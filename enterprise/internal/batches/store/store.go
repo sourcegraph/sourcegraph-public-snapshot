@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,6 +36,16 @@ func (s SQLColumns) ToSqlf() []*sqlf.Query {
 		columns = append(columns, sqlf.Sprintf(col))
 	}
 	return columns
+}
+
+// FmtStr returns a sqlf format string that can be concatenated to a query and
+// contains as many `%s` as columns.
+func (s SQLColumns) FmtStr() string {
+	elems := make([]string, len(s))
+	for i := range s {
+		elems[i] = "%s"
+	}
+	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
 // seededRand is used in RandomID() to generate a "random" number.
@@ -251,6 +262,10 @@ type operations struct {
 
 	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
 	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
+
+	getBatchSpecExecutionCacheEntry      *observation.Operation
+	markUsedBatchSpecExecutionCacheEntry *observation.Operation
+	createBatchSpecExecutionCacheEntry   *observation.Operation
 }
 
 var (
@@ -378,6 +393,10 @@ func newOperations(observationContext *observation.Context) *operations {
 
 			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
 			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
+
+			getBatchSpecExecutionCacheEntry:      op("GetBatchSpecExecutionCacheEntry"),
+			markUsedBatchSpecExecutionCacheEntry: op("MarkUsedBatchSpecExecutionCacheEntry"),
+			createBatchSpecExecutionCacheEntry:   op("CreateBatchSpecExecutionCacheEntry"),
 		}
 	})
 

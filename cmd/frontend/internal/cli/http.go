@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -121,7 +120,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 
 // newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
 // other internal services).
-func newInternalHTTPHandler(schema *graphql.Schema, db dbutil.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		withInternalActor(

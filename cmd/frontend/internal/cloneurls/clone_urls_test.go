@@ -7,8 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -16,19 +15,20 @@ import (
 func TestReposourceCloneURLToRepoName(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t)
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{{
+			ID:          1,
+			Kind:        extsvc.KindGitHub,
+			DisplayName: "GITHUB #1",
+			Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
+		}},
+		nil,
+	)
 
-	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
-			{
-				ID:          1,
-				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #1",
-				Config:      `{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			},
-		}, nil
-	}
-	defer func() { database.Mocks.ExternalServices = database.MockExternalServices{} }()
+	db := dbmock.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefaultReturn(dbmock.NewMockRepoStore())
 
 	tests := []struct {
 		name         string

@@ -32,8 +32,8 @@ func (s *DBDashboardStore) Handle() *basestore.TransactableHandle { return s.Sto
 
 // With creates a new DBDashboardStore with the given basestore. Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
-func (s *DBDashboardStore) With(other *DBDashboardStore) *DBDashboardStore {
-	return &DBDashboardStore{Store: s.Store.With(other.Store), Now: other.Now}
+func (s *DBDashboardStore) With(other basestore.ShareableStore) *DBDashboardStore {
+	return &DBDashboardStore{Store: s.Store.With(other), Now: s.Now}
 }
 
 func (s *DBDashboardStore) Transact(ctx context.Context) (*DBDashboardStore, error) {
@@ -284,10 +284,10 @@ func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId i
 	return scanDashboardGrants(s.Query(ctx, sqlf.Sprintf(getDashboardGrantsSql, dashboardId)))
 }
 
-func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error) {
-	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, visibleDashboardsQuery(userIds, orgIds))
+func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardIds []int, userIds []int, orgIds []int) (bool, error) {
+	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, pq.Array(dashboardIds), visibleDashboardsQuery(userIds, orgIds))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
-	return count != 0, err
+	return count == 0, err
 }
 
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId int, grants []DashboardGrant) error {
@@ -324,8 +324,7 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
     WHERE unique_id = ANY(%s)
-)
-ON CONFLICT DO NOTHING;
+);
 `
 
 const updateDashboardSql = `
@@ -361,8 +360,10 @@ SELECT * FROM dashboard_grants where dashboard_id = %s
 
 const getDashboardGrantsByPermissionsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
-SELECT COUNT(*) FROM dashboard
-WHERE id = %s AND id in (%s);
+SELECT count(*)
+FROM dashboard
+WHERE id = ANY (%s)
+AND id NOT IN (%s);
 `
 
 const addDashboardGrantsSql = `
@@ -376,5 +377,5 @@ type DashboardStore interface {
 	CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error)
 	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
-	HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error)
+	HasDashboardPermission(ctx context.Context, dashboardId []int, userIds []int, orgIds []int) (bool, error)
 }

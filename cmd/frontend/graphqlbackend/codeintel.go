@@ -154,6 +154,7 @@ type GitBlobLSIFDataResolver interface {
 	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
 }
@@ -204,6 +205,7 @@ type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context) (LocationConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
 	Documentation(ctx context.Context) (DocumentationResolver, error)
 }

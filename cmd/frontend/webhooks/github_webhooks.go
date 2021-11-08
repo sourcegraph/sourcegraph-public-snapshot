@@ -55,6 +55,8 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	SetExternalServiceID(r.Context(), extSvc.ID)
+
 	// 🚨 SECURITY: now that the payload and shared secret have been validated,
 	// we can use an internal actor on the context.
 	ctx := actor.WithInternalActor(r.Context())

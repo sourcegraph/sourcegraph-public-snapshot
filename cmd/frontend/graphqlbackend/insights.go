@@ -260,6 +260,7 @@ type CreateLineChartSearchInsightArgs struct {
 type CreateLineChartSearchInsightInput struct {
 	DataSeries []LineChartSearchInsightDataSeriesInput
 	Options    LineChartOptionsInput
+	Dashboards *[]graphql.ID
 }
 
 type UpdateLineChartSearchInsightArgs struct {
@@ -283,6 +284,7 @@ type InsightViewFiltersInput struct {
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
+	SeriesId        *string
 	Query           string
 	TimeScope       TimeScopeInput
 	RepositoryScope RepositoryScopeInput
@@ -316,7 +318,8 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First *int32
-	After *string
-	Id    *graphql.ID
+	First   *int32
+	After   *string
+	Id      *graphql.ID
+	Filters *InsightViewFiltersInput
 }

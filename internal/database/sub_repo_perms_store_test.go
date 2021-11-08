@@ -184,16 +184,64 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 }
 
+func TestSubRepoPermsRepoSupported(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	db := dbtest.NewDB(t)
+
+	ctx := context.Background()
+	s := SubRepoPerms(db)
+	prepareSubRepoTestData(ctx, t, db)
+
+	for _, tc := range []struct {
+		repo      api.RepoName
+		supported bool
+	}{
+		{
+			repo:      "github.com/foo/bar",
+			supported: false,
+		},
+		{
+			repo:      "perforce1",
+			supported: true,
+		},
+		{
+			repo:      "unknown",
+			supported: false,
+		},
+	} {
+		t.Run(string(tc.repo), func(t *testing.T) {
+			supported, err := s.RepoSupported(ctx, tc.repo)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if supported != tc.supported {
+				t.Fatalf("Want %v, got %v", tc.supported, supported)
+			}
+		})
+	}
+}
+
 func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 	t.Helper()
 
 	// Prepare data
 	qs := []string{
-		// ID=1, with newer code host connection sync
 		`INSERT INTO users(username) VALUES ('alice')`,
+
 		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
+		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
+
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(1, 'github.com/foo/bar', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`,
 		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,
+		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(3, 'perforce1', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/')`,
+
+		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(1, 1, 'cloneURL')`,
+		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(2, 1, 'cloneURL')`,
+		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(3, 2, 'cloneURL')`,
 	}
 	for _, q := range qs {
 		if _, err := db.ExecContext(ctx, q); err != nil {

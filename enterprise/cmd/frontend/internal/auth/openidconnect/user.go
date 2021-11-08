@@ -57,7 +57,7 @@ func getOrCreateUser(ctx context.Context, db dbutil.DB, p *provider, idToken *oi
 		UserClaims *userClaims    `json:"userClaims"`
 	}{IDToken: idToken, UserInfo: userInfo, UserClaims: claims})
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, db, auth.GetAndSaveUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, database.NewDB(db), auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        login,
 			Email:           email,

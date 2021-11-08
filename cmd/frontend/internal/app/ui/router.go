@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -118,7 +117,7 @@ func Router() *mux.Router {
 // InitRouter create the router that serves pages for our web app
 // and assigns it to uirouter.Router.
 // The router can be accessed by calling Router().
-func InitRouter(db dbutil.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+func InitRouter(db database.DB, codeIntelResolver graphqlbackend.CodeIntelResolver) {
 	router := newRouter()
 	initRouter(db, router, codeIntelResolver)
 }
@@ -218,7 +217,7 @@ func brandNameSubtitle(titles ...string) string {
 	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
 }
 
-func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
+func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbackend.CodeIntelResolver) {
 	uirouter.Router = router // make accessible to other packages
 
 	// basic pages with static titles

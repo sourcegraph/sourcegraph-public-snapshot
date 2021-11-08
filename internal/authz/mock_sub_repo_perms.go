@@ -11,9 +11,9 @@ import (
 // SubRepoPermissionChecker interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/authz) used for unit testing.
 type MockSubRepoPermissionChecker struct {
-	// CurrentUserPermissionsFunc is an instance of a mock function object
-	// controlling the behavior of the method CurrentUserPermissions.
-	CurrentUserPermissionsFunc *SubRepoPermissionCheckerCurrentUserPermissionsFunc
+	// PermissionsFunc is an instance of a mock function object controlling
+	// the behavior of the method Permissions.
+	PermissionsFunc *SubRepoPermissionCheckerPermissionsFunc
 }
 
 // NewMockSubRepoPermissionChecker creates a new mock of the
@@ -21,8 +21,8 @@ type MockSubRepoPermissionChecker struct {
 // all results, unless overwritten.
 func NewMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 	return &MockSubRepoPermissionChecker{
-		CurrentUserPermissionsFunc: &SubRepoPermissionCheckerCurrentUserPermissionsFunc{
-			defaultHook: func(context.Context, RepoContent) (Perms, error) {
+		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
+			defaultHook: func(context.Context, int32, RepoContent) (Perms, error) {
 				return 0, nil
 			},
 		},
@@ -34,43 +34,43 @@ func NewMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 // implementation, unless overwritten.
 func NewMockSubRepoPermissionCheckerFrom(i SubRepoPermissionChecker) *MockSubRepoPermissionChecker {
 	return &MockSubRepoPermissionChecker{
-		CurrentUserPermissionsFunc: &SubRepoPermissionCheckerCurrentUserPermissionsFunc{
-			defaultHook: i.CurrentUserPermissions,
+		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
+			defaultHook: i.Permissions,
 		},
 	}
 }
 
-// SubRepoPermissionCheckerCurrentUserPermissionsFunc describes the behavior
-// when the CurrentUserPermissions method of the parent
-// MockSubRepoPermissionChecker instance is invoked.
-type SubRepoPermissionCheckerCurrentUserPermissionsFunc struct {
-	defaultHook func(context.Context, RepoContent) (Perms, error)
-	hooks       []func(context.Context, RepoContent) (Perms, error)
-	history     []SubRepoPermissionCheckerCurrentUserPermissionsFuncCall
+// SubRepoPermissionCheckerPermissionsFunc describes the behavior when the
+// Permissions method of the parent MockSubRepoPermissionChecker instance is
+// invoked.
+type SubRepoPermissionCheckerPermissionsFunc struct {
+	defaultHook func(context.Context, int32, RepoContent) (Perms, error)
+	hooks       []func(context.Context, int32, RepoContent) (Perms, error)
+	history     []SubRepoPermissionCheckerPermissionsFuncCall
 	mutex       sync.Mutex
 }
 
-// CurrentUserPermissions delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockSubRepoPermissionChecker) CurrentUserPermissions(v0 context.Context, v1 RepoContent) (Perms, error) {
-	r0, r1 := m.CurrentUserPermissionsFunc.nextHook()(v0, v1)
-	m.CurrentUserPermissionsFunc.appendCall(SubRepoPermissionCheckerCurrentUserPermissionsFuncCall{v0, v1, r0, r1})
+// Permissions delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSubRepoPermissionChecker) Permissions(v0 context.Context, v1 int32, v2 RepoContent) (Perms, error) {
+	r0, r1 := m.PermissionsFunc.nextHook()(v0, v1, v2)
+	m.PermissionsFunc.appendCall(SubRepoPermissionCheckerPermissionsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// CurrentUserPermissions method of the parent MockSubRepoPermissionChecker
-// instance is invoked and the hook queue is empty.
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) SetDefaultHook(hook func(context.Context, RepoContent) (Perms, error)) {
+// SetDefaultHook sets function that is called when the Permissions method
+// of the parent MockSubRepoPermissionChecker instance is invoked and the
+// hook queue is empty.
+func (f *SubRepoPermissionCheckerPermissionsFunc) SetDefaultHook(hook func(context.Context, int32, RepoContent) (Perms, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CurrentUserPermissions method of the parent MockSubRepoPermissionChecker
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) PushHook(hook func(context.Context, RepoContent) (Perms, error)) {
+// Permissions method of the parent MockSubRepoPermissionChecker instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SubRepoPermissionCheckerPermissionsFunc) PushHook(hook func(context.Context, int32, RepoContent) (Perms, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -78,21 +78,21 @@ func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) PushHook(hook func(
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) SetDefaultReturn(r0 Perms, r1 error) {
-	f.SetDefaultHook(func(context.Context, RepoContent) (Perms, error) {
+func (f *SubRepoPermissionCheckerPermissionsFunc) SetDefaultReturn(r0 Perms, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, RepoContent) (Perms, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) PushReturn(r0 Perms, r1 error) {
-	f.PushHook(func(context.Context, RepoContent) (Perms, error) {
+func (f *SubRepoPermissionCheckerPermissionsFunc) PushReturn(r0 Perms, r1 error) {
+	f.PushHook(func(context.Context, int32, RepoContent) (Perms, error) {
 		return r0, r1
 	})
 }
 
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) nextHook() func(context.Context, RepoContent) (Perms, error) {
+func (f *SubRepoPermissionCheckerPermissionsFunc) nextHook() func(context.Context, int32, RepoContent) (Perms, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -105,34 +105,36 @@ func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) nextHook() func(con
 	return hook
 }
 
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) appendCall(r0 SubRepoPermissionCheckerCurrentUserPermissionsFuncCall) {
+func (f *SubRepoPermissionCheckerPermissionsFunc) appendCall(r0 SubRepoPermissionCheckerPermissionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// SubRepoPermissionCheckerCurrentUserPermissionsFuncCall objects describing
-// the invocations of this function.
-func (f *SubRepoPermissionCheckerCurrentUserPermissionsFunc) History() []SubRepoPermissionCheckerCurrentUserPermissionsFuncCall {
+// History returns a sequence of SubRepoPermissionCheckerPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *SubRepoPermissionCheckerPermissionsFunc) History() []SubRepoPermissionCheckerPermissionsFuncCall {
 	f.mutex.Lock()
-	history := make([]SubRepoPermissionCheckerCurrentUserPermissionsFuncCall, len(f.history))
+	history := make([]SubRepoPermissionCheckerPermissionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// SubRepoPermissionCheckerCurrentUserPermissionsFuncCall is an object that
-// describes an invocation of method CurrentUserPermissions on an instance
-// of MockSubRepoPermissionChecker.
-type SubRepoPermissionCheckerCurrentUserPermissionsFuncCall struct {
+// SubRepoPermissionCheckerPermissionsFuncCall is an object that describes
+// an invocation of method Permissions on an instance of
+// MockSubRepoPermissionChecker.
+type SubRepoPermissionCheckerPermissionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 RepoContent
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 RepoContent
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 Perms
@@ -143,12 +145,12 @@ type SubRepoPermissionCheckerCurrentUserPermissionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c SubRepoPermissionCheckerCurrentUserPermissionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c SubRepoPermissionCheckerPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c SubRepoPermissionCheckerCurrentUserPermissionsFuncCall) Results() []interface{} {
+func (c SubRepoPermissionCheckerPermissionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

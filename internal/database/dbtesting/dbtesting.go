@@ -5,11 +5,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"hash/crc32"
 	"hash/fnv"
 	"io"
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -44,11 +46,6 @@ func useFastPasswordMocks() {
 // BeforeTest functions are called before each test is run (by SetupGlobalTestDB).
 var BeforeTest []func()
 
-// DBNameSuffix must be set by DB test packages at init time to a value that is unique among all
-// other such values used by other DB test packages. This is necessary to ensure the tests do not
-// concurrently use the same DB (which would cause test failures).
-var DBNameSuffix = "database"
-
 var (
 	connectOnce sync.Once
 	connectErr  error
@@ -56,11 +53,6 @@ var (
 
 // SetupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
-//
-// Callers (other than github.com/sourcegraph/sourcegraph/internal/database) must
-// set a name in this package's DBNameSuffix var that is unique among all other
-// test packages that call SetupGlobalTestDB, so that each package's
-// tests run in separate DBs and do not conflict.
 func SetupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
@@ -69,7 +61,7 @@ func SetupGlobalTestDB(t testing.TB) {
 	}
 
 	connectOnce.Do(func() {
-		connectErr = initTest(DBNameSuffix)
+		connectErr = initTest()
 	})
 	if connectErr != nil {
 		// only ignore connection errors if not on CI
@@ -133,12 +125,14 @@ func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
 	}
 }
 
-// initTest creates a test database, named with the given suffix
-// (dropping it if it already exists), and configures this package to use it.
-// It is called by integration tests (in a package init func) that need to use
-// a real database.
-func initTest(nameSuffix string) error {
-	dbname := "sourcegraph-test-" + nameSuffix
+// initTest creates a test database (dropping it if it already exists), and
+// configures this package to use it.  It is called by integration tests (in a
+// package init func) that need to use a real database.
+func initTest() error {
+	dbname, err := dbName()
+	if err != nil {
+		return err
+	}
 
 	if os.Getenv("TEST_SKIP_DROP_DB_BEFORE_TESTS") == "" {
 		// When running the database-backcompat.sh tests, we need to *keep* the DB around because it has
@@ -175,6 +169,67 @@ func initTest(nameSuffix string) error {
 	}
 
 	return nil
+}
+
+// dbName generates a unique name for the package currently being tested.
+func dbName() (string, error) {
+	pkg := testPkgName()
+	if pkg == "" {
+		return "", errors.New("dbtesting: could not detect test package")
+	}
+
+	// Postgres identifier limit is 64. Conservatively shorten name if bigger
+	// than 32.
+	if len(pkg) > 32 {
+		pkg = fmt.Sprintf("%X-%s", crc32.ChecksumIEEE([]byte(pkg)), pkg[len(pkg)-32:])
+	}
+
+	return "sourcegraph-test-" + strings.ReplaceAll(pkg, "/", "-"), nil
+}
+
+// testPkgName finds the relative name of the sourcegraph package being tested
+// by inspecting the call stack. If it fails, it returns an empty string.
+func testPkgName() string {
+	pc := make([]uintptr, 20)
+	n := runtime.Callers(1, pc)
+	if n == 0 {
+		return ""
+	}
+
+	pc = pc[:n]
+	frames := runtime.CallersFrames(pc)
+
+	modulePrefix := "github.com/sourcegraph/sourcegraph/"
+	pkg := ""
+
+	var (
+		frame runtime.Frame
+		more  = true
+	)
+
+	// Look for last function name that looks like a sourcegraph test
+	for more {
+		frame, more = frames.Next()
+
+		// Example name of a function we are looking for and the example pkg
+		//
+		//  github.com/sourcegraph/sourcegraph/cmd/frontend/backend.TestGetFirstServiceVersion
+		//  =>
+		//  cmd/frontend/backend
+
+		testNameIdx := strings.Index(frame.Function, ".Test")
+		if testNameIdx < 0 {
+			continue
+		}
+
+		if !strings.HasPrefix(frame.Function, modulePrefix) {
+			continue
+		}
+
+		pkg = frame.Function[len(modulePrefix):testNameIdx]
+	}
+
+	return pkg
 }
 
 // MockDB implements the dbutil.DB interface and is intended to be used

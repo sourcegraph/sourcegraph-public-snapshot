@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -404,4 +405,36 @@ func limitOrDefault(first *int32) int {
 		return DefaultSymbolLimit
 	}
 	return int(*first)
+}
+
+type SymbolSearch struct {
+	ZoektArgs         *search.ZoektParameters
+	PatternInfo       *search.TextPatternInfo
+	Limit             int
+	NotSearcherOnly   bool
+	UseIndex          query.YesNoOnly
+	ContainsRefGlobs  bool
+	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+}
+
+func (s *SymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
+	ctx, stream, cancel := streaming.WithLimit(ctx, stream, s.Limit)
+	defer cancel()
+
+	request, ok, err := zoektutil.OnlyUnindexed(repos, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, repos, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+		if err != nil {
+			return err
+		}
+	}
+	return symbolSearchInRepos(ctx, request, s.PatternInfo, s.NotSearcherOnly, s.Limit, cancel, stream)
+}
+
+func (*SymbolSearch) Name() string {
+	return "Symbol"
 }

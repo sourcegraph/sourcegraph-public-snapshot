@@ -15,6 +15,7 @@ import (
 type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
+	Authz() AuthzStore
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
@@ -34,6 +35,7 @@ type DB interface {
 	UserExternalAccounts() UserExternalAccountsStore
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
+	WebhookLogs(encryption.Key) WebhookLogStore
 }
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
@@ -50,6 +52,10 @@ var _ DB = (*db)(nil)
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
+}
+
+func (d *db) Authz() AuthzStore {
+	return Authz(d.DB)
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -126,6 +132,10 @@ func (d *db) UserPublicRepos() UserPublicRepoStore {
 
 func (d *db) Users() UserStore {
 	return Users(d.DB)
+}
+
+func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
+	return WebhookLogs(d.DB, key)
 }
 
 func (d *db) Unwrap() dbutil.DB {

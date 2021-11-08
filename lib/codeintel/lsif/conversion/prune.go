@@ -31,6 +31,7 @@ func prune(ctx context.Context, state *State, root string, getChildren pathexist
 
 	pruneFromDefinitionReferences(state, state.DefinitionData)
 	pruneFromDefinitionReferences(state, state.ReferenceData)
+	pruneFromDefinitionReferences(state, state.ImplementationData)
 	return nil
 }
 

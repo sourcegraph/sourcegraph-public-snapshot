@@ -82,20 +82,24 @@ func TestListIndexableRepos(t *testing.T) {
 			}
 			want := []types.MinimalRepo{
 				{
-					ID:   api.RepoID(11),
-					Name: "github.com/foo/bar11",
+					ID:    api.RepoID(11),
+					Name:  "github.com/foo/bar11",
+					Stars: 25,
 				},
 				{
-					ID:   api.RepoID(10),
-					Name: "github.com/foo/bar10",
+					ID:    api.RepoID(10),
+					Name:  "github.com/foo/bar10",
+					Stars: 5,
 				},
 				{
-					ID:   api.RepoID(14),
-					Name: "github.com/foo/bar14",
+					ID:    api.RepoID(14),
+					Name:  "github.com/foo/bar14",
+					Stars: 2,
 				},
 				{
-					ID:   api.RepoID(15),
-					Name: "github.com/foo/bar15",
+					ID:    api.RepoID(15),
+					Name:  "github.com/foo/bar15",
+					Stars: 0,
 				},
 			}
 			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {
@@ -110,16 +114,19 @@ func TestListIndexableRepos(t *testing.T) {
 			}
 			want := []types.MinimalRepo{
 				{
-					ID:   api.RepoID(11),
-					Name: "github.com/foo/bar11",
+					ID:    api.RepoID(11),
+					Name:  "github.com/foo/bar11",
+					Stars: 25,
 				},
 				{
-					ID:   api.RepoID(10),
-					Name: "github.com/foo/bar10",
+					ID:    api.RepoID(10),
+					Name:  "github.com/foo/bar10",
+					Stars: 5,
 				},
 				{
-					ID:   api.RepoID(14),
-					Name: "github.com/foo/bar14",
+					ID:    api.RepoID(14),
+					Name:  "github.com/foo/bar14",
+					Stars: 2,
 				},
 			}
 			if diff := cmp.Diff(want, repos, cmpopts.EquateEmpty()); diff != "" {

@@ -411,7 +411,36 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
-	return s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	err := s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	if err != nil {
+		return err
+	}
+	// Enable the series in case it had previously been soft-deleted.
+	err = s.SetSeriesEnabled(ctx, series.SeriesID, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string, viewId int) error {
+	err := s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
+	if err != nil {
+		return err
+	}
+	// Delete the series if there are no longer any references to it.
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(countSeriesReferencesSql, seriesId)))
+	if err != nil {
+		return err
+	}
+	if count != 0 {
+		return nil
+	}
+	err = s.SetSeriesEnabled(ctx, seriesId, false)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
@@ -428,6 +457,7 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.UniqueID,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		view.OtherThreshold,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
@@ -459,10 +489,17 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.Filters.ExcludeRepoRegex,
 		view.UniqueID,
 	))
-	if row.Err() != nil {
-		return types.InsightView{}, row.Err()
+	var id int
+	err = row.Scan(&id)
+	if err != nil {
+		return types.InsightView{}, errors.Wrap(err, "failed to update insight view")
 	}
+	view.ID = id
 	return view, nil
+}
+
+func (s *InsightStore) UpdateViewSeries(ctx context.Context, seriesId string, viewId int, metadata types.InsightViewSeriesMetadata) error {
+	return s.Exec(ctx, sqlf.Sprintf(updateInsightViewSeries, metadata.Label, metadata.Stroke, seriesId, viewId))
 }
 
 func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView, grants []InsightViewGrant) error {
@@ -606,6 +643,41 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
 }
 
+type MatchSeriesArgs struct {
+	Query             string
+	StepIntervalUnit  string
+	StepIntervalValue int
+}
+
+func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
+	where := sqlf.Sprintf(
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue,
+	)
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
+	rows, err := scanDataSeries(s.Query(ctx, q))
+	if err != nil {
+		return types.InsightSeries{}, false, err
+	}
+	if len(rows) == 0 {
+		return types.InsightSeries{}, false, nil
+	}
+	return rows[0], true, nil
+}
+
+type UpdateFrontendSeriesArgs struct {
+	SeriesID          string
+	Query             string
+	Repositories      []string
+	StepIntervalUnit  string
+	StepIntervalValue int
+}
+
+func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, pq.Array(args.Repositories), args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -642,16 +714,32 @@ INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stro
 VALUES (%s, %s, %s, %s);
 `
 
+const removeSeriesFromViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:RemoveSeriesFromView
+DELETE FROM insight_view_series vs
+USING insight_series s
+WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s;
+`
+
+const updateInsightViewSeries = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateViewSeries
+UPDATE insight_view_series vs
+SET label = %s, stroke = %s
+FROM insight_series s
+WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s
+`
+
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
-INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
-VALUES (%s, %s, %s, %s, %s)
+INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex, other_threshold)
+VALUES (%s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s
-WHERE unique_id = %s;`
+WHERE unique_id = %s
+RETURNING id;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
@@ -698,4 +786,18 @@ WHERE (iv.id IN (SELECT insight_view_id
    OR iv.id IN (%s))
 AND %s
 ORDER BY iv.id
+`
+
+const countSeriesReferencesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:CountSeriesReferences
+SELECT COUNT(*) FROM insight_view_series viewSeries
+	INNER JOIN insight_series series ON viewSeries.insight_series_id = series.id
+WHERE series.series_id = %s
+`
+
+const updateFrontendSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateFrontendSeries
+UPDATE insight_series
+SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
+WHERE series_id = %s
 `

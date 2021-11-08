@@ -208,7 +208,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	if !envvar.SourcegraphDotComMode() {
 		// git-server repos purging thread
-		go repos.RunRepositoryPurgeWorker(ctx)
+		go repos.RunRepositoryPurgeWorker(ctx, database.NewDB(db))
 	}
 
 	// Git fetches scheduler

@@ -16,10 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "codemonitorsstoredb"
-}
-
 const (
 	testQuery       = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
 	testDescription = "test description"

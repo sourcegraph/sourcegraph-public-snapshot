@@ -6,7 +6,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -35,8 +34,7 @@ func (r *queryResolver) DocumentationDefinitions(ctx context.Context, pathID str
 		}
 		if len(locations) > 0 {
 			r.path = locations[0].Path
-			uploadsByID := map[int]dbstore.Dump{upload.ID: upload}
-			return r.adjustLocations(ctx, uploadsByID, locations)
+			return r.adjustLocations(ctx, locations)
 		}
 	}
 	return nil, nil
