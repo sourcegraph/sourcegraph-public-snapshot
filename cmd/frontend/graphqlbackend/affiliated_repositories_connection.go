@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -157,7 +156,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 type codeHostRepositoryResolver struct {
 	repo     *types.CodeHostRepository
 	codeHost *types.ExternalService
-	db       dbutil.DB
+	db       database.DB
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
@@ -170,7 +169,7 @@ func (r *codeHostRepositoryResolver) Private() bool {
 
 func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
 	return &externalServiceResolver{
-		db:              database.NewDB(r.db),
+		db:              r.db,
 		externalService: r.codeHost,
 	}
 }
