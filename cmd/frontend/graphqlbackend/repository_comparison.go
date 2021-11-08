@@ -162,7 +162,7 @@ func (r *RepositoryComparisonResolver) Commits(
 	args *graphqlutil.ConnectionArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		db:            r.db,
+		db:            database.NewDB(r.db),
 		revisionRange: r.baseRevspec + ".." + r.headRevspec,
 		first:         args.First,
 		repo:          r.repo,

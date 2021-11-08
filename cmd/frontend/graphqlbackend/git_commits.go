@@ -6,13 +6,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type gitCommitConnectionResolver struct {
-	db            dbutil.DB
+	db            database.DB
 	revisionRange string
 
 	first  *int32
@@ -79,7 +78,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = toGitCommitResolver(r.repo, database.NewDB(r.db), commit.ID, commit)
+		resolvers[i] = toGitCommitResolver(r.repo, r.db, commit.ID, commit)
 	}
 
 	return resolvers, nil

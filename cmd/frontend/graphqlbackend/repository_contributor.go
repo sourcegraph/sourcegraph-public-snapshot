@@ -1,6 +1,9 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+)
 
 type repositoryContributorResolver struct {
 	db    dbutil.DB
@@ -28,7 +31,7 @@ func (r *repositoryContributorResolver) Commits(args *struct {
 		revisionRange = *r.args.RevisionRange
 	}
 	return &gitCommitConnectionResolver{
-		db:            r.db,
+		db:            database.NewDB(r.db),
 		revisionRange: revisionRange,
 		path:          r.args.Path,
 		author:        &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails
