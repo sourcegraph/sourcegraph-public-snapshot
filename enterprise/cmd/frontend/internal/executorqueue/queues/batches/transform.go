@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -25,7 +24,7 @@ const (
 )
 
 func createAndAttachInternalAccessToken(ctx context.Context, s batchesStore, jobID int64, userID int32) (string, error) {
-	tokenID, token, err := database.AccessTokens(s.DB()).CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+	tokenID, token, err := s.DatabaseDB().AccessTokens().CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +49,7 @@ type batchesStore interface {
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
 	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
 
-	DB() dbutil.DB
+	DatabaseDB() database.DB
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
@@ -72,7 +71,7 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 	// when loading the repository.
 	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
 
-	repo, err := database.Repos(s.DB()).Get(ctx, workspace.RepoID)
+	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
