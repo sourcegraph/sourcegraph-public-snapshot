@@ -339,12 +339,12 @@ func TestResolverPaginate(t *testing.T) {
 		err   error
 	}{
 		{
-			name:  "no cursors",
+			name:  "default limit 500, no cursors",
 			opts:  search.RepoOptions{},
 			pages: []Resolved{all},
 		},
 		{
-			name: "with limit",
+			name: "with limit 3, no cursors",
 			opts: search.RepoOptions{
 				Limit: 3,
 			},
@@ -354,9 +354,25 @@ func TestResolverPaginate(t *testing.T) {
 					RepoSet:  setOf(all.RepoRevs[:3]),
 					Next: types.Cursors{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
-						{Column: "id", Direction: "next", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
 					},
 				},
+				{
+					RepoRevs: all.RepoRevs[3:],
+					RepoSet:  setOf(all.RepoRevs[3:]),
+				},
+			},
+		},
+		{
+			name: "with limit 3 and cursor",
+			opts: search.RepoOptions{
+				Limit: 3,
+				Cursors: types.Cursors{
+					{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
+					{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+				},
+			},
+			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[3:],
 					RepoSet:  setOf(all.RepoRevs[3:]),
@@ -372,6 +388,9 @@ func TestResolverPaginate(t *testing.T) {
 				pages = append(pages, *page)
 				return nil
 			})
+			if err != nil {
+				t.Error(err)
+			}
 
 			if !errors.Is(err, tc.err) {
 				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, cmp.Diff(err, tc.err))

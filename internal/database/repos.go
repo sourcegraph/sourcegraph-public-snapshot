@@ -832,12 +832,12 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
-	for _, c := range opt.Cursors {
-		cursorConds, err := parseCursorConds(c)
+	if len(opt.Cursors) > 0 {
+		cursorConds, err := parseCursorConds(opt.Cursors)
 		if err != nil {
 			return nil, err
 		}
-		where = append(where, cursorConds...)
+		where = append(where, cursorConds)
 	}
 
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
@@ -1544,29 +1544,43 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-// parseCursorConds checks whether the query is using cursor-based pagination, and
-// if so performs the necessary transformations for it to be successful.
-func parseCursorConds(c *types.Cursor) (conds []*sqlf.Query, err error) {
-	if c == nil || c.Column == "" || c.Value == "" {
-		return nil, nil
-	}
-	var direction string
-	switch c.Direction {
-	case "next":
-		direction = ">="
-	case "prev":
-		direction = "<="
-	default:
-		return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
+// parseCursorConds returns the WHERE conditions for the given cursor
+func parseCursorConds(cs types.Cursors) (cond *sqlf.Query, err error) {
+	var (
+		direction string
+		operator  string
+		columns   = make([]string, 0, len(cs))
+		values    = make([]*sqlf.Query, 0, len(cs))
+	)
+
+	for _, c := range cs {
+		if c == nil || c.Column == "" || c.Value == "" {
+			continue
+		}
+
+		if direction == "" {
+			switch direction = c.Direction; direction {
+			case "next":
+				operator = ">="
+			case "prev":
+				operator = "<="
+			default:
+				return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
+			}
+		} else if direction != c.Direction {
+			return nil, errors.Errorf("multi-cursors must have the same direction")
+		}
+
+		switch RepoListColumn(c.Column) {
+		case RepoListName, RepoListStars, RepoListCreatedAt, RepoListID:
+			columns = append(columns, c.Column)
+			values = append(values, sqlf.Sprintf("%s", c.Value))
+		default:
+			return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
+		}
 	}
 
-	switch RepoListColumn(c.Column) {
-	case RepoListName, RepoListStars, RepoListCreatedAt, RepoListID:
-		conds = append(conds, sqlf.Sprintf(c.Column+" "+direction+" %s", c.Value))
-	default:
-		return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
-	}
-	return conds, nil
+	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", strings.Join(columns, ", "), operator), sqlf.Join(values, ", ")), nil
 }
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible

@@ -162,7 +162,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			},
 			{
 				Field:      database.RepoListID,
-				Descending: false,
+				Descending: true,
 			},
 		},
 	}
