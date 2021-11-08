@@ -261,7 +261,7 @@ export const Panel = React.memo<Props>(props => {
                     <div className="d-flex w-100">
                         {items.map(({ label, id, trackTabClick }) => (
                             <Tab key={id}>
-                                <span className="tablist-wrapper--tab-label" onClick={trackTabClick} aria-hidden={true}>
+                                <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
                                     {label}
                                 </span>
                             </Tab>
