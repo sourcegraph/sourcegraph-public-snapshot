@@ -30,7 +30,7 @@ The plugin works with all JetBrains IDEs including:
 
 ## Configuring for use with a private Sourcegraph instance
 
-The plugin is configurable _globally_ by creating a `.sourcegraph-jetbrains.properties` in your home directory. For example, modify the following URL to match your on-premises Sourcegraph instance URL:
+The plugin is configurable _globally_ by creating a `.sourcegraph-jetbrains.properties` (or `sourcegraph-jetbrains.properties` pre-v1.2.2) in your home directory. For example, modify the following URL to match your on-premises Sourcegraph instance URL:
 
 ```
 url = https://sourcegraph.example.com
@@ -38,7 +38,7 @@ defaultBranch = example-branch
 remoteUrlReplacements = git.example.com, git-web.example.com
 ```
 
-You may also choose to configure it _per repository_ using a `.idea/sourcegraph.xml` file in your repository like so:
+You may also choose to configure it _per repository_ using a `.idea/sourcegraph.xml` (or `idea/sourcegraph.xml` pre-v1.2.2) file in your repository like so:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -80,7 +80,14 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 
 ## Version History
 
+#### v1.2.2
+
+- It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.
+    - Special thanks: @oliviernotteghem for contributing the new features in this release!
+- Fixed bugs where Open in Sourcegraph from the git menu does not work for repos with ssh url as their remote url
+
 #### v1.2.1
+
 - Added `Open In Sourcegraph` action to VCS History and Git Log to open a revision in the Sourcegraph diff view.
 - Added `defaultBranch` configuration option that allows opening files in a specific branch on Sourcegraph.
 - Added `remoteUrlReplacements` configuration option that allow users to replace specified values in the remote url with new strings.
@@ -92,8 +99,6 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 - Menu entries (Open file, etc.) are now under a Sourcegraph sub-menu.
 - Added a "Copy link to file" action (alt+c / opt+c).
 - Added a "Search in repository" action (alt+r / opt+r).
-- It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.
-- Special thanks: @oliviernotteghem for contributing the new features in this release!
 
 #### v1.1.2
 
