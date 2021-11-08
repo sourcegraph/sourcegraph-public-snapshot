@@ -25,21 +25,24 @@ export function getYTicks(scale: AnyD3Scale, height: number): number[] {
     let filteredTicks = ticks
 
     while (filteredTicks.length > numberTicks) {
-        filteredTicks = halveTicks(filteredTicks)
+        filteredTicks = getHalvedTicks(filteredTicks)
     }
 
     return filteredTicks
 }
 
 /**
- * Cut off half of tick elements from the list.
+ * Cut off half of tick elements from the list based on
+ * original number of ticks. With odd number of original ticks
+ * removes all even index ticks with even number removes all
+ * odd index ticks.
  */
-function halveTicks(ticks: number[]): number[] {
-    const isOriginTickLengthEven = !(ticks.length % 2)
+function getHalvedTicks(ticks: number[]): number[] {
+    const isOriginTickLengthOdd = !(ticks.length % 2)
     const filteredTicks = []
 
     for (let index = ticks.length; index >= 1; index--) {
-        if (isOriginTickLengthEven) {
+        if (isOriginTickLengthOdd) {
             if (index % 2 === 0) {
                 filteredTicks.unshift(ticks[index - 1])
             }
