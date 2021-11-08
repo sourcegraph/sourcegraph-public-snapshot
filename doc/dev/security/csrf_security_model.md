@@ -37,7 +37,7 @@ If you are looking for general information or wish to disclose a vulnerability, 
 This is a living document, with a changelog as follows:
 
 * Aug 13th, 2021: [@slimsag](https://github.com/slimsag) does an in-depth analysis & review of our CSRF threat model and creates this document.
-* Nov 8th, 2021: [@slimsag](https://github.com/slimsag) audited all potential instances of pre-fetched content embedded into pages and found we have none, the following is NOT true ([#PR](PR)):
+* Nov 8th, 2021: [@slimsag](https://github.com/slimsag) audited all potential instances of pre-fetched content embedded into pages and found we have none, the following is NOT true ([#27236](https://github.com/sourcegraph/sourcegraph/pull/27236)):
   * "Some Sourcegraph pages pre-fetch content: on the backend, data is pre-fetched for the user so that they need not make a request for the data corresponding to the page immediately upon loading it. Instead, we fetch it and embed it into the `GET` page response, giving JavaScript access to it immediately upon page load."
 
 # Prerequisites
