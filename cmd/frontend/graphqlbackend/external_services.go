@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -361,7 +360,7 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 type computedExternalServiceConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
-	db               dbutil.DB
+	db               database.DB
 }
 
 func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
@@ -371,7 +370,7 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{db: database.NewDB(r.db), externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
 	}
 	return resolvers
 }
