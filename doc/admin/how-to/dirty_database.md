@@ -1,10 +1,10 @@
 # How to troubleshoot a dirty database
 
-This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error. 
+This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
 
 The error will look something like this:
 
-```
+```log
 ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395797. Fix and force version.
 ```
 Resolving this error requires discovering which migration file failed to run, and manually attempting to run that migration. 
@@ -18,13 +18,15 @@ The following procedure requires that you are able to execute commands from insi
 
 ## TL;DR Steps to resolve
 
-_These steps pertain to the frontedn database and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
+_These steps pertain to the frontend database (pgsql) and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
 
 1. **Check schema version. If it's dirty, then note the version number by using this command:**
 
 `SELECT * FROM schema_migrations;`
 
-2. **Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)**
+2. **Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)** 
+
+_Note: migrations in this directory are specific to the `pgsql` frontend database, learn about other databases in the [detailed steps to resolution](#detailed-steps-to-resolve)_
 
 3. **Run the code there explicitly**
 4. **Manually clear the dirty flag on the `schema_migrations` table**
@@ -34,12 +36,12 @@ _These steps pertain to the frontedn database and are meant as a quick read for 
 
 ### 1. Identify incomplete migration
 
-When migrations run, the `schema_migrations` table is updated to show the state of migrations. The `dirty` column indicates whether a migration is in-process, and the `version` column indicates the version of the migration the database is on or converting to. On startup, the frontend will not start if the `schema_migrations` `dirty` column is set to true.
+When migrations run, the `schema_migrations` table is updated to show the state of migrations. The `dirty` column, when set `t` (true), _indicates a migration was attempted but did not complete successfully_ (either did not yet complete or failed to complete), and the `version` column indicates the version of the migration the database is on (when not dirty), or attempted to migrate to (when dirty). On startup, the frontend will not start if the `schema_migrations` `dirty` column is set to `t`.
 
 **Check schema version, by querying the database version table:** `SELECT * FROM schema_migrations;` **If it's dirty, then note the version number for use in step 2.**
 
 Example:
-```
+```sql
 SELECT * FROM schema_migrations;
 version | dirty
 ------------+-------
@@ -58,30 +60,33 @@ Sourcegraphs migration files take for form of `sql` files following the snake ca
 
 2. **Run the code from the identified migration _up_ file explicitly using the `psql` CLI:**
    * It’s possible that one or more commands from the migration ran successfully already. In these cases you may need to run the sql transaction in pieces. For example if a migration file creates multiple indexes and one index already exist you'll need to manually run this transaction skipping that line or adding `IF NOT EXISTS` to the transaction.
-   * If you’re running into unique index creation errors because of duplicate values please let us know at support@sourcegraph.com or via your enterprise support channel. 
+   * If you’re running into unique index creation errors because of duplicate values please let us know at support@sourcegraph.com or via your enterprise support channel.
+   * There may be other error cases that don't have an easy admin-only resolution, in these cases please let us know at support@sourcegraph.com or via your enterprise support channel.
 
 ### 3. Verify database is clean and declare `dirty=false`
 
 1. **Manually clear the dirty flag on the `schema_migrations` table**, example `psql` query:
-```
+```sql
 UPDATE schema_migrations SET version=1528395918, dirty=false;
 ```
 **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.**
 
-Checking on the status of the migration requires looking at the migration’s commands. In its migration file. Many migrations do nothing but create tables and/or indexes or alter them.
+Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that its the `sql` queries contained in the migration files have made their changes to the relevant tables in the database. 
 
-You can get a description of a table and its associated indexes quickly using the `\d` command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this inforamtion to determine if commands in a migration ran successfully before setting `dirty=false`.
+_Note: Many migrations do nothing but create tables and/or indexes or alter them._
+
+You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this inforamtion to determine if commands in a migration ran successfully before setting `dirty=false`.
 
 1. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again from [_1. Identify incomplete migration_](#1-identify-incomplete-migration)**
 
 ## Additional Information
 
 ### `CREATE_INDEX_CONCURRENTLY`
-Some migrations utilize the `CREATE INDEX CONCURRENTLY` migration option which runs the query as a background process (learn more [here](https://www.postgresql.org/docs/9.1/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY)). If one of these migrations fails to complete, you will see the index when you describe the table, the migration will see it there, but it will be an unusable. You will then need to `REINDEX CONURRENTLY` or drop and recreate the index.
+Some migrations utilize the `CREATE INDEX CONCURRENTLY` migration option which runs the query as a background process ([learn more here](https://www.postgresql.org/docs/12/sql-createindex.html)). If one of these migrations fails to complete, you will see the index when you describe the table, the migration will see it there, but it will be an unusable. You will then need to `REINDEX CONURRENTLY` or drop and recreate the index.
 
 You can discover if such a damaged index exists by running the following query:
 
-```
+```sql
 SELECT
     current_database() AS datname,
     pc.relname AS relname,
@@ -92,7 +97,7 @@ WHERE
     NOT indisvalid AND
     NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
 ```
-Additionally grafana will alert you of an index is this state. The grafana alert can be found unders its database charts. Ex: `Site Admin > Monitoring > Postgres > Invalid Indexes (unusable by query planner)`
+Additionally Grafana will alert you of an index is this state. _The Grafana alert can be found unders its database charts._ Ex: `Site Admin > Monitoring > Postgres > Invalid Indexes (unusable by query planner)`
 
 ## Further resources
 
