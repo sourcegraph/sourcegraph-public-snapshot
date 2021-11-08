@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { format } from 'date-fns'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -13,12 +14,18 @@ import styles from './WebhookLogNode.module.scss'
 
 export interface Props {
     node: WebhookLogFields
+
+    // For storybook purposes only:
+    initiallyExpanded?: boolean
+    initialTabIndex?: number
 }
 
 export const WebhookLogNode: React.FunctionComponent<Props> = ({
+    initiallyExpanded,
+    initialTabIndex,
     node: { externalService, receivedAt, request, response, statusCode },
 }) => {
-    const [isExpanded, setIsExpanded] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(initiallyExpanded === true)
     const toggleExpanded = useCallback(() => setIsExpanded(!isExpanded), [isExpanded])
 
     return (
@@ -38,7 +45,7 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
                     )}
                 </button>
             </span>
-            <span className="text-center">
+            <span className={classNames('text-center', styles.statusCode)}>
                 <StatusCode code={statusCode} />
             </span>
             <span>
@@ -47,7 +54,7 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
             <span className={styles.receivedAt}>{format(Date.parse(receivedAt), 'Ppp')}</span>
             {isExpanded && (
                 <div className={styles.expanded}>
-                    <Tabs size="small">
+                    <Tabs index={initialTabIndex} size="small">
                         <TabList>
                             <Tab>Request</Tab>
                             <Tab>Response</Tab>
