@@ -206,9 +206,17 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only the authenticated user can update their properties on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
 	}
 
 	if args.Username != nil {
