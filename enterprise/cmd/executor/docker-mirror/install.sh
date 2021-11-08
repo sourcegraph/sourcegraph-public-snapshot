@@ -109,7 +109,6 @@ TimeoutStartSec=0
 Restart=always
 ExecStartPre=-/usr/bin/docker stop %n
 ExecStartPre=-/usr/bin/docker rm %n
-ExecStartPre=/usr/bin/docker pull registry:2
 ExecStart=/usr/bin/docker run \
   --rm \
   -p 5000:5000 \
@@ -200,6 +199,10 @@ EOF
   systemctl enable exporter_exporter
 }
 
+function preload_registry_image() {
+  docker pull registry:2
+}
+
 function cleanup() {
   apt-get -y autoremove
   apt-get clean
@@ -216,6 +219,7 @@ else
 fi
 install_docker
 install_nvme
+preload_registry_image
 
 # Services
 setup_pull_through_docker_cache
