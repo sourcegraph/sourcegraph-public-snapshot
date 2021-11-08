@@ -10,6 +10,9 @@ import styles from './MessagePanel.module.scss'
 export interface Props {
     className?: string
     message: WebhookLogMessageFields
+    // A HTTP message can be either a request or a response; if it's a response,
+    // then we're only interested in the status code here to render the first
+    // line of the "response".
     requestOrStatusCode: WebhookLogRequestFields | number
 }
 
