@@ -184,7 +184,7 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
 func repositoryComparisonNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
 	return &GitTreeEntryResolver{
-		db:     db,
+		db:     database.NewDB(db),
 		commit: r.Head,
 		stat:   CreateFileInfo(r.FileDiff.NewName, false),
 	}
@@ -413,7 +413,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 		return nil
 	}
 	return &GitTreeEntryResolver{
-		db:     r.db,
+		db:     database.NewDB(r.db),
 		commit: r.Base,
 		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
 	}
