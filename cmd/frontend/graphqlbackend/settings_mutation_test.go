@@ -2,8 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
@@ -105,5 +109,29 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 				}
 			`,
 		},
+	})
+}
+
+func TestSettingsMutation(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		users := dbmock.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := newSchemaResolver(db).SettingsMutation(context.Background(),
+			&settingsMutationArgs{
+				Input: &settingsMutationGroupInput{
+					Subject: MarshalUserID(1),
+				},
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
 	})
 }
