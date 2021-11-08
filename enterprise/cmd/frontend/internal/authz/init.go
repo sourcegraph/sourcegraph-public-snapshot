@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,6 +36,9 @@ var clock = timeutil.Now
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ExternalServices = edb.NewExternalServicesStore
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
+		return edb.NewAuthzStore(db, clock)
+	}
+	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)
 	}
 

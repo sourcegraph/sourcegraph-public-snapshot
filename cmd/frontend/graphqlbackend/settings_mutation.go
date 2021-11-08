@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -42,10 +43,12 @@ type settingsMutation struct {
 	subject *settingsSubject
 }
 
-// SettingsMutation defines the Mutation.settingsMutation field.
-func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
+type settingsMutationArgs struct {
 	Input *settingsMutationGroupInput
-}) (*settingsMutation, error) {
+}
+
+// SettingsMutation defines the Mutation.settingsMutation field.
+func (r *schemaResolver) SettingsMutation(ctx context.Context, args *settingsMutationArgs) (*settingsMutation, error) {
 	n, err := r.nodeByID(ctx, args.Input.Subject)
 	if err != nil {
 		return nil, err
@@ -75,9 +78,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 }
 
 // Deprecated: in the GraphQL API
-func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
-	Input *settingsMutationGroupInput
-}) (*settingsMutation, error) {
+func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *settingsMutationArgs) (*settingsMutation, error) {
 	return r.SettingsMutation(ctx, args)
 }
 

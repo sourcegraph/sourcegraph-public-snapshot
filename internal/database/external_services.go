@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -74,8 +72,6 @@ type externalServiceStore struct {
 	perforceValidators        []func(*schema.PerforceConnection) error
 
 	key encryption.Key
-
-	mu sync.Mutex
 }
 
 func (e *externalServiceStore) copy() *externalServiceStore {
@@ -148,18 +144,6 @@ func (e *externalServiceStore) Done(err error) error {
 		return Mocks.ExternalServices.Done(err)
 	}
 	return e.Store.Done(err)
-}
-
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (e *externalServiceStore) ensureStore() {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	if e.Store == nil {
-		e.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-	}
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -616,7 +600,6 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	if Mocks.ExternalServices.Create != nil {
 		return Mocks.ExternalServices.Create(ctx, confGet, es)
 	}
-	e.ensureStore()
 
 	normalized, err := e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
 		Kind:            es.Kind,
@@ -729,7 +712,6 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	if len(svcs) == 0 {
 		return nil
 	}
-	e.ensureStore()
 
 	for _, s := range svcs {
 		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
@@ -926,7 +908,6 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	if Mocks.ExternalServices.Update != nil {
 		return Mocks.ExternalServices.Update(ctx, ps, id, update)
 	}
-	e.ensureStore()
 
 	var (
 		normalized  []byte
@@ -1051,7 +1032,6 @@ func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error)
 	if Mocks.ExternalServices.Delete != nil {
 		return Mocks.ExternalServices.Delete(ctx, id)
 	}
-	e.ensureStore()
 
 	tx, err := e.transact(ctx)
 	if err != nil {
@@ -1133,7 +1113,6 @@ func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 	if Mocks.ExternalServices.GetByID != nil {
 		return Mocks.ExternalServices.GetByID(id)
 	}
-	e.ensureStore()
 
 	opt := ExternalServicesListOptions{
 		IDs: []int64{id},
@@ -1193,7 +1172,6 @@ func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (
 	if Mocks.ExternalServices.GetLastSyncError != nil {
 		return Mocks.ExternalServices.GetLastSyncError(id)
 	}
-	e.ensureStore()
 
 	q := sqlf.Sprintf(`
 SELECT failure_message from external_service_sync_jobs
@@ -1265,7 +1243,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	if Mocks.ExternalServices.List != nil {
 		return Mocks.ExternalServices.List(opt)
 	}
-	e.ensureStore()
 
 	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
 	defer span.Finish()
@@ -1370,8 +1347,6 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 
 // DistinctKinds returns the distinct list of external services kinds that are stored in the database.
 func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {
-	e.ensureStore()
-
 	q := sqlf.Sprintf(`
 SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
 FROM external_services
@@ -1397,7 +1372,6 @@ func (e *externalServiceStore) Count(ctx context.Context, opt ExternalServicesLi
 	if Mocks.ExternalServices.Count != nil {
 		return Mocks.ExternalServices.Count(ctx, opt)
 	}
-	e.ensureStore()
 
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
@@ -1412,8 +1386,6 @@ func (e *externalServiceStore) Count(ctx context.Context, opt ExternalServicesLi
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
 func (e *externalServiceStore) RepoCount(ctx context.Context, id int64) (int32, error) {
-	e.ensureStore()
-
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos WHERE external_service_id = %s", id)
 	var count int32
 

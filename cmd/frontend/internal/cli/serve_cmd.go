@@ -107,7 +107,7 @@ func InitDB() (*sql.DB, error) {
 		// which would be added by running the migrations. Once we detect that
 		// it's missing, we run the migrations and try to update the version again.
 
-		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		err := backend.UpdateServiceVersion(ctx, database.NewDB(dbconn.Global), "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return nil, err
 		}
@@ -177,7 +177,7 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
 	// work remaining.
-	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, sqlDB)
+	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)

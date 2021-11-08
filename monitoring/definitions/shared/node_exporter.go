@@ -73,7 +73,7 @@ func NewNodeExporterGroup(containerName, job, jobTitle, instanceFilter string) m
 				{
 					Name:        "node_io_disk_utilization",
 					Description: "disk IO utilization (percentage time spent in IO)",
-					Query:       "sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{job=\"" + job + "\",instance=~\"" + instanceFilter + "\"}[$__rate_interval]), \"disk\", \"$1\", \"device\", \"^([^d].+)\"), \"disk\", \"ignite\", \"device\", \"dm-.*\")) by(instance,disk)",
+					Query:       "sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{job=\"" + job + "\",instance=~\"" + instanceFilter + "\"}[$__rate_interval]), \"disk\", \"$1\", \"device\", \"^([^d].+)\"), \"disk\", \"ignite\", \"device\", \"dm-.*\")) by(instance,disk) * 100",
 					NoAlert:     true,
 					Interpretation: "Indicates the percentage of time a disk was busy. If this is less than 100%, then the disk has spare utilization capacity. However, a value of 100% does not necesarily indicate the disk is at max capacity. " +
 						"For single, serial request-serving devices, 100% may indicate maximum saturation, but for SSDs and RAID arrays this is less likely to be the case, as they are capable of serving multiple requests in parallel, other metrics such as " +

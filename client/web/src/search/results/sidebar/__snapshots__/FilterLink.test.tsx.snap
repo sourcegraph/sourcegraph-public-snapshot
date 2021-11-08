@@ -167,6 +167,7 @@ Array [
           </span>
           <span
             aria-label="gitlab.com"
+            role="img"
             title="gitlab.com"
           >
             <Memo(GitlabIcon)
@@ -214,6 +215,7 @@ Array [
           </span>
           <span
             aria-label="github.com"
+            role="img"
             title="github.com"
           >
             <Memo(GithubIcon)
@@ -312,6 +314,7 @@ Array [
           </span>
           <span
             aria-label="gitlab.com"
+            role="img"
             title="gitlab.com"
           >
             <Memo(GitlabIcon)
@@ -359,6 +362,7 @@ Array [
           </span>
           <span
             aria-label="github.com"
+            role="img"
             title="github.com"
           >
             <Memo(GithubIcon)
