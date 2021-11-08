@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -39,7 +39,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 
 func (fm *FileMatchResolver) Commit() *GitCommitResolver {
 	return &GitCommitResolver{
-		db:           fm.db,
+		db:           database.NewDB(fm.db),
 		repoResolver: fm.RepoResolver,
 		oid:          GitObjectID(fm.CommitID),
 		inputRev:     fm.InputRev,
