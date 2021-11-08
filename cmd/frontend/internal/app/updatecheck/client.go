@@ -102,9 +102,14 @@ func getTotalUsersCount(ctx context.Context, db dbutil.DB) (_ int, err error) {
 	return database.Users(db).Count(ctx, &database.UsersListOptions{})
 }
 
-func getTotalReposCount(ctx context.Context, db dbutil.DB) (_ int, err error) {
-	defer recordOperation("getTotalReposCount")(&err)
-	return database.Repos(db).Count(ctx, database.ReposListOptions{})
+// hasRepo returns true when the instance has at least one repository that isn't
+// soft-deleted nor blocked.
+func hasRepos(ctx context.Context, db dbutil.DB) (_ bool, err error) {
+	defer recordOperation("hasRepos")(&err)
+	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
+		LimitOffset: &database.LimitOffset{Limit: 1},
+	})
+	return len(rs) > 0, err
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -367,11 +372,11 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getUsersActiveToday failed", "error", err)
 		}
 		r.UniqueUsers = int32(count)
-		totalRepos, err := getTotalReposCount(ctx, db)
+
+		r.HasRepos, err = hasRepos(ctx, db)
 		if err != nil {
-			logFunc("telemetry: updatecheck.getTotalReposCount failed", "error", err)
+			logFunc("telemetry: updatecheck.hasRepos failed", "error", err)
 		}
-		r.HasRepos = totalRepos > 0
 
 		r.EverSearched, err = hasSearchOccurred(ctx)
 		if err != nil {

@@ -185,7 +185,7 @@ func mustRegisterQueueMetric(observationContext *observation.Context, workerStor
 }
 
 func makeWorkerMetrics(observationContext *observation.Context) workerutil.WorkerMetrics {
-	return workerutil.NewMetrics(observationContext, "codeintel_upload_processor", nil)
+	return workerutil.NewMetrics(observationContext, "codeintel_upload_processor")
 }
 
 func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {

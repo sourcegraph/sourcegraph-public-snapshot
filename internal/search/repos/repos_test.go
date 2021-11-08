@@ -61,7 +61,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
+				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "revBar",
@@ -80,7 +80,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@*revBar:*!revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
+				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "",
@@ -99,7 +99,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
+				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "revBar",
@@ -110,7 +110,7 @@ func TestRevisionValidation(t *testing.T) {
 				ListRefs: nil,
 			}},
 			wantMissingRepoRevisions: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
+				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "^revQux",
@@ -141,7 +141,7 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.RepoName{Name: "repoFoo"},
+				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{
 					{
 						RevSpec:        "",
@@ -158,7 +158,7 @@ func TestRevisionValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 			repos := dbmock.NewMockRepoStore()
-			repos.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{{Name: "repoFoo"}}, nil)
+			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{{Name: "repoFoo"}}, nil)
 			db := dbmock.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
@@ -175,7 +175,7 @@ func TestRevisionValidation(t *testing.T) {
 			if tt.wantErr != err {
 				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
 			}
-			mockrequire.Called(t, repos.ListRepoNamesFunc)
+			mockrequire.Called(t, repos.ListMinimalReposFunc)
 		})
 	}
 }
@@ -341,15 +341,15 @@ func TestSearchableRepositories(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			var drs []types.RepoName
+			var drs []types.MinimalRepo
 			for i, name := range tc.defaultsInDb {
-				r := types.RepoName{
+				r := types.MinimalRepo{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(name),
 				}
 				drs = append(drs, r)
 			}
-			getRawSearchableRepos := func(ctx context.Context) ([]types.RepoName, error) {
+			getRawSearchableRepos := func(ctx context.Context) ([]types.MinimalRepo, error) {
 				return drs, nil
 			}
 
@@ -384,14 +384,14 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		"default/two",
 		"default/three",
 	}
-	searchableRepos := make([]types.RepoName, len(wantIndexableRepos))
+	searchableRepos := make([]types.MinimalRepo, len(wantIndexableRepos))
 	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepos))
-	mockSearchableReposFunc := func(_ context.Context) ([]types.RepoName, error) {
+	mockSearchableReposFunc := func(_ context.Context) ([]types.MinimalRepo, error) {
 		return searchableRepos, nil
 	}
 
 	for idx, name := range wantIndexableRepos {
-		searchableRepos[idx] = types.RepoName{Name: api.RepoName(name)}
+		searchableRepos[idx] = types.MinimalRepo{Name: api.RepoName(name)}
 		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				Name:     name,
@@ -441,11 +441,11 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	}
 
 	repos := dbmock.NewMockRepoStore()
-	repos.ListRepoNamesFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.UserID != wantUserID {
 			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
 		}
-		return []types.RepoName{
+		return []types.MinimalRepo{
 			{
 				ID:   1,
 				Name: "example.com/a",
@@ -514,7 +514,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	}
 
 	mockrequire.Called(t, ns.GetByNameFunc)
-	mockrequire.Called(t, repos.ListRepoNamesFunc)
+	mockrequire.Called(t, repos.ListMinimalReposFunc)
 }
 
 func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecifier {
@@ -527,8 +527,8 @@ func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecif
 
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	searchContext := &types.SearchContext{ID: 1, Name: "searchcontext"}
-	repoA := types.RepoName{ID: 1, Name: "example.com/a"}
-	repoB := types.RepoName{ID: 2, Name: "example.com/b"}
+	repoA := types.MinimalRepo{ID: 1, Name: "example.com/a"}
+	repoB := types.MinimalRepo{ID: 2, Name: "example.com/b"}
 	searchContextRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
 		{Repo: repoA, Revisions: []string{"branch-1", "branch-3"}},
 		{Repo: repoB, Revisions: []string{"branch-2"}},
@@ -539,11 +539,11 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	}
 
 	repos := dbmock.NewMockRepoStore()
-	repos.ListRepoNamesFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
 		}
-		return []types.RepoName{repoA, repoB}, nil
+		return []types.MinimalRepo{repoA, repoB}, nil
 	})
 
 	sc := dbmock.NewMockSearchContextsStore()

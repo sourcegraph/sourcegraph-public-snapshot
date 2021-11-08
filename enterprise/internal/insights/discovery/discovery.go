@@ -162,11 +162,19 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		return errors.Wrap(err, "failed to fetch just-in-time insights from all settings")
 	}
 
+	langStatsInsights, err := insights.GetLangStatsInsights(ctx, m.base, insights.All)
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch lang stats insights from all settings")
+	}
+
 	log15.Info("insights migration: migrating backend insights")
 	m.migrateInsights(ctx, discovered, backend)
 
-	log15.Info("insights migration: migrating frontend insights")
+	log15.Info("insights migration: migrating frontend search insights")
 	m.migrateInsights(ctx, justInTimeInsights, frontend)
+
+	log15.Info("insights migration: migrating frontend lang stats insights")
+	m.migrateLangStatsInsights(ctx, langStatsInsights)
 
 	log15.Info("insights migration: migrating dashboards")
 	dashboards, err := loader.LoadDashboards(ctx)
@@ -226,6 +234,40 @@ func (m *settingMigrator) migrateInsights(ctx context.Context, toMigrate []insig
 	}
 	log15.Info("insights settings migration batch complete", "batch", batch, "count", count, "skipped", skipped, "errors", errorCount)
 
+}
+
+func (m *settingMigrator) migrateLangStatsInsights(ctx context.Context, toMigrate []insights.LangStatsInsight) {
+	insightStore := store.NewInsightStore(m.insights)
+	tx, err := insightStore.Transact(ctx)
+	if err != nil {
+		log15.Info("insights migration: problem connecting to store, aborting lang stats migration")
+		return
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	var count, skipped, errorCount int
+	for _, d := range toMigrate {
+		if d.ID == "" {
+			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
+			skipped++
+			continue
+		}
+		err := insightStore.DeleteViewByUniqueID(ctx, d.ID)
+		log15.Info("insights migration: deleting insight view", "unique_id", d.ID)
+		if err != nil {
+			// if we fail here there isn't much we can do in this migration, so continue
+			skipped++
+			continue
+		}
+		err = migrateLangStatSeries(ctx, insightStore, d)
+		if err != nil {
+			// we can't do anything about errors, so we will just skip it and log it
+			errorCount++
+			log15.Error("insights migration: error while migrating insight", "error", err)
+		}
+		count++
+	}
+	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
 }
 
 func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
@@ -379,6 +421,50 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 		}
 	}
+	return nil
+}
+
+func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore, from insights.LangStatsInsight) (err error) {
+	tx, err := insightStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
+
+	view := types.InsightView{
+		Title:          from.Title,
+		UniqueID:       from.ID,
+		OtherThreshold: from.OtherThreshold,
+	}
+	series := types.InsightSeries{
+		SeriesID:           ksuid.New().String(),
+		Repositories:       []string{from.Repository},
+		SampleIntervalUnit: string(types.Month),
+	}
+	var grants []store.InsightViewGrant
+	if from.UserID != nil {
+		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.InsightViewGrant{store.GlobalGrant()}
+	}
+
+	view, err = tx.CreateView(ctx, view, grants)
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+	series, err = tx.CreateSeries(ctx, series)
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+	err = tx.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{})
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+
 	return nil
 }
 

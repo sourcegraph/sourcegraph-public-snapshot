@@ -184,9 +184,9 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 // elements at a time to workaround Postgres' limit of 65535 bind parameters
 // using exact name matching. This method only includes private repository names
 // and does not do deduplication on the returned list.
-func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.RepoName, error) {
+func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.MinimalRepo, error) {
 	if len(repoSpecs) == 0 {
-		return []types.RepoName{}, nil
+		return []types.MinimalRepo{}, nil
 	}
 
 	remaining := repoSpecs
@@ -195,9 +195,9 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 		nextCut = len(remaining)
 	}
 
-	repoNames := make([]types.RepoName, 0, len(repoSpecs))
+	repoNames := make([]types.MinimalRepo, 0, len(repoSpecs))
 	for nextCut > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepos: remaining[:nextCut],
 				OnlyPrivate:   true,
@@ -336,6 +336,12 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				continue
 			}
 
+			// Skip this external account if unimplemented
+			if errors.Is(err, &authz.ErrUnimplemented{}) {
+				log15.Debug("PermsSyncer.fetchUserPermsViaExternalAccounts.unimplemented", "userID", user.ID, "id", acct.ID, "error", err)
+				continue
+			}
+
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
 				return nil, nil, errors.Wrapf(err, "fetch user permissions for external account %d", acct.ID)
@@ -401,7 +407,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -500,6 +506,13 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 				// We still want to continue processing other external services
 				continue
 			}
+
+			// Skip this external account if unimplemented
+			if errors.Is(err, &authz.ErrUnimplemented{}) {
+				log15.Debug("PermsSyncer.fetchUserPermsViaExternalServices.unimplemented", "userID", userID, "id", svc.ID, "error", err)
+				continue
+			}
+
 			return nil, errors.Wrapf(err, "fetch user permissions for external service %d", svc.ID)
 		}
 
@@ -545,7 +558,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -707,14 +720,20 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		// when the owner of the token only has READ access. However, we don't want to fail
 		// so the scheduler won't keep trying to fetch permissions of this same repository, so we
 		// return a nil error and log a warning message.
-		var e *github.APIError
-		if errors.As(err, &e) && e.Code == http.StatusNotFound {
+		var apiErr *github.APIError
+		if errors.As(err, &apiErr) && apiErr.Code == http.StatusNotFound {
 			log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError",
 				"repoID", repo.ID,
 				"err", err,
 				"suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions",
 			)
 			return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
+		}
+
+		// Skip repo if unimplemented
+		if errors.Is(err, &authz.ErrUnimplemented{}) {
+			log15.Debug("PermsSyncer.syncRepoPerms.unimplemented", "repoID", repo.ID, "err", err)
+			return nil
 		}
 
 		if err != nil {

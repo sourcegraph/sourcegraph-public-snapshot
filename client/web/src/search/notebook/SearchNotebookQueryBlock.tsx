@@ -17,6 +17,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
+import { SearchContextProps } from '..'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
 import { useQueryDiagnostics } from '../useQueryIntelligence'
 
@@ -33,10 +34,12 @@ import { BlockProps, QueryBlock } from '.'
 interface SearchNotebookQueryBlockProps
     extends BlockProps,
         Omit<QueryBlock, 'type'>,
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps {
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -170,6 +173,9 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                 {searchResults && searchResults.state !== 'loading' && (
                     <div className={styles.results}>
                         <StreamingSearchResultsList
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            searchContextsEnabled={props.searchContextsEnabled}
+                            showSearchContext={props.showSearchContext}
                             location={location}
                             allExpanded={false}
                             results={searchResults}

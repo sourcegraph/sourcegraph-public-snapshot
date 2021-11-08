@@ -99,8 +99,13 @@ type InsightsDashboardConnectionResolver interface {
 type InsightsDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
-	Views() InsightViewConnectionResolver
+	Views(ctx context.Context, args DashboardInsightViewConnectionArgs) InsightViewConnectionResolver
 	Grants() InsightsPermissionGrantsResolver
+}
+
+type DashboardInsightViewConnectionArgs struct {
+	After *string
+	First *int32
 }
 
 type InsightsPermissionGrantsResolver interface {
@@ -255,6 +260,7 @@ type CreateLineChartSearchInsightArgs struct {
 type CreateLineChartSearchInsightInput struct {
 	DataSeries []LineChartSearchInsightDataSeriesInput
 	Options    LineChartOptionsInput
+	Dashboards *[]graphql.ID
 }
 
 type UpdateLineChartSearchInsightArgs struct {
@@ -278,6 +284,7 @@ type InsightViewFiltersInput struct {
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
+	SeriesId        *string
 	Query           string
 	TimeScope       TimeScopeInput
 	RepositoryScope RepositoryScopeInput
@@ -311,7 +318,8 @@ type InsightViewPayloadResolver interface {
 }
 
 type InsightViewQueryArgs struct {
-	First *int32
-	After *string
-	Id    *graphql.ID
+	First   *int32
+	After   *string
+	Id      *graphql.ID
+	Filters *InsightViewFiltersInput
 }

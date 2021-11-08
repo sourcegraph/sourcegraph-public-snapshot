@@ -16,13 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "searchcontexts"
-}
 
 func TestResolvingValidSearchContextSpecs(t *testing.T) {
 	t.Parallel()
@@ -141,7 +136,7 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 	}
 }
 
-func createRepos(ctx context.Context, repoStore database.RepoStore) ([]types.RepoName, error) {
+func createRepos(ctx context.Context, repoStore database.RepoStore) ([]types.MinimalRepo, error) {
 	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
 	if err != nil {
 		return nil, err
@@ -154,7 +149,7 @@ func createRepos(ctx context.Context, repoStore database.RepoStore) ([]types.Rep
 	if err != nil {
 		return nil, err
 	}
-	return []types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
+	return []types.MinimalRepo{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
 }
 
 func TestResolvingSearchContextRepoNames(t *testing.T) {
@@ -187,7 +182,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	gotRepos, err := r.ListRepoNames(ctx, database.ReposListOptions{SearchContextID: searchContext.ID})
+	gotRepos, err := r.ListMinimalRepos(ctx, database.ReposListOptions{SearchContextID: searchContext.ID})
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -122,7 +123,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 	var repoFilter string
 	if s.remoteURL != "" {
 		// Search in this repository.
-		repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, r.db, s.remoteURL)
+		repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, database.NewDB(r.db), s.remoteURL)
 		if err != nil {
 			return "", err
 		}
@@ -174,7 +175,7 @@ func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
 func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	of := r.openFileRequest
 	// Determine the repo name and branch.
-	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, r.db, of.remoteURL)
+	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, database.NewDB(r.db), of.remoteURL)
 	if err != nil {
 		return "", err
 	}

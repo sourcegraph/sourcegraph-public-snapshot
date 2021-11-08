@@ -83,5 +83,5 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 		return nil, err
 	}
 
-	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
+	return &externalServiceResolver{db: database.NewDB(r.db), externalService: externalService}, nil
 }

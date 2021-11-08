@@ -13,10 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "app"
-}
-
 func TestUsageStatsArchiveHandler(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

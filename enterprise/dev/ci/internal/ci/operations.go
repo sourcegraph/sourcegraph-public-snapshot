@@ -710,14 +710,15 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-func uploadBuildLogs() operations.Operation {
+// uploadBuildLogs publishes logs from failed jobs to Grafana Cloud. It runs as soon as
+// all previous steps up until a "wait" has run.
+func uploadBuildLogs(key string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		stepOpts := []bk.StepOpt{
+		pipeline.AddEnsureStep(fmt.Sprintf(":file_cabinet: Uploading build logs (%s)", key),
 			// Allow the upload to fail without failing the build.
+			bk.Key(fmt.Sprintf("upload-logs:%s", key)),
 			bk.SoftFail(1),
 			bk.AllowDependencyFailure(),
-			bk.Cmd("./enterprise/dev/upload-build-logs.sh"),
-		}
-		pipeline.AddEnsureStep(":file_cabinet: Uploading build logs", stepOpts...)
+			bk.Cmd("./enterprise/dev/upload-build-logs.sh"))
 	}
 }

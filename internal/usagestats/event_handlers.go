@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/amplitude"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
@@ -49,7 +48,7 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db dbutil.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
@@ -71,12 +70,12 @@ func LogBackendEvent(db dbutil.DB, userID int32, deviceID, eventName string, arg
 }
 
 // LogEvent logs an event.
-func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
+func LogEvent(ctx context.Context, db database.DB, args Event) error {
 	return LogEvents(ctx, db, []Event{args})
 }
 
 // LogEvents logs a batch of events.
-func LogEvents(ctx context.Context, db dbutil.DB, events []Event) error {
+func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
 	}
@@ -251,13 +250,13 @@ func createAmplitudeEvents(events []Event) ([]amplitude.AmplitudeEvent, error) {
 }
 
 // logLocalEvents logs a batch of user events.
-func logLocalEvents(ctx context.Context, db dbutil.DB, events []Event) error {
+func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
 	databaseEvents, err := serializeLocalEvents(events)
 	if err != nil {
 		return err
 	}
 
-	return database.EventLogs(db).BulkInsert(ctx, databaseEvents)
+	return db.EventLogs().BulkInsert(ctx, databaseEvents)
 }
 
 func serializeLocalEvents(events []Event) ([]*database.Event, error) {

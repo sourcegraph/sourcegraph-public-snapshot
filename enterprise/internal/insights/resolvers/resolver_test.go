@@ -10,10 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "insightsresolvers"
-}
-
 // TestResolver_Insights just checks that root resolver setup and getting an insights connection
 // does not result in any errors. It is a pretty minimal test.
 func TestResolver_Insights(t *testing.T) {

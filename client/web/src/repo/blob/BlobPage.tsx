@@ -23,7 +23,7 @@ import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchStreamingProps } from '../../search'
+import { SearchContextProps, SearchStreamingProps } from '../../search'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
 import { toTreeURL } from '../../util/url'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -55,6 +55,7 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
@@ -62,6 +63,7 @@ interface Props
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
     showSearchNotebook: boolean
     repoUrl: string
 }

@@ -24,12 +24,18 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
     disableOn?: { condition: boolean; reason: string }[]
     className?: string
     activeClassName?: string
+    /**
+     * If set to false makes the button non-actionable. The main use case for
+     * this prop is showing the toggles in examples. This is different from
+     * being disabled, because the buttons still render normally.
+     */
+    interactive?: boolean
 }
 
 /**
  * A toggle displayed in the QueryInput.
  */
-export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, ...props }) => {
+export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, interactive = true, ...props }) => {
     const toggleCheckbox = useRef<HTMLDivElement | null>(null)
 
     const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
@@ -62,26 +68,29 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
     const Icon = props.icon
     const isActive = props.isActive && !disabledRule
 
+    const interactiveProps = interactive
+        ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
+        : {}
+
     return (
         // Click events here are defined in useEffect
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events
         <div
             ref={toggleCheckbox}
-            onClick={onCheckboxToggled}
             className={classNames(
                 'btn btn-icon',
                 styles.toggle,
                 props.className,
                 !!disabledRule && styles.disabled,
                 isActive && styles.toggleActive,
+                !interactive && styles.toggleNonInteractive,
                 props.activeClassName
             )}
             role="checkbox"
             aria-disabled={!!disabledRule}
             aria-checked={isActive}
             aria-label={`${props.title} toggle`}
-            tabIndex={0}
-            data-tooltip={tooltipValue}
+            {...interactiveProps}
         >
             <Icon className="icon-inline" />
         </div>

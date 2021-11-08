@@ -12,39 +12,62 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // SubRepoPermsVersion is defines the version we are using to encode our include
 // and exclude patterns.
 const SubRepoPermsVersion = 1
 
-// SubRepoPermsStore is the unified interface for managing sub repository
+var SubRepoSupportedCodeHostKinds = []string{extsvc.KindPerforce}
+var supportedKindsQuery = make([]*sqlf.Query, len(SubRepoSupportedCodeHostKinds))
+
+func init() {
+	// Build this up at startup so we don't need to rebuild it every time
+	// RepoSupported is called
+	for i, kind := range SubRepoSupportedCodeHostKinds {
+		supportedKindsQuery[i] = sqlf.Sprintf("%s", kind)
+	}
+}
+
+type SubRepoPermsStore interface {
+	With(other basestore.ShareableStore) SubRepoPermsStore
+	Transact(ctx context.Context) (SubRepoPermsStore, error)
+	Done(err error) error
+	Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error
+	UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
+	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
+	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
+	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
+}
+
+// subRepoPermsStore is the unified interface for managing sub repository
 // permissions explicitly in the database. It is concurrency-safe and maintains
 // data consistency over sub_repo_permissions table.
-type SubRepoPermsStore struct {
+type subRepoPermsStore struct {
 	*basestore.Store
 }
 
 // SubRepoPerms returns a new SubRepoPermsStore with the given parameters.
-func SubRepoPerms(db dbutil.DB) *SubRepoPermsStore {
-	return &SubRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func SubRepoPerms(db dbutil.DB) SubRepoPermsStore {
+	return &subRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-func (s *SubRepoPermsStore) With(other basestore.ShareableStore) *SubRepoPermsStore {
-	return &SubRepoPermsStore{Store: s.Store.With(other)}
+func (s *subRepoPermsStore) With(other basestore.ShareableStore) SubRepoPermsStore {
+	return &subRepoPermsStore{Store: s.Store.With(other)}
 }
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
-func (s *SubRepoPermsStore) Transact(ctx context.Context) (*SubRepoPermsStore, error) {
+func (s *subRepoPermsStore) Transact(ctx context.Context) (SubRepoPermsStore, error) {
 	if Mocks.SubRepoPerms.Transact != nil {
 		return Mocks.SubRepoPerms.Transact(ctx)
 	}
 
 	txBase, err := s.Store.Transact(ctx)
-	return &SubRepoPermsStore{Store: txBase}, err
+	return &subRepoPermsStore{Store: txBase}, err
 }
 
-func (s *SubRepoPermsStore) Done(err error) error {
+func (s *subRepoPermsStore) Done(err error) error {
 	if Mocks.SubRepoPerms.Transact != nil {
 		return err
 	}
@@ -53,7 +76,7 @@ func (s *SubRepoPermsStore) Done(err error) error {
 }
 
 // Upsert will upsert sub repo permissions data.
-func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
+func (s *subRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 VALUES (%s, %s, %s, %s, %s, now())
@@ -73,7 +96,7 @@ SET
 // UpsertWithSpec will upsert sub repo permissions data using the provided
 // external repo spec to map to out internal repo id. If there is no mapping,
 // nothing is written.
-func (s *SubRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
 	if Mocks.SubRepoPerms.UpsertWithSpec != nil {
 		return Mocks.SubRepoPerms.UpsertWithSpec(ctx, userID, spec, perms)
 	}
@@ -100,7 +123,7 @@ SET
 }
 
 // Get will fetch sub repo rules for the given repo and user combination.
-func (s *SubRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
+func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
@@ -133,7 +156,7 @@ WHERE user_id = %s
 }
 
 // GetByUser fetches all sub repo perms for a user keyed by repo.
-func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
 SELECT r.name, path_includes, path_excludes
 FROM sub_repo_permissions
@@ -164,7 +187,24 @@ WHERE user_id = %s
 	return result, nil
 }
 
+// RepoSupported returns whether the given repo supports sub-repo permissions
+func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo api.RepoName) (bool, error) {
+	q := sqlf.Sprintf(`
+SELECT EXISTS(
+  SELECT
+  FROM external_services
+    JOIN external_service_repos esr ON external_services.id = esr.external_service_id
+    JOIN repo r ON esr.repo_id = r.id
+  WHERE r.name = %s
+  AND kind IN (%s)
+)
+`, repo, sqlf.Join(supportedKindsQuery, ","))
+
+	supported, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	return supported, errors.Wrap(err, "checking for sub-repo support")
+}
+
 type MockSubRepoPerms struct {
-	Transact       func(ctx context.Context) (*SubRepoPermsStore, error)
+	Transact       func(ctx context.Context) (*subRepoPermsStore, error)
 	UpsertWithSpec func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 }

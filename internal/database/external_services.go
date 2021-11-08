@@ -215,10 +215,10 @@ type ExternalServicesListOptions struct {
 
 	// When true, only external services without has_webhooks set will be
 	// returned. For use by ExternalServiceWebhookMigrator only.
-	noCachedWebhooks bool
+	NoCachedWebhooks bool
 	// When true, records will be locked. For use by
 	// ExternalServiceWebhookMigrator only.
-	forUpdate bool
+	ForUpdate bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
@@ -257,7 +257,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
 	}
-	if o.noCachedWebhooks {
+	if o.NoCachedWebhooks {
 		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
 	}
 	return conds
@@ -1275,7 +1275,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 
 	var forUpdate *sqlf.Query
-	if opt.forUpdate {
+	if opt.ForUpdate {
 		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
 	} else {
 		forUpdate = sqlf.Sprintf("")

@@ -23,6 +23,7 @@ export interface SearchContextDropdownProps
     authenticatedUser: AuthenticatedUser | null
     query: string
     className?: string
+    onEscapeMenuClose?: () => void
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -39,6 +40,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         fetchSearchContexts,
         className,
         telemetryService,
+        onEscapeMenuClose,
     } = props
 
     const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
@@ -79,6 +81,16 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
+
+    const onCloseMenu = useCallback(
+        (isEscapeKey?: boolean) => {
+            if (isEscapeKey) {
+                onEscapeMenuClose?.()
+            }
+            toggleOpen()
+        },
+        [toggleOpen, onEscapeMenuClose]
+    )
 
     return (
         <Dropdown
@@ -123,7 +135,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         selectSearchContextSpec={selectSearchContextSpec}
                         fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                         fetchSearchContexts={fetchSearchContexts}
-                        closeMenu={toggleOpen}
+                        closeMenu={onCloseMenu}
                     />
                 )}
             </DropdownMenu>

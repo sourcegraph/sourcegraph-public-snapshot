@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -6,11 +7,13 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { ErrorAlert } from '../../components/alerts'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
+import styles from './StreamingSearchResultsFooter.module.scss'
 
-export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: AggregateStreamingSearchResults }> = ({
-    results,
-}) => (
-    <div className="d-flex flex-column align-items-center">
+export const StreamingSearchResultFooter: React.FunctionComponent<{
+    results?: AggregateStreamingSearchResults
+    children?: React.ReactChild | React.ReactChild[]
+}> = ({ results, children }) => (
+    <div className={classNames(styles.footer, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
                 <LoadingSpinner className="icon-inline" />
@@ -26,8 +29,14 @@ export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: Ag
         )}
 
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
-            <div className="alert alert-info d-flex m-3">
-                <p className="m-0">No results</p>
+            <div className="pr-3 mt-3 align-self-stretch">
+                <div className="alert alert-info">
+                    <p className="m-0">
+                        <strong>No results matched your query</strong>
+                        <br />
+                        Use the tips below to improve your query.
+                    </p>
+                </div>
             </div>
         )}
 
@@ -39,5 +48,7 @@ export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: Ag
                 </p>
             </div>
         )}
+
+        {children}
     </div>
 )

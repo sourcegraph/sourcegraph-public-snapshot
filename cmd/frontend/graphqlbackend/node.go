@@ -240,3 +240,8 @@ func (r *NodeResolver) ToInsightView() (InsightViewResolver, bool) {
 	n, ok := r.Node.(InsightViewResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
+	n, ok := r.Node.(*webhookLogResolver)
+	return n, ok
+}

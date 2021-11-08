@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -14,13 +16,13 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/lib/pq"
+	_ "github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-
-	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 type runFunc func(quiet bool, cmd ...string) (string, error)
@@ -59,13 +61,15 @@ func mainErr() error {
 func mainLocal() error {
 	dataSourcePrefix := "dbname=" + databaseNamePrefix
 
+	g, _ := errgroup.WithContext(context.Background())
 	for database, destinationFile := range databases {
-		if err := generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile); err != nil {
-			return err
-		}
+		database, destinationFile := database, destinationFile
+		g.Go(func() error {
+			return generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile)
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
 func mainContainer() error {
@@ -79,13 +83,15 @@ func mainContainer() error {
 
 	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
 
+	g, _ := errgroup.WithContext(context.Background())
 	for database, destinationFile := range databases {
-		if err := generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile); err != nil {
-			return err
-		}
+		database, destinationFile := database, destinationFile
+		g.Go(func() error {
+			return generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile)
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
 func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefix []string, destinationFile string) error {
@@ -171,6 +177,11 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 		return "", err
 	}
 
+	tableDescriptions, err := fetchTableAndViewDescriptions(database.Name, run)
+	if err != nil {
+		return "", err
+	}
+
 	types, err := describeTypes(db)
 	if err != nil {
 		return "", err
@@ -195,7 +206,7 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 			for table := range ch {
 				logger.Println("describe", table.name)
 
-				doc, err := describeTable(db, database.Name, table, run)
+				doc, err := describeTable(db, database.Name, table, tableDescriptions)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue
@@ -268,7 +279,27 @@ func getTables(db *sql.DB) (tables []table, _ error) {
 	return tables, nil
 }
 
-func describeTable(db *sql.DB, databaseName string, table table, run runFunc) (string, error) {
+var nameRe = regexp.MustCompile(`^\s*(Table|View) "public.(?P<name>\w+)"`)
+
+func fetchTableAndViewDescriptions(databaseName string, run runFunc) (map[string]string, error) {
+	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", `\d *`)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]string)
+
+	objectDescriptions := strings.SplitAfter(out, "\n\n")
+	for _, objectDescription := range objectDescriptions {
+		if match := nameRe.FindStringSubmatch(objectDescription); match != nil {
+			res[match[2]] = objectDescription
+		}
+	}
+
+	return res, nil
+}
+
+func describeTable(db *sql.DB, databaseName string, table table, tableDescriptions map[string]string) (string, error) {
 	comment, err := getTableComment(db, table.name)
 	if err != nil {
 		return "", err
@@ -280,9 +311,9 @@ func describeTable(db *sql.DB, databaseName string, table table, run runFunc) (s
 	}
 
 	// Get postgres "describe table" output.
-	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", fmt.Sprintf("\\d %s", table.name))
-	if err != nil {
-		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
+	out, ok := tableDescriptions[table.name]
+	if !ok {
+		return "", errors.Errorf("no description found for table %v", table)
 	}
 
 	lines := strings.Split(out, "\n")

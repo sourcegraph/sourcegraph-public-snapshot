@@ -6,6 +6,7 @@ import (
 
 // InsightViewSeries is an abstraction of a complete Code Insight. This type materializes a view with any associated series.
 type InsightViewSeries struct {
+	ViewID                        int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string
@@ -28,6 +29,7 @@ type InsightViewSeries struct {
 }
 
 type Insight struct {
+	ViewID      int
 	UniqueID    string
 	Title       string
 	Description string
@@ -48,11 +50,12 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID          int
-	Title       string
-	Description string
-	UniqueID    string
-	Filters     InsightViewFilters
+	ID             int
+	Title          string
+	Description    string
+	UniqueID       string
+	Filters        InsightViewFilters
+	OtherThreshold float32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well

@@ -15,6 +15,7 @@ import (
 type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
+	Authz() AuthzStore
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
@@ -27,12 +28,14 @@ type DB interface {
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
+	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
+	WebhookLogs(encryption.Key) WebhookLogStore
 }
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
@@ -49,6 +52,10 @@ var _ DB = (*db)(nil)
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
+}
+
+func (d *db) Authz() AuthzStore {
+	return Authz(d.DB)
 }
 
 func (d *db) EventLogs() EventLogStore {
@@ -99,6 +106,10 @@ func (d *db) Settings() SettingsStore {
 	return Settings(d.DB)
 }
 
+func (d *db) SubRepoPerms() SubRepoPermsStore {
+	return SubRepoPerms(d.DB)
+}
+
 func (d *db) TemporarySettings() TemporarySettingsStore {
 	return &temporarySettingsStore{Store: basestore.NewWithDB(d.DB, sql.TxOptions{})}
 }
@@ -121,6 +132,10 @@ func (d *db) UserPublicRepos() UserPublicRepoStore {
 
 func (d *db) Users() UserStore {
 	return Users(d.DB)
+}
+
+func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
+	return WebhookLogs(d.DB, key)
 }
 
 func (d *db) Unwrap() dbutil.DB {

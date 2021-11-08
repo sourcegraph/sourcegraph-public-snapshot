@@ -11,14 +11,7 @@ Sourcegraph development is open source at:
 
 A hands-on introduction for setting up your local development environment.
 
-- [Step 1: Install `sg`](getting-started/quickstart_1_install_sg.md)
-- [Step 2: Install dependencies](getting-started/quickstart_2_install_dependencies.md)
-- [Step 3: Get the code](getting-started/quickstart_3_clone_repository.md)
-- [Step 4: Start Docker](getting-started/quickstart_4_start_docker.md)
-- [Step 5: Initialize your database](getting-started/quickstart_5_initialize_database.md)
-- [Step 6: Configure HTTPS reverse proxy](getting-started/quickstart_6_configure_https_reverse_proxy.md)
-- [Step 7: Start the server](getting-started/quickstart_7_start_server.md)
-- [Step 8: Additional resources](getting-started/quickstart_8_additional_resources.md)
+- [Quickstart](getting-started/quickstart.md)
 
 ## [Background information](background-information/index.md)
 
@@ -111,10 +104,12 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ### Local development
 
+- [DEPRECATED: Quickstart without `sg`](getting-started/deprecated_quickstart.md)
 - [How to debug live code](how-to/debug_live_code.md)
 - [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
 - [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
 - [Use `golangci-lint`](how-to/use-golangci-lint.md)
+- [Set up local development with M1 mac](how-to/m1_mac_local_dev.md)
 
 ### New features
 

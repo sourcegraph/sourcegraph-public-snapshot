@@ -81,10 +81,6 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                         }
                         createdAt
                         siteAdmin
-                        latestSettings {
-                            createdAt
-                            contents
-                        }
                         organizations {
                             nodes {
                                 name

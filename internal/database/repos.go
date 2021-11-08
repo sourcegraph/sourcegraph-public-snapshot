@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/query"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -71,18 +70,17 @@ type RepoStore interface {
 	Count(context.Context, ReposListOptions) (int, error)
 	Create(context.Context, ...*types.Repo) error
 	Delete(context.Context, ...api.RepoID) error
-	ExternalServices(context.Context, api.RepoID) ([]*types.ExternalService, error)
 	Get(context.Context, api.RepoID) (*types.Repo, error)
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	ListEnabledNames(context.Context) ([]string, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.RepoName, error)
-	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
+	ListEnabledNames(context.Context) ([]api.RepoName, error)
+	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
-	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
+	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -153,10 +151,6 @@ func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 	}
 
 	repo := repos[0]
-	if repo.Private {
-		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), []api.RepoID{repo.ID})
-	}
 
 	return repo, repo.IsBlocked()
 }
@@ -368,12 +362,15 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 }
 
 const listReposQueryFmtstr = `
+-- source: internal/database/repos.go:list
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
-FROM %%s
+FROM repo
+%%s
 WHERE
-%%s       -- Populates "queryConds"
-AND (%%s) -- Populates "authzConds"
+	%%s   -- Populates "queryConds"
+	AND
+	(%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
 `
 
@@ -420,7 +417,6 @@ var repoColumns = []string{
 	"repo.deleted_at",
 	"repo.metadata",
 	"repo.blocked",
-	getSourcesByRepoQueryStr,
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -550,19 +546,16 @@ type ReposListOptions struct {
 	IDs []api.RepoID
 
 	// UserID, if non zero, will limit the set of results to repositories added by the user
-	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	UserID int32
 
 	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
-	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	OrgID int32
 
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
 	SearchContextID int64
-
-	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
-	ServiceTypes []string
 
 	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
@@ -579,10 +572,6 @@ type ReposListOptions struct {
 	// ExternalRepoExcludeContains is the list of specs to exclude repos using
 	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
 	ExternalRepoExcludeContains []api.ExternalRepoSpec
-
-	// PatternQuery is an expression tree of patterns to query. The atoms of
-	// the query are strings which are regular expression patterns.
-	PatternQuery query.Q
 
 	// NoForks excludes forks from the list.
 	NoForks bool
@@ -653,6 +642,10 @@ type ReposListOptions struct {
 	// with the table alias "gr".
 	joinGitserverRepos bool
 
+	// ExcludeSources, if true, will NULL out the Sources field on repo. Computing it is relatively costly
+	// and if it doesn't end up being used this is wasted compute.
+	ExcludeSources bool
+
 	*LimitOffset
 }
 
@@ -719,16 +712,17 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 	s.ensureStore()
 
-	if len(opt.OrderBy) == 0 {
+	// always having ID in ORDER BY helps Postgres create a more performant query plan
+	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
 	return s.listRepos(ctx, tr, opt)
 }
 
-// StreamRepoNames calls the given callback for each of the repositories names and ids that match the given options.
-func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, cb func(*types.RepoName)) (err error) {
-	tr, ctx := trace.New(ctx, "repos.StreamRepoNames", "")
+// StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
+func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
+	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -743,7 +737,7 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	var privateIDs []api.RepoID
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
-		var r types.RepoName
+		var r types.MinimalRepo
 		var private bool
 		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars})
 		if err != nil {
@@ -770,13 +764,13 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	return nil
 }
 
-// ListRepoNames returns a list of repositories names and ids.
-func (s *repoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	if Mocks.Repos.ListRepoNames != nil {
-		return Mocks.Repos.ListRepoNames(ctx, opt)
+// ListMinimalRepos returns a list of repositories names and ids.
+func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
+	if Mocks.Repos.ListMinimalRepos != nil {
+		return Mocks.Repos.ListMinimalRepos(ctx, opt)
 	}
 
-	return results, s.StreamRepoNames(ctx, opt, func(r *types.RepoName) {
+	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
 }
@@ -832,7 +826,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 }
 
 func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
-	var ctes, from, where []*sqlf.Query
+	var ctes, joins, where []*sqlf.Query
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
@@ -864,38 +858,8 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
 	}
 
-	if opt.PatternQuery != nil {
-		cond, err := query.Eval(opt.PatternQuery, func(q query.Q) (*sqlf.Query, error) {
-			pattern, ok := q.(string)
-			if !ok {
-				return nil, errors.Errorf("unexpected token in repo listing query: %q", q)
-			}
-			extraConds, err := parsePattern(pattern)
-			if err != nil {
-				return nil, err
-			}
-			if len(extraConds) == 0 {
-				return sqlf.Sprintf("TRUE"), nil
-			}
-			return sqlf.Join(extraConds, "AND"), nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		where = append(where, cond)
-	}
-
 	if len(opt.IDs) > 0 {
 		where = append(where, sqlf.Sprintf("id = ANY (%s)", pq.Array(opt.IDs)))
-	}
-
-	if len(opt.ServiceTypes) > 0 {
-		ks := make([]*sqlf.Query, 0, len(opt.ServiceTypes))
-		for _, svcType := range opt.ServiceTypes {
-			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(svcType)))
-		}
-		where = append(where,
-			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
 	if len(opt.ExternalRepos) > 0 {
@@ -993,27 +957,25 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
-	} else if opt.UserID != 0 {
-		userReposCTE := sqlf.Sprintf(userReposQuery, opt.UserID)
-		if opt.IncludeUserPublicRepos {
-			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposQuery, opt.UserID))
-		}
-		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
-		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
-	} else if opt.OrgID != 0 {
-		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
-		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
-		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
+		joins = append(joins, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
+	} else if opt.UserID != 0 {
+		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
+		if opt.IncludeUserPublicRepos {
+			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposCTEFmtstr, opt.UserID))
+		}
+		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
+		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+	} else if opt.OrgID != 0 {
+		joins = append(joins, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
+		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
-		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
-
-	fromClause := sqlf.Sprintf("repo %s", sqlf.Join(from, " "))
 
 	baseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
@@ -1042,6 +1004,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 
 	columns := repoColumns
+	if !opt.ExcludeSources {
+		columns = append(columns, getSourcesByRepoQueryStr)
+	} else {
+		columns = append(columns, "NULL")
+	}
 	if len(opt.Select) > 0 {
 		columns = opt.Select
 	}
@@ -1054,18 +1021,18 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	return sqlf.Sprintf(
 		fmt.Sprintf(listReposQueryFmtstr, strings.Join(columns, ",")),
 		queryPrefix,
-		fromClause,
+		sqlf.Join(joins, "\n"),
 		queryConds,
 		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	), nil
 }
 
-const userReposQuery = `
+const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
-const userPublicReposQuery = `
+const userPublicReposCTEFmtstr = `
 SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
@@ -1086,7 +1053,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
+func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
@@ -1134,8 +1101,8 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	defer rows.Close()
 
 	for rows.Next() {
-		var r types.RepoName
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+		var r types.MinimalRepo
+		if err := rows.Scan(&r.ID, &r.Name, &dbutil.NullInt{N: &r.Stars}); err != nil {
 			return nil, errors.Wrap(err, "scanning indexable repos")
 		}
 		results = append(results, r)
@@ -1150,7 +1117,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 const listIndexableReposQuery = `
 -- source: internal/database/repos.go:ListIndexableRepos
 SELECT
-	repo.id, repo.name
+	repo.id, repo.name, repo.stars
 FROM repo
 %s
 WHERE
@@ -1482,43 +1449,57 @@ WHERE deleted_at IS NULL
 AND repo.id = repo_ids.id::int
 `
 
-// ListEnabledNames returns a list of all enabled repo names. This is commonly
-// requested information by other services (repo-updater and
-// indexed-search). We special case just returning enabled names so that we
-// read much less data into memory.
-func (s *repoStore) ListEnabledNames(ctx context.Context) ([]string, error) {
+const listEnabledNamesQueryFmtstr = `
+-- source:internal/database/repos.go:ListEnabledNames
+SELECT
+	name
+FROM
+	repo
+WHERE
+	deleted_at IS NULL
+	AND
+	blocked IS NULL
+`
+
+// ListEnabledNames returns a list of all enabled repo names. This is used in the
+// repo purger. We special case just returning enabled names so that we read much
+// less data into memory.
+func (s *repoStore) ListEnabledNames(ctx context.Context) (values []api.RepoName, err error) {
 	s.ensureStore()
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
-	return basestore.ScanStrings(s.Query(ctx, q))
-}
 
-// ExternalServices lists the external services which include references to the given repo.
-func (s *repoStore) ExternalServices(ctx context.Context, repoID api.RepoID) ([]*types.ExternalService, error) {
-	rs, err := s.List(ctx, ReposListOptions{
-		IDs: []api.RepoID{repoID},
-	})
-	if err != nil {
-		return nil, err
+	q := sqlf.Sprintf(listEnabledNamesQueryFmtstr)
+	rows, queryErr := s.Query(ctx, q)
+	if queryErr != nil {
+		return nil, queryErr
 	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	if len(rs) == 0 {
-		return nil, &RepoNotFoundErr{
-			ID: repoID,
+	for rows.Next() {
+		var value api.RepoName
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
 		}
+
+		values = append(values, value)
 	}
 
-	svcIDs := rs[0].ExternalServiceIDs()
-	if len(svcIDs) == 0 {
-		return []*types.ExternalService{}, nil
-	}
-
-	opts := ExternalServicesListOptions{
-		IDs:              svcIDs,
-		OrderByDirection: "ASC",
-	}
-
-	return ExternalServicesWith(s).List(ctx, opts)
+	return values, nil
 }
+
+const getFirstRepoNamesByCloneURLQueryFmtstr = `
+-- source:internal/database/repos.go:GetFirstRepoNamesByCloneURL
+SELECT
+	name
+FROM
+	repo r
+JOIN
+	external_service_repos esr ON r.id = esr.repo_id
+WHERE
+	esr.clone_url = %s
+ORDER BY
+	r.updated_at DESC
+LIMIT 1
+`
 
 // GetFirstRepoNamesByCloneURL returns the first repo name in our database that
 // match the given clone url. If not repo is found, an empty string and nil error
@@ -1530,15 +1511,7 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 
 	s.ensureStore()
 
-	name, _, err := basestore.ScanFirstString(
-		s.Query(ctx, sqlf.Sprintf(`
-SELECT name
-FROM repo r
-JOIN external_service_repos esr ON r.id = esr.repo_id
-WHERE clone_url = %s
-ORDER BY r.updated_at desc
-LIMIT 1
-`, cloneURL)))
+	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
 	}
@@ -1555,11 +1528,7 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
 			conds = append(conds, sqlf.Sprintf("TRUE"))
 		} else {
-			items := []*sqlf.Query{}
-			for _, v := range exact {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+			conds = append(conds, sqlf.Sprintf("name = ANY (%s)", pq.Array(exact)))
 		}
 	}
 	if len(like) > 0 {

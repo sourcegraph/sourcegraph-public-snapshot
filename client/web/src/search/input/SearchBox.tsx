@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import React from 'react'
+import * as Monaco from 'monaco-editor'
+import React, { useCallback, useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -48,6 +49,9 @@ export interface SearchBoxProps
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
     const { queryState } = props
 
+    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const focusEditor = useCallback(() => editor?.focus(), [editor])
+
     return (
         <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
             <div className={classNames(styles.searchBoxBackgroundContainer, 'flex-shrink-past-contents')}>
@@ -58,6 +62,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
+                            onEscapeMenuClose={focusEditor}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
@@ -67,6 +72,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
+                        onEditorCreated={setEditor}
                     />
                     <Toggles
                         {...props}

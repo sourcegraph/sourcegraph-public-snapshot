@@ -4,7 +4,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -16,7 +16,7 @@ func main() {
 	// See https://github.com/sourcegraph/sourcegraph/issues/3847 for details.
 	authz.SetProviders(true, []authz.Provider{})
 
-	shared.Main(func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
+	shared.Main(func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
 		return enterprise.DefaultServices()
 	})
 }

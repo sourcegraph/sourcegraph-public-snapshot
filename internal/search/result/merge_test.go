@@ -13,7 +13,7 @@ import (
 
 func commitResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
-		Repo: types.RepoName{Name: api.RepoName(repo)},
+		Repo: types.MinimalRepo{Name: api.RepoName(repo)},
 		Commit: gitapi.Commit{
 			ID: api.CommitID(commit),
 		},
@@ -23,7 +23,7 @@ func commitResult(repo, commit string) *CommitMatch {
 func diffResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		DiffPreview: &HighlightedString{},
-		Repo:        types.RepoName{Name: api.RepoName(repo)},
+		Repo:        types.MinimalRepo{Name: api.RepoName(repo)},
 		Commit: gitapi.Commit{
 			ID: api.CommitID(commit),
 		},
@@ -39,7 +39,7 @@ func repoResult(name string) *RepoMatch {
 func fileResult(repo string, lineMatches []*LineMatch, symbolMatches []*SymbolMatch) *FileMatch {
 	return &FileMatch{
 		File: File{
-			Repo: types.RepoName{Name: api.RepoName(repo)},
+			Repo: types.MinimalRepo{Name: api.RepoName(repo)},
 		},
 		Symbols:     symbolMatches,
 		LineMatches: lineMatches,

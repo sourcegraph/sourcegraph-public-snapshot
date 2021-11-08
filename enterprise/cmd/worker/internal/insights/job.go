@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -38,7 +40,7 @@ func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	}
 	log15.Info("Code Insights Enabled.")
 
-	mainAppDb, err := shared.InitDatabase()
+	mainAppDb, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +52,6 @@ func (s *insightsJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	return background.GetBackgroundJobs(context.Background(), mainAppDb, insightsDB), nil
 }
 
-func NewInsightsJob() shared.Job {
+func NewInsightsJob() job.Job {
 	return &insightsJob{}
 }
