@@ -20,10 +20,12 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -1181,6 +1183,27 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 		if newResult != nil {
 			newResult.Matches = result.Select(newResult.Matches, q)
+
+			actor := actor.FromContext(ctx)
+			var i int
+			for _, match := range newResult.Matches {
+				key := match.Key()
+				perms, err := authz.ActorPermissions(ctx, r.subRepoPerms, actor, authz.RepoContent{
+					Repo: key.Repo,
+					Path: key.Path,
+				})
+				if err != nil {
+					// TODO
+				}
+				if perms.Include(authz.Read) {
+					// Authorized - continue
+					i++
+					continue
+				}
+				// Unauthorized - drop this match
+				newResult.Matches = append(newResult.Matches[:i], newResult.Matches[i+1:]...)
+			}
+
 			sr = union(sr, newResult)
 			if len(sr.Matches) > wantCount {
 				sr.Matches = sr.Matches[:wantCount]
