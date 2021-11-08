@@ -10,11 +10,10 @@ import styles from './MessagePanel.module.scss'
 export interface Props {
     className?: string
     message: WebhookLogMessageFields
-    request?: WebhookLogRequestFields
-    statusCode?: number
+    requestOrStatusCode: WebhookLogRequestFields | number
 }
 
-export const MessagePanel: React.FunctionComponent<Props> = ({ className, message, request, statusCode }) => {
+export const MessagePanel: React.FunctionComponent<Props> = ({ className, message, requestOrStatusCode }) => {
     const headers = useMemo(() => {
         const headers: Map<string, { name: string; values: string[] }> = new Map()
 
@@ -57,21 +56,21 @@ export const MessagePanel: React.FunctionComponent<Props> = ({ className, messag
         }
 
         raw.sort()
-        if (statusCode !== undefined) {
+        if (typeof requestOrStatusCode === 'number') {
             let reason
             try {
-                reason = ' ' + getReasonPhrase(statusCode)
+                reason = ' ' + getReasonPhrase(requestOrStatusCode)
             } catch {
                 reason = ''
             }
 
-            raw.unshift(`HTTP/1.1 ${statusCode}${reason}`)
-        } else if (request !== undefined) {
-            raw.unshift(`${request.method} ${request.url} ${request.version}`)
+            raw.unshift(`HTTP/1.1 ${requestOrStatusCode}${reason}`)
+        } else {
+            raw.unshift(`${requestOrStatusCode.method} ${requestOrStatusCode.url} ${requestOrStatusCode.version}`)
         }
 
         return raw.join('\n')
-    }, [headers, request, statusCode])
+    }, [headers, requestOrStatusCode])
 
     return (
         <div className={className}>
