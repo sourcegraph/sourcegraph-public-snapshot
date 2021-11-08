@@ -91,7 +91,7 @@ func CheckSameUser(ctx context.Context, subjectUserID int32) error {
 	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
 		return nil
 	}
-	return &InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", subjectUserID)}
+	return &InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", subjectUserID)}
 }
 
 // CurrentUser gets the current authenticated user
