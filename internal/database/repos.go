@@ -837,7 +837,10 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		if err != nil {
 			return nil, err
 		}
-		where = append(where, cursorConds)
+
+		if cursorConds != nil {
+			where = append(where, cursorConds)
+		}
 	}
 
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
