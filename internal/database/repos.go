@@ -1580,6 +1580,10 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 		}
 	}
 
+	if len(columns) == 0 {
+		return nil, nil
+	}
+
 	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", strings.Join(columns, ", "), operator), sqlf.Join(values, ", ")), nil
 }
 
