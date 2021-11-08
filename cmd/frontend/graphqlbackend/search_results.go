@@ -1193,15 +1193,17 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 					Path: key.Path,
 				})
 				if err != nil {
-					// TODO
+					log15.Error("failed to get permissions",
+						"error", err)
 				}
-				if perms.Include(authz.Read) {
-					// Authorized - continue
-					i++
+
+				if !perms.Include(authz.Read) {
+					// Unauthorized - drop this match
+					newResult.Matches = append(newResult.Matches[:i], newResult.Matches[i+1:]...)
 					continue
 				}
-				// Unauthorized - drop this match
-				newResult.Matches = append(newResult.Matches[:i], newResult.Matches[i+1:]...)
+				// Authorized - keep and continue
+				i++
 			}
 
 			sr = union(sr, newResult)

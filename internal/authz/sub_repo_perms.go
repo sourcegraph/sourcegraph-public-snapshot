@@ -180,11 +180,11 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return Read, nil
 	}
 
-	if !a.IsAuthenticated() {
-		return None, &ErrUnauthenticated{}
-	}
 	if a.IsInternal() {
 		return Read, nil
+	}
+	if !a.IsAuthenticated() {
+		return None, &ErrUnauthenticated{}
 	}
 
 	return s.Permissions(ctx, a.UID, content)
