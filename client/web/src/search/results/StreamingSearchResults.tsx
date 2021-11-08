@@ -274,7 +274,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {results?.alert && (
-                    <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
+                    <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
+                        <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
+                    </div>
                 )}
 
                 {showSignUpCta && (

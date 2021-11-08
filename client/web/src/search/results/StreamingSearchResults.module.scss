@@ -63,4 +63,9 @@
             font-size: 0.875rem;
         }
     }
+
+    &__content-centered {
+        max-width: 65rem;
+        margin: auto;
+    }
 }
