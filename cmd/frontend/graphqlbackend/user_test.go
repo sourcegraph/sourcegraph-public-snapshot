@@ -227,25 +227,23 @@ func TestUpdateUser(t *testing.T) {
 		oldSourcegraphDotComMode := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: true}, nil
+			return &types.User{ID: 1}, nil
 		}
 		t.Cleanup(func() {
 			envvar.MockSourcegraphDotComMode(oldSourcegraphDotComMode)
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		result, err := (&schemaResolver{db: database.NewDB(db)}).UpdateUser(context.Background(), &updateUserArgs{
-			User:     "VXNlcjox",
-			Username: strptr("about"),
-		})
-		wantErr := `rejected suspicious name "about"`
-		gotErr := fmt.Sprintf("%v", err)
-		if wantErr != gotErr {
-			t.Fatalf("err: want %q but got %q", wantErr, gotErr)
-		}
-		if result != nil {
-			t.Fatalf("result: want nil but got %v", result)
-		}
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := newSchemaResolver(db).UpdateUser(ctx,
+			&updateUserArgs{
+				User:     MarshalUserID(1),
+				Username: strptr("about"),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := `rejected suspicious name "about"`
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("non site admin cannot change username when not enabled", func(t *testing.T) {
@@ -325,6 +323,21 @@ func TestUpdateUser(t *testing.T) {
 		`,
 			},
 		})
+	})
+
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		_, err := newSchemaResolver(db).UpdateUser(context.Background(),
+			&updateUserArgs{
+				User: MarshalUserID(1),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
 	})
 
 	t.Run("success", func(t *testing.T) {
