@@ -127,7 +127,6 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             defaultExpanded={true}
             title={renderTitle()}
             expandedChildren={renderBody()}
-            telemetryService={telemetryService}
         />
     )
 }

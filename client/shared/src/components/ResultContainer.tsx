@@ -8,11 +8,11 @@ import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
-import { TelemetryProps } from '../telemetry/telemetryService'
+import { TelemetryService } from '../telemetry/telemetryService'
 
 import { SearchResultStar } from './SearchResultStar'
 
-export interface Props extends TelemetryProps {
+export interface Props {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -87,6 +87,11 @@ export interface Props extends TelemetryProps {
      * The time the repo was last updated from the code host
      */
     repoLastFetched?: string
+
+    /**
+     * A telemetry service implementation to log events.
+     */
+    telemetryService?: TelemetryService
 }
 
 /**
@@ -119,11 +124,20 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         }
     }
 
-    const trackResultClick = (): void => telemetryService.log('ReferencePanel_FileNavigation', { action: 'click' })
+    const trackResultClick = (): void => {
+        if (telemetryService) {
+            telemetryService.log('ReferencePanel_FileNavigation', { action: 'click' })
+        }
+    }
 
     const Icon = icon
     return (
-        <div className="test-search-result result-container" data-testid="result-container" onClick={trackResultClick}>
+        <div
+            className="test-search-result result-container"
+            data-testid="result-container"
+            onClick={trackResultClick}
+            role="none"
+        >
             <div className="result-container__header">
                 <Icon className="icon-inline flex-shrink-0" />
                 <div className="result-container__header-divider mx-1" />
