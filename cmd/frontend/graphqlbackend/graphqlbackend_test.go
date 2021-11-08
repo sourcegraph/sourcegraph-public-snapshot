@@ -115,11 +115,16 @@ func TestMain(m *testing.M) {
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
 	rcache.SetupForTest(t)
-	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-		return map[string]bool{}, nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	users := dbmock.NewMockUserStore()
+	users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, userID int32) (*types.User, error) {
+		return &types.User{ID: userID, SiteAdmin: userID == 2}, nil
+	})
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -134,9 +139,10 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:   3,
 				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
 			},
-		}, nil
-	}
-	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		},
+		nil,
+	)
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		switch id {
 		case 1:
 			return &types.ExternalService{
@@ -152,16 +158,11 @@ func TestAffiliatedRepositories(t *testing.T) {
 			}, nil
 		}
 		return nil, nil
-	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
-		return &types.User{
-			ID:        userID,
-			SiteAdmin: userID == 2,
-		}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: true}, nil
-	}
+	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	// Map from path rou
 	httpResponder := map[string]roundTripFunc{
@@ -233,7 +234,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -282,7 +283,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -335,7 +336,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -391,7 +392,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
