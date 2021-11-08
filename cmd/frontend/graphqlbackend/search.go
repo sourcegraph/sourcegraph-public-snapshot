@@ -118,9 +118,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 			DefaultLimit:  defaultLimit,
 		},
 
-		subRepoPerms: &authz.SubRepoPermsClient{
-			PermissionsGetter: database.SubRepoPerms(db),
-		},
+		subRepoPerms: subRepoPermsClient(db),
 
 		stream: args.Stream,
 
