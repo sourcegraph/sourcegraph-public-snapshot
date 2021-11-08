@@ -8,9 +8,11 @@ import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
+import { TelemetryProps } from '../telemetry/telemetryService'
+
 import { SearchResultStar } from './SearchResultStar'
 
-export interface Props {
+export interface Props extends TelemetryProps {
     /**
      * Whether the result container's children are visible by default.
      * The header is always visible even when the component is not expanded.
@@ -104,6 +106,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     description,
     matchCountLabel,
     repoStars,
+    telemetryService,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -116,9 +119,11 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         }
     }
 
+    const trackResultClick = (): void => telemetryService.log('ReferencePanel_FileNavigation', { action: 'click' })
+
     const Icon = icon
     return (
-        <div className="test-search-result result-container" data-testid="result-container">
+        <div className="test-search-result result-container" data-testid="result-container" onClick={trackResultClick}>
             <div className="result-container__header">
                 <Icon className="icon-inline flex-shrink-0" />
                 <div className="result-container__header-divider mx-1" />
