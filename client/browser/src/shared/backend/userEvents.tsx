@@ -3,7 +3,6 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { UserEvent, EventSource } from '../../graphql-operations'
-import { DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -48,11 +47,6 @@ export const logEvent = (
     event: { name: string; userCookieID: string; url: string; argument?: string | {} },
     requestGraphQL: PlatformContext['requestGraphQL']
 ): void => {
-    // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (event.url === DEFAULT_SOURCEGRAPH_URL) {
-        return
-    }
-
     requestGraphQL<GQL.IMutation>({
         request: gql`
             mutation logEvent(
