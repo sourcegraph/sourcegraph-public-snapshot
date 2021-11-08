@@ -1731,7 +1731,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		case "Symbol":
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		case "Repo":
-			return waitGroup(args.ResultTypes.Without(result.TypeRepo) == 0)
+			return waitGroup(true)
 		case "Text":
 			return waitGroup(true)
 		case "Structural":
