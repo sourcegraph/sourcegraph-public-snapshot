@@ -314,3 +314,12 @@ func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositorie
 	})
 
 }
+
+func (r *schemaResolver) DeleteOrgExternalService(ctx context.Context, args *struct {
+	ExternalService graphql.ID
+}) (*EmptyResponse, error) {
+	if EnterpriseResolvers.orgRepositoryResolver == nil {
+		return nil, errors.New("listing organization repositories is not supported")
+	}
+	return r.DeleteExternalService(ctx, &deleteExternalServiceArgs{ExternalService: args.ExternalService})
+}
