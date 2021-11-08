@@ -23,7 +23,7 @@ interface Props extends TelemetryProps {
     icon: React.ComponentType<{ className?: string }>
 }
 
-export const SearcResult: React.FunctionComponent<Props> = ({ result, icon, repoName, telemetryService }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, telemetryService }) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
