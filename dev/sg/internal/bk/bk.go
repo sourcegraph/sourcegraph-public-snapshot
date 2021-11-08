@@ -68,6 +68,9 @@ type Client struct {
 	bk *buildkite.Client
 }
 
+// NewClient returns an authenticated client that can perform various operation on
+// the organization assigned to buildkiteOrg.
+// If there is no token assigned yet, it will be asked to the user.
 func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
 	token, err := retrieveToken(ctx, out)
 	if err != nil {
@@ -80,6 +83,8 @@ func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
 	return &Client{bk: buildkite.NewClient(config.Client())}, nil
 }
 
+// GetMostRecentBuild returns a list of most recent builds for the given pipeline and branch.
+// If no builds are found, an error will be returned.
 func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string) (*buildkite.Build, error) {
 	builds, _, err := c.bk.Builds.ListByPipeline(buildkiteOrg, pipeline, &buildkite.BuildsListOptions{
 		Branch: branch,
@@ -98,6 +103,23 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 	return &builds[0], nil
 }
 
+// GetBuildByNumber returns a single build from a given pipeline and a given build number.
+// If no build is found, an error will be returned.
+func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
+	b, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, number, nil)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no build found")
+		}
+		return nil, err
+	}
+	return b, nil
+}
+
+// TriggerBuild request a build on Buildkite API and returns that build.
 func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
 	build, _, err := c.bk.Builds.Create(buildkiteOrg, pipeline, &buildkite.CreateBuild{
 		Commit: commit,

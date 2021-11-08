@@ -93,7 +93,7 @@ func middleware(db dbutil.DB) func(next http.Handler) http.Handler {
 					return
 				}
 			}
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
+			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), database.NewDB(db), auth.GetAndSaveUserOp{
 				UserProps: database.NewUser{Username: username, Email: rawEmail, EmailIsVerified: true},
 				ExternalAccount: extsvc.AccountSpec{
 					ServiceType: providerType,

@@ -95,7 +95,7 @@ func getOrCreateUser(ctx context.Context, db dbutil.DB, allowSignup bool, info *
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", info.unnormalizedUsername), err
 	}
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, db, auth.GetAndSaveUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, database.NewDB(db), auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        username,
 			Email:           info.email,

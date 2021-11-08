@@ -99,17 +99,17 @@ func TestSearchSuggestions(t *testing.T) {
 		mu := sync.Mutex{}
 		var calledReposListNamesAll, calledReposListFoo bool
 
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
 				// when treating term as repo: field
 				calledReposListFoo = true
-				return []types.RepoName{{Name: "foo-repo"}}, nil
+				return []types.MinimalRepo{{Name: "foo-repo"}}, nil
 			} else {
 				// when treating term as text query
 				calledReposListNamesAll = true
-				return []types.RepoName{{Name: "bar-repo"}}, nil
+				return []types.MinimalRepo{{Name: "bar-repo"}}, nil
 			}
 		}
 		database.Mocks.Repos.Count = mockCount
@@ -125,7 +125,7 @@ func TestSearchSuggestions(t *testing.T) {
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			fm := mkFileMatch(types.RepoName{Name: "repo"}, "dir/file")
+			fm := mkFileMatch(types.MinimalRepo{Name: "repo"}, "dir/file")
 			rev := "rev"
 			fm.CommitID = "rev"
 			fm.InputRev = &rev
@@ -152,18 +152,18 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		calledReposListRepoNames := false
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		calledReposListMinimalRepos := false
+		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledReposListRepoNames = true
+			calledReposListMinimalRepos = true
 
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
-			return []types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
-		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
+		defer func() { database.Mocks.Repos.ListMinimalRepos = nil }()
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
@@ -182,8 +182,8 @@ func TestSearchSuggestions(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo"})
-			if !calledReposListRepoNames {
-				t.Error("!calledReposListRepoNames")
+			if !calledReposListMinimalRepos {
+				t.Error("!calledReposListMinimalRepos")
 			}
 		}
 	})
@@ -204,7 +204,7 @@ func TestSearchSuggestions(t *testing.T) {
 			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, have database.ReposListOptions) ([]types.RepoName, error) {
+		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, have database.ReposListOptions) ([]types.MinimalRepo, error) {
 			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				LimitOffset: &database.LimitOffset{
@@ -214,11 +214,11 @@ func TestSearchSuggestions(t *testing.T) {
 			if diff := cmp.Diff(have, want, cmp.AllowUnexported(database.ReposListOptions{})); diff != "" {
 				t.Error(diff)
 			}
-			return []types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
 		defer func() { database.Mocks.Repos.List = nil }()
-		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
+		defer func() { database.Mocks.Repos.ListMinimalRepos = nil }()
 		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 			return api.CommitID("deadbeef"), nil
 		}
@@ -259,18 +259,18 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		calledReposListRepoNames := false
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		calledReposListMinimalRepos := false
+		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledReposListRepoNames = true
+			calledReposListMinimalRepos = true
 
 			assertEqual(t, op.IncludePatterns, []string{"foo"})
 
-			return []types.RepoName{{Name: "foo-repo"}}, nil
+			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
 		}
 		database.Mocks.Repos.Count = mockCount
-		defer func() { database.Mocks.Repos.ListRepoNames = nil }()
+		defer func() { database.Mocks.Repos.ListMinimalRepos = nil }()
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
@@ -281,14 +281,14 @@ func TestSearchSuggestions(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos.Store(true)
-			return []result.Match{mkFileMatch(types.RepoName{Name: "foo-repo"}, "dir/bar-file")}, &streaming.Stats{}, nil
+			return []result.Match{mkFileMatch(types.MinimalRepo{Name: "foo-repo"}, "dir/bar-file")}, &streaming.Stats{}, nil
 		}
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo file:bar", v, []string{"file:dir/bar-file"})
-			if !calledReposListRepoNames {
-				t.Error("!calledReposListRepoNames")
+			if !calledReposListMinimalRepos {
+				t.Error("!calledReposListMinimalRepos")
 			}
 			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")

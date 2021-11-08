@@ -195,7 +195,7 @@ extend type Query {
     """
     Return all insight views visible to the authenticated user.
     """
-    insightViews(first: Int, after: String, id: ID): InsightViewConnection!
+    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
 }
 
 extend type Mutation {
@@ -257,7 +257,7 @@ type InsightsDashboard implements Node {
     """
     The list of associated insights to the dashboard.
     """
-    views: InsightViewConnection
+    views(first: Int, after: ID): InsightViewConnection
 
     """
     The permission grants assossiated with the dashboard.
@@ -563,6 +563,11 @@ input LineChartSearchInsightInput {
     The options for this line chart.
     """
     options: LineChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
 }
 
 """
@@ -613,6 +618,10 @@ input InsightViewFiltersInput {
 Input for a line chart search insight data series.
 """
 input LineChartSearchInsightDataSeriesInput {
+    """
+    Unique ID for the series. Omit this field if it's a new series.
+    """
+    seriesId: String
     """
     The query string.
     """

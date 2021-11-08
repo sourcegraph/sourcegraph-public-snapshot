@@ -60,7 +60,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		t.Fatal(err)
 	}
 	repoRevs := &search.RepositoryRevisions{
-		Repo: types.RepoName{ID: 1, Name: "repo"},
+		Repo: types.MinimalRepo{ID: 1, Name: "repo"},
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, db, search.CommitParameters{
@@ -75,7 +75,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 
 	want := []*result.CommitMatch{{
 		Commit:      gitapi.Commit{ID: "c1", Author: gitSignatureWithDate},
-		Repo:        types.RepoName{ID: 1, Name: "repo"},
+		Repo:        types.MinimalRepo{ID: 1, Name: "repo"},
 		DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
 		Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
 	}}

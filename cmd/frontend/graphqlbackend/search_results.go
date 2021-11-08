@@ -20,14 +20,12 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -42,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -137,11 +136,11 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
-		Name types.RepoName
+		Name types.MinimalRepo
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
@@ -381,7 +380,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer func() {
 		tr.Finish()
@@ -628,7 +627,22 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// across all of Sourcegraph.
 
 		globalSearch := args.Mode == search.ZoektGlobalSearch
+		// skipUnindexed is a value that controls whether to run
+		// unindexed search in a specific scenario of queries that
+		// contain no repo-affecting filters (global mode). When on
+		// sourcegraph.com, we resolve only a subset of all indexed
+		// repos to search. This control flow implies len(searcherRepos)
+		// is always 0, meaning that we should not create jobs to run
+		// unindexed searcher.
 		skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
+		// searcherOnly is a value that controls whether to run
+		// unindexed search in one of two scenarios. The first scenario
+		// depends on if index:no is set (value true). The second
+		// scenario happens if queries contain no repo-affecting filters
+		// (global mode). When NOT on sourcegraph.com the we _may_
+		// resolve some subset of nonindexed repos to search, so wemay
+		// generate jobs that run searcher, but it is conditional on
+		// whether global zoekt search will run (value true).
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 			if !skipUnindexed {
@@ -664,7 +678,33 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
 				})
 			}
+		}
 
+		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
+			if !skipUnindexed {
+				typ := search.SymbolRequest
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+				zoektArgs := &search.ZoektParameters{
+					Query:          zoektQuery,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				jobs = append(jobs, &symbol.SymbolSearch{
+					ZoektArgs:         zoektArgs,
+					PatternInfo:       args.PatternInfo,
+					Limit:             r.MaxResults(),
+					NotSearcherOnly:   !searcherOnly,
+					UseIndex:          args.PatternInfo.Index,
+					ContainsRefGlobs:  query.ContainsRefGlobs(q),
+					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				})
+			}
 		}
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
@@ -1540,21 +1580,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// globalSearch controls whether we run a global zoekt search.
 	globalSearch := args.Mode == search.ZoektGlobalSearch
-	// skipUnindexed is a value that controls whether to run unindexed
-	// search in a specific scenario of queries that contain no
-	// repo-affecting filters (global mode). When on sourcegraph.com, the
-	// determineRepos call below returns a subset of indexed repos to
-	// search. This control flow implies len(searcherRepos) is always 0, so
-	// we skip running searcher in subsequent goroutine search jobs.
-	skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
-	// searcherOnly is a value that controls whether to run unindexed search
-	// in one of two scenarios. The first scenario depends on if index:no is
-	// set (value true). The second scenario happens if queries contain no
-	// repo-affecting filters (global mode). When NOT on sourcegraph.com the
-	// determineRepos _may_ return a subset of nonindexed repos to search,
-	// so we run searcher, but conditional only on whether global zoekt
-	// search will run (value true).
-	searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
@@ -1571,7 +1596,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
-		userPrivateRepos, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		userPrivateRepos, err := database.Repos(r.db).ListMinimalRepos(ctx, database.ReposListOptions{
 			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
@@ -1649,14 +1674,32 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		tr.LazyPrintf("adding error for missing repo revs - done")
 	}
 
-	agg.Send(streaming.SearchEvent{
-		Stats: streaming.Stats{
-			Repos:            resolved.RepoSet,
-			ExcludedForks:    resolved.ExcludedRepos.Forks,
-			ExcludedArchived: resolved.ExcludedRepos.Archived,
-		},
-	})
-	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", len(resolved.RepoSet), resolved.ExcludedRepos)
+	agg.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: resolved.RepoSet}})
+	tr.LazyPrintf("sending first stats (repos %d) - done", len(resolved.RepoSet))
+
+	{
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+
+			repositoryResolver := searchrepos.Resolver{DB: r.db}
+			excluded, err := repositoryResolver.Excluded(ctx, args.RepoOptions)
+			if err != nil {
+				agg.Error(err)
+				return
+			}
+
+			agg.Send(streaming.SearchEvent{
+				Stats: streaming.Stats{
+					ExcludedArchived: excluded.Archived,
+					ExcludedForks:    excluded.Forks,
+				},
+			})
+
+			tr.LazyPrintf("sent excluded stats %#v", excluded)
+		})
+	}
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
@@ -1665,21 +1708,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			defer wg.Done()
 			_ = agg.DoRepoSearch(ctx, args, int32(limit))
 		})
-
-	}
-
-	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-		if !skipUnindexed {
-			wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-
-				notSearcherOnly := !searcherOnly
-
-				_ = agg.DoSymbolSearch(ctx, args, notSearcherOnly, false, limit)
-			})
-		}
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
@@ -1732,6 +1760,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		case "Commit":
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		case "Symbol":
+			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		case "Text":
 			return waitGroup(true)
 		case "Structural":
@@ -1743,6 +1773,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
+		job := job
 		wg := wgForJob(job)
 		wg.Add(1)
 		goroutine.Go(func() {

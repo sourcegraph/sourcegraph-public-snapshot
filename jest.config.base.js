@@ -59,6 +59,7 @@ const config = {
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
+    path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
     // Enzyme setup file
     path.join(__dirname, 'client/shared/dev/enzymeSetup.js'),
   ],

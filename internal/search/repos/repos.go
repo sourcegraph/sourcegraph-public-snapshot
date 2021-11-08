@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -35,14 +35,13 @@ type Resolved struct {
 
 	// Perf improvement: we precompute this map during repo resolution to save time
 	// on the critical path.
-	RepoSet         map[api.RepoID]types.RepoName
+	RepoSet         map[api.RepoID]types.MinimalRepo
 	MissingRepoRevs []*search.RepositoryRevisions
-	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
 }
 
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v, %#v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit, r.ExcludedRepos)
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
 type Resolver struct {
@@ -83,7 +82,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	var searchableRepos []types.RepoName
+	var searchableRepos []types.MinimalRepo
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
@@ -99,8 +98,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		}
 	}
 
-	var repos []types.RepoName
-	var excluded ExcludedRepos
+	var repos []types.MinimalRepo
 	if len(searchableRepos) > 0 {
 		repos = searchableRepos
 		if len(repos) > limit {
@@ -113,22 +111,17 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			IncludePatterns: includePatterns,
 			ExcludePattern:  UnionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:  &database.LimitOffset{Limit: limit + 1},
-			NoForks:      op.NoForks,
-			OnlyForks:    op.OnlyForks,
-			NoArchived:   op.NoArchived,
-			OnlyArchived: op.OnlyArchived,
-			NoPrivate:    op.Visibility == query.Public,
-			OnlyPrivate:  op.Visibility == query.Private,
-		}
-
-		if searchContext.ID != 0 {
-			options.SearchContextID = searchContext.ID
-		} else if searchContext.NamespaceUserID != 0 {
-			options.UserID = searchContext.NamespaceUserID
-			options.IncludeUserPublicRepos = true
-		} else if searchContext.NamespaceOrgID != 0 {
-			options.OrgID = searchContext.NamespaceOrgID
+			LimitOffset:            &database.LimitOffset{Limit: limit + 1},
+			NoForks:                op.NoForks,
+			OnlyForks:              op.OnlyForks,
+			NoArchived:             op.NoArchived,
+			OnlyArchived:           op.OnlyArchived,
+			NoPrivate:              op.Visibility == query.Public,
+			OnlyPrivate:            op.Visibility == query.Private,
+			SearchContextID:        searchContext.ID,
+			UserID:                 searchContext.NamespaceUserID,
+			OrgID:                  searchContext.NamespaceOrgID,
+			IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
 		}
 
 		if op.Ranked {
@@ -141,18 +134,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			}
 		}
 
-		// PERF: We Query concurrently since Count and List call can be slow
-		// on Sourcegraph.com (100ms+).
-		excludedC := make(chan ExcludedRepos)
-		go func() {
-			excludedC <- computeExcludedRepositories(ctx, r.DB, op.Query, options)
-		}()
-
-		repos, err = r.DB.Repos().ListRepoNames(ctx, options)
+		repos, err = r.DB.Repos().ListMinimalRepos(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
-
-		excluded = <-excludedC
-		tr.LazyPrintf("excluded repos: %+v", excluded)
 
 		if err != nil {
 			return Resolved{}, err
@@ -171,7 +154,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			return Resolved{}, err
 		}
 	}
-	repoSet := make(map[api.RepoID]types.RepoName, len(repos))
+	repoSet := make(map[api.RepoID]types.MinimalRepo, len(repos))
 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
@@ -268,9 +251,114 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		RepoRevs:        repoRevs,
 		RepoSet:         repoSet,
 		MissingRepoRevs: missingRepoRevs,
-		ExcludedRepos:   excluded,
 		OverLimit:       overLimit,
 	}, err
+}
+
+// Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
+// used to show in the search UI what repos are excluded precisely.
+func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex ExcludedRepos, err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Excluded", op.String())
+	defer func() {
+		tr.LazyPrintf("excluded repos: %+v", ex)
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	if op.Query == nil {
+		return ExcludedRepos{}, nil
+	}
+
+	includePatterns := op.RepoFilters
+	if includePatterns != nil {
+		// Copy to avoid race condition.
+		includePatterns = append([]string{}, includePatterns...)
+	}
+
+	excludePatterns := op.MinusRepoFilters
+
+	limit := op.Limit
+	if limit == 0 {
+		limit = search.SearchLimits(conf.Get()).MaxRepos
+	}
+
+	// note that this mutates the strings in includePatterns, stripping their
+	// revision specs, if they had any.
+	_, err = findPatternRevs(includePatterns)
+	if err != nil {
+		return ExcludedRepos{}, err
+	}
+
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	if err != nil {
+		return ExcludedRepos{}, err
+	}
+
+	options := database.ReposListOptions{
+		IncludePatterns: includePatterns,
+		ExcludePattern:  UnionRegExps(excludePatterns),
+		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
+		NoForks:                op.NoForks,
+		OnlyForks:              op.OnlyForks,
+		NoArchived:             op.NoArchived,
+		OnlyArchived:           op.OnlyArchived,
+		NoPrivate:              op.Visibility == query.Public,
+		OnlyPrivate:            op.Visibility == query.Private,
+		SearchContextID:        searchContext.ID,
+		UserID:                 searchContext.NamespaceUserID,
+		OrgID:                  searchContext.NamespaceOrgID,
+		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	var excluded struct {
+		sync.Mutex
+		ExcludedRepos
+	}
+
+	if op.Query.Fork() == nil && !ExactlyOneRepo(includePatterns) {
+		g.Go(func() error {
+			// 'fork:...' was not specified and Forks are excluded, find out
+			// which repos are excluded.
+			selectForks := options
+			selectForks.OnlyForks = true
+			selectForks.NoForks = false
+			numExcludedForks, err := r.DB.Repos().Count(ctx, selectForks)
+			if err != nil {
+				return err
+			}
+
+			excluded.Lock()
+			excluded.Forks = numExcludedForks
+			excluded.Unlock()
+
+			return nil
+		})
+	}
+
+	if op.Query.Archived() == nil && !ExactlyOneRepo(includePatterns) {
+		g.Go(func() error {
+			// Archived...: was not specified and archives are excluded,
+			// find out which repos are excluded.
+			selectArchived := options
+			selectArchived.OnlyArchived = true
+			selectArchived.NoArchived = false
+			numExcludedArchived, err := r.DB.Repos().Count(ctx, selectArchived)
+			if err != nil {
+				return err
+			}
+
+			excluded.Lock()
+			excluded.Archived = numExcludedArchived
+			excluded.Unlock()
+
+			return nil
+		})
+	}
+
+	return excluded.ExcludedRepos, g.Wait()
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
@@ -320,57 +408,6 @@ const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.Uni
 type ExcludedRepos struct {
 	Forks    int
 	Archived int
-}
-
-// computeExcludedRepositories returns a list of excluded repositories (Forks or
-// archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, db database.DB, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
-	if q == nil {
-		return ExcludedRepos{}
-	}
-
-	// PERF: We Query concurrently since each count call can be slow on
-	// Sourcegraph.com (100ms+).
-	var wg sync.WaitGroup
-	var numExcludedForks, numExcludedArchived int
-
-	if q.Fork() == nil && !ExactlyOneRepo(op.IncludePatterns) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// 'fork:...' was not specified and Forks are excluded, find out
-			// which repos are excluded.
-			selectForks := op
-			selectForks.OnlyForks = true
-			selectForks.NoForks = false
-			var err error
-			numExcludedForks, err = db.Repos().Count(ctx, selectForks)
-			if err != nil {
-				log15.Warn("repo count for excluded fork", "err", err)
-			}
-		}()
-	}
-
-	if q.Archived() == nil && !ExactlyOneRepo(op.IncludePatterns) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			// Archived...: was not specified and archives are excluded,
-			// find out which repos are excluded.
-			selectArchived := op
-			selectArchived.OnlyArchived = true
-			selectArchived.NoArchived = false
-			var err error
-			numExcludedArchived, err = db.Repos().Count(ctx, selectArchived)
-			if err != nil {
-				log15.Warn("repo count for excluded archive", "err", err)
-			}
-		}()
-	}
-
-	wg.Wait()
-
-	return ExcludedRepos{Forks: numExcludedForks, Archived: numExcludedArchived}
 }
 
 // a patternRevspec maps an include pattern to a list of revisions
@@ -463,11 +500,11 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
+type searchableReposFunc func(ctx context.Context) ([]types.MinimalRepo, error)
 
 // searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.RepoName, err error) {
+func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "searchableRepositories", "")
 	defer func() {
 		tr.SetError(err)

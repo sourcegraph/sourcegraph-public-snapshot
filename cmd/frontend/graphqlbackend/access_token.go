@@ -25,7 +25,7 @@ type accessTokenResolver struct {
 	accessToken database.AccessToken
 }
 
-func accessTokenByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*accessTokenResolver, error) {
+func accessTokenByID(ctx context.Context, db database.DB, id graphql.ID) (*accessTokenResolver, error) {
 	accessTokenID, err := unmarshalAccessTokenID(id)
 	if err != nil {
 		return nil, err

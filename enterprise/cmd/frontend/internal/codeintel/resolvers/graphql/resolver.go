@@ -545,7 +545,7 @@ func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
 
 // checkCurrentUserIsSiteAdmin returns true if the current user is a site-admin.
 func checkCurrentUserIsSiteAdmin(ctx context.Context) error {
-	return backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global)
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(dbconn.Global))
 }
 
 func validateConfigurationPolicy(policy gql.CodeIntelConfigurationPolicy) error {

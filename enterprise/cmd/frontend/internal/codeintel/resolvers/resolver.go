@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -42,6 +43,7 @@ type Resolver interface {
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
+	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type resolver struct {

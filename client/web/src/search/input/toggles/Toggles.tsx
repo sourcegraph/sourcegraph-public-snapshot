@@ -27,6 +27,13 @@ export interface TogglesProps
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
+    showCopyQueryButton?: boolean
+    /**
+     * If set to false makes all buttons non-actionable. The main use case for
+     * this prop is showing the toggles in examples. This is different from
+     * being disabled, because the buttons still render normally.
+     */
+    interactive?: boolean
 }
 
 export const getFullQuery = (
@@ -55,6 +62,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         className,
         selectedSearchContextSpec,
         submitSearch,
+        showCopyQueryButton = true,
     } = props
 
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
@@ -161,13 +169,17 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     ]}
                 />
             )}
-            <div className={styles.separator} />
-            <CopyQueryButton
-                fullQuery={fullQuery}
-                keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                isMacPlatform={isMacPlatform}
-                className={classNames(styles.toggle, styles.copyQueryButton)}
-            />
+            {showCopyQueryButton && (
+                <>
+                    <div className={styles.separator} />
+                    <CopyQueryButton
+                        fullQuery={fullQuery}
+                        keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+                        isMacPlatform={isMacPlatform}
+                        className={classNames(styles.toggle, styles.copyQueryButton)}
+                    />
+                </>
+            )}
         </div>
     )
 }

@@ -258,7 +258,7 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 			line.match = strings.TrimRight(line.match, ".")
 
 			// NOTE: Manipulations made to `depotContains` will affect the behaviour of
-			// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
+			// `(*RepoStore).ListMinimalRepos` - make sure to test new changes there as well.
 			depotContains := convertToPostgresMatch(line.match)
 
 			if !line.isExclusion {

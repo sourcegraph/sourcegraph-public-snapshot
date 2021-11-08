@@ -25,6 +25,7 @@ describe('Views (integration)', () => {
                     title: 't',
                     content: 'c',
                     priority: 3,
+                    selector: null,
                     component: null,
                 },
             ])
@@ -54,6 +55,7 @@ describe('Views (integration)', () => {
                     title: 't',
                     content: 'c',
                     priority: 3,
+                    selector: null,
                     component: {
                         locationProvider: LOCATION_PROVIDER_ID,
                     },

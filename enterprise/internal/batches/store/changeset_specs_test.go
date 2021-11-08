@@ -399,6 +399,30 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				}
 			}
 		})
+
+		t.Run("ByID", func(t *testing.T) {
+			for i := 0; i < 3; i++ {
+				spec := &btypes.ChangesetSpec{
+					BatchSpecID: int64(i + 1),
+					RepoID:      repo.ID,
+				}
+				err := s.CreateChangesetSpec(ctx, spec)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
+					IDs: []int64{spec.ID},
+				}); err != nil {
+					t.Fatal(err)
+				}
+
+				_, err = s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: spec.ID})
+				if err != ErrNoResults {
+					t.Fatal("changeset spec not deleted")
+				}
+			}
+		})
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {

@@ -7,13 +7,13 @@
   "browser_action": {
     "default_title": "Sourcegraph",
     "default_icon": {
-      "16": "img/icon-16.png",
+      "32": "img/icon-32.png",
       "48": "img/icon-48.png",
       "128": "img/icon-128.png"
     }
   },
   "icons": {
-    "16": "img/icon-16.png",
+    "32": "img/icon-32.png",
     "48": "img/icon-48.png",
     "128": "img/icon-128.png"
   },

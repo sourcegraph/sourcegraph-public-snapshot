@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -24,7 +23,7 @@ import (
 // configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL string) (repoName api.RepoName, err error) {
+func ReposourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "ReposourceCloneURLToRepoName")
 	defer span.Finish()
 
@@ -33,7 +32,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 	}
 
 	// Fast path for repos we already have in our database
-	name, err := database.Repos(db).GetFirstRepoNamesByCloneURL(ctx, cloneURL)
+	name, err := db.Repos().GetFirstRepoNamesByCloneURL(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}
@@ -64,7 +63,7 @@ func ReposourceCloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL st
 	}
 
 	for {
-		svcs, err := database.ExternalServices(db).List(ctx, opt)
+		svcs, err := db.ExternalServices().List(ctx, opt)
 		if err != nil {
 			return "", errors.Wrap(err, "list")
 		}

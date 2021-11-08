@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/query"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -91,16 +90,16 @@ func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db *sql.DB, repo
 	return createdRepos
 }
 
-func repoNamesFromRepos(repos []*types.Repo) []types.RepoName {
-	rnames := make([]types.RepoName, 0, len(repos))
+func repoNamesFromRepos(repos []*types.Repo) []types.MinimalRepo {
+	rnames := make([]types.MinimalRepo, 0, len(repos))
 	for _, repo := range repos {
-		rnames = append(rnames, types.RepoName{ID: repo.ID, Name: repo.Name})
+		rnames = append(rnames, types.MinimalRepo{ID: repo.ID, Name: repo.Name})
 	}
 
 	return rnames
 }
 
-func reposFromRepoNames(names []types.RepoName) []*types.Repo {
+func reposFromRepoNames(names []types.MinimalRepo) []*types.Repo {
 	repos := make([]*types.Repo, 0, len(names))
 	for _, name := range names {
 		repos = append(repos, &types.Repo{ID: name.ID, Name: name.Name})
@@ -367,7 +366,7 @@ func TestRepos_List(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames_userID(t *testing.T) {
+func TestRepos_ListMinimalRepos_userID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -436,11 +435,11 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []types.RepoName{
+	want := []types.MinimalRepo{
 		{ID: repo.ID, Name: repo.Name},
 	}
 
-	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID})
+	have, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -450,7 +449,7 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames_orgID(t *testing.T) {
+func TestRepos_ListMinimalRepos_orgID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -512,11 +511,11 @@ func TestRepos_ListRepoNames_orgID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []types.RepoName{
+	want := []types.MinimalRepo{
 		{ID: repo.ID, Name: repo.Name},
 	}
 
-	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OrgID: org.ID})
+	have, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{OrgID: org.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -737,43 +736,6 @@ func TestRepos_List_ids(t *testing.T) {
 	}{
 		{"Subset", ReposListOptions{IDs: mine.IDs()}, mine},
 		{"All", ReposListOptions{IDs: all.IDs()}, all},
-		{"Default", ReposListOptions{}, all},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).List(ctx, test.opt)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assertJSONEqual(t, test.want, repos)
-		})
-	}
-}
-
-func TestRepos_List_serviceTypes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
-	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo())
-	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo())
-	both := append(mine, yours...)
-	all := append(both, others...)
-
-	tests := []struct {
-		name string
-		opt  ReposListOptions
-		want []*types.Repo
-	}{
-		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, mine},
-		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, yours},
-		{"Both", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, both},
 		{"Default", ReposListOptions{}, all},
 	}
 
@@ -1042,136 +1004,6 @@ func TestRepos_List_patterns(t *testing.T) {
 	}
 }
 
-// TestRepos_List_patterns tests the behavior of Repos.List when called with
-// a QueryPattern.
-func TestRepos_List_queryPattern(t *testing.T) {
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	createdRepos := []*types.Repo{
-		{Name: "a/b"},
-		{Name: "c/d"},
-		{Name: "e/f"},
-		{Name: "g/h"},
-	}
-	for _, repo := range createdRepos {
-		createRepo(ctx, t, db, repo)
-	}
-	tests := []struct {
-		q    query.Q
-		want []api.RepoName
-		err  string
-	}{
-		// These are the same tests as TestRepos_List_patterns, but in an
-		// expression form.
-		{
-			q:    "(a|c)",
-			want: []api.RepoName{"a/b", "c/d"},
-		},
-		{
-			q:    query.And("(a|c)", "b"),
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			q:    query.And("(a|c)", query.Not("d")),
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			q:    query.Not("(d|e)"),
-			want: []api.RepoName{"a/b", "g/h"},
-		},
-
-		// Some extra tests which test the pattern compiler
-		{
-			q:    "",
-			want: []api.RepoName{"a/b", "c/d", "e/f", "g/h"},
-		},
-		{
-			q:    "^a/b$",
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			// Should match only e/f, but pattern compiler doesn't handle this
-			// so matches nothing.
-			q:    "[a-zA-Z]/e",
-			want: nil,
-		},
-
-		// Test OR support
-		{
-			q:    query.Or(query.Not("(d|e)"), "d"),
-			want: []api.RepoName{"a/b", "c/d", "g/h"},
-		},
-
-		// Test deeply nested
-		{
-			q: query.Or(
-				query.And(
-					true,
-					query.Not(query.Or("a", "c"))),
-				query.And(query.Not("e"), query.Not("a"))),
-			want: []api.RepoName{"c/d", "e/f", "g/h"},
-		},
-
-		// Corner cases for Or
-		{
-			q:    query.Or(), // empty Or is false
-			want: nil,
-		},
-		{
-			q:    query.Or("a"),
-			want: []api.RepoName{"a/b"},
-		},
-
-		// Corner cases for And
-		{
-			q:    query.And(), // empty And is true
-			want: []api.RepoName{"a/b", "c/d", "e/f", "g/h"},
-		},
-		{
-			q:    query.And("a"),
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			q:    query.And("a", "d"),
-			want: nil,
-		},
-
-		// Bad pattern
-		{
-			q:   query.And("a/b", ")*"),
-			err: "error parsing regexp",
-		},
-		// Only want strings
-		{
-			q:   query.And("a/b", 1),
-			err: "unexpected token",
-		},
-	}
-	for _, test := range tests {
-		repos, err := Repos(db).List(ctx, ReposListOptions{
-			PatternQuery: test.q,
-		})
-		if err != nil {
-			if test.err == "" {
-				t.Fatal(err)
-			}
-			if !strings.Contains(err.Error(), test.err) {
-				t.Errorf("expected error to contain %q, got: %v", test.err, err)
-			}
-			continue
-		}
-		if test.err != "" {
-			t.Errorf("%s: expected error", query.Print(test.q))
-			continue
-		}
-		if got := repoNames(repos); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%s: got repos %q, want %q", query.Print(test.q), got, test.want)
-		}
-	}
-}
-
 func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
@@ -1316,7 +1148,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames(t *testing.T) {
+func TestRepos_ListMinimalRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1348,9 +1180,9 @@ func TestRepos_ListRepoNames(t *testing.T) {
 	repo := mustCreate(ctx, t, db, &types.Repo{
 		Name: "name",
 	})
-	want := []types.RepoName{{ID: repo[0].ID, Name: repo[0].Name}}
+	want := []types.MinimalRepo{{ID: repo[0].ID, Name: repo[0].Name}}
 
-	repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{})
+	repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1359,7 +1191,7 @@ func TestRepos_ListRepoNames(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames_fork(t *testing.T) {
+func TestRepos_ListMinimalRepos_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1372,36 +1204,36 @@ func TestRepos_ListRepoNames_fork(t *testing.T) {
 	yours := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true}))
 
 	{
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OnlyForks: true})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, yours, repos)
 	}
 	{
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{NoForks: true})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{NoForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, mine, repos)
 	}
 	{
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{NoForks: true, OnlyForks: true})
 		if err != nil {
 			t.Fatal(err)
 		}
 		assertJSONEqual(t, nil, repos)
 	}
 	{
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertJSONEqual(t, append(append([]types.RepoName(nil), mine...), yours...), repos)
+		assertJSONEqual(t, append(append([]types.MinimalRepo(nil), mine...), yours...), repos)
 	}
 }
 
-func TestRepos_ListRepoNames_cloned(t *testing.T) {
+func TestRepos_ListMinimalRepos_cloned(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1416,17 +1248,17 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []types.RepoName
+		want []types.MinimalRepo
 	}{
 		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, yours},
 		{"NoCloned", ReposListOptions{NoCloned: true}, mine},
 		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
-		{"Default", ReposListOptions{}, append(append([]types.RepoName(nil), mine...), yours...)},
+		{"Default", ReposListOptions{}, append(append([]types.MinimalRepo(nil), mine...), yours...)},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
+			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1435,7 +1267,7 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames_ids(t *testing.T) {
+func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1453,7 +1285,7 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []types.RepoName
+		want []types.MinimalRepo
 	}{
 		{"Subset", ReposListOptions{IDs: mine.IDs()}, repoNamesFromRepos(mine)},
 		{"All", ReposListOptions{IDs: all.IDs()}, repoNamesFromRepos(all)},
@@ -1462,7 +1294,7 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
+			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1471,44 +1303,7 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames_serviceTypes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
-	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo())
-	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo())
-	both := append(mine, yours...)
-	all := append(both, others...)
-
-	tests := []struct {
-		name string
-		opt  ReposListOptions
-		want []types.RepoName
-	}{
-		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, repoNamesFromRepos(mine)},
-		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, repoNamesFromRepos(yours)},
-		{"Both", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, repoNamesFromRepos(both)},
-		{"Default", ReposListOptions{}, repoNamesFromRepos(all)},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assertJSONEqual(t, test.want, repos)
-		})
-	}
-}
-
-func TestRepos_ListRepoNames_pagination(t *testing.T) {
+func TestRepos_ListMinimalRepos_pagination(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1543,7 +1338,7 @@ func TestRepos_ListRepoNames_pagination(t *testing.T) {
 		{limit: 4, offset: 4, exp: nil},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{LimitOffset: &LimitOffset{Limit: test.limit, Offset: test.offset}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1553,10 +1348,10 @@ func TestRepos_ListRepoNames_pagination(t *testing.T) {
 	}
 }
 
-// TestRepos_ListRepoNames_query tests the behavior of Repos.ListRepoNames when called with
+// TestRepos_ListMinimalRepos_query tests the behavior of Repos.ListMinimalRepos when called with
 // a query.
 // Test batch 1 (correct filtering)
-func TestRepos_ListRepoNames_correctFiltering(t *testing.T) {
+func TestRepos_ListMinimalRepos_correctFiltering(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1584,7 +1379,7 @@ func TestRepos_ListRepoNames_correctFiltering(t *testing.T) {
 		{"mno/p", []api.RepoName{"jkl/mno/pqr"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{Query: test.query})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1595,7 +1390,7 @@ func TestRepos_ListRepoNames_correctFiltering(t *testing.T) {
 }
 
 // Test batch 2 (correct ranking)
-func TestRepos_ListRepoNames_query2(t *testing.T) {
+func TestRepos_ListMinimalRepos_query2(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1626,7 +1421,7 @@ func TestRepos_ListRepoNames_query2(t *testing.T) {
 		{"def/m", []api.RepoName{"def/mno"}},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{Query: test.query})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: test.query})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1637,7 +1432,7 @@ func TestRepos_ListRepoNames_query2(t *testing.T) {
 }
 
 // Test sort
-func TestRepos_ListRepoNames_sort(t *testing.T) {
+func TestRepos_ListMinimalRepos_sort(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1695,7 +1490,7 @@ func TestRepos_ListRepoNames_sort(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: test.query, OrderBy: test.orderBy})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1705,9 +1500,9 @@ func TestRepos_ListRepoNames_sort(t *testing.T) {
 	}
 }
 
-// TestRepos_ListRepoNames_patterns tests the behavior of Repos.List when called with
+// TestRepos_ListMinimalRepos_patterns tests the behavior of Repos.List when called with
 // IncludePatterns and ExcludePattern.
-func TestRepos_ListRepoNames_patterns(t *testing.T) {
+func TestRepos_ListMinimalRepos_patterns(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1749,7 +1544,7 @@ func TestRepos_ListRepoNames_patterns(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{
+		repos, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{
 			IncludePatterns: test.includePatterns,
 			ExcludePattern:  test.excludePattern,
 		})
@@ -1762,170 +1557,40 @@ func TestRepos_ListRepoNames_patterns(t *testing.T) {
 	}
 }
 
-// TestRepos_ListRepoNames_patterns tests the behavior of Repos.List when called with
-// a QueryPattern.
-func TestRepos_ListRepoNames_queryPattern(t *testing.T) {
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	createdRepos := []*types.Repo{
-		{Name: "a/b"},
-		{Name: "c/d"},
-		{Name: "e/f"},
-		{Name: "g/h"},
-	}
-	for _, repo := range createdRepos {
-		createRepo(ctx, t, db, repo)
-	}
-	tests := []struct {
-		q    query.Q
-		want []api.RepoName
-		err  string
-	}{
-		// These are the same tests as TestRepos_ListRepoNames_patterns, but in an
-		// expression form.
-		{
-			q:    "(a|c)",
-			want: []api.RepoName{"a/b", "c/d"},
-		},
-		{
-			q:    query.And("(a|c)", "b"),
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			q:    query.And("(a|c)", query.Not("d")),
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			q:    query.Not("(d|e)"),
-			want: []api.RepoName{"a/b", "g/h"},
-		},
-
-		// Some extra tests which test the pattern compiler
-		{
-			q:    "",
-			want: []api.RepoName{"a/b", "c/d", "e/f", "g/h"},
-		},
-		{
-			q:    "^a/b$",
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			// Should match only e/f, but pattern compiler doesn't handle this
-			// so matches nothing.
-			q:    "[a-zA-Z]/e",
-			want: nil,
-		},
-
-		// Test OR support
-		{
-			q:    query.Or(query.Not("(d|e)"), "d"),
-			want: []api.RepoName{"a/b", "c/d", "g/h"},
-		},
-
-		// Test deeply nested
-		{
-			q: query.Or(
-				query.And(
-					true,
-					query.Not(query.Or("a", "c"))),
-				query.And(query.Not("e"), query.Not("a"))),
-			want: []api.RepoName{"c/d", "e/f", "g/h"},
-		},
-
-		// Corner cases for Or
-		{
-			q:    query.Or(), // empty Or is false
-			want: nil,
-		},
-		{
-			q:    query.Or("a"),
-			want: []api.RepoName{"a/b"},
-		},
-
-		// Corner cases for And
-		{
-			q:    query.And(), // empty And is true
-			want: []api.RepoName{"a/b", "c/d", "e/f", "g/h"},
-		},
-		{
-			q:    query.And("a"),
-			want: []api.RepoName{"a/b"},
-		},
-		{
-			q:    query.And("a", "d"),
-			want: nil,
-		},
-
-		// Bad pattern
-		{
-			q:   query.And("a/b", ")*"),
-			err: "error parsing regexp",
-		},
-		// Only want strings
-		{
-			q:   query.And("a/b", 1),
-			err: "unexpected token",
-		},
-	}
-	for _, test := range tests {
-		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{
-			PatternQuery: test.q,
-		})
-		if err != nil {
-			if test.err == "" {
-				t.Fatal(err)
-			}
-			if !strings.Contains(err.Error(), test.err) {
-				t.Errorf("expected error to contain %q, got: %v", test.err, err)
-			}
-			continue
-		}
-		if test.err != "" {
-			t.Errorf("%s: expected error", query.Print(test.q))
-			continue
-		}
-		if got := repoNames(reposFromRepoNames(repos)); !reflect.DeepEqual(got, test.want) {
-			t.Errorf("%s: got repos %q, want %q", query.Print(test.q), got, test.want)
-		}
-	}
-}
-
-func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
+func TestRepos_ListMinimalRepos_queryAndPatternsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	wantErr := "Query and IncludePatterns/ExcludePattern options are mutually exclusive"
 
 	t.Parallel()
 	db := dbtest.NewDB(t)
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
-		_, err := Repos(db).ListRepoNames(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
+		_, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 
 	t.Run("Query and ExcludePattern", func(t *testing.T) {
-		_, err := Repos(db).ListRepoNames(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
+		_, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{Query: "x", ExcludePattern: "y"})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
 			t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 		}
 	})
 }
 
-func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
+func TestRepos_ListMinimalRepos_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
 
 	t.Parallel()
 	db := dbtest.NewDB(t)
-	_, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
+	_, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
 	if err == nil || !strings.Contains(err.Error(), wantErr) {
 		t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 	}
 }
 
-func TestRepos_ListRepoNames_useOr(t *testing.T) {
+func TestRepos_ListMinimalRepos_useOr(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1949,7 +1614,7 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []types.RepoName
+		want []types.MinimalRepo
 	}{
 		{"Archived or Forks", ReposListOptions{OnlyArchived: true, OnlyForks: true, UseOr: true}, repoNamesFromRepos(archivedAndForks)},
 		{"Archived or Forks Or Cloned", ReposListOptions{OnlyArchived: true, OnlyForks: true, OnlyCloned: true, UseOr: true}, repoNamesFromRepos(all)},
@@ -1957,7 +1622,7 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
+			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1966,7 +1631,7 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 	}
 }
 
-func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
+func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2002,7 +1667,7 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []types.RepoName
+		want []types.MinimalRepo
 	}{
 		{"Some", ReposListOptions{ExternalServiceIDs: []int64{service1.ID}}, repoNamesFromRepos(mine)},
 		{"Default", ReposListOptions{}, repoNamesFromRepos(append(mine, yours...))},
@@ -2011,7 +1676,7 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
+			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2022,7 +1687,7 @@ func TestRepos_ListRepoNames_externalServiceID(t *testing.T) {
 
 // This function tests for both individual uses of ExternalRepoIncludeContains,
 // ExternalRepoExcludeContains as well as combination of these two options.
-func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
+func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2119,7 +1784,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 	tests := []struct {
 		name string
 		opt  ReposListOptions
-		want []types.RepoName
+		want []types.MinimalRepo
 	}{
 		{
 			name: "only apply ExternalRepoIncludeContains",
@@ -2338,7 +2003,7 @@ func TestRepos_ListRepoNames_externalRepoContains(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListRepoNames(ctx, test.opt)
+			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2382,11 +2047,11 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []types.RepoName{
+	want := []types.MinimalRepo{
 		{ID: repo.ID, Name: repo.Name},
 	}
 
-	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID})
+	have, err := Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2395,12 +2060,12 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 		t.Fatalf(diff)
 	}
 
-	want = []types.RepoName{
+	want = []types.MinimalRepo{
 		{ID: repo.ID, Name: repo.Name},
 		{ID: otherRepo.ID, Name: otherRepo.Name},
 	}
 
-	have, err = Repos(db).ListRepoNames(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
+	have, err = Repos(db).ListMinimalRepos(ctx, ReposListOptions{UserID: user.ID, IncludeUserPublicRepos: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2408,53 +2073,6 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatalf(diff)
 	}
-}
-
-func TestRepos_RepoExternalServices(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-
-	services := types.MakeExternalServices()
-	service1 := services[0]
-	service2 := services[1]
-	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
-		t.Fatal(err)
-	}
-	if err := ExternalServices(db).Create(ctx, confGet, service2); err != nil {
-		t.Fatal(err)
-	}
-
-	repo1 := types.MakeGithubRepo(service1)
-	if err := Repos(db).Create(ctx, repo1); err != nil {
-		t.Fatal(err)
-	}
-
-	repo2 := types.MakeGitlabRepo(service2)
-	if err := Repos(db).Create(ctx, repo2); err != nil {
-		t.Fatal(err)
-	}
-
-	assertServices := func(repoID api.RepoID, want []*types.ExternalService) {
-		services, err := Repos(db).ExternalServices(ctx, repoID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if diff := cmp.Diff(want, services); diff != "" {
-			t.Fatal(diff)
-		}
-	}
-
-	assertServices(repo1.ID, []*types.ExternalService{service1})
-	assertServices(repo2.ID, []*types.ExternalService{service2})
 }
 
 func TestGetFirstRepoNamesByCloneURL(t *testing.T) {

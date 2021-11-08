@@ -66,7 +66,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 	}
 
 	var (
-		repos    = map[api.RepoID]types.RepoName{}
+		repos    = map[api.RepoID]types.MinimalRepo{}
 		filesMap = map[repoCommit]*fileStatsWork{}
 
 		run = parallel.NewRun(16)
@@ -76,7 +76,7 @@ func searchResultsStatsLanguages(ctx context.Context, matches []result.Match) ([
 	)
 
 	// Track the mapping of repo ID -> repo object as we iterate.
-	sawRepo := func(repo types.RepoName) {
+	sawRepo := func(repo types.MinimalRepo) {
 		if _, ok := repos[repo.ID]; !ok {
 			repos[repo.ID] = repo
 		}

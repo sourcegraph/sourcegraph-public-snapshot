@@ -1,0 +1,52 @@
+.annotated-search-input {
+    text {
+        font-family: var(--base-font-family);
+        fill: var(--body-color);
+        font-size: 0.75rem;
+    }
+
+    text.code {
+        font-family: var(--code-font-family);
+        white-space: pre;
+        fill: var(--search-query-text-color);
+    }
+
+    tspan.bold {
+        font-weight: 600;
+    }
+
+    tspan.filter {
+        fill: var(--search-filter-keyword-color);
+    }
+
+    tspan.meta-regexp-character-set {
+        /* from client/web/src/components/MonacoEditor.tsx */
+        fill: #a112ff;
+    }
+
+    tspan.meta-regexp-range-quantifier {
+        /* from client/web/src/components/MonacoEditor.tsx */
+        fill: #1098ad;
+    }
+
+    .search-icon {
+        color: var(--light-text);
+    }
+
+    .search-box {
+        fill: var(--body-bg);
+        stroke: var(--input-border-color);
+    }
+
+    .separator {
+        stroke: var(--border-color-2);
+    }
+
+    .arrow {
+        stroke: #a305e1; // $purple
+    }
+
+    .flip {
+        transform: scale(1, -1);
+    }
+}

@@ -190,11 +190,11 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
 	// When true, only include external services not under any namespace (i.e. owned
-	// by all site admins), and values of NamespaceUserID, NamespaceOrgID and
-	// ExcludeNamespaceUser are ignored.
+	// by all site admins), and values of ExcludeNamespaceUser, NamespaceUserID and
+	// NamespaceOrgID are ignored.
 	NoNamespace bool
-	// When true, will exclude external services under any user namespace, and
-	// values of NamespaceUserID and NamespaceOrgID are ignored.
+	// When true, will exclude external services under any user namespace, and the
+	// value of NamespaceUserID is ignored.
 	ExcludeNamespaceUser bool
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
@@ -215,10 +215,10 @@ type ExternalServicesListOptions struct {
 
 	// When true, only external services without has_webhooks set will be
 	// returned. For use by ExternalServiceWebhookMigrator only.
-	noCachedWebhooks bool
+	NoCachedWebhooks bool
 	// When true, records will be locked. For use by
 	// ExternalServiceWebhookMigrator only.
-	forUpdate bool
+	ForUpdate bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
@@ -230,14 +230,19 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 		}
 		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}
+
 	if o.NoNamespace {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
-	} else if o.ExcludeNamespaceUser {
-		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
-	} else if o.NamespaceUserID > 0 {
-		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
-	} else if o.NamespaceOrgID > 0 {
-		conds = append(conds, sqlf.Sprintf(`namespace_org_id = %d`, o.NamespaceOrgID))
+	} else {
+		if o.ExcludeNamespaceUser {
+			conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
+		} else if o.NamespaceUserID > 0 {
+			conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
+		}
+
+		if o.NamespaceOrgID > 0 {
+			conds = append(conds, sqlf.Sprintf(`namespace_org_id = %d`, o.NamespaceOrgID))
+		}
 	}
 	if len(o.Kinds) > 0 {
 		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
@@ -252,7 +257,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
 	}
-	if o.noCachedWebhooks {
+	if o.NoCachedWebhooks {
 		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
 	}
 	return conds
@@ -727,6 +732,16 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	e.ensureStore()
 
 	for _, s := range svcs {
+		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
+		// Cloud, we always want to enforce repository permissions using OAuth to
+		// prevent unexpected resource leaking.
+		if envvar.SourcegraphDotComMode() {
+			s.Config, err = upsertAuthorizationToExternalService(s.Kind, s.Config)
+			if err != nil {
+				return err
+			}
+		}
+
 		if err := e.recalculateFields(s, s.Config); err != nil {
 			return err
 		}
@@ -1260,7 +1275,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 
 	var forUpdate *sqlf.Query
-	if opt.forUpdate {
+	if opt.ForUpdate {
 		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
 	} else {
 		forUpdate = sqlf.Sprintf("")

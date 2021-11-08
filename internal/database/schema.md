@@ -79,6 +79,21 @@ Indexes:
 
 ```
 
+# Table "public.batch_spec_execution_cache_entries"
+```
+    Column    |           Type           | Collation | Nullable |                            Default                             
+--------------+--------------------------+-----------+----------+----------------------------------------------------------------
+ id           | bigint                   |           | not null | nextval('batch_spec_execution_cache_entries_id_seq'::regclass)
+ key          | text                     |           | not null | 
+ value        | text                     |           | not null | 
+ version      | integer                  |           | not null | 
+ last_used_at | timestamp with time zone |           |          | 
+ created_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.batch_spec_resolution_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                        Default                         
@@ -655,6 +670,7 @@ Check constraints:
  org_id              | integer |           |          | 
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
+    "external_service_repos_clone_url_idx" btree (clone_url)
     "external_service_repos_idx" btree (external_service_id, repo_id)
     "external_service_repos_org_id_idx" btree (org_id) WHERE org_id IS NOT NULL
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
@@ -724,6 +740,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    TABLE "webhook_logs" CONSTRAINT "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -1931,9 +1948,6 @@ Foreign-key constraints:
  updated_at    | timestamp with time zone |           | not null | now()
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
-    "sub_repo_perms_repo_id" btree (repo_id)
-    "sub_repo_perms_user_id" btree (user_id)
-    "sub_repo_perms_version" btree (version)
 Foreign-key constraints:
     "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -2191,6 +2205,27 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
+
+```
+
+# Table "public.webhook_logs"
+```
+       Column        |           Type           | Collation | Nullable |                 Default                  
+---------------------+--------------------------+-----------+----------+------------------------------------------
+ id                  | bigint                   |           | not null | nextval('webhook_logs_id_seq'::regclass)
+ received_at         | timestamp with time zone |           | not null | now()
+ external_service_id | integer                  |           |          | 
+ status_code         | integer                  |           | not null | 
+ request             | bytea                    |           | not null | 
+ response            | bytea                    |           | not null | 
+ encryption_key_id   | text                     |           | not null | 
+Indexes:
+    "webhook_logs_pkey" PRIMARY KEY, btree (id)
+    "webhook_logs_external_service_id_idx" btree (external_service_id)
+    "webhook_logs_received_at_idx" btree (received_at)
+    "webhook_logs_status_code_idx" btree (status_code)
+Foreign-key constraints:
+    "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 

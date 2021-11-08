@@ -62,6 +62,7 @@ var (
 			installCommand,
 			versionCommand,
 			secretCommand,
+			setupCommand,
 		},
 	}
 )

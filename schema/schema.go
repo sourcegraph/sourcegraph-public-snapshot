@@ -492,6 +492,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
+	WebhookLogKey          *EncryptionKey `json:"webhookLogKey,omitempty"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -570,6 +571,8 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
+	// EnableSubRepoPermissions description: Enables sub-repo permission checking
+	EnableSubRepoPermissions bool `json:"enableSubRepoPermissions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
@@ -1448,8 +1451,6 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// AcceptSearchSuggestionOnEnter description: Whether the search bar should select completion suggestions when pressing enter
-	AcceptSearchSuggestionOnEnter *bool `json:"acceptSearchSuggestionOnEnter,omitempty"`
 	// ApiDocs description: Enables API documentation.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
@@ -1666,6 +1667,8 @@ type SiteConfiguration struct {
 	UserReposMaxPerSite int `json:"userRepos.maxPerSite,omitempty"`
 	// UserReposMaxPerUser description: The per user maximum number of repos that can be added by non site admins
 	UserReposMaxPerUser int `json:"userRepos.maxPerUser,omitempty"`
+	// WebhookLogging description: Configuration for logging incoming webhooks.
+	WebhookLogging *WebhookLogging `json:"webhook.logging,omitempty"`
 }
 
 // Step description: A command to run (as part of a sequence) in a repository branch to produce the required changes.
@@ -1732,6 +1735,14 @@ type VersionContextRevision struct {
 	Repo string `json:"repo"`
 	// Rev description: Branch, tag, or commit hash. "HEAD" or "" can be used for the default branch.
 	Rev string `json:"rev"`
+}
+
+// WebhookLogging description: Configuration for logging incoming webhooks.
+type WebhookLogging struct {
+	// Enabled description: Whether incoming webhooks are logged. If omitted, logging is enabled on sites without encryption. If one or more encryption keys are present, this setting must be enabled manually; as webhooks may contain sensitive data, admins of encrypted sites may want to enable webhook encryption via encryption.keys.webhookLogKey.
+	Enabled *bool `json:"enabled,omitempty"`
+	// Retention description: How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is "72h", or three days.
+	Retention string `json:"retention,omitempty"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
