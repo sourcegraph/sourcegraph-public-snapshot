@@ -198,38 +198,48 @@ func secureHeadersMiddleware(next http.Handler, policy crossOriginPolicy) http.H
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
-		// CORS
-		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
-		// to the incoming header URL. Otherwise use the configured CORS origin.
-		//
-		// Note: API users also rely on this codepath handling wildcards
-		// properly. For example, if Sourcegraph is behind a corporate VPN an
-		// admin may choose to set the CORS origin to "*" and would expect
-		// Sourcegraph to respond appropriately to any Origin request header:
-		//
-		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
-		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
-		//
-		headerOrigin := r.Header.Get("Origin")
-		isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
-
-		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-			if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
-				w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
-			}
-
-			if r.Method == "OPTIONS" {
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
-				w.WriteHeader(http.StatusOK)
-				return // do not invoke next handler
-			}
+		// Write CORS headers and potentially handle the requests if it is a OPTIONS request.
+		if handled := handleCORSRequest(w, r); handled {
+			return // request was handled, do not invoke next handler
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// handleCORSRequest handles checking the Origin header and writing CORS Access-Control-Allow-*
+// headers. In some cases, it may handle OPTIONS CORS preflight requests in which case the function
+// returns true and the request should be considered fully served.
+func handleCORSRequest(w http.ResponseWriter, r *http.Request) (handled bool) {
+	// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
+	// to the incoming header URL. Otherwise use the configured CORS origin.
+	//
+	// Note: API users also rely on this codepath handling wildcards
+	// properly. For example, if Sourcegraph is behind a corporate VPN an
+	// admin may choose to set the CORS origin to "*" and would expect
+	// Sourcegraph to respond appropriately to any Origin request header:
+	//
+	// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
+	// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+	//
+	headerOrigin := r.Header.Get("Origin")
+	isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
+
+	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
+			w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
+		}
+
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+			w.WriteHeader(http.StatusOK)
+			return true // we handled the request
+		}
+	}
+	return false
 }
 
 // isTrustedOrigin returns whether the HTTP request's Origin is trusted to initiate authenticated
