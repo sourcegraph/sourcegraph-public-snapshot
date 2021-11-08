@@ -36,6 +36,7 @@ add('List of batch changes', () => (
             <BatchChangeListPage
                 {...props}
                 headingElement="h1"
+                canCreate={true}
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesLicensed}
             />
@@ -49,6 +50,7 @@ add('Licensing not enforced', () => (
             <BatchChangeListPage
                 {...props}
                 headingElement="h1"
+                canCreate={true}
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesNotLicensed}
             />
@@ -78,6 +80,7 @@ add('No batch changes', () => {
                 <BatchChangeListPage
                     {...props}
                     headingElement="h1"
+                    canCreate={true}
                     queryBatchChanges={queryBatchChanges}
                     areBatchChangesLicensed={batchChangesLicensed}
                 />
@@ -86,33 +89,45 @@ add('No batch changes', () => {
     )
 })
 
-add('All batch changes tab empty', () => {
-    const queryBatchChanges = useCallback(
-        () =>
-            of({
-                batchChanges: {
-                    totalCount: 0,
-                    nodes: [],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                },
-                totalCount: 0,
-            }),
-        []
-    )
-    return (
-        <WebStory>
-            {props => (
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    queryBatchChanges={queryBatchChanges}
-                    areBatchChangesLicensed={batchChangesLicensed}
-                    openTab="batchChanges"
-                />
-            )}
-        </WebStory>
-    )
-})
+const QUERY_NO_BATCH_CHANGES = () =>
+    of({
+        batchChanges: {
+            totalCount: 0,
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+        },
+        totalCount: 0,
+    })
+
+add('All batch changes tab empty', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeListPage
+                {...props}
+                headingElement="h1"
+                canCreate={true}
+                queryBatchChanges={QUERY_NO_BATCH_CHANGES}
+                areBatchChangesLicensed={batchChangesLicensed}
+                openTab="batchChanges"
+            />
+        )}
+    </WebStory>
+))
+
+add('All batch changes tab empty, cannot create', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeListPage
+                {...props}
+                headingElement="h1"
+                canCreate={false}
+                queryBatchChanges={QUERY_NO_BATCH_CHANGES}
+                areBatchChangesLicensed={batchChangesLicensed}
+                openTab="batchChanges"
+            />
+        )}
+    </WebStory>
+))
