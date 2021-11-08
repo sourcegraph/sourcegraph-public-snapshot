@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -29,7 +28,7 @@ func (r *RepositoryResolver) Contributors(args *struct {
 }
 
 type repositoryContributorConnectionResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	args  repositoryContributorsArgs
 	first *int32
 
@@ -71,7 +70,7 @@ func (r *repositoryContributorConnectionResolver) Nodes(ctx context.Context) ([]
 	resolvers := make([]*repositoryContributorResolver, len(results))
 	for i, contributor := range results {
 		resolvers[i] = &repositoryContributorResolver{
-			db:    database.NewDB(r.db),
+			db:    r.db,
 			name:  contributor.Name,
 			email: contributor.Email,
 			count: contributor.Count,
