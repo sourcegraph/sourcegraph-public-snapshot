@@ -5646,6 +5646,256 @@ Query: `sum by(app) (up{app=~".*query-runner"}) / count by (app) (up{app=~".*que
 
 <br />
 
+## Redis
+
+<p class="subtitle">Metrics from both redis databases.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/redis/redis` on your Sourcegraph instance.
+
+### Redis: Redis Store
+
+#### redis: redis-store_up
+
+<p class="subtitle">Redis-store availability</p>
+
+A value of 1 indicates the service is currently running
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-store-up) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `redis_up{app="redis-store"}`
+
+</details>
+
+<br />
+
+### Redis: Redis Cache
+
+#### redis: redis-cache_up
+
+<p class="subtitle">Redis-cache availability</p>
+
+A value of 1 indicates the service is currently running
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-cache-up) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100100` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `redis_up{app="redis-cache"}`
+
+</details>
+
+<br />
+
+### Redis: Provisioning indicators (not available on server)
+
+#### redis: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100200` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^redis-cache.*"}[1d])`
+
+</details>
+
+<br />
+
+#### redis: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">Container memory usage (1d maximum) by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100201` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-cache.*"}[1d])`
+
+</details>
+
+<br />
+
+#### redis: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100210` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^redis-cache.*"}[5m])`
+
+</details>
+
+<br />
+
+#### redis: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">Container memory usage (5m maximum) by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100211` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-cache.*"}[5m])`
+
+</details>
+
+<br />
+
+### Redis: Provisioning indicators (not available on server)
+
+#### redis: provisioning_container_cpu_usage_long_term
+
+<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100300` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^redis-store.*"}[1d])`
+
+</details>
+
+<br />
+
+#### redis: provisioning_container_memory_usage_long_term
+
+<p class="subtitle">Container memory usage (1d maximum) by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100301` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-store.*"}[1d])`
+
+</details>
+
+<br />
+
+#### redis: provisioning_container_cpu_usage_short_term
+
+<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100310` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^redis-store.*"}[5m])`
+
+</details>
+
+<br />
+
+#### redis: provisioning_container_memory_usage_short_term
+
+<p class="subtitle">Container memory usage (5m maximum) by instance</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100311` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^redis-store.*"}[5m])`
+
+</details>
+
+<br />
+
+### Redis: Kubernetes monitoring (only available on Kubernetes)
+
+#### redis: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-pods-available-percentage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100400` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*redis-cache"}) / count by (app) (up{app=~".*redis-cache"}) * 100`
+
+</details>
+
+<br />
+
+### Redis: Kubernetes monitoring (only available on Kubernetes)
+
+#### redis: pods_available_percentage
+
+<p class="subtitle">Percentage pods available</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-pods-available-percentage) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis/redis?viewPanel=100500` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum by(app) (up{app=~".*redis-store"}) / count by (app) (up{app=~".*redis-store"}) * 100`
+
+</details>
+
+<br />
+
 ## Worker
 
 <p class="subtitle">Manages background processes.</p>
