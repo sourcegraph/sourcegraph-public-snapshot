@@ -52,7 +52,7 @@ type GitTreeEntryResolver struct {
 }
 
 func NewGitTreeEntryResolver(commit *GitCommitResolver, db database.DB, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: database.NewDB(db), commit: commit, stat: stat}
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }

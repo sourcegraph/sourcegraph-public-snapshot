@@ -49,7 +49,7 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	db := database.NewDB(nil)
+	db := dbmock.NewMockDB()
 	resetMocks()
 	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	RunTests(t, []*Test{
@@ -233,7 +233,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -282,7 +282,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -335,7 +335,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -391,7 +391,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, dbmock.NewMockDB()),
 			Query: `
 			{
 				affiliatedRepositories(

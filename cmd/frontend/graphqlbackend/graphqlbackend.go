@@ -607,7 +607,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(database.NewDB(r.db), repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
