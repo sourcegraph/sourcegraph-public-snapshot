@@ -163,7 +163,7 @@ To set the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
-func HandleResetPasswordCode(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleResetPasswordCode(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -188,7 +188,7 @@ func HandleResetPasswordCode(db dbutil.DB) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		success, err := database.Users(db).SetPassword(ctx, params.UserID, params.Code, params.Password)
+		success, err := db.Users().SetPassword(ctx, params.UserID, params.Code, params.Password)
 		if err != nil {
 			httpLogAndError(w, "Unexpected error", http.StatusInternalServerError, "err", err)
 			return
