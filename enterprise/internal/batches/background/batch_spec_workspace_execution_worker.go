@@ -10,6 +10,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -126,13 +127,23 @@ func deleteAccessToken(ctx context.Context, batchesStore *store.Store, tokenID i
 
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions, fn markFinal) (_ bool, err error) {
+func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
 	batchesStore := store.New(s.Store.Handle().DB(), s.observationContext, nil)
 	tx, err := batchesStore.Transact(ctx)
 	if err != nil {
 		return false, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		// If we failed to mark the job as final, we fall back to the
+		// non-wrapped functions so that the job does get marked as
+		// final/errored if, e.g., deleting the access token failed.
+		err = tx.Done(err)
+		if err != nil {
+			log15.Error("marking job as final failed, falling back to base method", "err", err)
+			// Note: we don't use the transaction.
+			ok, err = fn(ctx, s.Store)
+		}
+	}()
 
 	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id)})
 	if err != nil {
@@ -164,13 +175,13 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, failureMessage, options, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
+	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
 		return tx.MarkErrored(ctx, id, failureMessage, options)
 	})
 }
 
 func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, failureMessage, options, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
+	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store) (bool, error) {
 		return tx.MarkFailed(ctx, id, failureMessage, options)
 	})
 }
