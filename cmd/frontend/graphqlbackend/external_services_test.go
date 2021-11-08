@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1053,18 +1052,17 @@ func TestExternalServices(t *testing.T) {
 }
 
 func TestExternalServices_PageInfo(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	cmpOpts := cmp.AllowUnexported(graphqlutil.PageInfo{})
 	tests := []struct {
 		name         string
 		opt          database.ExternalServicesListOptions
-		mockList     func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+		mockList     func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		mockCount    func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error)
 		wantPageInfo *graphqlutil.PageInfo
 	}{
 		{
 			name: "no limit set",
-			mockList: func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return []*types.ExternalService{{ID: 1}}, nil
 			},
 			wantPageInfo: graphqlutil.HasNextPage(false),
@@ -1076,7 +1074,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			mockList: func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return []*types.ExternalService{{ID: 1}}, nil
 			},
 			wantPageInfo: graphqlutil.HasNextPage(false),
@@ -1088,7 +1086,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 					Limit: 1,
 				},
 			},
-			mockList: func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return []*types.ExternalService{{ID: 1}}, nil
 			},
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
@@ -1103,7 +1101,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 					Limit: 1,
 				},
 			},
-			mockList: func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return []*types.ExternalService{{ID: 1}}, nil
 			},
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
@@ -1114,14 +1112,15 @@ func TestExternalServices_PageInfo(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			database.Mocks.ExternalServices.List = test.mockList
-			database.Mocks.ExternalServices.Count = test.mockCount
-			defer func() {
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.ListFunc.SetDefaultHook(test.mockList)
+			externalServices.CountFunc.SetDefaultHook(test.mockCount)
+
+			db := dbmock.NewMockDB()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			r := &externalServiceConnectionResolver{
-				db:  database.NewDB(db),
+				db:  db,
 				opt: test.opt,
 			}
 			pageInfo, err := r.PageInfo(context.Background())
