@@ -50,8 +50,10 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
-// A Pager returns a page of resolved repositories given a cursor.
+// A Pager implements paginated repository resolution.
 type Pager interface {
+	// Paginate calls the given callback with each page of resolved repositories. If the callback
+	// returns an error, Paginate will abort and return that error.
 	Paginate(context.Context, func(*Resolved) error) error
 }
 
@@ -135,8 +137,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	if err != nil {
 		return Resolved{}, err
 	}
-
-	tr.LazyPrintf("Repos.List - start")
 
 	options := database.ReposListOptions{
 		IncludePatterns: includePatterns,
