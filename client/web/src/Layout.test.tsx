@@ -9,6 +9,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
+import { GlobalStoreProvider } from './stores/global'
 
 jest.mock('./theme', () => ({
     useTheme: () => ({
@@ -58,14 +59,16 @@ describe('Layout', () => {
         const setParsedSearchQuery = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    setParsedSearchQuery={setParsedSearchQuery}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        setParsedSearchQuery={setParsedSearchQuery}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -82,14 +85,16 @@ describe('Layout', () => {
         const setParsedSearchQuery = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    setParsedSearchQuery={setParsedSearchQuery}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        setParsedSearchQuery={setParsedSearchQuery}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -105,14 +110,16 @@ describe('Layout', () => {
         const setParsedSearchQuery = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    setParsedSearchQuery={setParsedSearchQuery}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        setParsedSearchQuery={setParsedSearchQuery}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -129,15 +136,17 @@ describe('Layout', () => {
         const setPatternTypeSpy = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        patternType={SearchPatternType.literal}
+                        setPatternType={setPatternTypeSpy}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -154,15 +163,17 @@ describe('Layout', () => {
         const setPatternTypeSpy = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.regexp}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        patternType={SearchPatternType.regexp}
+                        setPatternType={setPatternTypeSpy}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -178,15 +189,17 @@ describe('Layout', () => {
         const setPatternTypeSpy = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    patternType={SearchPatternType.literal}
-                    setPatternType={setPatternTypeSpy}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        patternType={SearchPatternType.literal}
+                        setPatternType={setPatternTypeSpy}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -202,15 +215,17 @@ describe('Layout', () => {
         const setCaseSensitivitySpy = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        caseSensitive={false}
+                        setCaseSensitivity={setCaseSensitivitySpy}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -227,15 +242,17 @@ describe('Layout', () => {
         const setCaseSensitivitySpy = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={true}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        caseSensitive={true}
+                        setCaseSensitivity={setCaseSensitivitySpy}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 
@@ -251,15 +268,17 @@ describe('Layout', () => {
         const setCaseSensitivitySpy = sinon.spy()
 
         const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    caseSensitive={false}
-                    setCaseSensitivity={setCaseSensitivitySpy}
-                />
-            </BrowserRouter>,
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <Layout
+                        {...defaultProps}
+                        history={history}
+                        location={history.location}
+                        caseSensitive={false}
+                        setCaseSensitivity={setCaseSensitivitySpy}
+                    />
+                </BrowserRouter>
+            </GlobalStoreProvider>,
             { attachTo: document.querySelector('#root') as HTMLElement }
         )
 

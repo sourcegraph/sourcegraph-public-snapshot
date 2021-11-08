@@ -24,6 +24,7 @@ import {
 import { SearchResult } from '../../components/SearchResult'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { GlobalStoreProvider } from '../../stores/global'
 import * as helpers from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
@@ -70,9 +71,11 @@ describe('StreamingSearchResults', () => {
 
     function render(component: React.ReactElement<StreamingSearchResultsProps>) {
         return mount(
-            <BrowserRouter>
-                <MockedTestProvider mocks={revisionsMockResponses}>{component}</MockedTestProvider>
-            </BrowserRouter>
+            <GlobalStoreProvider>
+                <BrowserRouter>
+                    <MockedTestProvider mocks={revisionsMockResponses}>{component}</MockedTestProvider>
+                </BrowserRouter>
+            </GlobalStoreProvider>
         )
     }
 
