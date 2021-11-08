@@ -43,7 +43,7 @@ type Resolved struct {
 
 	// Next points to the next page of resolved repository revisions. It will
 	// be nil if there are no more pages left.
-	Next types.Cursors
+	Next types.MultiCursor
 }
 
 func (r *Resolved) String() string {
@@ -179,7 +179,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	var next types.Cursors
+	var next types.MultiCursor
 	if len(repos) == limit+1 { // Do we have a next page?
 		last := repos[len(repos)-1]
 		for _, o := range options.OrderBy {

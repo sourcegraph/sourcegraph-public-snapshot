@@ -352,7 +352,7 @@ func TestResolverPaginate(t *testing.T) {
 				{
 					RepoRevs: all.RepoRevs[:3],
 					RepoSet:  setOf(all.RepoRevs[:3]),
-					Next: types.Cursors{
+					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
 					},
@@ -367,7 +367,7 @@ func TestResolverPaginate(t *testing.T) {
 			name: "with limit 3 and cursor",
 			opts: search.RepoOptions{
 				Limit: 3,
-				Cursors: types.Cursors{
+				Cursors: types.MultiCursor{
 					{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 					{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
 				},
