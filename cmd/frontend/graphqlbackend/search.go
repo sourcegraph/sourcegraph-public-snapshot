@@ -278,10 +278,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		tr.Finish()
 	}()
 
-	// TODO(tsenart)
-	// 	  Move per-request caching to searchrepos.Pager, and make the cache key the RepoOptions struct
-	//    (including the Cursor field). Once that is done, we can get rid of this `resolveRepositories`
-	//    method which only adds caching around searchrepos.Resolver.
+	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
+	//  which are the last call sites of resolveRepositories (which does caching).
 	if options.CacheLookup {
 		// Cache if opts are empty, so that multiple calls to resolveRepositories only
 		// hit the database once.
@@ -330,8 +328,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
-	// TODO(tsenart): Move this to use a searchrepos.Pager directly and to not do any file path
-	//  suggestions if more than 1 repo filters are defined.
+	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
+	//  which are the last call sites of resolveRepositories (which does caching).
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
