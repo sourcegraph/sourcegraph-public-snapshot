@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -74,7 +74,7 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := dbmock.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
@@ -84,7 +84,7 @@ func TestResolverTo(t *testing.T) {
 		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: database.NewDB(db)},
+		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&repositorySuggestionResolver{},

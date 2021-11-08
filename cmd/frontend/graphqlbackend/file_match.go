@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -14,7 +13,7 @@ type FileMatchResolver struct {
 	result.FileMatch
 
 	RepoResolver *RepositoryResolver
-	db           dbutil.DB
+	db           database.DB
 }
 
 // Equal provides custom comparison which is used by go-cmp
@@ -39,7 +38,7 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 
 func (fm *FileMatchResolver) Commit() *GitCommitResolver {
 	return &GitCommitResolver{
-		db:           database.NewDB(fm.db),
+		db:           fm.db,
 		repoResolver: fm.RepoResolver,
 		oid:          GitObjectID(fm.CommitID),
 		inputRev:     fm.InputRev,
