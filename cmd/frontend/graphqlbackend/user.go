@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -20,41 +21,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func (r *schemaResolver) User(ctx context.Context, args struct {
-	Username *string
-	Email    *string
-}) (*UserResolver, error) {
+func (r *schemaResolver) User(
+	ctx context.Context,
+	args struct {
+		Username *string
+		Email    *string
+	},
+) (*UserResolver, error) {
+	var err error
+	var user *types.User
 	switch {
 	case args.Username != nil:
-		user, err := database.Users(r.db).GetByUsername(ctx, *args.Username)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				return nil, nil
-			}
-			return nil, err
-		}
-		return NewUserResolver(r.db, user), nil
+		user, err = database.Users(r.db).GetByUsername(ctx, *args.Username)
 
 	case args.Email != nil:
-		// 🚨 SECURITY: Only site admins are allowed to look up by email address on Sourcegraph.com, for
-		// user privacy reasons.
+		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
+		// Sourcegraph.com, for user privacy reasons.
 		if envvar.SourcegraphDotComMode() {
 			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			}
 		}
-		user, err := database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
-		if err != nil {
-			if errcode.IsNotFound(err) {
-				return nil, nil
-			}
-			return nil, err
-		}
-		return NewUserResolver(r.db, user), nil
+		user, err = database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
 
 	default:
-		return nil, errors.New("must specify either username or email to look up user")
+		return nil, errors.New("must specify either username or email to look up a user")
 	}
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return NewUserResolver(r.db, user), nil
 }
 
 // UserResolver implements the GraphQL User type.
@@ -155,10 +154,18 @@ func (r *UserResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's settings, because they
-	// may contain secrets or other sensitive data.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only the authenticated user can view their settings on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+		// settings, because they may contain secrets or other sensitive data.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
@@ -282,7 +289,15 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 }
 
 func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); errcode.IsUnauthorized(err) {
+	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
+	// Sourcegraph.com.
+	var err error
+	if envvar.SourcegraphDotComMode() {
+		err = backend.CheckSameUser(ctx, r.user.ID)
+	} else {
+		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID)
+	}
+	if errcode.IsUnauthorized(err) {
 		return false, nil
 	} else if err != nil {
 		return false, err

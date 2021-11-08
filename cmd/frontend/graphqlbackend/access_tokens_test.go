@@ -164,8 +164,8 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
 						Path:          []interface{}{"createAccessToken"},
-						Message:       "Must be authenticated as user with id 1",
-						ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+						Message:       "must be authenticated as user with id 1",
+						ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 					},
 				},
 			},

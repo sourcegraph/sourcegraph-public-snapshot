@@ -106,7 +106,7 @@ func TestResolverTo(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+		log15.Root().SetHandler(log15.DiscardHandler())
 		log.SetOutput(io.Discard)
 	}
 	os.Exit(m.Run())
@@ -302,8 +302,8 @@ func TestAffiliatedRepositories(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"affiliatedRepositories"},
-					Message:       "Must be authenticated as user with id 1",
-					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", 1)},
+					Message:       "must be authenticated as user with id 1",
+					ResolverError: &backend.InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", 1)},
 				},
 			},
 		},
