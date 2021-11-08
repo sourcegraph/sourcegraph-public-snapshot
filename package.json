@@ -46,7 +46,7 @@
     "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
     "build-browser-extension": "yarn --cwd client/browser run build",
     "install:sg": "dev/sg/install.sh",
-    "optimize-svg-assets": "svgo ui/assets/img --multipass --config=\"./svgo.config.js\""
+    "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\""
   },
   "browserslist": [
     "last 1 version",

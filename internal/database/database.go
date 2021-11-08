@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -14,6 +15,7 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
+
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	EventLogs() EventLogStore
@@ -36,112 +38,140 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
-}
 
-// NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
-// that has constructor methods for the more specialized stores.
-func NewDB(inner dbutil.DB) DB {
-	return &db{inner}
-}
-
-type db struct {
-	dbutil.DB
+	Transact(context.Context) (DB, error)
+	Done(error) error
 }
 
 var _ DB = (*db)(nil)
 
+// NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
+// that has constructor methods for the more specialized stores.
+func NewDB(inner dbutil.DB) DB {
+	return &db{basestore.NewWithDB(inner, sql.TxOptions{})}
+}
+
+type db struct {
+	*basestore.Store
+}
+
+func (d *db) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+	return d.Handle().DB().QueryContext(ctx, q, args...)
+}
+
+func (d *db) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
+	return d.Handle().DB().ExecContext(ctx, q, args...)
+
+}
+
+func (d *db) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
+	return d.Handle().DB().QueryRowContext(ctx, q, args...)
+}
+
+func (d *db) Transact(ctx context.Context) (DB, error) {
+	tx, err := d.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &db{tx}, nil
+}
+
+func (d *db) Done(err error) error {
+	return d.Store.Done(err)
+}
+
 func (d *db) AccessTokens() AccessTokenStore {
-	return AccessTokens(d.DB)
+	return AccessTokensWith(d.Store)
 }
 
 func (d *db) Authz() AuthzStore {
-	return Authz(d.DB)
+	return AuthzWith(d.Store)
 }
 
 func (d *db) EventLogs() EventLogStore {
-	return EventLogs(d.DB)
+	return EventLogsWith(d.Store)
 }
 
 func (d *db) ExternalServices() ExternalServiceStore {
-	return ExternalServices(d.DB)
+	return ExternalServicesWith(d.Store)
 }
 
 func (d *db) FeatureFlags() FeatureFlagStore {
-	return FeatureFlags(d.DB)
+	return FeatureFlagsWith(d.Store)
 }
 
 func (d *db) Namespaces() NamespaceStore {
-	return Namespaces(d.DB)
+	return NamespacesWith(d.Store)
 }
 
 func (d *db) OrgInvitations() OrgInvitationStore {
-	return OrgInvitations(d.DB)
+	return OrgInvitationsWith(d.Store)
 }
 
 func (d *db) OrgMembers() OrgMemberStore {
-	return OrgMembers(d.DB)
+	return OrgMembersWith(d.Store)
 }
 
 func (d *db) Orgs() OrgStore {
-	return Orgs(d.DB)
+	return OrgsWith(d.Store)
 }
 
 func (d *db) Phabricator() PhabricatorStore {
-	return Phabricator(d.DB)
+	return PhabricatorWith(d.Store)
 }
 
 func (d *db) Repos() RepoStore {
-	return Repos(d.DB)
+	return ReposWith(d.Store)
 }
 
 func (d *db) SavedSearches() SavedSearchStore {
-	return SavedSearches(d.DB)
+	return SavedSearchesWith(d.Store)
 }
 
 func (d *db) SearchContexts() SearchContextsStore {
-	return SearchContexts(d.DB)
+	return SearchContextsWith(d.Store)
 }
 
 func (d *db) Settings() SettingsStore {
-	return Settings(d.DB)
+	return SettingsWith(d.Store)
 }
 
 func (d *db) SubRepoPerms() SubRepoPermsStore {
-	return SubRepoPerms(d.DB)
+	return SubRepoPermsWith(d.Store)
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
-	return &temporarySettingsStore{Store: basestore.NewWithDB(d.DB, sql.TxOptions{})}
+	return &temporarySettingsStore{Store: basestore.NewWithHandle(d.Store.Handle())}
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
-	return UserCredentials(d.DB, key)
+	return UserCredentialsWith(d.Store, key)
 }
 
 func (d *db) UserEmails() UserEmailsStore {
-	return UserEmails(d.DB)
+	return UserEmailsWith(d.Store)
 }
 
 func (d *db) UserExternalAccounts() UserExternalAccountsStore {
-	return ExternalAccounts(d.DB)
+	return ExternalAccountsWith(d.Store)
 }
 
 func (d *db) UserPublicRepos() UserPublicRepoStore {
-	return UserPublicRepos(d.DB)
+	return UserPublicReposWith(d.Store)
 }
 
 func (d *db) Users() UserStore {
-	return Users(d.DB)
+	return UsersWith(d.Store)
 }
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
-	return WebhookLogs(d.DB, key)
+	return WebhookLogsWith(d.Store, key)
 }
 
 func (d *db) Unwrap() dbutil.DB {
 	// Recursively unwrap in case we ever call `database.NewDB()` with a `database.DB`
-	if unwrapper, ok := d.DB.(dbutil.Unwrapper); ok {
+	if unwrapper, ok := d.Handle().DB().(dbutil.Unwrapper); ok {
 		return unwrapper.Unwrap()
 	}
-	return d.DB
+	return d.Handle().DB()
 }

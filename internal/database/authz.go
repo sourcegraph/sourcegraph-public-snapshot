@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -59,6 +60,10 @@ type AuthzStore interface {
 // Authz instantiates and returns a new AuthzStore. In the OSS version, this is a no-op AuthzStore, but
 // this constructor is overridden in enterprise versions.
 var Authz = func(db dbutil.DB) AuthzStore {
+	return &authzStore{}
+}
+
+var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
 	return &authzStore{}
 }
 

@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -47,7 +46,7 @@ func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*graphqlb
 	r.repoOnce.Do(func() {
 		var repo *types.Repo
 		repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
-		r.repo = graphqlbackend.NewRepositoryResolver(database.NewDB(r.store.DB()), repo)
+		r.repo = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)
 	})
 	return r.repo, r.repoErr
 }
