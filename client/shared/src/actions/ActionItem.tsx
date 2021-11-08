@@ -174,7 +174,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     {this.props.action.actionItem.iconURL && (
                         <img
                             src={this.props.action.actionItem.iconURL}
-                            alt={this.props.action.actionItem.iconDescription}
+                            alt={this.props.action.actionItem.iconDescription || ''}
                             className={this.props.iconClassName}
                         />
                     )}
@@ -192,7 +192,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     {this.props.action.iconURL && (
                         <img
                             src={this.props.action.iconURL}
-                            alt={this.props.action.description}
+                            alt={this.props.action.description || ''}
                             className={this.props.iconClassName}
                         />
                     )}{' '}

@@ -83,6 +83,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="navItem"
       >
         <button
+          aria-label="Hide more matches on all results"
+          aria-live="polite"
           className="btn btn-sm btn-outline-secondary text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
@@ -216,6 +218,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="navItem"
       >
         <button
+          aria-label="Hide more matches on all results"
+          aria-live="polite"
           className="btn btn-sm btn-outline-secondary text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
@@ -511,6 +515,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="navItem"
       >
         <button
+          aria-label="Hide more matches on all results"
+          aria-live="polite"
           className="btn btn-sm btn-outline-secondary text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
@@ -647,6 +653,8 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="navItem"
       >
         <button
+          aria-label="Hide more matches on all results"
+          aria-live="polite"
           className="btn btn-sm btn-outline-secondary text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
@@ -942,6 +950,8 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         className="navItem"
       >
         <button
+          aria-label="Hide more matches on all results"
+          aria-live="polite"
           className="btn btn-sm btn-outline-secondary text-decoration-none"
           data-tooltip="Hide more matches on all results"
           onClick={[Function]}
