@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 )
@@ -92,7 +91,7 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	commit *GitCommitResolver
 	*result.SymbolMatch
 }
