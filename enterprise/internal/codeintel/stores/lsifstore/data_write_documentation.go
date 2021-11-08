@@ -526,41 +526,61 @@ func (s *Store) replaceSearchRecords(
 	}
 
 	inserter := func(inserter *batch.Inserter) error {
-		handler := func(node *precise.DocumentationNode) error {
-			if node.Documentation.SearchKey == "" {
-				return nil
-			}
+		// handler := func(node *precise.DocumentationNode) error {
+		// 	if node.Documentation.SearchKey == "" {
+		// 		return nil
+		// 	}
 
-			detail := apidocs.Truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
-			label := apidocs.Truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
-			tagsID := tagIDs[normalizeTags(node.Documentation.Tags)]
+		// 	detail := apidocs.Truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
+		// 	label := apidocs.Truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
+		// 	tagsID := tagIDs[normalizeTags(node.Documentation.Tags)]
+
+		// 	if err := inserter.Insert(
+		// 		ctx,
+		// 		node.PathID, // path_id
+		// 		detail,      // detail
+		// 		tagsID,      // tags_id
+
+		// 		node.Documentation.SearchKey,                                            // search_key
+		// 		apidocs.TextSearchVector(node.Documentation.SearchKey),                  // search_key_tsv
+		// 		apidocs.TextSearchVector(apidocs.Reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
+
+		// 		label,                           // label
+		// 		apidocs.TextSearchVector(label), // label_tsv
+		// 		apidocs.TextSearchVector(apidocs.Reverse(label)), // label_reverse_tsv
+		// 	); err != nil {
+		// 		return err
+		// 	}
+
+		// 	return nil
+		// }
+
+		// for _, page := range pages {
+		// 	if err := walkDocumentationNode(page.Tree, handler); err != nil {
+		// 		return err
+		// 	}
+		// }
+
+		documents := apidocs.EncodeDocuments(pages)
+		for _, document := range documents {
+			// TODO: Oh F tags.. hmm
+			var tagsID int
+			for _, v := range tagIDs {
+				tagsID = v
+				break
+			}
 
 			if err := inserter.Insert(
 				ctx,
-				node.PathID, // path_id
-				detail,      // detail
-				tagsID,      // tags_id
-
-				node.Documentation.SearchKey,                                            // search_key
-				apidocs.TextSearchVector(node.Documentation.SearchKey),                  // search_key_tsv
-				apidocs.TextSearchVector(apidocs.Reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
-
-				label,                           // label
-				apidocs.TextSearchVector(label), // label_tsv
-				apidocs.TextSearchVector(apidocs.Reverse(label)), // label_reverse_tsv
+				document.PathID, // TODO: uhh, even necessary? no, delete
+				tagsID,
+				document.Encoded,
+				apidocs.TextSearchVector(document.Encoded),                  // document_tsv
+				apidocs.TextSearchVector(apidocs.Reverse(document.Encoded)), // document_reverse_tsv
 			); err != nil {
 				return err
 			}
-
-			return nil
 		}
-
-		for _, page := range pages {
-			if err := walkDocumentationNode(page.Tree, handler); err != nil {
-				return err
-			}
-		}
-
 		return nil
 	}
 
@@ -571,14 +591,10 @@ func (s *Store) replaceSearchRecords(
 		"t_lsif_data_docs_search_"+tableSuffix,
 		[]string{
 			"path_id",
-			"detail",
 			"tags_id",
-			"search_key",
-			"search_key_tsv",
-			"search_key_reverse_tsv",
-			"label",
-			"label_tsv",
-			"label_reverse_tsv",
+			"document",
+			"document_tsv",
+			"document_reverse_tsv",
 		},
 		inserter,
 	); err != nil {
@@ -617,14 +633,10 @@ const insertSearchRecordsTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
 CREATE TEMPORARY TABLE t_lsif_data_docs_search_$SUFFIX (
 	path_id TEXT NOT NULL,
-	detail TEXT NOT NULL,
 	tags_id INTEGER NOT NULL,
-	search_key TEXT NOT NULL,
-	search_key_tsv TSVECTOR NOT NULL,
-	search_key_reverse_tsv TSVECTOR NOT NULL,
-	label TEXT NOT NULL,
-	label_tsv TSVECTOR NOT NULL,
-	label_reverse_tsv TSVECTOR NOT NULL
+	document TEXT NOT NULL,
+	document_tsv TSVECTOR NOT NULL,
+	document_reverse_tsv TSVECTOR NOT NULL
 ) ON COMMIT DROP
 `
 
@@ -637,14 +649,10 @@ INSERT INTO lsif_data_docs_search_$SUFFIX (
 	repo_name_id,
 	lang_name_id,
 	path_id,
-	detail,
 	tags_id,
-	search_key,
-	search_key_tsv,
-	search_key_reverse_tsv,
-	label,
-	label_tsv,
-	label_reverse_tsv
+	document,
+	document_tsv,
+	document_reverse_tsv
 )
 SELECT
 	%s, -- repo_id
@@ -653,14 +661,10 @@ SELECT
 	%s, -- repo_name_id
 	%s, -- lang_name_id
 	source.path_id,
-	source.detail,
 	source.tags_id,
-	source.search_key,
-	source.search_key_tsv,
-	source.search_key_reverse_tsv,
-	source.label,
-	source.label_tsv,
-	source.label_reverse_tsv
+	source.document,
+	source.document_tsv,
+	source.document_reverse_tsv
 FROM t_lsif_data_docs_search_$SUFFIX source
 `
 
@@ -675,26 +679,10 @@ INSERT INTO lsif_data_docs_search_current_$SUFFIX (
 VALUES (%s, %s, %s, %s)
 `
 
-func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
-	if err := f(node); err != nil {
-		return err
-	}
-
-	for _, child := range node.Children {
-		if child.Node != nil {
-			if err := walkDocumentationNode(child.Node, f); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 func gatherTags(pages []*precise.DocumentationPageData) []string {
 	tagMap := map[string]struct{}{}
 	for _, page := range pages {
-		_ = walkDocumentationNode(page.Tree, func(node *precise.DocumentationNode) error {
+		_ = apidocs.WalkDocumentationNode(page.Tree, func(node *precise.DocumentationNode) error {
 			if node.Documentation.SearchKey != "" {
 				tagMap[normalizeTags(node.Documentation.Tags)] = struct{}{}
 			}
