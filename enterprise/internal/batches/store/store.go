@@ -94,6 +94,10 @@ func (s *Store) ObservationContext() *observation.Context {
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
 
+// DatabaseDB returns a database.DB with the same handle that this Store was
+// instantiated with.
+func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+
 // DB returns the underlying dbutil.DB that this Store was
 // instantiated with.
 // It's here for legacy reason to pass the dbutil.DB to a repos.Store while
