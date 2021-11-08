@@ -69,9 +69,7 @@ var (
 // graphqlbackend only.
 func subRepoPermsClient(db database.DB) authz.SubRepoPermissionChecker {
 	subRepoPermsOnce.Do(func() {
-		subRepoPermsInstance = &authz.SubRepoPermsClient{
-			PermissionsGetter: database.SubRepoPerms(db),
-		}
+		subRepoPermsInstance = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
 	})
 	return subRepoPermsInstance
 }
