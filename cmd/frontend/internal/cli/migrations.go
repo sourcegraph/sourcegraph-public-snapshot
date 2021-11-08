@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"os"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -22,18 +22,18 @@ import (
 // newOutOfBandMigrationRunner creates and validates an out of band migrator instance.
 // This method may issue a `log.Fatal` when there are migrations left in an unexpected
 // state for the current application version.
-func newOutOfBandMigrationRunner(ctx context.Context, db *sql.DB) *oobmigration.Runner {
+func newOutOfBandMigrationRunner(ctx context.Context, db database.DB) *oobmigration.Runner {
 	outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second*30, &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	})
 
-	validateOutOfBandMigrationRunner(ctx, outOfBandMigrationRunner)
+	validateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner)
 	return outOfBandMigrationRunner
 }
 
-func validateOutOfBandMigrationRunner(ctx context.Context, outOfBandMigrationRunner *oobmigration.Runner) {
+func validateOutOfBandMigrationRunner(ctx context.Context, db database.DB, outOfBandMigrationRunner *oobmigration.Runner) {
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		log15.Warn("Skipping out-of-band migrations check")
 		return
@@ -49,7 +49,7 @@ func validateOutOfBandMigrationRunner(ctx context.Context, outOfBandMigrationRun
 		return
 	}
 
-	firstVersion, err := backend.GetFirstServiceVersion(ctx, "frontend")
+	firstVersion, err := backend.GetFirstServiceVersion(ctx, db, "frontend")
 	if err != nil {
 		log.Fatalf("Failed to retrieve first instance version: %v", err)
 	}
