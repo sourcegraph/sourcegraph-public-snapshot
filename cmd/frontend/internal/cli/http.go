@@ -199,7 +199,7 @@ func secureHeadersMiddleware(next http.Handler, policy crossOriginPolicy) http.H
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
 		// Write CORS headers and potentially handle the requests if it is a OPTIONS request.
-		if handled := handleCORSRequest(w, r); handled {
+		if handled := handleCORSRequest(w, r, policy); handled {
 			return // request was handled, do not invoke next handler
 		}
 
@@ -210,7 +210,31 @@ func secureHeadersMiddleware(next http.Handler, policy crossOriginPolicy) http.H
 // handleCORSRequest handles checking the Origin header and writing CORS Access-Control-Allow-*
 // headers. In some cases, it may handle OPTIONS CORS preflight requests in which case the function
 // returns true and the request should be considered fully served.
-func handleCORSRequest(w http.ResponseWriter, r *http.Request) (handled bool) {
+func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOriginPolicy) (handled bool) {
+	// If this route is one which should never allow cross-origin requests, then we should return
+	// early. We do not write ANY Access-Control-Allow-* CORS headers, which triggers the browsers
+	// default (and strict) behavior of not allowing cross-origin requests.
+	//
+	// We could instead parse the domain from conf.Get().ExternalURL and use that in the response,
+	// to make things more explicit, but it would add more logic here to think about and you would
+	// also want to think about whether or not `OPTIONS` requests should be handled and if the other
+	// headers (-Credentials, -Methods, -Headers, etc.) should be sent back in such a situation.
+	// Instead, it's easier to reason about the code by just saying "we send back nothing in this
+	// case, and so the browser enforces no cross-origin requests".
+	//
+	// This is in compliance with section 7.2 "Resource Sharing Check" of the CORS standard: https://www.w3.org/TR/2020/SPSD-cors-20200602/#resource-sharing-check-0
+	// It states:
+	//
+	// > If the response includes zero or more than one Access-Control-Allow-Origin header values,
+	// > return fail and terminate this algorithm.
+	//
+	// And you may also see the type of error the browser would produce in this instance at e.g.
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
+	//
+	if policy == crossOriginPolicyNever {
+		return false
+	}
+
 	// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
 	// to the incoming header URL. Otherwise use the configured CORS origin.
 	//
