@@ -115,6 +115,8 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 // ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
 // This function ensures access to dbconn happens after the rest of the code or tests have
 // initialized it.
+// This can't be removed yet because GlobalRepos still uses the zero value of `repoStore`,
+// depending on it being initialized by `ensureStore`
 func (s *repoStore) ensureStore() {
 	s.once.Do(func() {
 		if s.Store == nil {
