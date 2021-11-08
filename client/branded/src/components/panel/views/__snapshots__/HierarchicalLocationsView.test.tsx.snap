@@ -21,6 +21,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             className="test-search-result result-container"
             data-testid="result-container"
             onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -263,6 +264,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             className="test-search-result result-container"
             data-testid="result-container"
             onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -451,6 +453,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             className="test-search-result result-container"
             data-testid="result-container"
             onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
