@@ -402,7 +402,7 @@ Query: `sum(increase(src_codeintel_resolvers_total{job=~"^(frontend|sourcegraph-
 
 #### frontend: codeintel_resolvers_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate graphql operation duration over 5m</p>
+<p class="subtitle">Aggregate successful graphql operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -413,7 +413,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_resolvers_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_resolvers_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -556,7 +556,7 @@ Query: `sum(increase(src_codeintel_autoindex_enqueuer_total{job=~"^(frontend|sou
 
 #### frontend: codeintel_autoindex_enqueuer_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate enqueuer operation duration over 5m</p>
+<p class="subtitle">Aggregate successful enqueuer operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -567,7 +567,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -710,7 +710,7 @@ Query: `sum(increase(src_codeintel_dbstore_total{job=~"^(frontend|sourcegraph-fr
 
 #### frontend: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -721,7 +721,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -864,7 +864,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_index_total{job=~"^
 
 #### frontend: workerutil_dbworker_store_codeintel_index_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -875,7 +875,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100601`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_index_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_index_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -942,7 +942,7 @@ Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^(frontend|sourcegraph-
 
 #### frontend: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -953,7 +953,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100701`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1096,7 +1096,7 @@ Query: `sum(increase(src_codeintel_gitserver_total{job=~"^(frontend|sourcegraph-
 
 #### frontend: codeintel_gitserver_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate client operation duration over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1107,7 +1107,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100801`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1250,7 +1250,7 @@ Query: `sum(increase(src_codeintel_uploadstore_total{job=~"^(frontend|sourcegrap
 
 #### frontend: codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1261,7 +1261,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100901`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1404,7 +1404,7 @@ Query: `sum(increase(src_batches_dbstore_total{job=~"^(frontend|sourcegraph-fron
 
 #### frontend: batches_dbstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1415,7 +1415,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101001`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1558,7 +1558,7 @@ Query: `sum(increase(src_batches_service_total{job=~"^(frontend|sourcegraph-fron
 
 #### frontend: batches_service_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate service operation duration over 5m</p>
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1569,7 +1569,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101101`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1712,7 +1712,7 @@ Query: `sum(increase(src_oobmigration_total{op="up",job=~"^(frontend|sourcegraph
 
 #### frontend: oobmigration_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful migration handler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful migration handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1723,7 +1723,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101201`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_oobmigration_duration_seconds_bucket{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_oobmigration_duration_seconds_bucket{op="up",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -1790,7 +1790,7 @@ Query: `sum(increase(src_oobmigration_total{op="down",job=~"^(frontend|sourcegra
 
 #### frontend: oobmigration_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful migration handler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful migration handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1801,7 +1801,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101301`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_oobmigration_duration_seconds_bucket{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_oobmigration_duration_seconds_bucket{op="down",job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -3042,7 +3042,7 @@ Query: `sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^gitser
 
 #### gitserver: codeintel_coursier_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate invocations operation duration over 5m</p>
+<p class="subtitle">Aggregate successful invocations operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -3053,7 +3053,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10030
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^gitserver.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^gitserver.*"}[5m]))`
 
 </details>
 
@@ -4231,7 +4231,7 @@ Query: `sum(increase(src_codeintel_upload_processor_total{job=~"^precise-code-in
 
 #### precise-code-intel-worker: codeintel_upload_processor_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful handler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -4242,7 +4242,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_upload_processor_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_upload_processor_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -4309,7 +4309,7 @@ Query: `sum(increase(src_codeintel_dbstore_total{job=~"^precise-code-intel-worke
 
 #### precise-code-intel-worker: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -4320,7 +4320,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -4463,7 +4463,7 @@ Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^precise-code-intel-wor
 
 #### precise-code-intel-worker: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -4474,7 +4474,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -4617,7 +4617,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_upload_total{job=~"
 
 #### precise-code-intel-worker: workerutil_dbworker_store_codeintel_upload_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -4628,7 +4628,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_upload_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_upload_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -4695,7 +4695,7 @@ Query: `sum(increase(src_codeintel_gitserver_total{job=~"^precise-code-intel-wor
 
 #### precise-code-intel-worker: codeintel_gitserver_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate client operation duration over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -4706,7 +4706,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -4849,7 +4849,7 @@ Query: `sum(increase(src_codeintel_uploadstore_total{job=~"^precise-code-intel-w
 
 #### precise-code-intel-worker: codeintel_uploadstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -4860,7 +4860,7 @@ To see this panel, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-c
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_uploadstore_duration_seconds_bucket{job=~"^precise-code-intel-worker.*"}[5m]))`
 
 </details>
 
@@ -5801,7 +5801,7 @@ Query: `sum(increase(src_codeintel_commit_graph_processor_total{job=~"^worker.*"
 
 #### worker: codeintel_commit_graph_processor_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful update operation duration over 5m</p>
+<p class="subtitle">Aggregate successful update operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -5812,7 +5812,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_commit_graph_processor_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_commit_graph_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -5944,7 +5944,7 @@ Query: `sum(increase(src_codeintel_dependency_index_processor_total{job=~"^worke
 
 #### worker: codeintel_dependency_index_processor_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful handler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -5955,7 +5955,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100411` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_dependency_index_processor_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_dependency_index_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -6213,7 +6213,7 @@ Query: `sum(increase(src_codeintel_index_scheduler_total{job=~"^worker.*"}[5m]))
 
 #### worker: codeintel_index_scheduler_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate scheduler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful scheduler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -6224,7 +6224,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100601` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_index_scheduler_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_index_scheduler_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -6367,7 +6367,7 @@ Query: `sum(increase(src_codeintel_autoindex_enqueuer_total{job=~"^worker.*"}[5m
 
 #### worker: codeintel_autoindex_enqueuer_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate enqueuer operation duration over 5m</p>
+<p class="subtitle">Aggregate successful enqueuer operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -6378,7 +6378,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100701` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_autoindex_enqueuer_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -6521,7 +6521,7 @@ Query: `sum(increase(src_codeintel_dbstore_total{job=~"^worker.*"}[5m]))`
 
 #### worker: codeintel_dbstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -6532,7 +6532,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100801` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -6675,7 +6675,7 @@ Query: `sum(increase(src_codeintel_lsifstore_total{job=~"^worker.*"}[5m]))`
 
 #### worker: codeintel_lsifstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -6686,7 +6686,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100901` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_lsifstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -6829,7 +6829,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_codeintel_dependency_index_to
 
 #### worker: workerutil_dbworker_store_codeintel_dependency_index_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -6840,7 +6840,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101001` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_dependency_index_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_workerutil_dbworker_store_codeintel_dependency_index_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -6907,7 +6907,7 @@ Query: `sum(increase(src_codeintel_gitserver_total{job=~"^worker.*"}[5m]))`
 
 #### worker: codeintel_gitserver_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate client operation duration over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -6918,7 +6918,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_gitserver_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -7061,7 +7061,7 @@ Query: `sum(increase(src_codeintel_dependency_repos_total{job=~"^worker.*"}[5m])
 
 #### worker: codeintel_dependency_repos_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate insert operation duration over 5m</p>
+<p class="subtitle">Aggregate successful insert operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7072,7 +7072,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_dependency_repos_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_dependency_repos_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -7215,7 +7215,7 @@ Query: `sum(increase(src_batches_dbstore_total{job=~"^worker.*"}[5m]))`
 
 #### worker: batches_dbstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7226,7 +7226,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101301` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -7369,7 +7369,7 @@ Query: `sum(increase(src_batches_service_total{job=~"^worker.*"}[5m]))`
 
 #### worker: batches_service_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate service operation duration over 5m</p>
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7380,7 +7380,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101401` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -7765,7 +7765,7 @@ Query: `sum(increase(src_insights_search_queue_processor_total{job=~"^worker.*"}
 
 #### worker: insights_search_queue_processor_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful handler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7776,7 +7776,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101911` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_insights_search_queue_processor_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_insights_search_queue_processor_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -7902,7 +7902,7 @@ Query: `sum(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_st
 
 #### worker: workerutil_dbworker_store_insights_query_runner_jobs_store_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7913,7 +7913,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=102101` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_workerutil_dbworker_store_insights_query_runner_jobs_store_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_workerutil_dbworker_store_insights_query_runner_jobs_store_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 
@@ -9196,7 +9196,7 @@ Query: `sum(increase(src_batches_dbstore_total{job=~"^repo-updater.*"}[5m]))`
 
 #### repo-updater: batches_dbstore_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate store operation duration over 5m</p>
+<p class="subtitle">Aggregate successful store operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -9207,7 +9207,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^repo-updater.*"}[5m])))`
+Query: `sum  by (le)(rate(src_batches_dbstore_duration_seconds_bucket{job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -9350,7 +9350,7 @@ Query: `sum(increase(src_batches_service_total{job=~"^repo-updater.*"}[5m]))`
 
 #### repo-updater: batches_service_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate service operation duration over 5m</p>
+<p class="subtitle">Aggregate successful service operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -9361,7 +9361,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^repo-updater.*"}[5m])))`
+Query: `sum  by (le)(rate(src_batches_service_duration_seconds_bucket{job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -9504,7 +9504,7 @@ Query: `sum(increase(src_codeintel_coursier_total{op!="RunCommand",job=~"^repo-u
 
 #### repo-updater: codeintel_coursier_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate invocations operation duration over 5m</p>
+<p class="subtitle">Aggregate successful invocations operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -9515,7 +9515,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^repo-updater.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_coursier_duration_seconds_bucket{op!="RunCommand",job=~"^repo-updater.*"}[5m]))`
 
 </details>
 
@@ -11906,7 +11906,7 @@ Query: `sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"
 
 #### executor: executor_processor_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful handler operation duration over 5m</p>
+<p class="subtitle">Aggregate successful handler operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -11917,7 +11917,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100111`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])))`
+Query: `sum  by (le)(rate(src_executor_processor_duration_seconds_bucket{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
@@ -12028,7 +12028,7 @@ Query: `sum(increase(src_apiworker_apiclient_total{job=~"^(executor|sourcegraph-
 
 #### executor: apiworker_apiclient_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate client operation duration over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -12039,7 +12039,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100301`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])))`
+Query: `sum  by (le)(rate(src_apiworker_apiclient_duration_seconds_bucket{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
@@ -12182,7 +12182,7 @@ Query: `sum(increase(src_apiworker_command_total{op=~"setup.*",job=~"^(executor|
 
 #### executor: apiworker_command_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate command operation duration over 5m</p>
+<p class="subtitle">Aggregate successful command operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -12193,7 +12193,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"setup.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
@@ -12336,7 +12336,7 @@ Query: `sum(increase(src_apiworker_command_total{op=~"exec.*",job=~"^(executor|s
 
 #### executor: apiworker_command_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate command operation duration over 5m</p>
+<p class="subtitle">Aggregate successful command operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -12347,7 +12347,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100501`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"exec.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
@@ -12490,7 +12490,7 @@ Query: `sum(increase(src_apiworker_command_total{op=~"teardown.*",job=~"^(execut
 
 #### executor: apiworker_command_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate command operation duration over 5m</p>
+<p class="subtitle">Aggregate successful command operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -12501,7 +12501,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100601`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])))`
+Query: `sum  by (le)(rate(src_apiworker_command_duration_seconds_bucket{op=~"teardown.*",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
