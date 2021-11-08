@@ -17,6 +17,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Debug
+        run: free
+
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
