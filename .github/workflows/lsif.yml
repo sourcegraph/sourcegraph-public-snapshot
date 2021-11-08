@@ -23,17 +23,17 @@ jobs:
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: bash -c "</dev/zero head -c $((1024**3*1)) | tail"
+        run: "</dev/zero head -c 1000000000 | tail"
 
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: bash -c "</dev/zero head -c $((1024**3*3)) | tail"
+        run: "</dev/zero head -c 3000000000 | tail"
 
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: bash -c "</dev/zero head -c $((1024**3*7)) | tail"
+        run: "</dev/zero head -c 7000000000 | tail"
 
       # Upload lsif-go data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-go dump to Cloud
