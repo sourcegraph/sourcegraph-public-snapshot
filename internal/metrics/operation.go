@@ -29,11 +29,12 @@ func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...str
 }
 
 type operationMetricOptions struct {
-	subsystem    string
-	durationHelp string
-	countHelp    string
-	errorsHelp   string
-	labels       []string
+	subsystem       string
+	durationHelp    string
+	countHelp       string
+	errorsHelp      string
+	labels          []string
+	durationBuckets []float64
 }
 
 // OperationMetricsOption alter the default behavior of NewOperationMetrics.
@@ -47,6 +48,14 @@ func WithSubsystem(subsystem string) OperationMetricsOption {
 // WithDurationHelp overrides the default help text for duration metrics.
 func WithDurationHelp(text string) OperationMetricsOption {
 	return func(o *operationMetricOptions) { o.durationHelp = text }
+}
+
+func WithDurationBuckets(buckets []float64) OperationMetricsOption {
+	return func(o *operationMetricOptions) {
+		if len(buckets) != 0 {
+			o.durationBuckets = buckets
+		}
+	}
 }
 
 // WithCountHelp overrides the default help text for count metrics.
@@ -70,11 +79,12 @@ func WithLabels(labels ...string) OperationMetricsOption {
 // metric name.
 func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...OperationMetricsOption) *OperationMetrics {
 	options := &operationMetricOptions{
-		subsystem:    "",
-		durationHelp: fmt.Sprintf("Time in seconds spent performing successful %s operations", metricPrefix),
-		countHelp:    fmt.Sprintf("Total number of successful %s operations", metricPrefix),
-		errorsHelp:   fmt.Sprintf("Total number of %s operations resulting in an unexpected error", metricPrefix),
-		labels:       nil,
+		subsystem:       "",
+		durationHelp:    fmt.Sprintf("Time in seconds spent performing successful %s operations", metricPrefix),
+		countHelp:       fmt.Sprintf("Total number of successful %s operations", metricPrefix),
+		errorsHelp:      fmt.Sprintf("Total number of %s operations resulting in an unexpected error", metricPrefix),
+		labels:          nil,
+		durationBuckets: prometheus.DefBuckets,
 	}
 
 	for _, fn := range fns {
@@ -87,6 +97,7 @@ func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...Op
 			Name:      fmt.Sprintf("%s_duration_seconds", metricPrefix),
 			Subsystem: options.subsystem,
 			Help:      options.durationHelp,
+			Buckets:   options.durationBuckets,
 		},
 		options.labels,
 	)
