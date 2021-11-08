@@ -31,7 +31,87 @@ func TestUser_Emails(t *testing.T) {
 	})
 }
 
+func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		ok, _ := (&userEmailResolver{}).ViewerCanManuallyVerify(context.Background())
+		assert.False(t, ok, "ViewerCanManuallyVerify")
+	})
+}
+
+func TestAddUserEmail(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := newSchemaResolver(db).AddUserEmail(context.Background(),
+			&addUserEmailArgs{
+				User: MarshalUserID(1),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestRemoveUserEmail(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := newSchemaResolver(db).RemoveUserEmail(context.Background(),
+			&removeUserEmailArgs{
+				User: MarshalUserID(1),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestSetUserEmailPrimary(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := newSchemaResolver(db).SetUserEmailPrimary(context.Background(),
+			&setUserEmailPrimaryArgs{
+				User: MarshalUserID(1),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
+
 func TestSetUserEmailVerified(t *testing.T) {
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := newSchemaResolver(dbmock.NewMockDB()).SetUserEmailVerified(context.Background(),
+			&setUserEmailVerifiedArgs{
+				User: MarshalUserID(1),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "manually verify user email is disabled"
+		assert.Equal(t, want, got)
+	})
+
 	resetMocks()
 	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
@@ -111,6 +191,21 @@ func TestSetUserEmailVerified(t *testing.T) {
 }
 
 func TestResendUserEmailVerification(t *testing.T) {
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := newSchemaResolver(dbmock.NewMockDB()).ResendVerificationEmail(context.Background(),
+			&resendVerificationEmailArgs{
+				User: MarshalUserID(1),
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+
 	resetMocks()
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, SiteAdmin: true}, nil
