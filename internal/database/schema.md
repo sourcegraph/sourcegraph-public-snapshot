@@ -1771,7 +1771,6 @@ Indexes:
 ---------------+--------------------------+-----------+----------+-----------------
  repo_id       | integer                  |           | not null | 
  permission    | text                     |           | not null | 
- user_ids      | bytea                    |           | not null | '\x'::bytea
  updated_at    | timestamp with time zone |           | not null | 
  synced_at     | timestamp with time zone |           |          | 
  user_ids_ints | integer[]                |           | not null | '{}'::integer[]
