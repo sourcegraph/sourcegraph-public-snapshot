@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -22,6 +24,13 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	org, err := r.db.Orgs().GetByName(ctx, args.Name)
 	if err != nil {
 		return nil, err
+	}
+	// 🚨 SECURITY: Only org members can get org details on Cloud
+	if envvar.SourcegraphDotComMode() {
+		err := backend.CheckOrgAccess(ctx, r.db, org.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &OrgResolver{db: r.db, org: org}, nil
 }
@@ -46,6 +55,13 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 	org, err := db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
+	}
+	// 🚨 SECURITY: Only org members can get org details on Cloud
+	if envvar.SourcegraphDotComMode() {
+		err := backend.CheckOrgAccess(ctx, db, org.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &OrgResolver{db, org}, nil
 }
@@ -88,8 +104,8 @@ func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings
 func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.CreatedAt} }
 
 func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
-	// 🚨 SECURITY: Only org members can list the org members.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+	// 🚨 SECURITY: Only org members can list other org members.
+	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
 			return nil, errors.New("must be a member of this organization to view members")
 		}
@@ -116,9 +132,9 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins may access the settings, because they
-	// may contains secrets or other sensitive data.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
+	// because they may contain secrets or other sensitive data.
+	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -153,7 +169,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 }
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -220,7 +236,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -247,7 +263,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
 	// site admin.
-	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
@@ -269,6 +285,10 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	Organization graphql.ID
 	Username     string
 }) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Do not allow direct add on cloud.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("adding users to organization directly is not allowed")
+	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {

@@ -3,6 +3,10 @@ package backend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -12,10 +16,20 @@ import (
 
 var ErrNotAuthenticated = errors.New("not authenticated")
 
+// CheckOrgAccessOrSiteAdminCloud returns an error if:
+// (1) if we are on cloud instance and the user is not a member of the organization
+// (2) if we are on prem instance and
+//    (a) the user is not a member of the organization
+//    (b) the user is not a site admin
+func CheckOrgAccessOrSiteAdminCloud(ctx context.Context, db dbutil.DB, orgID int32) error {
+	allowAdmin := !envvar.SourcegraphDotComMode()
+	return checkOrgAccess(ctx, database.NewDB(db), orgID, allowAdmin)
+}
+
 // CheckOrgAccessOrSiteAdmin returns an error if the user is NEITHER (1) a site
 // admin NOR (2) a member of the organization with the specified ID.
 //
-// It is used when an action on a user can be performed by site admins and the
+// It is used when an action on an org can be performed by site admins and the
 // organization's members, but nobody else.
 func CheckOrgAccessOrSiteAdmin(ctx context.Context, db database.DB, orgID int32) error {
 	return checkOrgAccess(ctx, db, orgID, true)
@@ -24,7 +38,7 @@ func CheckOrgAccessOrSiteAdmin(ctx context.Context, db database.DB, orgID int32)
 // CheckOrgAccess returns an error if the user is not a member of the
 // organization with the specified ID.
 //
-// It is used when an action on a user can be performed by the organization's
+// It is used when an action on an org can be performed by the organization's
 // members, but nobody else.
 func CheckOrgAccess(ctx context.Context, db database.DB, orgID int32) error {
 	return checkOrgAccess(ctx, db, orgID, false)
