@@ -33,6 +33,26 @@ func (v *InsightPermissionsValidator) loadUserContext(ctx context.Context) error
 	return v.err
 }
 
+func (v *InsightPermissionsValidator) validateUserAccessForDashboard(ctx context.Context, dashboardId int) error {
+	err := v.loadUserContext(ctx)
+	if err != nil {
+		return err
+	}
+	hasPermission, err := v.dashboardStore.HasDashboardPermission(ctx, []int{dashboardId}, v.userIds, v.orgIds)
+	if err != nil {
+		return errors.Wrap(err, "HasDashboardPermissions")
+	}
+	// 🚨 SECURITY: if the user context doesn't get any response here that means they cannot see the insight.
+	// The important assumption is that the store is returning only insights visible to the user, as well as the assumption
+	// that there is no split between viewers / editors. We will return a generic not found error to prevent leaking
+	// insight existence.
+	if !hasPermission {
+		return errors.New("dashboard not found")
+	}
+
+	return nil
+}
+
 func (v *InsightPermissionsValidator) validateUserAccessForView(ctx context.Context, insightId string) error {
 	err := v.loadUserContext(ctx)
 	if err != nil {

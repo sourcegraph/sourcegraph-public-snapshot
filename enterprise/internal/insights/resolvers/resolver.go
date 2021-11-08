@@ -54,6 +54,7 @@ type Resolver struct {
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
 
+	InsightPermissionsValidator
 	baseInsightResolver
 }
 
