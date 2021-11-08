@@ -1227,7 +1227,7 @@ Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^(fronte
 
 <br />
 
-### Frontend: Codeintel: repoUpdater client
+### Frontend: Codeintel: repo-updater client
 
 #### frontend: codeintel_repoupdater_total
 
@@ -1250,7 +1250,7 @@ Query: `sum(increase(src_codeintel_repoupdater_total{job=~"^(frontend|sourcegrap
 
 #### frontend: codeintel_repoupdater_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate client operation duration over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -1261,7 +1261,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100901`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^(frontend|sourcegraph-frontend).*"}[5m]))`
 
 </details>
 
@@ -7442,7 +7442,7 @@ Query: `sum by (op)(increase(src_codeintel_gitserver_errors_total{job=~"^worker.
 
 <br />
 
-### Worker: Codeintel: repoUpdater client
+### Worker: Codeintel: repo-updater client
 
 #### worker: codeintel_repoupdater_total
 
@@ -7465,7 +7465,7 @@ Query: `sum(increase(src_codeintel_repoupdater_total{job=~"^worker.*"}[5m]))`
 
 #### worker: codeintel_repoupdater_99th_percentile_duration
 
-<p class="subtitle">99th percentile successful aggregate client operation duration over 5m</p>
+<p class="subtitle">Aggregate successful client operation duration distribution over 5m</p>
 
 This panel has no related alerts.
 
@@ -7476,7 +7476,7 @@ To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=101201` on 
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^worker.*"}[5m])))`
+Query: `sum  by (le)(rate(src_codeintel_repoupdater_duration_seconds_bucket{job=~"^worker.*"}[5m]))`
 
 </details>
 

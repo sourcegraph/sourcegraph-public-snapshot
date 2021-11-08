@@ -624,7 +624,7 @@ func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitori
 	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "codeintel",
-			DescriptionRoot: "repoUpdater client",
+			DescriptionRoot: "repo-updater client",
 			Hidden:          true,
 
 			ObservableConstructorOptions: ObservableConstructorOptions{
