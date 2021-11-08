@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,9 +19,17 @@ import (
 var timeNow = time.Now
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
-	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only the authenticated user can view their email on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	userEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{

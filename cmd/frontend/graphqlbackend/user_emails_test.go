@@ -2,16 +2,34 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+func TestUser_Emails(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := NewUserResolver(db, &types.User{ID: 1}).Emails(context.Background())
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
 
 func TestSetUserEmailVerified(t *testing.T) {
 	resetMocks()

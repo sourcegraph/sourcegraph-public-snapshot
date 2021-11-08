@@ -102,9 +102,17 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Email returns the user's oldest email, if one exists.
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return "", err
+	// 🚨 SECURITY: Only the authenticated user can view their email on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return "", err
+		}
+	} else {
+		// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return "", err
+		}
 	}
 
 	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)

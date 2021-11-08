@@ -142,7 +142,21 @@ func TestUser(t *testing.T) {
 	})
 }
 
-func TestUser_SettingsCascade(t *testing.T) {
+func TestUser_Email(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := NewUserResolver(db, &types.User{ID: 1}).Email(context.Background())
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestUser_LatestSettings(t *testing.T) {
 	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		orig := envvar.SourcegraphDotComMode()
