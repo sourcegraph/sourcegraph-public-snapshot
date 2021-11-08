@@ -342,9 +342,9 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 
 	uniqueID := "user1viewonly"
 	view, err := store.CreateView(ctx, types.InsightView{
-		Title:       "user 1 view only",
-		Description: "user 1 should see this only",
-		UniqueID:    uniqueID,
+		Title:            "user 1 view only",
+		Description:      "user 1 should see this only",
+		UniqueID:         uniqueID,
 		PresentationType: string(types.Line),
 	}, []InsightViewGrant{UserGrant(1), OrgGrant(5)})
 	if err != nil {
@@ -416,9 +416,10 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 	t.Run("no users or orgs provided should only return global", func(t *testing.T) {
 		uniqueID := "globalonly"
 		view, err := store.CreateView(ctx, types.InsightView{
-			Title:       "global only",
-			Description: "global only",
-			UniqueID:    uniqueID,
+			Title:            "global only",
+			Description:      "global only",
+			UniqueID:         uniqueID,
+			PresentationType: string(types.Line),
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
@@ -521,9 +522,9 @@ func TestUpdateViewSeries(t *testing.T) {
 
 	t.Run("test update view series", func(t *testing.T) {
 		view, err := store.CreateView(ctx, types.InsightView{
-			Title:       "my view",
-			Description: "my view description",
-			UniqueID:    "1234567",
+			Title:            "my view",
+			Description:      "my view description",
+			UniqueID:         "1234567",
 			PresentationType: string(types.Line),
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
@@ -580,9 +581,9 @@ func TestDeleteView(t *testing.T) {
 
 	uniqueID := "user1viewonly"
 	view, err := store.CreateView(ctx, types.InsightView{
-		Title:       "user 1 view only",
-		Description: "user 1 should see this only",
-		UniqueID:    uniqueID,
+		Title:            "user 1 view only",
+		Description:      "user 1 should see this only",
+		UniqueID:         uniqueID,
 		PresentationType: string(types.Line),
 	}, []InsightViewGrant{GlobalGrant()})
 	if err != nil {
