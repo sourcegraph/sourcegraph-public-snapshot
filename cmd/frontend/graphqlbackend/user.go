@@ -289,7 +289,15 @@ func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseRe
 }
 
 func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); errcode.IsUnauthorized(err) {
+	// 🚨 SECURITY: Only the authenticated user can administrate themselves on
+	// Sourcegraph.com.
+	var err error
+	if envvar.SourcegraphDotComMode() {
+		err = backend.CheckSameUser(ctx, r.user.ID)
+	} else {
+		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID)
+	}
+	if errcode.IsUnauthorized(err) {
 		return false, nil
 	} else if err != nil {
 		return false, err
