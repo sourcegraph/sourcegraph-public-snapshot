@@ -543,8 +543,6 @@ commands:
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
-      PGDATA_DIR: ""
-      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |
