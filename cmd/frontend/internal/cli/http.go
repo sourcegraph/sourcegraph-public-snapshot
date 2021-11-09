@@ -248,20 +248,19 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	//
 	headerOrigin := r.Header.Get("Origin")
 	isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
+	corsOrigin := conf.Get().CorsOrigin
 
-	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-		if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
-			w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
-		}
+	if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
+		w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
+	}
 
-		if r.Method == "OPTIONS" {
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
-			w.WriteHeader(http.StatusOK)
-			return true // we handled the request
-		}
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		w.WriteHeader(http.StatusOK)
+		return true // we handled the request
 	}
 	return false
 }
