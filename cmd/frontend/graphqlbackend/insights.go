@@ -157,7 +157,6 @@ type InsightViewResolver interface {
 	DefaultFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	AppliedFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
-	PresentationType(ctx context.Context) (string, error)
 	Presentation(ctx context.Context) (InsightPresentation, error)
 	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
 }

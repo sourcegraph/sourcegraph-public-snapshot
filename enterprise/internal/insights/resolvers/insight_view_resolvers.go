@@ -99,10 +99,6 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) PresentationType(ctx context.Context) (string, error) {
-	return string(i.view.PresentationType), nil
-}
-
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
 	if i.view.PresentationType == types.Pie {
 		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view}
