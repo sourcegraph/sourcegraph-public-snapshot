@@ -29,17 +29,17 @@ func TestComputeBatchSpecState(t *testing.T) {
 			want:  BatchSpecStatePending,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, CachedWorkspaces: 5},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, SkippedWorkspaces: 5},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCompleted,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, CachedWorkspaces: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, SkippedWorkspaces: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStatePending,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, CachedWorkspaces: 2, Executions: 3, Queued: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, SkippedWorkspaces: 2, Executions: 3, Queued: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateQueued,
 		},
