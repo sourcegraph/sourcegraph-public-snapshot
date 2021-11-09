@@ -14,6 +14,36 @@ type Pair struct {
 	Err     error
 }
 
+type LsifFormat int32
+
+const (
+	StandardFormat     LsifFormat = 1
+	ProtobufFormat     LsifFormat = 2
+	ProtobufJsonFormat LsifFormat = 3
+)
+
+type LsifInput struct {
+	Format    LsifFormat
+	NewReader func() (io.Reader, error)
+}
+
+func ReadInput(ctx context.Context, input LsifInput) <-chan Pair {
+	switch input.Format {
+	case ProtobufFormat:
+		pairCh := make(chan Pair, ChannelBufferSize)
+		return pairCh
+	default:
+		reader, err := input.NewReader()
+		if err != nil {
+			pairCh := make(chan Pair, 1)
+			pairCh <- Pair{Err: err}
+			close(pairCh)
+			return pairCh
+		}
+		return Read(ctx, reader)
+	}
+}
+
 // Read reads the given content as line-separated JSON objects and returns a channel of Pair values for each
 // non-empty line.
 func Read(ctx context.Context, r io.Reader) <-chan Pair {
