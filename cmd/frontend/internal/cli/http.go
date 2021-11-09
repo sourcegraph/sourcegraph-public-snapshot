@@ -235,19 +235,23 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 		return false
 	}
 
-	// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
-	// to the incoming header URL. Otherwise use the configured CORS origin.
-	//
-	// Note: API users also rely on this codepath handling wildcards
-	// properly. For example, if Sourcegraph is behind a corporate VPN an
-	// admin may choose to set the CORS origin to "*" and would expect
-	// Sourcegraph to respond appropriately to any Origin request header:
-	//
-	// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
-	// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
-	//
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
 	if isTrustedOrigin(r) {
+		// The request came from a trusted origin, either from the browser extension's fixed origin
+		// identifier or from an origin present in the site configuration `corsOrigin` allow list.
+		//
+		// This means we should allow the exact origin to make the request, the browser will grant
+		// their request the ability to authenticate via a session cookie.
+		//
+		// Note: API users also rely on this codepath handling wildcards properly. For example, if
+		// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*"
+		// (via a proxy, not what a browser would ever send) and would expect Sourcegraph to respond
+		// appropriately to any Origin request header:
+		//
+		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
+		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+		//
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 	}
 
