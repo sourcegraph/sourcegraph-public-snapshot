@@ -3,6 +3,8 @@ package background
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"sort"
 
 	"github.com/inconshreveable/log15"
 
@@ -90,7 +92,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		ws = append(ws, workspace)
 
-		rawKey, err := cacheKeyForWorkspace(w)
+		rawKey, err := cacheKeyForWorkspace(spec, w)
 		if err != nil {
 			return err
 		}
@@ -102,6 +104,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			return err
 		}
 		if err == store.ErrNoResults {
+			fmt.Println("NO CACHE ENTRY FOUND")
 			continue
 		}
 
@@ -122,18 +125,25 @@ func (r *batchSpecWorkspaceCreator) process(
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
 
-func cacheKeyForWorkspace(w *service.RepoWorkspace) (string, error) {
+func cacheKeyForWorkspace(spec *btypes.BatchSpec, w *service.RepoWorkspace) (string, error) {
+	fileMatches := w.FileMatches
+	sort.Strings(fileMatches)
+
 	executionKey := cache.ExecutionKey{
 		Repository: batcheslib.Repository{
 			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
 			Name:        string(w.Repo.Name),
 			BaseRef:     git.EnsureRefPrefix(w.Branch),
 			BaseRev:     string(w.Commit),
-			FileMatches: []string{},
+			FileMatches: fileMatches,
 		},
 		Path:               w.Path,
-		Steps:              w.Steps,
 		OnlyFetchWorkspace: w.OnlyFetchWorkspace,
+		Steps:              w.Steps,
+		BatchChangeAttributes: &template.BatchChangeAttributes{
+			Name:        spec.Spec.Name,
+			Description: spec.Spec.Description,
+		},
 	}
 	return executionKey.Key()
 }
