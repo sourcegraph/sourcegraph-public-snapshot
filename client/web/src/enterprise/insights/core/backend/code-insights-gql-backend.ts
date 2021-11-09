@@ -83,6 +83,7 @@ export const parseGrants = (type: string, visibility: string): InsightsPermissio
 
 const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => ({
     __typename: insight.__typename,
+    presentationType: insight.presentation.__typename,
     type: InsightType.Backend,
     id: insight.id,
     visibility: '',

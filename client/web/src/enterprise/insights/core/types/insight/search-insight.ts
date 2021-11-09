@@ -43,7 +43,6 @@ export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSett
  * https://github.com/sourcegraph/sourcegraph-search-insights/blob/master/package.json#L26
  */
 export interface SearchBasedExtensionInsightSettings {
-    __typename?: string
     title: string
     repositories: string[]
     series: SearchBasedInsightSeries[]
