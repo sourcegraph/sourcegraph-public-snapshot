@@ -126,7 +126,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
 
     const trackResultClick = (): void => {
         if (telemetryService) {
-            telemetryService.log('ReferencePanel_FileNavigation', { action: 'click' })
+            telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
         }
     }
 

@@ -38,7 +38,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(() => {
-        props.telemetryService.log('Expand/Collapse File Tree View', {
+        props.telemetryService.log('FileTreeViewClicked', {
             action: 'click',
             label: 'expand / collapse file tree view',
         })

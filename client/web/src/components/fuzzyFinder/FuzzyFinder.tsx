@@ -37,7 +37,7 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
 
     useEffect(() => {
         if (props.isVisible) {
-            props.telemetryService.log('FuzzyFinder', { action: 'shortcut open' })
+            props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
         }
     }, [props.telemetryService, props.isVisible])
 

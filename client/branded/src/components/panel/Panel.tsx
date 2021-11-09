@@ -207,7 +207,7 @@ export const Panel = React.memo<Props>(props => {
     ])
 
     const trackTabClick = useCallback(
-        (label: string) => props.telemetryService.log('ReferencePanel', { action: 'click', label }),
+        (label: string) => props.telemetryService.log('ReferencePanelClicked', { action: 'click', label }),
         [props.telemetryService]
     )
 

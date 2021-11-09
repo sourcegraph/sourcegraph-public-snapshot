@@ -46,7 +46,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
             className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
             to={repoUrl}
             aria-current={false}
-            onClick={() => telemetryService.log('Root Repo Navigation', { action: 'click', label: 'root directory' })}
+            onClick={() => telemetryService.log('RootBreadcrumbClicked', { action: 'click', label: 'root directory' })}
         >
             /
         </LinkOrSpan>,
