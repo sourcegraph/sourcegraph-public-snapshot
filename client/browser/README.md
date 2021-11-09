@@ -127,8 +127,7 @@ Click reload for Sourcegraph at `about:debugging`
 
 ### Safari
 
-> Note:
->  - Requires MacOS with Xcode installed.
+> **Note**: Requires MacOS with Xcode installed
 
 1. `yarn --cwd client/browser dev:safari`
 1. Open Safari then: `Develop > Allow Unsigned Extensions`
