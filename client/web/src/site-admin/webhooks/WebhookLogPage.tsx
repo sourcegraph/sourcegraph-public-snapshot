@@ -13,7 +13,7 @@ import styles from './WebhookLogPage.module.scss'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
 export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
-    queryWebhookLogs: typeof _queryWebhookLogs
+    queryWebhookLogs?: typeof _queryWebhookLogs
 }
 
 export const WebhookLogPage: React.FunctionComponent<Props> = ({
