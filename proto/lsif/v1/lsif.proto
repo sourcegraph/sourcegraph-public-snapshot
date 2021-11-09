@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package lsif;
+package lsif.v1;
 
 // LsifValue defines a single LSIF value that. An LSIF index is a stream of values.
 message LsifValue {
@@ -35,12 +35,12 @@ message Range {
 // Moniker defines a symbol, such as a function or an interface.
 message Moniker {
   enum Unique {
-    UNKNOWN = 0;
-    DOCUMENT = 1;
-    PROJECT = 2;
-    WORKSPACE = 3;
-    SCHEME = 4;
-    GLOBAL = 5;
+    UNIQUE_UNSPECIFIED = 0;
+    UNIQUE_DOCUMENT = 1;
+    UNIQUE_PROJECT = 2;
+    UNIQUE_WORKSPACE = 3;
+    UNIQUE_SCHEME = 4;
+    UNIQUE_GLOBAL = 5;
   }
   // The identifier of this this moniker, which is can be referenced from
   // MonikerOccurence.  An empty id means this moniker can be ignored.
@@ -73,9 +73,9 @@ message Moniker {
 // source file.
 message MonikerOccurrence {
   enum Role {
-    UNKNOWN = 0;
-    DEFINITION = 1;
-    REFERENCE = 2;
+    ROLE_UNSPECIFIED = 0;
+    ROLE_DEFINITION = 1;
+    ROLE_REFERENCE = 2;
   }
   // Reference to the `Moniker.id` field.
   string moniker_id = 1;
