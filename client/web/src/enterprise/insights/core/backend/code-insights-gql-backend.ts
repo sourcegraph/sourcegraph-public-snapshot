@@ -103,7 +103,7 @@ export const parseGrants = (type: string, visibility: string): InsightsPermissio
 
 const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
     id: insight.id,
-    title: insight.presentation.title,
+    title: 'title' in insight.presentation ? insight.presentation.title : '',
     series: insight.dataSeries.map(series => ({
         label: series.label,
         points: series.points,
