@@ -416,5 +416,5 @@ type insightsDashboardPayloadResolver struct {
 
 func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
 	id := newRealDashboardID(int64(i.dashboard.ID))
-	return &insightsDashboardResolver{dashboard: i.dashboard, id: &id}, nil
+	return &insightsDashboardResolver{dashboard: i.dashboard, id: &id, baseInsightResolver: i.baseInsightResolver}, nil
 }
