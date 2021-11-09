@@ -54,29 +54,29 @@ describe('CodeMonitoringListPage', () => {
         expect(additionalProps.toggleCodeMonitorEnabled.calledOnce)
     })
 
-    test('Show getting started on load if empty', () => {
+    test('Switching tabs from getting started to empty list works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
+        const codeMonitorsButton = component.getByRole('button', { name: 'Code monitors' })
+        fireEvent.click(codeMonitorsButton)
+
+        const emptyListMessage = component.getByText(/no code monitors have been created/i)
+        expect(emptyListMessage).toBeInTheDocument()
     })
 
-    test('Do not show getting started on load if not empty', () => {
+    test('Switching tabs from list to getting started works', () => {
         const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
+                <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
-    })
+        const gettingStartedButton = component.getByRole('button', { name: 'Getting started' })
+        fireEvent.click(gettingStartedButton)
 
-    test('Show getting started on load if not logged in', () => {
-        const component = render(
-            <MemoryRouter initialEntries={['/code-monitoring']}>
-                <CodeMonitoringPage {...additionalProps} authenticatedUser={null} />
-            </MemoryRouter>
-        )
+        const gettingStartedHeader = component.getByText(/proactively monitor/i)
+        expect(gettingStartedHeader).toBeInTheDocument()
     })
-
-    test('Switching tabs from getting started to empty list works', () => {})
 })

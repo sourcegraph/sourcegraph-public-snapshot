@@ -134,7 +134,7 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                                     role="button"
                                 >
                                     <span className="text-content" data-tab-content="Code monitors">
-                                        Code Monitors
+                                        Code monitors
                                     </span>
                                 </a>
                             </div>
