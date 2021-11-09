@@ -83,7 +83,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label1",
 				LineColor:           "color1",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 			{
 				ViewID:              1,
@@ -102,7 +102,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label2",
 				LineColor:           "color2",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 			{
 				ViewID:              2,
@@ -121,7 +121,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "second-label-2",
 				LineColor:           "second-color-2",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 		}
 
@@ -156,7 +156,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label1",
 				LineColor:           "color1",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 			{
 				ViewID:              1,
@@ -175,7 +175,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label2",
 				LineColor:           "color2",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 		}
 
@@ -209,7 +209,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label1",
 				LineColor:           "color1",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 			{
 				ViewID:              1,
@@ -228,7 +228,7 @@ func TestGet(t *testing.T) {
 				SampleIntervalUnit:  sampleIntervalUnit,
 				Label:               "label2",
 				LineColor:           "color2",
-				PresentationType:    string(types.Line),
+				PresentationType:    types.Line,
 			},
 		}
 
@@ -307,7 +307,7 @@ func TestCreateView(t *testing.T) {
 			Title:            "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}
 
 		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
@@ -320,7 +320,7 @@ func TestCreateView(t *testing.T) {
 			Title:            "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -345,7 +345,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		Title:            "user 1 view only",
 		Description:      "user 1 should see this only",
 		UniqueID:         uniqueID,
-		PresentationType: string(types.Line),
+		PresentationType: types.Line,
 	}, []InsightViewGrant{UserGrant(1), OrgGrant(5)})
 	if err != nil {
 		t.Fatal(err)
@@ -419,7 +419,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 			Title:            "global only",
 			Description:      "global only",
 			UniqueID:         uniqueID,
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
@@ -474,7 +474,7 @@ func TestUpdateView(t *testing.T) {
 			Title:            "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}
 		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
@@ -484,7 +484,7 @@ func TestUpdateView(t *testing.T) {
 			ID: 1, Title: "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}).Equal(t, got)
 
 		include, exclude := "include repos", "exclude repos"
@@ -525,7 +525,7 @@ func TestUpdateViewSeries(t *testing.T) {
 			Title:            "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
@@ -584,7 +584,7 @@ func TestDeleteView(t *testing.T) {
 		Title:            "user 1 view only",
 		Description:      "user 1 should see this only",
 		UniqueID:         uniqueID,
-		PresentationType: string(types.Line),
+		PresentationType: types.Line,
 	}, []InsightViewGrant{GlobalGrant()})
 	if err != nil {
 		t.Fatal(err)
@@ -665,7 +665,7 @@ func TestAttachSeriesView(t *testing.T) {
 			Title:            "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}
 		view, err = store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
@@ -702,7 +702,7 @@ func TestAttachSeriesView(t *testing.T) {
 			SampleIntervalUnit:  sampleIntervalUnit,
 			Label:               "my label",
 			LineColor:           "my stroke",
-			PresentationType:    string(types.Line),
+			PresentationType:    types.Line,
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -742,7 +742,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 			Title:            "my view",
 			Description:      "my view description",
 			UniqueID:         "1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}
 		view, err = store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
@@ -779,7 +779,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 			SampleIntervalUnit:  sampleIntervalUnit,
 			Label:               "my label",
 			LineColor:           "my stroke",
-			PresentationType:    string(types.Line),
+			PresentationType:    types.Line,
 		}}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after attaching series to view (want/got): %s", diff)

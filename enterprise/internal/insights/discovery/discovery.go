@@ -392,7 +392,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		Title:            from.Title,
 		Description:      from.Description,
 		UniqueID:         from.ID,
-		PresentationType: string(types.Line),
+		PresentationType: types.Line,
 	}
 
 	if from.Filters != nil {
@@ -438,7 +438,7 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 		Title:            from.Title,
 		UniqueID:         from.ID,
 		OtherThreshold:   &from.OtherThreshold,
-		PresentationType: string(types.Pie),
+		PresentationType: types.Pie,
 	}
 	series := types.InsightSeries{
 		SeriesID:           ksuid.New().String(),

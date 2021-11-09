@@ -14,5 +14,5 @@
 	Label:              "label1",
 	LineColor:          "blue",
 	SampleIntervalUnit: "MONTH",
-	PresentationType:   "LINE",
+	PresentationType:   types.PresentationType("LINE"),
 }}

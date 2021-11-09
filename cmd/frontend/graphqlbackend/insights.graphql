@@ -744,11 +744,6 @@ type InsightView implements Node {
     dataSeries: [InsightsSeries!]!
 
     """
-    Presentation type for the insight. (e.g. line, pie, etc.)
-    """
-    presentationType: PresentationType!
-
-    """
     Presentation options for the insight.
     """
     presentation: InsightPresentation!
@@ -768,14 +763,6 @@ union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
 Defines presentation options for the insight.
 """
 union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
-
-"""
-Presentation types.
-"""
-enum PresentationType {
-    LINE
-    PIE
-}
 
 """
 Defines a scope of time for which the insight data is generated.

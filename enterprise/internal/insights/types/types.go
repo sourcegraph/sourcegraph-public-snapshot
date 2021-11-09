@@ -27,7 +27,7 @@ type InsightViewSeries struct {
 	DefaultFilterIncludeRepoRegex *string
 	DefaultFilterExcludeRepoRegex *string
 	OtherThreshold                *float64
-	PresentationType              string
+	PresentationType              PresentationType
 }
 
 type Insight struct {
@@ -38,7 +38,7 @@ type Insight struct {
 	Series           []InsightViewSeries
 	Filters          InsightViewFilters
 	OtherThreshold   *float64
-	PresentationType string
+	PresentationType PresentationType
 }
 
 type InsightViewFilters struct {
@@ -60,7 +60,7 @@ type InsightView struct {
 	UniqueID         string
 	Filters          InsightViewFilters
 	OtherThreshold   *float64
-	PresentationType string
+	PresentationType PresentationType
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well

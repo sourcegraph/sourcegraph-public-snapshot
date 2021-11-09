@@ -300,7 +300,7 @@ func TestAssociateViewsById(t *testing.T) {
 			Title:            "great view",
 			Description:      "my view",
 			UniqueID:         "view1234567",
-			PresentationType: string(types.Line),
+			PresentationType: types.Line,
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
@@ -352,7 +352,7 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		Title:            "view1",
 		Description:      "view1",
 		UniqueID:         "view1",
-		PresentationType: string(types.Line),
+		PresentationType: types.Line,
 	}, []InsightViewGrant{GlobalGrant()})
 	if err != nil {
 		t.Fatal(err)
