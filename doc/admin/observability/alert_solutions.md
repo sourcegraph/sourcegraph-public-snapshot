@@ -1614,8 +1614,8 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> postgres: 300ms+ maximum transaction durations for 5m0s
-- <span class="badge badge-critical">critical</span> postgres: 500ms+ maximum transaction durations for 10m0s
+- <span class="badge badge-warning">warning</span> postgres: 0.3s+ maximum transaction durations for 5m0s
+- <span class="badge badge-critical">critical</span> postgres: 0.5s+ maximum transaction durations for 10m0s
 
 **Possible solutions**
 
