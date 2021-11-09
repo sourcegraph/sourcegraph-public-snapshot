@@ -3,9 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"path"
-	"regexp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -111,10 +108,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOptions) bool {
 	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{
-		DB:                  r.db,
-		SearchableReposFunc: backend.Repos.ListSearchable,
-	}
+	repositoryResolver := &searchrepos.Resolver{DB: r.db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -238,130 +232,6 @@ func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
 }
 
-func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepoLimit {
-	// Try to suggest the most helpful repo: filters to narrow the query.
-	//
-	// For example, suppose the query contains "repo:kubern" and it matches > 30
-	// repositories, and each one of the (clipped result set of) 30 repos has
-	// "kubernetes" in their path. Then it's likely that the user would want to
-	// search for "repo:kubernetes". If that still matches > 30 repositories,
-	// then try to narrow it further using "/kubernetes/", etc.
-	//
-	// (In the above sample paragraph, we assume MAX_REPOS_TO_SEARCH is 30.)
-	//
-	// TODO(sqs): this logic can be significantly improved, but it's better than
-	// nothing for now.
-
-	var proposedQueries []*searchQueryDescription
-	description := "Use a 'repo:' or 'context:' filter to narrow your search and see results."
-	if envvar.SourcegraphDotComMode() {
-		description = "Use a 'repo:' or 'context:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
-	}
-	if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
-		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
-	}
-
-	buildErr := func(proposedQueries []*searchQueryDescription, description string) *errOverRepoLimit {
-		return &errOverRepoLimit{
-			ProposedQueries: proposedQueries,
-			Description:     description,
-		}
-	}
-
-	// If globbing is active we return a simple alert for now. The alert is still
-	// helpful but it doesn't contain any proposed queries.
-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		return buildErr(proposedQueries, description)
-	}
-
-	q, err := query.ParseLiteral(r.rawQuery()) // Invariant: query is already validated; guard against error anyway.
-	if err != nil || !query.IsBasic(q) {
-		// If the query is not basic, the assumptions that other logic
-		// makes to propose queries do not hold. Return a default alert
-		// without proposed queries.
-		return buildErr(proposedQueries, description)
-	}
-
-	repoOptions := r.toRepoOptions(r.Query, resolveRepositoriesOpts{})
-	resolved, _ := r.resolveRepositories(ctx, repoOptions)
-	if len(resolved.RepoRevs) > 0 {
-		paths := make([]string, len(resolved.RepoRevs))
-		for i, repo := range resolved.RepoRevs {
-			paths[i] = string(repo.Repo.Name)
-		}
-
-		// See if we can narrow it down by using filters like
-		// repo:github.com/myorg/.
-		const maxParentsToPropose = 4
-		ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
-		defer cancel()
-	outer:
-		for i, repoParent := range pathParentsByFrequency(paths) {
-			if i >= maxParentsToPropose || ctx.Err() != nil {
-				break
-			}
-			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-			repoFieldValues, _ := q.Repositories()
-
-			for _, v := range repoFieldValues {
-				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
-					continue outer // this repo: filter is already applied
-				}
-			}
-
-			repoFieldValues = append(repoFieldValues, repoParentPattern)
-			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-			defer cancel()
-			repoOptions := r.toRepoOptions(r.Query,
-				resolveRepositoriesOpts{
-					effectiveRepoFieldValues: repoFieldValues,
-				})
-			resolved, err := r.resolveRepositories(ctx, repoOptions)
-			if ctx.Err() != nil {
-				continue
-			} else if err != nil {
-				return buildErr([]*searchQueryDescription{}, description)
-			}
-
-			var more string
-			if resolved.OverLimit {
-				more = "(further filtering required)"
-			}
-			// We found a more specific repo: filter that may be narrow enough. Now
-			// add it to the user's query, but be smart. For example, if the user's
-			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
-			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-			newExpr := query.AddRegexpField(q, query.FieldRepo, repoParentPattern)
-			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
-				query:       newExpr,
-				patternType: r.PatternType,
-			})
-		}
-		if len(proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
-			// Propose specific repos' paths if we aren't able to propose
-			// anything else.
-			const maxReposToPropose = 4
-			shortest := append([]string{}, paths...) // prefer shorter repo names
-			sort.Slice(shortest, func(i, j int) bool {
-				return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
-			})
-			for i, pathToPropose := range shortest {
-				if i >= maxReposToPropose {
-					break
-				}
-				newExpr := query.AddRegexpField(q, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
-				proposedQueries = append(proposedQueries, &searchQueryDescription{
-					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
-					query:       newExpr,
-					patternType: r.PatternType,
-				})
-			}
-		}
-	}
-	return buildErr(proposedQueries, description)
-}
-
 func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 	return &searchAlert{
 		prometheusType: "structural_search_not_set",
@@ -373,14 +243,6 @@ func alertForStructuralSearchNotSet(queryString string) *searchAlert {
 			patternType: query.SearchTypeStructural,
 		}},
 	}
-}
-
-type missingRepoRevsError struct {
-	Missing []*search.RepositoryRevisions
-}
-
-func (*missingRepoRevsError) Error() string {
-	return "missing repo revs"
 }
 
 func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
@@ -415,28 +277,6 @@ func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *sea
 		title:          "Some repositories could not be searched",
 		description:    description,
 	}
-}
-
-// pathParentsByFrequency returns the most common path parents of the given paths.
-// For example, given paths [a/b a/c x/y], it would return [a x] because "a"
-// is a parent to 2 paths and "x" is a parent to 1 path.
-func pathParentsByFrequency(paths []string) []string {
-	var parents []string
-	parentFreq := map[string]int{}
-	for _, p := range paths {
-		parent := path.Dir(p)
-		if _, seen := parentFreq[parent]; !seen {
-			parents = append(parents, parent)
-		}
-		parentFreq[parent]++
-	}
-
-	sort.Slice(parents, func(i, j int) bool {
-		pi, pj := parents[i], parents[j]
-		fi, fj := parentFreq[pi], parentFreq[pj]
-		return fi > fj || (fi == fj && pi < pj) // freq desc, alpha asc
-	})
-	return parents
 }
 
 func (a searchAlert) wrapResults() *SearchResults {
@@ -482,63 +322,22 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func alertForError(err error) *searchAlert {
-	var (
-		alert *searchAlert
-		rErr  *commit.RepoLimitError
-		tErr  *commit.TimeLimitError
-		mErr  *missingRepoRevsError
-	)
-
-	if errors.As(err, &mErr) {
-		alert = alertForMissingRepoRevs(mErr.Missing)
-		alert.priority = 6
-	} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-		alert = &searchAlert{
-			prometheusType: "structural_search_needs_more_memory",
-			title:          "Structural search needs more memory",
-			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
-			priority:       5,
-		}
-	} else if strings.Contains(err.Error(), "Out of memory") {
-		alert = &searchAlert{
-			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
-			title:          "Structural search needs more memory",
-			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
-			priority:       4,
-		}
-	} else if errors.As(err, &rErr) {
-		alert = &searchAlert{
-			prometheusType: "exceeded_diff_commit_search_limit",
-			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
-			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
-			priority:       2,
-		}
-	} else if errors.As(err, &tErr) {
-		alert = &searchAlert{
-			prometheusType: "exceeded_diff_commit_with_time_search_limit",
-			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
-			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
-			priority:       1,
-		}
-	}
-	return alert
-}
-
-// errorToAlert is intended to be a catch-all function for converting all errors into alerts.
-// The intent here is to create alerts as close to the API boundary as possible, so this should be called
-// immediately before creating the SearchResultsResolver.
-func errorToAlert(err error) (*searchAlert, error) {
+func (r *searchResolver) errorToAlert(ctx context.Context, err error) (*searchAlert, error) {
 	if err == nil {
 		return nil, nil
 	}
 
-	{
-		var e *multierror.Error
-		if errors.As(err, &e) {
-			return multierrorToAlert(e)
-		}
+	var e *multierror.Error
+	if errors.As(err, &e) {
+		return r.multierrorToAlert(ctx, e)
 	}
+
+	var (
+		rErr *commit.RepoLimitError
+		tErr *commit.TimeLimitError
+		mErr *searchrepos.MissingRepoRevsError
+		oErr *errOverRepoLimit
+	)
 
 	if errors.HasType(err, authz.ErrStalePermissions{}) {
 		return alertForStalePermissions(), nil
@@ -551,16 +350,59 @@ func errorToAlert(err error) (*searchAlert, error) {
 		}
 	}
 
-	{
-		var e *errOverRepoLimit
-		if errors.As(err, &e) {
-			return &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: e.ProposedQueries,
-				description:     e.Description,
-			}, nil
-		}
+	if err == searchrepos.ErrNoResolvedRepos {
+		return r.alertForNoResolvedRepos(ctx, r.Query), nil
+	}
+
+	if errors.As(err, &oErr) {
+		return &searchAlert{
+			prometheusType:  "over_repo_limit",
+			title:           "Too many matching repositories",
+			proposedQueries: oErr.ProposedQueries,
+			description:     oErr.Description,
+		}, nil
+	}
+
+	if errors.As(err, &mErr) {
+		alert := alertForMissingRepoRevs(mErr.Missing)
+		alert.priority = 6
+		return alert, nil
+	}
+
+	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
+		return &searchAlert{
+			prometheusType: "structural_search_needs_more_memory",
+			title:          "Structural search needs more memory",
+			description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+			priority:       5,
+		}, nil
+	}
+
+	if strings.Contains(err.Error(), "Out of memory") {
+		return &searchAlert{
+			prometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
+			title:          "Structural search needs more memory",
+			description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+			priority:       4,
+		}, nil
+	}
+
+	if errors.As(err, &rErr) {
+		return &searchAlert{
+			prometheusType: "exceeded_diff_commit_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", rErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'.`, strings.Title(rErr.ResultType), rErr.Max),
+			priority:       2,
+		}, nil
+	}
+
+	if errors.As(err, &tErr) {
+		return &searchAlert{
+			prometheusType: "exceeded_diff_commit_with_time_search_limit",
+			title:          fmt.Sprintf("Too many matching repositories for %s search to handle", tErr.ResultType),
+			description:    fmt.Sprintf(`%s search can currently only handle searching across %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search.`, strings.Title(tErr.ResultType), tErr.Max),
+			priority:       1,
+		}, nil
 	}
 
 	return nil, err
@@ -584,9 +426,9 @@ func maxAlertByPriority(a, b *searchAlert) *searchAlert {
 // multierrorToAlert converts a multierror.Error into the highest priority alert
 // for the errors contained in it, and a new error with all the errors that could
 // not be converted to alerts.
-func multierrorToAlert(me *multierror.Error) (resAlert *searchAlert, resErr error) {
+func (r *searchResolver) multierrorToAlert(ctx context.Context, me *multierror.Error) (resAlert *searchAlert, resErr error) {
 	for _, err := range me.Errors {
-		alert, err := errorToAlert(err)
+		alert, err := r.errorToAlert(ctx, err)
 		resAlert = maxAlertByPriority(resAlert, alert)
 		resErr = multierror.Append(resErr, err)
 	}
@@ -611,6 +453,8 @@ func alertForInvalidRevision(revision string) *searchAlert {
 }
 
 type alertObserver struct {
+	*searchResolver
+
 	// Inputs are used to generate alert messages based on the query.
 	Inputs *run.SearchInputs
 
@@ -630,7 +474,7 @@ func (o *alertObserver) Error(ctx context.Context, err error) {
 	}
 
 	// We can compute the alert outside of the critical section.
-	alert := alertForError(err)
+	alert, _ := o.errorToAlert(ctx, err)
 
 	o.mu.Lock()
 	defer o.mu.Unlock()

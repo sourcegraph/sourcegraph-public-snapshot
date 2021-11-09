@@ -1,8 +1,8 @@
-package database
+package types
 
-// Cursors is a slice of Cursors which is needed when a single Cursor isn't specific
-// enough to paginate through unique records. Example: (repos.stars, repo.name)
-type Cursors []*Cursor
+// MultiCursor is a slice of Cursors which is needed when a single Cursor isn't specific
+// enough to paginate through unique records. Example: (repos.stars, repo.id)
+type MultiCursor []*Cursor
 
 // A Cursor for efficient index based pagination through large result sets.
 type Cursor struct {

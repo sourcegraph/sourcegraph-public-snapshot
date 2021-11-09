@@ -1729,6 +1729,7 @@ Indexes:
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_non_deleted_id_name_idx" btree (id, name) WHERE deleted_at IS NULL
     "repo_private" btree (private)
+    "repo_stars_desc_id_desc_idx" btree (stars DESC NULLS LAST, id DESC) WHERE deleted_at IS NULL AND blocked IS NULL
     "repo_stars_idx" btree (stars DESC NULLS LAST)
     "repo_uri_idx" btree (uri)
 Check constraints:
