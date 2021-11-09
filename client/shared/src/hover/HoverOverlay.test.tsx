@@ -10,10 +10,6 @@ import { subtypeOf } from '../util/types'
 
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
-// jest.mock('../actions/ActionItem', () => ({
-//     ActionItem: 'ActionItem',
-// }))
-
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }

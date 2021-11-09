@@ -8,18 +8,6 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 
-jest.mock('./BackToAllSubscriptionsLink', () => ({
-    BackToAllSubscriptionsLink: 'BackToAllSubscriptionsLink',
-}))
-
-jest.mock('./UserProductSubscriptionStatus', () => ({
-    UserProductSubscriptionStatus: 'UserProductSubscriptionStatus',
-}))
-
-jest.mock('./ProductSubscriptionBilling', () => ({
-    ProductSubscriptionBilling: 'ProductSubscriptionBilling',
-}))
-
 jest.mock('./ProductSubscriptionHistory', () => ({
     ProductSubscriptionHistory: 'ProductSubscriptionHistory',
 }))
