@@ -1183,29 +1183,6 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 		if newResult != nil {
 			newResult.Matches = result.Select(newResult.Matches, q)
-
-			actor := actor.FromContext(ctx)
-			var i int
-			for _, match := range newResult.Matches {
-				key := match.Key()
-				perms, err := authz.ActorPermissions(ctx, r.subRepoPerms, actor, authz.RepoContent{
-					Repo: key.Repo,
-					Path: key.Path,
-				})
-				if err != nil {
-					log15.Error("failed to get permissions",
-						"error", err)
-				}
-
-				if !perms.Include(authz.Read) {
-					// Unauthorized - drop this match
-					newResult.Matches = append(newResult.Matches[:i], newResult.Matches[i+1:]...)
-					continue
-				}
-				// Authorized - keep and continue
-				i++
-			}
-
 			sr = union(sr, newResult)
 			if len(sr.Matches) > wantCount {
 				sr.Matches = sr.Matches[:wantCount]
@@ -1215,9 +1192,37 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	}
 
 	if sr != nil {
+		applySubRepoPerms(ctx, r.subRepoPerms, sr)
 		r.sortResults(sr.Matches)
 	}
 	return sr, err
+}
+
+// applySubRepoPerms drops matches the actor in the given context does not have read access to.
+func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, sr *SearchResults) {
+	actor := actor.FromContext(ctx)
+	var i int
+	for _, match := range sr.Matches {
+		key := match.Key()
+		perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
+			Repo: key.Repo,
+			Path: key.Path,
+		})
+		if err != nil {
+			log15.Error("applySubRepoPerms: failed to check sub-repo permissions",
+				"actor.uid", actor.UID,
+				"match.key", key,
+				"error", err)
+		}
+
+		if !perms.Include(authz.Read) {
+			// Unauthorized - drop this match
+			sr.Matches = append(sr.Matches[:i], sr.Matches[i+1:]...)
+			continue
+		}
+		// Authorized - keep and continue
+		i++
+	}
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
