@@ -126,7 +126,7 @@ var macOSInstructions = []instruction{
 		command: `brew install go yarn git gnu-sed comby pcre sqlite jq`,
 	},
 	{
-		prompt:    `Do you want to use Docker (for PostgreSQL and Redis) or not?`,
+		prompt:    `Do you want to use Docker to run PostgreSQL and Redis?`,
 		readsBool: `docker`,
 	},
 	{
