@@ -71,15 +71,15 @@ Sourcegraph's migration files take for form of `sql` files following the snake c
 UPDATE schema_migrations SET version=1528395918, dirty=false;
 ```
 
-- **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.**
+   * **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.**
 
-- Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. 
+   * Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. 
 
-- _Note: Many migrations do nothing but create tables and/or indexes or alter them._
+   * _Note: Many migrations do nothing but create tables and/or indexes or alter them._
 
-- You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before setting `dirty=false`.
+   * You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before setting `dirty=false`.
 
-2. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again from the [Identify incomplete migration](#1-identify-incomplete-migration)**
+2. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again starting from the [Identify incomplete migration](#1-identify-incomplete-migration) step.**
 
 ## Additional Information
 
