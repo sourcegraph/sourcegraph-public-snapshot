@@ -409,8 +409,10 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-
-	// Permissions
+	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	if err != nil {
+		return nil, err
+	}
 
 	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
 	if err != nil {
@@ -429,7 +431,6 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
 	}
-
 	err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
 		SeriesID:         views[0].Series[0].SeriesID,
 		Query:            args.Input.Query,
