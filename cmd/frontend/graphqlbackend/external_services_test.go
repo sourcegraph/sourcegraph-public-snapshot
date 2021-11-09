@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
@@ -323,28 +324,24 @@ func TestAddExternalService(t *testing.T) {
 }
 
 func TestUpdateExternalService(t *testing.T) {
-	db := database.NewDB(nil)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{ID: 1}, nil
-		}
-		defer func() {
-			database.Mocks.Users = database.MockUsers{}
-		}()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
 		t.Run("no namespace", func(t *testing.T) {
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID: id,
 				}, nil
-			}
-			defer func() {
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			})
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -359,18 +356,20 @@ func TestUpdateExternalService(t *testing.T) {
 
 		t.Run("has mismatched user namespace", func(t *testing.T) {
 			userID := int32(2)
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
 				}, nil
-			}
-			defer func() {
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			})
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -388,22 +387,24 @@ func TestUpdateExternalService(t *testing.T) {
 
 		t.Run("has mismatched org namespace", func(t *testing.T) {
 			orgID := int32(42)
-			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return nil, nil
-			}
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:             id,
 					NamespaceOrgID: orgID,
 				}, nil
-			}
-			defer func() {
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			})
+
+			orgMembers := dbmock.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -421,23 +422,21 @@ func TestUpdateExternalService(t *testing.T) {
 
 		t.Run("has matching user namespace", func(t *testing.T) {
 			userID := int32(1)
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
 				}, nil
-			}
-			calledUpdate := false
-			database.Mocks.ExternalServices.Update = func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-				calledUpdate = true
-				return nil
-			}
-			defer func() {
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			})
+			externalServices.UpdateFunc.SetDefaultReturn(nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			_, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -445,37 +444,35 @@ func TestUpdateExternalService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !calledUpdate {
-				t.Fatal("!calledUpdate")
-			}
+			mockrequire.Called(t, externalServices.UpdateFunc)
 		})
 
 		t.Run("has matching org namespace", func(t *testing.T) {
 			orgID := int32(1)
-			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return &types.OrgMembership{
-					OrgID:  orgID,
-					UserID: 1,
-				}, nil
-			}
-			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.UpdateFunc.SetDefaultReturn(nil)
+			externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:             id,
 					NamespaceOrgID: orgID,
 				}, nil
-			}
-			calledUpdate := false
-			database.Mocks.ExternalServices.Update = func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
-				calledUpdate = true
-				return nil
-			}
-			defer func() {
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			})
+
+			orgMembers := dbmock.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return &types.OrgMembership{
+					OrgID:  orgID,
+					UserID: 1,
+				}, nil
+			})
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			_, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -483,28 +480,27 @@ func TestUpdateExternalService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !calledUpdate {
-				t.Fatal("!calledUpdate")
-			}
+			mockrequire.Called(t, externalServices.UpdateFunc)
 		})
 	})
 
 	t.Run("empty config", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: true}, nil
-		}
-		database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+		externalServices := dbmock.NewMockExternalServiceStore()
+		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 			return &types.ExternalService{
 				ID: id,
 			}, nil
-		}
-		defer func() {
-			database.Mocks.Users = database.MockUsers{}
-			database.Mocks.ExternalServices = database.MockExternalServices{}
-		}()
+		})
+
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -522,14 +518,16 @@ func TestUpdateExternalService(t *testing.T) {
 
 	userID := int32(1)
 	var cachedUpdate *database.ExternalServiceUpdate
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.ExternalServices.Update = func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
 		cachedUpdate = update
 		return nil
-	}
-	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+	})
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		if cachedUpdate == nil {
 			return &types.ExternalService{
 				ID:              id,
@@ -544,11 +542,11 @@ func TestUpdateExternalService(t *testing.T) {
 			Config:          *cachedUpdate.Config,
 			NamespaceUserID: userID,
 		}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.ExternalServices = database.MockExternalServices{}
 	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	RunTests(t, []*Test{
 		{

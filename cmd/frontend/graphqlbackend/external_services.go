@@ -125,7 +125,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
