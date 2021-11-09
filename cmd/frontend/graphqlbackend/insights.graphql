@@ -662,7 +662,6 @@ input PieChartSearchInsightInput {
     The query string.
     """
     query: String!
-
     """
     The scope of repositories.
     """
@@ -682,7 +681,6 @@ input PieChartOptionsInput {
     The title for the pie chart.
     """
     title: String
-
     """
     The threshold for which groups fall into the "other category". Only categories with a percentage greater than
     this value will be separately rendered.
@@ -705,13 +703,12 @@ extend type Mutation {
     Create a line chart backed by search insights.
     """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
-    #createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
+    #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
 
     """
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
-    #updatePieChartSearchInsight(input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Delete an insight view given the graphql ID.
@@ -762,7 +759,8 @@ union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
 """
 Defines presentation options for the insight.
 """
-union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
+union InsightPresentation = LineChartInsightViewPresentation
+#    | PieChartInsightViewPresentation
 
 """
 Defines a scope of time for which the insight data is generated.

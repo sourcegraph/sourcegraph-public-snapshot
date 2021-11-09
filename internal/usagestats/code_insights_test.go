@@ -278,7 +278,7 @@ func TestGetLangStatsInsights(t *testing.T) {
 			ID:             "codeStatsInsights.insight.global.lang1",
 			Title:          "my insight",
 			Repository:     "github.com/sourcegraph/sourcegraph",
-			OtherThreshold: float64(0),
+			OtherThreshold: float32(0),
 			OrgID:          &orgId,
 		},
 	}

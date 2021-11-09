@@ -276,7 +276,7 @@ type LangStatsInsight struct {
 	ID             string
 	Title          string
 	Repository     string
-	OtherThreshold float64
+	OtherThreshold float32
 	OrgID          *int32
 	UserID         *int32
 }
