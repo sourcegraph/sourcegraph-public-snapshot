@@ -8,7 +8,6 @@ require (
 	github.com/cockroachdb/errors v1.8.6
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/derision-test/go-mockgen v1.1.2
-	github.com/efritz/pentimento v0.0.0-20190429011147-ade47d831101
 	github.com/fatih/color v1.13.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-stack/stack v1.8.1 // indirect
