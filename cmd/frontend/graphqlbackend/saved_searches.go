@@ -11,13 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type savedSearchResolver struct {
-	db dbutil.DB
+	db database.DB
 	s  types.SavedSearch
 }
 
@@ -36,7 +35,7 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 		return nil, err
 	}
 
-	ss, err := database.SavedSearches(r.db).GetByID(ctx, intID)
+	ss, err := r.db.SavedSearches().GetByID(ctx, intID)
 	if err != nil {
 		return nil, err
 	}
@@ -91,14 +90,14 @@ func (r savedSearchResolver) Query() string { return r.s.Query }
 
 func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.s.OrgID != nil {
-		n, err := NamespaceByID(ctx, database.NewDB(r.db), MarshalOrgID(*r.s.OrgID))
+		n, err := NamespaceByID(ctx, r.db, MarshalOrgID(*r.s.OrgID))
 		if err != nil {
 			return nil, err
 		}
 		return &NamespaceResolver{n}, nil
 	}
 	if r.s.UserID != nil {
-		n, err := NamespaceByID(ctx, database.NewDB(r.db), MarshalUserID(*r.s.UserID))
+		n, err := NamespaceByID(ctx, r.db, MarshalUserID(*r.s.UserID))
 		if err != nil {
 			return nil, err
 		}
@@ -119,7 +118,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context) ([]*savedSearchResol
 		return nil, errors.New("no currently authenticated user")
 	}
 
-	allSavedSearches, err := database.SavedSearches(r.db).ListSavedSearchesByUserID(ctx, a.UID)
+	allSavedSearches, err := r.db.SavedSearches().ListSavedSearchesByUserID(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +187,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := database.SavedSearches(r.db).Create(ctx, &types.SavedSearch{
+	ss, err := r.db.SavedSearches().Create(ctx, &types.SavedSearch{
 		Description: args.Description,
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
@@ -245,7 +244,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := database.SavedSearches(r.db).Update(ctx, &types.SavedSearch{
+	ss, err := r.db.SavedSearches().Update(ctx, &types.SavedSearch{
 		ID:          id,
 		Description: args.Description,
 		Query:       args.Query,
@@ -268,7 +267,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	ss, err := database.SavedSearches(r.db).GetByID(ctx, id)
+	ss, err := r.db.SavedSearches().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +283,7 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	} else {
 		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
 	}
-	err = database.SavedSearches(r.db).Delete(ctx, id)
+	err = r.db.SavedSearches().Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}

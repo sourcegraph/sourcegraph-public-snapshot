@@ -98,6 +98,7 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
     ['goToDefinition.notFound']: boolean
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
+    ['panel.url']: string
     hoverPosition: TextDocumentPositionParameters & URLToFileContext
     hoveredOnDefinition: boolean
 }
@@ -190,6 +191,11 @@ export function getHoverActionsContext(
                                   { part: hoverContext.part }
                               )
                             : null,
+
+                    'panel.url': urlToFile(
+                        { ...hoverContext, position: hoverContext, viewState: 'panelID' },
+                        { part: hoverContext.part }
+                    ),
 
                     // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
                     hoverPosition: parameters,
