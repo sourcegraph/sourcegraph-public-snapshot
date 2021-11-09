@@ -54,6 +54,8 @@ const buildMock = (externalServiceCount: number, webhookLogCount: number) => [
     },
 ]
 
+// Create a component to handle the minimum state management required for a
+// WebhookLogPageHeader.
 const WebhookLogPageHeaderContainer: React.FunctionComponent<{
     initialExternalService?: SelectedExternalService
     initialOnlyErrors?: boolean
@@ -65,8 +67,8 @@ const WebhookLogPageHeaderContainer: React.FunctionComponent<{
         <WebhookLogPageHeader
             externalService={externalService}
             onlyErrors={onlyErrors}
-            onExternalServiceSelected={setExternalService}
-            onSetErrors={setOnlyErrors}
+            onSelectExternalService={setExternalService}
+            onSetOnlyErrors={setOnlyErrors}
         />
     )
 }

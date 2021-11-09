@@ -14,15 +14,15 @@ export interface Props {
     externalService: SelectedExternalService
     onlyErrors: boolean
 
-    onExternalServiceSelected: (externalService: SelectedExternalService) => void
-    onSetErrors: (onlyErrors: boolean) => void
+    onSelectExternalService: (externalService: SelectedExternalService) => void
+    onSetOnlyErrors: (onlyErrors: boolean) => void
 }
 
 export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
     externalService,
     onlyErrors,
-    onExternalServiceSelected,
-    onSetErrors,
+    onSelectExternalService: onExternalServiceSelected,
+    onSetOnlyErrors: onSetErrors,
 }) => {
     const onErrorToggle = useCallback(() => onSetErrors(!onlyErrors), [onlyErrors, onSetErrors])
     const onSelect = useCallback(

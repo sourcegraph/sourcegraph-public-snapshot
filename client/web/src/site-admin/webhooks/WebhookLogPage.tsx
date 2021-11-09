@@ -43,9 +43,9 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({ history, locati
             <Container>
                 <WebhookLogPageHeader
                     onlyErrors={onlyErrors}
-                    onSetErrors={setOnlyErrors}
+                    onSetOnlyErrors={setOnlyErrors}
                     externalService={externalService}
-                    onExternalServiceSelected={setExternalService}
+                    onSelectExternalService={setExternalService}
                 />
                 <FilteredConnection
                     history={history}
