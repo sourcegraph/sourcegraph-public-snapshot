@@ -17,7 +17,6 @@ const insightFieldsFragment = gql`
     fragment InsightFields on Insight {
         id
         title
-        description
         series {
             label
             points(excludeRepoRegex: $excludeRepoRegex, includeRepoRegex: $includeRepoRegex) {
