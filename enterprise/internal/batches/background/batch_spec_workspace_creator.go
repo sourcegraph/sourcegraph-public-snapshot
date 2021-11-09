@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"sort"
 
 	"github.com/inconshreveable/log15"
@@ -104,7 +103,6 @@ func (r *batchSpecWorkspaceCreator) process(
 			return err
 		}
 		if err == store.ErrNoResults {
-			fmt.Println("NO CACHE ENTRY FOUND")
 			continue
 		}
 

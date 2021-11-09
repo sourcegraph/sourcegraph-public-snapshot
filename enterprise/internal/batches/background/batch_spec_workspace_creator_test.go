@@ -204,7 +204,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		OnlyFetchWorkspace: true,
 	}
 
-	key, err := cacheKeyForWorkspace(workspace)
+	key, err := cacheKeyForWorkspace(batchSpec, workspace)
 	if err != nil {
 		t.Fatal(err)
 	}
