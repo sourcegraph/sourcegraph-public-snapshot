@@ -129,7 +129,7 @@ Click reload for Sourcegraph at `about:debugging`
 
 - Unit tests: `sg test bext`
 - Integration tests: `sg test bext-integration`
-- E2E tests: 
+- E2E tests:
   - `EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build`
   - `sg test bext-e2e`
 
