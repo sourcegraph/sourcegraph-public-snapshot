@@ -211,9 +211,10 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	defer func() { err = tx.Done(err) }()
 
 	view, err := tx.CreateView(ctx, types.InsightView{
-		Title:    emptyIfNil(args.Input.Options.Title),
-		UniqueID: ksuid.New().String(),
-		Filters:  types.InsightViewFilters{},
+		Title:            emptyIfNil(args.Input.Options.Title),
+		UniqueID:         ksuid.New().String(),
+		Filters:          types.InsightViewFilters{},
+		PresentationType: types.Line,
 	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateView")
@@ -334,6 +335,63 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
+}
+
+func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.PieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	uid := actor.FromContext(ctx).UID
+
+	tx, err := r.insightStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	view, err := tx.CreateView(ctx, types.InsightView{
+		Title:            args.Input.PresentationOptions.Title,
+		UniqueID:         ksuid.New().String(),
+		OtherThreshold:   &args.Input.PresentationOptions.OtherThreshold,
+		PresentationType: types.Pie,
+	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateView")
+	}
+	seriesToAdd, err := tx.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:           ksuid.New().String(),
+		Query:              args.Input.Query,
+		CreatedAt:          time.Now(),
+		Repositories:       args.Input.RepositoryScope.Repositories,
+		SampleIntervalUnit: string(types.Month),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateSeries")
+	}
+	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{})
+	if err != nil {
+		return nil, errors.Wrap(err, "AttachSeriesToView")
+	}
+
+	if args.Input.Dashboards != nil {
+		dashboardTx := r.dashboardStore.With(tx)
+		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
+			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+			if err != nil {
+				return nil, errors.Wrap(err, "AddViewsToDashboard")
+			}
+		}
+	}
+
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
 }
 
 type pieChartInsightViewPresentation struct {

@@ -671,7 +671,12 @@ input PieChartSearchInsightInput {
     """
     Options for this pie chart.
     """
-    options: PieChartOptionsInput!
+    presentationOptions: PieChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
 }
 
 """
@@ -681,7 +686,7 @@ input PieChartOptionsInput {
     """
     The title for the pie chart.
     """
-    title: String
+    title: String!
 
     """
     The threshold for which groups fall into the "other category". Only categories with a percentage greater than
@@ -705,7 +710,7 @@ extend type Mutation {
     Create a line chart backed by search insights.
     """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
-    #createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
+    createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Update a line chart backed by search insights.
