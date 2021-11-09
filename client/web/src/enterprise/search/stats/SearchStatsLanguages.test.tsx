@@ -1,12 +1,12 @@
+import { render } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer from 'react-test-renderer'
 
 import { SearchStatsLanguages, summarizeSearchResultsStatsLanguages } from './SearchStatsLanguages'
 
 describe('SearchStatsLanguages', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = render(
             <MemoryRouter>
                 <SearchStatsLanguages
                     query="abc"
@@ -23,12 +23,9 @@ describe('SearchStatsLanguages', () => {
                         ],
                     }}
                 />
-            </MemoryRouter>,
-            {
-                createNodeMock: () => ({ parentElement: document.implementation.createHTMLDocument().body }),
-            }
+            </MemoryRouter>
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })
 

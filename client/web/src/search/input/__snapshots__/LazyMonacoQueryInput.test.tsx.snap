@@ -1,21 +1,23 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`PlainQueryInput empty 1`] = `
-<input
-  className="form-control text-code lazyMonacoQueryInputIntermediateInput"
-  onChange={[Function]}
-  spellCheck={false}
-  type="text"
-  value=""
-/>
+<DocumentFragment>
+  <input
+    class="form-control text-code lazyMonacoQueryInputIntermediateInput"
+    spellcheck="false"
+    type="text"
+    value=""
+  />
+</DocumentFragment>
 `;
 
 exports[`PlainQueryInput with query 1`] = `
-<input
-  className="form-control text-code lazyMonacoQueryInputIntermediateInput"
-  onChange={[Function]}
-  spellCheck={false}
-  type="text"
-  value="repo:jsonrpc2 file:async.go asyncHandler"
-/>
+<DocumentFragment>
+  <input
+    class="form-control text-code lazyMonacoQueryInputIntermediateInput"
+    spellcheck="false"
+    type="text"
+    value="repo:jsonrpc2 file:async.go asyncHandler"
+  />
+</DocumentFragment>
 `;

@@ -1,79 +1,84 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ErrorBoundary passes through if non-error 1`] = `
-<div
-  className="heroPage defaultPadding"
->
+<DocumentFragment>
   <div
-    className="icon"
-  >
-    <AlertCircleIcon />
-  </div>
-  <div
-    className="title"
-  >
-    Error
-  </div>
-  <div
-    className="subtitle"
-    data-testid="hero-page-subtitle"
+    class="heroPage defaultPadding"
   >
     <div
-      className="container"
+      class="icon"
     >
-      <p>
-        Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
-      </p>
-      <p>
-        <code
-          className="text-wrap"
-        >
-          x
-        </code>
-      </p>
+      <alertcircleicon />
+    </div>
+    <div
+      class="title"
+    >
+      Error
+    </div>
+    <div
+      class="subtitle"
+      data-testid="hero-page-subtitle"
+    >
+      <div
+        class="container"
+      >
+        <p>
+          Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
+        </p>
+        <p>
+          <code
+            class="text-wrap"
+          >
+            x
+          </code>
+        </p>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`ErrorBoundary renders error page if error 1`] = `
-<span>
-  hello
-</span>
+<DocumentFragment>
+  <span>
+    hello
+  </span>
+</DocumentFragment>
 `;
 
 exports[`ErrorBoundary renders reload page if chunk error 1`] = `
-<div
-  className="heroPage defaultPadding"
->
+<DocumentFragment>
   <div
-    className="icon"
-  >
-    <ReloadIcon />
-  </div>
-  <div
-    className="title"
-  >
-    Reload required
-  </div>
-  <div
-    className="subtitle"
-    data-testid="hero-page-subtitle"
+    class="heroPage defaultPadding"
   >
     <div
-      className="container"
+      class="icon"
     >
-      <p>
-        A new version of Sourcegraph is available.
-      </p>
-      <button
-        className="btn btn-primary"
-        onClick={[Function]}
-        type="button"
+      <reloadicon />
+    </div>
+    <div
+      class="title"
+    >
+      Reload required
+    </div>
+    <div
+      class="subtitle"
+      data-testid="hero-page-subtitle"
+    >
+      <div
+        class="container"
       >
-        Reload to update
-      </button>
+        <p>
+          A new version of Sourcegraph is available.
+        </p>
+        <button
+          class="btn btn-primary"
+          type="button"
+        >
+          Reload to update
+        </button>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
