@@ -1,6 +1,14 @@
+import { MockedResponse } from '@apollo/client/testing'
 import { number, text } from '@storybook/addon-knobs'
 
-import { WebhookLogFields } from '../../../graphql-operations'
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
+
+import {
+    WebhookLogFields,
+    WebhookLogPageHeaderExternalService,
+    WebhookLogPageHeaderResult,
+} from '../../../graphql-operations'
+import { WEBHOOK_LOG_PAGE_HEADER } from '../backend'
 
 export const BODY_JSON = '{"this is":"valid JSON","that should be":["re","indented"]}'
 export const BODY_PLAIN = 'this is definitely not valid JSON\n\tand should not be reformatted in any way'
@@ -52,3 +60,39 @@ export const webhookLogNode = (overrides?: Partial<WebhookLogFields>): WebhookLo
         body: BODY_PLAIN,
     },
 })
+
+export const buildExternalServices = (count: number): WebhookLogPageHeaderExternalService[] => {
+    const services: WebhookLogPageHeaderExternalService[] = []
+    count = number('external service count', count)
+
+    for (let index = 0; index < count; index++) {
+        const name = `External service ${index}`
+        services.push({
+            __typename: 'ExternalService',
+            id: name,
+            displayName: name,
+        })
+    }
+
+    return services
+}
+
+export const buildHeaderMock = (
+    externalServiceCount: number,
+    webhookLogCount: number
+): MockedResponse<WebhookLogPageHeaderResult>[] => [
+    {
+        request: { query: getDocumentNode(WEBHOOK_LOG_PAGE_HEADER) },
+        result: {
+            data: {
+                externalServices: {
+                    totalCount: externalServiceCount,
+                    nodes: buildExternalServices(externalServiceCount),
+                },
+                webhookLogs: {
+                    totalCount: number('errored webhook count', webhookLogCount),
+                },
+            },
+        },
+    },
+]

@@ -7,14 +7,20 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 
-import { queryWebhookLogs, SelectedExternalService } from './backend'
+import { queryWebhookLogs as _queryWebhookLogs, SelectedExternalService } from './backend'
 import { WebhookLogNode } from './WebhookLogNode'
 import styles from './WebhookLogPage.module.scss'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 
-export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {}
+export interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
+    queryWebhookLogs: typeof _queryWebhookLogs
+}
 
-export const WebhookLogPage: React.FunctionComponent<Props> = ({ history, location }) => {
+export const WebhookLogPage: React.FunctionComponent<Props> = ({
+    history,
+    location,
+    queryWebhookLogs = _queryWebhookLogs,
+}) => {
     const [onlyErrors, setOnlyErrors] = useState(false)
     const [externalService, setExternalService] = useState<SelectedExternalService>('all')
 
@@ -28,7 +34,7 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({ history, locati
                 externalService,
                 onlyErrors
             ),
-        [externalService, onlyErrors]
+        [externalService, onlyErrors, queryWebhookLogs]
     )
 
     return (
