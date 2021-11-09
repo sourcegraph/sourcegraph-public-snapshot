@@ -246,14 +246,9 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 	// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
 	// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
 	//
-	headerOrigin := r.Header.Get("Origin")
-	isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
-	corsOrigin := conf.Get().CorsOrigin
-
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-	if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
-		w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
+	if isTrustedOrigin(r) {
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 	}
 
 	if r.Method == "OPTIONS" {
