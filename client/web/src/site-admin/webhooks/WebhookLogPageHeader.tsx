@@ -34,6 +34,7 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
 
     const { data } = useQuery<WebhookLogPageHeaderResult>(WEBHOOK_LOG_PAGE_HEADER, {})
     const errorCount = data?.webhookLogs.totalCount ?? 0
+    console.log(data)
 
     return (
         <div className="d-flex align-items-end">

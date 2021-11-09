@@ -122,11 +122,7 @@ export const WEBHOOK_LOG_PAGE_HEADER = gql`
     query WebhookLogPageHeader {
         externalServices {
             nodes {
-                id
-                displayName
-            }
-            pageInfo {
-                hasNextPage
+                ...WebhookLogPageHeaderExternalService
             }
             totalCount
         }
@@ -134,5 +130,10 @@ export const WEBHOOK_LOG_PAGE_HEADER = gql`
         webhookLogs(onlyErrors: true) {
             totalCount
         }
+    }
+
+    fragment WebhookLogPageHeaderExternalService on ExternalService {
+        id
+        displayName
     }
 `
