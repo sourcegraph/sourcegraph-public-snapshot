@@ -13,7 +13,6 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
-
 ## Chrome / Firefox v21.11.8.1804, Safari v1.7
 
 - URL mismatch [#issues/26170](https://github.com/sourcegraph/sourcegraph/issues/26170), [#pull/26776](https://github.com/sourcegraph/sourcegraph/pull/26776)
