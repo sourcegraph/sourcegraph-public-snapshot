@@ -153,7 +153,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(database.NewDB(db))))
+	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
 

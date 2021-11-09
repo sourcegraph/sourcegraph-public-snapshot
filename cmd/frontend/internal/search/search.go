@@ -281,7 +281,7 @@ LOOP:
 func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
 	eventsC := make(chan streaming.SearchEvent)
 
-	search, err := h.newSearchResolver(ctx, database.NewDB(h.db), &graphqlbackend.SearchArgs{
+	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
 		Query:       a.Query,
 		Version:     a.Version,
 		PatternType: strPtr(a.PatternType),

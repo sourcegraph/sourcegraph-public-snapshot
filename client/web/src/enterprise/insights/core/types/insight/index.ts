@@ -12,7 +12,7 @@ export * from './common'
 
 export const INSIGHTS_ALL_REPOS_SETTINGS_KEY = 'insights.allrepos'
 
-export type Insight = SearchBasedInsight | LangStatsInsight
+export type Insight = (SearchBasedInsight | LangStatsInsight) & { presentationType?: string }
 export type ExtensionInsight = SearchExtensionBasedInsight | LangStatsInsight
 
 export type InsightExtensionBasedConfiguration =
@@ -32,8 +32,14 @@ export function isExtensionInsight(insight: Insight): insight is ExtensionInsigh
     return insight.type === InsightType.Extension
 }
 
-export function isSearchBasedInsight(possibleInsight: { id: string }): possibleInsight is SearchBasedInsight {
-    return isSearchBasedInsightId(possibleInsight.id)
+export function isSearchBasedInsight(
+    possibleInsight: Pick<Insight, 'id' | 'presentationType'>
+): possibleInsight is SearchBasedInsight {
+    // TODO: update this check after deprecating settings api
+    return (
+        possibleInsight.presentationType === 'LineChartInsightViewPresentation' ||
+        isSearchBasedInsightId(possibleInsight.id)
+    )
 }
 
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {

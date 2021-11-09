@@ -29,7 +29,7 @@ import (
 type CachedLocationResolver struct {
 	sync.RWMutex
 	children map[api.RepoID]*cachedRepositoryResolver
-	db       dbutil.DB
+	db       database.DB
 }
 
 type cachedRepositoryResolver struct {
@@ -47,7 +47,7 @@ type cachedCommitResolver struct {
 // NewCachedLocationResolver creates a location resolver with an empty cache.
 func NewCachedLocationResolver(db dbutil.DB) *CachedLocationResolver {
 	return &CachedLocationResolver{
-		db:       db,
+		db:       database.NewDB(db),
 		children: map[api.RepoID]*cachedRepositoryResolver{},
 	}
 }
@@ -214,7 +214,7 @@ func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.R
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(database.NewDB(r.db), repo), nil
+	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
 // Commit resolves the git commit with the given repository resolver and commit hash. This method may

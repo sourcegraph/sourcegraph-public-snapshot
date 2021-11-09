@@ -145,26 +145,106 @@ func TestUser(t *testing.T) {
 func TestUser_SettingsCascade(t *testing.T) {
 	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		users := dbmock.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-		_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(context.Background())
-		got := fmt.Sprintf("%v", err)
-		want := "must be authenticated as user with id 1"
-		assert.Equal(t, want, got)
+		tests := []struct {
+			name  string
+			ctx   context.Context
+			setup func()
+		}{
+			{
+				name: "unauthenticated",
+				ctx:  context.Background(),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				},
+			},
+			{
+				name: "another user",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id}, nil
+					})
+				},
+			},
+			{
+				name: "site admin",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id, SiteAdmin: true}, nil
+					})
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				test.setup()
+
+				_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(context.Background())
+				got := fmt.Sprintf("%v", err)
+				want := "must be authenticated as user with id 1"
+				assert.Equal(t, want, got)
+			})
+		}
 	})
 }
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
 	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		users := dbmock.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-		ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(context.Background())
-		assert.False(t, ok, "ViewerCanAdminister")
+		tests := []struct {
+			name  string
+			ctx   context.Context
+			setup func()
+		}{
+			{
+				name: "unauthenticated",
+				ctx:  context.Background(),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				},
+			},
+			{
+				name: "another user",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id}, nil
+					})
+				},
+			},
+			{
+				name: "site admin",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id, SiteAdmin: true}, nil
+					})
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				test.setup()
+
+				ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(context.Background())
+				assert.False(t, ok, "ViewerCanAdminister")
+			})
+		}
 	})
 }
 
@@ -326,18 +406,59 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		db := dbmock.NewMockDB()
+		users := dbmock.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig)
 
-		_, err := newSchemaResolver(db).UpdateUser(context.Background(),
-			&updateUserArgs{
-				User: MarshalUserID(1),
+		tests := []struct {
+			name  string
+			ctx   context.Context
+			setup func()
+		}{
+			{
+				name: "unauthenticated",
+				ctx:  context.Background(),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				},
 			},
-		)
-		got := fmt.Sprintf("%v", err)
-		want := "must be authenticated as user with id 1"
-		assert.Equal(t, want, got)
+			{
+				name: "another user",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id}, nil
+					})
+				},
+			},
+			{
+				name: "site admin",
+				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				setup: func() {
+					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+						return &types.User{ID: id, SiteAdmin: true}, nil
+					})
+				},
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				test.setup()
+
+				_, err := newSchemaResolver(db).UpdateUser(context.Background(),
+					&updateUserArgs{
+						User: MarshalUserID(1),
+					},
+				)
+				got := fmt.Sprintf("%v", err)
+				want := "must be authenticated as user with id 1"
+				assert.Equal(t, want, got)
+			})
+		}
 	})
 
 	t.Run("success", func(t *testing.T) {
