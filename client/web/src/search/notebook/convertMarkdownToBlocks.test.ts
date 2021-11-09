@@ -17,7 +17,7 @@ Paragraph`
         expect(convertMarkdownToBlocks(markdown)).toStrictEqual([{ type: 'md', input: markdown }])
     })
 
-    it('should handle interleaved markdown and query blocks at the start', () => {
+    it('should handle interleaved markdown, query, and file blocks', () => {
         const markdown = `# Title
 
 \`\`\`sourcegraph
@@ -36,6 +36,18 @@ Paragraph with list:
 my second query
 \`\`\`
 
+\`\`\`sourcegraph:file
+/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts
+\`\`\`
+
+## Second title v2
+
+File
+
+\`\`\`sourcegraph:file
+/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts?L101-123
+\`\`\`
+
 ### Third title`
 
         expect(convertMarkdownToBlocks(markdown)).toStrictEqual([
@@ -43,6 +55,28 @@ my second query
             { type: 'query', input: 'my query' },
             { type: 'md', input: '## Second title\n\nParagraph with list:\n\n* 1\n* 2\n* 3\n\n' },
             { type: 'query', input: 'my second query' },
+            {
+                type: 'file',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'feature',
+                    filePath: 'client/web/index.ts',
+                    lineRange: undefined,
+                },
+            },
+            { type: 'md', input: '## Second title v2\n\nFile\n\n' },
+            {
+                type: 'file',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'feature',
+                    filePath: 'client/web/index.ts',
+                    lineRange: {
+                        startLine: 100,
+                        endLine: 123,
+                    },
+                },
+            },
             { type: 'md', input: '### Third title' },
         ])
     })
