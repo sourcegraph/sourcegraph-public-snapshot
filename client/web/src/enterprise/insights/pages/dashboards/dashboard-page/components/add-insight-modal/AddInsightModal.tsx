@@ -11,6 +11,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { parseType } from '../../../../../core/backend/code-insights-gql-backend'
 import { SettingsBasedInsightDashboard } from '../../../../../core/types'
 
 import styles from './AddInsightModal.module.scss'
@@ -28,12 +29,11 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const { dashboard, onClose } = props
     const { getReachableInsights, updateDashboard } = useContext(CodeInsightsBackendContext)
 
-    if (!dashboard.owner) {
-        throw new Error('TODO: Update this to visibility default')
-    }
-
     const insights = useObservable(
-        useMemo(() => getReachableInsights(dashboard.owner!.id) || of([]), [dashboard.owner, getReachableInsights])
+        useMemo(() => getReachableInsights(dashboard.owner?.id || '') || of([]), [
+            dashboard.owner,
+            getReachableInsights,
+        ])
     )
 
     const initialValues = useMemo<AddInsightFormValues>(
@@ -47,17 +47,15 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
-
-            if (!dashboard.owner) {
-                throw new Error('TODO: Update this to visibility default')
-            }
+            const type = dashboard.grants && parseType(dashboard.grants)
 
             await updateDashboard({
                 previousDashboard: dashboard,
                 nextDashboardInput: {
                     name: dashboard.title,
-                    visibility: dashboard.owner.id,
+                    visibility: dashboard.owner?.id || '',
                     insightIds,
+                    type,
                 },
             }).toPromise()
             onClose()

@@ -79,7 +79,9 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                         />
 
                         <TruncatedText>{insight.title}</TruncatedText>
-                        <Badge value={insight.owner.name} className={styles.insightOwnerName} />
+                        {insight.owner.name.length > 0 && (
+                            <Badge value={insight.owner.name} className={styles.insightOwnerName} />
+                        )}
                     </label>
                 ))}
             </fieldset>

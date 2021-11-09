@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { parseType } from '../../../core/backend/code-insights-gql-backend'
 import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
@@ -23,8 +24,9 @@ const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string 
         return undefined
     }
 
+    // If no owner, this is using the graphql api
     if (!dashboard.owner) {
-        throw new Error('TODO: support GraphQL API')
+        return parseType(dashboard.grants)
     }
 
     return dashboard.owner.id
@@ -54,7 +56,7 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
         return <LoadingSpinner />
     }
 
-    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<void> => {
+    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
         return createInsight({ insight, dashboard }).toPromise()
@@ -69,7 +71,8 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
         }
 
         if (!dashboard.owner) {
-            throw new Error('TODO: support GraphQL API')
+            history.push(`/insights/dashboards/${dashboard.id}`)
+            return
         }
 
         if (dashboard.owner.id === insight.visibility) {
