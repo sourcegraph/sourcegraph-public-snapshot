@@ -9,6 +9,7 @@ import (
 	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -278,8 +279,6 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		tr.Finish()
 	}()
 
-	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
-	//  which are the last call sites of resolveRepositories (which does caching).
 	if options.CacheLookup {
 		// Cache if opts are empty, so that multiple calls to resolveRepositories only
 		// hit the database once.
@@ -298,7 +297,10 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 	tr.LazyPrintf("resolveRepositories - start")
 	defer tr.LazyPrintf("resolveRepositories - done")
 
-	repositoryResolver := &searchrepos.Resolver{DB: r.db}
+	repositoryResolver := &searchrepos.Resolver{
+		DB:                  r.db,
+		SearchableReposFunc: backend.Repos.ListSearchable,
+	}
 
 	return repositoryResolver.Resolve(ctx, options)
 }
@@ -328,8 +330,6 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
-	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
-	//  which are the last call sites of resolveRepositories (which does caching).
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {

@@ -89,15 +89,12 @@ func (g gitTreeSuggestionResolver) Label() string { return g.gitTreeEntry.Path()
 func (g gitTreeSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, true
 }
-
 func (g gitTreeSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsRegular()
 }
-
 func (g gitTreeSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsDir()
 }
-
 func (g gitTreeSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
 		repoName: g.gitTreeEntry.Commit().Repository().Name(),
@@ -117,7 +114,6 @@ func (s symbolSuggestionResolver) Score() int { return s.score }
 func (s symbolSuggestionResolver) Length() int {
 	return len(s.symbol.Symbol.Name) + len(s.symbol.Symbol.Parent)
 }
-
 func (s symbolSuggestionResolver) Label() string {
 	return s.symbol.Symbol.Name + " " + s.symbol.Symbol.Parent
 }
@@ -176,7 +172,6 @@ func (s searchContextSuggestionResolver) Label() string { return s.searchContext
 func (s searchContextSuggestionResolver) ToSearchContext() (SearchContextResolver, bool) {
 	return s.searchContext, true
 }
-
 func (s searchContextSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
 		searchContextSpec: s.searchContext.Spec(),
@@ -248,8 +243,6 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 				limit:                    maxSearchSuggestions,
 			})
 
-		// TODO(tsenart): Figure out what to do with this instance of resolveRepositories.
-		//  I think we're getting rid of GraphQL suggestions code, so this might be a non-issue.
 		resolved, err := r.resolveRepositories(ctx, repoOptions)
 		resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
 		for i, rev := range resolved.RepoRevs {
@@ -536,6 +529,7 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 type suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
+
 	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
 	// from "field:^foo$" to "field:^foo".
 	globbing := false

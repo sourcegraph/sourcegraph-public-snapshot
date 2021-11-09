@@ -25,7 +25,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed liveness probes from Kubernetes Prometheus deployment [#2970](https://github.com/sourcegraph/deploy-sourcegraph/pull/2970)
 - Batch Changes now requests the `workflow` scope on GitHub personal access tokens to allow batch changes to write to the `.github` directory in repositories. If you have already configured a GitHub PAT for use with Batch Changes, we suggest adding the scope to the others already granted. [#26606](https://github.com/sourcegraph/sourcegraph/issues/26606)
-- The search UI's repositories count as well as the GraphQL API's `search().repositories` and `search().repositoriesCount` have changed semantics from the set of searchable repositories to the set of searched repositories. In a future release, we'll introduce separate fields for the set of searchable repositories backed by a [scalable implementation](https://github.com/sourcegraph/sourcegraph/issues/27274). [#26995](https://github.com/sourcegraph/sourcegraph/issues/26995)
 
 ### Fixed
 

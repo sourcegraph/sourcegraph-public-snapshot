@@ -6,12 +6,14 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -177,6 +179,42 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 
 	trueP := true
 	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
+}
+
+// ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
+// It lists all public indexable repos and also any private repos added by the
+// current user. Only used on sourcegraph.com where we don't have every repo indexed.
+func (s *repos) ListSearchable(ctx context.Context) (repos []types.MinimalRepo, err error) {
+	ctx, done := trace(ctx, "Repos", "ListSearchable", nil, &err)
+	defer func() {
+		if err == nil {
+			span := opentracing.SpanFromContext(ctx)
+			span.LogFields(otlog.Int("result.len", len(repos)))
+		}
+		done()
+	}()
+
+	span := opentracing.SpanFromContext(ctx)
+	repos, err = s.cache.ListPublic(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing default public repos")
+	}
+	span.LogFields(otlog.Int("public.len", len(repos)))
+
+	// For authenticated users we also want to include any private repos they may have added
+	if a := actor.FromContext(ctx); a.IsAuthenticated() {
+		privateRepos, err := s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+			UserID:      a.UID,
+			OnlyPrivate: true,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "getting user private repos")
+		}
+		span.LogFields(otlog.Int("private.len", len(privateRepos)))
+		repos = append(repos, privateRepos...)
+	}
+
+	return repos, nil
 }
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {

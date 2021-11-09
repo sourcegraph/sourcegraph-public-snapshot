@@ -7,15 +7,14 @@ import (
 	"runtime"
 
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -25,7 +24,7 @@ var MockSearchRepositories func(args *search.TextParameters) ([]result.Match, *s
 //
 // For a repository to match a query, the repository's name must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func SearchRepositories(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
+func SearchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) (err error) {
 	if MockSearchRepositories != nil {
 		results, stats, err := MockSearchRepositories(args)
 		stream.Send(streaming.SearchEvent{
@@ -35,24 +34,14 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		return err
 	}
 
-	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
-	defer cancel()
-
-	return searchRepositories(ctx, args, args.Repos, limit, stream)
-}
-
-func searchRepositories(
-	ctx context.Context,
-	args *search.TextParameters,
-	repos []*search.RepositoryRevisions,
-	limit int,
-	stream streaming.Sender,
-) (err error) {
-	tr, ctx := trace.New(ctx, "run.searchRepositories", "")
+	tr, ctx := trace.New(ctx, "run.SearchRepositories", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	ctx, stream, cancel := streaming.WithLimit(ctx, stream, int(limit))
+	defer cancel()
 
 	fieldAllowlist := map[string]struct{}{
 		query.FieldRepo:               {},
@@ -87,20 +76,20 @@ func searchRepositories(
 
 	tr.LogFields(
 		otlog.String("pattern", patternRe),
-		otlog.Int("limit", limit))
+		otlog.Int32("limit", limit))
 
 	pattern, err := regexp.Compile(patternRe)
 	if err != nil {
 		return err
 	}
 
-	// Filter repos by matching their names against the query pattern.
-	tr.LogFields(otlog.Int("resolved.len", len(repos)))
+	// Filter args.Repos by matching their names against the query pattern.
+	tr.LogFields(otlog.Int("resolved.len", len(args.Repos)))
 
 	results := make(chan []*search.RepositoryRevisions)
 	go func() {
 		defer close(results)
-		matchRepos(pattern, repos, results)
+		matchRepos(pattern, args.Repos, results)
 	}()
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
@@ -130,24 +119,6 @@ func searchRepositories(
 	tr.LogFields(otlog.Int("matched.len", count))
 
 	return nil
-}
-
-type RepoSearch struct {
-	Args  *search.TextParameters
-	Limit int
-}
-
-func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
-	defer cleanup()
-
-	return repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		return searchRepositories(ctx, s.Args, page.RepoRevs, s.Limit, stream)
-	})
-}
-
-func (*RepoSearch) Name() string {
-	return "Repo"
 }
 
 func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
