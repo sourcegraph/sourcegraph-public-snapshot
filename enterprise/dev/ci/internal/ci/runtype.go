@@ -36,6 +36,7 @@ const (
 	// Special test branches
 
 	BackendIntegrationTests // run backend tests that are used on main
+	E2ETests                // run e2e tests
 )
 
 func computeRunType(tag, branch string) RunType {
@@ -66,6 +67,9 @@ func computeRunType(tag, branch string) RunType {
 
 	case strings.HasPrefix(branch, "backend-integration/"):
 		return BackendIntegrationTests
+
+	case strings.HasPrefix(branch, "only-e2e-tests/"):
+		return E2ETests
 
 	default:
 		// If no specific run type is matched, assumed to be a PR
@@ -107,6 +111,8 @@ func (t RunType) String() string {
 		return "Build All candidates without testing"
 	case BackendIntegrationTests:
 		return "Backend integration tests"
+	case E2ETests:
+		return "E2E tests"
 	}
 	panic("Run type does not have a full name defined")
 }

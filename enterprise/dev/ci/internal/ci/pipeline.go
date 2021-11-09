@@ -115,6 +115,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Run default set of PR checks as well
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
+	case E2ETests:
+		ops.Append(
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			serverE2E(c.candidateImageTag()))
+
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
