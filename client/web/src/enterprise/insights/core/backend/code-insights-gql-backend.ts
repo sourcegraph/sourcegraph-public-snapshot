@@ -87,20 +87,21 @@ const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]):
     type: InsightType.Backend,
     id: insight.id,
     visibility: '',
-    title: insight.presentation.title,
+    title: 'title' in insight.presentation ? insight.presentation.title : '',
     series: insight.dataSeries.map(series => ({
         name: series.label,
         query:
             insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
             'QUERY NOT FOUND',
-        stroke: insight.presentation.seriesPresentation.find(presentation => presentation.seriesId === series.seriesId)
-            ?.color,
+        stroke: 'seriesPresentation' in insight.presentation
+            ? insight.presentation.seriesPresentation.find(presentation => presentation.seriesId === series.seriesId)?.color
+            : '',
     })),
 })
 
 const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
     id: insight.id,
-    title: insight.presentation.title,
+    title: 'title' in insight.presentation ? insight.presentation.title : '',
     description: '',
     series: insight.dataSeries.map(series => ({
         label: series.label,
