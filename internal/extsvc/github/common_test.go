@@ -85,7 +85,7 @@ func TestClient_GetRepository(t *testing.T) {
 	"stargazers_count": 30,
 	"watchers_count": 20,
 	"forks_count": 5,
-    "visibility": "internal"
+  "visibility": "internal"
 }
 `,
 	}
