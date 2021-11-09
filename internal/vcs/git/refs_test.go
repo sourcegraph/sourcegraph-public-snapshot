@@ -2,16 +2,100 @@ package git
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
+
+func TestExpandRefs(t *testing.T) {
+	t.Parallel()
+
+	// Create commit tree like this:
+	// b0m0
+	// |   \
+	// b1m0 b2m0
+	//      |
+	//      b2m1
+	gitCommands := []string{
+		`git config user.email "you@example.com"`,
+		`git config user.name "you@example.com"`,
+		`git checkout -b b0`,
+		`git commit --allow-empty -m b0m0`,
+		`git checkout -b b1`,
+		`git commit --allow-empty -m b1m0`,
+		`git checkout -b b2 b0`,
+		`git commit --allow-empty -m b2m0`,
+		`git commit --allow-empty -m b2m1`,
+	}
+
+	moreGitCommands := []string{
+		`git checkout b0`,
+		`git commit --allow-empty -m b0m1`,
+		`git checkout b1`,
+		`git commit --allow-empty -m b1m1`,
+		`git checkout b2`,
+		`git commit --allow-empty -m b2m2`,
+	}
+
+	cases := [][]protocol.RevisionSpecifier{{
+		{RevSpec: "b0"},
+		{RevSpec: "b1"},
+	}, {
+		{RevSpec: "b1"},
+	}, {
+		{RevSpec: "b2"},
+	}, {
+		{RefGlob: "refs/heads/*"},
+	}, {
+		{RefGlob: "refs/heads/b*"},
+	}, {
+		{RefGlob: "refs/heads/*"},
+		{ExcludeRefGlob: "refs/heads/b1"},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			// Initialize the git repository
+			dir := InitGitRepository(t, gitCommands...)
+			t.Cleanup(func() { os.RemoveAll(dir) })
+			dividedOutput := func(ctx context.Context, args []string) ([]byte, []byte, error) {
+				out, err := GitCommand(dir, "git", args...).CombinedOutput()
+				return out, nil, err
+			}
+
+			// Expand refs into stable hashes
+			expanded, err := ExpandRefs(context.Background(), dividedOutput, tc)
+			require.NoError(t, err)
+
+			// Generate args for git log to list searched commits with the expanded args
+			logArgs := append([]string{"log", "--format=format:%H"}, revsToGitArgs(expanded)...)
+
+			// Run the git log command
+			outputBefore, err := GitCommand(dir, "git", logArgs...).CombinedOutput()
+			require.NoError(t, err)
+
+			// Add more commits to the branches
+			for _, cmd := range moreGitCommands {
+				out, err := GitCommand(dir, "bash", "-c", cmd).CombinedOutput()
+				require.NoError(t, err, string(out))
+			}
+
+			// Ensure that the searched commits do not change after adding new commits
+			outputAfter, err := GitCommand(dir, "git", logArgs...).CombinedOutput()
+			require.NoError(t, err)
+			require.Equal(t, outputBefore, outputAfter)
+		})
+	}
+}
 
 func TestHumanReadableBranchName(t *testing.T) {
 	for _, tc := range []struct {

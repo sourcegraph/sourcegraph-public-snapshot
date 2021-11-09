@@ -23,12 +23,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
-type dividedOutputFunc func(context.Context, args []string) ([]byte, []byte, error)
+type dividedOutputFunc func(ctx context.Context, args []string) ([]byte, []byte, error)
 
 // ExpandRefs expands all reference-type RevisionSpecifiers (globs, exclude globs, and HEAD) into absolute commits hashes.
 // This is useful to convert reference types, which may change meaning over time, to static hashes, which will not change meaning.
 func ExpandRefs(ctx context.Context, dividedOutput dividedOutputFunc, revSpecs []protocol.RevisionSpecifier) ([]protocol.RevisionSpecifier, error) {
-	args := []string{"rev-parse"}
+	args := append([]string{"rev-parse"}, revsToGitArgs(revSpecs)...)
+
+	stdout, stderr, err := dividedOutput(ctx, args)
+	if err != nil {
+		log15.Warn("rev-parse command failed", "err", err.Error(), "stderr", string(stderr))
+		return nil, err
+	}
+
+	split := bytes.Split(stdout, []byte{'\n'})
+	split = split[:len(split)-1] // remove the last, empty string
+	res := make([]protocol.RevisionSpecifier, 0, len(split))
+	for _, hash := range split {
+		res = append(res, protocol.RevisionSpecifier{RevSpec: string(hash)})
+	}
+	return res, nil
+}
+
+func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
+	args := make([]string, 0, len(revSpecs))
 	for _, r := range revSpecs {
 		if r.RevSpec != "" {
 			args = append(args, r.RevSpec)
@@ -45,20 +63,7 @@ func ExpandRefs(ctx context.Context, dividedOutput dividedOutputFunc, revSpecs [
 	if len(revSpecs) == 0 {
 		args = append(args, "HEAD")
 	}
-
-	stdout, stderr, err := dividedOutput(ctx, args)
-	if err != nil {
-		log15.Warn("rev-parse command failed", "err", err.Error(), "stderr", string(stderr))
-		return nil, err
-	}
-
-	split := bytes.Split(stdout, []byte{'\n'})
-	split = split[:len(split)-1] // remove the last, empty string
-	res := make([]protocol.RevisionSpecifier, 0, len(split))
-	for _, hash := range split {
-		res = append(res, protocol.RevisionSpecifier{RevSpec: string(hash)})
-	}
-	return res, nil
+	return args
 }
 
 // HumanReadableBranchName returns a human readable branch name from the
