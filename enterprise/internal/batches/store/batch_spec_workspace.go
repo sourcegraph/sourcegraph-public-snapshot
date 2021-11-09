@@ -23,6 +23,7 @@ import (
 var batchSpecWorkspaceInsertColumns = []string{
 	"batch_spec_id",
 	"changeset_spec_ids",
+	"batch_spec_execution_cache_entry_id",
 
 	"repo_id",
 	"branch",
@@ -46,6 +47,7 @@ var BatchSpecWorkspaceColums = SQLColumns{
 
 	"batch_spec_workspaces.batch_spec_id",
 	"batch_spec_workspaces.changeset_spec_ids",
+	"batch_spec_workspaces.batch_spec_execution_cache_entry_id",
 
 	"batch_spec_workspaces.repo_id",
 	"batch_spec_workspaces.branch",
@@ -106,6 +108,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				ctx,
 				wj.BatchSpecID,
 				marshaledIDs,
+				dbutil.NewNullInt64(wj.BatchSpecExecutionCacheEntryID),
 				wj.RepoID,
 				wj.Branch,
 				wj.Commit,
@@ -292,6 +295,7 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) err
 		&wj.ID,
 		&wj.BatchSpecID,
 		&jsonIDsSet{Assocs: &wj.ChangesetSpecIDs},
+		&dbutil.NullInt64{N: &wj.BatchSpecExecutionCacheEntryID},
 		&wj.RepoID,
 		&wj.Branch,
 		&wj.Commit,
