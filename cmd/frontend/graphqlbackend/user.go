@@ -500,7 +500,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 				ID:   repo.RepoID,
 				Name: api.RepoName(repo.RepoURI),
 			},
-			db: database.NewDB(r.db),
+			db: r.db,
 			innerRepo: &types.Repo{
 				ID: repo.RepoID,
 			},

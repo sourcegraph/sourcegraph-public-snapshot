@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -505,7 +504,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	return getCommit()
 }
 
-func makePhabClientForOrigin(ctx context.Context, db dbutil.DB, origin string) (*phabricator.Client, error) {
+func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string) (*phabricator.Client, error) {
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &database.LimitOffset{
@@ -513,7 +512,7 @@ func makePhabClientForOrigin(ctx context.Context, db dbutil.DB, origin string) (
 		},
 	}
 	for {
-		svcs, err := database.ExternalServices(db).List(ctx, opt)
+		svcs, err := db.ExternalServices().List(ctx, opt)
 		if err != nil {
 			return nil, errors.Wrap(err, "list")
 		}

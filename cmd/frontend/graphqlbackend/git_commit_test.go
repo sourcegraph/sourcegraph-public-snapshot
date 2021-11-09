@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
@@ -19,7 +19,7 @@ import (
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := dbmock.NewMockDB()
 
 	commit := &gitapi.Commit{
 		ID:      "c1",
@@ -94,7 +94,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(database.NewDB(db), &types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
 				r := toGitCommitResolver(repo, db, "c1", nil)
