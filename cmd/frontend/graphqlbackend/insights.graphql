@@ -680,6 +680,26 @@ input PieChartSearchInsightInput {
 }
 
 """
+Input for updating a pie chart search insight
+"""
+input UpdatePieChartSearchInsightInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
+    presentationOptions: PieChartOptionsInput!
+}
+
+"""
 Options for a pie chart
 """
 input PieChartOptionsInput {
@@ -716,7 +736,7 @@ extend type Mutation {
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
-    #updatePieChartSearchInsight(input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
+    updatePieChartSearchInsight(id: ID!, input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Delete an insight view given the graphql ID.

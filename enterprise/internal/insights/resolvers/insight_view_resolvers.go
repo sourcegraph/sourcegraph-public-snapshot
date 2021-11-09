@@ -280,6 +280,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		Filters: types.InsightViewFilters{
 			IncludeRepoRegex: args.Input.ViewControls.Filters.IncludeRepoRegex,
 			ExcludeRepoRegex: args.Input.ViewControls.Filters.ExcludeRepoRegex},
+		PresentationType: types.Line,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")
@@ -337,7 +338,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
 }
 
-func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.PieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	uid := actor.FromContext(ctx).UID
 
 	tx, err := r.insightStore.Transact(ctx)
@@ -389,6 +390,52 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 				return nil, errors.Wrap(err, "AddViewsToDashboard")
 			}
 		}
+	}
+
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+}
+
+func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	tx, err := r.insightStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	var insightViewId string
+	err = relay.UnmarshalSpec(args.Id, &insightViewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+
+	// Permissions
+
+	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetMapped")
+	}
+	if len(views) == 0 {
+		return nil, errors.New("No insight view found with this id")
+	}
+
+	view, err := tx.UpdateView(ctx, types.InsightView{
+		UniqueID:         insightViewId,
+		Title:            args.Input.PresentationOptions.Title,
+		OtherThreshold:   &args.Input.PresentationOptions.OtherThreshold,
+		PresentationType: types.Pie,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "UpdateView")
+	}
+
+	err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
+		SeriesID:         views[0].Series[0].SeriesID,
+		Query:            args.Input.Query,
+		Repositories:     args.Input.RepositoryScope.Repositories,
+		StepIntervalUnit: string(types.Month),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "UpdateSeries")
 	}
 
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil

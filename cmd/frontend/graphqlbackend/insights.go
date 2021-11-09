@@ -27,8 +27,9 @@ type InsightsResolver interface {
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 
 	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
-	CreatePieChartSearchInsight(ctx context.Context, args *PieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 	UpdateLineChartSearchInsight(ctx context.Context, args *UpdateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	CreatePieChartSearchInsight(ctx context.Context, args *CreatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	UpdatePieChartSearchInsight(ctx context.Context, args *UpdatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
 	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
 
@@ -284,15 +285,26 @@ type UpdateLineChartSearchInsightInput struct {
 	ViewControls        InsightViewControlsInput
 }
 
-type PieChartSearchInsightArgs struct {
-	Input PieChartSearchInsightInput
+type CreatePieChartSearchInsightArgs struct {
+	Input CreatePieChartSearchInsightInput
 }
 
-type PieChartSearchInsightInput struct {
+type CreatePieChartSearchInsightInput struct {
 	Query               string
 	RepositoryScope     RepositoryScopeInput
 	PresentationOptions PieChartOptionsInput
 	Dashboards          *[]graphql.ID
+}
+
+type UpdatePieChartSearchInsightArgs struct {
+	Id    graphql.ID
+	Input UpdatePieChartSearchInsightInput
+}
+
+type UpdatePieChartSearchInsightInput struct {
+	Query               string
+	RepositoryScope     RepositoryScopeInput
+	PresentationOptions PieChartOptionsInput
 }
 
 type PieChartOptionsInput struct {

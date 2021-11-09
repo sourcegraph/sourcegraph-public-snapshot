@@ -492,6 +492,8 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.Description,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		view.OtherThreshold,
+		view.PresentationType,
 		view.UniqueID,
 	))
 	var id int
@@ -743,7 +745,8 @@ returning id;`
 
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
-UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s
+UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
+other_threshold = %s, presentation_type = %s
 WHERE unique_id = %s
 RETURNING id;`
 
