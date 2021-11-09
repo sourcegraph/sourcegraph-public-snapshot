@@ -77,7 +77,7 @@ _Note: Many migrations do nothing but create tables and/or indexes or alter them
 
 You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before setting `dirty=false`.
 
-1. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again from [_1. Identify incomplete migration_](#1-identify-incomplete-migration)**
+2. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again from [_1. Identify incomplete migration_](#1-identify-incomplete-migration)**
 
 ## Additional Information
 
