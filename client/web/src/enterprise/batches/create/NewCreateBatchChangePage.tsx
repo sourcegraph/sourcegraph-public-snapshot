@@ -24,6 +24,7 @@ import {
     tap,
 } from 'rxjs/operators'
 
+import { ErrorObject } from 'schema-utils/declarations/validate'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
@@ -59,7 +60,7 @@ import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { useNamespaces } from './useNamespaces'
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { excludeRepo } from './yaml-util'
+import { excludeRepo as excludeRepoFromYaml } from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)
@@ -107,32 +108,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [previewID, setPreviewID] = useState<Scalars['ID']>()
 
-    const [isValid, setIsValid] = useState<boolean | 'unknown'>('unknown')
-    const [code, setCode] = useState<string>(helloWorldSample)
-    const debouncedCode = useDebounce(code, 250)
-
-    const validate = useCallback((newCode: string) => {
-        const valid = VALIDATE_SPEC(newCode)
-        setIsValid(valid)
-    }, [])
-    const debouncedValidate = useMemo(() => debounce(validate, 250), [validate])
-
-    // Stop the debounced function on dismount
-    useEffect(
-        () => () => {
-            debouncedValidate.cancel()
-        },
-        [debouncedValidate]
-    )
-
-    const handleCodeChange = useCallback(
-        (newCode: string) => {
-            setCode(newCode)
-            setIsValid('unknown')
-            debouncedValidate(newCode)
-        },
-        [debouncedValidate]
-    )
+    const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors } = useBatchSpecCode(helloWorldSample)
 
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
         if (!previewID) {
@@ -146,28 +122,6 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
             setIsLoading(error)
         }
     }, [previewID, history])
-
-    const [codeUpdateError, setCodeUpdateError] = useState<string>()
-
-    // Updates the batch spec code when the user wants to exclude a repo resolved in the
-    // workspaces preview.
-    const excludeRepoFromSpec = useCallback(
-        (repo: string, branch: string) => {
-            setCodeUpdateError(undefined)
-
-            const result = excludeRepo(code, repo, branch)
-
-            if (result.success) {
-                setCode(result.spec)
-            } else {
-                setCodeUpdateError(
-                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again.' +
-                        result.error
-                )
-            }
-        },
-        [code]
-    )
 
     // const preview = useObservable(
     //     useMemo(
@@ -276,10 +230,10 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={code} onChange={handleCodeChange} />
                 </div>
                 <Container className={styles.workspacesPreviewContainer}>
-                    {codeUpdateError && <ErrorAlert error={codeUpdateError} />}
-                    {!isValid && VALIDATE_SPEC.errors && (
+                    {errors.update && <ErrorAlert error={errors.update} />}
+                    {!isValid && errors.validation.length && (
                         <ErrorAlert
-                            error={`The entered spec is invalid ${VALIDATE_SPEC.errors
+                            error={`The entered spec is invalid ${errors.validation
                                 .map(error => error.message)
                                 .join('\n')}`}
                         />
@@ -289,4 +243,87 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
             </div>
         </div>
     )
+}
+
+interface UseBatchSpecCodeResult {
+    code: string
+    debouncedCode: string
+    handleCodeChange: (newCode: string) => void
+    isValid: boolean | 'unknown'
+    errors: {
+        validation: ErrorObject[]
+        update?: string
+    }
+    excludeRepo: (repo: string, branch: string) => void
+}
+
+const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult => {
+    const [code, setCode] = useState<string>(initialCode)
+    const debouncedCode = useDebounce(code, 250)
+
+    const [validationErrors, setValidationErrors] = useState<string[]>([])
+    const [updateError, setUpdateError] = useState<string>()
+
+    const clearErrors = useCallback(() => {
+        setValidationErrors([])
+        setUpdateError(undefined)
+    }, [])
+
+    const [isValid, setIsValid] = useState<boolean | 'unknown'>('unknown')
+
+    const validate = useCallback((newCode: string) => {
+        const valid = VALIDATE_SPEC(newCode)
+        setIsValid(valid)
+    }, [])
+    const debouncedValidate = useMemo(() => debounce(validate, 250), [validate])
+
+    // Stop the debounced function on dismount
+    useEffect(
+        () => () => {
+            debouncedValidate.cancel()
+        },
+        [debouncedValidate]
+    )
+
+    const handleCodeChange = useCallback(
+        (newCode: string) => {
+            setCode(newCode)
+            clearErrors()
+            setIsValid('unknown')
+            debouncedValidate(newCode)
+        },
+        [debouncedValidate, clearErrors]
+    )
+
+    // Updates the batch spec code when the user wants to exclude a repo resolved in the
+    // workspaces preview.
+    const excludeRepo = useCallback(
+        (repo: string, branch: string) => {
+            clearErrors()
+
+            const result = excludeRepoFromYaml(code, repo, branch)
+
+            if (result.success) {
+                setCode(result.spec)
+            } else {
+                setUpdateError(
+                    'Unable to update batch spec. Double-check to make sure there are no syntax errors, then try again.' +
+                        result.error
+                )
+            }
+        },
+        [code, clearErrors]
+    )
+
+    return {
+        code,
+        debouncedCode,
+        handleCodeChange,
+        isValid,
+        errors: {
+            validation: validationErrors,
+            update: updateError,
+        },
+        excludeRepo,
+    }
 }
