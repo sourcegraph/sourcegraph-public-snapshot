@@ -61,7 +61,7 @@ type FileDiff interface {
 	InternalID() string
 }
 
-func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
+func NewRepositoryComparison(ctx context.Context, db database.DB, r *RepositoryResolver, args *RepositoryComparisonInput) (*RepositoryComparisonResolver, error) {
 	var baseRevspec, headRevspec string
 	if args.Base == nil {
 		baseRevspec = "HEAD"
@@ -90,7 +90,7 @@ func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryRes
 			return nil, err
 		}
 
-		return toGitCommitResolver(r, database.NewDB(db), commitID, nil), nil
+		return toGitCommitResolver(r, db, commitID, nil), nil
 	}
 
 	head, err := getCommit(ctx, r.RepoName(), headRevspec)
@@ -128,7 +128,7 @@ func (r *RepositoryResolver) Comparison(ctx context.Context, args *RepositoryCom
 }
 
 type RepositoryComparisonResolver struct {
-	db                       dbutil.DB
+	db                       database.DB
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	repo                     *RepositoryResolver
@@ -162,7 +162,7 @@ func (r *RepositoryComparisonResolver) Commits(
 	args *graphqlutil.ConnectionArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		db:            database.NewDB(r.db),
+		db:            r.db,
 		revisionRange: r.baseRevspec + ".." + r.headRevspec,
 		first:         args.First,
 		repo:          r.repo,
