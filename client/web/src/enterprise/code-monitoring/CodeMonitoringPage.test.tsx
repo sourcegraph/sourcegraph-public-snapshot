@@ -1,5 +1,4 @@
-import { mount } from 'enzyme'
-import * as H from 'history'
+import { render, fireEvent } from '@testing-library/react'
 import * as React from 'react'
 import { MemoryRouter } from 'react-router'
 import { of } from 'rxjs'
@@ -44,75 +43,40 @@ const generateMockFetchMonitors = (count: number) => ({ id, first, after }: List
 }
 
 describe('CodeMonitoringListPage', () => {
-    test('Code monitoring page with less than 10 results', () => {
-        expect(
-            mount(
-                <MemoryRouter initialEntries={['/code-monitoring']}>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(3)} />
-                </MemoryRouter>
-            )
-        ).toMatchSnapshot()
-    })
-    test('Code monitoring page with 10 results', () => {
-        expect(
-            mount(
-                <MemoryRouter initialEntries={['/code-monitoring']}>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(10)} />
-                </MemoryRouter>
-            )
-        ).toMatchSnapshot()
-    })
-    test('Code monitoring page with more than 10 results', () => {
-        expect(
-            mount(
-                <MemoryRouter initialEntries={['/code-monitoring']}>
-                    <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(12)} />
-                </MemoryRouter>
-            )
-        ).toMatchSnapshot()
-    })
-
     test('Clicking enabled toggle calls toggleCodeMonitorEnabled', () => {
-        const component = mount(
+        const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
             </MemoryRouter>
         )
-        const toggle = component.find('.test-toggle-monitor-enabled')
-        toggle.simulate('click')
+        const toggle = component.getByTestId('toggle-monitor-enabled')
+        fireEvent.click(toggle)
         expect(additionalProps.toggleCodeMonitorEnabled.calledOnce)
     })
 
-    test('Redirect to getting started if empty', () => {
-        const component = mount(
+    test('Show getting started on load if empty', () => {
+        const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(0)} />
             </MemoryRouter>
         )
-
-        const history: H.History = component.find('Router').prop('history')
-        expect(history.location.pathname).toBe('/code-monitoring/getting-started')
     })
 
-    test('Do not redirect to getting started if not empty', () => {
-        const component = mount(
+    test('Do not show getting started on load if not empty', () => {
+        const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
                 <CodeMonitoringPage {...additionalProps} fetchUserCodeMonitors={generateMockFetchMonitors(1)} />
             </MemoryRouter>
         )
-
-        const history: H.History = component.find('Router').prop('history')
-        expect(history.location.pathname).toBe('/code-monitoring')
     })
 
-    test('Redirect to getting started if not logged in', () => {
-        const component = mount(
+    test('Show getting started on load if not logged in', () => {
+        const component = render(
             <MemoryRouter initialEntries={['/code-monitoring']}>
                 <CodeMonitoringPage {...additionalProps} authenticatedUser={null} />
             </MemoryRouter>
         )
-
-        const history: H.History = component.find('Router').prop('history')
-        expect(history.location.pathname).toBe('/code-monitoring/getting-started')
     })
+
+    test('Switching tabs from getting started to empty list works', () => {})
 })

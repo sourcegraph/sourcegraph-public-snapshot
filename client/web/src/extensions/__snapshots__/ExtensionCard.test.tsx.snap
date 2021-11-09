@@ -71,7 +71,6 @@ exports[`ExtensionCard renders 1`] = `
         <button
           aria-checked={false}
           className="toggle mx-2"
-          data-test="extension-toggle-x/y"
           disabled={false}
           onClick={[Function]}
           role="switch"
