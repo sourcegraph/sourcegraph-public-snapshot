@@ -73,10 +73,6 @@ func (s *savedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
 // user is an admin. It is the callers responsibility to ensure that only users
 // with the proper permissions can access the returned saved searches.
 func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
-	if Mocks.SavedSearches.ListAll != nil {
-		return Mocks.SavedSearches.ListAll(ctx)
-	}
-
 	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "")
 	defer func() {
 		tr.SetError(err)
@@ -130,10 +126,6 @@ func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 // user is an admin. It is the callers responsibility to ensure this response
 // only makes it to users with proper permissions to access the saved search.
 func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
-	if Mocks.SavedSearches.GetByID != nil {
-		return Mocks.SavedSearches.GetByID(ctx, id)
-	}
-
 	var sq api.SavedQuerySpecAndConfig
 	err := s.Handle().DB().QueryRowContext(ctx, `SELECT
 		id,
@@ -173,10 +165,6 @@ func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQue
 // specified user or users with proper permissions can access the returned
 // saved searches.
 func (s *savedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
-	if Mocks.SavedSearches.ListSavedSearchesByUserID != nil {
-		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
-	}
-
 	var savedSearches []*types.SavedSearch
 	orgs, err := OrgsWith(s).GetByUserID(ctx, userID)
 	if err != nil {
@@ -264,10 +252,6 @@ func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to create the saved search.
 func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
-	if Mocks.SavedSearches.Create != nil {
-		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
-	}
-
 	if newSavedSearch.ID != 0 {
 		return nil, errors.New("newSavedSearch.ID must be zero")
 	}
@@ -314,10 +298,6 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the update.
 func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
-	if Mocks.SavedSearches.Update != nil {
-		return Mocks.SavedSearches.Update(ctx, savedSearch)
-	}
-
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Update", "")
 	defer func() {
 		tr.SetError(err)
@@ -358,10 +338,6 @@ func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedS
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the delete.
 func (s *savedSearchStore) Delete(ctx context.Context, id int32) (err error) {
-	if Mocks.SavedSearches.Delete != nil {
-		return Mocks.SavedSearches.Delete(ctx, id)
-	}
-
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Delete", "")
 	defer func() {
 		tr.SetError(err)
