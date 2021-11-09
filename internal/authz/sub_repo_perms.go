@@ -74,12 +74,18 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
+	if s.permissionsGetter == nil {
+		return None, errors.New("PermissionsGetter is nil")
+	}
+
 	if userID == 0 {
 		return None, &ErrUnauthenticated{}
 	}
 
-	if s.permissionsGetter == nil {
-		return None, errors.New("PermissionsGetter is nil")
+	// An empty path is equivalent to repo permissions so we can assume it has
+	// already been checked at that level.
+	if content.Path == "" {
+		return Read, nil
 	}
 
 	if supported, err := s.permissionsGetter.RepoSupported(ctx, content.Repo); err != nil {
