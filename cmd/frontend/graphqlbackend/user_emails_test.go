@@ -8,10 +8,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
