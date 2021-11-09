@@ -337,14 +337,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	uid := actor.FromContext(ctx).UID
-
 	tx, err := r.insightStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
+	uid := actor.FromContext(ctx).UID
 	view, err := tx.CreateView(ctx, types.InsightView{
 		Title:            args.Input.PresentationOptions.Title,
 		UniqueID:         ksuid.New().String(),
@@ -409,7 +408,6 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, err
 	}
-
 	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetMapped")
