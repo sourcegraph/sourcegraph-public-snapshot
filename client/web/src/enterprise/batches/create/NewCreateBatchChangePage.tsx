@@ -7,7 +7,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
+import { useHistory } from 'react-router'
 import { asyncScheduler, concat, Observable, of, OperatorFunction, SchedulerLike, Subject } from 'rxjs'
 import {
     catchError,
@@ -55,20 +55,15 @@ import {
 } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './examples/hello-world.batch.yaml'
+import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
+import { useNamespaces } from './useNamespaces'
 import { WorkspacesPreview } from './WorkspacesPreview'
 import { excludeRepo } from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)
 const VALIDATE_SPEC = ajv.compile<BatchSpec>(batchSpecSchemaJSON)
-
-const getNamespacesFromSettings = (settingsCascade: SettingsCascadeOrError<Settings>): SettingsSubject[] =>
-    (settingsCascade !== null &&
-        !isErrorLike(settingsCascade) &&
-        settingsCascade.subjects !== null &&
-        settingsCascade.subjects.map(({ subject }) => subject).filter(subject => !isErrorLike(subject))) ||
-    []
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -102,52 +97,8 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     createBatchSpecFromRaw = _createBatchSpecFromRaw,
 }) => {
     const history = useHistory()
-    const location = useLocation()
 
-    // Gather all the available namespaces from user settings
-    const rawNamespaces: SettingsSubject[] = useMemo(() => getNamespacesFromSettings(settingsCascade), [
-        settingsCascade,
-    ])
-
-    const userNamespace = useMemo(
-        () => rawNamespaces.find((namespace): namespace is SettingsUserSubject => namespace.__typename === 'User'),
-        [rawNamespaces]
-    )
-
-    if (!userNamespace) {
-        throw new Error('No user namespace found')
-    }
-
-    const organizationNamespaces = useMemo(
-        () => rawNamespaces.filter((namespace): namespace is SettingsOrgSubject => namespace.__typename === 'Org'),
-        [rawNamespaces]
-    )
-
-    const namespaces: (SettingsUserSubject | SettingsOrgSubject)[] = useMemo(
-        () => [userNamespace, ...organizationNamespaces],
-        [userNamespace, organizationNamespaces]
-    )
-
-    // Check if there's a namespace parameter in the URL
-    const defaultNamespace = new URLSearchParams(location.search).get('namespace')
-
-    // The default namespace selected from the dropdown should match whatever was in the
-    // URL parameter, or else default to the user's namespace
-    const defaultSelectedNamespace = useMemo(() => {
-        if (defaultNamespace) {
-            const lowerCaseDefaultNamespace = defaultNamespace.toLowerCase()
-            return (
-                namespaces.find(
-                    namespace =>
-                        namespace.displayName?.toLowerCase() === lowerCaseDefaultNamespace ||
-                        (namespace.__typename === 'User' &&
-                            namespace.username.toLowerCase() === lowerCaseDefaultNamespace) ||
-                        (namespace.__typename === 'Org' && namespace.name.toLowerCase() === lowerCaseDefaultNamespace)
-                ) || userNamespace
-            )
-        }
-        return userNamespace
-    }, [namespaces, defaultNamespace, userNamespace])
+    const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade)
 
     const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
         defaultSelectedNamespace
@@ -336,51 +287,6 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     <WorkspacesPreview batchSpecInput={debouncedCode} />
                 </Container>
             </div>
-        </div>
-    )
-}
-
-const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
-
-interface NamespaceSelectorProps {
-    namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
-    selectedNamespace: string
-    onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
-}
-
-const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
-    namespaces,
-    selectedNamespace,
-    onSelect,
-}) => {
-    const onSelectNamespace = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
-        event => {
-            const selectedNamespace = namespaces.find(
-                (namespace): namespace is SettingsUserSubject | SettingsOrgSubject =>
-                    namespace.id === event.target.value
-            )
-            onSelect(selectedNamespace || namespaces[0])
-        },
-        [onSelect, namespaces]
-    )
-
-    return (
-        <div className="form-group d-flex align-items-center">
-            <label className="text-nowrap mr-2 mb-0" htmlFor={NAMESPACE_SELECTOR_ID}>
-                <strong>Change namespace:</strong>
-            </label>
-            <select
-                className={classNames(styles.namespaceSelector, 'form-control')}
-                id={NAMESPACE_SELECTOR_ID}
-                value={selectedNamespace}
-                onChange={onSelectNamespace}
-            >
-                {namespaces.map(namespace => (
-                    <option key={namespace.id} value={namespace.id}>
-                        {getNamespaceDisplayName(namespace)}
-                    </option>
-                ))}
-            </select>
         </div>
     )
 }
