@@ -280,8 +280,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // it was part of setting-cascade based API.
     public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => of([])
 
-    public getSubjectSettingsById = errorMockMethod('getSubjectSettingsById')
-
     public createInsight = (input: InsightCreateInput): Observable<unknown> => {
         const { insight, dashboard } = input
 
