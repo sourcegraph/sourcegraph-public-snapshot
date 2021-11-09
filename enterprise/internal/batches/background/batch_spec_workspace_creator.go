@@ -2,15 +2,21 @@ package background
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 // batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
@@ -66,7 +72,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
-		ws = append(ws, &btypes.BatchSpecWorkspace{
+		workspace := &btypes.BatchSpecWorkspace{
 			BatchSpecID:      spec.ID,
 			ChangesetSpecIDs: []int64{},
 
@@ -80,8 +86,103 @@ func (r *batchSpecWorkspaceCreator) process(
 
 			Unsupported: w.Unsupported,
 			Ignored:     w.Ignored,
+		}
+
+		ws = append(ws, workspace)
+
+		rawKey, err := cacheKeyForWorkspace(w)
+		if err != nil {
+			return err
+		}
+
+		entry, err := tx.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
+			Key: rawKey,
 		})
+		if err != nil && err != store.ErrNoResults {
+			return err
+		}
+		if err == store.ErrNoResults {
+			continue
+		}
+
+		workspace.BatchSpecExecutionCacheEntryID = entry.ID
+
+		changesetSpecs, err := changesetSpecsFromCache(spec, w, entry)
+		if err != nil {
+			return err
+		}
+		for _, spec := range changesetSpecs {
+			if err := tx.CreateChangesetSpec(ctx, spec); err != nil {
+				return err
+			}
+			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
+		}
 	}
 
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
+}
+
+func cacheKeyForWorkspace(w *service.RepoWorkspace) (string, error) {
+	executionKey := cache.ExecutionKey{
+		Repository: batcheslib.Repository{
+			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
+			Name:        string(w.Repo.Name),
+			BaseRef:     git.EnsureRefPrefix(w.Branch),
+			BaseRev:     string(w.Commit),
+			FileMatches: []string{},
+		},
+		Path:               w.Path,
+		Steps:              w.Steps,
+		OnlyFetchWorkspace: w.OnlyFetchWorkspace,
+	}
+	return executionKey.Key()
+}
+
+func changesetSpecsFromCache(spec *btypes.BatchSpec, w *service.RepoWorkspace, entry *btypes.BatchSpecExecutionCacheEntry) ([]*btypes.ChangesetSpec, error) {
+	var executionResult execution.Result
+	if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
+		return nil, err
+	}
+
+	repoID := string(graphqlbackend.MarshalRepositoryID(w.Repo.ID))
+	input := &batcheslib.ChangesetSpecInput{
+		BaseRepositoryID: repoID,
+		HeadRepositoryID: repoID,
+		Repository: batcheslib.ChangesetSpecRepository{
+			Name:        string(w.Repo.Name),
+			FileMatches: w.FileMatches,
+			BaseRef:     git.EnsureRefPrefix(w.Branch),
+			BaseRev:     string(w.Commit),
+		},
+		BatchChangeAttributes: &template.BatchChangeAttributes{
+			Name:        spec.Spec.Name,
+			Description: spec.Spec.Description,
+		},
+		Template:         spec.Spec.ChangesetTemplate,
+		TransformChanges: spec.Spec.TransformChanges,
+		Result:           executionResult,
+	}
+
+	rawSpecs, err := batcheslib.BuildChangesetSpecs(input, batcheslib.ChangesetSpecFeatureFlags{
+		IncludeAutoAuthorDetails: true,
+		AllowOptionalPublished:   true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var specs []*btypes.ChangesetSpec
+	for _, s := range rawSpecs {
+		changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
+		if err != nil {
+			return nil, err
+		}
+		changesetSpec.BatchSpecID = spec.ID
+		changesetSpec.RepoID = w.Repo.ID
+		changesetSpec.UserID = spec.UserID
+
+		specs = append(specs, changesetSpec)
+
+	}
+	return specs, nil
 }

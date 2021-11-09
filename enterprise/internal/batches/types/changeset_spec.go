@@ -23,6 +23,12 @@ func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
 	return c, c.computeDiffStat()
 }
 
+func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
+	c := &ChangesetSpec{Spec: spec}
+
+	return c, c.computeDiffStat()
+}
+
 type ChangesetSpec struct {
 	ID     int64
 	RandID string
