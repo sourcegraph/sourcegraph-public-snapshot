@@ -20,17 +20,12 @@ The following procedure requires that you are able to execute commands from insi
 
 _These steps pertain to the frontend database (pgsql) and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
 
-1. **Check the schema version. If it's dirty, then note the version number by using this command:**
-
-`SELECT * FROM schema_migrations;`
-
+1. **Check the schema version in `psql` using the following query: `SELECT * FROM schema_migrations;`. If it's dirty, note the version number.**
 2. **Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)** 
-
-_Note: migrations in this directory are specific to the `pgsql` frontend database, learn about other databases in the [detailed steps to resolution](#detailed-steps-to-resolve)_
-
-3. **Run the code there explicitly**
-4. **Manually clear the dirty flag on the `schema_migrations` table**
-5. **Start up again and the remaining migrations should succeed, otherwise repeat**
+   * _Note: migrations in this directory are specific to the `pgsql` frontend database, learn about other databases in the [detailed steps to resolution](#detailed-steps-to-resolve)_
+3. **Run the code there explicitly.**
+4. **Manually clear the dirty flag on the `schema_migrations` table.**
+5. **Start up again and the remaining migrations should succeed, otherwise repeat.**
 
 ## Detailed Steps to resolve
 
