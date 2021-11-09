@@ -1,6 +1,6 @@
 ---
-name: Contractor issue
-about: Create an issue that will be picked up by contractors
+name: External contractor issue
+about: Create an issue that will be picked up by external contractors
 title: ''
 labels: 'gitstart'
 assignees: 'gitstart-sourcegraph'
