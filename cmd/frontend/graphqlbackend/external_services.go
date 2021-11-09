@@ -125,7 +125,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	if err := database.ExternalServices(r.db).Delete(ctx, id); err != nil {
+	if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
