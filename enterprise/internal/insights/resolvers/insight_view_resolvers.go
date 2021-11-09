@@ -99,18 +99,10 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) PresentationType(ctx context.Context) (string, error) {
-	return string(i.view.PresentationType), nil
-}
-
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
-	if i.view.PresentationType == types.Pie {
-		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view}
-		return &insightPresentationUnionResolver{resolver: pieChartPresentation}, nil
-	} else {
-		lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
-		return &insightPresentationUnionResolver{resolver: lineChartPresentation}, nil
-	}
+	lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
+
+	return &insightPresentationUnionResolver{resolver: lineChartPresentation}, nil
 }
 
 func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.InsightDataSeriesDefinition, error) {
@@ -336,22 +328,6 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
 }
 
-type pieChartInsightViewPresentation struct {
-	view *types.Insight
-}
-
-func (p *pieChartInsightViewPresentation) Title(ctx context.Context) (string, error) {
-	return p.view.Title, nil
-}
-
-func (p *pieChartInsightViewPresentation) OtherThreshold(ctx context.Context) (float64, error) {
-	if p.view.OtherThreshold == nil {
-		log15.Warn("Returning a pie chart with no threshold set. This should never happen!", "id", p.view.UniqueID)
-		return 0, nil
-	}
-	return *p.view.OtherThreshold, nil
-}
-
 type insightPayloadResolver struct {
 	viewId string
 	baseInsightResolver
@@ -394,12 +370,6 @@ type insightPresentationUnionResolver struct {
 // ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
 func (r *insightPresentationUnionResolver) ToLineChartInsightViewPresentation() (graphqlbackend.LineChartInsightViewPresentation, bool) {
 	res, ok := r.resolver.(*lineChartInsightViewPresentation)
-	return res, ok
-}
-
-// ToPieChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
-func (r *insightPresentationUnionResolver) ToPieChartInsightViewPresentation() (graphqlbackend.PieChartInsightViewPresentation, bool) {
-	res, ok := r.resolver.(*pieChartInsightViewPresentation)
 	return res, ok
 }
 

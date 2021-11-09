@@ -26,19 +26,15 @@ type InsightViewSeries struct {
 	SampleIntervalValue           int
 	DefaultFilterIncludeRepoRegex *string
 	DefaultFilterExcludeRepoRegex *string
-	OtherThreshold                *float64
-	PresentationType              PresentationType
 }
 
 type Insight struct {
-	ViewID           int
-	UniqueID         string
-	Title            string
-	Description      string
-	Series           []InsightViewSeries
-	Filters          InsightViewFilters
-	OtherThreshold   *float64
-	PresentationType PresentationType
+	ViewID      int
+	UniqueID    string
+	Title       string
+	Description string
+	Series      []InsightViewSeries
+	Filters     InsightViewFilters
 }
 
 type InsightViewFilters struct {
@@ -54,13 +50,12 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID               int
-	Title            string
-	Description      string
-	UniqueID         string
-	Filters          InsightViewFilters
-	OtherThreshold   *float64
-	PresentationType PresentationType
+	ID             int
+	Title          string
+	Description    string
+	UniqueID       string
+	Filters        InsightViewFilters
+	OtherThreshold float32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -126,10 +121,3 @@ type InsightSeriesStatus struct {
 	Failed     int
 	Completed  int
 }
-
-type PresentationType string
-
-const (
-	Line PresentationType = "LINE"
-	Pie  PresentationType = "PIE"
-)

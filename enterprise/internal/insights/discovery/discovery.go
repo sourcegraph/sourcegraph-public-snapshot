@@ -389,10 +389,9 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	}
 
 	view := types.InsightView{
-		Title:            from.Title,
-		Description:      from.Description,
-		UniqueID:         from.ID,
-		PresentationType: types.Line,
+		Title:       from.Title,
+		Description: from.Description,
+		UniqueID:    from.ID,
 	}
 
 	if from.Filters != nil {
@@ -435,10 +434,9 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
 
 	view := types.InsightView{
-		Title:            from.Title,
-		UniqueID:         from.ID,
-		OtherThreshold:   &from.OtherThreshold,
-		PresentationType: types.Pie,
+		Title:          from.Title,
+		UniqueID:       from.ID,
+		OtherThreshold: from.OtherThreshold,
 	}
 	series := types.InsightSeries{
 		SeriesID:           ksuid.New().String(),

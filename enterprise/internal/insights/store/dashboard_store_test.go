@@ -297,10 +297,9 @@ func TestAssociateViewsById(t *testing.T) {
 	t.Run("create and add view to dashboard", func(t *testing.T) {
 		insightStore := NewInsightStore(timescale)
 		view, err := insightStore.CreateView(ctx, types.InsightView{
-			Title:            "great view",
-			Description:      "my view",
-			UniqueID:         "view1234567",
-			PresentationType: types.Line,
+			Title:       "great view",
+			Description: "my view",
+			UniqueID:    "view1234567",
 		}, []InsightViewGrant{GlobalGrant()})
 		if err != nil {
 			t.Fatal(err)
@@ -349,10 +348,9 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 	insightStore := NewInsightStore(timescale)
 
 	view, err := insightStore.CreateView(ctx, types.InsightView{
-		Title:            "view1",
-		Description:      "view1",
-		UniqueID:         "view1",
-		PresentationType: types.Line,
+		Title:       "view1",
+		Description: "view1",
+		UniqueID:    "view1",
 	}, []InsightViewGrant{GlobalGrant()})
 	if err != nil {
 		t.Fatal(err)
