@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.sourcegraph.jetbrains</id>
   <name>Sourcegraph</name>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
   <description><![CDATA[
@@ -15,6 +15,13 @@
 
   <change-notes><![CDATA[
     <ul>
+       <li>v1.2.2 - Minor bug fixes
+         <ul>
+            <li>It is now possible to configure the plugin per-repository using a `.idea/sourcegraph.xml` file. See the README for details.</li>
+            <li>Special thanks: @oliviernotteghem for contributing the new features in this release!</li>
+            <li>Fixed bugs where Open in Sourcegraph from the git menu does not work for repos with ssh url as their remote url</li>
+          </ul>
+      </li>
       <li>v1.2.1 - Open Revision in Sourcegraph
        <ul>
           <li>Added "Open In Sourcegraph" action to VCS History and Git Log to open a revision in the Sourcegraph diff view.</li>

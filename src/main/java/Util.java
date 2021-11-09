@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import java.util.Properties;
 
 public class Util {
-    public static String VERSION = "v1.2.1";
+    public static String VERSION = "v1.2.2";
 
     // gitRemoteURL returns the remote URL for the given remote name.
     // e.g. "origin" -> "git@github.com:foo/bar"
