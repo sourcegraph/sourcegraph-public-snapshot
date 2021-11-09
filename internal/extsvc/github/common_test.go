@@ -84,7 +84,8 @@ func TestClient_GetRepository(t *testing.T) {
 	"fork": true,
 	"stargazers_count": 30,
 	"watchers_count": 20,
-	"forks_count": 5
+	"forks_count": 5,
+    "visibility": "internal"
 }
 `,
 	}
@@ -98,6 +99,7 @@ func TestClient_GetRepository(t *testing.T) {
 		IsFork:         true,
 		StargazerCount: 30,
 		ForkCount:      5,
+		Visibility:     "internal",
 	}
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")

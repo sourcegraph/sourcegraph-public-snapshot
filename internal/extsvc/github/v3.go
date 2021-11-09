@@ -154,6 +154,10 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 	// https://developer.github.com/v3/apps/installations/#list-repositories
 	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
 
+	// Include "visibility" in the REST API response for getting a repository. See
+	// https://docs.github.com/en/enterprise-server@2.22/rest/reference/repos#get-a-repository
+	req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
+
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
