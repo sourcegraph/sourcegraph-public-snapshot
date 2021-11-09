@@ -13,10 +13,13 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
-- URL mismatch [#26776](https://github.com/sourcegraph/sourcegraph/pull/26776)
-- Branded hover [#26189](https://github.com/sourcegraph/sourcegraph/pull/26189)
-- Action icon quality [#27065](https://github.com/sourcegraph/sourcegraph/pull/27065)
-- Blur omnibox/src after search [#25004](https://github.com/sourcegraph/sourcegraph/pull/25004)
-- Fix options popup toggle button styles [#25210](https://github.com/sourcegraph/sourcegraph/pull/25210)
-- Fix hover for files with braces [#26278](https://github.com/sourcegraph/sourcegraph/pull/26278)
+
+## Chrome / Firefox v21.11.8.1804, Safari v1.7
+
+- URL mismatch [#issues/26170](https://github.com/sourcegraph/sourcegraph/issues/26170), [#pull/26776](https://github.com/sourcegraph/sourcegraph/pull/26776)
+- Branded hover [#issues/23738](https://github.com/sourcegraph/sourcegraph/issues/23738), [#pull/26189](https://github.com/sourcegraph/sourcegraph/pull/26189)
+- Action icon quality [#issues/16218](https://github.com/sourcegraph/sourcegraph/issues/16218), [#pull/27065](https://github.com/sourcegraph/sourcegraph/pull/27065)
+- Blur omnibox/src after search [#issues/25000](https://github.com/sourcegraph/sourcegraph/issues/25000), [#pull/25004](https://github.com/sourcegraph/sourcegraph/pull/25004)
+- Fix options popup toggle button styles [#pull/25210](https://github.com/sourcegraph/sourcegraph/pull/25210)
+- Fix hover for files with braces [#issues/25156](https://github.com/sourcegraph/sourcegraph/issues/25156) [#pull/26278](https://github.com/sourcegraph/sourcegraph/pull/26278)
 - Bitbucket cloud support [#25084](https://github.com/sourcegraph/sourcegraph/pull/25084)
