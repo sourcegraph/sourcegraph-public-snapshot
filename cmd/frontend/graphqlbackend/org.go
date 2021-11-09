@@ -29,7 +29,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	if envvar.SourcegraphDotComMode() {
 		err := backend.CheckOrgAccess(ctx, r.db, org.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Newf("org not found: %s", args.Name)
 		}
 	}
 	return &OrgResolver{db: r.db, org: org}, nil
@@ -60,7 +60,7 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 	if envvar.SourcegraphDotComMode() {
 		err := backend.CheckOrgAccess(ctx, db, org.ID)
 		if err != nil {
-			return nil, err
+			return nil, errors.Newf("org not found: %d", orgID)
 		}
 	}
 	return &OrgResolver{db, org}, nil
