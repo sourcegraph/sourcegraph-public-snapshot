@@ -64,6 +64,13 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
+echo "--- DEBUG JH"
+echo "--- DEBUG user"
+whoami
+echo "--- DEBUG bk config"
+cat /root/.profile
+echo "--- END JH"
+
 echo "--- yarn run test-e2e"
 echo "TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
