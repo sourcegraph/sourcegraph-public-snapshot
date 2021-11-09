@@ -67,9 +67,11 @@ Sourcegraph's migration files take for form of `sql` files following the snake c
 
 1. **Ensure the migration applied, and manually clear the dirty flag on the `schema_migrations` table.**
    * example `psql` query:
+   
    ```sql
    UPDATE schema_migrations SET version=1528395918, dirty=false;
    ```
+   
    * **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.**
    * Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. 
    * _Note: Many migrations do nothing but create tables and/or indexes or alter them._
