@@ -20,7 +20,7 @@ The following procedure requires that you are able to execute commands from insi
 
 _These steps pertain to the frontend database (pgsql) and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
 
-1. **Check schema version. If it's dirty, then note the version number by using this command:**
+1. **Check the schema version. If it's dirty, then note the version number by using this command:**
 
 `SELECT * FROM schema_migrations;`
 
@@ -54,12 +54,12 @@ _Note: for codeintel the schema version table is called `codeintel_schema_migrat
 
 ### 2. Run the sql queries to finish incomplete migrations
 
-Sourcegraphs migration files take for form of `sql` files following the snake case naming schema `<version>_<description>.<up or down>.sql` and can be found [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/migrations) in subdirectories for the specific database. _Note frontend is the pgsql database_.
+Sourcegraph's migration files take for form of `sql` files following the snake case naming schema `<version>_<description>.<up or down>.sql` and can be found [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/migrations) in subdirectories for the specific database. _Note frontend is the pgsql database_.
 
 1. **Find the up migration starting with the version number identified in [step 1](#1-identify-incomplete-migration):** [https://github.com/sourcegraph/sourcegraph/tree/main/migrations](https://github.com/sourcegraph/sourcegraph/tree/main/migrations)
 
 2. **Run the code from the identified migration _up_ file explicitly using the `psql` CLI:**
-   * It’s possible that one or more commands from the migration ran successfully already. In these cases you may need to run the sql transaction in pieces. For example if a migration file creates multiple indexes and one index already exist you'll need to manually run this transaction skipping that line or adding `IF NOT EXISTS` to the transaction.
+   * It’s possible that one or more commands from the migration ran successfully already. In these cases you may need to run the sql transaction in pieces. For example if a migration file creates multiple indexes and one index already exists you'll need to manually run this transaction skipping that line or adding `IF NOT EXISTS` to the transaction.
    * If you’re running into unique index creation errors because of duplicate values please let us know at support@sourcegraph.com or via your enterprise support channel.
    * There may be other error cases that don't have an easy admin-only resolution, in these cases please let us know at support@sourcegraph.com or via your enterprise support channel.
 
@@ -71,20 +71,22 @@ UPDATE schema_migrations SET version=1528395918, dirty=false;
 ```
 **Do not mark the migration table as clean if you have not verified that the migration was successfully completed.**
 
-Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that its the `sql` queries contained in the migration files have made their changes to the relevant tables in the database. 
+Checking to see if a migration ran successfully requires looking at the migration’s `sql` file, and verifying that `sql` queries contained in the migration file have been applied to tables in the database. 
 
 _Note: Many migrations do nothing but create tables and/or indexes or alter them._
 
-You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this inforamtion to determine if commands in a migration ran successfully before setting `dirty=false`.
+You can get a description of a table and its associated indexes quickly using the `\d <table name>` `psql` shell command (note lack of semicolon). Using this information, you can determine whether a table exists, what columns it contains, and what indexes on it exist. Use this information to determine if commands in a migration ran successfully before setting `dirty=false`.
 
 1. **Start Sourcegraph again and the remaining migrations should succeed, otherwise repeat this procedure again from [_1. Identify incomplete migration_](#1-identify-incomplete-migration)**
 
 ## Additional Information
 
 ### `CREATE_INDEX_CONCURRENTLY`
-Some migrations utilize the `CREATE INDEX CONCURRENTLY` migration option which runs the query as a background process ([learn more here](https://www.postgresql.org/docs/12/sql-createindex.html)). If one of these migrations fails to complete, you will see the index when you describe the table, the migration will see it there, but it will be an unusable. You will then need to `REINDEX CONURRENTLY` or drop and recreate the index.
+Some migrations utilize the `CREATE INDEX CONCURRENTLY` migration option which runs a query to create a table index as a background process ([learn more here](https://www.postgresql.org/docs/12/sql-createindex.html)). If one of these migrations fails to complete, the database will register that a table index has been created, however the index will be unusable. If you use `\d <table name>` you will see the index for the table, but there will be nothing to tell you the indexing operation has failed. This database state can lead to poor search query performance, with searches attempting to utilize the incomplete table index.
 
-You can discover if such a damaged index exists by running the following query:
+To resolve this, you will then need to run the migration that creates the relevant index again, replacing `CREATE INDEX CONCURRENTLY` with `REINDEX CONCURRENTLY`. You can also drop and recreate the index.
+
+To discover if such a damaged index exists by run the following query:
 
 ```sql
 SELECT
@@ -97,7 +99,7 @@ WHERE
     NOT indisvalid AND
     NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
 ```
-Additionally Grafana will alert you of an index is this state. _The Grafana alert can be found unders its database charts._ Ex: `Site Admin > Monitoring > Postgres > Invalid Indexes (unusable by query planner)`
+Additionally Grafana will alert you of an index is in this state. _The Grafana alert can be found under it's database's charts._ Ex: `Site Admin > Monitoring > Postgres > Invalid Indexes (unusable by query planner)`
 
 ## Further resources
 

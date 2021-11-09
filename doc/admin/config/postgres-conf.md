@@ -47,21 +47,21 @@ The setting `effective_cache_size` acts as a hint to Postgres on how to adjust i
 
 The setting `max_connections` determines the number of active connections that can exist before new connections will start to be declined. This number is dependent on the replica factor of the containers that require a database connection. These containers include:
 
-| Service                     | Connects to    |
-| --------------------------- | -------------- |
-| `frontend`                  | `pgsql`        |
-| `gitserver`                 | `pgsql`        |
-| `repo-updater`              | `pgsql`        |
-| `precise-code-intel-worker` | `codeintel-db` |
-| `worker`                    | `codeintel-db` |
+| Service                     | Connects to                                |
+| --------------------------- | ------------------------------------------ |
+| `frontend`                  | `pgsql`, `codeintel-db`, `codeinsights-db` |
+| `gitserver`                 | `pgsql`                                    |
+| `repo-updater`              | `pgsql`                                    |
+| `precise-code-intel-worker` | `codeintel-db`, `pgsql`                    |
+| `worker`                    | `codeintel-db`, `pgsql`                    |
 
 Each of these containers open a pool of connections not exceeding the pool capacity indicated by the `SRC_PGSQL_MAX_OPEN` environment variable. The maximum number of connections for your instance can be determined by summing the connection pool capacity of every container in this list. By default, `SRC_PGSQL_MAX_OPEN` is `30`. _Note that these services do not all connect to the same database, and the frontend generates the majority of database connections_
 
-If your database is experiencing too many attemtpted connections from the above services you may see the following error:
+If your database is experiencing too many attempted connections from the above services you may see the following error:
 ```
 UTC [333] FATAL:  sorry, too many clients already
 ```
-This can be resolved by raising the `max_connections` value in your `postgresql.conf` or `pgsql.ConfigMap.yaml`. It may be necessary to raise your `work_mem` as well as more concurrent connections requires more memory to process. See the table above for an idea about this scaling relationship, and coninue reading for more information about `work_mem`. _Note: you may see a similar error pattern for `codeintel-db` or `codeinsights-db`, for these databases the resolution is the same._ 
+This can be resolved by raising the `max_connections` value in your `postgresql.conf` or `pgsql.ConfigMap.yaml`. It may be necessary to raise your `work_mem` as well as more concurrent connections requires more memory to process. See the table above for an idea about this scaling relationship, and continue reading for more information about `work_mem`. _Note: you may see a similar error pattern for `codeintel-db` or `codeinsights-db`, for these databases the resolution is the same._ 
 
 #### `max_parallel_workers_per_gather`
 
