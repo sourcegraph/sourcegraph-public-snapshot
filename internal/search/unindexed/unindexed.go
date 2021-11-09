@@ -337,3 +337,36 @@ func (t *RepoSubsetTextSearch) Run(ctx context.Context, stream streaming.Sender,
 func (*RepoSubsetTextSearch) Name() string {
 	return "RepoSubsetText"
 }
+
+type RepoUniverseTextSearch struct {
+	GlobalZoektQuery *zoektutil.GlobalZoektQuery
+
+	ZoektArgs         *search.ZoektParameters
+	SearcherArgs      *search.SearcherParameters
+	FileMatchLimit    int32
+	NotSearcherOnly   bool
+	UseIndex          query.YesNoOnly
+	ContainsRefGlobs  bool
+	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
+}
+
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
+	defer cleanup()
+
+	request, ok, err := zoektutil.OnlyUnindexed(repos, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		var userPrivateRepos []types.MinimalRepo // FIXME
+		t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
+		t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
+		request = &zoektutil.IndexedUniverseSearchRequest{Args: t.ZoektArgs}
+	}
+	return SearchFilesInRepos(ctx, request, t.SearcherArgs, t.NotSearcherOnly, stream)
+}
+
+func (*RepoUniverseTextSearch) Name() string {
+	return "RepoUniverseText"
+}
