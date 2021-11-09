@@ -1,39 +1,29 @@
 import { ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
-import { Duration } from 'date-fns'
-import { Observable, throwError, of, from } from 'rxjs'
+import { from, Observable, of, throwError } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 import {
     CreateDashboardResult,
+    CreateInsightResult,
     CreateInsightsDashboardInput,
     DeleteDashboardResult,
     GetInsightResult,
     GetInsightsResult,
-    InsightsDashboardsResult,
     InsightFields,
+    InsightsDashboardsResult,
     InsightsPermissionGrantsInput,
-    UpdateDashboardResult,
-    UpdateInsightsDashboardInput,
-    CreateInsightResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
-    TimeIntervalStepUnit,
+    UpdateDashboardResult,
+    UpdateInsightsDashboardInput,
     UpdateLineChartSearchInsightResult,
 } from '@sourcegraph/web/src/graphql-operations'
 
-import {
-    Insight,
-    InsightDashboard,
-    InsightsDashboardType,
-    InsightType,
-    isSearchBasedInsight,
-    SearchBasedInsight,
-} from '../types'
+import { Insight, InsightDashboard, InsightsDashboardType, isSearchBasedInsight, SearchBasedInsight } from '../types'
 import {
     isSearchBackendBasedInsight,
     SearchBackendBasedInsight,
@@ -60,40 +50,9 @@ import {
     ReachableInsight,
 } from './code-insights-backend-types'
 import { createViewContent } from './utils/create-view-content'
+import { getInsightView, getStepInterval } from './utils/insight-transformers'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
-
-function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepUnit, number] {
-    if (insight.type === InsightType.Backend) {
-        return [TimeIntervalStepUnit.WEEK, 2]
-    }
-
-    const castUnits = (Object.keys(insight.step) as (keyof Duration)[])
-        .map<[TimeIntervalStepUnit, number] | null>(key => {
-            switch (key) {
-                case 'hours':
-                    return [TimeIntervalStepUnit.HOUR, insight.step[key] ?? 0]
-                case 'days':
-                    return [TimeIntervalStepUnit.DAY, insight.step[key] ?? 0]
-                case 'weeks':
-                    return [TimeIntervalStepUnit.WEEK, insight.step[key] ?? 0]
-                case 'months':
-                    return [TimeIntervalStepUnit.MONTH, insight.step[key] ?? 0]
-                case 'years':
-                    return [TimeIntervalStepUnit.YEAR, insight.step[key] ?? 0]
-            }
-
-            return null
-        })
-        .filter(isDefined)
-
-    if (castUnits.length === 0) {
-        throw new Error('Wrong time step format')
-    }
-
-    // Return first valid match
-    return castUnits[0]
-}
 
 /**
  * Helper function to parse the dashboard type from the grants object.
@@ -141,23 +100,6 @@ export const parseGrants = (type: string, visibility: string): InsightsPermissio
 
     return grants
 }
-
-const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => ({
-    __typename: insight.__typename,
-    presentationType: insight.presentation.__typename,
-    type: InsightType.Backend,
-    id: insight.id,
-    visibility: '',
-    title: insight.presentation.title,
-    series: insight.dataSeries.map(series => ({
-        name: series.label,
-        query:
-            insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
-            'QUERY NOT FOUND',
-        stroke: insight.presentation.seriesPresentation.find(presentation => presentation.seriesId === series.seriesId)
-            ?.color,
-    })),
-})
 
 const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
     id: insight.id,
@@ -236,7 +178,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) => {
-                const insightViews = data.insightViews.nodes.map(mapInsightView)
+                const insightViews = data.insightViews.nodes.map(getInsightView)
+
                 if (ids) {
                     return insightViews.filter(insight => ids.includes(insight.id))
                 }
@@ -271,15 +214,14 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                // TODO [VK] Support lang stats insight
-                // TODO [VK] Support different type of insight backend based and FE insight
-                return mapInsightView(insightData)
+                return getInsightView(insightData)
             })
         )
 
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> =>
         this.getInsights().pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
-    public getReachableInsights = (subjectId: string): Observable<ReachableInsight[]> =>
+
+    public getReachableInsights = (): Observable<ReachableInsight[]> =>
         this.getInsights().pipe(
             map(insights =>
                 insights.map(insight => ({
@@ -300,7 +242,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             // Note: this insight is guaranteed to exist since this function
             // is only called from within a loop of insight ids
             map(({ data }) => ({
-                insight: mapInsightView(data.insightViews.nodes[0]) as SearchBasedInsight,
+                insight: getInsightView(data.insightViews.nodes[0]) as SearchBasedInsight,
                 insightFields: mapInsightFields(data.insightViews.nodes[0]),
             })),
             switchMap(({ insight, insightFields }) => {
@@ -331,6 +273,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 },
             }))
         )
+
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
 
     // We don't have insight visibility and subject levels in the new GQL API anymore.
@@ -365,7 +308,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return of()
     }
 
-    public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
     public updateInsight = (input: InsightUpdateInput): Observable<void[]> => {
         // Extracting mutations here to make it easier to support different types of insights
         const updateLineChartSearchInsightMutation = gql`
@@ -394,6 +336,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         return of()
     }
+
     public deleteInsight = errorMockMethod('deleteInsight')
 
     // Dashboards
@@ -422,8 +365,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 `,
             })
         ).pipe(
-            map(({ data }) =>
-                data.insightsDashboards.nodes.map(
+            map(({ data }) => [
+                {
+                    id: 'all',
+                    type: InsightsDashboardType.All,
+                    insightIds: [],
+                },
+                ...data.insightsDashboards.nodes.map(
                     (dashboard): InsightDashboard => ({
                         id: dashboard.id,
                         title: dashboard.title,
@@ -431,9 +379,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         grants: dashboard.grants,
                         type: parseType(dashboard.grants),
                     })
-                )
-            )
+                ),
+            ])
         )
+
     public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
         this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId)))
 
