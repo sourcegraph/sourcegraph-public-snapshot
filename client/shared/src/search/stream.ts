@@ -128,8 +128,7 @@ export interface RepositoryMatch {
  */
 export interface Progress {
     /**
-     * The number of repositories matching the repo: filter. Is set once they
-     * are resolved.
+     * The number of repositories searched.
      */
     repositoriesCount?: number
 
