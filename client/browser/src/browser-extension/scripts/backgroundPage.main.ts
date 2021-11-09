@@ -2,7 +2,6 @@
 import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
-import { without } from 'lodash'
 import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
@@ -48,8 +47,6 @@ assertEnvironment('BACKGROUND')
 
 initSentry('background')
 
-let customServerOrigins: string[] = []
-
 /**
  * For each tab, we store a flag if we know that we are on a private
  * repository that has not been added to Cloud (+ the extension
@@ -81,21 +78,6 @@ const tabPrivateCloudErrorCache = (() => {
         },
     }
 })()
-
-const contentScripts = browser.runtime.getManifest().content_scripts
-
-// jsContentScriptOrigins are the required URLs inside of the manifest. When checking for permissions to inject
-// the content script on optional pages (inside browser.tabs.onUpdated) we need to skip manual injection of the
-// script since the browser extension will automatically inject it.
-const jsContentScriptOrigins: string[] = []
-if (contentScripts) {
-    for (const contentScript of contentScripts) {
-        if (!contentScript || !contentScript.js || !contentScript.matches) {
-            continue
-        }
-        jsContentScriptOrigins.push(...contentScript.matches)
-    }
-}
 
 const configureOmnibox = (serverUrl: string): void => {
     browser.omnibox.setDefaultSuggestion({
@@ -167,33 +149,7 @@ async function main(): Promise<void> {
 
     const permissions = await browser.permissions.getAll()
     if (!permissions.origins) {
-        customServerOrigins = []
         return
-    }
-    customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
-
-    // Not supported in Firefox
-    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
-    if (browser.permissions.onAdded) {
-        browser.permissions.onAdded.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            const origins = without(permissions.origins, ...jsContentScriptOrigins)
-            customServerOrigins.push(...origins)
-        })
-    }
-    if (browser.permissions.onRemoved) {
-        browser.permissions.onRemoved.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            customServerOrigins = without(customServerOrigins, ...permissions.origins)
-            const urlsToRemove: string[] = []
-            for (const url of permissions.origins) {
-                urlsToRemove.push(url.replace('/*', ''))
-            }
-        })
     }
 
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
@@ -207,6 +163,10 @@ async function main(): Promise<void> {
             checkUrlPermissions(tab.url)
                 .then(async hasPermissions => {
                     if (hasPermissions) {
+                        /**
+                         * Loading content script dynamically
+                         * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
+                         */
                         await browser.tabs.executeScript(tabId, {
                             file: 'js/inject.bundle.js',
                             runAt: 'document_end',
