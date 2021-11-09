@@ -42,6 +42,10 @@ func Perms(db dbutil.DB, clock func() time.Time) *PermsStore {
 	return &PermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
 }
 
+func PermsWith(other basestore.ShareableStore, clock func() time.Time) *PermsStore {
+	return &PermsStore{Store: basestore.NewWithHandle(other.Handle()), clock: clock}
+}
+
 func (s *PermsStore) With(other basestore.ShareableStore) *PermsStore {
 	return &PermsStore{Store: s.Store.With(other), clock: s.clock}
 }

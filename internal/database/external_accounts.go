@@ -6,14 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -58,7 +56,6 @@ type UserExternalAccountsStore interface {
 // userExternalAccountsStore provides access to the `user_external_accounts` table.
 type userExternalAccountsStore struct {
 	*basestore.Store
-	once sync.Once
 
 	key encryption.Key
 }
@@ -82,21 +79,8 @@ func (s *userExternalAccountsStore) WithEncryptionKey(key encryption.Key) UserEx
 }
 
 func (s *userExternalAccountsStore) Transact(ctx context.Context) (UserExternalAccountsStore, error) {
-	s.ensureStore()
-
 	txBase, err := s.Store.Transact(ctx)
 	return &userExternalAccountsStore{Store: txBase, key: s.key}, err
-}
-
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-func (s *userExternalAccountsStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
 }
 
 func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
@@ -124,7 +108,6 @@ func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec 
 	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
-	s.ensureStore()
 
 	var (
 		encrypted, keyID string
@@ -180,7 +163,6 @@ func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, us
 	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
 		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
 	}
-	s.ensureStore()
 
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
@@ -330,7 +312,6 @@ func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) 
 	if Mocks.ExternalAccounts.TouchExpired != nil {
 		return Mocks.ExternalAccounts.TouchExpired(ctx, id)
 	}
-	s.ensureStore()
 
 	_, err := s.Handle().DB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchExpired
@@ -346,7 +327,6 @@ func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32
 	if Mocks.ExternalAccounts.TouchLastValid != nil {
 		return Mocks.ExternalAccounts.TouchLastValid(ctx, id)
 	}
-	s.ensureStore()
 
 	_, err := s.Handle().DB().ExecContext(ctx, `
 -- source: internal/database/external_accounts.go:UserExternalAccountsStore.TouchLastValid
@@ -364,7 +344,6 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error 
 	if Mocks.ExternalAccounts.Delete != nil {
 		return Mocks.ExternalAccounts.Delete(id)
 	}
-	s.ensureStore()
 
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
@@ -393,7 +372,6 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 	if Mocks.ExternalAccounts.List != nil {
 		return Mocks.ExternalAccounts.List(opt)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List", "")
 	defer func() {
@@ -417,7 +395,6 @@ func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccou
 	if Mocks.ExternalAccounts.Count != nil {
 		return Mocks.ExternalAccounts.Count(opt)
 	}
-	s.ensureStore()
 
 	conds := s.listSQL(opt)
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM user_external_accounts WHERE %s", sqlf.Join(conds, "AND"))
@@ -427,7 +404,6 @@ func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccou
 }
 
 func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
-	s.ensureStore()
 	results, err := s.ListBySQL(ctx, querySuffix)
 	if err != nil {
 		return nil, err
@@ -439,7 +415,6 @@ func (s *userExternalAccountsStore) getBySQL(ctx context.Context, querySuffix *s
 }
 
 func (s *userExternalAccountsStore) ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
-	s.ensureStore()
 	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at, t.encryption_key_id FROM user_external_accounts t %s`, querySuffix)
 	rows, err := s.Query(ctx, q)
 	if err != nil {

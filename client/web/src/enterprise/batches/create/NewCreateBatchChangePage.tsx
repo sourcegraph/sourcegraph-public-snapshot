@@ -257,7 +257,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     )
 
     return (
-        <div className="d-flex flex-column p-4 w-100">
+        <div className="d-flex flex-column p-4 w-100 h-100">
             <div className="d-flex flex-0 justify-content-between">
                 <div className="flex-1">
                     <PageHeader
@@ -295,8 +295,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
             </div>
             <div className="d-flex flex-1">
                 <div className={styles.editorContainer}>
-                    {/* TODO: Calculate height from remaining window height */}
-                    <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={code} onChange={setCode} height={800} />
+                    <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={code} onChange={setCode} />
                 </div>
                 <Container className={styles.workspacesPreviewContainer}>
                     {codeUpdateError && <ErrorAlert error={codeUpdateError} />}

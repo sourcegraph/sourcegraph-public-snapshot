@@ -55,7 +55,7 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
         getDriver: () => driver,
         url: url.href,
         // Other than GitHub, the URL must not include the column in the hash.
-        goToDefinitionURL: new URL('#L9:6', url.href).href,
+        goToDefinitionURL: new URL('#L5', url.href).href,
         repoName: `${REPO_PATH_PREFIX}/sourcegraph/jsonrpc2`,
         sourcegraphBaseUrl,
         lineSelector: '.line',

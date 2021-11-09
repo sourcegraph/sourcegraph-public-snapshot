@@ -16,7 +16,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
   - [Non-API endpoints](#non-api-endpoints)
     - [Non-API endpoints are generally static, unprivileged content only](#non-api-endpoints-are-generally-static-unprivileged-content-only)
       - [Exclusion: window.context](#exclusion-windowcontext)
-      - [Exclusion: pre-fetched content](#exclusion-pre-fetched-content)
       - [Exclusion: username/password manipulation (sign in, password reset, etc.)](#exclusion-usernamepassword-manipulation-sign-in-password-reset-etc)
     - [Risk of CSRF attacks against our non-API endpoints](#risk-of-csrf-attacks-against-our-non-api-endpoints)
     - [How we protect against CSRF in non-API endpoints](#how-we-protect-against-csrf-in-non-api-endpoints)
@@ -28,7 +27,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
     - [Known issue](#known-issue)
   - [Improving our CSRF threat model](#improving-our-csrf-threat-model)
     - [Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)
-    - [Audit usages of pre-fetched content embedded into pages](#audit-usages-of-pre-fetched-content-embedded-into-pages)
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
     - [Remove our CSRF tokens](#remove-our-csrf-tokens)
     - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
@@ -39,6 +37,8 @@ If you are looking for general information or wish to disclose a vulnerability, 
 This is a living document, with a changelog as follows:
 
 * Aug 13th, 2021: [@slimsag](https://github.com/slimsag) does an in-depth analysis & review of our CSRF threat model and creates this document.
+* Nov 8th, 2021: [@slimsag](https://github.com/slimsag) audited all potential instances of pre-fetched content embedded into pages and found we have none, the following is NOT true ([#27236](https://github.com/sourcegraph/sourcegraph/pull/27236)):
+  * "Some Sourcegraph pages pre-fetch content: on the backend, data is pre-fetched for the user so that they need not make a request for the data corresponding to the page immediately upon loading it. Instead, we fetch it and embed it into the `GET` page response, giving JavaScript access to it immediately upon page load."
 
 # Prerequisites
 
@@ -130,12 +130,6 @@ Importantly, this context may contain information which is specific to the user'
 
 TODO(slimsag): TODO(security): It is my belief JSContext should _NOT_ contain sensitive information. This makes caching of GET requests tricky and very risky, this is a dangerous weak spot in our threat model and we should correct it ASAP.
 
-#### Exclusion: pre-fetched content
-
-Some Sourcegraph pages pre-fetch content: on the backend, data is pre-fetched for the user so that they need not make a request for the data corresponding to the page immediately upon loading it. Instead, we fetch it and embed it into the `GET` page response, giving JavaScript access to it immediately upon page load. 
-
-TODO(slimsag): TODO(security): actually vet if this is true, it was in the past but it could potentially no longer be true.
-
 #### Exclusion: username/password manipulation (sign in, password reset, etc.)
 
 The following are distinct non-API routes, registered under non-API endpoints. They inherit the middleware for handling authentication based on session cookies, and utilize the same CSRF protection as other non-API endpoints:
@@ -160,7 +154,7 @@ The primary risk of a forged request making its way to a non-API endpoint in Sou
 3. Any other potentially-sensitive information we embed in `window` described in the two exclusions above.
 4. Authentication cookie access, which is used to authenticate API endpoint requests (more on this below.)
 
-Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the three exclusions listed above (`Exclusion: window.context`, `Exclusion: pre-fetched content`, and `Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
+Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the two exclusions listed above (`Exclusion: window.context`, and `Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
 
 With all of this in mind, it is worth calling out that:
 
@@ -253,14 +247,6 @@ This may be completed at ANY time. It has NO pre-requisites.
 Performing this would allow us to restrict `window.context` to ONLY public content, which would alleviate a number of tricky questions around how caching Sourcegraph GET requests can sometimes be harmful. This may already be the case today, but we'd need to verify before adjusting our model to say this is true.
 
 See also: [Exclusion: window.context](#exclusion-windowcontext)
-
-### Audit usages of pre-fetched content embedded into pages
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-Similar to "[Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)", if we completed both of these actions we would then have eliminated all questions surrounding caching of Sourcegraph pages. This is a critical component to improving our CSRF threat model.
-
-See also: [Exclusion: pre-fetched content](#exclusion-pre-fetched-content)
 
 ### Eliminate the username/password manipulation exclusion
 

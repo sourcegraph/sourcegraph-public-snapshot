@@ -263,51 +263,45 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                 Try searching in regexp mode to match terms independently, similar to an AND search, but
                                 term ordering is maintained.
                             </p>
-                            <p>
-                                <SearchInputExample
-                                    showSearchContext={searchContextsEnabled && showSearchContext}
-                                    query="repo:sourcegraph const Authentication"
-                                    patternType={SearchPatternType.regexp}
-                                    runnable={isSourcegraphDotCom}
-                                    onRun={() =>
-                                        telemetryService.log('NoResultsSearchLiteral', { search: 'regexp search' })
-                                    }
-                                />
-                            </p>
+                            <SearchInputExample
+                                showSearchContext={searchContextsEnabled && showSearchContext}
+                                query="repo:sourcegraph const Authentication"
+                                patternType={SearchPatternType.regexp}
+                                runnable={isSourcegraphDotCom}
+                                onRun={() =>
+                                    telemetryService.log('NoResultsSearchLiteral', { search: 'regexp search' })
+                                }
+                            />
                         </Container>
                     )}
                     {!hiddenSectionIDs?.includes(SectionID.COMMON_PROBLEMS) && (
                         <Container sectionID={SectionID.COMMON_PROBLEMS} title="Common Problems" onClose={onClose}>
                             <h4>Finding a specific repository</h4>
                             <p>Repositories are specified by their org/repository-name convention:</p>
-                            <p>
-                                <SearchInputExample
-                                    showSearchContext={searchContextsEnabled && showSearchContext}
-                                    query="repo:sourcegraph/about lang:go publish"
-                                    runnable={isSourcegraphDotCom}
-                                    onRun={() =>
-                                        telemetryService.log('NoResultsCommonProblems', {
-                                            search: 'zfind specific repo',
-                                        })
-                                    }
-                                />
-                            </p>
+                            <SearchInputExample
+                                showSearchContext={searchContextsEnabled && showSearchContext}
+                                query="repo:sourcegraph/about lang:go publish"
+                                runnable={isSourcegraphDotCom}
+                                onRun={() =>
+                                    telemetryService.log('NoResultsCommonProblems', {
+                                        search: 'zfind specific repo',
+                                    })
+                                }
+                            />
                             <p>
                                 To search within all of an org’s repositories, specify only the org name and a trailing
                                 slash:
                             </p>
-                            <p>
-                                <SearchInputExample
-                                    showSearchContext={searchContextsEnabled && showSearchContext}
-                                    query="repo:sourcegraph/ lang:go publish"
-                                    runnable={isSourcegraphDotCom}
-                                    onRun={() =>
-                                        telemetryService.log('NoResultsCommonProblems', {
-                                            search: 'find specific repo',
-                                        })
-                                    }
-                                />
-                            </p>
+                            <SearchInputExample
+                                showSearchContext={searchContextsEnabled && showSearchContext}
+                                query="repo:sourcegraph/ lang:go publish"
+                                runnable={isSourcegraphDotCom}
+                                onRun={() =>
+                                    telemetryService.log('NoResultsCommonProblems', {
+                                        search: 'find specific repo',
+                                    })
+                                }
+                            />
                             <p>
                                 <small>
                                     <Link
@@ -321,30 +315,24 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
 
                             <h4>AND, OR, NOT</h4>
                             <p>Conditionals and grouping are possible within queries:</p>
-                            <p>
-                                <SearchInputExample
-                                    showSearchContext={searchContextsEnabled && showSearchContext}
-                                    query="repo:sourcegraph/ (lang:typescript OR lang:go) auth"
-                                    runnable={isSourcegraphDotCom}
-                                    onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
-                                />
-                            </p>
+                            <SearchInputExample
+                                showSearchContext={searchContextsEnabled && showSearchContext}
+                                query="repo:sourcegraph/ (lang:typescript OR lang:go) auth"
+                                runnable={isSourcegraphDotCom}
+                                onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
+                            />
 
                             <h4>Escaping</h4>
                             <p>
                                 Because our default mode is literal, escaping requires a dedicated filter. Use the
                                 content filter to include spaces and filter keywords in searches.
                             </p>
-                            <p>
-                                <SearchInputExample
-                                    showSearchContext={searchContextsEnabled && showSearchContext}
-                                    query={'content:"class Vector"'}
-                                    runnable={isSourcegraphDotCom}
-                                    onRun={() =>
-                                        telemetryService.log('NoResultsCommonProblems', { search: 'escaping' })
-                                    }
-                                />
-                            </p>
+                            <SearchInputExample
+                                showSearchContext={searchContextsEnabled && showSearchContext}
+                                query={'content:"class Vector"'}
+                                runnable={isSourcegraphDotCom}
+                                onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'escaping' })}
+                            />
                         </Container>
                     )}
 

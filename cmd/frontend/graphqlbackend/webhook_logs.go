@@ -22,24 +22,46 @@ import (
 // access to webhook logs: the webhookLogs method on the top level query, and on
 // the ExternalService type.
 type webhookLogsArgs struct {
-	First      *int
+	graphqlutil.ConnectionArgs
 	After      *string
 	OnlyErrors *bool
 	Since      *time.Time
 	Until      *time.Time
 }
 
+// webhookLogsExternalServiceID is used to represent an external service ID,
+// which may be a constant defined below to represent all or unmatched external
+// services.
+type webhookLogsExternalServiceID int64
+
+var (
+	webhookLogsAllExternalServices      webhookLogsExternalServiceID = -1
+	webhookLogsUnmatchedExternalService webhookLogsExternalServiceID = 0
+)
+
+func (id webhookLogsExternalServiceID) toListOpt() *int64 {
+	switch id {
+	case webhookLogsAllExternalServices:
+		return nil
+	case webhookLogsUnmatchedExternalService:
+		fallthrough
+	default:
+		i := int64(id)
+		return &i
+	}
+}
+
 // toListOpts transforms the GraphQL webhookLogsArgs into options that can be
 // provided to the WebhookLogStore's Count and List methods.
-func (args *webhookLogsArgs) toListOpts(externalServiceID int64) (database.WebhookLogListOpts, error) {
+func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalServiceID) (database.WebhookLogListOpts, error) {
 	opts := database.WebhookLogListOpts{
-		ExternalServiceID: &externalServiceID,
+		ExternalServiceID: externalServiceID.toListOpt(),
 		Since:             args.Since,
 		Until:             args.Until,
 	}
 
 	if args.First != nil {
-		opts.Limit = *args.First
+		opts.Limit = int(*args.First)
 	} else {
 		opts.Limit = 50
 	}
@@ -59,15 +81,25 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID int64) (database.Webho
 	return opts, nil
 }
 
+type globalWebhookLogsArgs struct {
+	webhookLogsArgs
+	OnlyUnmatched *bool
+}
+
 // WebhookLogs is the top level query used to return webhook logs that weren't
 // resolved to a specific external service.
-func (r *schemaResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
-	return newWebhookLogConnectionResolver(ctx, r.db, args, 0)
+func (r *schemaResolver) WebhookLogs(ctx context.Context, args *globalWebhookLogsArgs) (*webhookLogConnectionResolver, error) {
+	externalServiceID := webhookLogsAllExternalServices
+	if unmatched := args.OnlyUnmatched; unmatched != nil && *unmatched {
+		externalServiceID = webhookLogsUnmatchedExternalService
+	}
+
+	return newWebhookLogConnectionResolver(ctx, r.db, &args.webhookLogsArgs, externalServiceID)
 }
 
 type webhookLogConnectionResolver struct {
 	args              *webhookLogsArgs
-	externalServiceID int64
+	externalServiceID webhookLogsExternalServiceID
 	store             database.WebhookLogStore
 
 	once sync.Once
@@ -76,7 +108,10 @@ type webhookLogConnectionResolver struct {
 	err  error
 }
 
-func newWebhookLogConnectionResolver(ctx context.Context, db database.DB, args *webhookLogsArgs, externalServiceID int64) (*webhookLogConnectionResolver, error) {
+func newWebhookLogConnectionResolver(
+	ctx context.Context, db database.DB, args *webhookLogsArgs,
+	externalServiceID webhookLogsExternalServiceID,
+) (*webhookLogConnectionResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
@@ -186,7 +221,7 @@ func (r *webhookLogResolver) ReceivedAt() DateTime {
 
 func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
 	if r.log.ExternalServiceID == nil {
-		return nil, errors.New("no external service attached to webhook log")
+		return nil, nil
 	}
 
 	return externalServiceByID(ctx, r.db, marshalExternalServiceID(*r.log.ExternalServiceID))
@@ -196,8 +231,8 @@ func (r *webhookLogResolver) StatusCode() int32 {
 	return int32(r.log.StatusCode)
 }
 
-func (r *webhookLogResolver) Request() *webhookLogMessageResolver {
-	return &webhookLogMessageResolver{message: &r.log.Request}
+func (r *webhookLogResolver) Request() *webhookLogRequestResolver {
+	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &r.log.Request}}
 }
 
 func (r *webhookLogResolver) Response() *webhookLogMessageResolver {
@@ -222,6 +257,22 @@ func (r *webhookLogMessageResolver) Headers() []*webhookLogHeaderResolver {
 
 func (r *webhookLogMessageResolver) Body() string {
 	return string(r.message.Body)
+}
+
+type webhookLogRequestResolver struct {
+	webhookLogMessageResolver
+}
+
+func (r *webhookLogRequestResolver) Method() string {
+	return r.message.Method
+}
+
+func (r *webhookLogRequestResolver) URL() string {
+	return r.message.URL
+}
+
+func (r *webhookLogRequestResolver) Version() string {
+	return r.message.Version
 }
 
 type webhookLogHeaderResolver struct {

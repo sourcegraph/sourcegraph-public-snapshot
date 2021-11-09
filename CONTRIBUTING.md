@@ -20,6 +20,7 @@ All interactions with the Sourcegraph open source project are governed by the
 3. [Setup your development environment](https://docs.sourcegraph.com/dev/contributing) to run the project locally.
 4. Before creating a Pull Request ensure that [recommended checks](https://docs.sourcegraph.com/dev/contributing) pass locally. We're actively working on making our CI pipeline public to automate this step.
 5. **IMPORTANT:** Once you have a pull request ready to review, the 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@sourcegraph/contribution-reviewers`. After that your pull request will be ready for review.
+   - (For Sourcegraph team members, see [these notes](https://docs.sourcegraph.com/dev/contributing/accepting_contribution#cla-bot) for how to verify that the CLA has been signed.)
 6. Once you've chosen an issue, **comment on it to announce that you will be working on it**, making it visible for others that this issue is being tackled. If you end up not creating a pull request for this issue, please delete your comment.
 7. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
 8. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
@@ -47,3 +48,4 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 - [Size guidelines](https://handbook.sourcegraph.com/engineering/enablement#prefer-small-prs-400-lines)
 - Git branch name convention: `[developer-initials]/short-feature-description`
 - [Examples on Github](https://github.com/sourcegraph/sourcegraph/pulls?q=is%3Apr+label%3Ateam%2Ffrontend-platform)
+- (For Sourcegraph team) [How to accept contributions](https://docs.sourcegraph.com/dev/contributing/accepting_contribution)

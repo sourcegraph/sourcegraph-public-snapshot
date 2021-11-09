@@ -38,6 +38,7 @@ func main() {
 		definitions.Postgres(),
 		definitions.PreciseCodeIntelWorker(),
 		definitions.QueryRunner(),
+		definitions.Redis(),
 		definitions.Worker(),
 		definitions.RepoUpdater(),
 		definitions.Searcher(),

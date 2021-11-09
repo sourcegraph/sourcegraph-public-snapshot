@@ -573,3 +573,24 @@ func getExistingSeriesRepositories(seriesId string, existingSeries []types.Insig
 	}
 	return nil
 }
+
+func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
+	var viewId string
+	err := relay.UnmarshalSpec(args.Id, &viewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+
+	validator := InsightPermissionsValidator{baseInsightResolver: r.baseInsightResolver}
+	err = validator.validateUserAccessForView(ctx, viewId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.insightStore.DeleteViewByUniqueID(ctx, viewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "DeleteView")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}

@@ -80,7 +80,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := database.AccessTokens(r.db).Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 
 	if conf.CanSendEmail() {
 		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "created an access token"); err != nil {
@@ -119,7 +119,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err != nil {
 			return nil, err
 		}
-		token, err := database.AccessTokens(r.db).GetByID(ctx, accessTokenID)
+		token, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
@@ -128,12 +128,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID); err != nil {
+		if err := r.db.AccessTokens().DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 
 	case args.ByToken != nil:
-		token, err := database.AccessTokens(r.db).GetByToken(ctx, *args.ByToken)
+		token, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +141,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
-		if err := database.AccessTokens(r.db).DeleteByToken(ctx, *args.ByToken); err != nil {
+		if err := r.db.AccessTokens().DeleteByToken(ctx, *args.ByToken); err != nil {
 			return nil, err
 		}
 

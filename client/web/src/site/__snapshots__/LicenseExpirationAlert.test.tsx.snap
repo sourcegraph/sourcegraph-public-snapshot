@@ -34,6 +34,7 @@ exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
     </a>
   </div>
   <button
+    aria-label="Close alert"
     className="btn btn-icon closeButton"
     onClick={[Function]}
     type="button"
@@ -87,6 +88,7 @@ exports[`LicenseExpirationAlert.test.tsx expiring soon 1`] = `
     </a>
   </div>
   <button
+    aria-label="Close alert"
     className="btn btn-icon closeButton"
     onClick={[Function]}
     type="button"
