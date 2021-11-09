@@ -92,7 +92,7 @@ Indexes:
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
 Referenced by:
-    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_execution_cache_entry_id_fkey" FOREIGN KEY (batch_spec_execution_cache_entry_id) REFERENCES batch_spec_execution_cache_entries(id)
+    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_execution_cache_entry_id_fkey" FOREIGN KEY (batch_spec_execution_cache_entry_id) REFERENCES batch_spec_execution_cache_entries(id) DEFERRABLE
 
 ```
 
@@ -176,7 +176,7 @@ Indexes:
 Check constraints:
     "batch_spec_workspaces_steps_check" CHECK (jsonb_typeof(steps) = 'array'::text)
 Foreign-key constraints:
-    "batch_spec_workspaces_batch_spec_execution_cache_entry_id_fkey" FOREIGN KEY (batch_spec_execution_cache_entry_id) REFERENCES batch_spec_execution_cache_entries(id)
+    "batch_spec_workspaces_batch_spec_execution_cache_entry_id_fkey" FOREIGN KEY (batch_spec_execution_cache_entry_id) REFERENCES batch_spec_execution_cache_entries(id) DEFERRABLE
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
 Referenced by:
