@@ -78,9 +78,12 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
                 query:
                     insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
                     'QUERY NOT FOUND',
-                stroke: 'seriesPresentation' in insight.presentation
-                    ? insight.presentation.seriesPresentation.find(presentation => presentation.seriesId === series.seriesId)?.color
-                    : ''
+                stroke:
+                    'seriesPresentation' in insight.presentation
+                        ? insight.presentation.seriesPresentation.find(
+                              presentation => presentation.seriesId === series.seriesId
+                          )?.color
+                        : '',
             }))
 
             if (isBackendInsight) {
