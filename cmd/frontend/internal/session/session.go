@@ -320,11 +320,24 @@ func CookieMiddlewareWithCSRFSafety(db dbutil.DB, next http.Handler, corsAllowHe
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie, Authorization, "+corsAllowHeader)
 
+		// Does the request have the X-Requested-With header? If so, it's trusted.
 		_, isTrusted := r.Header[corsAllowHeader]
 		if !isTrusted {
+			// The request doesn't have the X-Requested-With header.
+			// Did the request come from a trusted origin? If so, it's trusted.
 			isTrusted = isTrustedOrigin(r)
 		}
 		if !isTrusted {
+			// The request doesn't have the X-Requested-With header.
+			// The request didn't come from a trusted origin.
+			// Did the request pass the CORS preflight? If so, it's trusted.
+			//
+			// Any origin with the ability to specify "Content-Type: application/json; charset=utf-8"
+			// would have passed CORS preflight.
+			//
+			// We allow this because it means you do not need to specify `X-Requested-With` in
+			// requests from an origin in the site config `corsOrigin` allow list, which is slightly
+			// nicer for API consumers.
 			contentType := r.Header.Get("Content-Type")
 			isTrusted = contentType == "application/json" || contentType == "application/json; charset=utf-8"
 		}
