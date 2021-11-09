@@ -419,6 +419,7 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
+			bk.Env("BUILDKITE_TIMESTAMP_LINES", "true"),
 
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
@@ -443,6 +444,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
+			bk.Env("BUILDKITE_TIMESTAMP_LINES", "true"),
 
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
@@ -470,6 +472,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
+			bk.Env("BUILDKITE_TIMESTAMP_LINES", "true"),
 
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
