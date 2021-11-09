@@ -1,0 +1,22 @@
+.header {
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.empty {
+    &-icon {
+        height: 50px;
+        width: 50px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        background-color: var(--white);
+    }
+
+    &-header-prompt {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        font-weight: 300;
+        font-style: italic;
+        color: var(--text-muted);
+    }
+}
