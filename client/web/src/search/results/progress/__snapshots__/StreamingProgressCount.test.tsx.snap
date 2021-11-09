@@ -16,10 +16,10 @@ exports[`StreamingProgressCount should not render a trace link when not opted in
     className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     0
-     
+
     results
      in
-     
+
     0.00
     s
   </small>
@@ -41,10 +41,10 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
     className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     0
-     
+
     results
      in
-     
+
     0.00
     s
   </small>
@@ -67,16 +67,17 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
     className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     0
-     
+
     results
      in
-     
+
     0.00
     s
-     
-    from 
+
+    from
     0
-     
+    searched
+
     repositories
   </small>
 </StreamingProgressCount>
@@ -98,16 +99,17 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
     className="streaming-progress__count d-flex align-items-center"
   >
     1
-     
+
     result
      in
-     
+
     1.25
     s
-     
-    from 
+
+    from
     1
-     
+    searched
+
     repository
   </small>
 </StreamingProgressCount>
@@ -129,16 +131,17 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
     className="streaming-progress__count d-flex align-items-center"
   >
     123
-     
+
     results
      in
-     
+
     1.25
     s
-     
-    from 
+
+    from
     500
-     
+    searched
+
     repositories
   </small>
 </StreamingProgressCount>
@@ -160,16 +163,17 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
     className="streaming-progress__count d-flex align-items-center"
   >
     1.2m
-     
+
     results
      in
-     
+
     52.50
     s
-     
-    from 
+
+    from
     8.9k
-     
+    searched
+
     repositories
   </small>
 </StreamingProgressCount>
@@ -199,16 +203,17 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
   >
     123
     +
-     
+
     results
      in
-     
+
     1.25
     s
-     
-    from 
+
+    from
     500
-     
+    searched
+
     repositories
   </small>
 </StreamingProgressCount>
@@ -231,10 +236,10 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
     className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
   >
     0
-     
+
     results
      in
-     
+
     0.00
     s
   </small>

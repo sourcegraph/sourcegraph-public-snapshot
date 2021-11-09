@@ -37,7 +37,7 @@ export const StreamingProgressCount: React.FunctionComponent<
             {progress.repositoriesCount !== undefined && (
                 <>
                     {' '}
-                    from {abbreviateNumber(progress.repositoriesCount)}{' '} searched{' '}
+                    from {abbreviateNumber(progress.repositoriesCount)} searched{' '}
                     {pluralize('repository', progress.repositoriesCount, 'repositories')}
                 </>
             )}
