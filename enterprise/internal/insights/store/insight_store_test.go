@@ -495,6 +495,7 @@ func TestUpdateView(t *testing.T) {
 				IncludeRepoRegex: &include,
 				ExcludeRepoRegex: &exclude,
 			},
+			PresentationType: types.Line,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -505,6 +506,7 @@ func TestUpdateView(t *testing.T) {
 				IncludeRepoRegex: valast.Addr("include repos").(*string),
 				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
 			},
+			PresentationType: types.PresentationType("LINE"),
 		}).Equal(t, got)
 	})
 }

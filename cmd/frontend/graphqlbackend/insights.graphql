@@ -730,12 +730,20 @@ extend type Mutation {
     Create a line chart backed by search insights.
     """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Create a pie chart backed by search insights.
+    """
     createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Update a pie chart backed by search insights.
+    """
     updatePieChartSearchInsight(id: ID!, input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
 
     """
