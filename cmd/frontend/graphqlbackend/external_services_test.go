@@ -766,22 +766,18 @@ func TestDeleteExternalService(t *testing.T) {
 }
 
 func TestExternalServices(t *testing.T) {
-	db := database.NewDB(nil)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("read users external services", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{ID: 1}, nil
-			}
-			database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			users := dbmock.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id}, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.Users = database.MockUsers{}
 			})
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
 
 			id := MarshalUserID(2)
-			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -793,19 +789,17 @@ func TestExternalServices(t *testing.T) {
 		})
 
 		t.Run("read orgs external services", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{ID: 1}, nil
-			}
-			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return nil, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-				database.Mocks.Users = database.MockUsers{}
-			})
+			users := dbmock.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+			orgMembers := dbmock.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
 			id := MarshalOrgID(2)
-			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -817,17 +811,16 @@ func TestExternalServices(t *testing.T) {
 		})
 
 		t.Run("read site-level external services", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{ID: 1}, nil
-			}
-			database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			users := dbmock.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+			users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id}, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.Users = database.MockUsers{}
 			})
 
-			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+
+			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -839,18 +832,17 @@ func TestExternalServices(t *testing.T) {
 
 	t.Run("authenticated as admin", func(t *testing.T) {
 		t.Run("read other users external services", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{ID: 1, SiteAdmin: true}, nil
-			}
-			database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			users := dbmock.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id, SiteAdmin: true}, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.Users = database.MockUsers{}
 			})
 
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+
 			id := MarshalUserID(2)
-			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -862,18 +854,17 @@ func TestExternalServices(t *testing.T) {
 		})
 
 		t.Run("can read site-level external service", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-				return &types.User{ID: 1, SiteAdmin: true}, nil
-			}
-			database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			users := dbmock.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id, SiteAdmin: true}, nil
-			}
-			t.Cleanup(func() {
-				database.Mocks.Users = database.MockUsers{}
 			})
 
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+
 			id := MarshalUserID(0)
-			_, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
+			_, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if err != nil {
@@ -882,10 +873,11 @@ func TestExternalServices(t *testing.T) {
 		})
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.NamespaceUserID > 0 {
 			return []*types.ExternalService{
 				{ID: 1},
@@ -906,21 +898,19 @@ func TestExternalServices(t *testing.T) {
 			return ess[:opt.LimitOffset.Limit], nil
 		}
 		return ess, nil
-	}
-	database.Mocks.ExternalServices.Count = func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
+	})
+	externalServices.CountFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 		if opt.NamespaceUserID > 0 || opt.AfterID > 0 {
 			return 1, nil
 		}
 
 		return 2, nil
-	}
-	database.Mocks.ExternalServices.GetLastSyncError = func(id int64) (string, error) {
-		return "Oops", nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.ExternalServices = database.MockExternalServices{}
-	}()
+	})
+	externalServices.GetLastSyncErrorFunc.SetDefaultReturn("Oops", nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	// NOTE: all these tests run as site admin
 	RunTests(t, []*Test{
