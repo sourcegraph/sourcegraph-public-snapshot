@@ -11,15 +11,55 @@ import (
 
 	"github.com/avelino/slugify"
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 	"github.com/rainycape/unidecode"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
+
+type dividedOutputFunc func(context.Context, args []string) ([]byte, []byte, error)
+
+// ExpandRefs expands all reference-type RevisionSpecifiers (globs, exclude globs, and HEAD) into absolute commits hashes.
+// This is useful to convert reference types, which may change meaning over time, to static hashes, which will not change meaning.
+func ExpandRefs(ctx context.Context, dividedOutput dividedOutputFunc, revSpecs []protocol.RevisionSpecifier) ([]protocol.RevisionSpecifier, error) {
+	args := []string{"rev-parse"}
+	for _, r := range revSpecs {
+		if r.RevSpec != "" {
+			args = append(args, r.RevSpec)
+		} else if r.RefGlob != "" {
+			args = append(args, "--glob="+r.RefGlob)
+		} else if r.ExcludeRefGlob != "" {
+			args = append(args, "--exclude="+r.ExcludeRefGlob)
+		} else {
+			args = append(args, "HEAD")
+		}
+	}
+
+	// If revSpecs is empty, git treats it as equivalent to HEAD
+	if len(revSpecs) == 0 {
+		args = append(args, "HEAD")
+	}
+
+	stdout, stderr, err := dividedOutput(ctx, args)
+	if err != nil {
+		log15.Warn("rev-parse command failed", "err", err.Error(), "stderr", string(stderr))
+		return nil, err
+	}
+
+	split := bytes.Split(stdout, []byte{'\n'})
+	split = split[:len(split)-1] // remove the last, empty string
+	res := make([]protocol.RevisionSpecifier, 0, len(split))
+	for _, hash := range split {
+		res = append(res, protocol.RevisionSpecifier{RevSpec: string(hash)})
+	}
+	return res, nil
+}
 
 // HumanReadableBranchName returns a human readable branch name from the
 // given text. It replaces unicode characters with their ASCII equivalent
