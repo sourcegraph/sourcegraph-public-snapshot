@@ -12,7 +12,6 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../graphql-operations'
-import { GlobalStoreProvider } from '../stores/global'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -69,22 +68,18 @@ describe('GlobalNavbar', () => {
 
     test('default', () => {
         const { asFragment } = render(
-            <GlobalStoreProvider>
-                <MemoryRouter>
-                    <GlobalNavbar {...PROPS} />
-                </MemoryRouter>
-            </GlobalStoreProvider>
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} />
+            </MemoryRouter>
         )
         expect(asFragment()).toMatchSnapshot()
     })
 
     test('low-profile', () => {
         const { asFragment } = render(
-            <GlobalStoreProvider>
-                <MemoryRouter>
-                    <GlobalNavbar {...PROPS} variant="low-profile" />
-                </MemoryRouter>
-            </GlobalStoreProvider>
+            <MemoryRouter>
+                <GlobalNavbar {...PROPS} variant="low-profile" />
+            </MemoryRouter>
         )
         expect(asFragment()).toMatchSnapshot()
     })

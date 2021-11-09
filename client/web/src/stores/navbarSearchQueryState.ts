@@ -29,7 +29,7 @@ export type QueryUpdate =
           field: FilterType
           value: string
       }
-    // Only exists for the filters from the serach sidebar since they come in
+    // Only exists for the filters from the search sidebar since they come in
     // filter:value form. Should not be used elsewhere.
     | {
           type: 'toggleSubquery'
