@@ -1018,7 +1018,7 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 
 	excludeCondition := sqlf.Sprintf("TRUE")
 	if dependencyUpdateType == DependencyReferenceCountUpdateTypeRemove {
-		excludeCondition = sqlf.Sprintf("u.id NOT IN (%s)", idListQuery)
+		excludeCondition = sqlf.Sprintf("u.id NOT = ANY (%s)", pq.Array(ids))
 	}
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(
