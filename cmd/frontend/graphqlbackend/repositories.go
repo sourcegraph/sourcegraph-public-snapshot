@@ -51,7 +51,7 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		cursor := types.Cursor{
+		cursor := database.Cursor{
 			Column: string(toDBRepoListColumn(args.OrderBy)),
 		}
 
@@ -285,7 +285,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
 	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
-		&types.Cursor{
+		&database.Cursor{
 			Column:    cursor.Column,
 			Value:     value,
 			Direction: cursor.Direction,

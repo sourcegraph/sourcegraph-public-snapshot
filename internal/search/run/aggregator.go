@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
@@ -78,11 +77,11 @@ func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParamete
 		tr.Finish()
 	}()
 
-	err = SearchRepositories(ctx, args, int(limit), a)
+	err = SearchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager, mode search.GlobalSearchMode) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos []*search.RepositoryRevisions, mode search.GlobalSearchMode) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
@@ -93,6 +92,7 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pa
 
 	err = job.Run(ctx, a, repos)
 	return errors.Wrap(err, job.Name()+" search failed")
+
 }
 
 func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int) (err error) {

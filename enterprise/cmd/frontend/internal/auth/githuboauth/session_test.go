@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -313,7 +312,7 @@ func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *t
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(nil)
 
 	ctx := context.Background()
 	s := &sessionIssuerHelper{db: db}

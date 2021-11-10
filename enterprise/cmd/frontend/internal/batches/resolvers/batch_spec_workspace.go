@@ -305,7 +305,7 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
-		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DB(), entry)
+		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 	}
 
 	return nil
@@ -321,7 +321,7 @@ func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(
 		if !strings.HasPrefix(entry.Key, prefix) {
 			continue
 		}
-		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DB(), entry)
+		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 		resolvers = append(resolvers, r)
 	}
 
