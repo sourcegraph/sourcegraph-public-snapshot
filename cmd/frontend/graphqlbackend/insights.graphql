@@ -709,6 +709,11 @@ extend type Mutation {
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Delete an insight view given the graphql ID.
+    """
+    deleteInsightView(id: ID!): EmptyResponse!
 }
 
 """

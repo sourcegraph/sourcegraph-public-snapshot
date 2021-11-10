@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -98,7 +99,6 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 		}
 		result.sentInvitationEmail = true
 	}
-
 	return result, nil
 }
 
@@ -139,6 +139,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, a.UID); err != nil {
 			return nil, err
 		}
+		// Schedule permission sync for user that accepted the invite
+		r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
 	}
 	return &EmptyResponse{}, nil
 }

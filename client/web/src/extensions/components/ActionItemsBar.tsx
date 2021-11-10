@@ -299,6 +299,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(props => {
                             to="/extensions"
                             className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
                             data-tooltip="Add extensions"
+                            aria-label="Add extensions"
                         >
                             <PlusIcon className="icon-inline" />
                         </Link>
@@ -323,12 +324,10 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
     return barInPage ? (
         <>
             <div className={styles.dividerVertical} />
-            <li
-                data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
-                className={classNames('nav-item mr-2', className)}
-            >
+            <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <ButtonLink
+                        data-tooltip={`${isOpen ? 'Close' : 'Open'} extensions panel`}
                         className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                         onSelect={toggle}
                         buttonLinkRef={toggleReference}

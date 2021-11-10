@@ -108,12 +108,12 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := database.UserEmails(r.db).Remove(ctx, userID, args.Email); err != nil {
+	if err := r.db.UserEmails().Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset tokens that may have been sent to that email.
-	if err := database.Users(r.db).DeletePasswordResetCode(ctx, userID); err != nil {
+	if err := r.db.Users().DeletePasswordResetCode(ctx, userID); err != nil {
 		return nil, err
 	}
 

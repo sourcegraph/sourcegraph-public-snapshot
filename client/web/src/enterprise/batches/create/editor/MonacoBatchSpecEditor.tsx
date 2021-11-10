@@ -25,7 +25,6 @@ export interface Props extends ThemeProps {
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
-    height?: number
 }
 
 interface State {}
@@ -78,7 +77,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
             <MonacoEditor
                 className={classNames(styles.editor, this.props.className)}
                 language="yaml"
-                height={this.props.height || 400}
+                height="100%"
                 isLightTheme={this.props.isLightTheme}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}

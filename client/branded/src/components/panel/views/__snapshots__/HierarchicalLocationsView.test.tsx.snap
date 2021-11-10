@@ -44,6 +44,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <span
                   aria-label="github.com"
+                  role="img"
                   title="github.com"
                 >
                   <svg
@@ -284,6 +285,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <span
                   aria-label="github.com"
+                  role="img"
                   title="github.com"
                 >
                   <svg
@@ -470,6 +472,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <span
                   aria-label="github.com"
+                  role="img"
                   title="github.com"
                 >
                   <svg

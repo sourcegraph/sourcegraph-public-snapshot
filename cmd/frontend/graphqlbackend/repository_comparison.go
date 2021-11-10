@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -89,7 +90,7 @@ func NewRepositoryComparison(ctx context.Context, db dbutil.DB, r *RepositoryRes
 			return nil, err
 		}
 
-		return toGitCommitResolver(r, db, commitID, nil), nil
+		return toGitCommitResolver(r, database.NewDB(db), commitID, nil), nil
 	}
 
 	head, err := getCommit(ctx, r.RepoName(), headRevspec)
@@ -161,7 +162,7 @@ func (r *RepositoryComparisonResolver) Commits(
 	args *graphqlutil.ConnectionArgs,
 ) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		db:            r.db,
+		db:            database.NewDB(r.db),
 		revisionRange: r.baseRevspec + ".." + r.headRevspec,
 		first:         args.First,
 		repo:          r.repo,
@@ -183,7 +184,7 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
 func repositoryComparisonNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
 	return &GitTreeEntryResolver{
-		db:     db,
+		db:     database.NewDB(db),
 		commit: r.Head,
 		stat:   CreateFileInfo(r.FileDiff.NewName, false),
 	}
@@ -412,7 +413,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 		return nil
 	}
 	return &GitTreeEntryResolver{
-		db:     r.db,
+		db:     database.NewDB(r.db),
 		commit: r.Base,
 		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
 	}

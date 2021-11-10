@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -282,6 +283,8 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	if _, err := database.OrgMembers(r.db).Create(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
+	// Schedule permission sync for newly added user
+	r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
 	return &EmptyResponse{}, nil
 }
 
@@ -324,7 +327,7 @@ func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositorie
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
+		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{

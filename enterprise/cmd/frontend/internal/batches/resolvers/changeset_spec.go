@@ -203,7 +203,7 @@ type gitCommitDescriptionResolver struct {
 
 func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 	return graphqlbackend.NewPersonResolver(
-		r.store.DB(),
+		r.store.DatabaseDB(),
 		r.authorName,
 		r.authorEmail,
 		// Try to find the corresponding Sourcegraph user.

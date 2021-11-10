@@ -42,7 +42,7 @@ func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
 
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
-func addDebugHandlers(r *mux.Router, db dbutil.DB) {
+func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
 	addZoekt(r, db)
@@ -57,9 +57,11 @@ func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 				Addr:    s.Host,
 			})
 		}
-		rph.Populate(peps)
+		rph.Populate(db, peps)
 	} else if conf.IsDeployTypeKubernetes(conf.DeployType()) {
-		err := debugproxies.StartClusterScanner(rph.Populate)
+		err := debugproxies.StartClusterScanner(func(endpoints []debugproxies.Endpoint) {
+			rph.Populate(db, endpoints)
+		})
 		if err != nil {
 			// we ended up here because cluster is not a k8s cluster
 			addNoK8sClientHandler(r, db)
@@ -69,7 +71,7 @@ func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 		addNoK8sClientHandler(r, db)
 	}
 
-	rph.AddToRouter(r)
+	rph.AddToRouter(r, db)
 }
 
 // PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a

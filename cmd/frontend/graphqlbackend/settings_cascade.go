@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -23,7 +22,7 @@ import (
 // - Organization settings
 // - Current user settings
 type settingsCascade struct {
-	db dbutil.DB
+	db database.DB
 	// At most 1 of these fields is set.
 	unauthenticatedActor bool
 	subject              *settingsSubject
@@ -36,7 +35,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: database.NewDB(r.db), gqlID: singletonSiteGQLID}}}
+	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: r.db, gqlID: singletonSiteGQLID}}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil
@@ -50,7 +49,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		subjects = append(subjects, r.subject)
 
 	case r.subject.user != nil:
-		orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.subject.user.user.ID)
+		orgs, err := r.db.Orgs().GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +59,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		})
 		// Apply the user's orgs' settings.
 		for _, org := range orgs {
-			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: database.NewDB(r.db), org: org}})
+			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: r.db, org: org}})
 		}
 		// Apply the user's own settings last (it has highest priority).
 		subjects = append(subjects, r.subject)

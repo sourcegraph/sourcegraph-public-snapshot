@@ -21,12 +21,13 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const to = `/${encodeRepoRevision(this.props)}/-/raw/${this.props.filePath}`
+        const descriptiveText = 'Raw (download file)'
 
         if (this.props.actionType === 'dropdown') {
             return (
                 <a href={to} onClick={this.onClick.bind(this)} className="btn repo-header__file-action" download={true}>
                     <FileDownloadOutlineIcon className="icon-inline" />
-                    <span>Raw (download file)</span>
+                    <span>{descriptiveText}</span>
                 </a>
             )
         }
@@ -36,7 +37,8 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 href={to}
                 onClick={this.onClick.bind(this)}
                 className="btn btn-icon repo-header__action"
-                data-tooltip="Raw (download file)"
+                data-tooltip={descriptiveText}
+                aria-label={descriptiveText}
                 download={true}
             >
                 <FileDownloadOutlineIcon className="icon-inline" />

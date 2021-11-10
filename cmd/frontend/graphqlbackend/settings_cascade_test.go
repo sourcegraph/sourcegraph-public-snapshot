@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -180,9 +180,8 @@ func TestMergeSettings(t *testing.T) {
 }
 
 func TestSubjects(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	t.Run("Default settings are included", func(t *testing.T) {
-		cascade := &settingsCascade{db: db, unauthenticatedActor: true}
+		cascade := &settingsCascade{db: dbmock.NewMockDB(), unauthenticatedActor: true}
 		subjects, err := cascade.Subjects(context.Background())
 		if err != nil {
 			t.Fatal(err)

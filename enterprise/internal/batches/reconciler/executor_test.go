@@ -633,6 +633,49 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
+func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
+	ctx := context.Background()
+	db := dbtest.NewDB(t)
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	changesetSpec := ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+		Repo:      repo.ID,
+		HeadRef:   "refs/heads/my-pr",
+		Published: true,
+	})
+	changeset := ct.BuildChangeset(ct.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
+
+	ourError := errors.New("this should not be returned")
+	sourcer := sources.NewFakeSourcer(ourError, &sources.FakeChangesetSource{})
+
+	t.Run("plan requires changeset source", func(t *testing.T) {
+		plan := &Plan{}
+		plan.ChangesetSpec = changesetSpec
+		plan.Changeset = changeset
+
+		plan.AddOp(btypes.ReconcilerOperationClose)
+
+		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		if err != ourError {
+			t.Fatalf("executePlan did not return expected error: %s", err)
+		}
+	})
+
+	t.Run("plan does not require changeset source", func(t *testing.T) {
+		plan := &Plan{}
+		plan.ChangesetSpec = changesetSpec
+		plan.Changeset = changeset
+
+		plan.AddOp(btypes.ReconcilerOperationDetach)
+
+		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		if err != nil {
+			t.Fatalf("executePlan returned unexpected error: %s", err)
+		}
+	})
+}
+
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t)

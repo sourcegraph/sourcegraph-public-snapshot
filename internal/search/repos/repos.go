@@ -6,19 +6,21 @@ import (
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/neelance/parallel"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -38,20 +40,74 @@ type Resolved struct {
 	RepoSet         map[api.RepoID]types.MinimalRepo
 	MissingRepoRevs []*search.RepositoryRevisions
 	OverLimit       bool
+
+	// Next points to the next page of resolved repository revisions. It will
+	// be nil if there are no more pages left.
+	Next types.MultiCursor
 }
 
 func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
+// A Pager implements paginated repository resolution.
+type Pager interface {
+	// Paginate calls the given callback with each page of resolved repositories. If the callback
+	// returns an error, Paginate will abort and return that error.
+	Paginate(context.Context, func(*Resolved) error) error
+}
+
 type Resolver struct {
-	DB                  database.DB
-	SearchableReposFunc searchableReposFunc
+	DB     database.DB
+	Opts   search.RepoOptions
+	Stream streaming.Sender
+}
+
+func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
+	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Paginate", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	opts := r.Opts // copy
+	if opts.Limit == 0 {
+		opts.Limit = 500
+	}
+
+	errs := new(multierror.Error)
+
+	for {
+		page, err := r.Resolve(ctx, opts)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			if !errors.As(err, &MissingRepoRevsError{}) { // Non-fatal errors
+				break
+			}
+		}
+		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
+
+		r.Stream.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: page.RepoSet}})
+		tr.LazyPrintf("sent stats (repos %d) ", len(page.RepoSet))
+
+		if err = handle(&page); err != nil {
+			errs = multierror.Append(errs, err)
+			break
+		}
+
+		if page.Next == nil {
+			break
+		}
+
+		opts.Cursors = page.Next
+	}
+
+	return errs.ErrorOrNil()
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Resolve", op.String())
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -82,98 +138,109 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	var searchableRepos []types.MinimalRepo
-
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
-		start := time.Now()
-		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, excludePatterns)
-		if err != nil {
-			return Resolved{}, errors.Wrap(err, "getting list of indexable repos")
-		}
-		tr.LazyPrintf("searchableRepos: took %s to add %d repos", time.Since(start), len(searchableRepos))
-
-		// Search all indexable repos since indexed search is fast.
-		if len(searchableRepos) > limit {
-			limit = len(searchableRepos)
-		}
+	options := database.ReposListOptions{
+		IncludePatterns: includePatterns,
+		ExcludePattern:  UnionRegExps(excludePatterns),
+		Cursors:         op.Cursors,
+		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
+		NoForks:                op.NoForks,
+		OnlyForks:              op.OnlyForks,
+		NoArchived:             op.NoArchived,
+		OnlyArchived:           op.OnlyArchived,
+		NoPrivate:              op.Visibility == query.Public,
+		OnlyPrivate:            op.Visibility == query.Private,
+		SearchContextID:        searchContext.ID,
+		UserID:                 searchContext.NamespaceUserID,
+		OrgID:                  searchContext.NamespaceOrgID,
+		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
+		OrderBy: database.RepoListOrderBy{
+			{
+				Field:      database.RepoListStars,
+				Descending: true,
+				Nulls:      "LAST",
+			},
+			{
+				Field:      database.RepoListID,
+				Descending: true,
+			},
+		},
 	}
 
-	var repos []types.MinimalRepo
-	if len(searchableRepos) > 0 {
-		repos = searchableRepos
-		if len(repos) > limit {
-			repos = repos[:limit]
-		}
-	} else {
-		tr.LazyPrintf("Repos.List - start")
+	tr.LazyPrintf("Repos.ListMinimalRepos - start")
+	repos, err := r.DB.Repos().ListMinimalRepos(ctx, options)
+	tr.LazyPrintf("Repos.ListMinimalRepos - done (%d repos, err %v)", len(repos), err)
 
-		options := database.ReposListOptions{
-			IncludePatterns: includePatterns,
-			ExcludePattern:  UnionRegExps(excludePatterns),
-			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:            &database.LimitOffset{Limit: limit + 1},
-			NoForks:                op.NoForks,
-			OnlyForks:              op.OnlyForks,
-			NoArchived:             op.NoArchived,
-			OnlyArchived:           op.OnlyArchived,
-			NoPrivate:              op.Visibility == query.Public,
-			OnlyPrivate:            op.Visibility == query.Private,
-			SearchContextID:        searchContext.ID,
-			UserID:                 searchContext.NamespaceUserID,
-			OrgID:                  searchContext.NamespaceOrgID,
-			IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
-		}
+	if err != nil {
+		return Resolved{}, err
+	}
 
-		if op.Ranked {
-			options.OrderBy = database.RepoListOrderBy{
-				{
-					Field:      database.RepoListStars,
-					Descending: true,
-					Nulls:      "LAST",
-				},
+	if len(repos) == 0 && len(op.Cursors) == 0 { // Is the first page empty?
+		return Resolved{}, ErrNoResolvedRepos
+	}
+
+	var next types.MultiCursor
+	if len(repos) == limit+1 { // Do we have a next page?
+		last := repos[len(repos)-1]
+		for _, o := range options.OrderBy {
+			c := types.Cursor{Column: string(o.Field)}
+
+			switch c.Column {
+			case "stars":
+				c.Value = strconv.FormatInt(int64(last.Stars), 10)
+			case "id":
+				c.Value = strconv.FormatInt(int64(last.ID), 10)
 			}
-		}
 
-		repos, err = r.DB.Repos().ListMinimalRepos(ctx, options)
-		tr.LazyPrintf("Repos.List - done")
+			if o.Descending {
+				c.Direction = "prev"
+			} else {
+				c.Direction = "next"
+			}
 
-		if err != nil {
-			return Resolved{}, err
+			next = append(next, &c)
 		}
+		repos = repos[:len(repos)-1]
 	}
-	overLimit := len(repos) > limit
-	repoRevs := make([]*search.RepositoryRevisions, 0, len(repos))
-	var missingRepoRevs []*search.RepositoryRevisions
+
 	tr.LazyPrintf("Associate/validate revs - start")
 
-	// For auto-defined search contexts we only search the main branch
-	var searchContextRepositoryRevisions []*search.RepositoryRevisions
+	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
-		searchContextRepositoryRevisions, err = searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
+		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err
 		}
+
+		searchContextRepositoryRevisions = make(map[api.RepoID]*search.RepositoryRevisions, len(scRepoRevs))
+		for _, repoRev := range scRepoRevs {
+			searchContextRepositoryRevisions[repoRev.Repo.ID] = repoRev
+		}
 	}
-	repoSet := make(map[api.RepoID]types.MinimalRepo, len(repos))
+
+	res := Resolved{
+		RepoRevs: make([]*search.RepositoryRevisions, 0, len(repos)),
+		RepoSet:  make(map[api.RepoID]types.MinimalRepo, len(repos)),
+		Next:     next,
+	}
 
 	for _, repo := range repos {
-		var repoRev search.RepositoryRevisions
-		var revs []search.RevisionSpecifier
+		var (
+			repoRev = search.RepositoryRevisions{Repo: repo}
+			revs    []search.RevisionSpecifier
+		)
+
 		if len(searchContextRepositoryRevisions) > 0 {
-			for _, repositoryRevisions := range searchContextRepositoryRevisions {
-				if repo.ID == repositoryRevisions.Repo.ID {
-					repoRev.Repo = repo
-					revs = repositoryRevisions.Revs
-					break
-				}
+			if scRepoRev := searchContextRepositoryRevisions[repo.ID]; scRepoRev != nil {
+				revs = scRepoRev.Revs
 			}
 		} else {
 			var clashingRevs []search.RevisionSpecifier
 			revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
-			repoRev.Repo = repo
+
 			// if multiple specified revisions clash, report this usefully:
 			if len(revs) == 0 && clashingRevs != nil {
-				missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
+				res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
 					Repo: repo,
 					Revs: clashingRevs,
 				})
@@ -223,7 +290,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 						// Report as HEAD not "" (empty string) to avoid user confusion.
 						rev.RevSpec = "HEAD"
 					}
-					missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
+					res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
 						Repo: repo,
 						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 					})
@@ -234,25 +301,25 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			}
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
-		repoRevs = append(repoRevs, &repoRev)
-		repoSet[repoRev.Repo.ID] = repoRev.Repo
+
+		res.RepoRevs = append(res.RepoRevs, &repoRev)
+		res.RepoSet[repoRev.Repo.ID] = repoRev.Repo
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
 	if op.CommitAfter != "" {
 		start := time.Now()
-		before := len(repoRevs)
-		repoRevs, err = filterRepoHasCommitAfter(ctx, repoRevs, op.CommitAfter)
-		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(repoRevs), time.Since(start))
+		before := len(res.RepoRevs)
+		res.RepoRevs, err = filterRepoHasCommitAfter(ctx, res.RepoRevs, op.CommitAfter)
+		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(res.RepoRevs), time.Since(start))
 	}
 
-	return Resolved{
-		RepoRevs:        repoRevs,
-		RepoSet:         repoSet,
-		MissingRepoRevs: missingRepoRevs,
-		OverLimit:       overLimit,
-	}, err
+	if len(res.MissingRepoRevs) > 0 {
+		err = multierror.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
+	}
+
+	return res, err
 }
 
 // Excluded computes the ExcludedRepos that the given RepoOptions would not match. This is
@@ -500,40 +567,6 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type searchableReposFunc func(ctx context.Context) ([]types.MinimalRepo, error)
-
-// searchableRepositories returns the intersection of calling gettRawSearchableRepos
-// (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.MinimalRepo, err error) {
-	tr, ctx := trace.New(ctx, "searchableRepositories", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// Get the list of indexable repos from the database.
-	searchableRepos, err := getRawSearchableRepos(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "querying database for searchable repos")
-	}
-	tr.LazyPrintf("getRawSearchableRepos - done")
-
-	// Remove excluded repos.
-	if len(excludePatterns) > 0 {
-		patterns, _ := regexp.Compile(`(?i)` + UnionRegExps(excludePatterns))
-		filteredRepos := searchableRepos[:0]
-		for _, repo := range searchableRepos {
-			if matched := patterns.MatchString(string(repo.Name)); !matched {
-				filteredRepos = append(filteredRepos, repo)
-			}
-		}
-		searchableRepos = filteredRepos
-		tr.LazyPrintf("remove excluded repos - done")
-	}
-
-	return searchableRepos, nil
-}
-
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
 	var (
 		mut  sync.Mutex
@@ -608,6 +641,14 @@ func (e *badRequestError) Error() string {
 func (e *badRequestError) Cause() error {
 	return e.err
 }
+
+var ErrNoResolvedRepos = errors.New("no resolved repositories")
+
+type MissingRepoRevsError struct {
+	Missing []*search.RepositoryRevisions
+}
+
+func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 
 // HandleRepoSearchResult handles the limitHit and searchErr returned by a search function,
 // returning common as to reflect that new information. If searchErr is a fatal error,

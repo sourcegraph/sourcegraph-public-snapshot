@@ -53,6 +53,10 @@ func SubRepoPerms(db dbutil.DB) SubRepoPermsStore {
 	return &subRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
+func SubRepoPermsWith(other basestore.ShareableStore) SubRepoPermsStore {
+	return &subRepoPermsStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
 func (s *subRepoPermsStore) With(other basestore.ShareableStore) SubRepoPermsStore {
 	return &subRepoPermsStore{Store: s.Store.With(other)}
 }

@@ -246,7 +246,7 @@ func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
 	}
 
 	return graphqlbackend.NewPersonResolver(
-		r.store.DB(),
+		r.store.DatabaseDB(),
 		name,
 		email,
 		// Try to find the corresponding Sourcegraph user.
