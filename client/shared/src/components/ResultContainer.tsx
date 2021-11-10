@@ -8,8 +8,6 @@ import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
-import { TelemetryService } from '../telemetry/telemetryService'
-
 import { SearchResultStar } from './SearchResultStar'
 
 export interface Props {
