@@ -25,7 +25,6 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -1192,41 +1191,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 	}
 
 	if sr != nil {
-		// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-		if r.subRepoPerms.Enabled() {
-			applySubRepoPerms(ctx, r.subRepoPerms, sr)
-		}
-
 		r.sortResults(sr.Matches)
 	}
 	return sr, err
-}
-
-// applySubRepoPerms drops matches the actor in the given context does not have read access to.
-func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, sr *SearchResults) {
-	actor := actor.FromContext(ctx)
-	var n int
-	for _, match := range sr.Matches {
-		key := match.Key()
-		perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
-			Repo: key.Repo,
-			Path: key.Path,
-		})
-		if err != nil {
-			log15.Error("applySubRepoPerms: failed to check sub-repo permissions",
-				"actor.uid", actor.UID,
-				"match.key", key,
-				"error", err)
-		}
-
-		if perms.Include(authz.Read) {
-			// Authorized - keep result and continue
-			sr.Matches[n] = match
-			n++
-		}
-	}
-	// Drop all unauthorized matches
-	sr.Matches = sr.Matches[:n]
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
@@ -1595,7 +1562,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		defer cancelOnLimit()
 	}
 
-	agg := run.NewAggregator(r.db, stream)
+	agg := run.NewAggregator(ctx, r.db, stream)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.

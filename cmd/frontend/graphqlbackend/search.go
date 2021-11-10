@@ -10,7 +10,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -196,11 +195,6 @@ type searchResolver struct {
 	*run.SearchInputs
 	db                  database.DB
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
-
-	// Responsible for filtering out sub-repository content.
-	//
-	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-	subRepoPerms authz.SubRepoPermissionChecker
 
 	// stream if non-nil will send all search events we receive down it.
 	stream streaming.Sender
