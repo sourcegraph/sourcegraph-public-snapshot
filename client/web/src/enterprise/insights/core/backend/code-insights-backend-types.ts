@@ -11,6 +11,8 @@ export interface DashboardCreateInput {
     visibility: string
     insightIds?: string[]
     type?: string
+    userIds?: string[]
+    orgIds?: string[]
 }
 
 export interface DashboardUpdateInput {
