@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -102,6 +103,14 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 			if entryExitCode != nil {
 				si.Skipped = true
 			}
+		}
+		// Mark all steps as skipped when a cached result was found.
+		if r.CachedResultFound() {
+			si.Skipped = true
+		}
+		// Mark all steps as skipped when a workspace is skipped.
+		if r.workspace.Skipped {
+			si.Skipped = true
 		}
 
 		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
@@ -232,9 +241,13 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 	if err != nil {
 		return nil, err
 	}
-	repos, err := r.store.Repos().GetReposSetByIDs(ctx, specs.RepoIDs()...)
-	if err != nil {
-		return nil, err
+	var repos map[api.RepoID]*types.Repo
+	repoIDs := specs.RepoIDs()
+	if len(repoIDs) > 0 {
+		repos, err = r.store.Repos().GetReposSetByIDs(ctx, specs.RepoIDs()...)
+		if err != nil {
+			return nil, err
+		}
 	}
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(specs))
 	for _, spec := range specs {
