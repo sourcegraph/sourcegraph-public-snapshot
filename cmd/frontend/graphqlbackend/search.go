@@ -199,6 +199,8 @@ type searchResolver struct {
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// Responsible for filtering out sub-repository content.
+	//
+	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
 	subRepoPerms authz.SubRepoPermissionChecker
 
 	// stream if non-nil will send all search events we receive down it.
