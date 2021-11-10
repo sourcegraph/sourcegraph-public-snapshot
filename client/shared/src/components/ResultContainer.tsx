@@ -89,9 +89,9 @@ export interface Props {
     repoLastFetched?: string
 
     /**
-     * A telemetry service implementation to log events.
+     * Logs the click event on the reference panel iif it happens from the reference panel component.
      */
-    telemetryService?: TelemetryService
+    logRefencePanelClick?: () => void
 }
 
 /**
@@ -111,7 +111,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     description,
     matchCountLabel,
     repoStars,
-    telemetryService,
+    logRefencePanelClick,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -124,9 +124,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         }
     }
 
-    const trackResultClick = (): void => {
-        if (telemetryService) {
-            telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
+    const trackReferencePanelClick = (): void => {
+        if (logRefencePanelClick) {
+            logRefencePanelClick()
         }
     }
 
@@ -135,7 +135,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         <div
             className="test-search-result result-container"
             data-testid="result-container"
-            onClick={trackResultClick}
+            onClick={trackReferencePanelClick}
             role="none"
         >
             <div className="result-container__header">
