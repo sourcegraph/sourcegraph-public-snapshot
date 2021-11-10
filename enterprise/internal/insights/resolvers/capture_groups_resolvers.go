@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -69,11 +73,12 @@ type CaptureGroupExecutor struct {
 	clock     func() time.Time
 }
 
-func NewCaptureGroupExecutor(ctx context.Context, postgres dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
+func NewCaptureGroupExecutor(ctx context.Context, postgres, insightsDb dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
 		repoStore: database.Repos(postgres),
-		filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), postgres),
-		clock:     clock,
+		// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
+		filter: &compression.NoopFilter{},
+		clock:  clock,
 	}
 }
 
@@ -85,14 +90,21 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			return nil, errors.Wrapf(err, "failed to fetch repository information for repository name: %s", repository)
 		}
 		repoIds[repository] = repo.ID
-
 	}
+	log15.Info("Generated repoIds", "repoids", repoIds)
+
 	frames := FirstOfMonthFrames(7, c.clock())
 
 	type timeCounts map[time.Time]int
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
+		firstCommit, err := git.FirstEverCommit(ctx, api.RepoName(repository))
+		if err != nil {
+			return nil, errors.Wrapf(err, "FirstEverCommit")
+		}
+		// plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
+		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
 		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
 
 		generateTimes := func() map[time.Time]int {
@@ -105,13 +117,33 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			}
 			return times
 		}
+		for _, execution := range plan.Executions {
+			log15.Info("Generated execution for live search query plan", "repository", repository, "execution", execution)
+		}
 
 		// we need to perform the pivot
 		// var pivoted map[string]timeCounts
 		for _, execution := range plan.Executions {
-			modifiedQuery := withCountUnlimited(query)
-			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), execution.Revision)
+			if execution.RecordingTime.Before(firstCommit.Committer.Date) {
+				// this logic is faulty, but works for now. If the plan was compressed (these executions had children) we would have to
+				// iterate over the children to ensure they are also all before the first commit date. Otherwise, we would have to promote
+				// that child to the new execution, and all of the remaining children (after the promoted one) become children of the new execution.
+				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
+				continue
+			}
 
+			commits, err := git.Commits(ctx, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true})
+			if err != nil {
+				return nil, errors.Wrap(err, "git.Commits")
+			} else if len(commits) < 1 {
+				// there is no commit so skip this execution. Once again faulty logic for the same reasons as above.
+				continue
+			}
+
+			modifiedQuery := withCountUnlimited(query)
+			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
+
+			log15.Info("executing query", "query", modifiedQuery)
 			results, err := queryrunner.ComputeSearch(ctx, modifiedQuery)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
@@ -121,6 +153,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			sort.Slice(grouped, func(i, j int) bool {
 				return grouped[i].Value < grouped[j].Value
 			})
+			log15.Info("grouped results", "grouped", grouped)
 
 			for _, timeGroupElement := range grouped {
 				value := timeGroupElement.Value
@@ -244,7 +277,7 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
 	}
 
-	executor := NewCaptureGroupExecutor(ctx, r.postgresDB, time.Now)
+	executor := NewCaptureGroupExecutor(ctx, r.postgresDB, r.insightsDB, time.Now)
 	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories)
 	if err != nil {
 		return nil, err
