@@ -292,29 +292,46 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 
 	// EXECUTION OF TASKS
 	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
-		Creator:          workspaceCreator,
-		CacheDir:         opts.flags.cacheDir,
-		Cache:            executor.NewDiskCache(opts.flags.cacheDir),
-		ClearCache:       opts.flags.clearCache,
-		SkipErrors:       opts.flags.skipErrors,
-		CleanArchives:    opts.flags.cleanArchives,
-		Parallelism:      opts.flags.parallelism,
-		Timeout:          opts.flags.timeout,
-		KeepLogs:         opts.flags.keepLogs,
-		TempDir:          opts.flags.tempDir,
-		ImportChangesets: true,
+		Creator:       workspaceCreator,
+		CacheDir:      opts.flags.cacheDir,
+		Cache:         executor.NewDiskCache(opts.flags.cacheDir),
+		SkipErrors:    opts.flags.skipErrors,
+		CleanArchives: opts.flags.cleanArchives,
+		Parallelism:   opts.flags.parallelism,
+		Timeout:       opts.flags.timeout,
+		KeepLogs:      opts.flags.keepLogs,
+		TempDir:       opts.flags.tempDir,
 	})
 
 	ui.CheckingCache()
 	tasks := svc.BuildTasks(ctx, batchSpec, workspaces)
-	uncachedTasks, cachedSpecs, err := coord.CheckCache(ctx, tasks)
-	if err != nil {
-		return err
+	var (
+		specs         []*batcheslib.ChangesetSpec
+		uncachedTasks []*executor.Task
+	)
+	if opts.flags.clearCache {
+		coord.ClearCache(ctx, tasks)
+		uncachedTasks = tasks
+	} else {
+		uncachedTasks, specs, err = coord.CheckCache(ctx, tasks)
+		if err != nil {
+			return err
+		}
 	}
-	ui.CheckingCacheSuccess(len(cachedSpecs), len(uncachedTasks))
+	ui.CheckingCacheSuccess(len(specs), len(uncachedTasks))
 
 	taskExecUI := ui.ExecutingTasks(*verbose, opts.flags.parallelism)
-	freshSpecs, logFiles, err := coord.Execute(ctx, uncachedTasks, batchSpec, taskExecUI)
+	freshSpecs, logFiles, execErr := coord.Execute(ctx, uncachedTasks, batchSpec, taskExecUI)
+	// Add external changeset specs.
+	importedSpecs, importErr := svc.CreateImportChangesetSpecs(ctx, batchSpec)
+	var errs *multierror.Error
+	if execErr != nil {
+		err = multierror.Append(err, execErr)
+	}
+	if importErr != nil {
+		err = multierror.Append(err, importErr)
+	}
+	err = errs.ErrorOrNil()
 	if err != nil && !opts.flags.skipErrors {
 		return err
 	}
@@ -335,7 +352,8 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		ui.LogFilesKept(logFiles)
 	}
 
-	specs := append(cachedSpecs, freshSpecs...)
+	specs = append(specs, freshSpecs...)
+	specs = append(specs, importedSpecs...)
 
 	err = svc.ValidateChangesetSpecs(repos, specs)
 	if err != nil {

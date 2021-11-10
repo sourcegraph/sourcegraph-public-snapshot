@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
+	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 )
 
 type Service struct {
@@ -199,12 +201,27 @@ func (svc *Service) BuildTasks(ctx context.Context, spec *batcheslib.BatchSpec, 
 }
 
 func (svc *Service) NewCoordinator(opts executor.NewCoordinatorOpts) *executor.Coordinator {
-	opts.ResolveRepoName = svc.resolveRepositoryName
-	opts.Client = svc.client
+	opts.RepoArchiveRegistry = repozip.NewArchiveRegistry(svc.client, opts.CacheDir, opts.CleanArchives)
 	opts.Features = svc.features
 	opts.EnsureImage = svc.EnsureImage
 
 	return executor.NewCoordinator(opts)
+}
+
+func (svc *Service) CreateImportChangesetSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*batcheslib.ChangesetSpec, error) {
+	return batcheslib.BuildImportChangesetSpecs(ctx, batchSpec.ImportChangesets, func(ctx context.Context, repoNames []string) (_ map[string]string, errs error) {
+		repoNameIDs := map[string]string{}
+		for _, name := range repoNames {
+			repo, err := svc.resolveRepositoryName(ctx, name)
+			if err != nil {
+				wrapped := errors.Wrapf(err, "resolving repository name %q", name)
+				errs = multierror.Append(errs, wrapped)
+				continue
+			}
+			repoNameIDs[name] = repo.ID
+		}
+		return repoNameIDs, errs
+	})
 }
 
 // ValidateChangesetSpecs validates that among all branch changesets there are no

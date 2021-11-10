@@ -351,60 +351,6 @@ func TestCoordinator_Execute(t *testing.T) {
 	}
 }
 
-func TestCoordinator_Execute_ImportChangesets(t *testing.T) {
-
-	logManager := mock.LogNoOpManager{}
-	ui := newDummyTaskExecutionUI()
-	cache := newInMemoryExecutionCache()
-
-	repoName := "github.com/testing/test-repo"
-	repoID := "graphql-id:999"
-
-	repoNameResolver := func(ctx context.Context, name string) (*graphql.Repository, error) {
-		if name != repoName {
-			t.Fatalf("wrong repo name: %s", name)
-		}
-		return &graphql.Repository{ID: repoID, Name: repoName}, nil
-	}
-
-	opts := NewCoordinatorOpts{Features: featuresAllEnabled(), ResolveRepoName: repoNameResolver}
-
-	batchSpec := &batcheslib.BatchSpec{
-		Name:              "my-batch-change",
-		Description:       "the description",
-		ChangesetTemplate: testChangesetTemplate,
-		ImportChangesets: []batcheslib.ImportChangeset{
-			{Repository: repoName, ExternalIDs: []interface{}{500, 600, 700}},
-		},
-	}
-
-	t.Run("importChangesets:true", func(t *testing.T) {
-		opts.ImportChangesets = true
-		coord := Coordinator{cache: cache, exec: &dummyExecutor{}, logManager: logManager, opts: opts}
-
-		specs, _, err := coord.Execute(context.Background(), []*Task{}, batchSpec, ui)
-		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
-		if len(specs) != len(batchSpec.ImportChangesets[0].ExternalIDs) {
-			t.Fatalf("wrong number of imported changesets: %d", len(specs))
-		}
-	})
-
-	t.Run("importChangesets:false", func(t *testing.T) {
-		opts.ImportChangesets = false
-		coord := Coordinator{cache: cache, exec: &dummyExecutor{}, logManager: logManager, opts: opts}
-
-		specs, _, err := coord.Execute(context.Background(), []*Task{}, batchSpec, ui)
-		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
-		}
-		if len(specs) != 0 {
-			t.Fatalf("wrong number of imported changesets: %d", len(specs))
-		}
-	})
-}
-
 func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	// Setup dependencies
 	cache := newInMemoryExecutionCache()
@@ -475,7 +421,9 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	task.CachedResultFound = false
 
 	// Now we execute the spec with -clear-cache:
-	coord.opts.ClearCache = true
+	if err := coord.ClearCache(context.Background(), []*Task{task}); err != nil {
+		t.Fatal(err)
+	}
 	// We don't want any cached results set on the task:
 	execAndEnsure(t, coord, executor, task, assertNoCachedResult(t))
 	// Cache should have the same number of entries: the cached step results should
@@ -496,11 +444,19 @@ func execAndEnsure(t *testing.T, coord *Coordinator, exec *dummyExecutor, task *
 	// Setup the callback
 	exec.startCb = cb
 
+	// Check cache
+	uncached, cachedSpecs, err := coord.CheckCache(context.Background(), []*Task{task})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Execute
-	specs, _, err := coord.Execute(context.Background(), []*Task{task}, batchSpec, newDummyTaskExecutionUI())
+	freshSpecs, _, err := coord.Execute(context.Background(), uncached, batchSpec, newDummyTaskExecutionUI())
 	if err != nil {
 		t.Fatalf("execution of task failed: %s", err)
 	}
+
+	specs := append(cachedSpecs, freshSpecs...)
 
 	// Sanity check, because we're not interested in the specs
 	if have, want := len(specs), 1; have != want {
