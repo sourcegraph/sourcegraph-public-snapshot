@@ -67,6 +67,7 @@ func (a *Aggregator) Error(err error) {
 	a.mu.Lock()
 	a.errors = multierror.Append(a.errors, err)
 	a.mu.Unlock()
+	log15.Error("aggregated search error", "error", err)
 }
 
 func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) (err error) {
