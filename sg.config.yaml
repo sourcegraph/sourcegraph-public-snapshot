@@ -311,7 +311,7 @@ commands:
         echo "downloading ${url}" 1>&2
         curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
         mv "${target}.tmp" "${target}"
-        chmod +x ${target}
+        chmod +x "${target}"
       fi
     env:
       CADDY_VERSION: 2.4.5
