@@ -49,6 +49,7 @@ export const webhookLogNode = (overrides?: Partial<WebhookLogFields>): WebhookLo
     statusCode: overrides?.statusCode ?? number('status code', 204, { min: 100, max: 599 }),
     externalService: overrides?.externalService ?? null,
     request: overrides?.request ?? {
+        __typename: 'WebhookLogRequest',
         headers: HEADERS_JSON,
         body: BODY_JSON,
         method: 'POST',
@@ -56,6 +57,7 @@ export const webhookLogNode = (overrides?: Partial<WebhookLogFields>): WebhookLo
         version: 'HTTP/1.1',
     },
     response: overrides?.response ?? {
+        __typename: 'WebhookLogResponse',
         headers: HEADERS_PLAIN,
         body: BODY_PLAIN,
     },

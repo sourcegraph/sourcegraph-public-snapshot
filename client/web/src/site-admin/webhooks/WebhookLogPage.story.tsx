@@ -1,14 +1,15 @@
 import { storiesOf } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import React from 'react'
-import { of } from 'rxjs'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
-import { WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
+import { ServiceWebhookLogsVariables, WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
 
-import { queryWebhookLogs, SelectedExternalService } from './backend'
+import { EXTERNAL_SERVICE_WEBHOOK_LOGS, GLOBAL_WEBHOOK_LOGS } from './backend'
 import { BODY_JSON, BODY_PLAIN, buildHeaderMock, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'
 import { WebhookLogPage } from './WebhookLogPage'
 
@@ -19,45 +20,6 @@ const { add } = storiesOf('web/site-admin/webhooks/WebhookLogPage', module)
             viewports: [320, 576, 978, 1440],
         },
     })
-
-const buildQueryWebhookLogs: (logs: WebhookLogFields[]) => typeof queryWebhookLogs = logs => (
-    { first, after }: Pick<WebhookLogsVariables, 'first' | 'after'>,
-    externalService: SelectedExternalService,
-    onlyErrors: boolean
-) => {
-    const filtered = logs.filter(log => {
-        if (onlyErrors && log.statusCode < 400) {
-            return false
-        }
-
-        if (externalService === 'unmatched' && log.externalService) {
-            return false
-        }
-        if (
-            externalService !== 'all' &&
-            externalService !== 'unmatched' &&
-            externalService !== log.externalService?.displayName
-        ) {
-            return false
-        }
-
-        return true
-    })
-
-    first = first ?? 20
-    const afterNumber = after?.length ? +after : 0
-    const page = filtered.slice(afterNumber, afterNumber + first)
-    const cursor = afterNumber + first
-
-    return of({
-        nodes: page,
-        pageInfo: {
-            hasNextPage: logs.length > cursor,
-            endCursor: cursor.toString(),
-        },
-        totalCount: logs.length,
-    })
-}
 
 const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookLogFields[] => {
     const logs: WebhookLogFields[] = []
@@ -73,6 +35,7 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
                 : 500 + Math.floor(index / 3)
 
         logs.push({
+            __typename: 'WebhookLog',
             id: index.toString(),
             receivedAt: formatRFC3339(addMinutes(time, index)),
             externalService:
@@ -83,14 +46,16 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
                       },
             statusCode,
             request: {
-                headers: HEADERS_JSON,
+                __typename: 'WebhookLogRequest',
+                headers: HEADERS_JSON.map(header => ({ ...header, __typename: 'WebhookLogHeader' })),
                 body: BODY_JSON,
                 method: 'POST',
                 url: '/my/url',
                 version: 'HTTP/1.1',
             },
             response: {
-                headers: HEADERS_PLAIN,
+                __typename: 'WebhookLogResponse',
+                headers: HEADERS_PLAIN.map(header => ({ ...header, __typename: 'WebhookLogHeader' })),
                 body: BODY_PLAIN,
             },
         })
@@ -99,11 +64,101 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
     return logs
 }
 
+const buildWebhookLogMockLink = (count: number, externalServiceCount: number): WildcardMockLink => {
+    const logs = buildWebhookLogs(count, externalServiceCount)
+
+    return new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(GLOBAL_WEBHOOK_LOGS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: variables => {
+                let { first, after, onlyErrors, onlyUnmatched } = variables as WebhookLogsVariables
+
+                const filtered = logs.filter(log => {
+                    if (onlyErrors && log.statusCode < 400) {
+                        return false
+                    }
+                    if (onlyUnmatched && log.externalService) {
+                        return false
+                    }
+
+                    return true
+                })
+
+                first = first ?? 20
+                const afterNumber = after?.length ? +after : 0
+                const page = filtered.slice(afterNumber, afterNumber + first)
+                const cursor = afterNumber + first
+
+                return {
+                    data: {
+                        webhookLogs: {
+                            __typename: 'WebhookLogConnection',
+                            nodes: page,
+                            pageInfo: {
+                                __typename: 'PageInfo',
+                                hasNextPage: logs.length > cursor,
+                                endCursor: cursor.toString(),
+                            },
+                            totalCount: logs.length,
+                        },
+                    },
+                }
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        {
+            request: {
+                query: getDocumentNode(EXTERNAL_SERVICE_WEBHOOK_LOGS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: variables => {
+                let { first, after, onlyErrors, id } = variables as ServiceWebhookLogsVariables
+
+                const filtered = logs.filter(log => {
+                    if (onlyErrors && log.statusCode < 400) {
+                        return false
+                    }
+
+                    return id === log.externalService?.displayName
+                })
+
+                first = first ?? 20
+                const afterNumber = after?.length ? +after : 0
+                const page = filtered.slice(afterNumber, afterNumber + first)
+                const cursor = afterNumber + first
+
+                return {
+                    data: {
+                        node: {
+                            __typename: 'ExternalService',
+                            webhookLogs: {
+                                __typename: 'WebhookLogConnection',
+                                nodes: page,
+                                pageInfo: {
+                                    __typename: 'PageInfo',
+                                    hasNextPage: filtered.length > cursor,
+                                    endCursor: cursor.toString(),
+                                },
+                                totalCount: filtered.length,
+                            },
+                        },
+                    },
+                }
+            },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+        ...buildHeaderMock(externalServiceCount, Math.floor((count * 2) / 3)),
+    ])
+}
+
 add('no logs', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
-                <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs([])} />
+            <MockedTestProvider link={buildWebhookLogMockLink(0, 2)}>
+                <WebhookLogPage {...props} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -112,8 +167,8 @@ add('no logs', () => (
 add('one page of logs', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
-                <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs(buildWebhookLogs(20, 2))} />
+            <MockedTestProvider link={buildWebhookLogMockLink(20, 2)}>
+                <WebhookLogPage {...props} />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -122,8 +177,8 @@ add('one page of logs', () => (
 add('two pages of logs', () => (
     <WebStory>
         {props => (
-            <MockedTestProvider mocks={buildHeaderMock(2, 2)}>
-                <WebhookLogPage {...props} queryWebhookLogs={buildQueryWebhookLogs(buildWebhookLogs(40, 2))} />
+            <MockedTestProvider link={buildWebhookLogMockLink(40, 2)}>
+                <WebhookLogPage {...props} />
             </MockedTestProvider>
         )}
     </WebStory>
