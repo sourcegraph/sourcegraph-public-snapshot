@@ -155,10 +155,10 @@ func (s *Store) MarkUsedBatchSpecExecutionCacheEntry(ctx context.Context, id int
 	return s.Exec(ctx, q)
 }
 
-// cleanBatchSpecExecutionEntriesQuery collects cache entries to delete by
+// cleanBatchSpecExecutionEntriesQueryFmtstr collects cache entries to delete by
 // collecting enough so that if we were to delete them we'd be under
 // maxCacheSize again.
-const cleanBatchSpecExecutionEntriesQuery = `
+const cleanBatchSpecExecutionEntriesQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CleanBatchSpecExecutionEntries
 WITH total_size AS (
   SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries
@@ -167,26 +167,26 @@ candidates AS (
   SELECT
     id
   FROM (
-      SELECT entries.id,
-             entries.created_at,
-             entries.last_used_at,
-			 SUM(octet_length(entries.value)) OVER (ORDER BY COALESCE(entries.last_used_at, entries.created_at) ASC, entries.id ASC) AS running_size
-      FROM batch_spec_execution_cache_entries entries
+    SELECT
+      entries.id,
+      entries.created_at,
+      entries.last_used_at,
+      SUM(octet_length(entries.value)) OVER (ORDER BY COALESCE(entries.last_used_at, entries.created_at) ASC, entries.id ASC) AS running_size
+    FROM batch_spec_execution_cache_entries entries
   ) t
   WHERE
     ((SELECT total FROM total_size) - t.running_size) >= %s
 )
 DELETE FROM batch_spec_execution_cache_entries WHERE id IN (SELECT id FROM candidates)
-;
 `
 
 func (s *Store) CleanBatchSpecExecutionCacheEntries(ctx context.Context, maxCacheSize int64) (err error) {
-	ctx, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.cleanBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("MaxTableSize", int(maxCacheSize)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, sqlf.Sprintf(cleanBatchSpecExecutionEntriesQuery, maxCacheSize))
+	return s.Exec(ctx, sqlf.Sprintf(cleanBatchSpecExecutionEntriesQueryFmtstr, maxCacheSize))
 }
 
 func scanBatchSpecExecutionCacheEntry(wj *btypes.BatchSpecExecutionCacheEntry, s dbutil.Scanner) error {
