@@ -58,9 +58,8 @@ type Pager interface {
 }
 
 type Resolver struct {
-	DB     database.DB
-	Opts   search.RepoOptions
-	Stream streaming.Sender
+	DB   database.DB
+	Opts search.RepoOptions
 }
 
 func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
@@ -92,9 +91,6 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 			}
 		}
 		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
-
-		r.Stream.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: page.RepoSet}})
-		tr.LazyPrintf("sent stats (repos %d) ", len(page.RepoSet))
 
 		if err = handle(&page); err != nil {
 			errs = multierror.Append(errs, err)

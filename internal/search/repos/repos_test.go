@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -381,7 +380,7 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := Resolver{Opts: tc.opts, DB: db, Stream: streaming.StreamFunc(func(streaming.SearchEvent) {})}
+			r := Resolver{Opts: tc.opts, DB: db}
 
 			var pages []Resolved
 			err := r.Paginate(ctx, nil, func(page *Resolved) error {

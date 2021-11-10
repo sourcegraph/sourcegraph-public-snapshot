@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
@@ -55,9 +57,20 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	// Do not aggregate results if we are streaming.
+	// Only aggregate results if we are not streaming.
 	if a.parentStream == nil {
 		a.results = append(a.results, event.Results...)
+
+		if a.stats.Repos == nil {
+			a.stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+		}
+
+		for _, r := range event.Results {
+			repo := r.RepoName()
+			if _, ok := a.stats.Repos[repo.ID]; !ok {
+				a.stats.Repos[repo.ID] = repo
+			}
+		}
 	}
 
 	a.matchCount += len(event.Results)

@@ -1742,9 +1742,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	repos := &searchrepos.Resolver{
-		Opts:   args.RepoOptions,
-		DB:     r.db,
-		Stream: agg,
+		Opts: args.RepoOptions,
+		DB:   r.db,
 	}
 
 	// Start all specific search jobs, if any.
