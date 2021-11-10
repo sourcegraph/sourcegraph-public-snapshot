@@ -106,7 +106,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		workspace.BatchSpecExecutionCacheEntryID = entry.ID
+		workspace.CachedResultFound = true
 
 		changesetSpecs, err := changesetSpecsFromCache(spec, w, entry)
 		if err != nil {

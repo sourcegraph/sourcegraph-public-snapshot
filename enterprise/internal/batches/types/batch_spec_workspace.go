@@ -12,9 +12,6 @@ type BatchSpecWorkspace struct {
 
 	BatchSpecID      int64
 	ChangesetSpecIDs []int64
-	// BatchSpecExecutionCacheEntry is non-zero if workspace resolution found a
-	// cache entry for the given workspace.
-	BatchSpecExecutionCacheEntryID int64
 
 	RepoID             api.RepoID
 	Branch             string
@@ -27,7 +24,8 @@ type BatchSpecWorkspace struct {
 	Unsupported bool
 	Ignored     bool
 
-	Skipped bool
+	Skipped           bool
+	CachedResultFound bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

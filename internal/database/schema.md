@@ -91,8 +91,7 @@ Indexes:
  created_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
-Referenced by:
-    TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_execution_cache_entry_id_fkey" FOREIGN KEY (batch_spec_execution_cache_entry_id) REFERENCES batch_spec_execution_cache_entries(id) DEFERRABLE
+    "batch_spec_execution_cache_entries_key_unique" UNIQUE CONSTRAINT, btree (key)
 
 ```
 
@@ -153,30 +152,29 @@ Foreign-key constraints:
 
 # Table "public.batch_spec_workspaces"
 ```
-               Column                |           Type           | Collation | Nullable |                      Default                      
--------------------------------------+--------------------------+-----------+----------+---------------------------------------------------
- id                                  | bigint                   |           | not null | nextval('batch_spec_workspaces_id_seq'::regclass)
- batch_spec_id                       | integer                  |           |          | 
- changeset_spec_ids                  | jsonb                    |           |          | '{}'::jsonb
- repo_id                             | integer                  |           |          | 
- branch                              | text                     |           | not null | 
- commit                              | text                     |           | not null | 
- path                                | text                     |           | not null | 
- file_matches                        | text[]                   |           | not null | 
- only_fetch_workspace                | boolean                  |           | not null | false
- steps                               | jsonb                    |           |          | '[]'::jsonb
- created_at                          | timestamp with time zone |           | not null | now()
- updated_at                          | timestamp with time zone |           | not null | now()
- ignored                             | boolean                  |           | not null | false
- unsupported                         | boolean                  |           | not null | false
- skipped                             | boolean                  |           | not null | false
- batch_spec_execution_cache_entry_id | integer                  |           |          | 
+        Column        |           Type           | Collation | Nullable |                      Default                      
+----------------------+--------------------------+-----------+----------+---------------------------------------------------
+ id                   | bigint                   |           | not null | nextval('batch_spec_workspaces_id_seq'::regclass)
+ batch_spec_id        | integer                  |           |          | 
+ changeset_spec_ids   | jsonb                    |           |          | '{}'::jsonb
+ repo_id              | integer                  |           |          | 
+ branch               | text                     |           | not null | 
+ commit               | text                     |           | not null | 
+ path                 | text                     |           | not null | 
+ file_matches         | text[]                   |           | not null | 
+ only_fetch_workspace | boolean                  |           | not null | false
+ steps                | jsonb                    |           |          | '[]'::jsonb
+ created_at           | timestamp with time zone |           | not null | now()
+ updated_at           | timestamp with time zone |           | not null | now()
+ ignored              | boolean                  |           | not null | false
+ unsupported          | boolean                  |           | not null | false
+ skipped              | boolean                  |           | not null | false
+ cached_result_found  | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "batch_spec_workspaces_steps_check" CHECK (jsonb_typeof(steps) = 'array'::text)
 Foreign-key constraints:
-    "batch_spec_workspaces_batch_spec_execution_cache_entry_id_fkey" FOREIGN KEY (batch_spec_execution_cache_entry_id) REFERENCES batch_spec_execution_cache_entries(id) DEFERRABLE
     "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "batch_spec_workspaces_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
 Referenced by:

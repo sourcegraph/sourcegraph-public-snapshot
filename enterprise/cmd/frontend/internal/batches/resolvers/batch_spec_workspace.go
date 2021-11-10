@@ -147,7 +147,7 @@ func (r *batchSpecWorkspaceResolver) Unsupported() bool {
 }
 
 func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
-	return r.workspace.BatchSpecExecutionCacheEntryID != 0
+	return r.workspace.CachedResultFound
 }
 
 func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceStagesResolver {

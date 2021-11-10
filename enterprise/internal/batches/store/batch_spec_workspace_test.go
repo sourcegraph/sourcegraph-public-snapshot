@@ -32,9 +32,8 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
 	for i := 0; i < cap(workspaces); i++ {
 		job := &btypes.BatchSpecWorkspace{
-			BatchSpecID:                    int64(i + 567),
-			ChangesetSpecIDs:               []int64{int64(i + 456), int64(i + 678)},
-			BatchSpecExecutionCacheEntryID: int64(i + 999),
+			BatchSpecID:      int64(i + 567),
+			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
 
 			RepoID: repo.ID,
 			Branch: "master",
@@ -62,6 +61,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			Unsupported:        true,
 			Ignored:            true,
 			Skipped:            true,
+			CachedResultFound:  true,
 		}
 
 		if i == cap(workspaces)-1 {
