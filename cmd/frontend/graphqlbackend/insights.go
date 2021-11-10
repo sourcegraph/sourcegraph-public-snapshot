@@ -48,7 +48,7 @@ type SearchInsightLivePreviewInput struct {
 	Query                      string
 	Label                      string
 	RepositoryScope            RepositoryScopeInput
-	TimeScopeInput             TimeScopeInput
+	TimeScope                  TimeScopeInput
 	GeneratedFromCaptureGroups bool
 }
 
