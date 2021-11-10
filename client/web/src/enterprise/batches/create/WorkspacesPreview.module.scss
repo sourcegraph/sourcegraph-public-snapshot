@@ -19,4 +19,9 @@
         font-style: italic;
         color: var(--text-muted);
     }
+
+    &-on-example {
+        width: 100%;
+        max-width: 380px;
+    }
 }

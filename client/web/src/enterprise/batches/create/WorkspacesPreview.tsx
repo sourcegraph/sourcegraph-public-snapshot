@@ -7,6 +7,7 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -23,27 +24,38 @@ import {
     replaceBatchSpecInput,
 } from './backend'
 import styles from './WorkspacesPreview.module.scss'
+import { hasOnStatement } from './yaml-util'
 
 interface WorkspacesPreviewProps {
+    batchSpecInput: string
+    disabled: boolean
+    preview: () => void
     // excludeRepo: (repo: string, branch: string) => void
     // preview: BatchSpecWithWorkspacesFields | Error | undefined
     // previewStale: boolean
 }
 
-export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = () => (
-    // if (!preview || previewStale) {
-    //     return <LoadingSpinner />
-    // }
-    // if (isErrorLike(preview)) {
-    //     return <ErrorAlert error={preview} className="mb-0" />
-    // }
-    // if (!preview.workspaceResolution) {
-    //     throw new Error('Expected workspace resolution to exist.')
-    // }
-    <div className="h-100">
-        <h3 className={styles.header}>Workspaces preview</h3>
-        <Empty />
-        {/* {preview.workspaceResolution.failureMessage !== null && (
+export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
+    batchSpecInput,
+    disabled,
+    preview,
+}) => {
+    const previewDisabled = useMemo(() => disabled || !hasOnStatement(batchSpecInput), [batchSpecInput, disabled])
+
+    return (
+        // if (!preview || previewStale) {
+        //     return <LoadingSpinner />
+        // }
+        // if (isErrorLike(preview)) {
+        //     return <ErrorAlert error={preview} className="mb-0" />
+        // }
+        // if (!preview.workspaceResolution) {
+        //     throw new Error('Expected workspace resolution to exist.')
+        // }
+        <div className="h-100">
+            <h3 className={styles.header}>Workspaces preview</h3>
+            <Empty previewDisabled={previewDisabled} preview={preview} />
+            {/* {preview.workspaceResolution.failureMessage !== null && (
                 <ErrorAlert error={preview.workspaceResolution.failureMessage} />
             )}
             {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.QUEUED && (
@@ -119,8 +131,13 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                     </ul>
                 </>
             )} */}
-    </div>
-)
+        </div>
+    )
+}
+
+const ON_STATEMENT = `on:
+  - repositoriesMatchingQuery: repo:my-org/.*
+`
 
 const Empty: React.FunctionComponent<{ preview: () => void; previewDisabled: boolean }> = ({
     preview,
@@ -135,5 +152,9 @@ const Empty: React.FunctionComponent<{ preview: () => void; previewDisabled: boo
             <SearchIcon className="icon-inline mr-1" />
             Preview workspaces
         </Button>
+        <div className={styles.emptyOnExample}>
+            <h3 className="align-self-start pt-4 text-muted">Example:</h3>
+            <CodeSnippet className="w-100" code={ON_STATEMENT} language="yaml" />
+        </div>
     </div>
 )
