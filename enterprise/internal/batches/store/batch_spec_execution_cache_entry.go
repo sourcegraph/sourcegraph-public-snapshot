@@ -7,6 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -151,6 +152,49 @@ func (s *Store) MarkUsedBatchSpecExecutionCacheEntry(ctx context.Context, id int
 		id,
 	)
 	return s.Exec(ctx, q)
+}
+
+const cleanBatchSpecExecutionEntriesQuery = `
+-- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CleanBatchSpecExecutionEntries
+WITH candidates AS (
+  SELECT
+    id
+  FROM batch_spec_execution_cache_entries
+  -- oldest first, then LRU (or unused)
+  ORDER BY last_used_at ASC NULLS FIRST, created_at ASC, pg_column_size(value) DESC
+  LIMIT 50
+  FOR UPDATE
+)
+DELETE FROM
+  batch_spec_execution_cache_entries
+WHERE
+  id = ANY(SELECT id FROM candidates);
+`
+
+const queryCacheValuesSize = `
+SELECT sum(pg_column_size(value)) FROM batch_spec_execution_cache_entries;
+`
+
+func (s *Store) CleanBatchSpecExecutionEntries(ctx context.Context, maxTableSize int64) (err error) {
+	ctx, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("MaxTableSize", int(maxTableSize)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	for {
+		size, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(queryCacheValuesSize)))
+		if err != nil {
+			return err
+		}
+
+		if size < int(maxTableSize) {
+			return nil
+		}
+
+		if err := s.Exec(ctx, sqlf.Sprintf(cleanBatchSpecExecutionEntriesQuery)); err != nil {
+			return err
+		}
+	}
 }
 
 func scanBatchSpecExecutionCacheEntry(wj *btypes.BatchSpecExecutionCacheEntry, s dbutil.Scanner) error {
