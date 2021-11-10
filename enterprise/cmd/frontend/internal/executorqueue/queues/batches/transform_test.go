@@ -97,12 +97,8 @@ func TestTransformRecord(t *testing.T) {
 		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{
-					"batch", "exec",
-					"-f", "input.json",
-					"-clear-cache",
-				},
-				Dir: ".",
+				Commands: []string{"batch", "exec", "-f", "input.json"},
+				Dir:      ".",
 				Env: []string{
 					"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
 					"SRC_ACCESS_TOKEN=" + accessToken,
