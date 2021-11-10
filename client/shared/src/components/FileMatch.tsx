@@ -160,8 +160,6 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
     const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
-    const logRefencePanelClick = (): void =>
-        props.telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
 
     if (result.type === 'content' && result.hunks) {
         // We should only get here if the new streamed highlight format is sent
@@ -223,7 +221,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 matchCountLabel,
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
-                logRefencePanelClick,
+                onResultClicked: props.onSelect,
             }
         } else {
             const hideCount = matchCount - limitedMatchCount
@@ -241,7 +239,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 matchCountLabel,
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
-                logRefencePanelClick,
+                onResultClicked: props.onSelect,
             }
         }
     } else if (props.showAllMatches) {
@@ -256,7 +254,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             matchCountLabel,
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
-            logRefencePanelClick,
+            onResultClicked: props.onSelect,
         }
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
@@ -274,7 +272,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             matchCountLabel,
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
-            logRefencePanelClick,
+            onResultClicked: props.onSelect,
         }
     }
 

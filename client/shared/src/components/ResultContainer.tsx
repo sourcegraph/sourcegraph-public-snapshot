@@ -89,9 +89,9 @@ export interface Props {
     repoLastFetched?: string
 
     /**
-     * Logs the click event on the reference panel iif it happens from the reference panel component.
+     * Click event for when the result is clicked
      */
-    logRefencePanelClick?: () => void
+    onResultClicked?: () => void
 }
 
 /**
@@ -111,7 +111,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     description,
     matchCountLabel,
     repoStars,
-    logRefencePanelClick,
+    onResultClicked,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -125,8 +125,8 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     }
 
     const trackReferencePanelClick = (): void => {
-        if (logRefencePanelClick) {
-            logRefencePanelClick()
+        if (onResultClicked) {
+            onResultClicked()
         }
     }
 
