@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -37,7 +36,7 @@ var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
 type GitTreeEntryResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	commit *GitCommitResolver
 
 	contentOnce sync.Once
@@ -52,7 +51,7 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat fs.FileInfo) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(commit *GitCommitResolver, db database.DB, stat fs.FileInfo) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
@@ -132,7 +131,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		if strings.HasPrefix(url, "../") {
 			url = path.Join(r.Repository().Name(), url)
 		}
-		repoName, err := cloneURLToRepoName(ctx, database.NewDB(r.db), url)
+		repoName, err := cloneURLToRepoName(ctx, r.db, url)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
 			return "", nil
@@ -171,7 +170,7 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, database.NewDB(r.db), repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.db, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {

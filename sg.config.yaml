@@ -543,9 +543,6 @@ commands:
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
-      # Set the following to a path on disk to persist data (or unset to not persist data)
-      PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
-      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |

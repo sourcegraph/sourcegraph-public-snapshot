@@ -47,7 +47,6 @@ function getRawBackendInsights(insightIds: string[]): Observable<ViewInsightProv
                     id: insight.id,
                     view: {
                         title: insight.title,
-                        subtitle: insight.description,
                         content: [createViewContent(insight)],
                     },
                     source: ViewInsightProviderSourceType.Backend,

@@ -7,7 +7,15 @@ import { timeFormat } from 'd3-time-format'
 import React from 'react'
 
 // Date formatters
-export const numberFormatter = format('~s')
+const SI_PREFIX_FORMATTER = format('~s')
+export const numberFormatter = (number: number): string => {
+    if (!Number.isInteger(number)) {
+        return number.toString()
+    }
+
+    return SI_PREFIX_FORMATTER(number)
+}
+
 // Number of month day + short name of month
 export const dateTickFormatter = timeFormat('%d %b')
 // Year + full name of month + full name of week day

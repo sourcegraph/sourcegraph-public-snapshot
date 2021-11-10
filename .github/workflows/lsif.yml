@@ -6,7 +6,7 @@ jobs:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
-    container: sourcegraph/lsif-go
+    container: sourcegraph/lsif-go:v1.7.2 # Pinned in preparation for upgrade
     strategy:
       matrix:
         root:
