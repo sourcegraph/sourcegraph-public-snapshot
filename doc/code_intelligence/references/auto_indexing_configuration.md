@@ -53,7 +53,7 @@ index_jobs:
 
 ## Index job object
 
-Each configured index job is run by a single executor process and multiple index jobs configured for the same repository may be executed by different executor instances, out of order, and possibly in parallel.
+Each configured index job is run by a single executor process. Multiple index jobs configured for the same repository may be executed by different executor instances, out of order, and possibly in parallel.
 
 The basic outline of an index job is as follows.
 
