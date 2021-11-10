@@ -1,9 +1,5 @@
 .hero {
-    padding: 1.5rem 6rem;
-}
-
-.hero-image {
-    margin-right: 5rem;
+    padding: 1.5rem;
 }
 
 .heading {
@@ -23,6 +19,10 @@
 .starting-point {
     &:not(:first-child) {
         padding-left: 2rem;
+    }
+
+    img {
+        flex: 0;
     }
 }
 
