@@ -11,10 +11,6 @@ import {
     BatchSpecWorkspacesByIDResult,
     BatchSpecWorkspacesByIDVariables,
     BatchSpecWithWorkspacesFields,
-    CreateBatchSpecFromRawResult,
-    CreateBatchSpecFromRawVariables,
-    ReplaceBatchSpecInputResult,
-    ReplaceBatchSpecInputVariables,
     Scalars,
 } from '../../../graphql-operations'
 
@@ -102,27 +98,6 @@ const fragment = gql`
     }
 `
 
-export function createBatchSpecFromRaw(
-    spec: string,
-    namespace: Scalars['ID']
-): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(
-        gql`
-            mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
-                createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
-
-            ${fragment}
-        `,
-        { spec, namespace }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => result.createBatchSpecFromRaw)
-    )
-}
-
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
     mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
         createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
@@ -133,26 +108,15 @@ export const CREATE_BATCH_SPEC_FROM_RAW = gql`
     ${fragment}
 `
 
-export function replaceBatchSpecInput(
-    previousSpec: Scalars['ID'],
-    spec: string
-): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(
-        gql`
-            mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
-                replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
+export const REPLACE_BATCH_SPEC_INPUT = gql`
+    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
+        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
+            ...BatchSpecWithWorkspacesFields
+        }
+    }
 
-            ${fragment}
-        `,
-        { previousSpec, spec }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => result.replaceBatchSpecInput)
-    )
-}
+    ${fragment}
+`
 
 export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWithWorkspacesFields> {
     return requestGraphQL<BatchSpecWorkspacesByIDResult, BatchSpecWorkspacesByIDVariables>(

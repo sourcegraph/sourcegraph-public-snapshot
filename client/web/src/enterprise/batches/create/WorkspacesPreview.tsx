@@ -1,5 +1,3 @@
-import AJV from 'ajv'
-import addFormats from 'ajv-formats'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -10,19 +8,11 @@ import { useHistory, useLocation } from 'react-router'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
 
-import {
-    createBatchSpecFromRaw as _createBatchSpecFromRaw,
-    executeBatchSpec,
-    fetchBatchSpec,
-    replaceBatchSpecInput,
-} from './backend'
+import { fetchBatchSpec } from './backend'
 import styles from './WorkspacesPreview.module.scss'
 import { hasOnStatement } from './yaml-util'
 

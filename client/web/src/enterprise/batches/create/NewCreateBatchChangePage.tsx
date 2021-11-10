@@ -24,18 +24,17 @@ import { Container, PageHeader, useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables } from '../../../graphql-operations'
+import {
+    CreateBatchSpecFromRawResult,
+    CreateBatchSpecFromRawVariables,
+    ReplaceBatchSpecInputResult,
+    ReplaceBatchSpecInputVariables,
+} from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import {
-    createBatchSpecFromRaw as _createBatchSpecFromRaw,
-    CREATE_BATCH_SPEC_FROM_RAW,
-    executeBatchSpec,
-    fetchBatchSpec,
-    replaceBatchSpecInput,
-} from './backend'
+import { CREATE_BATCH_SPEC_FROM_RAW, executeBatchSpec, fetchBatchSpec, REPLACE_BATCH_SPEC_INPUT } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './examples/hello-world.batch.yaml'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -94,21 +93,41 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         [handleCodeChange]
     )
 
-    const [createBatchSpecFromRaw, { data, loading }] = useMutation<
-        CreateBatchSpecFromRawResult,
-        CreateBatchSpecFromRawVariables
-    >(CREATE_BATCH_SPEC_FROM_RAW, {})
+    const [
+        createBatchSpecFromRaw,
+        { data: createBatchSpecFromRawData, loading: createBatchSpecFromRawLoading },
+    ] = useMutation<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(CREATE_BATCH_SPEC_FROM_RAW, {})
+
+    const [
+        replaceBatchSpecInput,
+        { data: replaceBatchSpecInputData, loading: replaceBatchSpecInputLoading },
+    ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT, {})
+
+    const currentBatchSpecID = useMemo(
+        () =>
+            // If we have replaced the batch spec input already, the initial batch spec
+            // has been superseded, so prefer that one.
+            replaceBatchSpecInputData?.replaceBatchSpecInput.id ||
+            createBatchSpecFromRawData?.createBatchSpecFromRaw.id,
+        [replaceBatchSpecInputData, createBatchSpecFromRawData]
+    )
 
     const preview = useCallback(() => {
         setServerError(undefined)
-        if (data?.createBatchSpecFromRaw.id) {
-            console.log("I'm done!", code)
-            return
+
+        // If we have a batch spec ID already, we're replacing the exiting batch spec with
+        // a new one.
+        if (currentBatchSpecID) {
+            return replaceBatchSpecInput({ variables: { spec: code, previousSpec: currentBatchSpecID } }).catch(
+                setServerError
+            )
         }
+
+        // Otherwise, we're creating a new batch spec from the raw spec input YAML.
         return createBatchSpecFromRaw({
-            variables: { spec: 'lmao I am not real', namespace: selectedNamespace.id },
+            variables: { spec: code, namespace: selectedNamespace.id },
         }).catch(setServerError)
-    }, [code, selectedNamespace, createBatchSpecFromRaw, data?.createBatchSpecFromRaw.id])
+    }, [code, currentBatchSpecID, selectedNamespace, createBatchSpecFromRaw, replaceBatchSpecInput])
 
     // const history = useHistory()
     // const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
@@ -125,16 +144,16 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     // }, [previewID, history])
 
     const [canExecute, executionTooltip] = useMemo(() => {
-        const canExecute = isValid && !serverError && !loading
+        const canExecute = isValid && !serverError && !createBatchSpecFromRawLoading && !replaceBatchSpecInputLoading
         const executionTooltip =
             !isValid || serverError
                 ? "There's a problem with your batch spec."
-                : loading
+                : createBatchSpecFromRawLoading || replaceBatchSpecInputLoading
                 ? 'Wait for the preview to finish.'
                 : undefined
 
         return [canExecute, executionTooltip]
-    }, [isValid, serverError, loading])
+    }, [isValid, serverError, createBatchSpecFromRawLoading, replaceBatchSpecInputLoading])
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
