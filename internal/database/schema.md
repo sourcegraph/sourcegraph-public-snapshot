@@ -91,6 +91,7 @@ Indexes:
  created_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_execution_cache_entries_key_unique" UNIQUE CONSTRAINT, btree (key)
 
 ```
 
