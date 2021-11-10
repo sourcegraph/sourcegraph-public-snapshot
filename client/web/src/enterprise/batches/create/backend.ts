@@ -101,21 +101,17 @@ const fragment = gql`
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
     mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
         createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
-            ...BatchSpecWithWorkspacesFields
+            id
         }
     }
-
-    ${fragment}
 `
 
 export const REPLACE_BATCH_SPEC_INPUT = gql`
     mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
         replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
-            ...BatchSpecWithWorkspacesFields
+            id
         }
     }
-
-    ${fragment}
 `
 
 export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWithWorkspacesFields> {
