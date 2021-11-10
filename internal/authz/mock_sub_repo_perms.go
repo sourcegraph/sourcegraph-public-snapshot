@@ -11,6 +11,9 @@ import (
 // SubRepoPermissionChecker interface (from the package
 // github.com/sourcegraph/sourcegraph/internal/authz) used for unit testing.
 type MockSubRepoPermissionChecker struct {
+	// EnabledFunc is an instance of a mock function object controlling the
+	// behavior of the method Enabled.
+	EnabledFunc *SubRepoPermissionCheckerEnabledFunc
 	// PermissionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Permissions.
 	PermissionsFunc *SubRepoPermissionCheckerPermissionsFunc
@@ -21,6 +24,11 @@ type MockSubRepoPermissionChecker struct {
 // all results, unless overwritten.
 func NewMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 	return &MockSubRepoPermissionChecker{
+		EnabledFunc: &SubRepoPermissionCheckerEnabledFunc{
+			defaultHook: func() bool {
+				return false
+			},
+		},
 		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
 			defaultHook: func(context.Context, int32, RepoContent) (Perms, error) {
 				return 0, nil
@@ -34,10 +42,116 @@ func NewMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 // implementation, unless overwritten.
 func NewMockSubRepoPermissionCheckerFrom(i SubRepoPermissionChecker) *MockSubRepoPermissionChecker {
 	return &MockSubRepoPermissionChecker{
+		EnabledFunc: &SubRepoPermissionCheckerEnabledFunc{
+			defaultHook: i.Enabled,
+		},
 		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
 			defaultHook: i.Permissions,
 		},
 	}
+}
+
+// SubRepoPermissionCheckerEnabledFunc describes the behavior when the
+// Enabled method of the parent MockSubRepoPermissionChecker instance is
+// invoked.
+type SubRepoPermissionCheckerEnabledFunc struct {
+	defaultHook func() bool
+	hooks       []func() bool
+	history     []SubRepoPermissionCheckerEnabledFuncCall
+	mutex       sync.Mutex
+}
+
+// Enabled delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockSubRepoPermissionChecker) Enabled() bool {
+	r0 := m.EnabledFunc.nextHook()()
+	m.EnabledFunc.appendCall(SubRepoPermissionCheckerEnabledFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Enabled method of
+// the parent MockSubRepoPermissionChecker instance is invoked and the hook
+// queue is empty.
+func (f *SubRepoPermissionCheckerEnabledFunc) SetDefaultHook(hook func() bool) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Enabled method of the parent MockSubRepoPermissionChecker instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SubRepoPermissionCheckerEnabledFunc) PushHook(hook func() bool) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SubRepoPermissionCheckerEnabledFunc) SetDefaultReturn(r0 bool) {
+	f.SetDefaultHook(func() bool {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SubRepoPermissionCheckerEnabledFunc) PushReturn(r0 bool) {
+	f.PushHook(func() bool {
+		return r0
+	})
+}
+
+func (f *SubRepoPermissionCheckerEnabledFunc) nextHook() func() bool {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SubRepoPermissionCheckerEnabledFunc) appendCall(r0 SubRepoPermissionCheckerEnabledFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SubRepoPermissionCheckerEnabledFuncCall
+// objects describing the invocations of this function.
+func (f *SubRepoPermissionCheckerEnabledFunc) History() []SubRepoPermissionCheckerEnabledFuncCall {
+	f.mutex.Lock()
+	history := make([]SubRepoPermissionCheckerEnabledFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SubRepoPermissionCheckerEnabledFuncCall is an object that describes an
+// invocation of method Enabled on an instance of
+// MockSubRepoPermissionChecker.
+type SubRepoPermissionCheckerEnabledFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SubRepoPermissionCheckerEnabledFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SubRepoPermissionCheckerEnabledFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // SubRepoPermissionCheckerPermissionsFunc describes the behavior when the
