@@ -18,8 +18,8 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find('.streaming-progress__skipped')).toHaveLength(0)
-        expect(element.find('.streaming-progress__skipped-popover')).toHaveLength(0)
+        expect(element.find('[data-testid="streaming-progress-skipped"]')).toHaveLength(0)
+        expect(element.find('[data-testid="streaming-progress-skipped-popover"]')).toHaveLength(0)
     })
 
     it('should be in info state with only info items', () => {
@@ -52,8 +52,8 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find('.btn.btn-outline-secondary.streaming-progress__skipped')).toHaveLength(1)
-        expect(element.find('.btn.btn-outline-danger.streaming-progress__skipped')).toHaveLength(0)
+        expect(element.find('.btn.btn-outline-secondary[data-testid="streaming-progress-skipped"]')).toHaveLength(1)
+        expect(element.find('.btn.btn-outline-danger[data-testid="streaming-progress-skipped"]')).toHaveLength(0)
     })
 
     it('should be in warning state with at least one warning item', () => {
@@ -96,8 +96,8 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find('.btn.btn-outline-danger.streaming-progress__skipped')).toHaveLength(1)
-        expect(element.find('.btn.btn-outline-secondary.streaming-progress__skipped')).toHaveLength(0)
+        expect(element.find('.btn.btn-outline-danger[data-testid="streaming-progress-skipped"]')).toHaveLength(1)
+        expect(element.find('.btn.btn-outline-secondary[data-testid="streaming-progress-skipped"]')).toHaveLength(0)
     })
 
     it('should open and close popover when button is clicked', () => {
@@ -134,7 +134,7 @@ describe('StreamingProgressSkippedButton', () => {
         let popover = element.find(ButtonDropdown)
         expect(popover.prop('isOpen')).toBe(false)
 
-        const button = element.find('.btn.streaming-progress__skipped')
+        const button = element.find('.btn[data-testid="streaming-progress-skipped"]')
         button.simulate('click')
 
         popover = element.find(ButtonDropdown)
@@ -180,7 +180,7 @@ describe('StreamingProgressSkippedButton', () => {
         const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />)
 
         // Open dropdown
-        const button = element.find('.btn.streaming-progress__skipped')
+        const button = element.find('.btn[data-testid="streaming-progress-skipped"]')
         button.simulate('click')
 
         // Trigger onSearchAgain event and check for changes
