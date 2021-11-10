@@ -708,6 +708,10 @@ commands:
   debug-env:
     cmd: env
 
+  bext:
+    cmd: yarn --cwd client/browser dev
+    install: yarn
+
 checks:
   docker:
     cmd: docker version
@@ -972,6 +976,18 @@ tests:
   web-integration:
     cmd: yarn test-integration
     install: ENTERPRISE=1 yarn build-web
+
+  bext:
+    cmd: yarn --cwd client/browser test
+
+  bext-integration:
+    cmd: yarn --cwd client/browser test-integration
+
+  bext-e2e:
+    cmd: yarn run download-puppeteer-browser && yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    env:
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.com
+      PERCY_BROWSER_EXECUTABLE: node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome
 
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook
