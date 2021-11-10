@@ -38,8 +38,8 @@ else
   set -x
   _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:" | tr -d '\r')"
   _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"
-  wget $_base_url/sg_linux_amd64 -o sg_ci
-  chmod +x sg_ci
+  wget $_base_url/sg_linux_amd64 -o ci_sg
+  chmod +x ci_sg
   )
 
   export BUILDKITE_API_TOKEN=$(gcloud secrets versions access latest --secret="BUILDKITE_API_TOKEN" --project="sourcegraph-ci" --quiet)
