@@ -26,7 +26,7 @@ type TimeDataPoint struct {
 }
 
 func GroupIt(results []ComputeResult) []GroupedResults {
-	if len(results) < 0 {
+	if len(results) < 1 {
 		return nil
 	}
 

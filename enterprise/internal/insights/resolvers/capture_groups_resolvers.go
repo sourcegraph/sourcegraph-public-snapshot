@@ -26,35 +26,39 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
 )
 
-// type CaptureGroupResultsResolver interface {
-// 	Groups(ctx context.Context) ([]CaptureGroupResolver, error)
-// }
-//
-// type CaptureGroupResolver interface {
-// 	Repo(ctx context.Context) string
-// 	Commit(ctx context.Context) string
-// 	Matches(ctx context.Context) []CaptureGroupMatchResolver
-// }
-// type CaptureGroupMatchResolver interface {
-// 	Value(ctx context.Context) string
-// 	Count(ctx context.Context) int
-// }
+type TimeInterval struct {
+	unit  string
+	value int
+}
 
-// FirstOfMonthFrames builds a set of frames with a specific number of elements, such that all of the
-// starting times of each frame < current will fall on the first of a month.
-func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
-	if numPoints < 1 {
-		return nil
+func (t TimeInterval) StepBackwards(start time.Time) time.Time {
+	switch t.unit {
+	case "YEAR":
+		return start.AddDate(-1*t.value, 0, 0)
+	case "MONTH":
+		return start.AddDate(0, -1*t.value, 0)
+	case "WEEK":
+		return start.AddDate(0, 0, -7*t.value)
+	case "DAY":
+		return start.AddDate(0, 0, -1*t.value)
+	case "HOUR":
+		return start.Add(time.Hour * time.Duration(t.value) * -1)
+	default:
+		// this doesn't really make sense, so return something?
+		return start.AddDate(-1*t.value, 0, 0)
 	}
+}
+
+func BuildFrames(numPoints int, interval TimeInterval, now time.Time) []compression.Frame {
+	current := now
 	times := make([]time.Time, 0, numPoints)
-	year, month, _ := current.Date()
-	firstOfCurrent := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	times = append(times, now)
+	times = append(times, now) // looks weird but is so we can get a frame that is the current point
 
 	for i := 0 - numPoints + 1; i < 0; i++ {
-		times = append(times, firstOfCurrent.AddDate(0, i, 0))
+		current = interval.StepBackwards(current)
+		times = append(times, current)
 	}
-	times = append(times, firstOfCurrent)
-	times = append(times, current)
 
 	frames := make([]compression.Frame, 0, len(times)-1)
 	for i := 1; i < len(times); i++ {
@@ -82,7 +86,7 @@ func NewCaptureGroupExecutor(ctx context.Context, postgres, insightsDb dbutil.DB
 	}
 }
 
-func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string) ([]livePreviewTimeSeries, error) {
+func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval TimeInterval) ([]livePreviewTimeSeries, error) {
 	repoIds := make(map[string]api.RepoID)
 	for _, repository := range repositories {
 		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
@@ -93,7 +97,8 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	}
 	log15.Info("Generated repoIds", "repoids", repoIds)
 
-	frames := FirstOfMonthFrames(7, c.clock())
+	// frames := FirstOfMonthFrames(7, c.clock())
+	frames := BuildFrames(7, interval, c.clock())
 
 	type timeCounts map[time.Time]int
 	pivoted := make(map[string]timeCounts)
@@ -245,20 +250,6 @@ func (c *captureGroupResultsResolver) Groups(ctx context.Context) ([]graphqlback
 	return resolvers, nil
 }
 
-// type captureGroupResolver struct {
-// 	result queryrunner.GroupedResults
-// }
-//
-// func (c *captureGroupResolver) Repo(ctx context.Context) string {
-// 	return ""
-// }
-//
-// func (c *captureGroupResolver) Matches(ctx context.Context) []graphqlbackend.CaptureGroupMatchResolver {
-// 	var resolvers []graphqlbackend.CaptureGroupMatchResolver
-// 	return []captureGroupMatchResolver{{value: c.result.Value, count: int32(c.result.Count)}}
-// 	return resolvers
-// }
-
 type captureGroupMatchResolver struct {
 	time  time.Time
 	count int32
@@ -275,10 +266,16 @@ func (c *captureGroupMatchResolver) Count(ctx context.Context) int32 {
 func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	if !args.Input.GeneratedFromCaptureGroups {
 		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
+	} else if args.Input.TimeScope.StepInterval == nil {
+		return nil, errors.New("live preview currently only supports a time interval time scope")
 	}
 
 	executor := NewCaptureGroupExecutor(ctx, r.postgresDB, r.insightsDB, time.Now)
-	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories)
+	interval := TimeInterval{
+		unit:  args.Input.TimeScope.StepInterval.Unit,
+		value: int(args.Input.TimeScope.StepInterval.Value),
+	}
+	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories, interval)
 	if err != nil {
 		return nil, err
 	}
