@@ -21,6 +21,8 @@ type InsightsResolver interface {
 
 	CaptureGroup(ctx context.Context, args CaptureGroupArgs) ([]CaptureGroupResultsResolver, error)
 
+	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -36,6 +38,18 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+}
+
+type SearchInsightLivePreviewArgs struct {
+	Input SearchInsightLivePreviewInput
+}
+
+type SearchInsightLivePreviewInput struct {
+	Query                      string
+	Label                      string
+	RepositoryScope            RepositoryScopeInput
+	TimeScopeInput             TimeScopeInput
+	GeneratedFromCaptureGroups bool
 }
 
 type InsightsArgs struct {
@@ -349,4 +363,9 @@ type CaptureGroupMatchResolver interface {
 type CaptureGroupArgs struct {
 	Query string
 	Repo  string
+}
+
+type SearchInsightLivePreviewSeriesResolver interface {
+	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
+	Label(ctx context.Context) (string, error)
 }

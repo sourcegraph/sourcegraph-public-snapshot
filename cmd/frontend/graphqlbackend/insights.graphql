@@ -198,6 +198,8 @@ extend type Query {
     insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
 
     captureGroup(query: String!, repo: String!): [CaptureGroupResults!]!
+
+    searchInsightLivePreview(input: SearchInsightLivePreviewInput!): [SearchInsightLivePreviewSeries!]!
 }
 
 type CaptureGroupResults {
@@ -893,3 +895,44 @@ type InsightViewFilters {
     excludeRepoRegex: String
 }
 
+"""
+Required input to generate a time series for a search insight using live preview.
+"""
+input SearchInsightLivePreviewInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The desired label for the series. Will be overwritten when series are dynamically generated.
+    """
+    label: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+
+    """
+    Whether or not to generate the timeseries results from the query capture groups.
+    """
+    generatedFromCaptureGroups: Boolean!
+}
+
+type SearchInsightLivePreviewSeries {
+
+    """
+    The data points for the time series.
+    """
+    points: [InsightDataPoint!]!
+
+    """
+    The label for the data series.
+    """
+    label: String!
+}

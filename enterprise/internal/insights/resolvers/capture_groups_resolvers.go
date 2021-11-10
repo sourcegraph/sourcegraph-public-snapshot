@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
@@ -59,65 +63,80 @@ func FirstOfMonthFrames(numPoints int, current time.Time) []compression.Frame {
 	return frames
 }
 
-func (r *Resolver) CaptureGroup(ctx context.Context, args graphqlbackend.CaptureGroupArgs) ([]graphqlbackend.CaptureGroupResultsResolver, error) {
+type CaptureGroupExecutor struct {
+	repoStore database.RepoStore
+	filter    compression.DataFrameFilter
+	clock     func() time.Time
+}
 
-	// var counts [][]queryrunner.GroupedResults
-	//
-	// var byTime map[string][]queryrunner.TimeDataPoint
-
-	repoStore := database.Repos(r.postgresDB)
-	repo, err := repoStore.GetByName(ctx, api.RepoName(args.Repo))
-	if err != nil {
-		return nil, err
+func NewCaptureGroupExecutor(ctx context.Context, postgres dbutil.DB, clock func() time.Time) *CaptureGroupExecutor {
+	return &CaptureGroupExecutor{
+		repoStore: database.Repos(postgres),
+		filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), postgres),
+		clock:     clock,
 	}
+}
 
-	frames := FirstOfMonthFrames(7, time.Now())
-	filter := compression.NewHistoricalFilter(true, time.Now().Add(time.Hour*24*365*-1), r.postgresDB)
-	plan := filter.FilterFrames(ctx, frames, repo.ID)
-
-	generateTimes := func() map[time.Time]int {
-		times := make(map[time.Time]int)
-		for _, execution := range plan.Executions {
-			times[execution.RecordingTime] = 0
-			for _, recording := range execution.SharedRecordings {
-				times[recording] = 0
-			}
+func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string) ([]livePreviewTimeSeries, error) {
+	repoIds := make(map[string]api.RepoID)
+	for _, repository := range repositories {
+		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to fetch repository information for repository name: %s", repository)
 		}
-		return times
+		repoIds[repository] = repo.ID
+
 	}
+	frames := FirstOfMonthFrames(7, c.clock())
 
 	type timeCounts map[time.Time]int
-	// we need to perform the pivot
-	// var pivoted map[string]timeCounts
 	pivoted := make(map[string]timeCounts)
-	for _, execution := range plan.Executions {
-		query := withCountUnlimited(args.Query)
-		query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(args.Repo), execution.Revision)
 
-		results, err := queryrunner.ComputeSearch(ctx, args.Query)
-		if err != nil {
-			return nil, err
+	for _, repository := range repositories {
+		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
+
+		generateTimes := func() map[time.Time]int {
+			times := make(map[time.Time]int)
+			for _, execution := range plan.Executions {
+				times[execution.RecordingTime] = 0
+				for _, recording := range execution.SharedRecordings {
+					times[recording] = 0
+				}
+			}
+			return times
 		}
 
-		grouped := queryrunner.GroupIt(results)
-		sort.Slice(grouped, func(i, j int) bool {
-			return grouped[i].Value < grouped[j].Value
-		})
+		// we need to perform the pivot
+		// var pivoted map[string]timeCounts
+		for _, execution := range plan.Executions {
+			modifiedQuery := withCountUnlimited(query)
+			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), execution.Revision)
 
-		for _, timeGroupElement := range grouped {
-			value := timeGroupElement.Value
-			if _, ok := pivoted[value]; !ok {
-				pivoted[value] = generateTimes()
+			results, err := queryrunner.ComputeSearch(ctx, modifiedQuery)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
 			}
-			pivoted[value][execution.RecordingTime] = timeGroupElement.Count
-			for _, children := range execution.SharedRecordings {
-				pivoted[value][children] = timeGroupElement.Count
+
+			grouped := queryrunner.GroupIt(results)
+			sort.Slice(grouped, func(i, j int) bool {
+				return grouped[i].Value < grouped[j].Value
+			})
+
+			for _, timeGroupElement := range grouped {
+				value := timeGroupElement.Value
+				if _, ok := pivoted[value]; !ok {
+					pivoted[value] = generateTimes()
+				}
+				pivoted[value][execution.RecordingTime] = timeGroupElement.Count
+				for _, children := range execution.SharedRecordings {
+					pivoted[value][children] += timeGroupElement.Count
+				}
 			}
 		}
 	}
 
-	var resolvers []graphqlbackend.CaptureGroupResultsResolver
-
+	var calculated []livePreviewTimeSeries
+	seriesCount := 1
 	for value, timeCounts := range pivoted {
 		var timeseries []queryrunner.TimeDataPoint
 
@@ -132,8 +151,20 @@ func (r *Resolver) CaptureGroup(ctx context.Context, args graphqlbackend.Capture
 			return timeseries[i].Time.Before(timeseries[j].Time)
 		})
 
-		resolvers = append(resolvers, &captureGroupResultsResolver{results: timeseries, value: value})
+		// resolvers = append(resolvers, &captureGroupResultsResolver{results: timeseries, value: value})
+		calculated = append(calculated, livePreviewTimeSeries{
+			label:    value,
+			points:   timeseries,
+			seriesId: fmt.Sprintf("livepreview %d", seriesCount),
+		})
+		seriesCount++
 	}
+	return calculated, nil
+}
+
+func (r *Resolver) CaptureGroup(ctx context.Context, args graphqlbackend.CaptureGroupArgs) ([]graphqlbackend.CaptureGroupResultsResolver, error) {
+
+	var resolvers []graphqlbackend.CaptureGroupResultsResolver
 
 	return resolvers, nil
 }
@@ -206,4 +237,53 @@ func (c *captureGroupMatchResolver) Time(ctx context.Context) graphqlbackend.Dat
 
 func (c *captureGroupMatchResolver) Count(ctx context.Context) int32 {
 	return c.count
+}
+
+func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+	if !args.Input.GeneratedFromCaptureGroups {
+		return nil, errors.New("live preview is currently only supported for generated series from capture groups")
+	}
+
+	executor := NewCaptureGroupExecutor(ctx, r.postgresDB, time.Now)
+	generatedSeries, err := executor.Execute(ctx, args.Input.Query, args.Input.RepositoryScope.Repositories)
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvers []graphqlbackend.SearchInsightLivePreviewSeriesResolver
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &searchInsightLivePreviewSeriesResolver{series: &generatedSeries[i]})
+	}
+
+	return resolvers, nil
+}
+
+func (r *disabledResolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+type searchInsightLivePreviewSeriesResolver struct {
+	series *livePreviewTimeSeries
+}
+
+func (s *searchInsightLivePreviewSeriesResolver) Points(ctx context.Context) ([]graphqlbackend.InsightsDataPointResolver, error) {
+	var resolvers []graphqlbackend.InsightsDataPointResolver
+	for _, point := range s.series.points {
+		resolvers = append(resolvers, &insightsDataPointResolver{store.SeriesPoint{
+			SeriesID: s.series.seriesId,
+			Time:     point.Time,
+			Value:    float64(point.Count),
+		}})
+	}
+	return resolvers, nil
+}
+
+func (s *searchInsightLivePreviewSeriesResolver) Label(ctx context.Context) (string, error) {
+	return s.series.label, nil
+}
+
+type livePreviewTimeSeries struct {
+	label    string
+	points   []queryrunner.TimeDataPoint
+	seriesId string
 }
