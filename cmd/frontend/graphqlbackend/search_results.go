@@ -1205,7 +1205,7 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 // applySubRepoPerms drops matches the actor in the given context does not have read access to.
 func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, sr *SearchResults) {
 	actor := actor.FromContext(ctx)
-	var i int
+	var n int
 	for _, match := range sr.Matches {
 		key := match.Key()
 		perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
@@ -1219,14 +1219,14 @@ func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, 
 				"error", err)
 		}
 
-		if !perms.Include(authz.Read) {
-			// Unauthorized - drop this match
-			sr.Matches = append(sr.Matches[:i], sr.Matches[i+1:]...)
-			continue
+		if perms.Include(authz.Read) {
+			// Authorized - keep result and continue
+			sr.Matches[n] = match
+			n++
 		}
-		// Authorized - keep and continue
-		i++
 	}
+	// Drop all unauthorized matches
+	sr.Matches = sr.Matches[:n]
 }
 
 // searchResultsToRepoNodes converts a set of search results into repository nodes
