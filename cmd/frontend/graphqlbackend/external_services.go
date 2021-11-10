@@ -282,7 +282,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	opt := database.ExternalServicesListOptions{
 		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
-		// specified we need to explicitly specifying `NoNamespace`, otherwise site
+		// specified we need to explicitly specify `NoNamespace`, otherwise site
 		// admins will be able to list all user code host connections that are not
 		// accessible when trying to access them individually.
 		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
