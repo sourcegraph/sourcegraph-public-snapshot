@@ -483,7 +483,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
-			r.store.DB(),
+			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
 			diff,

@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type PreviewRepositoryComparisonResolver interface {
@@ -18,7 +17,7 @@ type PreviewRepositoryComparisonResolver interface {
 }
 
 // NewPreviewRepositoryComparisonResolver is a convenience function to get a preview diff from a repo, given a base rev and the git patch.
-func NewPreviewRepositoryComparisonResolver(ctx context.Context, db dbutil.DB, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
+func NewPreviewRepositoryComparisonResolver(ctx context.Context, db database.DB, repo *RepositoryResolver, baseRev, patch string) (*previewRepositoryComparisonResolver, error) {
 	args := &RepositoryCommitArgs{Rev: baseRev}
 	commit, err := repo.Commit(ctx, args)
 	if err != nil {
@@ -33,7 +32,7 @@ func NewPreviewRepositoryComparisonResolver(ctx context.Context, db dbutil.DB, r
 }
 
 type previewRepositoryComparisonResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	repo   *RepositoryResolver
 	commit *GitCommitResolver
 	patch  string
@@ -55,7 +54,7 @@ func (r *previewRepositoryComparisonResolver) BaseRepository() *RepositoryResolv
 }
 
 func (r *previewRepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
-	return NewFileDiffConnectionResolver(database.NewDB(r.db), r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
+	return NewFileDiffConnectionResolver(r.db, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
 }
 
 func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
