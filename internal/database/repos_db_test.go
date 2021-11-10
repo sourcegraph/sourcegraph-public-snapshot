@@ -674,21 +674,55 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// we create two search contexts, with one being updated recently only
+	// including "newSearchContext".
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "newSearchContext"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-24 * time.Hour),
+	})
+	{
+		mkSearchContext := func(name string, opts ReposListOptions) {
+			t.Helper()
+			var revs []*types.SearchContextRepositoryRevisions
+			err := repos.StreamMinimalRepos(ctx, opts, func(repo *types.MinimalRepo) {
+				revs = append(revs, &types.SearchContextRepositoryRevisions{
+					Repo:      *repo,
+					Revisions: []string{"HEAD"},
+				})
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = SearchContexts(db).CreateSearchContextWithRepositoryRevisions(ctx, &types.SearchContext{Name: name}, revs)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		mkSearchContext("old", ReposListOptions{})
+		_, err = db.Exec("update search_contexts set updated_at = $1", now.Add(-24*time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+		mkSearchContext("new", ReposListOptions{
+			Names: []string{"newSearchContext"},
+		})
+	}
+
 	tests := []struct {
 		Name           string
 		MinLastChanged time.Time
 		Want           []string
 	}{{
 		Name: "not specified",
-		Want: []string{"old", "new", "newMeta"},
+		Want: []string{"old", "new", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "old",
 		MinLastChanged: now.Add(-24 * time.Hour),
-		Want:           []string{"old", "new", "newMeta"},
+		Want:           []string{"old", "new", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "new",
 		MinLastChanged: now.Add(-time.Minute),
-		Want:           []string{"new", "newMeta"},
+		Want:           []string{"new", "newMeta", "newSearchContext"},
 	}, {
 		Name:           "none",
 		MinLastChanged: now.Add(time.Minute),
