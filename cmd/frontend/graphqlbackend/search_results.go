@@ -1778,10 +1778,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			err := agg.DoSearch(ctx, job, args.Repos, args.Mode)
-			if err != nil {
-				log15.Warn("agg.DoSearch failed", "error", err.Error())
-			}
+			_ = agg.DoSearch(ctx, job, args.Repos, args.Mode)
 		})
 	}
 

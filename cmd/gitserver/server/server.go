@@ -949,7 +949,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// Run the search
 	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		log15.Warn("failed to send done event", "error", writeErr)
+		log15.Error("failed to send done event", "error", writeErr)
 	}
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
