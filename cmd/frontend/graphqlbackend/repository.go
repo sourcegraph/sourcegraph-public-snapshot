@@ -419,7 +419,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(database.NewDB(r.db), repo)
+		r := NewRepositoryResolver(r.db, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 

@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
@@ -89,7 +88,7 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{database.NewDB(r.db), &settingsSubject{site: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {
@@ -123,13 +122,13 @@ func (r *siteResolver) AllowSiteSettingsEdits() bool {
 }
 
 type siteConfigurationResolver struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
@@ -138,7 +137,7 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
 	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site

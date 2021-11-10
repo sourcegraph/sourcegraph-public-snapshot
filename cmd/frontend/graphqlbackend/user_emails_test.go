@@ -6,87 +6,90 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSetUserEmailVerified(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.UserEmails.SetVerified = func(context.Context, int32, string, bool) error {
-		return nil
-	}
-	db := database.NewDB(nil)
-
 	tests := []struct {
 		name                                string
-		gqlTests                            []*Test
+		gqlTests                            func(db database.DB) []*Test
 		expectCalledGrantPendingPermissions bool
 	}{
 		{
 			name: "set an email to be verified",
-			gqlTests: []*Test{
-				{
+			gqlTests: func(db database.DB) []*Test {
+				return []*Test{{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
-				mutation {
-					setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: true) {
-						alwaysNil
-					}
-				}
-			`,
+						mutation {
+							setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: true) {
+								alwaysNil
+							}
+						}
+					`,
 					ExpectedResult: `
-				{
-					"setUserEmailVerified": {
-						"alwaysNil": null
-    				}
-				}
-			`,
-				},
+						{
+							"setUserEmailVerified": {
+								"alwaysNil": null
+							}
+						}
+					`,
+				}}
 			},
 			expectCalledGrantPendingPermissions: true,
 		},
 		{
 			name: "set an email to be unverified",
-			gqlTests: []*Test{
-				{
+			gqlTests: func(db database.DB) []*Test {
+				return []*Test{{
 					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
-				mutation {
-					setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: false) {
-						alwaysNil
-					}
-				}
-			`,
+						mutation {
+							setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: false) {
+								alwaysNil
+							}
+						}
+					`,
 					ExpectedResult: `
-				{
-					"setUserEmailVerified": {
-						"alwaysNil": null
-    				}
-				}
-			`,
-				},
+						{
+							"setUserEmailVerified": {
+								"alwaysNil": null
+							}
+						}
+					`,
+				}}
 			},
 			expectCalledGrantPendingPermissions: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			calledGrantPendingPermissions := false
-			database.Mocks.Authz.GrantPendingPermissions = func(context.Context, *database.GrantPendingPermissionsArgs) error {
-				calledGrantPendingPermissions = true
-				return nil
-			}
+			users := dbmock.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-			RunTests(t, test.gqlTests)
+			userEmails := dbmock.NewMockUserEmailsStore()
+			userEmails.SetVerifiedFunc.SetDefaultReturn(nil)
 
-			if test.expectCalledGrantPendingPermissions != calledGrantPendingPermissions {
-				t.Fatalf("calledGrantPendingPermissions: want %v but got %v", test.expectCalledGrantPendingPermissions, calledGrantPendingPermissions)
+			authz := dbmock.NewMockAuthzStore()
+			authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.UserEmailsFunc.SetDefaultReturn(userEmails)
+			db.AuthzFunc.SetDefaultReturn(authz)
+
+			RunTests(t, test.gqlTests(db))
+
+			if test.expectCalledGrantPendingPermissions {
+				mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+			} else {
+				mockrequire.NotCalled(t, authz.GrantPendingPermissionsFunc)
 			}
 		})
 	}

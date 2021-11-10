@@ -91,6 +91,7 @@ Indexes:
  created_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_execution_cache_entries_key_unique" UNIQUE CONSTRAINT, btree (key)
 
 ```
 
@@ -168,6 +169,7 @@ Foreign-key constraints:
  ignored              | boolean                  |           | not null | false
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
+ cached_result_found  | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:

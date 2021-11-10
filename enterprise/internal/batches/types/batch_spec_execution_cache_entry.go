@@ -1,6 +1,9 @@
 package types
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 const CurrentCacheVersion = 1
 
@@ -14,4 +17,14 @@ type BatchSpecExecutionCacheEntry struct {
 
 	LastUsedAt time.Time
 	CreatedAt  time.Time
+}
+
+func NewCacheEntryFromResult(key string, result interface{}) (*BatchSpecExecutionCacheEntry, error) {
+	value, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
+	}
+
+	entry := &BatchSpecExecutionCacheEntry{Key: key, Value: string(value)}
+	return entry, nil
 }

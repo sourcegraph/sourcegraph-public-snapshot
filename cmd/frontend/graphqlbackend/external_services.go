@@ -125,7 +125,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +218,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	es, err := database.ExternalServices(r.db).GetByID(ctx, id)
+	es, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	if err := database.ExternalServices(r.db).Delete(ctx, id); err != nil {
+	if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
 		return nil, err
 	}
 	now := time.Now()
@@ -281,6 +281,11 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	}
 
 	opt := database.ExternalServicesListOptions{
+		// 🚨 SECURITY: When both `namespaceUserID` and `namespaceOrgID` are not
+		// specified we need to explicitly specify `NoNamespace`, otherwise site
+		// admins will be able to list all user code host connections that are not
+		// accessible when trying to access them individually.
+		NoNamespace:     namespaceUserID == 0 && namespaceOrgID == 0,
 		NamespaceUserID: namespaceUserID,
 		NamespaceOrgID:  namespaceOrgID,
 		AfterID:         afterID,
