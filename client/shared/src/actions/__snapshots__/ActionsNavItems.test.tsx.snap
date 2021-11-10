@@ -5,7 +5,7 @@ Array [
   " ",
   <li>
     <span
-      className="action-item actions-nav-items__action-item action-item--variant-action-item"
+      className="actionItem"
       data-tooltip="This is Action A"
     >
        Action A

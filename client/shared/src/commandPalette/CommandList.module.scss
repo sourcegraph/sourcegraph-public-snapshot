@@ -1,23 +1,27 @@
 .command-list {
     width: 24rem;
     background-color: var(--body-bg);
-    .list-group {
+
+    :global(.list-group) {
         max-height: 18.5rem;
         overflow: auto;
     }
-    .list-group-item {
+
+    :global(.list-group-item) {
         &.active {
             &:hover {
                 color: var(--body-color);
             }
         }
     }
-    .list-group-item-action {
+
+    :global(.list-group-item-action) {
         &:hover {
             background-color: var(--color-bg-3);
         }
     }
-    &__popover-button {
-        cursor: pointer;
-    }
+}
+
+.popover-button {
+    cursor: pointer;
 }

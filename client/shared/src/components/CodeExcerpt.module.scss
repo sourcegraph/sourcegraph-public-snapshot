@@ -1,23 +1,24 @@
 .code-excerpt {
-    .line,
-    .code {
-        // stylelint-disable-next-line declaration-property-unit-whitelist
+    :global(.line),
+    :global(.code) {
+        /* stylelint-disable-next-line declaration-property-unit-whitelist */
         height: 18px;
         vertical-align: middle;
         padding: 0;
     }
 
-    .line {
+    :global(.line) {
         min-width: 1.5rem;
         text-align: right;
+
         &::before {
-            // draw line number with css so it cannot be copied to clipboard
+            /* draw line number with css so it cannot be copied to clipboard */
             content: attr(data-line);
             color: var(--text-muted);
         }
     }
 
-    .code {
+    :global(.code) {
         white-space: pre;
         padding-left: 1rem;
     }
@@ -28,6 +29,6 @@
 
     &-alert {
         margin-bottom: 0;
-        color: $red;
+        color: var(--red);
     }
 }
