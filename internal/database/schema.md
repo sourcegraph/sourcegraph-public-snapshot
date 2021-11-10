@@ -1319,6 +1319,7 @@ Stores the retention policy of code intellience data for a repository.
  num_references         | integer                  |           |          | 
  expired                | boolean                  |           | not null | false
  last_retention_scan_at | timestamp with time zone |           |          | 
+ reference_count        | integer                  |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1352,7 +1353,9 @@ Stores metadata about an LSIF index uploaded by a user.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
-**num_references**: The number of references to this upload data from other upload records (via lsif_references).
+**num_references**: Deprecated in favor of reference_count.
+
+**reference_count**: The number of references to this upload data from other upload records (via lsif_references).
 
 **root**: The path for which the index can resolve code intelligence relative to the repository root.
 
