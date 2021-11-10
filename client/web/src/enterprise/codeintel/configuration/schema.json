@@ -9,7 +9,7 @@
       "type": "object",
       "properties": {
         "root": {
-          "description": "The working directly within the docker container.",
+          "description": "The working directory within the docker container.",
           "type": "string"
         },
         "image": {
