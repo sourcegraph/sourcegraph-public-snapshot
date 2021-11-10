@@ -217,7 +217,7 @@ type fakeOrgRepoResolver struct {
 	repo *types.Repo
 }
 
-func (r *fakeOrgRepoResolver) OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *ListOrgRepositoriesArgs) RepositoryConnectionResolver) (RepositoryConnectionResolver, error) {
+func (r *fakeOrgRepoResolver) OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error) {
 	return r, nil
 }
 
