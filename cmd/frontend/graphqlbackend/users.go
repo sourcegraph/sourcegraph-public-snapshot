@@ -40,7 +40,7 @@ type UserConnectionResolver interface {
 var _ UserConnectionResolver = &userConnectionResolver{}
 
 type userConnectionResolver struct {
-	db           dbutil.DB
+	db           database.DB
 	opt          database.UsersListOptions
 	activePeriod *string
 
@@ -86,7 +86,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
 	// 🚨 SECURITY: Only site admins can list users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -104,7 +104,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 	var l []*UserResolver
 	for _, user := range users {
 		l = append(l, &UserResolver{
-			db:   database.NewDB(r.db),
+			db:   r.db,
 			user: user,
 		})
 	}
@@ -113,7 +113,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can count users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 
