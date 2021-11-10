@@ -1,53 +1,30 @@
-import AJV, { ErrorObject } from 'ajv'
+import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import classNames from 'classnames'
-import { load as loadYAML, YAMLException } from 'js-yaml'
+import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
-import { asyncScheduler, concat, Observable, of, OperatorFunction, SchedulerLike, Subject } from 'rxjs'
-import {
-    catchError,
-    debounceTime,
-    delay,
-    distinctUntilChanged,
-    map,
-    publish,
-    repeatWhen,
-    startWith,
-    switchMap,
-    take,
-    takeWhile,
-    tap,
-} from 'rxjs/operators'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import {
-    SettingsCascadeOrError,
     SettingsCascadeProps,
     SettingsOrgSubject,
-    SettingsSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Container, LoadingSpinner, PageHeader, useDebounce } from '@sourcegraph/wildcard'
+import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
+import { Container, PageHeader, useDebounce } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 import { BatchChangesIcon } from '../../../batches/icons'
-import {
-    BatchSpecWithWorkspacesFields,
-    CreateBatchSpecFromRawResult,
-    CreateBatchSpecFromRawVariables,
-} from '../../../graphql-operations'
+import { CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables } from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
@@ -98,10 +75,9 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     isLightTheme,
     settingsCascade,
 }) => {
-    const history = useHistory()
-
     const { namespaces, defaultSelectedNamespace } = useNamespaces(settingsCascade)
 
+    // The namespace selected for creating the new batch spec under.
     const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
         defaultSelectedNamespace
     )
@@ -109,6 +85,15 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors } = useBatchSpecCode(helloWorldSample)
 
     const [serverError, setServerError] = useState<Error>()
+
+    const clearErrorsAndHandleCodeChange = useCallback(
+        (newCode: string) => {
+            setServerError(undefined)
+            handleCodeChange(newCode)
+        },
+        [handleCodeChange]
+    )
+
     const [createBatchSpecFromRaw, { data, loading }] = useMutation<
         CreateBatchSpecFromRawResult,
         CreateBatchSpecFromRawVariables
@@ -139,6 +124,18 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     //     }
     // }, [previewID, history])
 
+    const [canExecute, executionTooltip] = useMemo(() => {
+        const canExecute = isValid && !serverError && !loading
+        const executionTooltip =
+            !isValid || serverError
+                ? "There's a problem with your batch spec."
+                : loading
+                ? 'Wait for the preview to finish.'
+                : undefined
+
+        return [canExecute, executionTooltip]
+    }, [isValid, serverError, loading])
+
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
             <div className="d-flex flex-0 justify-content-between">
@@ -163,14 +160,15 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     />
                 </div>
                 <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
-                    <button
+                    <ButtonTooltip
                         type="button"
                         className="btn btn-primary mb-2"
-                        onClick={submitBatchSpec}
-                        disabled={isLoading === true}
+                        // onClick={submitBatchSpec}
+                        disabled={!canExecute}
+                        tooltip={executionTooltip}
                     >
                         Run batch spec
-                    </button>
+                    </ButtonTooltip>
                     <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
                         or download for src-cli
                     </BatchSpecDownloadLink>
@@ -178,13 +176,18 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
             </div>
             <div className="d-flex flex-1">
                 <div className={styles.editorContainer}>
-                    <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={code} onChange={handleCodeChange} />
+                    <MonacoBatchSpecEditor
+                        isLightTheme={isLightTheme}
+                        value={code}
+                        onChange={clearErrorsAndHandleCodeChange}
+                    />
                 </div>
                 <Container className={styles.workspacesPreviewContainer}>
                     {errors.update && <ErrorAlert error={errors.update} />}
                     {!isValid && errors.validation.length > 0 && (
-                        <ErrorAlert error={`The entered spec is invalid:\n${errors.validation.join('\n')}`} />
+                        <ErrorAlert error={`The entered spec is invalid:\n  * ${errors.validation.join('\n  * ')}`} />
                     )}
+                    {serverError && <ErrorAlert error={serverError} />}
                     <WorkspacesPreview batchSpecInput={debouncedCode} disabled={isValid !== true} preview={preview} />
                 </Container>
             </div>
@@ -235,6 +238,9 @@ const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult => {
             }
         }
     }, [])
+
+    // Run validation once for initial batch spec code
+    useEffect(() => validate(initialCode), [initialCode, validate])
 
     // Debounce validation to avoid excessive computation.
     const debouncedValidate = useMemo(() => debounce(validate, 250), [validate])

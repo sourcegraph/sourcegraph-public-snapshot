@@ -146,7 +146,7 @@ const Empty: React.FunctionComponent<{ preview: () => void; previewDisabled: boo
     <div className="d-flex flex-column align-items-center pt-4">
         <div className={styles.emptyIcon} />
         <h4 className={styles.emptyHeaderPrompt}>
-            Add an <span className="text-monospace">on:</span> statement to preview repositories.
+            Use an <span className="text-monospace">on:</span> statement to preview repositories.
         </h4>
         <Button variant="success" disabled={previewDisabled} onClick={preview}>
             <SearchIcon className="icon-inline mr-1" />
