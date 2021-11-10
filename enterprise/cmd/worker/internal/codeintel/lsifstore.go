@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -33,5 +34,5 @@ var initLSFIStore = memo.NewMemoizedConstructor(func() (interface{}, error) {
 		return nil, err
 	}
 
-	return lsifstore.NewStore(db, observationContext), nil
+	return lsifstore.NewStore(db, conf.Get(), observationContext), nil
 })

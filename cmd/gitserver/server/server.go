@@ -63,8 +63,10 @@ const tempDirName = ".tmp"
 // logs to stderr
 var traceLogs bool
 
-var lastCheckAt = make(map[api.RepoName]time.Time)
-var lastCheckMutex sync.Mutex
+var (
+	lastCheckAt    = make(map[api.RepoName]time.Time)
+	lastCheckMutex sync.Mutex
+)
 
 // debounce() provides some filtering to prevent spammy requests for the same
 // repository. If the last fetch of the repository was within the given
@@ -398,7 +400,7 @@ func (s *Server) Janitor(interval time.Duration) {
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	for {
-		addrs := conf.Get().ServiceConnections.GitServers
+		addrs := conf.Get().ServiceConnections().GitServers
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
 		currentAddrs := strings.Join(addrs, ",")
@@ -987,7 +989,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 // search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
 // concern itself with event types, and all instrumentation is handled in the calling function.
 func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
-
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
