@@ -10,7 +10,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       className="d-flex"
     />
     <div
-      className="file-locations fileLocations"
+      className="fileLocations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -251,7 +251,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       </div>
     </div>
     <div
-      className="file-locations fileLocations"
+      className="fileLocations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -438,7 +438,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       className="d-flex"
     />
     <div
-      className="file-locations fileLocations"
+      className="fileLocations fileLocations"
     >
       <div>
         <VisibilitySensor
