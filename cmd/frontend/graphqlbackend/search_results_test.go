@@ -866,6 +866,9 @@ func TestEvaluateAnd(t *testing.T) {
 			ctx := context.Background()
 
 			database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+				if len(op.IncludePatterns) > 0 || len(op.ExcludePattern) > 0 {
+					return nil, nil
+				}
 				repoNames := make([]types.MinimalRepo, len(minimalRepos))
 				for i := range minimalRepos {
 					repoNames[i] = types.MinimalRepo{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
@@ -898,7 +901,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			if tt.wantAlert {
 				if results.SearchResults.Alert == nil {
-					t.Errorf("Expected results")
+					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
 				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
