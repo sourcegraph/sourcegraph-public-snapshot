@@ -161,7 +161,10 @@ func TestGetRepos(t *testing.T) {
 	db := dbmock.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repoStore)
 
-	require.Equal(t, 123, getRepos(db, 0).ID)
+	got := getRepos(db, 0)
+	if got.ID != 123 {
+		t.Fatalf("wrong ID: %d", got.ID)
+	}
 }
 ```
 
@@ -191,8 +194,9 @@ func TestGetRepos(t *testing.T) {
 	createRepo(db, "my cool repo", 123)
 	got := getRepo(db, 123)
 
-	require.Equal(t, "my cool repo", got.Name)
-	require.Equal(t, 123, got.ID)
+	if got.Name != "my cool repo" {
+		t.Fatalf("wrong name: %s", got.Name)
+	}
 }
 ```
 
