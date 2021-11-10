@@ -2,19 +2,27 @@ package background
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-const maxCacheEntriesTableSize = 500 * 1024 * 1024 // 500mb
+var maxCacheEntriesSize, _ = strconv.Atoi(env.Get(
+	"SRC_BATCH_CHANGES_MAX_CACHE_SIZE_MB",
+	"5000",
+	"Maximum size of the batch_spec_execution_cache_entries.value column. Value is megabytes.",
+))
 
 func newCacheEntryCleanerJob(ctx context.Context, s *store.Store) goroutine.BackgroundRoutine {
+	maxSizeByte := int64(maxCacheEntriesSize * 1024 * 1024)
+
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		specExpireInteral,
 		goroutine.NewHandlerWithErrorMessage("cleaning up LRU batch spec execution cache entries", func(ctx context.Context) error {
-			return s.DeleteExpiredChangesetSpecs(ctx)
+			return s.CleanBatchSpecExecutionCacheEntries(ctx, maxSizeByte)
 		}),
 	)
 }
