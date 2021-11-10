@@ -310,5 +310,4 @@ func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositorie
 		return nil, errors.New("listing organization repositories is not supported")
 	}
 	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
-
 }
