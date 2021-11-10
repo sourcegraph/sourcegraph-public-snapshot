@@ -4,9 +4,9 @@ import React, { useCallback, useState } from 'react'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { deleteExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind } from '../../../graphql-operations'
+import { deleteOrgExternalService } from '../../../org/backend'
 
 const getWarningMessage = (serviceName: string, orgName: string, repoCount: number | undefined): string => {
     const membersWillNoLongerSearchAcross = `will no longer be synced and members of ${orgName} will no longer be able to search across`
@@ -55,7 +55,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
             setIsLoading(true)
 
             try {
-                await deleteExternalService(serviceID)
+                await deleteOrgExternalService(serviceID)
                 onDidRemove()
             } catch (error) {
                 setIsLoading(false)

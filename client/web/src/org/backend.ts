@@ -1,7 +1,7 @@
 import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
 
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 
 import { refreshAuthenticatedUser } from '../auth'
@@ -14,6 +14,8 @@ import {
     Scalars,
     UpdateOrganizationResult,
     UpdateOrganizationVariables,
+    DeleteOrgExternalServiceResult,
+    DeleteOrgExternalServiceVariables,
 } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -117,6 +119,20 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
             })
         )
         .toPromise()
+}
+
+export async function deleteOrgExternalService(externalService: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<DeleteOrgExternalServiceResult, DeleteOrgExternalServiceVariables>(
+        gql`
+            mutation DeleteOrgExternalService($externalService: ID!) {
+                deleteOrgExternalService(externalService: $externalService) {
+                    alwaysNil
+                }
+            }
+        `,
+        { externalService }
+    ).toPromise()
+    dataOrThrowErrors(result)
 }
 
 export const GET_ORG_FEATURE_FLAG_VALUE = gql`

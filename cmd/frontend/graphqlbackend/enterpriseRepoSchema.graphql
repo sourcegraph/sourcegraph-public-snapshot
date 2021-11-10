@@ -37,3 +37,10 @@ extend type Org {
         externalServiceIDs: [ID]
     ): RepositoryConnection!
 }
+
+extend type Mutation {
+    """
+    Delete an external service. Only org admins may perform this mutation.
+    """
+    deleteOrgExternalService(externalService: ID!): EmptyResponse!
+}
