@@ -93,6 +93,8 @@ const executableWorkspaceJobsConditionFmtstr = `
 	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
 	AND
 	jsonb_array_length(batch_spec_workspaces.steps) > 0
+	AND
+	batch_spec_workspaces.batch_spec_execution_cache_entry_id IS NULL
 )`
 
 // CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.

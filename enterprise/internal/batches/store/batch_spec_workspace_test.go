@@ -32,12 +32,14 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
 	for i := 0; i < cap(workspaces); i++ {
 		job := &btypes.BatchSpecWorkspace{
-			BatchSpecID:      int64(i + 567),
-			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
-			RepoID:           repo.ID,
-			Branch:           "master",
-			Commit:           "d34db33f",
-			Path:             "sub/dir/ectory",
+			BatchSpecID:                    int64(i + 567),
+			ChangesetSpecIDs:               []int64{int64(i + 456), int64(i + 678)},
+			BatchSpecExecutionCacheEntryID: int64(i + 999),
+
+			RepoID: repo.ID,
+			Branch: "master",
+			Commit: "d34db33f",
+			Path:   "sub/dir/ectory",
 			FileMatches: []string{
 				"a.go",
 				"a/b/horse.go",

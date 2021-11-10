@@ -3,6 +3,7 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -123,6 +124,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 		RepoStore:           database.Repos(db),
 		SearchContextsStore: database.SearchContexts(db),
 		Indexers:            search.Indexers(),
+
+		MinLastChangedEnabled: os.Getenv("SRC_SEARCH_CORE_MIN_LAST_CHANGED") != "",
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))

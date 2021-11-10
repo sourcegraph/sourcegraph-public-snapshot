@@ -147,8 +147,7 @@ func (r *batchSpecWorkspaceResolver) Unsupported() bool {
 }
 
 func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
-	// TODO(ssbc): not implemented
-	return false
+	return r.workspace.BatchSpecExecutionCacheEntryID != 0
 }
 
 func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceStagesResolver {
@@ -208,6 +207,9 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 }
 
 func (r *batchSpecWorkspaceResolver) State() string {
+	if r.CachedResultFound() {
+		return "COMPLETED"
+	}
 	if r.workspace.Skipped {
 		return "SKIPPED"
 	}
@@ -218,7 +220,7 @@ func (r *batchSpecWorkspaceResolver) State() string {
 }
 
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.ChangesetSpecResolver, error) {
-	if r.workspace.Skipped {
+	if r.workspace.Skipped && !r.CachedResultFound() {
 		return nil, nil
 	}
 
@@ -242,13 +244,6 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 }
 
 func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	if r.execution == nil {
-		return nil, nil
-	}
-	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
-		return nil, nil
-	}
-
 	// TODO: Cache this computation.
 	resolvers, err := r.ChangesetSpecs(ctx)
 	if err != nil {

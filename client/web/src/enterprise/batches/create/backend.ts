@@ -98,6 +98,7 @@ const fragment = gql`
             container
         }
         searchResultPaths
+        cachedResultFound
     }
 `
 

@@ -371,7 +371,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                     setHiddenSectionIds([])
                                 }}
                             >
-                                Turn all panels on.
+                                Show all panels.
                             </button>
                         </p>
                     )}
