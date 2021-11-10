@@ -3,14 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -52,16 +51,16 @@ func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, 
 }
 
 func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
-	org, err := db.Orgs().GetByID(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
-		err := backend.CheckOrgAccess(ctx, db, org.ID)
+		err := backend.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
 			return nil, errors.Newf("org not found: %d", orgID)
 		}
+	}
+	org, err := db.Orgs().GetByID(ctx, orgID)
+	if err != nil {
+		return nil, err
 	}
 	return &OrgResolver{db, org}, nil
 }
@@ -105,7 +104,7 @@ func (o *OrgResolver) CreatedAt() DateTime { return DateTime{Time: o.org.Created
 
 func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list other org members.
-	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, o.db, o.org.ID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
 			return nil, errors.New("must be a member of this organization to view members")
 		}
@@ -134,7 +133,7 @@ func (o *OrgResolver) settingsSubject() api.SettingsSubject {
 func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
 	// because they may contain secrets or other sensitive data.
-	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, o.db, o.org.ID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
@@ -169,7 +168,7 @@ func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 }
 
 func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -236,7 +235,7 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 
 	// 🚨 SECURITY: Check that the current user is a member
 	// of the org that is being modified.
-	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
@@ -263,7 +262,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
 	// site admin.
-	if err := backend.CheckOrgAccessOrSiteAdminCloud(ctx, r.db, orgID); err != nil {
+	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
