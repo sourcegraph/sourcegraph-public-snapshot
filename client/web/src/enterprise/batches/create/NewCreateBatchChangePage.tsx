@@ -1,7 +1,7 @@
-import AJV from 'ajv'
+import AJV, { ErrorObject } from 'ajv'
 import addFormats from 'ajv-formats'
 import classNames from 'classnames'
-import { load as loadYAML } from 'js-yaml'
+import { load as loadYAML, YAMLException } from 'js-yaml'
 import { debounce } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
@@ -24,7 +24,6 @@ import {
     tap,
 } from 'rxjs/operators'
 
-import { ErrorObject } from 'schema-utils/declarations/validate'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
@@ -231,14 +230,10 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                 </div>
                 <Container className={styles.workspacesPreviewContainer}>
                     {errors.update && <ErrorAlert error={errors.update} />}
-                    {!isValid && errors.validation.length && (
-                        <ErrorAlert
-                            error={`The entered spec is invalid ${errors.validation
-                                .map(error => error.message)
-                                .join('\n')}`}
-                        />
+                    {!isValid && errors.validation.length > 0 && (
+                        <ErrorAlert error={`The entered spec is invalid:\n${errors.validation.join('\n')}`} />
                     )}
-                    <WorkspacesPreview batchSpecInput={debouncedCode} />
+                    <WorkspacesPreview batchSpecInput={debouncedCode} disabled={isValid !== true} />
                 </Container>
             </div>
         </div>
@@ -251,7 +246,7 @@ interface UseBatchSpecCodeResult {
     handleCodeChange: (newCode: string) => void
     isValid: boolean | 'unknown'
     errors: {
-        validation: ErrorObject[]
+        validation: string[]
         update?: string
     }
     excludeRepo: (repo: string, branch: string) => void
@@ -272,12 +267,27 @@ const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult => {
     const [isValid, setIsValid] = useState<boolean | 'unknown'>('unknown')
 
     const validate = useCallback((newCode: string) => {
-        const valid = VALIDATE_SPEC(newCode)
-        setIsValid(valid)
+        try {
+            const parsed = loadYAML(newCode)
+            const valid = VALIDATE_SPEC(parsed)
+            setIsValid(valid)
+            if (!valid && VALIDATE_SPEC.errors) {
+                setValidationErrors(VALIDATE_SPEC.errors.map(error => error.message || '') || [])
+            }
+        } catch (error: unknown) {
+            setIsValid(false)
+            if (error && typeof error === 'object' && 'reason' in error) {
+                setValidationErrors([(error as { reason: string }).reason])
+            } else {
+                setValidationErrors(['unknown validation error occurred'])
+            }
+        }
     }, [])
+
+    // Debounce validation to avoid excessive computation.
     const debouncedValidate = useMemo(() => debounce(validate, 250), [validate])
 
-    // Stop the debounced function on dismount
+    // Stop the debounced function on dismount.
     useEffect(
         () => () => {
             debouncedValidate.cancel()
