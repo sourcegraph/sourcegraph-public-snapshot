@@ -450,15 +450,15 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func viewerCanChangeUsername(ctx context.Context, db dbutil.DB, userID int32) bool {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
+func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
 	}
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	return backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) == nil
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil
 }
 
 // Users may be trying to change their own username, or someone else's.
