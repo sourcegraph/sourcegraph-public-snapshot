@@ -1095,7 +1095,7 @@ ranked_uploads_providing_packages AS (
 -- ranked_uploads_providing_packages. Those that are not the canonical upload
 -- providing their package will have ref count of zero, by having no associated
 -- row in this intermediate result set. The canonical uploads will have their
--- reference count re-calcaulted based on the current set of dependencies known
+-- reference count re-calculated based on the current set of dependencies known
 -- to Postgres.
 canonical_package_reference_counts AS (
 	SELECT
