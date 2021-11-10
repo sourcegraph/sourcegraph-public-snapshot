@@ -22,13 +22,25 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-echo "--- :go: Building sg"
-(
+
+if hash go 2>/dev/null ; then
+  echo "--- :go: Building sg"
+  (
   set -x
   pushd dev/sg
   go build -o ../../ci_sg -ldflags "-X main.BuildCommit=$BUILDKITE_COMMIT" -mod=mod .
   popd
-)
+  )
+else
+  # 
+  echo "--- :arrow_down: Downloading sg"
+  (
+  set -x
+  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:" | tr -d '\r')"
+  _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"
+  wget $_base_url/sg_linux_amd64 -o sg_ci
+  )
+fi
 
 echo "--- :file_cabinet: Uploading logs"
 # Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
