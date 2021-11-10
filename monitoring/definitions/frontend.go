@@ -410,7 +410,7 @@ func Frontend() *monitoring.Container {
 							Query:             `max by(owner) (observability_test_metric_warning)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(1, nil),
 							Panel:             monitoring.Panel().Max(1),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 						{
@@ -419,7 +419,7 @@ func Frontend() *monitoring.Container {
 							Query:             `max by(owner) (observability_test_metric_critical)`,
 							Critical:          monitoring.Alert().GreaterOrEqual(1, nil),
 							Panel:             monitoring.Panel().Max(1),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 					},
@@ -428,10 +428,10 @@ func Frontend() *monitoring.Container {
 
 			// Resource monitoring
 			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",

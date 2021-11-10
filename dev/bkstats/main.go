@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 	"sort"
 	"time"
 
@@ -12,11 +15,15 @@ import (
 var token string
 var date string
 var pipeline string
+var slack string
+var shortDateFormat = "2006-01-02"
+var longDateFormat = "2006-01-02 15:04 (MST)"
 
 func init() {
 	flag.StringVar(&token, "token", "", "mandatory buildkite token")
 	flag.StringVar(&date, "date", "", "date for builds")
 	flag.StringVar(&pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
+	flag.StringVar(&slack, "slack", "", "Slack Webhook URL to post the results on")
 }
 
 type event struct {
@@ -25,12 +32,39 @@ type event struct {
 	buildURL string
 }
 
+type report struct {
+	details []string
+	summary string
+}
+
+type slackBody struct {
+	Blocks []slackBlock `json:"blocks"`
+}
+
+type slackBlock struct {
+	Type     string      `json:"type"`
+	Text     *slackText  `json:"text,omitempty"`
+	Elements []slackText `json:"elements,omitempty"`
+}
+
+type slackText struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
 func main() {
 	flag.Parse()
 
-	t, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		panic(err)
+	var t time.Time
+	var err error
+	if date != "" {
+		t, err = time.Parse(shortDateFormat, date)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		t = time.Now()
+		t = t.Add(-1 * 24 * time.Hour)
 	}
 
 	config, err := buildkite.NewTokenConfig(token, false)
@@ -84,20 +118,87 @@ func main() {
 
 	var lastRed *event
 	red := time.Duration(0)
+	var report report
 	for _, event := range ends {
 		if event.state == "failed" {
 			// if a build failed, compute how much time until the next green
 			lastRed = event
-			fmt.Printf("failure at %s, %s\n", event.at.Format(time.RFC822), event.buildURL)
+			report.details = append(report.details, fmt.Sprintf("Failure on %s, %s", event.at.Format(longDateFormat), event.buildURL))
 		}
 		if event.state == "passed" && lastRed != nil {
 			// if a build passed and we previously were red, stop recording the duration.
 			red += event.at.Sub(lastRed.at)
 			lastRed = nil
-			fmt.Printf("fixed at   %s, %s\n", event.at.Format(time.RFC822), event.buildURL)
+			report.details = append(report.details, fmt.Sprintf("Fixed on %s, %s", event.at.Format(longDateFormat), event.buildURL))
 		}
 	}
-	fmt.Printf("On %s, the pipeline was red for %s\n", date, red.String())
+	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s*", t.Format(shortDateFormat), red.String())
+
+	if slack == "" {
+		// If we're meant to print the results on stdout.
+		for _, detail := range report.details {
+			fmt.Println(detail)
+		}
+		fmt.Println(report.summary)
+	} else if err := postOnSlack(&report); err != nil {
+		panic(err)
+	}
+}
+
+func postOnSlack(report *report) error {
+	var text string
+	for _, detail := range report.details {
+		text += "• " + detail + " \n"
+	}
+
+	slackBody := slackBody{
+		Blocks: []slackBlock{
+			{
+				Type: "section",
+				Text: &slackText{
+					Type: "mrkdwn",
+					Text: report.summary,
+				},
+			},
+			{
+				Type: "context",
+				Elements: []slackText{
+					{
+						Type: "mrkdwn",
+						Text: text,
+					},
+				},
+			},
+		},
+	}
+
+	body, err := json.MarshalIndent(slackBody, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to post on slack: %w", err)
+	}
+	// Perform the HTTP Post on the webhook
+	req, err := http.NewRequest(http.MethodPost, slack, bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("failed to post on slack: %w", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to post on slack: %w", err)
+	}
+
+	// Parse the response, to check if it succeeded
+	buf := new(bytes.Buffer)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if buf.String() != "ok" {
+		return fmt.Errorf("failed to post on slack: %s", buf.String())
+	}
+	return nil
 }
 
 func BoD(t time.Time) time.Time {

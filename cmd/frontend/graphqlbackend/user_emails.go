@@ -168,13 +168,13 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 	if err != nil {
 		return nil, err
 	}
-	if err := database.UserEmails(r.db).SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
+	if err := r.db.UserEmails().SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
 		return nil, err
 	}
 
 	// Avoid unnecessary calls if the email is set to unverified.
 	if args.Verified {
-		if err = database.Authz(r.db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,

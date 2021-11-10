@@ -74,7 +74,7 @@ type JSContext struct {
 
 	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
-	AccessTokensAllow conf.AccessTokAllow `json:"accessTokensAllow"`
+	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
 
 	AllowSignup bool `json:"allowSignup"`
 

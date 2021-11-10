@@ -164,8 +164,9 @@ interface Props extends ThemeProps {
     /** The DOM element ID to use when rendering the component. Use for a11y, not DOM manipulation. */
     id?: string
 
-    /** The height (in px) of the Monaco editor or 'auto' for automatic resizing to fit the content height. */
-    height: number | 'auto'
+    /** The height (as a number in px or as a string) of the Monaco editor or 'auto' for
+     * automatic resizing to fit the content height. */
+    height: number | string | 'auto'
 
     /** Called when the editor has mounted. */
     editorWillMount: (editor: typeof monaco) => void
@@ -187,8 +188,10 @@ interface Props extends ThemeProps {
 }
 
 interface State {
-    computedHeight: number
+    computedHeight: string
 }
+
+const toPx = (number: number): string => `${number}px`
 
 export class MonacoEditor extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
@@ -199,7 +202,10 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = { computedHeight: props.height !== 'auto' ? props.height : 0 }
+
+        const computedHeight =
+            typeof props.height === 'number' ? toPx(props.height) : props.height === 'auto' ? toPx(0) : props.height
+        this.state = { computedHeight }
     }
 
     private setRef = (element: HTMLElement | null): void => {
@@ -222,9 +228,9 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
         this.editor = editor
 
         if (this.props.height === 'auto') {
-            this.setState({ computedHeight: Math.min(MAX_AUTO_HEIGHT, editor.getContentHeight()) })
+            this.setState({ computedHeight: toPx(Math.min(MAX_AUTO_HEIGHT, editor.getContentHeight())) })
             const disposable = editor.onDidContentSizeChange(({ contentHeight }) => {
-                this.setState({ computedHeight: Math.min(MAX_AUTO_HEIGHT, contentHeight) })
+                this.setState({ computedHeight: toPx(Math.min(MAX_AUTO_HEIGHT, contentHeight)) })
             })
             this.subscriptions.add({ unsubscribe: () => disposable.dispose() })
         }
@@ -267,7 +273,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                 <div
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{
-                        height: `${this.state.computedHeight}px`,
+                        height: this.state.computedHeight,
                         position: 'relative',
                     }}
                     ref={this.setRef}

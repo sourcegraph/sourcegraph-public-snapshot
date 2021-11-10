@@ -85,7 +85,9 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
     <div className="w-100">
         <Switch>
             <Route
-                render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
+                render={props => (
+                    <BatchChangeListPage headingElement="h1" canCreate={true} {...outerProps} {...props} />
+                )}
                 path={match.url}
                 exact={true}
             />

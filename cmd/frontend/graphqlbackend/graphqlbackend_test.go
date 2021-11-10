@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -49,7 +49,7 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	db := database.NewDB(nil)
+	db := dbmock.NewMockDB()
 	resetMocks()
 	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	RunTests(t, []*Test{
@@ -74,7 +74,7 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := dbmock.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
@@ -84,7 +84,7 @@ func TestResolverTo(t *testing.T) {
 		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: database.NewDB(db)},
+		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&repositorySuggestionResolver{},
@@ -115,11 +115,16 @@ func TestMain(m *testing.M) {
 func TestAffiliatedRepositories(t *testing.T) {
 	resetMocks()
 	rcache.SetupForTest(t)
-	database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-		return map[string]bool{}, nil
-	}
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	users := dbmock.NewMockUserStore()
+	users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, userID int32) (*types.User, error) {
+		return &types.User{ID: userID, SiteAdmin: userID == 2}, nil
+	})
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -134,9 +139,10 @@ func TestAffiliatedRepositories(t *testing.T) {
 				ID:   3,
 				Kind: extsvc.KindBitbucketCloud, // unsupported, should be ignored
 			},
-		}, nil
-	}
-	database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+		},
+		nil,
+	)
+	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
 		switch id {
 		case 1:
 			return &types.ExternalService{
@@ -152,16 +158,11 @@ func TestAffiliatedRepositories(t *testing.T) {
 			}, nil
 		}
 		return nil, nil
-	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, userID int32) (*types.User, error) {
-		return &types.User{
-			ID:        userID,
-			SiteAdmin: userID == 2,
-		}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: true}, nil
-	}
+	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	// Map from path rou
 	httpResponder := map[string]roundTripFunc{
@@ -233,7 +234,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -282,7 +283,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -335,7 +336,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(
@@ -391,7 +392,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, database.NewDB(nil)),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				affiliatedRepositories(

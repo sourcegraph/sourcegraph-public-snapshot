@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
@@ -25,12 +24,12 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 }
 
 type userEventLogsConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	opt database.EventLogsListOptions
 }
 
 func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEventLogResolver, error) {
-	events, err := database.EventLogs(r.db).ListAll(ctx, r.opt)
+	events, err := r.db.EventLogs().ListAll(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -48,9 +47,9 @@ func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32
 	var err error
 
 	if r.opt.EventName != nil {
-		count, err = database.EventLogs(r.db).CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+		count, err = r.db.EventLogs().CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
 	} else {
-		count, err = database.EventLogs(r.db).CountByUserID(ctx, r.opt.UserID)
+		count, err = r.db.EventLogs().CountByUserID(ctx, r.opt.UserID)
 	}
 
 	return int32(count), err
@@ -61,9 +60,9 @@ func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	var err error
 
 	if r.opt.EventName != nil {
-		count, err = database.EventLogs(r.db).CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
+		count, err = r.db.EventLogs().CountByUserIDAndEventName(ctx, r.opt.UserID, *r.opt.EventName)
 	} else {
-		count, err = database.EventLogs(r.db).CountByUserID(ctx, r.opt.UserID)
+		count, err = r.db.EventLogs().CountByUserID(ctx, r.opt.UserID)
 	}
 
 	if err != nil {

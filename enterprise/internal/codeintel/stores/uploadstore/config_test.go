@@ -149,7 +149,7 @@ func TestS3ClientConfig(t *testing.T) {
 	}, cred); diff != "" {
 		t.Errorf("invalid credential returned: %s", diff)
 	}
-	if cfg.EndpointResolver != nil {
+	if cfg.EndpointResolverWithOptions != nil {
 		t.Errorf("unexpected endpoint option")
 	}
 }

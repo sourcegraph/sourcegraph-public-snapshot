@@ -8,6 +8,8 @@ import (
 	"strconv"
 
 	"github.com/google/zoekt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -126,6 +128,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		}
 
 		getVersion := func(branch string) (string, error) {
+			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
 			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
@@ -226,3 +229,8 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	return json.NewEncoder(w).Encode(&data)
 }
+
+var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_get_version_total",
+	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
+})

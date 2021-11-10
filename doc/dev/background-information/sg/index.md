@@ -270,6 +270,9 @@ specific to your work.
 
 You can run `sg run debug-env` to see the environment variables passed `sg`'s child processes.
 
+## Debugger
+To attach the [Delve](https://github.com/go-delve/delve) debugger, pass the environment variable `DELVE=true` into `sg`. [Read more here](https://docs.sourcegraph.com/dev/how-to/debug_live_code#debug-go-code)
+
 ### Examples
 
 #### Changing database configuration

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type createAccessTokenInput struct {
@@ -161,7 +160,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
 	// token values themselves are not stored in our database.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -194,7 +193,7 @@ type accessTokenConnectionResolver struct {
 	once         sync.Once
 	accessTokens []*database.AccessToken
 	err          error
-	db           dbutil.DB
+	db           database.DB
 }
 
 func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*database.AccessToken, error) {
@@ -206,7 +205,7 @@ func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*databas
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.accessTokens, r.err = database.AccessTokens(r.db).List(ctx, opt2)
+		r.accessTokens, r.err = r.db.AccessTokens().List(ctx, opt2)
 	})
 	return r.accessTokens, r.err
 }
@@ -228,7 +227,7 @@ func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTok
 }
 
 func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := database.AccessTokens(r.db).Count(ctx, r.opt)
+	count, err := r.db.AccessTokens().Count(ctx, r.opt)
 	return int32(count), err
 }
 
