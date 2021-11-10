@@ -3,11 +3,13 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -1004,6 +1006,12 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 		return nil
 	}
 
+	// Just in case
+	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
+		log15.Warn("Reference count operations are currently disabled")
+		return nil
+	}
+
 	tx, err := s.transact(ctx)
 	if err != nil {
 		return err
@@ -1189,6 +1197,12 @@ func (s *Store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	// Just in case
+	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
+		log15.Warn("Reference count operations are currently disabled")
+		return 0, nil
+	}
 
 	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
 	if err != nil {
