@@ -444,6 +444,7 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
 
+			// TODO efef
 			// TODO need doc
 			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
