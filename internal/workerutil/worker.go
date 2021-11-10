@@ -239,7 +239,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		}
 	}()
 
-	dequeueable, extraDequeueArguments, err := w.preDequeueHook()
+	dequeueable, extraDequeueArguments, err := w.preDequeueHook(w.ctx)
 	if err != nil {
 		return false, errors.Wrap(err, "Handler.PreDequeueHook")
 	}
@@ -259,9 +259,12 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.ctx, true), w.options.Name)
-	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
+	jobCtx, cancel := context.WithCancel(workerCtxWithSpan)
+
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {
+		workerSpan.LogFields(log.Error(ErrJobAlreadyExists))
+		workerSpan.Finish()
 		return false, ErrJobAlreadyExists
 	}
 
@@ -269,7 +272,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
 
 	if hook, ok := w.handler.(WithHooks); ok {
-		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(workerCtxWithSpan, nil, observation.Args{})
+		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(jobCtx, nil, observation.Args{})
 		hook.PreHandle(preCtx, record)
 		endObservation(1, observation.Args{})
 	}
@@ -279,10 +282,10 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	go func() {
 		defer func() {
 			if hook, ok := w.handler.(WithHooks); ok {
-				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
-				defer endObservation(1, observation.Args{})
-				// Don't use handleCtx here, the record is already not owned by
+				// Don't use workerCtxWithSpan here, the record is already not owned by
 				// this worker anymore at this point.
+				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(jobCtx, nil, observation.Args{})
+				defer endObservation(1, observation.Args{})
 				hook.PostHandle(postCtx, record)
 			}
 
@@ -295,8 +298,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 			workerSpan.Finish()
 		}()
 
-		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
-			log15.Error("Failed to finalize record", "name", w.options.Name, "err", err)
+		if err := w.handle(jobCtx, workerCtxWithSpan, record); err != nil {
 		}
 	}()
 
@@ -343,9 +345,9 @@ func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker) preDequeueHook() (dequeueable bool, extraDequeueArguments interface{}, err error) {
+func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments interface{}, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
-		return o.PreDequeue(w.ctx)
+		return o.PreDequeue(ctx)
 	}
 
 	return true, nil, nil
