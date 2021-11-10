@@ -228,7 +228,10 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 
 	var errors error
 	for j := range jobs {
-		multierror.Append(errors, runJob(j))
+		err := runJob(j)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+		}
 	}
 	return errors
 }
