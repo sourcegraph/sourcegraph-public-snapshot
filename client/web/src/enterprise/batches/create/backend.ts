@@ -123,6 +123,16 @@ export function createBatchSpecFromRaw(
     )
 }
 
+export const CREATE_BATCH_SPEC_FROM_RAW = gql`
+    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
+        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
+            ...BatchSpecWithWorkspacesFields
+        }
+    }
+
+    ${fragment}
+`
+
 export function replaceBatchSpecInput(
     previousSpec: Scalars['ID'],
     spec: string

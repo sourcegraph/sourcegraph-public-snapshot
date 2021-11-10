@@ -26,6 +26,7 @@ import {
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import {
     SettingsCascadeOrError,
     SettingsCascadeProps,
@@ -42,13 +43,18 @@ import { Container, LoadingSpinner, PageHeader, useDebounce } from '@sourcegraph
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 import { BatchChangesIcon } from '../../../batches/icons'
-import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
+import {
+    BatchSpecWithWorkspacesFields,
+    CreateBatchSpecFromRawResult,
+    CreateBatchSpecFromRawVariables,
+} from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import {
     createBatchSpecFromRaw as _createBatchSpecFromRaw,
+    CREATE_BATCH_SPEC_FROM_RAW,
     executeBatchSpec,
     fetchBatchSpec,
     replaceBatchSpecInput,
@@ -86,15 +92,11 @@ const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOr
     }
 }
 
-interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
-    /* For testing only. */
-    createBatchSpecFromRaw?: typeof _createBatchSpecFromRaw
-}
+interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {}
 
 export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     isLightTheme,
     settingsCascade,
-    createBatchSpecFromRaw = _createBatchSpecFromRaw,
 }) => {
     const history = useHistory()
 
@@ -104,88 +106,38 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         defaultSelectedNamespace
     )
 
-    const [isLoading, setIsLoading] = useState<boolean | Error>(false)
-    const [previewID, setPreviewID] = useState<Scalars['ID']>()
-
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors } = useBatchSpecCode(helloWorldSample)
 
-    const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
-        if (!previewID) {
+    const [serverError, setServerError] = useState<Error>()
+    const [createBatchSpecFromRaw, { data, loading }] = useMutation<
+        CreateBatchSpecFromRawResult,
+        CreateBatchSpecFromRawVariables
+    >(CREATE_BATCH_SPEC_FROM_RAW, {})
+
+    const preview = useCallback(() => {
+        setServerError(undefined)
+        if (data?.createBatchSpecFromRaw.id) {
+            console.log("I'm done!", code)
             return
         }
-        setIsLoading(true)
-        try {
-            const execution = await executeBatchSpec(previewID)
-            history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
-        } catch (error) {
-            setIsLoading(error)
-        }
-    }, [previewID, history])
+        return createBatchSpecFromRaw({
+            variables: { spec: 'lmao I am not real', namespace: selectedNamespace.id },
+        }).catch(setServerError)
+    }, [code, selectedNamespace, createBatchSpecFromRaw, data?.createBatchSpecFromRaw.id])
 
-    // const preview = useObservable(
-    //     useMemo(
-    //         () =>
-    //             codeUpdates.pipe(
-    //                 startWith(code),
-    //                 distinctUntilChanged(),
-    //                 tap(() => {
-    //                     setPreviewStale(true)
-    //                 }),
-    //                 debounceTimeAfterFirst(250),
-    //                 map(code => {
-    //                     try {
-    //                         const parsedDocument = loadYAML(code)
-    //                         const valid = VALIDATE_SPEC(parsedDocument)
-    //                         setInvalid(!valid)
-    //                     } catch {
-    //                         setInvalid(true)
-    //                     }
-    //                     return code
-    //                 }),
-    //                 switchMap(code => {
-    //                     let specCreator: Observable<BatchSpecWithWorkspacesFields>
-    //                     if (preview !== undefined && !isErrorLike(preview)) {
-    //                         specCreator = replaceBatchSpecInput(preview.id, code)
-    //                     } else {
-    //                         specCreator = createBatchSpecFromRaw(code, selectedNamespace.id)
-    //                     }
-    //                     return specCreator.pipe(
-    //                         switchMap(spec =>
-    //                             concat(
-    //                                 of(spec),
-    //                                 fetchBatchSpec(spec.id).pipe(
-    //                                     // Poll the batch spec until resolution is complete or failed.
-    //                                     repeatWhen(completed => completed.pipe(delay(500))),
-    //                                     takeWhile(
-    //                                         response =>
-    //                                             !!response.workspaceResolution &&
-    //                                             (response.workspaceResolution.state ===
-    //                                                 BatchSpecWorkspaceResolutionState.QUEUED ||
-    //                                                 response.workspaceResolution.state ===
-    //                                                     BatchSpecWorkspaceResolutionState.PROCESSING),
-    //                                         true
-    //                                     )
-    //                                 )
-    //                             )
-    //                         ),
-    //                         catchError(error => [asError(error)])
-    //                     )
-    //                 }),
-    //                 tap(preview => {
-    //                     setPreviewStale(false)
-    //                     if (!isErrorLike(preview)) {
-    //                         setPreviewID(preview.id)
-    //                     } else {
-    //                         setPreviewID(undefined)
-    //                     }
-    //                 }),
-    //                 catchError(error => [asError(error)])
-    //             ),
-    //         // Don't want to trigger on changes to code, it's just the initial value.
-    //         // eslint-disable-next-line react-hooks/exhaustive-deps
-    //         [codeUpdates]
-    //     )
-    // )
+    // const history = useHistory()
+    // const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
+    //     if (!previewID) {
+    //         return
+    //     }
+    //     setIsLoading(true)
+    //     try {
+    //         const execution = await executeBatchSpec(previewID)
+    //         history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
+    //     } catch (error) {
+    //         setIsLoading(error)
+    //     }
+    // }, [previewID, history])
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
@@ -233,7 +185,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     {!isValid && errors.validation.length > 0 && (
                         <ErrorAlert error={`The entered spec is invalid:\n${errors.validation.join('\n')}`} />
                     )}
-                    <WorkspacesPreview batchSpecInput={debouncedCode} disabled={isValid !== true} />
+                    <WorkspacesPreview batchSpecInput={debouncedCode} disabled={isValid !== true} preview={preview} />
                 </Container>
             </div>
         </div>
