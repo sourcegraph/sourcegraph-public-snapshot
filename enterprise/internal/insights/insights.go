@@ -1,7 +1,6 @@
 package insights
 
 import (
-	"context"
 	"database/sql"
 	"log"
 	"os"
@@ -9,13 +8,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // IsEnabled tells if code insights are enabled or not.
@@ -34,24 +28,6 @@ func IsEnabled() bool {
 		return false
 	}
 	return true
-}
-
-// Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	if !IsEnabled() {
-		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
-			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
-		} else {
-			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights has been disabled")
-		}
-		return nil
-	}
-	timescale, err := InitializeCodeInsightsDB("frontend")
-	if err != nil {
-		return err
-	}
-	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
-	return nil
 }
 
 // InitializeCodeInsightsDB connects to and initializes the Code Insights Timescale DB, running

@@ -25,10 +25,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -51,6 +51,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"licensing":      licensing.Init,
 	"executor":       executor.Init,
 	"codeintel":      codeintel.Init,
+	"insights":       insights.Init,
 	"batches":        batches.Init,
 	"codemonitors":   codemonitors.Init,
 	"dotcom":         dotcom.Init,
@@ -84,9 +85,6 @@ func enterpriseSetupHook(db database.DB, outOfBandMigrationRunner *oobmigration.
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}
-
-	// Initialize the internal insights service.
-	insights.Init(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext)
 
 	return enterpriseServices
 }
