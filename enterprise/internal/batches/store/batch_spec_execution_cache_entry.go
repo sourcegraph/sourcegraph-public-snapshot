@@ -79,6 +79,8 @@ var createBatchSpecExecutionCacheEntryQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CreateBatchSpecExecutionCacheEntry
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
+ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_key_unique
+DO UPDATE SET value = EXCLUDED.value, created_at = EXCLUDED.created_at
 RETURNING %s
 `
 

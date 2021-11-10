@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -78,6 +79,31 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
+	})
+
+	t.Run("CreateWithConflictingKey", func(t *testing.T) {
+		clock.Add(1 * time.Minute)
+
+		keyConflict := &btypes.BatchSpecExecutionCacheEntry{
+			Key:   entries[0].Key,
+			Value: "new value",
+		}
+		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, keyConflict); err != nil {
+			t.Fatal(err)
+		}
+
+		reloaded, err := s.GetBatchSpecExecutionCacheEntry(ctx, GetBatchSpecExecutionCacheEntryOpts{Key: keyConflict.Key})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(reloaded, keyConflict); diff != "" {
+			t.Fatal(diff)
+		}
+
+		if reloaded.CreatedAt.Equal(entries[0].CreatedAt) {
+			t.Fatal("CreatedAt not updated")
+		}
 	})
 
 	t.Run("MarkUsedBatchSpecExecutionCacheEntry", func(t *testing.T) {
