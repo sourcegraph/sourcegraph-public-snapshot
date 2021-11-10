@@ -1193,7 +1193,9 @@ func (r *searchResolver) resultsRecursive(ctx context.Context, plan query.Plan) 
 
 	if sr != nil {
 		// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-		applySubRepoPerms(ctx, r.subRepoPerms, sr)
+		if r.subRepoPerms.Enabled() {
+			applySubRepoPerms(ctx, r.subRepoPerms, sr)
+		}
 
 		r.sortResults(sr.Matches)
 	}
