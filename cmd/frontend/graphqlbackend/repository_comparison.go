@@ -319,7 +319,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &FileDiffResolver{
-			db:       r.db,
+			db:       database.NewDB(r.db),
 			newFile:  r.newFile,
 			FileDiff: fileDiff,
 			Base:     r.base,
@@ -384,7 +384,7 @@ type FileDiffResolver struct {
 	Base     *GitCommitResolver
 	Head     *GitCommitResolver
 
-	db      dbutil.DB
+	db      database.DB
 	newFile NewFileFunc
 }
 
@@ -413,7 +413,7 @@ func (r *FileDiffResolver) OldFile() FileResolver {
 		return nil
 	}
 	return &GitTreeEntryResolver{
-		db:     database.NewDB(r.db),
+		db:     r.db,
 		commit: r.Base,
 		stat:   CreateFileInfo(r.FileDiff.OrigName, false),
 	}
