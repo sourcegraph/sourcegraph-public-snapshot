@@ -4,6 +4,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 root_dir=$(pwd)
 set -ex
 
+echo "--- JH trigger failure"
+exit 1
+
 if [ -z "$IMAGE" ]; then
   echo "Must specify \$IMAGE."
   exit 1
@@ -73,3 +76,4 @@ echo "--- coverage"
 yarn nyc report -r json
 # Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)
 ./dev/ci/codecov.sh -F e2e
+
