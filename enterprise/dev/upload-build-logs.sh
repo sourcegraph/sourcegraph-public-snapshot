@@ -40,6 +40,9 @@ else
   _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"
   wget $_base_url/sg_linux_amd64 -o sg_ci
   )
+
+  export BUILDKITE_API_TOKEN=$(gcloud secrets versions access latest --secret="BUILDKITE_API_TOKEN" --project="sourcegraph-ci" --quiet)
+  export BUILD_LOGS_LOKI_URL=$(gcloud secrets versions access latest --secret="BUILD_LOGS_LOKI_URL" --project="sourcegraph-ci" --quiet)
 fi
 
 echo "--- :file_cabinet: Uploading logs"
