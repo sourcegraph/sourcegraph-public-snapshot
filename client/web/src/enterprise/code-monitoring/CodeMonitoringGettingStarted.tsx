@@ -28,51 +28,45 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
 
     return (
         <div>
-            <div className={classNames('mb-5 card', styles.hero)}>
-                <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
-                <div className="d-flex flex-column flex-lg-row">
-                    <div className="w-100">
-                        <p className={classNames('mb-4')}>
-                            With code monitoring, you can automatically track changes made across multiple code hosts
-                            and repositories.
-                        </p>
-
-                        <h3>Common use cases</h3>
-                        <ul>
-                            <li>Identify when bad patterns are committed </li>
-                            <li>Identify use of deprecated libraries</li>
-                        </ul>
-                        {isSignedIn ? (
-                            <Link
-                                to="/code-monitoring/new"
-                                className={classNames('btn btn-primary', styles.createButton)}
-                            >
-                                <PlusIcon className="icon-inline mr-2" />
-                                Create a code monitor
-                            </Link>
-                        ) : (
-                            <CodeMonitorSignUpLink
-                                className={styles.createButton}
-                                eventName="SignUpPLGMonitor_GettingStarted"
-                                text="Sign up to create a code monitor"
-                            />
-                        )}
-                    </div>
-                    <p className="w-100 align-self-center mt-3 mt-lg-0 ml-lg-3 mb-0">
-                        We are currently working on increasing the performance and fidelity of Code Monitors to work
-                        with more sensitive workloads like a large number of repositories or auditing published code for
-                        secrets.
+            <div className={classNames('mb-5 card flex-lg-row align-items-start', styles.hero)}>
+                <div className="w-100">
+                    <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
+                    <p className={classNames('mb-4')}>
+                        With code monitoring, you can automatically track changes made across multiple code hosts and
+                        repositories.
                     </p>
+
+                    <h3>Common use cases</h3>
+                    <ul>
+                        <li>Identify when bad patterns are committed </li>
+                        <li>Identify use of deprecated libraries</li>
+                    </ul>
+                    {isSignedIn ? (
+                        <Link to="/code-monitoring/new" className={classNames('btn btn-primary', styles.createButton)}>
+                            <PlusIcon className="icon-inline mr-2" />
+                            Create a code monitor
+                        </Link>
+                    ) : (
+                        <CodeMonitorSignUpLink
+                            className={styles.createButton}
+                            eventName="SignUpPLGMonitor_GettingStarted"
+                            text="Sign up to create a code monitor"
+                        />
+                    )}
                 </div>
+                <p className={classNames('alert alert-info mt-3 mt-lg-0 ml-lg-3 mb-0', styles.alert)}>
+                    We are currently working on increasing the performance and fidelity of Code Monitors to work with
+                    more sensitive workloads like a large number of repositories or auditing published code for secrets.
+                </p>
             </div>
             <div className={classNames('container', styles.startingPointsContainer)}>
                 <h3 className="mb-3">Starting points for your first monitor</h3>
                 <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
                     <div className={classNames('col-6', styles.startingPoint)}>
                         <div className="card h-100">
-                            <div className="card-body p-3 d-flex">
+                            <div className="card-body p-3 d-flex flex-column flex-md-row">
                                 <img
-                                    className="mr-3"
+                                    className="mr-3 mt-3 mb-3 pt-1 pb-1"
                                     src={`${assetsRoot}/img/codemonitoring-search-${
                                         isLightTheme ? 'light' : 'dark'
                                     }.svg`}
@@ -91,7 +85,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                     </div>
                     <div className={classNames('col-6', styles.startingPoint)}>
                         <div className="card h-100">
-                            <div className="card-body p-3 d-flex">
+                            <div className="card-body p-3 d-flex flex-column flex-md-row">
                                 <img
                                     src={`${assetsRoot}/img/codemonitoring-notify-${
                                         isLightTheme ? 'light' : 'dark'
