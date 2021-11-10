@@ -86,10 +86,11 @@ export const parseType = (grants?: {
  * @param visibility {string} - Usually the user or organization id
  * @returns - A properly formatted grants object
  */
-export const parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
+export const parseGrants = (input: DashboardCreateInput): InsightsPermissionGrantsInput => {
     const grants: InsightsPermissionGrantsInput = {}
+    const { type, userIds, visibility } = input
     if (type === 'personal') {
-        grants.users = [visibility]
+        grants.users = userIds || []
     }
     if (type === 'organization') {
         grants.organizations = [visibility]
@@ -384,7 +385,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
         this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId)))
 
-    public findDashboardByName = errorMockMethod('findDashboardByName')
+    // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
+    // So we just return null to get the form to always accept.
+    public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
     public createDashboard = (input: DashboardCreateInput): Observable<void> => {
         if (!input.type) {
@@ -393,7 +396,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
-            grants: parseGrants(input.type, input.visibility),
+            grants: parseGrants(input),
         }
 
         return from(
@@ -442,7 +445,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
-            grants: parseGrants(nextDashboardInput.type, nextDashboardInput.visibility),
+            grants: parseGrants(nextDashboardInput),
         }
 
         return from(
