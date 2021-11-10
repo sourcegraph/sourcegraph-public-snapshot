@@ -11,7 +11,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { parseType } from '../../../../../core/backend/code-insights-gql-backend'
+import { parseDashboardType } from '../../../../../core/backend/utils/parse-dashboard-type'
 import { SettingsBasedInsightDashboard } from '../../../../../core/types'
 
 import styles from './AddInsightModal.module.scss'
@@ -47,7 +47,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
-            const type = dashboard.grants && parseType(dashboard.grants)
+            const type = dashboard.grants && parseDashboardType(dashboard.grants)
 
             await updateDashboard({
                 previousDashboard: dashboard,

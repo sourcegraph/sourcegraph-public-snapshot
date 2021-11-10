@@ -1,4 +1,4 @@
-import { ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
+import { ApolloClient, gql } from '@apollo/client'
 import { from, Observable, of, throwError } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
@@ -11,11 +11,9 @@ import {
     CreateInsightResult,
     CreateInsightsDashboardInput,
     DeleteDashboardResult,
-    GetInsightResult,
     GetInsightsResult,
-    InsightFields,
+    GetInsightViewResult,
     InsightsDashboardsResult,
-    InsightsPermissionGrantsInput,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     UpdateDashboardResult,
@@ -32,6 +30,7 @@ import {
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { InsightStillProcessingError } from './api/get-backend-insight'
+import { getBuiltInInsight } from './api/get-built-in-insight'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from './api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
@@ -49,115 +48,15 @@ import {
     InsightUpdateInput,
     ReachableInsight,
 } from './code-insights-backend-types'
-import { createViewContent } from './utils/create-view-content'
+import { GET_INSIGHTS_GQL } from './gql/GetInsights'
+import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
+import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
+import { createLineChartContent } from './utils/create-line-chart-content'
+import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView, getStepInterval } from './utils/insight-transformers'
+import { parseDashboardType } from './utils/parse-dashboard-type'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
-
-/**
- * Helper function to parse the dashboard type from the grants object.
- * TODO: Remove this function when settings api is deprecated
- *
- * @param grants {object} - A grants object from an insight dashboard
- * @param grants.global {boolean}
- * @param grants.users {string[]}
- * @param grants.organizations {string[]}
- * @returns - The type of the dashboard
- */
-export const parseType = (grants?: {
-    global?: boolean
-    users?: string[]
-    organizations?: string[]
-}): InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global => {
-    if (grants?.global) {
-        return InsightsDashboardType.Global
-    }
-    if (grants?.organizations?.length) {
-        return InsightsDashboardType.Organization
-    }
-    return InsightsDashboardType.Personal
-}
-
-/**
- * Helper function to parse a grants object from a given type and visibility.
- * TODO: Remove this function when settings api is deprecated
- *
- * @param type {('personal'|'organization'|'global')} - The type of the dashboard
- * @param visibility {string} - Usually the user or organization id
- * @returns - A properly formatted grants object
- */
-export const parseGrants = (input: DashboardCreateInput): InsightsPermissionGrantsInput => {
-    const grants: InsightsPermissionGrantsInput = {}
-    const { type, userIds, visibility } = input
-    if (type === 'personal') {
-        grants.users = userIds || []
-    }
-    if (type === 'organization') {
-        grants.organizations = [visibility]
-    }
-    if (type === 'global') {
-        grants.global = true
-    }
-
-    return grants
-}
-
-const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
-    id: insight.id,
-    title: insight.presentation.title,
-    series: insight.dataSeries.map(series => ({
-        label: series.label,
-        points: series.points,
-        status: series.status,
-    })),
-})
-
-const insightViewsFieldsFragment = gql`
-    fragment InsightViewsFields on InsightView {
-        id
-        presentation {
-            __typename
-            ... on LineChartInsightViewPresentation {
-                title
-                seriesPresentation {
-                    seriesId
-                    label
-                    color
-                }
-            }
-        }
-        dataSeries {
-            seriesId
-            label
-            points {
-                dateTime
-                value
-            }
-            status {
-                totalPoints
-                pendingJobs
-                completedJobs
-                failedJobs
-                backfillQueuedAt
-            }
-        }
-        dataSeriesDefinitions {
-            ... on SearchInsightDataSeriesDefinition {
-                seriesId
-                query
-                repositoryScope {
-                    repositories
-                }
-                timeScope {
-                    ... on InsightIntervalTimeScope {
-                        unit
-                        value
-                    }
-                }
-            }
-        }
-    }
-`
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
@@ -165,18 +64,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = (ids?: string[]): Observable<Insight[]> =>
         fromObservableQuery(
-            this.apolloClient.watchQuery<GetInsightsResult>({
-                query: gql`
-                    query GetInsights {
-                        insightViews {
-                            nodes {
-                                ...InsightViewsFields
-                            }
-                        }
-                    }
-                    ${insightViewsFieldsFragment}
-                `,
-            })
+            this.apolloClient.watchQuery<GetInsightsResult>({ query: GET_INSIGHTS_GQL })
         ).pipe(
             map(({ data }) => {
                 const insightViews = data.insightViews.nodes.map(getInsightView)
@@ -189,25 +77,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    private getInsightView = (id: string): Observable<ApolloQueryResult<GetInsightResult>> =>
+    public getInsightById = (id: string): Observable<Insight | null> =>
         fromObservableQuery(
-            this.apolloClient.watchQuery<GetInsightResult>({
-                query: gql`
-                    query GetInsight($id: ID!) {
-                        insightViews(id: $id) {
-                            nodes {
-                                ...InsightViewsFields
-                            }
-                        }
-                    }
-                    ${insightViewsFieldsFragment}
-                `,
+            this.apolloClient.watchQuery<GetInsightsResult>({
+                query: GET_INSIGHTS_GQL,
                 variables: { id },
             })
-        )
-
-    public getInsightById = (id: string): Observable<Insight | null> =>
-        this.getInsightView(id).pipe(
+        ).pipe(
             map(({ data }) => {
                 const insightData = data.insightViews.nodes[0]
 
@@ -239,43 +115,37 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
     // fit with both of those shapes.
     public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> =>
-        this.getInsightView(insight.id).pipe(
+        from(
+            this.apolloClient.query<GetInsightViewResult>({
+                query: GET_INSIGHT_VIEW_GQL,
+                variables: { id: insight.id },
+            })
+        ).pipe(
             // Note: this insight is guaranteed to exist since this function
             // is only called from within a loop of insight ids
-            map(({ data }) => ({
-                insight: getInsightView(data.insightViews.nodes[0]) as SearchBasedInsight,
-                insightFields: mapInsightFields(data.insightViews.nodes[0]),
-            })),
-            switchMap(({ insight, insightFields }) => {
-                if (!insight) {
+            map(({ data }) => data.insightViews.nodes[0]),
+            switchMap(data => {
+                if (!data) {
                     return throwError(new InsightStillProcessingError())
                 }
 
-                return of({ insight, insightFields })
+                return of(data)
             }),
-            map(({ insight, insightFields }) => ({
+            map(data => ({
                 id: insight.id,
                 view: {
                     title: insight.title ?? insight.title,
-                    subtitle: '', // TODO: is this still used anywhere?
-                    content: [
-                        createViewContent(
-                            {
-                                id: insight.id,
-                                title: insight.title,
-                                series: insightFields.series,
-                            },
-                            insight.series
-                        ),
-                    ],
-                    isFetchingHistoricalData: insightFields.series.some(
+                    // TODO: is this still used anywhere?
+                    subtitle: '',
+                    content: [createLineChartContent({ series: data.dataSeries }, insight.series)],
+                    isFetchingHistoricalData: data.dataSeries.some(
                         ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
                     ),
                 },
             }))
         )
 
-    public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
+    public getBuiltInInsightData = getBuiltInInsight
 
     // We don't have insight visibility and subject levels in the new GQL API anymore.
     // it was part of setting-cascade based API.
@@ -342,41 +212,21 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getDashboards = (): Observable<InsightDashboard[]> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<InsightsDashboardsResult>({
-                query: gql`
-                    query InsightsDashboards {
-                        insightsDashboards {
-                            nodes {
-                                id
-                                title
-                                views {
-                                    nodes {
-                                        id
-                                    }
-                                }
-                                grants {
-                                    users
-                                    organizations
-                                    global
-                                }
-                            }
-                        }
-                    }
-                `,
+                query: GET_INSIGHTS_DASHBOARDS_GQL,
             })
         ).pipe(
             map(({ data }) => [
                 {
                     id: 'all',
                     type: InsightsDashboardType.All,
-                    insightIds: [],
                 },
                 ...data.insightsDashboards.nodes.map(
                     (dashboard): InsightDashboard => ({
                         id: dashboard.id,
+                        type: parseDashboardType(dashboard.grants),
                         title: dashboard.title,
                         insightIds: dashboard.views?.nodes.map(view => view.id),
                         grants: dashboard.grants,
-                        type: parseType(dashboard.grants),
                     })
                 ),
             ])
@@ -396,7 +246,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
-            grants: parseGrants(input),
+            grants: createDashboardGrants(input),
         }
 
         return from(
@@ -445,7 +295,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
-            grants: parseGrants(nextDashboardInput),
+            grants: createDashboardGrants(nextDashboardInput),
         }
 
         return from(
