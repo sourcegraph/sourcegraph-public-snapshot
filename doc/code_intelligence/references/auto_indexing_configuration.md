@@ -22,7 +22,7 @@ The shared steps field defines an ordered sequence of pre-indexing actions (form
 
 ## Examples
 
-In the following example, we have a repository configured to index three different projects: `cmd/foo`, `cmd/bar`, and `cmd/baz`. These projects are executed concurrently by free executor processes. Each index job shares a common setup step that runs a `setup.sh` script in the root of the repository and installs Go dependencies. The index job for `cmd/bar` additionally require sa codegen step, which is performed after the shared step but before the indexer invocation.
+In the following example, we have a repository configured to index three different projects: `cmd/foo`, `cmd/bar`, and `cmd/baz`. These projects are executed concurrently by available executor processes. Each index job shares an initial step that runs a `setup.sh` script in the root of the repository and installs Go dependencies. The index job for `cmd/bar` additionally requires a code generation step, which is performed after the shared step but before the indexer invocation.
 
 ```yaml
 shared_steps:
