@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 var timeNow = time.Now
@@ -42,7 +41,7 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 }
 
 type userEmailResolver struct {
-	db        dbutil.DB
+	db        database.DB
 	userEmail database.UserEmail
 	user      *UserResolver
 }
@@ -64,7 +63,7 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
 		return false, err

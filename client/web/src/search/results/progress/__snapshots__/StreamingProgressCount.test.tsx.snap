@@ -13,7 +13,7 @@ exports[`StreamingProgressCount should not render a trace link when not opted in
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
+    className="d-flex align-items-center count countInProgress"
   >
     0
      
@@ -38,7 +38,7 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
+    className="d-flex align-items-center count countInProgress"
   >
     0
      
@@ -64,7 +64,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
+    className="d-flex align-items-center count countInProgress"
   >
     0
      
@@ -95,7 +95,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center"
+    className="d-flex align-items-center count"
   >
     1
      
@@ -126,7 +126,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center"
+    className="d-flex align-items-center count"
   >
     123
      
@@ -157,7 +157,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center"
+    className="d-flex align-items-center count"
   >
     1.2m
      
@@ -195,7 +195,7 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
   state="complete"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center"
+    className="d-flex align-items-center count"
   >
     123
     +
@@ -228,7 +228,7 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
   state="loading"
 >
   <small
-    className="streaming-progress__count d-flex align-items-center streaming-progress__count--in-progress"
+    className="d-flex align-items-center count countInProgress"
   >
     0
      

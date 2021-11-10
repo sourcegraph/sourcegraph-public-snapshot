@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -252,13 +253,20 @@ type softFailExitStatus struct {
 
 // SoftFail indicates the specified exit codes should trigger a soft fail.
 // https://buildkite.com/docs/pipelines/command-step#command-step-attributes
+// This function also adds a specific env var named SOFT_FAIL_EXIT_CODES, enabling
+// to get exit codes from the scripts until https://github.com/sourcegraph/sourcegraph/issues/27264
+// is fixed.
 func SoftFail(exitCodes ...int) StepOpt {
 	return func(step *Step) {
+		var codes []string
 		for _, code := range exitCodes {
+			codes = append(codes, strconv.Itoa(code))
 			step.SoftFail = append(step.SoftFail, softFailExitStatus{
 				ExitStatus: code,
 			})
 		}
+		// https://github.com/sourcegraph/sourcegraph/issues/27264
+		step.Env["SOFT_FAIL_EXIT_CODES"] = strings.Join(codes, " ")
 	}
 }
 

@@ -127,10 +127,13 @@ Click reload for Sourcegraph at `about:debugging`
 
 ## Testing
 
-- Unit tests: `yarn test`
-- E2E tests: `yarn test-e2e`
+- Unit tests: `sg test bext`
+- Integration tests: `sg test bext-integration`
+- E2E tests:
+  - `EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build`
+  - `sg test bext-e2e`
 
-### e2e tests
+### E2E tests
 
 The test suite in `end-to-end/github.test.ts` runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
 

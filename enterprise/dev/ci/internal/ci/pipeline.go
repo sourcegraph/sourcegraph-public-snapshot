@@ -218,11 +218,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			serverQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
 
-		// Upload logs up to this point
-		if c.RunType.Is(MainBranch) {
-			ops.Append(uploadBuildLogs("builds-and-tests"))
-		}
-
 		// All operations before this point are required
 		ops.Append(wait)
 
@@ -238,17 +233,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 
-		// Upload logs up to this point
-		if c.RunType.Is(MainBranch) {
-			ops.Append(uploadBuildLogs("publish"))
-		}
-
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
 			ops.Append(
 				wait, // wait for all steps to pass
-				triggerUpdaterPipeline,
-				uploadBuildLogs("updater"))
+				triggerUpdaterPipeline)
 		}
 	}
 

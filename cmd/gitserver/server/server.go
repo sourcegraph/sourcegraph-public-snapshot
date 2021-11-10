@@ -947,14 +947,14 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Run the search
-	limitHit, err := s.search(ctx, &args, matchesBuf)
-	if err := eventWriter.Event("done", protocol.NewSearchEventDone(false, err)); err != nil {
-		log15.Warn("failed to send done event", "error", err)
+	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
+	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
+		log15.Error("failed to send done event", "error", writeErr)
 	}
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
-	tr.SetError(err)
+	tr.SetError(searchErr)
 	searchDuration.
-		WithLabelValues(strconv.FormatBool(err != nil)).
+		WithLabelValues(strconv.FormatBool(searchErr != nil)).
 		Observe(time.Since(searchStart).Seconds())
 
 	if honey.Enabled() || traceLogs {
@@ -968,8 +968,8 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		ev.AddField("query", args.Query.String())
 		ev.AddField("limit", args.Limit)
 		ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
-		if err != nil {
-			ev.AddField("error", err.Error())
+		if searchErr != nil {
+			ev.AddField("error", searchErr.Error())
 		}
 		if traceID := trace.ID(ctx); traceID != "" {
 			ev.AddField("traceID", traceID)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/google/zoekt"
 	"github.com/prometheus/client_golang/prometheus"
@@ -72,6 +73,10 @@ type searchIndexerServer struct {
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
+
+	// MinLastChangedEnabled is a feature flag for enabling more efficient
+	// polling by zoekt.
+	MinLastChangedEnabled bool
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -106,9 +111,23 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		return nil
 	}
 
+	var minLastChanged time.Time
+	if h.MinLastChangedEnabled {
+		var err error
+		minLastChanged, err = searchbackend.ParseAndSetConfigFingerprint(w, r, &siteConfig)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Preload repos to support fast lookups by repo ID.
 	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
 		IDs: indexedIDs,
+		// When minLastChanged is non-zero we will only return the
+		// repositories that have changed since minLastChanged. This takes
+		// into account repo metadata, repo content and search context
+		// changes.
+		MinLastChanged: minLastChanged,
 		// Not needed here and expensive to compute for so many repos.
 		ExcludeSources: true,
 	})

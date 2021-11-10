@@ -44,19 +44,15 @@ type MockDBStore struct {
 	// UpdateCommitedAtFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateCommitedAt.
 	UpdateCommitedAtFunc *DBStoreUpdateCommitedAtFunc
-	// UpdateDependencyNumReferencesFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// UpdateDependencyNumReferences.
-	UpdateDependencyNumReferencesFunc *DBStoreUpdateDependencyNumReferencesFunc
-	// UpdateNumReferencesFunc is an instance of a mock function object
-	// controlling the behavior of the method UpdateNumReferences.
-	UpdateNumReferencesFunc *DBStoreUpdateNumReferencesFunc
 	// UpdatePackageReferencesFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdatePackageReferences.
 	UpdatePackageReferencesFunc *DBStoreUpdatePackageReferencesFunc
 	// UpdatePackagesFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdatePackages.
 	UpdatePackagesFunc *DBStoreUpdatePackagesFunc
+	// UpdateReferenceCountsFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateReferenceCounts.
+	UpdateReferenceCountsFunc *DBStoreUpdateReferenceCountsFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *DBStoreWithFunc
@@ -106,16 +102,6 @@ func NewMockDBStore() *MockDBStore {
 				return nil
 			},
 		},
-		UpdateDependencyNumReferencesFunc: &DBStoreUpdateDependencyNumReferencesFunc{
-			defaultHook: func(context.Context, []int, bool) error {
-				return nil
-			},
-		},
-		UpdateNumReferencesFunc: &DBStoreUpdateNumReferencesFunc{
-			defaultHook: func(context.Context, []int) error {
-				return nil
-			},
-		},
 		UpdatePackageReferencesFunc: &DBStoreUpdatePackageReferencesFunc{
 			defaultHook: func(context.Context, int, []precise.PackageReference) error {
 				return nil
@@ -123,6 +109,11 @@ func NewMockDBStore() *MockDBStore {
 		},
 		UpdatePackagesFunc: &DBStoreUpdatePackagesFunc{
 			defaultHook: func(context.Context, int, []precise.Package) error {
+				return nil
+			},
+		},
+		UpdateReferenceCountsFunc: &DBStoreUpdateReferenceCountsFunc{
+			defaultHook: func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error {
 				return nil
 			},
 		},
@@ -162,17 +153,14 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		UpdateCommitedAtFunc: &DBStoreUpdateCommitedAtFunc{
 			defaultHook: i.UpdateCommitedAt,
 		},
-		UpdateDependencyNumReferencesFunc: &DBStoreUpdateDependencyNumReferencesFunc{
-			defaultHook: i.UpdateDependencyNumReferences,
-		},
-		UpdateNumReferencesFunc: &DBStoreUpdateNumReferencesFunc{
-			defaultHook: i.UpdateNumReferences,
-		},
 		UpdatePackageReferencesFunc: &DBStoreUpdatePackageReferencesFunc{
 			defaultHook: i.UpdatePackageReferences,
 		},
 		UpdatePackagesFunc: &DBStoreUpdatePackagesFunc{
 			defaultHook: i.UpdatePackages,
+		},
+		UpdateReferenceCountsFunc: &DBStoreUpdateReferenceCountsFunc{
+			defaultHook: i.UpdateReferenceCounts,
 		},
 		WithFunc: &DBStoreWithFunc{
 			defaultHook: i.With,
@@ -1039,225 +1027,6 @@ func (c DBStoreUpdateCommitedAtFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// DBStoreUpdateDependencyNumReferencesFunc describes the behavior when the
-// UpdateDependencyNumReferences method of the parent MockDBStore instance
-// is invoked.
-type DBStoreUpdateDependencyNumReferencesFunc struct {
-	defaultHook func(context.Context, []int, bool) error
-	hooks       []func(context.Context, []int, bool) error
-	history     []DBStoreUpdateDependencyNumReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateDependencyNumReferences delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdateDependencyNumReferences(v0 context.Context, v1 []int, v2 bool) error {
-	r0 := m.UpdateDependencyNumReferencesFunc.nextHook()(v0, v1, v2)
-	m.UpdateDependencyNumReferencesFunc.appendCall(DBStoreUpdateDependencyNumReferencesFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// UpdateDependencyNumReferences method of the parent MockDBStore instance
-// is invoked and the hook queue is empty.
-func (f *DBStoreUpdateDependencyNumReferencesFunc) SetDefaultHook(hook func(context.Context, []int, bool) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateDependencyNumReferences method of the parent MockDBStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *DBStoreUpdateDependencyNumReferencesFunc) PushHook(hook func(context.Context, []int, bool) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreUpdateDependencyNumReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []int, bool) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreUpdateDependencyNumReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []int, bool) error {
-		return r0
-	})
-}
-
-func (f *DBStoreUpdateDependencyNumReferencesFunc) nextHook() func(context.Context, []int, bool) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreUpdateDependencyNumReferencesFunc) appendCall(r0 DBStoreUpdateDependencyNumReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// DBStoreUpdateDependencyNumReferencesFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreUpdateDependencyNumReferencesFunc) History() []DBStoreUpdateDependencyNumReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreUpdateDependencyNumReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreUpdateDependencyNumReferencesFuncCall is an object that describes
-// an invocation of method UpdateDependencyNumReferences on an instance of
-// MockDBStore.
-type DBStoreUpdateDependencyNumReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 bool
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreUpdateDependencyNumReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreUpdateDependencyNumReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBStoreUpdateNumReferencesFunc describes the behavior when the
-// UpdateNumReferences method of the parent MockDBStore instance is invoked.
-type DBStoreUpdateNumReferencesFunc struct {
-	defaultHook func(context.Context, []int) error
-	hooks       []func(context.Context, []int) error
-	history     []DBStoreUpdateNumReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// UpdateNumReferences delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDBStore) UpdateNumReferences(v0 context.Context, v1 []int) error {
-	r0 := m.UpdateNumReferencesFunc.nextHook()(v0, v1)
-	m.UpdateNumReferencesFunc.appendCall(DBStoreUpdateNumReferencesFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the UpdateNumReferences
-// method of the parent MockDBStore instance is invoked and the hook queue
-// is empty.
-func (f *DBStoreUpdateNumReferencesFunc) SetDefaultHook(hook func(context.Context, []int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateNumReferences method of the parent MockDBStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *DBStoreUpdateNumReferencesFunc) PushHook(hook func(context.Context, []int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreUpdateNumReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, []int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreUpdateNumReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, []int) error {
-		return r0
-	})
-}
-
-func (f *DBStoreUpdateNumReferencesFunc) nextHook() func(context.Context, []int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreUpdateNumReferencesFunc) appendCall(r0 DBStoreUpdateNumReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreUpdateNumReferencesFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreUpdateNumReferencesFunc) History() []DBStoreUpdateNumReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreUpdateNumReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreUpdateNumReferencesFuncCall is an object that describes an
-// invocation of method UpdateNumReferences on an instance of MockDBStore.
-type DBStoreUpdateNumReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreUpdateNumReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreUpdateNumReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // DBStoreUpdatePackageReferencesFunc describes the behavior when the
 // UpdatePackageReferences method of the parent MockDBStore instance is
 // invoked.
@@ -1475,6 +1244,116 @@ func (c DBStoreUpdatePackagesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreUpdatePackagesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBStoreUpdateReferenceCountsFunc describes the behavior when the
+// UpdateReferenceCounts method of the parent MockDBStore instance is
+// invoked.
+type DBStoreUpdateReferenceCountsFunc struct {
+	defaultHook func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error
+	hooks       []func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error
+	history     []DBStoreUpdateReferenceCountsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateReferenceCounts delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) UpdateReferenceCounts(v0 context.Context, v1 []int, v2 dbstore.DependencyReferenceCountUpdateType) error {
+	r0 := m.UpdateReferenceCountsFunc.nextHook()(v0, v1, v2)
+	m.UpdateReferenceCountsFunc.appendCall(DBStoreUpdateReferenceCountsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateReferenceCounts method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreUpdateReferenceCountsFunc) SetDefaultHook(hook func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateReferenceCounts method of the parent MockDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreUpdateReferenceCountsFunc) PushHook(hook func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreUpdateReferenceCountsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreUpdateReferenceCountsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error {
+		return r0
+	})
+}
+
+func (f *DBStoreUpdateReferenceCountsFunc) nextHook() func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreUpdateReferenceCountsFunc) appendCall(r0 DBStoreUpdateReferenceCountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreUpdateReferenceCountsFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreUpdateReferenceCountsFunc) History() []DBStoreUpdateReferenceCountsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreUpdateReferenceCountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreUpdateReferenceCountsFuncCall is an object that describes an
+// invocation of method UpdateReferenceCounts on an instance of MockDBStore.
+type DBStoreUpdateReferenceCountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 dbstore.DependencyReferenceCountUpdateType
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreUpdateReferenceCountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreUpdateReferenceCountsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

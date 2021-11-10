@@ -3,7 +3,6 @@ package authz
 import (
 	"context"
 	"path"
-	"sync/atomic"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
@@ -12,29 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
-
-var (
-	subRepoPermsEnabledFlag int32
-)
-
-func init() {
-	// We need to check whether sub-repo permissions are enabled often so we cache
-	// the config value locally and only update it when it changes.
-	//
-	// This will be removed once sub-repo perms are no longer experimental.
-	go conf.Watch(func() {
-		c := conf.Get()
-		if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableSubRepoPermissions {
-			atomic.StoreInt32(&subRepoPermsEnabledFlag, 1)
-		} else {
-			atomic.StoreInt32(&subRepoPermsEnabledFlag, 0)
-		}
-	})
-}
-
-func subRepoPermsEnabled() bool {
-	return atomic.LoadInt32(&subRepoPermsEnabledFlag) == 1
-}
 
 // RepoContent specifies data existing in a repo. It currently only supports
 // paths but will be extended in future to support other pieces of metadata, for
@@ -54,6 +30,9 @@ type SubRepoPermissionChecker interface {
 	//
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
 	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
+
+	// Enabled indicates whether sub-repo permissions are enabled.
+	Enabled() bool
 }
 
 var _ SubRepoPermissionChecker = &subRepoPermsClient{}
@@ -91,7 +70,7 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *subRepoP
 
 func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	// Are sub-repo permissions enabled at the site level
-	if !subRepoPermsEnabled() {
+	if !s.Enabled() {
 		return Read, nil
 	}
 
@@ -162,6 +141,11 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	return None, nil
 }
 
+func (s *subRepoPermsClient) Enabled() bool {
+	c := conf.Get()
+	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableSubRepoPermissions
+}
+
 // CurrentUserPermissions returns the level of access the authenticated user within
 // the provided context has for the requested content by calling ActorPermissions.
 func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, content RepoContent) (Perms, error) {
@@ -176,15 +160,15 @@ func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, con
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
-	if !subRepoPermsEnabled() {
+	if !s.Enabled() {
 		return Read, nil
 	}
 
-	if !a.IsAuthenticated() {
-		return None, &ErrUnauthenticated{}
-	}
 	if a.IsInternal() {
 		return Read, nil
+	}
+	if !a.IsAuthenticated() {
+		return None, &ErrUnauthenticated{}
 	}
 
 	return s.Permissions(ctx, a.UID, content)

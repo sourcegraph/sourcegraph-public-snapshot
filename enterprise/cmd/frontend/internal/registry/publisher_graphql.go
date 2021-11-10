@@ -27,7 +27,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db dbutil.DB) ([]gra
 	}
 
 	var publishers []graphqlbackend.RegistryPublisher
-	user, err := graphqlbackend.CurrentUser(ctx, db)
+	user, err := graphqlbackend.CurrentUser(ctx, database.NewDB(db))
 	if err != nil || user == nil {
 		return nil, err
 	}
