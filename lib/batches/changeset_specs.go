@@ -1,10 +1,12 @@
 package batches
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -169,6 +171,45 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 	}
 
 	return specs, nil
+}
+
+type RepoFetcher func(context.Context, []string) (map[string]string, error)
+
+func BuildImportChangesetSpecs(ctx context.Context, importChangesets []ImportChangeset, repoFetcher RepoFetcher) (specs []*ChangesetSpec, errs error) {
+	if len(importChangesets) == 0 {
+		return nil, nil
+	}
+
+	var repoNames []string
+	for _, ic := range importChangesets {
+		repoNames = append(repoNames, ic.Repository)
+	}
+
+	repoNameIDs, err := repoFetcher(ctx, repoNames)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ic := range importChangesets {
+		repoID, ok := repoNameIDs[ic.Repository]
+		if !ok {
+			errs = multierror.Append(errs, errors.Newf("repository %q not found", ic.Repository))
+			continue
+		}
+		for _, id := range ic.ExternalIDs {
+			extID, err := ParseChangesetSpecExternalID(id)
+			if err != nil {
+				errs = multierror.Append(errs, err)
+				continue
+			}
+			specs = append(specs, &ChangesetSpec{
+				BaseRepository: repoID,
+				ExternalID:     extID,
+			})
+		}
+	}
+
+	return specs, errs
 }
 
 func groupsForRepository(repoName string, transform *TransformChanges) []Group {

@@ -63,4 +63,13 @@
             background-color: var(--primary);
         }
     }
+
+    &--non-interactive {
+        /* marked !important to overwrite .btn's cursor property */
+        cursor: unset !important;
+
+        &:not(.toggle--active):hover {
+            background-color: transparent;
+        }
+    }
 }

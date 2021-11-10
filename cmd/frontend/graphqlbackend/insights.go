@@ -29,6 +29,8 @@ type InsightsResolver interface {
 	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 	UpdateLineChartSearchInsight(ctx context.Context, args *UpdateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
+	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
+
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
@@ -260,6 +262,7 @@ type CreateLineChartSearchInsightArgs struct {
 type CreateLineChartSearchInsightInput struct {
 	DataSeries []LineChartSearchInsightDataSeriesInput
 	Options    LineChartOptionsInput
+	Dashboards *[]graphql.ID
 }
 
 type UpdateLineChartSearchInsightArgs struct {
@@ -321,4 +324,8 @@ type InsightViewQueryArgs struct {
 	After   *string
 	Id      *graphql.ID
 	Filters *InsightViewFiltersInput
+}
+
+type DeleteInsightViewArgs struct {
+	Id graphql.ID
 }

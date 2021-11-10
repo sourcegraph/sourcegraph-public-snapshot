@@ -80,9 +80,9 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	}
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
-	sm.Handle("/.api/", apiHandler)
-	sm.Handle("/.executors/", executorProxyHandler)
-	sm.Handle("/", appHandler)
+	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
+	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
+	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
 	assetsutil.Mount(sm)
 
 	var h http.Handler = sm
@@ -96,7 +96,6 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	h = middleware.Trace(h)
 	h = gcontext.ClearHandler(h)
 	h = healthCheckMiddleware(h)
-	h = secureHeadersMiddleware(h)
 	h = middleware.BlackHole(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
@@ -159,11 +158,38 @@ func withInternalActor(h http.Handler) http.Handler {
 // for more information on this technique.
 const corsAllowHeader = "X-Requested-With"
 
+// crossOriginPolicy describes the cross-origin policy the middleware should be enforcing.
+type crossOriginPolicy string
+
+const (
+	// crossOriginPolicyAPI describes that the middleware should handle cross origin requests as a
+	// public API. That is, cross-origin requests are allowed from any domain but
+	// cookie/session-based authentication is only allowed if the origin is in the configured
+	/// allow-list of origins. Otherwise, only access token authentication is permitted.
+	//
+	// This is to be used for all /.api routes, such as our GraphQL and search streaming APIs as we
+	// want third-party websites (such as e.g. github1s.com, or internal tools for on-prem
+	// customers) to be able to leverage our API. Their users will need to provide an access token,
+	// or the website would need to be added to Sourcegraph's CORS allow list in order to be granted
+	// cookie/session-based authentication (which is dangerous to expose to untrusted domains.)
+	crossOriginPolicyAPI crossOriginPolicy = "API"
+
+	// crossOriginPolicyNever describes that the middleware should handle cross origin requests by
+	// never allowing them. This makes sense for e.g. routes such as e.g. sign out pages, where
+	// cookie based authentication is needed and requests should never come from a domain other than
+	// the Sourcegraph instance itself.
+	//
+	// Important: This only applies to cross-origin requests issued by clients that respect CORS,
+	// such as browsers. So for example Code Intelligence /.executors, despite being "an API",
+	// should use this policy unless they intend to get cross-origin requests _from browsers_.
+	crossOriginPolicyNever crossOriginPolicy = "never"
+)
+
 // secureHeadersMiddleware adds and checks for HTTP security-related headers.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func secureHeadersMiddleware(next http.Handler) http.Handler {
+func secureHeadersMiddleware(next http.Handler, policy crossOriginPolicy) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// headers for security
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -172,38 +198,70 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 		// no cache by default
 		w.Header().Set("Cache-Control", "no-cache, max-age=0")
 
-		// CORS
-		// If the headerOrigin is the development or production Chrome Extension explicitly set the Allow-Control-Allow-Origin
-		// to the incoming header URL. Otherwise use the configured CORS origin.
-		//
-		// Note: API users also rely on this codepath handling wildcards
-		// properly. For example, if Sourcegraph is behind a corporate VPN an
-		// admin may choose to set the CORS origin to "*" and would expect
-		// Sourcegraph to respond appropriately to any Origin request header:
-		//
-		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
-		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
-		//
-		headerOrigin := r.Header.Get("Origin")
-		isExtensionRequest := headerOrigin == devExtension || headerOrigin == prodExtension
-
-		if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" || isExtensionRequest {
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-
-			if isExtensionRequest || isAllowedOrigin(headerOrigin, strings.Fields(corsOrigin)) {
-				w.Header().Set("Access-Control-Allow-Origin", headerOrigin)
-			}
-
-			if r.Method == "OPTIONS" {
-				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
-				w.WriteHeader(http.StatusOK)
-				return // do not invoke next handler
-			}
+		// Write CORS headers and potentially handle the requests if it is a OPTIONS request.
+		if handled := handleCORSRequest(w, r, policy); handled {
+			return // request was handled, do not invoke next handler
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// handleCORSRequest handles checking the Origin header and writing CORS Access-Control-Allow-*
+// headers. In some cases, it may handle OPTIONS CORS preflight requests in which case the function
+// returns true and the request should be considered fully served.
+func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOriginPolicy) (handled bool) {
+	// If this route is one which should never allow cross-origin requests, then we should return
+	// early. We do not write ANY Access-Control-Allow-* CORS headers, which triggers the browsers
+	// default (and strict) behavior of not allowing cross-origin requests.
+	//
+	// We could instead parse the domain from conf.Get().ExternalURL and use that in the response,
+	// to make things more explicit, but it would add more logic here to think about and you would
+	// also want to think about whether or not `OPTIONS` requests should be handled and if the other
+	// headers (-Credentials, -Methods, -Headers, etc.) should be sent back in such a situation.
+	// Instead, it's easier to reason about the code by just saying "we send back nothing in this
+	// case, and so the browser enforces no cross-origin requests".
+	//
+	// This is in compliance with section 7.2 "Resource Sharing Check" of the CORS standard: https://www.w3.org/TR/2020/SPSD-cors-20200602/#resource-sharing-check-0
+	// It states:
+	//
+	// > If the response includes zero or more than one Access-Control-Allow-Origin header values,
+	// > return fail and terminate this algorithm.
+	//
+	// And you may also see the type of error the browser would produce in this instance at e.g.
+	// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
+	//
+	if policy == crossOriginPolicyNever {
+		return false
+	}
+
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	if isTrustedOrigin(r) {
+		// The request came from a trusted origin, either from the browser extension's fixed origin
+		// identifier or from an origin present in the site configuration `corsOrigin` allow list.
+		//
+		// This means we should allow the exact origin to make the request, the browser will grant
+		// their request the ability to authenticate via a session cookie.
+		//
+		// Note: API users also rely on this codepath handling wildcards properly. For example, if
+		// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*"
+		// (via a proxy, not what a browser would ever send) and would expect Sourcegraph to respond
+		// appropriately to any Origin request header:
+		//
+		// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
+		// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+		//
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	}
+
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		w.WriteHeader(http.StatusOK)
+		return true // we handled the request
+	}
+	return false
 }
 
 // isTrustedOrigin returns whether the HTTP request's Origin is trusted to initiate authenticated

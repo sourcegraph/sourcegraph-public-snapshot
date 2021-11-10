@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
@@ -34,7 +33,7 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 }
 
 type GitCommitResolver struct {
-	db           dbutil.DB
+	db           database.DB
 	repoResolver *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
@@ -58,7 +57,7 @@ type GitCommitResolver struct {
 
 // When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
 // a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
+func toGitCommitResolver(repo *RepositoryResolver, db database.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -191,7 +190,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 		return nil, err
 	}
 
-	return externallink.Commit(ctx, database.NewDB(r.db), repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {

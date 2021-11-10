@@ -1,7 +1,7 @@
 import { mount } from 'enzyme'
 import React from 'react'
 import { act } from 'react-dom/test-utils'
-import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownToggle } from 'reactstrap'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,6 +13,7 @@ import {
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { SearchContextMenuItem } from './SearchContextMenu'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
@@ -102,7 +103,7 @@ describe('SearchContextDropdown', () => {
         })
         element.update()
 
-        const item = element.find(DropdownItem).at(0)
+        const item = element.find(SearchContextMenuItem).at(0)
         item.simulate('click')
 
         sinon.assert.calledOnce(submitSearch)

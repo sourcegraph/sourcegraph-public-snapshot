@@ -39,6 +39,7 @@ exports[`Notices shows notices for location 1`] = `
       />
     </div>
     <button
+      aria-label="Close alert"
       className="btn btn-icon closeButton"
       onClick={[Function]}
       type="button"

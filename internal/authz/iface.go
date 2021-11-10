@@ -4,6 +4,7 @@ package authz
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -57,7 +58,8 @@ type ExternalUserPermissions struct {
 	ExcludeContains []extsvc.RepoID
 
 	// SubRepoPermissions denotes sub-repository content access control rules where
-	// relevant.
+	// relevant. If no corresponding entry for an Exacts repo exists in SubRepoPermissions,
+	// it can be safely assumed that access to the entire repo is available.
 	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
 }
 
@@ -141,4 +143,25 @@ type ErrUnauthenticated struct{}
 
 func (e ErrUnauthenticated) Error() string {
 	return "request is unauthenticated"
+}
+
+func (e ErrUnauthenticated) Unauthenticated() bool { return true }
+
+// ErrUnimplemented indicates sync is unimplemented and its data should not be used.
+//
+// When returning this error, provide a pointer.
+type ErrUnimplemented struct {
+	// Feature indicates the unimplemented functionality.
+	Feature string
+}
+
+func (e ErrUnimplemented) Error() string {
+	return fmt.Sprintf("%s is unimplemented", e.Feature)
+}
+
+func (e ErrUnimplemented) Unimplemented() bool { return true }
+
+func (e ErrUnimplemented) Is(err error) bool {
+	_, ok := err.(*ErrUnimplemented)
+	return ok
 }

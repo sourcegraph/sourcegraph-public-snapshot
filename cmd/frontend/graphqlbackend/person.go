@@ -6,13 +6,12 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type PersonResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	name  string
 	email string
 
@@ -25,7 +24,7 @@ type PersonResolver struct {
 	err  error
 }
 
-func NewPersonResolver(db dbutil.DB, name, email string, includeUserInfo bool) *PersonResolver {
+func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool) *PersonResolver {
 	return &PersonResolver{
 		db:              db,
 		name:            name,
@@ -99,5 +98,5 @@ func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
 	if user == nil || err != nil {
 		return nil, err
 	}
-	return NewUserResolver(database.NewDB(r.db), user), nil
+	return NewUserResolver(r.db, user), nil
 }

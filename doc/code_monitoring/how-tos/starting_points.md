@@ -2,18 +2,6 @@
 
 This page lists code monitors that are commonly used and can be used across most codebases.
 
-## Watch for potential secrets
-
-Code monitors can help you react quickly to the secrets being accidentally committed to your codebase.
-
-```
-patterntype:regexp ("[a-z0-9+/]{32,}=?"|'[a-z0-9+/]{32,}=?'|`[a-z0-9+/]{32,}=?`) or -----BEGIN RSA PRIVATE KEY----- or token.+[a-z0-9+/]{32,}=['"]?\n
-```
-
-The above query will return matches for:
-* Alphanumeric or base64-encoded strings longer than 32 characters
-* RSA private key headers
-* Patterns suggesting the association of “token” with a base64-encoded value on the same line
 
 ## Watch for consumers of deprecated endpoints
 

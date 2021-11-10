@@ -563,6 +563,11 @@ input LineChartSearchInsightInput {
     The options for this line chart.
     """
     options: LineChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
 }
 
 """
@@ -704,6 +709,11 @@ extend type Mutation {
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Delete an insight view given the graphql ID.
+    """
+    deleteInsightView(id: ID!): EmptyResponse!
 }
 
 """

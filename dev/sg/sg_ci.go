@@ -38,6 +38,7 @@ var (
 	ciLogsBuildFlag    = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
 	ciLogsOutFlag      = ciLogsFlagSet.String("out", ciLogsOutStdout,
 		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
@@ -56,9 +57,6 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 	case *ciStatusBranchFlag != "":
 		branch = *ciStatusBranchFlag
 	default:
-		if os.Getenv("BUILDKITE") == "true" {
-			return "", false, fmt.Errorf("getCIBranch should not be used within the CI. Specifiy a branch manually instead")
-		}
 		branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
 		fromFlag = false
 	}
@@ -164,7 +162,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						}
 						return true, nil
 					})
-					pending.Close()
+					pending.Destroy()
 					if err != nil {
 						return err
 					}
@@ -309,23 +307,60 @@ From there, you can start exploring logs with the Grafana explore panel.
 						return fmt.Errorf("invalid Loki target: %w", err)
 					}
 					lokiClient := loki.NewLokiClient(lokiURL)
-					out.WriteLine(output.Linef("", output.StylePending, "Pushing %d log streams to Loki instance at %q",
-						len(logs), lokiURL.Host))
-					entries := 0
-					for _, log := range logs {
+					out.WriteLine(output.Linef("", output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
+
+					var (
+						pushedEntries int
+						pushedStreams int
+						pushErrs      []string
+						pending       = out.Pending(output.Linef("", output.StylePending, "Processing logs..."))
+					)
+					for i, log := range logs {
+						job := log.JobMeta.Job
+						if log.JobMeta.Label != nil {
+							job = fmt.Sprintf("%q (%s)", *log.JobMeta.Label, log.JobMeta.Job)
+						}
+
+						pending.Updatef("Processing build %d job %s (%d/%d)...",
+							log.JobMeta.Build, job, i, len(logs))
 						stream, err := loki.NewStreamFromJobLogs(log)
 						if err != nil {
-							return fmt.Errorf("failed to generate stream from logs for build %d job %q: %w",
-								log.JobMeta.Build, log.JobMeta.Job, err)
+							pushErrs = append(pushErrs, fmt.Sprintf("build %d job %s: %s",
+								log.JobMeta.Build, job, err))
+							continue
 						}
-						if err := lokiClient.PushStreams(ctx, []*loki.Stream{stream}); err != nil {
-							return fmt.Errorf("failed to push stream from logs for build %d job %q: %w",
-								log.JobMeta.Build, log.JobMeta.Job, err)
+
+						// Set buildkite branch if available
+						if ciBranch := os.Getenv("BUILDKITE_BRANCH"); ciBranch != "" {
+							stream.Stream.Branch = ciBranch
 						}
-						entries += len(stream.Values)
+
+						err = lokiClient.PushStreams(ctx, []*loki.Stream{stream})
+						if err != nil {
+							pushErrs = append(pushErrs, fmt.Sprintf("build %d job %q: %s",
+								log.JobMeta.Build, job, err))
+							continue
+						}
+
+						pushedEntries += len(stream.Values)
+						pushedStreams += 1
 					}
-					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess,
-						"Pushed %d entries from %d streams to Loki", entries, len(logs)))
+
+					if pushedEntries > 0 {
+						pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+							"Pushed %d entries from %d streams to Loki", pushedEntries, pushedStreams))
+					} else {
+						pending.Destroy()
+					}
+
+					if pushErrs != nil {
+						failedStreams := len(logs) - pushedStreams
+						out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
+							"Failed to push %d streams: \n - %s", failedStreams, strings.Join(pushErrs, "\n - ")))
+						if failedStreams == len(logs) {
+							return errors.New("failed to push all logs")
+						}
+					}
 				}
 
 				return nil

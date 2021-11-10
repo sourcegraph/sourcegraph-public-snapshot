@@ -28,7 +28,7 @@ export function getBackendInsight(insight: SearchBackendBasedInsight): Observabl
             id: backendInsight.id,
             view: {
                 title: insight.title ?? backendInsight.title,
-                subtitle: backendInsight.description,
+                subtitle: '',
                 content: [createViewContent(backendInsight, series)],
                 isFetchingHistoricalData: backendInsight.series.some(
                     ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null

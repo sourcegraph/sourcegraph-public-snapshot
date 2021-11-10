@@ -50,7 +50,6 @@ const (
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
 	ReposIndex             = "internal.repos.index"
-	ReposListEnabled       = "internal.repos.list-enabled"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
@@ -122,7 +121,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
-	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)

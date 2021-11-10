@@ -156,14 +156,14 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 			(2, 'test-repo2', 'description', false, current_timestamp, current_timestamp, 2, 'github', 1, false, 'github.com/test-repo/test-repo2', null, '{}', false, 1),
 			(3, 'test-repo3', 'description', false, current_timestamp, current_timestamp, 3, 'github', 1, false, 'github.com/test-repo/test-repo3', null, '{}', false, 1);
 
-		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at, object_ids_ints)
+		INSERT INTO user_permissions (user_id, permission, object_type, updated_at, synced_at, object_ids_ints)
 		VALUES
-		       (1, 'read', 'repos', '', current_timestamp, current_timestamp, ARRAY[1]);
+		       (1, 'read', 'repos', current_timestamp, current_timestamp, ARRAY[1]);
 
-		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at)
+		INSERT INTO user_permissions (user_id, permission, object_type, updated_at, synced_at)
 		VALUES
-		       (2, 'read', 'repos', '', current_timestamp, current_timestamp),
-		       (3, 'read', 'repos', '', current_timestamp, current_timestamp);
+		       (2, 'read', 'repos', current_timestamp, current_timestamp),
+		       (3, 'read', 'repos', current_timestamp, current_timestamp);
 
 		INSERT INTO users (id, username, display_name, avatar_url, created_at, updated_at, deleted_at, invite_quota, passwd,
 						   site_admin)

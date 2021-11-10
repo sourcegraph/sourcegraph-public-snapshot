@@ -285,7 +285,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(database.NewDB(db)))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())

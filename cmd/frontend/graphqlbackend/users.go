@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -40,7 +39,7 @@ type UserConnectionResolver interface {
 var _ UserConnectionResolver = &userConnectionResolver{}
 
 type userConnectionResolver struct {
-	db           dbutil.DB
+	db           database.DB
 	opt          database.UsersListOptions
 	activePeriod *string
 
@@ -86,7 +85,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
 	// 🚨 SECURITY: Only site admins can list users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -104,7 +103,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 	var l []*UserResolver
 	for _, user := range users {
 		l = append(l, &UserResolver{
-			db:   database.NewDB(r.db),
+			db:   r.db,
 			user: user,
 		})
 	}
@@ -113,7 +112,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	// 🚨 SECURITY: Only site admins can count users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err
 	}
 
@@ -142,14 +141,14 @@ func (r *userConnectionResolver) useCache() bool {
 // staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
 // list of users that is computed statically.
 type staticUserConnectionResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	users []*types.User
 }
 
 func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
 	resolvers := make([]*UserResolver, len(r.users))
 	for i, user := range r.users {
-		resolvers[i] = NewUserResolver(database.NewDB(r.db), user)
+		resolvers[i] = NewUserResolver(r.db, user)
 	}
 	return resolvers
 }

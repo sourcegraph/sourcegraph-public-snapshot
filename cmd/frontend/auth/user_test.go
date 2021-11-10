@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -30,8 +29,6 @@ func init() {
 // 🚨 SECURITY: This guarantees the integrity of the identity resolution process (ensuring that new
 // external accounts are linked to the appropriate user account)
 func TestGetAndSaveUser(t *testing.T) {
-	db := dbtest.NewDB(t)
-
 	type innerCase struct {
 		description string
 		actorUID    int32
@@ -388,8 +385,6 @@ func TestGetAndSaveUser(t *testing.T) {
 					t.Run("", func(t *testing.T) {
 						t.Logf("Description: %q", description)
 						m := newMocks(t, oc.mock)
-						m.apply()
-						defer m.reset()
 
 						ctx := context.Background()
 						if c.actorUID != 0 {
@@ -397,7 +392,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, database.NewDB(db), op)
+						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
 						for _, v := range []struct {
 							label string
 							got   interface{}
@@ -574,31 +569,31 @@ type mocks struct {
 	calledGrantPendingPermissions bool
 }
 
-func (m *mocks) apply() {
-	database.Mocks.ExternalAccounts = database.MockExternalAccounts{
-		LookupUserAndSave:    m.LookupUserAndSave,
-		AssociateUserAndSave: m.AssociateUserAndSave,
-		CreateUserAndSave:    m.CreateUserAndSave,
-	}
-	database.Mocks.Users = database.MockUsers{
-		GetByID:            m.GetByID,
-		GetByVerifiedEmail: m.GetByVerifiedEmail,
-		GetByUsername:      m.GetByUsername,
-		Update:             m.Update,
-	}
-	database.Mocks.Authz = database.MockAuthz{
-		GrantPendingPermissions: m.GrantPendingPermissions,
-	}
-}
+func (m *mocks) DB() database.DB {
+	externalAccounts := dbmock.NewMockUserExternalAccountsStore()
+	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
+	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
+	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
 
-func (m *mocks) reset() {
-	database.Mocks.ExternalAccounts = database.MockExternalAccounts{}
-	database.Mocks.Users = database.MockUsers{}
-	database.Mocks.Authz = database.MockAuthz{}
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(m.GetByID)
+	users.GetByVerifiedEmailFunc.SetDefaultHook(m.GetByVerifiedEmail)
+	users.GetByUsernameFunc.SetDefaultHook(m.GetByUsername)
+	users.UpdateFunc.SetDefaultHook(m.Update)
+
+	authzStore := dbmock.NewMockAuthzStore()
+	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
+
+	db := dbmock.NewMockDB()
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.AuthzFunc.SetDefaultReturn(authzStore)
+	db.EventLogsFunc.SetDefaultReturn(dbmock.NewMockEventLogStore())
+	return db
 }
 
 // LookupUserAndSave mocks database.ExternalAccounts.LookupUserAndSave
-func (m *mocks) LookupUserAndSave(spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
+func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
 	if m.lookupUserAndSaveErr != nil {
 		return 0, m.lookupUserAndSaveErr
 	}
@@ -615,7 +610,7 @@ func (m *mocks) LookupUserAndSave(spec extsvc.AccountSpec, data extsvc.AccountDa
 }
 
 // CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
+func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
 	if m.createUserAndSaveErr != nil {
 		return 0, m.createUserAndSaveErr
 	}
@@ -650,7 +645,7 @@ func (m *mocks) CreateUserAndSave(newUser database.NewUser, spec extsvc.AccountS
 }
 
 // AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
+func (m *mocks) AssociateUserAndSave(_ context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
 	if m.associateUserAndSaveErr != nil {
 		return m.associateUserAndSaveErr
 	}
@@ -713,12 +708,12 @@ func (m *mocks) GetByID(ctx context.Context, id int32) (*types.User, error) {
 }
 
 // Update mocks database.Users.Update
-func (m *mocks) Update(id int32, update database.UserUpdate) error {
+func (m *mocks) Update(ctx context.Context, id int32, update database.UserUpdate) error {
 	if m.updateErr != nil {
 		return m.updateErr
 	}
 
-	_, err := m.GetByID(context.Background(), id)
+	_, err := m.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}

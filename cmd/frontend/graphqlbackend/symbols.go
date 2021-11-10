@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 )
@@ -50,7 +50,7 @@ func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*sy
 	}, nil
 }
 
-func symbolResultsToResolvers(db dbutil.DB, commit *GitCommitResolver, symbols []*result.SymbolMatch) []symbolResolver {
+func symbolResultsToResolvers(db database.DB, commit *GitCommitResolver, symbols []*result.SymbolMatch) []symbolResolver {
 	symbolResolvers := make([]symbolResolver, 0, len(symbols))
 	for _, symbol := range symbols {
 		symbolResolvers = append(symbolResolvers, toSymbolResolver(db, commit, symbol))
@@ -58,7 +58,7 @@ func symbolResultsToResolvers(db dbutil.DB, commit *GitCommitResolver, symbols [
 	return symbolResolvers
 }
 
-func toSymbolResolver(db dbutil.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
+func toSymbolResolver(db database.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
 	return symbolResolver{
 		db:          db,
 		commit:      commit,
@@ -91,7 +91,7 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	commit *GitCommitResolver
 	*result.SymbolMatch
 }

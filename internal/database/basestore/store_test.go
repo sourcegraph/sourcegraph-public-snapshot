@@ -14,10 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "base-store"
-}
-
 func TestTransaction(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	setupStoreTest(t, db)

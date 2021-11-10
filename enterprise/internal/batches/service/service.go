@@ -292,54 +292,39 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 		return err
 	}
 
-	if len(opts.spec.Spec.ImportChangesets) != 0 {
-		var repoNames []string
-		for _, ic := range opts.spec.Spec.ImportChangesets {
-			repoNames = append(repoNames, ic.Repository)
-		}
-
+	// If there are "importChangesets" statements in the spec we evaluate
+	// them now and create ChangesetSpecs for them.
+	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, opts.spec.Spec.ImportChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
 		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
 		// whether the user has access to the repository or not.
-		//
-		// Further down, when iterating over
 		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
+		if err != nil {
+			return nil, err
+		}
+
+		repoNameIDs := make(map[string]string, len(repos))
+		for _, r := range repos {
+			repoNameIDs[string(r.Name)] = string(graphqlbackend.MarshalRepositoryID(r.ID))
+		}
+		return repoNameIDs, nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, cs := range specs {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cs.BaseRepository))
 		if err != nil {
 			return err
 		}
-
-		repoNameIDs := make(map[api.RepoName]api.RepoID, len(repos))
-		for _, r := range repos {
-			repoNameIDs[r.Name] = r.ID
+		changesetSpec := &btypes.ChangesetSpec{
+			UserID:      opts.spec.UserID,
+			RepoID:      repoID,
+			Spec:        cs,
+			BatchSpecID: opts.spec.ID,
 		}
 
-		// If there are "importChangesets" statements in the spec we evaluate
-		// them now and create ChangesetSpecs for them.
-		for _, ic := range opts.spec.Spec.ImportChangesets {
-			for _, id := range ic.ExternalIDs {
-				repoID, ok := repoNameIDs[api.RepoName(ic.Repository)]
-				if !ok {
-					return errors.Newf("repository %s not found", ic.Repository)
-				}
-
-				extID, err := batcheslib.ParseChangesetSpecExternalID(id)
-				if err != nil {
-					return err
-				}
-
-				changesetSpec := &btypes.ChangesetSpec{
-					UserID: opts.spec.UserID,
-					RepoID: repoID,
-					Spec: &batcheslib.ChangesetSpec{
-						BaseRepository: string(graphqlbackend.MarshalRepositoryID(repoID)),
-						ExternalID:     extID,
-					},
-					BatchSpecID: opts.spec.ID,
-				}
-
-				if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-					return err
-				}
-			}
+		if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+			return err
 		}
 	}
 
@@ -683,7 +668,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -723,7 +708,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 
@@ -765,7 +750,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.InitialApplierID); err != nil {
 		return err
 	}
 
@@ -803,7 +788,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), c.InitialApplierID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.InitialApplierID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -854,7 +839,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), c.InitialApplierID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), c.InitialApplierID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -995,7 +980,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	// 🚨 SECURITY: Only the author of the batch change can create jobs.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchChange.InitialApplierID); err != nil {
 		return bulkGroupID, err
 	}
 

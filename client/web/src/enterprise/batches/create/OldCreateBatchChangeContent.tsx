@@ -7,8 +7,8 @@ import { Container } from '@sourcegraph/wildcard'
 import { SidebarGroup, SidebarGroupHeader } from '../../../components/Sidebar'
 
 import combySample from './examples/comby.batch.yaml'
-import helloWorldSample from './examples/empty.batch.yaml'
 import goImportsSample from './examples/go-imports.batch.yaml'
+import helloWorldSample from './examples/hello-world.batch.yaml'
 import minimalSample from './examples/minimal.batch.yaml'
 
 // SampleTabHeader is superseded by ExampleTabs and can be removed when SSBC is rolled out

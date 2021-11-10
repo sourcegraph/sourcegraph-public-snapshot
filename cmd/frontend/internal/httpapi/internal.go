@@ -155,16 +155,6 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposListEnabled(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		names, err := database.Repos(db).ListEnabledNames(r.Context())
-		if err != nil {
-			return err
-		}
-		return json.NewEncoder(w).Encode(names)
-	}
-}
-
 func serveSavedQueriesListAll(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		// List settings for all users, orgs, etc.

@@ -49,7 +49,7 @@ export interface StreamingSearchResultsProps
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -274,7 +274,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {results?.alert && (
-                    <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
+                    <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
+                        <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
+                    </div>
                 )}
 
                 {showSignUpCta && (

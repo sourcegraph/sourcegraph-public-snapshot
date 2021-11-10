@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -443,7 +442,7 @@ func (a searchAlert) wrapResults() *SearchResults {
 	return &SearchResults{Alert: &a}
 }
 
-func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer {
+func (a searchAlert) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
 	return &alertSearchImplementer{
 		db:    db,
 		alert: a,
@@ -453,12 +452,12 @@ func (a searchAlert) wrapSearchImplementer(db dbutil.DB) *alertSearchImplementer
 // alertSearchImplementer is a light wrapper type around an alert that implements
 // SearchImplementer. This helps avoid needing to have a db on the searchAlert type
 type alertSearchImplementer struct {
-	db    dbutil.DB
+	db    database.DB
 	alert searchAlert
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return &SearchResultsResolver{db: database.NewDB(a.db), SearchResults: a.alert.wrapResults()}, nil
+	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
 }
 
 func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
