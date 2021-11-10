@@ -9,6 +9,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 )
 
+func TestStepSoftFail(t *testing.T) {
+	pipeline := buildkite.Pipeline{}
+	stepOpt := buildkite.SoftFail(1, 2, 3, 4)
+	pipeline.AddStep("foo", stepOpt)
+	step, ok := pipeline.Steps[0].(*buildkite.Step)
+	if !ok {
+		t.Fatal("Pipeline step is not a buildkite.Step")
+	}
+	want := "1 2 3 4"
+	got := step.Env["SOFT_FAIL_EXIT_CODES"]
+	if got != want {
+		t.Fatalf("want %q, got %q", want, got)
+	}
+}
+
 func TestOutputSanitization(t *testing.T) {
 	t.Run("JSON", func(t *testing.T) {
 		tests := []struct {
