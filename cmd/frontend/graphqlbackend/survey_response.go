@@ -13,14 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type surveyResponseResolver struct {
-	db             dbutil.DB
+	db             database.DB
 	surveyResponse *types.SurveyResponse
 }
 
@@ -31,7 +30,7 @@ func marshalSurveyResponseID(id int32) graphql.ID { return relay.MarshalID("Surv
 
 func (s *surveyResponseResolver) User(ctx context.Context) (*UserResolver, error) {
 	if s.surveyResponse.UserID != nil {
-		user, err := UserByIDInt32(ctx, database.NewDB(s.db), *s.surveyResponse.UserID)
+		user, err := UserByIDInt32(ctx, s.db, *s.surveyResponse.UserID)
 		if err != nil && errcode.IsNotFound(err) {
 			// This can happen if the user has been deleted, see issue #4888 and #6454
 			return nil, nil

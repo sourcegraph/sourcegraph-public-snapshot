@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Removed liveness probes from Kubernetes Prometheus deployment [#2970](https://github.com/sourcegraph/deploy-sourcegraph/pull/2970)
 - Batch Changes now requests the `workflow` scope on GitHub personal access tokens to allow batch changes to write to the `.github` directory in repositories. If you have already configured a GitHub PAT for use with Batch Changes, we suggest adding the scope to the others already granted. [#26606](https://github.com/sourcegraph/sourcegraph/issues/26606)
+- Sourcegraph's Prometheus and Alertmanager dependency has been upgraded to v2.31.1 and v0.23.0 respectively. [#27336](https://github.com/sourcegraph/sourcegraph/pull/27336)
 
 ### Fixed
 

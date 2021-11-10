@@ -58,13 +58,18 @@ func (s *Store) createBatchSpecExecutionCacheEntryQuery(ce *btypes.BatchSpecExec
 		ce.Version = btypes.CurrentCacheVersion
 	}
 
+	lastUsedAt := &ce.LastUsedAt
+	if ce.LastUsedAt.IsZero() {
+		lastUsedAt = nil
+	}
+
 	return sqlf.Sprintf(
 		createBatchSpecExecutionCacheEntryQueryFmtstr,
 		sqlf.Join(batchSpecExecutionCacheEntryInsertColumns.ToSqlf(), ", "),
 		ce.Key,
 		ce.Value,
 		ce.Version,
-		&dbutil.NullTime{Time: &ce.LastUsedAt},
+		&dbutil.NullTime{Time: lastUsedAt},
 		ce.CreatedAt,
 		sqlf.Join(BatchSpecExecutionCacheEntryColums.ToSqlf(), ", "),
 	)

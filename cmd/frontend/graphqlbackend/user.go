@@ -243,7 +243,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
-func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
+func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
 	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
@@ -251,7 +251,7 @@ func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
 		}
 		return nil, err
 	}
-	return NewUserResolver(database.NewDB(db), user), nil
+	return NewUserResolver(db, user), nil
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
@@ -450,15 +450,15 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func viewerCanChangeUsername(ctx context.Context, db dbutil.DB, userID int32) bool {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
+func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
 	}
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	return backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) == nil
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil
 }
 
 // Users may be trying to change their own username, or someone else's.

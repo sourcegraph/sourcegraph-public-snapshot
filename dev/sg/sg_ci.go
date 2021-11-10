@@ -31,12 +31,13 @@ const (
 var (
 	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
 
-	ciLogsFlagSet      = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
-	ciLogsBranchFlag   = ciLogsFlagSet.String("branch", "", "Branch name of build to find logs for (defaults to current branch)")
-	ciLogsJobStateFlag = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
-	ciLogsJobQueryFlag = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
-	ciLogsBuildFlag    = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
-	ciLogsOutFlag      = ciLogsFlagSet.String("out", ciLogsOutStdout,
+	ciLogsFlagSet               = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
+	ciLogsBranchFlag            = ciLogsFlagSet.String("branch", "", "Branch name of build to find logs for (defaults to current branch)")
+	ciLogsJobStateFlag          = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
+	ciLogsJobOverwriteStateFlag = ciLogsFlagSet.String("overwrite-state", "", "State to overwrite the job state metadata")
+	ciLogsJobQueryFlag          = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
+	ciLogsBuildFlag             = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
+	ciLogsOutFlag               = ciLogsFlagSet.String("out", ciLogsOutStdout,
 		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
@@ -319,6 +320,10 @@ From there, you can start exploring logs with the Grafana explore panel.
 						job := log.JobMeta.Job
 						if log.JobMeta.Label != nil {
 							job = fmt.Sprintf("%q (%s)", *log.JobMeta.Label, log.JobMeta.Job)
+						}
+						if *ciLogsJobOverwriteStateFlag != "" {
+							failed := *ciLogsJobOverwriteStateFlag
+							log.JobMeta.State = &failed
 						}
 
 						pending.Updatef("Processing build %d job %s (%d/%d)...",

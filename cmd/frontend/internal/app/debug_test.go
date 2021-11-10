@@ -124,7 +124,7 @@ func TestGrafanaLicensing(t *testing.T) {
 
 		router := mux.NewRouter()
 		// nil db as calls are mocked above
-		addGrafana(router, nil)
+		addGrafana(router, database.NewDB(nil))
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
 
@@ -144,7 +144,7 @@ func TestGrafanaLicensing(t *testing.T) {
 
 		router := mux.NewRouter()
 		// nil db as calls are mocked above
-		addGrafana(router, nil)
+		addGrafana(router, database.NewDB(nil))
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, httptest.NewRequest("GET", "/grafana", nil))
 
