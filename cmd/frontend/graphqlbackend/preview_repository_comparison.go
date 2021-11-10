@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -54,7 +55,7 @@ func (r *previewRepositoryComparisonResolver) BaseRepository() *RepositoryResolv
 }
 
 func (r *previewRepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
-	return NewFileDiffConnectionResolver(r.db, r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
+	return NewFileDiffConnectionResolver(database.NewDB(r.db), r.commit, r.commit, args, fileDiffConnectionCompute(r.patch), previewNewFile), nil
 }
 
 func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *FileDiffsConnectionArgs) ([]*diff.FileDiff, int32, bool, error) {
@@ -113,7 +114,7 @@ func fileDiffConnectionCompute(patch string) func(ctx context.Context, args *Fil
 	}
 }
 
-func previewNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
+func previewNewFile(db database.DB, r *FileDiffResolver) FileResolver {
 	fileStat := CreateFileInfo(r.FileDiff.NewName, false)
 	return NewVirtualFileResolver(fileStat, fileDiffVirtualFileContent(r))
 }

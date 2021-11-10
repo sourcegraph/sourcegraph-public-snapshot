@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -182,9 +181,9 @@ func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *File
 
 // repositoryComparisonNewFile is the default NewFileFunc used by
 // RepositoryComparisonResolver to produce the new file in a FileDiffResolver.
-func repositoryComparisonNewFile(db dbutil.DB, r *FileDiffResolver) FileResolver {
+func repositoryComparisonNewFile(db database.DB, r *FileDiffResolver) FileResolver {
 	return &GitTreeEntryResolver{
-		db:     database.NewDB(db),
+		db:     db,
 		commit: r.Head,
 		stat:   CreateFileInfo(r.FileDiff.NewName, false),
 	}
@@ -273,10 +272,10 @@ type ComputeDiffFunc func(ctx context.Context, args *FileDiffsConnectionArgs) ([
 
 // NewFileFunc is a function that returns the "new" file in a FileDiff as a
 // FileResolver.
-type NewFileFunc func(db dbutil.DB, r *FileDiffResolver) FileResolver
+type NewFileFunc func(db database.DB, r *FileDiffResolver) FileResolver
 
 func NewFileDiffConnectionResolver(
-	db dbutil.DB,
+	db database.DB,
 	base, head *GitCommitResolver,
 	args *FileDiffsConnectionArgs,
 	compute ComputeDiffFunc,
@@ -294,7 +293,7 @@ func NewFileDiffConnectionResolver(
 }
 
 type fileDiffConnectionResolver struct {
-	db      dbutil.DB
+	db      database.DB
 	base    *GitCommitResolver
 	head    *GitCommitResolver
 	first   *int32
@@ -319,7 +318,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 	resolvers := make([]FileDiff, len(fileDiffs))
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &FileDiffResolver{
-			db:       database.NewDB(r.db),
+			db:       r.db,
 			newFile:  r.newFile,
 			FileDiff: fileDiff,
 			Base:     r.base,
