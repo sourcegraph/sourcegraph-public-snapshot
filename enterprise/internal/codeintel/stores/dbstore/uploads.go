@@ -1010,23 +1010,19 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 	}
 	defer func() { err = tx.Done(err) }()
 
-	idQueries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
-	}
-	idListQuery := sqlf.Join(idQueries, ", ")
+	idArray := pq.Array(ids)
 
 	excludeCondition := sqlf.Sprintf("TRUE")
 	if dependencyUpdateType == DependencyReferenceCountUpdateTypeRemove {
-		excludeCondition = sqlf.Sprintf("u.id NOT IN (%s)", idListQuery)
+		excludeCondition = sqlf.Sprintf("NOT (u.id = ANY (%s))", idArray)
 	}
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		updateReferenceCountsQuery,
-		idListQuery,
-		idListQuery,
+		idArray,
+		idArray,
 		excludeCondition,
-		idListQuery,
+		idArray,
 		deltaMap[dependencyUpdateType],
 	)); err != nil {
 		return err
@@ -1043,7 +1039,7 @@ WITH
 packages_defined_by_target_uploads AS (
 	SELECT p.scheme, p.name, p.version
 	FROM lsif_packages p
-	WHERE p.dump_id IN (%s)
+	WHERE p.dump_id = ANY (%s)
 ),
 
 -- Select the ranked set of uploads that provide a package that is also provided
@@ -1066,7 +1062,7 @@ ranked_uploads_providing_packages AS (
 	WHERE
 		(
 			-- Select our target uploads
-			u.id in (%s) OR
+			u.id = ANY (%s) OR
 
 			-- Also select uploads that provide the same package as a target upload.
 			--
@@ -1132,7 +1128,7 @@ dependency_reference_counts AS (
 	WHERE
 		-- Here we want the set of actually reachable uploads
 		u.state = 'completed' AND
-		r.dump_id IN (%s)
+		r.dump_id = ANY (%s)
 	GROUP BY u.id, p.scheme, p.name, p.version
 ),
 
