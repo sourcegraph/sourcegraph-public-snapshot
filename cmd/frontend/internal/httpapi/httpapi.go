@@ -25,7 +25,6 @@ import (
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -39,7 +38,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimiter graphqlbackend.LimitWatcher) http.Handler {
+func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimiter graphqlbackend.LimitWatcher) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -81,7 +80,7 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(database.NewDB(db))))
+	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))

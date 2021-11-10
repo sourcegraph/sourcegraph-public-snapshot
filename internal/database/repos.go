@@ -624,13 +624,17 @@ type ReposListOptions struct {
 	FailedFetch bool
 
 	// MinLastChanged finds repository metadata or data that has changed since
-	// MinLastChanged. It filters against repos.UpdatedAt and
-	// gitserver.LastChanged.
+	// MinLastChanged. It filters against repos.UpdatedAt,
+	// gitserver.LastChanged and searchcontexts.UpdatedAt.
 	//
 	// LastChanged is the time of the last git fetch which changed refs
 	// stored. IE the last time any branch changed (not just HEAD).
 	//
 	// UpdatedAt is the last time the metadata changed for a repository.
+	//
+	// Note: This option is used by our search indexer to determine what has
+	// changed since it last polled. The fields its checks are all based on
+	// what can affect search indexes.
 	MinLastChanged time.Time
 
 	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
@@ -910,7 +914,12 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
 	if !opt.MinLastChanged.IsZero() {
-		where = append(where, sqlf.Sprintf("(gr.last_changed >= %s OR repo.updated_at >= %s)", opt.MinLastChanged, opt.MinLastChanged))
+		conds := []*sqlf.Query{
+			sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("repo.updated_at >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("repo.id IN (SELECT scr.repo_id FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE sc.updated_at >= %s)", opt.MinLastChanged),
+		}
+		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
 	}
 	if opt.NoPrivate {
 		where = append(where, sqlf.Sprintf("NOT private"))
