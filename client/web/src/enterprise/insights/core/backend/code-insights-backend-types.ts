@@ -12,7 +12,6 @@ export interface DashboardCreateInput {
     insightIds?: string[]
     type?: string
     userIds?: string[]
-    orgIds?: string[]
 }
 
 export interface DashboardUpdateInput {

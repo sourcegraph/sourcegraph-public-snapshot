@@ -40,7 +40,6 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             await createDashboard({
                 ...values,
                 userIds: user?.id ? [user?.id] : [],
-                orgIds: user?.organizations.nodes.map(organization => organization.id),
             }).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')

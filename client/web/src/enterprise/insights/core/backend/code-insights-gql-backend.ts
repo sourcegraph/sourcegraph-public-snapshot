@@ -88,12 +88,12 @@ export const parseType = (grants?: {
  */
 export const parseGrants = (input: DashboardCreateInput): InsightsPermissionGrantsInput => {
     const grants: InsightsPermissionGrantsInput = {}
-    const { type, userIds, orgIds } = input
+    const { type, userIds, visibility } = input
     if (type === 'personal') {
         grants.users = userIds || []
     }
     if (type === 'organization') {
-        grants.organizations = orgIds || []
+        grants.organizations = [visibility]
     }
     if (type === 'global') {
         grants.global = true
