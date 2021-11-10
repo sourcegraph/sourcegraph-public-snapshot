@@ -1077,8 +1077,8 @@ ranked_uploads_providing_packages AS (
 		) AND
 
 		-- Don't match deleted uploads. We may be dealing with uploads still in the
-		-- processing state, though, so we explicitly allow those here.
-		u.state IN ('completed', 'processing') AND
+		-- processing state, though, so we allow those here.
+		u.state NOT IN ('deleted', 'deleting') AND
 
 		-- If we are deleting uploads that provide intelligence for a package, we need
 		-- to ensure that we calculate the correct dependencies as if the records have
