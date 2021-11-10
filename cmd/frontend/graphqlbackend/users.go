@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -142,14 +141,14 @@ func (r *userConnectionResolver) useCache() bool {
 // staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
 // list of users that is computed statically.
 type staticUserConnectionResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	users []*types.User
 }
 
 func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
 	resolvers := make([]*UserResolver, len(r.users))
 	for i, user := range r.users {
-		resolvers[i] = NewUserResolver(database.NewDB(r.db), user)
+		resolvers[i] = NewUserResolver(r.db, user)
 	}
 	return resolvers
 }
