@@ -439,6 +439,11 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	})
 
 	t.Run("CreateBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
+		cacheEntry := &btypes.BatchSpecExecutionCacheEntry{Key: "one", Value: "two"}
+		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, cacheEntry); err != nil {
+			t.Fatal(err)
+		}
+
 		singleStep := []batches.Step{{Run: "echo lol", Container: "alpine:3"}}
 		createWorkspaces := func(t *testing.T, batchSpec *btypes.BatchSpec, workspaces ...*btypes.BatchSpecWorkspace) {
 			t.Helper()
@@ -485,10 +490,11 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			ignoredWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Ignored: true}
 			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Unsupported: true}
 			noStepsWorkspace := &btypes.BatchSpecWorkspace{Steps: []batches.Step{}}
+			cachedResultWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, BatchSpecExecutionCacheEntryID: cacheEntry.ID}
 
 			batchSpec := &btypes.BatchSpec{}
 
-			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, noStepsWorkspace)
+			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, noStepsWorkspace, cachedResultWorkspace)
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID})
 		})
 
