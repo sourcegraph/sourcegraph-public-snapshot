@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import memoizeOne from 'memoize-one'
+import { useCallback, useMemo, useState } from 'react'
 
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -39,6 +40,13 @@ const readStoredThemePreference = (localStorage: Pick<Storage, 'getItem' | 'setI
     }
 }
 
+const updateDocumentThemeClassname = memoizeOne(
+    (isLightTheme: boolean, documentElement: Pick<HTMLElement, 'classList'>) => {
+        documentElement.classList.toggle('theme-light', isLightTheme)
+        documentElement.classList.toggle('theme-dark', !isLightTheme)
+    }
+)
+
 /**
  * A React hook for getting and setting the theme.
  *
@@ -68,10 +76,10 @@ export const useTheme = (
     )
 
     const isLightTheme = themePreference === 'system' ? systemIsLightTheme : themePreference === 'light'
-    useEffect(() => {
-        documentElement.classList.toggle('theme-light', isLightTheme)
-        documentElement.classList.toggle('theme-dark', !isLightTheme)
-    }, [documentElement.classList, isLightTheme])
+
+    // Memoized function executed synchronously to avoid theme flashing:
+    // https://github.com/sourcegraph/sourcegraph/issues/26435
+    updateDocumentThemeClassname(isLightTheme, documentElement)
 
     return {
         isLightTheme,

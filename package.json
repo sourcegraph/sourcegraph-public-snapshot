@@ -384,6 +384,7 @@
     "lodash": "^4.17.20",
     "marked": "^4.0.0",
     "mdi-react": "^8.1.0",
+    "memoize-one": "^6.0.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.24.0",
     "monaco-yaml": "^3.2.1",
