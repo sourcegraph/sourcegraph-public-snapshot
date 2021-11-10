@@ -302,15 +302,6 @@ func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositorie
 	if EnterpriseResolvers.orgRepositoryResolver == nil {
 		return nil, errors.New("listing organization repositories is not supported")
 	}
-	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org, func(db database.DB, opt database.ReposListOptions, args *ListOrgRepositoriesArgs) RepositoryConnectionResolver {
-		return &repositoryConnectionResolver{
-			db:         db,
-			opt:        opt,
-			cloned:     args.Cloned,
-			notCloned:  args.NotCloned,
-			indexed:    args.Indexed,
-			notIndexed: args.NotIndexed,
-		}
-	})
+	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
 
 }

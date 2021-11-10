@@ -15,11 +15,13 @@ func NewResolver(db database.DB) graphqlbackend.OrgRepositoryResolver {
 	return &resolver{db: db}
 }
 
+var _ graphqlbackend.OrgRepositoryResolver = &resolver{}
+
 type resolver struct {
 	db database.DB
 }
 
-func (r *resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *graphqlbackend.ListOrgRepositoriesArgs) graphqlbackend.RepositoryConnectionResolver) (graphqlbackend.RepositoryConnectionResolver, error) {
+func (r *resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if err := backend.CheckOrgExternalServices(ctx, r.db, org.ID); err != nil {
 		return nil, err
 	}
@@ -73,5 +75,5 @@ func (r *resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.Lis
 		opt.ExternalServiceIDs = idArray
 	}
 
-	return resolverFn(r.db, opt, args), nil
+	return graphqlbackend.NewRepositoryConnectionResolver(r.db, opt, args.Cloned, args.NotCloned, args.Indexed, args.NotIndexed), nil
 }

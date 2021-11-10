@@ -69,5 +69,5 @@ func (r *orgConnectionStaticResolver) PageInfo() *graphqlutil.PageInfo {
 }
 
 type OrgRepositoryResolver interface {
-	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *ListOrgRepositoriesArgs) RepositoryConnectionResolver) (RepositoryConnectionResolver, error)
+	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }
