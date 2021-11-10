@@ -81,53 +81,27 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         defaultSelectedNamespace
     )
 
-    const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors } = useBatchSpecCode(helloWorldSample)
+    const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
+        helloWorldSample
+    )
 
-    const [serverError, setServerError] = useState<Error>()
+    const {
+        previewBatchSpec,
+        currentBatchSpecID,
+        isLoading,
+        error: previewError,
+        clearError: clearPreviewError,
+    } = usePreviewBatchSpec(selectedNamespace)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
-            setServerError(undefined)
+            clearPreviewError()
             handleCodeChange(newCode)
         },
-        [handleCodeChange]
+        [handleCodeChange, clearPreviewError]
     )
 
-    const [
-        createBatchSpecFromRaw,
-        { data: createBatchSpecFromRawData, loading: createBatchSpecFromRawLoading },
-    ] = useMutation<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(CREATE_BATCH_SPEC_FROM_RAW, {})
-
-    const [
-        replaceBatchSpecInput,
-        { data: replaceBatchSpecInputData, loading: replaceBatchSpecInputLoading },
-    ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT, {})
-
-    const currentBatchSpecID = useMemo(
-        () =>
-            // If we have replaced the batch spec input already, the initial batch spec
-            // has been superseded, so prefer that one.
-            replaceBatchSpecInputData?.replaceBatchSpecInput.id ||
-            createBatchSpecFromRawData?.createBatchSpecFromRaw.id,
-        [replaceBatchSpecInputData, createBatchSpecFromRawData]
-    )
-
-    const preview = useCallback(() => {
-        setServerError(undefined)
-
-        // If we have a batch spec ID already, we're replacing the exiting batch spec with
-        // a new one.
-        if (currentBatchSpecID) {
-            return replaceBatchSpecInput({ variables: { spec: code, previousSpec: currentBatchSpecID } }).catch(
-                setServerError
-            )
-        }
-
-        // Otherwise, we're creating a new batch spec from the raw spec input YAML.
-        return createBatchSpecFromRaw({
-            variables: { spec: code, namespace: selectedNamespace.id },
-        }).catch(setServerError)
-    }, [code, currentBatchSpecID, selectedNamespace, createBatchSpecFromRaw, replaceBatchSpecInput])
+    const preview = useCallback(() => previewBatchSpec(code), [code, previewBatchSpec])
 
     // const history = useHistory()
     // const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
@@ -144,16 +118,16 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     // }, [previewID, history])
 
     const [canExecute, executionTooltip] = useMemo(() => {
-        const canExecute = isValid && !serverError && !createBatchSpecFromRawLoading && !replaceBatchSpecInputLoading
+        const canExecute = isValid && !previewError && !isLoading
         const executionTooltip =
-            !isValid || serverError
+            !isValid || previewError
                 ? "There's a problem with your batch spec."
-                : createBatchSpecFromRawLoading || replaceBatchSpecInputLoading
+                : isLoading
                 ? 'Wait for the preview to finish.'
                 : undefined
 
         return [canExecute, executionTooltip]
-    }, [isValid, serverError, createBatchSpecFromRawLoading, replaceBatchSpecInputLoading])
+    }, [isValid, previewError, isLoading])
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
@@ -202,11 +176,13 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     />
                 </div>
                 <Container className={styles.workspacesPreviewContainer}>
-                    {errors.update && <ErrorAlert error={errors.update} />}
-                    {!isValid && errors.validation.length > 0 && (
-                        <ErrorAlert error={`The entered spec is invalid:\n  * ${errors.validation.join('\n  * ')}`} />
+                    {codeErrors.update && <ErrorAlert error={codeErrors.update} />}
+                    {!isValid && codeErrors.validation.length > 0 && (
+                        <ErrorAlert
+                            error={`The entered spec is invalid:\n  * ${codeErrors.validation.join('\n  * ')}`}
+                        />
                     )}
-                    {serverError && <ErrorAlert error={serverError} />}
+                    {previewError && <ErrorAlert error={previewError} />}
                     <WorkspacesPreview batchSpecInput={debouncedCode} disabled={isValid !== true} preview={preview} />
                 </Container>
             </div>
@@ -312,5 +288,67 @@ const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult => {
             update: updateError,
         },
         excludeRepo,
+    }
+}
+
+interface UsePreviewBatchSpecResult {
+    previewBatchSpec: (code: string) => void
+    currentBatchSpecID?: Scalars['ID']
+    isLoading: boolean
+    error?: Error
+    clearError: () => void
+}
+
+const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject): UsePreviewBatchSpecResult => {
+    const [error, setError] = useState<Error>()
+
+    const [
+        createBatchSpecFromRaw,
+        { data: createBatchSpecFromRawData, loading: createBatchSpecFromRawLoading },
+    ] = useMutation<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(CREATE_BATCH_SPEC_FROM_RAW, {})
+
+    const [
+        replaceBatchSpecInput,
+        { data: replaceBatchSpecInputData, loading: replaceBatchSpecInputLoading },
+    ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT, {})
+
+    const currentBatchSpecID = useMemo(
+        () =>
+            // If we have replaced the batch spec input already, the initial batch spec
+            // has been superseded, so prefer that one.
+            replaceBatchSpecInputData?.replaceBatchSpecInput.id ||
+            createBatchSpecFromRawData?.createBatchSpecFromRaw.id,
+        [replaceBatchSpecInputData, createBatchSpecFromRawData]
+    )
+
+    const isLoading = useMemo(() => createBatchSpecFromRawLoading || replaceBatchSpecInputLoading, [
+        createBatchSpecFromRawLoading,
+        replaceBatchSpecInputLoading,
+    ])
+
+    const previewBatchSpec = useCallback(
+        (code: string) => {
+            setError(undefined)
+
+            // If we have a batch spec ID already, we're replacing the exiting batch spec with
+            // a new one.
+            if (currentBatchSpecID) {
+                replaceBatchSpecInput({ variables: { spec: code, previousSpec: currentBatchSpecID } }).catch(setError)
+            } else {
+                // Otherwise, we're creating a new batch spec from the raw spec input YAML.
+                createBatchSpecFromRaw({
+                    variables: { spec: code, namespace: namespace.id },
+                }).catch(setError)
+            }
+        },
+        [currentBatchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput]
+    )
+
+    return {
+        previewBatchSpec,
+        currentBatchSpecID,
+        isLoading,
+        error,
+        clearError: () => setError(undefined),
     }
 }
