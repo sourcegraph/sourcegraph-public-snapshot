@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
 	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
@@ -33,7 +34,7 @@ import (
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context, datastore *codeintel.DataStores) error {
 	database.ExternalServices = edb.NewExternalServicesStore
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)

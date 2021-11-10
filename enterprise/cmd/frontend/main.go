@@ -44,14 +44,13 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context, *codeintel.DataStores) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
 	"licensing":      licensing.Init,
 	"executor":       executor.Init,
 	"codeintel":      codeintel.Init,
-	"insights":       insights.Init,
 	"batches":        batches.Init,
 	"codemonitors":   codemonitors.Init,
 	"dotcom":         dotcom.Init,
@@ -75,11 +74,19 @@ func enterpriseSetupHook(db database.DB, outOfBandMigrationRunner *oobmigration.
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
+	datastore, err := codeintel.NewDataStores(ctx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext); err != nil {
+		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext, datastore); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}
+
+	// Initialize the internal insights service.
+	insights.Init(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext)
 
 	return enterpriseServices
 }
