@@ -239,16 +239,16 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 
 	want := []*btypes.BatchSpecWorkspace{
 		{
-			RepoID:                         repos[0].ID,
-			BatchSpecID:                    batchSpec.ID,
-			ChangesetSpecIDs:               have[0].ChangesetSpecIDs,
-			Branch:                         "refs/heads/main",
-			Commit:                         "d34db33f",
-			FileMatches:                    []string{},
-			Path:                           "",
-			Steps:                          []batcheslib.Step{},
-			OnlyFetchWorkspace:             true,
-			BatchSpecExecutionCacheEntryID: entry.ID,
+			RepoID:             repos[0].ID,
+			BatchSpecID:        batchSpec.ID,
+			ChangesetSpecIDs:   have[0].ChangesetSpecIDs,
+			Branch:             "refs/heads/main",
+			Commit:             "d34db33f",
+			FileMatches:        []string{},
+			Path:               "",
+			Steps:              []batcheslib.Step{},
+			OnlyFetchWorkspace: true,
+			CachedResultFound:  true,
 		},
 	}
 

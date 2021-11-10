@@ -170,8 +170,6 @@ candidates AS (
              entries.last_used_at,
 			 SUM(octet_length(entries.value)) OVER (ORDER BY COALESCE(entries.last_used_at, entries.created_at) ASC, entries.id ASC) AS running_size
       FROM batch_spec_execution_cache_entries entries
-      LEFT JOIN batch_spec_workspaces ON batch_spec_workspaces.batch_spec_execution_cache_entry_id = entries.id
-      WHERE batch_spec_workspaces.id IS NULL
   ) t
   WHERE
     ((SELECT total FROM total_size) - t.running_size) >= %s
