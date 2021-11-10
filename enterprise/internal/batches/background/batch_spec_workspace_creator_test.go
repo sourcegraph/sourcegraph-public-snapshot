@@ -2,8 +2,8 @@ package background
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -14,6 +14,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
@@ -178,7 +179,9 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 
 	user := ct.CreateTestUser(t, db, true)
 
-	s := store.New(db, &observation.TestContext, nil)
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
+	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	batchSpec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpecYAML, false)
 	if err != nil {
@@ -209,29 +212,20 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 		t.Fatal(err)
 	}
 	executionResult := &execution.Result{
-		Diff: testDiff,
-		ChangedFiles: &git.Changes{
-			Modified: []string{"README.md", "urls.txt"},
-		},
-		Outputs: map[string]interface{}{},
-		Path:    "",
+		Diff:         testDiff,
+		ChangedFiles: &git.Changes{Modified: []string{"README.md", "urls.txt"}},
+		Outputs:      map[string]interface{}{},
 	}
 
-	value, err := json.Marshal(executionResult)
+	entry, err := btypes.NewCacheEntryFromResult(key, executionResult)
 	if err != nil {
 		t.Fatal(err)
-	}
-	entry := &btypes.BatchSpecExecutionCacheEntry{
-		Key:   key,
-		Value: string(value),
 	}
 	if err := s.CreateBatchSpecExecutionCacheEntry(context.Background(), entry); err != nil {
 		t.Fatal(err)
 	}
 
-	resolver := &dummyWorkspaceResolver{
-		workspaces: []*service.RepoWorkspace{workspace},
-	}
+	resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
 
 	creator := &batchSpecWorkspaceCreator{store: s}
 	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
@@ -281,6 +275,14 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	}
 	if haveDiff != testDiff {
 		t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
+	}
+
+	reloadedEntry, err := s.GetBatchSpecExecutionCacheEntry(context.Background(), store.GetBatchSpecExecutionCacheEntryOpts{Key: entry.Key})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reloadedEntry.LastUsedAt.Equal(now) {
+		t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
 	}
 }
 

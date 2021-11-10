@@ -118,6 +118,10 @@ func (r *batchSpecWorkspaceCreator) process(
 			}
 			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
 		}
+
+		if err := tx.MarkUsedBatchSpecExecutionCacheEntry(ctx, entry.ID); err != nil {
+			return err
+		}
 	}
 
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
