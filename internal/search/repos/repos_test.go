@@ -384,7 +384,7 @@ func TestResolverPaginate(t *testing.T) {
 			r := Resolver{Opts: tc.opts, DB: db, Stream: streaming.StreamFunc(func(streaming.SearchEvent) {})}
 
 			var pages []Resolved
-			err := r.Paginate(ctx, func(page *Resolved) error {
+			err := r.Paginate(ctx, nil, func(page *Resolved) error {
 				pages = append(pages, *page)
 				return nil
 			})

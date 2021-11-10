@@ -54,7 +54,7 @@ func (r *Resolved) String() string {
 type Pager interface {
 	// Paginate calls the given callback with each page of resolved repositories. If the callback
 	// returns an error, Paginate will abort and return that error.
-	Paginate(context.Context, func(*Resolved) error) error
+	Paginate(context.Context, *search.RepoOptions, func(*Resolved) error) error
 }
 
 type Resolver struct {
@@ -63,14 +63,20 @@ type Resolver struct {
 	Stream streaming.Sender
 }
 
-func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolver.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	opts := r.Opts // copy
+	var opts search.RepoOptions
+	if op != nil {
+		opts = *op
+	} else {
+		opts = r.Opts
+	}
+
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}

@@ -135,7 +135,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			calledReposListMinimalRepos = true
 
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+			return []types.MinimalRepo{}, nil
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)
@@ -182,7 +182,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			calledReposListMinimalRepos = true
 
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+			return []types.MinimalRepo{}, nil
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)

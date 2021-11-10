@@ -317,7 +317,7 @@ func (t *TextSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
 	defer cleanup()
 
-	return repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
 		if err != nil {
 			return err

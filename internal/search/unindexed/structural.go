@@ -159,7 +159,7 @@ type StructuralSearch struct {
 }
 
 func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	return repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
 			return err

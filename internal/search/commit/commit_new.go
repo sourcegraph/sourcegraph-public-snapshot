@@ -31,7 +31,7 @@ type CommitSearch struct {
 }
 
 func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	return repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
 		resultType := "commit"
 		if j.Diff {
 			resultType = "diff"
