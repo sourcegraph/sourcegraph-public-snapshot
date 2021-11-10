@@ -43,7 +43,7 @@ Precise code intelligence indexing jobs are scheduled periodically in the backgr
 
 ### Applying indexing policies globally
 
-Site admins may create indexing policies that are applied to _all repositories_ on your Sourcegraph instance. In order to view and edit these policies, navigate to teh code intelligence configuration in the site-admin dashboard.
+Site admins can create indexing policies that apply to _all repositories_ on their Sourcegraph instance. In order to view and edit these policies, navigate to the code intelligence configuration in the site-admin dashboard.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.33/indexing/global/list.png" class="screenshot">
 
