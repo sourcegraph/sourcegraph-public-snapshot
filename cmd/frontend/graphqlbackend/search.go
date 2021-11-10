@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -235,7 +234,7 @@ const (
 var mockDecodedViewerFinalSettings *schema.Settings
 
 // decodedViewerFinalSettings returns the final (merged) settings for the viewer
-func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Settings, err error) {
+func decodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
 	defer func() {
 		tr.SetError(err)
@@ -245,7 +244,7 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 		return mockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := (&schemaResolver{db: database.NewDB(db)}).ViewerSettings(ctx)
+	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

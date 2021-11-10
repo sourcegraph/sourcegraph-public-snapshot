@@ -144,7 +144,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(database.NewDB(db), repoName.ToRepo())
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
