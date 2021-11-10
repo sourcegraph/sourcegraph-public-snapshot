@@ -196,6 +196,22 @@ extend type Query {
     Return all insight views visible to the authenticated user.
     """
     insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
+
+    captureGroup(query: String!, repo: String!): [CaptureGroupResults!]!
+}
+
+type CaptureGroupResults {
+    value: String!
+    groups: [CaptureGroupMatch!]!
+}
+#type CaptureGroup {
+#    repo: String!
+#    matches: [CaptureGroupMatch!]!
+#}
+
+type CaptureGroupMatch {
+    time: DateTime!
+    count: Int!
 }
 
 extend type Mutation {
@@ -876,3 +892,4 @@ type InsightViewFilters {
     """
     excludeRepoRegex: String
 }
+

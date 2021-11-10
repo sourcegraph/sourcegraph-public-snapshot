@@ -19,6 +19,8 @@ type InsightsResolver interface {
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
+	CaptureGroup(ctx context.Context, args CaptureGroupArgs) ([]CaptureGroupResultsResolver, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -328,4 +330,23 @@ type InsightViewQueryArgs struct {
 
 type DeleteInsightViewArgs struct {
 	Id graphql.ID
+}
+
+type CaptureGroupResultsResolver interface {
+	Value(ctx context.Context) string
+	Groups(ctx context.Context) ([]CaptureGroupMatchResolver, error)
+}
+
+// type CaptureGroupResolver interface {
+// 	Repo(ctx context.Context) string
+// 	Matches(ctx context.Context) []CaptureGroupMatchResolver
+// }
+type CaptureGroupMatchResolver interface {
+	Time(ctx context.Context) DateTime
+	Count(ctx context.Context) int32
+}
+
+type CaptureGroupArgs struct {
+	Query string
+	Repo  string
 }
