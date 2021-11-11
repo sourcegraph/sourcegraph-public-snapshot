@@ -95,9 +95,8 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 		}
 		repoIds[repository] = repo.ID
 	}
-	log15.Info("Generated repoIds", "repoids", repoIds)
+	log15.Debug("Generated repoIds", "repoids", repoIds)
 
-	// frames := FirstOfMonthFrames(7, c.clock())
 	frames := BuildFrames(7, interval, c.clock())
 
 	type timeCounts map[time.Time]int
@@ -108,7 +107,6 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 		if err != nil {
 			return nil, errors.Wrapf(err, "FirstEverCommit")
 		}
-		// plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
 		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
 
@@ -123,11 +121,10 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			return times
 		}
 		for _, execution := range plan.Executions {
-			log15.Info("Generated execution for live search query plan", "repository", repository, "execution", execution)
+			log15.Debug("Generated execution for live search query plan", "repository", repository, "execution", execution)
 		}
 
-		// we need to perform the pivot
-		// var pivoted map[string]timeCounts
+		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
 		for _, execution := range plan.Executions {
 			if execution.RecordingTime.Before(firstCommit.Committer.Date) {
 				// this logic is faulty, but works for now. If the plan was compressed (these executions had children) we would have to
@@ -148,7 +145,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			modifiedQuery := withCountUnlimited(query)
 			modifiedQuery = fmt.Sprintf("%s repo:^%s$@%s", modifiedQuery, regexp.QuoteMeta(repository), commits[0].ID)
 
-			log15.Info("executing query", "query", modifiedQuery)
+			log15.Debug("executing query", "query", modifiedQuery)
 			results, err := queryrunner.ComputeSearch(ctx, modifiedQuery)
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
@@ -158,7 +155,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 			sort.Slice(grouped, func(i, j int) bool {
 				return grouped[i].Value < grouped[j].Value
 			})
-			log15.Info("grouped results", "grouped", grouped)
+			log15.Debug("grouped results", "grouped", grouped)
 
 			for _, timeGroupElement := range grouped {
 				value := timeGroupElement.Value
