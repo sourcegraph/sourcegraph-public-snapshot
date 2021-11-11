@@ -35,6 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
   . [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
 - Improve detection for Docker running in non-linux
   environments. [#23477](https://github.com/sourcegraph/sourcegraph/issues/23477)
+- Fixed the cache size calculation used for Kubernetes deployments. Previously, the calculated value was too high and would exceed the ephemeral storage request limit. #[26283](https://github.com/sourcegraph/sourcegraph/issues/26283)
 
 ### Removed
 
