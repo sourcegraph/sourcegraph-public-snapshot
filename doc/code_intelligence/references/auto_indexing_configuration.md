@@ -57,12 +57,12 @@ Each configured index job is run by a single executor process. Multiple index jo
 
 The basic outline of an index job is as follows.
 
-1. The target repository is cloned into the job's workspace
-2. Pre-indexing steps (if configured) executed in individual Docker container that volume mount the workspace
-3. A Docker container for the indexer is started
-4. Local steps (if configured) are executed within the running container
-5. The indexer is invoked within the running container to produce an index artifact
-6. The src cli is invoked to upload the index artifact to the Sourcegraph instance
+1. The target repository is cloned into the job's workspace from Sourcegraph.
+2. Pre-indexing steps (if any are configured) are executed sequentially in individual Docker containers that volume mount the workspace.
+3. A separate Docker container for the indexer is started.
+4. Local steps (if configured) are executed within the running container.
+5. The indexer is invoked within the running container to produce an index artifact.
+6. The [`src` CLI](/cli/index.md) is invoked to upload the index artifact to the Sourcegraph instance.
 
 The pre-indexing steps, indexer container, local steps, and indexer arguments are configurable via this object.
 
