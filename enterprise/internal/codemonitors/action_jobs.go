@@ -5,11 +5,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -85,8 +83,7 @@ func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, trigge
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	return scanActionJobs(rows, err)
+	return scanActionJobs(rows)
 }
 
 const totalActionEmailEventsFmtStr = `
@@ -142,14 +139,10 @@ INNER JOIN cm_monitors cm on cm.id = cq.monitor
 WHERE caj.id = %s
 `
 
-func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (m *ActionJobMetadata, err error) {
+func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error) {
 	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, recordID))
-	m = &ActionJobMetadata{}
-	err = row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	m := &ActionJobMetadata{}
+	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
 }
 
 const actionJobForIDFmtStr = `
@@ -159,65 +152,57 @@ WHERE id = %s
 `
 
 func (s *Store) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
-	return s.runActionJobQuery(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), recordID))
+	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), recordID)
+	row := s.QueryRow(ctx, q)
+	return scanActionJob(row)
 }
 
-func (s *Store) runActionJobQuery(ctx context.Context, q *sqlf.Query) (ajs *ActionJob, err error) {
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, q)
+// ScanActionJobRecord implements the worker RecordScanFn
+func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
-		return nil, err
+		return &TriggerJobs{}, false, err
 	}
-	defer rows.Close()
-	var es []*ActionJob
-	es, err = scanActionJobs(rows, err)
-	if err != nil {
-		return nil, err
-	}
-	if len(es) == 0 {
-		return nil, errors.Errorf("operation failed. Query should have returned at least 1 row")
-	}
-	return es[0], nil
-}
 
-func ScanActionJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	records, err := scanActionJobs(rows, err)
+	records, err := scanActionJobs(rows)
 	if err != nil || len(records) == 0 {
 		return &TriggerJobs{}, false, err
 	}
 	return records[0], true, nil
 }
 
-func scanActionJobs(rows *sql.Rows, err error) ([]*ActionJob, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
+	defer rows.Close()
+
 	var ajs []*ActionJob
 	for rows.Next() {
-		aj := &ActionJob{}
-		// Columns should be kept in sync with ActionJobsColumns
-		if err := rows.Scan(
-			&aj.Id,
-			&aj.Email,
-			&aj.Webhook,
-			&aj.SlackNotification,
-			&aj.TriggerEvent,
-			&aj.State,
-			&aj.FailureMessage,
-			&aj.StartedAt,
-			&aj.FinishedAt,
-			&aj.ProcessAfter,
-			&aj.NumResets,
-			&aj.NumFailures,
-			&aj.LogContents,
-		); err != nil {
+		aj, err := scanActionJob(rows)
+		if err != nil {
 			return nil, err
 		}
 		ajs = append(ajs, aj)
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return ajs, nil
+	return ajs, rows.Err()
+}
+
+type rowScanner interface {
+	Scan(...interface{}) error
+}
+
+func scanActionJob(row rowScanner) (*ActionJob, error) {
+	aj := &ActionJob{}
+	return aj, row.Scan(
+		&aj.Id,
+		&aj.Email,
+		&aj.Webhook,
+		&aj.SlackNotification,
+		&aj.TriggerEvent,
+		&aj.State,
+		&aj.FailureMessage,
+		&aj.StartedAt,
+		&aj.FinishedAt,
+		&aj.ProcessAfter,
+		&aj.NumResets,
+		&aj.NumFailures,
+		&aj.LogContents,
+	)
 }
