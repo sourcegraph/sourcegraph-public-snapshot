@@ -155,6 +155,7 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
                 // TODO: Show cooler loading indicator
                 <LoadingSpinner className="my-4" />
             ) : null}
+            {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
             {resolution?.state === 'COMPLETED' ? (
                 <WorkspacesPreviewList
                     batchSpecID={batchSpecID}

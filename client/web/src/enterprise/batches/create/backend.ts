@@ -49,29 +49,7 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
                 workspaceResolution {
                     workspaces(first: 10000) {
                         nodes {
-                            repository {
-                                id
-                                name
-                                url
-                            }
-                            ignored
-                            unsupported
-                            branch {
-                                id
-                                abbrevName
-                                displayName
-                                target {
-                                    oid
-                                }
-                            }
-                            path
-                            onlyFetchWorkspace
-                            steps {
-                                run
-                                container
-                            }
-                            searchResultPaths
-                            cachedResultFound
+                            ...PreviewBatchSpecWorkspaceFields
                         }
                     }
                 }
@@ -79,21 +57,46 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
                     totalCount
                     nodes {
                         __typename
-                        id
                         ... on VisibleChangesetSpec {
-                            description {
-                                __typename
-                                ... on ExistingChangesetReference {
-                                    baseRepository {
-                                        name
-                                        url
-                                    }
-                                    externalID
-                                }
-                            }
+                            ...PreviewBatchSpecImportingChangesetFields
                         }
                     }
                 }
+            }
+        }
+    }
+
+    fragment PreviewBatchSpecWorkspaceFields on BatchSpecWorkspace {
+        repository {
+            id
+            name
+            url
+        }
+        ignored
+        unsupported
+        branch {
+            id
+            abbrevName
+            displayName
+            target {
+                oid
+            }
+        }
+        path
+        searchResultPaths
+        cachedResultFound
+    }
+
+    fragment PreviewBatchSpecImportingChangesetFields on VisibleChangesetSpec {
+        id
+        description {
+            __typename
+            ... on ExistingChangesetReference {
+                baseRepository {
+                    name
+                    url
+                }
+                externalID
             }
         }
     }

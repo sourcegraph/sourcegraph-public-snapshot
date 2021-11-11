@@ -52,17 +52,17 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
             {!workspaces || workspaces.nodes.length === 0 ? (
                 <span className="text-muted">No workspaces found</span>
             ) : (
-                <ul className="list-group p-1 mb-0">
+                <ul className="list-group p-1 mb-0 w-100">
                     {workspaces?.nodes.map(item => (
                         <li
-                            className="d-flex border-bottom mb-3"
+                            className="d-flex border-bottom mb-3 w-100"
                             key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
                         >
                             <button
                                 className="btn align-self-start p-0 m-0 mr-3"
                                 data-tooltip="Omit this repository from batch spec file"
                                 type="button"
-                                // TODO: Alert that for monorepos, we will currently exclude all paths
+                                // TODO: Show warning that for monorepos, we will currently exclude all paths.
                                 onClick={() => excludeRepo(item.repository.name, item.branch.displayName)}
                             >
                                 <CloseIcon className="icon-inline" />
@@ -82,28 +82,27 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
             )}
             {importingChangesets && importingChangesets.totalCount > 0 && (
                 <>
-                    <h3>Importing changesets</h3>
-                    <ul>
-                        {importingChangesets?.nodes.map(node => (
-                            <li key={node.id}>
-                                <LinkOrSpan
-                                    to={
-                                        node.__typename === 'VisibleChangesetSpec' &&
-                                        node.description.__typename === 'ExistingChangesetReference'
-                                            ? node.description.baseRepository.url
-                                            : undefined
-                                    }
-                                >
-                                    {node.__typename === 'VisibleChangesetSpec' &&
-                                        node.description.__typename === 'ExistingChangesetReference' &&
-                                        node.description.baseRepository.name}
-                                </LinkOrSpan>{' '}
-                                #
-                                {node.__typename === 'VisibleChangesetSpec' &&
-                                    node.description.__typename === 'ExistingChangesetReference' &&
-                                    node.description.externalID}
-                            </li>
-                        ))}
+                    <h4 className="align-self-start w-100">Importing changesets</h4>
+                    <ul className="w-100">
+                        {importingChangesets?.nodes.map(node =>
+                            node.__typename === 'VisibleChangesetSpec' ? (
+                                <li className="w-100" key={node.id}>
+                                    <LinkOrSpan
+                                        to={
+                                            node.description.__typename === 'ExistingChangesetReference'
+                                                ? node.description.baseRepository.url
+                                                : undefined
+                                        }
+                                    >
+                                        {node.description.__typename === 'ExistingChangesetReference' &&
+                                            node.description.baseRepository.name}
+                                    </LinkOrSpan>{' '}
+                                    #
+                                    {node.description.__typename === 'ExistingChangesetReference' &&
+                                        node.description.externalID}
+                                </li>
+                            ) : null
+                        )}
                     </ul>
                 </>
             )}

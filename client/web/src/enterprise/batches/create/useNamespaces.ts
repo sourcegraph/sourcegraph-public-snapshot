@@ -17,10 +17,16 @@ export interface UseNamespacesResult {
     defaultSelectedNamespace: SettingsUserSubject | SettingsOrgSubject
 }
 
+/**
+ * Custom hook to extract namespaces from the provided `settingsCascade` and determine the
+ * appropriate default namespace to select for the user.
+ *
+ * @param settingsCascade The current user's `Settings`.
+ */
 export const useNamespaces = (settingsCascade: SettingsCascadeOrError<Settings>): UseNamespacesResult => {
     const location = useLocation()
 
-    // Gather all the available namespaces from user settings
+    // Gather all the available namespaces from the settings subjects.
     const rawNamespaces: SettingsSubject[] = useMemo(
         () =>
             (settingsCascade !== null &&
@@ -50,11 +56,11 @@ export const useNamespaces = (settingsCascade: SettingsCascadeOrError<Settings>)
         [userNamespace, organizationNamespaces]
     )
 
-    // Check if there's a namespace parameter in the URL
+    // Check if there's a namespace parameter in the URL.
     const defaultNamespace = new URLSearchParams(location.search).get('namespace')
 
     // The default namespace selected from the dropdown should match whatever was in the
-    // URL parameter, or else default to the user's namespace
+    // URL parameter, or else default to the user's namespace.
     const defaultSelectedNamespace = useMemo(() => {
         if (defaultNamespace) {
             const lowerCaseDefaultNamespace = defaultNamespace.toLowerCase()

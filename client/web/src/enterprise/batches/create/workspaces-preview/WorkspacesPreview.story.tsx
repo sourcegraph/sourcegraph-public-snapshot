@@ -2,17 +2,17 @@ import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+import { MATCH_ANY_PARAMETERS, WildcardMockedResponse, WildcardMockLink } from 'wildcard-mock-link'
 
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
-import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
+import { WORKSPACES_AND_IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { mockWorkspaceResolutionStatus } from './WorkspacesPreview.mock'
+import { mockWorkspaceResolutionStatus, mockWorkspacesAndImportingChangesets } from './WorkspacesPreview.mock'
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
@@ -60,6 +60,7 @@ add('first preview, loading', () => {
                     <WorkspacesPreview
                         {...props}
                         batchSpecID="fakelol"
+                        currentPreviewRequestTime="1234"
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={false}
@@ -99,6 +100,7 @@ add('first preview, error', () => {
                     <WorkspacesPreview
                         {...props}
                         batchSpecID="fakelol"
+                        currentPreviewRequestTime="1234"
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={false}
@@ -110,7 +112,17 @@ add('first preview, error', () => {
     )
 })
 
-// TODO:
+const WORKSPACES_AND_IMPORTING_CHANGESETS_MOCK: WildcardMockedResponse = {
+    request: {
+        query: getDocumentNode(WORKSPACES_AND_IMPORTING_CHANGESETS),
+        variables: MATCH_ANY_PARAMETERS,
+    },
+    result: {
+        data: mockWorkspacesAndImportingChangesets(10, 2),
+    },
+    nMatches: Number.POSITIVE_INFINITY,
+}
+
 add('first preview, success', () => {
     const mocks = new WildcardMockLink([
         {
@@ -123,6 +135,7 @@ add('first preview, success', () => {
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
+        WORKSPACES_AND_IMPORTING_CHANGESETS_MOCK,
     ])
 
     return (
@@ -132,6 +145,7 @@ add('first preview, success', () => {
                     <WorkspacesPreview
                         {...props}
                         batchSpecID="fakelol"
+                        currentPreviewRequestTime="1234"
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={false}
@@ -143,7 +157,6 @@ add('first preview, success', () => {
     )
 })
 
-// TODO:
 add('first preview, stale', () => {
     const mocks = new WildcardMockLink([
         {
@@ -156,6 +169,7 @@ add('first preview, stale', () => {
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
+        WORKSPACES_AND_IMPORTING_CHANGESETS_MOCK,
     ])
 
     return (
@@ -165,6 +179,7 @@ add('first preview, stale', () => {
                     <WorkspacesPreview
                         {...props}
                         batchSpecID="fakelol"
+                        currentPreviewRequestTime="1234"
                         previewDisabled={false}
                         preview={noop}
                         batchSpecStale={true}
@@ -175,3 +190,6 @@ add('first preview, stale', () => {
         </WebStory>
     )
 })
+
+// TODO: Add these stories once the workspaces preview list is kept visible on subsequent updates
+// add('subsequent preview, loading', () => {})
