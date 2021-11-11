@@ -13,6 +13,7 @@
 | `-name` | exact name of the external service to edit |  |
 | `-rename` | when specified, renames the external service |  |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 
 
 ## Usage
@@ -35,6 +36,8 @@ Usage of 'src extsvc edit':
     	when specified, renames the external service
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
 Examples:
 

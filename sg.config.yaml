@@ -311,7 +311,7 @@ commands:
         echo "downloading ${url}" 1>&2
         curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" >"${target}.tmp"
         mv "${target}.tmp" "${target}"
-        chmod +x ${target}
+        chmod +x "${target}"
       fi
     env:
       CADDY_VERSION: 2.4.5
@@ -543,9 +543,6 @@ commands:
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
-      # Set the following to a path on disk to persist data (or unset to not persist data)
-      PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
-      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |
@@ -710,6 +707,10 @@ commands:
   # be used to debug which global vars `sg` uses.
   debug-env:
     cmd: env
+
+  bext:
+    cmd: yarn --cwd client/browser dev
+    install: yarn
 
 checks:
   docker:
@@ -975,6 +976,18 @@ tests:
   web-integration:
     cmd: yarn test-integration
     install: ENTERPRISE=1 yarn build-web
+
+  bext:
+    cmd: yarn --cwd client/browser test
+
+  bext-integration:
+    cmd: yarn --cwd client/browser test-integration
+
+  bext-e2e:
+    cmd: yarn run download-puppeteer-browser && yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    env:
+      SOURCEGRAPH_BASE_URL: https://sourcegraph.com
+      PERCY_BROWSER_EXECUTABLE: node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome
 
   frontend:
     cmd: yarn run jest --testPathIgnorePatterns end-to-end regression integration storybook

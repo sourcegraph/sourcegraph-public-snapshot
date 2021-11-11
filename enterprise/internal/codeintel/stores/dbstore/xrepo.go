@@ -3,18 +3,20 @@ package dbstore
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // DefinitionDumpsLimit is the maximum number of records that can be returned from DefinitionDumps.
-const DefinitionDumpsLimit = 10
+var DefinitionDumpsLimit, _ = strconv.ParseInt(env.Get("PRECISE_CODE_INTEL_DEFINITION_DUMPS_LIMIT", "100", "The maximum number of dumps that can define the same package."), 10, 64)
 
 // DefinitionDumps returns the set of dumps that define at least one of the given monikers.
 func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []Dump, err error) {
@@ -44,6 +46,29 @@ func (s *Store) DefinitionDumps(ctx context.Context, monikers []precise.Qualifie
 
 const definitionDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/xrepo.go:DefinitionDumps
+WITH
+ranked_uploads AS (
+	SELECT
+		u.id,
+		-- Rank each upload providing the same package from the same directory
+		-- within a repository by commit date. We'll choose the oldest commit
+		-- date as the canonical choice used to resolve the current definitions
+		-- request.
+		` + packageRankingQueryFragment + ` AS rank
+	FROM lsif_uploads u
+	JOIN lsif_packages p ON p.dump_id = u.id
+	WHERE
+		-- Don't match deleted uploads
+		u.state = 'completed' AND
+		(p.scheme, p.name, p.version) IN (%s)
+),
+canonical_uploads AS (
+	SELECT ru.id
+	FROM ranked_uploads ru
+	WHERE ru.rank = 1
+	ORDER BY ru.id
+	LIMIT %s
+)
 SELECT
 	u.id,
 	u.commit,
@@ -61,8 +86,25 @@ SELECT
 	u.repository_name,
 	u.indexer,
 	u.associated_index_id
-FROM lsif_dumps_with_repository_name u WHERE u.id IN (
-	SELECT MAX(p.dump_id) FROM lsif_packages p WHERE (p.scheme, p.name, p.version) IN (%s) GROUP BY p.scheme, p.name, p.version LIMIT %s
+FROM lsif_dumps_with_repository_name u
+WHERE u.id IN (SELECT id FROM canonical_uploads)
+`
+
+// packageRankingQueryFragment uses `lsif_uploads u` JOIN `lsif_packages p` to return a rank
+// for each row grouped by package and source code location and ordered by the associated Git
+// commit date.
+const packageRankingQueryFragment = `
+rank() OVER (
+	PARTITION BY
+		-- Group providers of the same package together
+		p.scheme, p.name, p.version,
+		-- Defined by the same directory within a repository
+		u.repository_id, u.indexer, u.root
+	ORDER BY
+		-- Rank each grouped upload by the associated commit date
+		u.committed_at,
+		-- Break ties via the unique identifier
+		u.id
 )
 `
 

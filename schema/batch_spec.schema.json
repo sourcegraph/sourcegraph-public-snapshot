@@ -148,7 +148,7 @@
                     },
                     {
                       "type": "object",
-                      "description": "An environment variable to set in the step environment: the value will be passed through from the environment src is running within.",
+                      "description": "An environment variable to set in the step environment: the key is used as the environment variable name and the value as the value.",
                       "additionalProperties": {
                         "type": "string"
                       },

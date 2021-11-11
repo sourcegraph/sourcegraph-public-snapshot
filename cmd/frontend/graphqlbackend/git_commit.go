@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"io/fs"
 	"net/url"
 	"os"
 	"sync"
@@ -9,13 +10,14 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
@@ -34,7 +36,7 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 }
 
 type GitCommitResolver struct {
-	db           dbutil.DB
+	db           database.DB
 	repoResolver *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
@@ -58,7 +60,7 @@ type GitCommitResolver struct {
 
 // When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
 // a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
+func toGitCommitResolver(repo *RepositoryResolver, db database.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -191,7 +193,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 		return nil, err
 	}
 
-	return externallink.Commit(ctx, database.NewDB(r.db), repo, api.CommitID(r.oid))
+	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
@@ -202,8 +204,11 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := gitStat(ctx, subRepoPermsClient(r.db), r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if !stat.Mode().IsDir() {
@@ -220,7 +225,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := gitStat(ctx, subRepoPermsClient(r.db), r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -354,4 +359,20 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	url := *r.repoResolver.RepoMatch.URL()
 	url.Path += "@" + string(r.oid)
 	return &url
+}
+
+func gitStat(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
+		Repo: repo,
+		Path: path,
+	})
+	if err != nil {
+		log15.Error("checking sub-repo permissions in gitStat", "error", err)
+		return nil, errors.New("checking sub-repo permissions")
+	}
+	// No access
+	if !perms.Include(authz.Read) {
+		return nil, os.ErrNotExist
+	}
+	return git.Stat(ctx, repo, commit, path)
 }

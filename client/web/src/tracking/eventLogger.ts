@@ -10,6 +10,7 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
@@ -18,6 +19,7 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private lastSourceURL?: string
     private deviceID = ''
     private eventID = 0
 
@@ -121,6 +123,19 @@ export class EventLogger implements TelemetryService {
 
         this.firstSourceURL = firstSourceURL
         return firstSourceURL
+    }
+
+    public getLastSourceURL(): string {
+        const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
+
+        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+
+        this.lastSourceURL = lastSourceURL
+        return lastSourceURL
     }
 
     // Device ID is a require field for Amplitude events.

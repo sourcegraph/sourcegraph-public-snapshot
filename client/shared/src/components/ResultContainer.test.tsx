@@ -131,6 +131,7 @@ describe('ResultContainer', () => {
         collapseLabel: 'Hide matches',
         expandLabel: 'Show matches',
         allExpanded: false,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     const findReferencesProps = {
@@ -147,6 +148,7 @@ describe('ResultContainer', () => {
             />
         ),
         expandedChildren: <FileMatchChildren {...fileMatchChildrenProps} {...expandedMatchGroups} />,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
     }
 
     it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {

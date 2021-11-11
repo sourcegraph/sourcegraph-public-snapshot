@@ -3,7 +3,7 @@
 exports[`LoaderInput should not render a loading spinner when loading prop is false 1`] = `
 <DocumentFragment>
   <div
-    class="loader-input__container"
+    class="container"
   >
     <input
       type="text"
@@ -15,13 +15,13 @@ exports[`LoaderInput should not render a loading spinner when loading prop is fa
 exports[`LoaderInput should render a loading spinner when loading prop is true 1`] = `
 <DocumentFragment>
   <div
-    class="loader-input__container"
+    class="container"
   >
     <input
       type="text"
     />
     <loadingspinner
-      class="loader-input__spinner"
+      class="spinner"
     />
   </div>
 </DocumentFragment>

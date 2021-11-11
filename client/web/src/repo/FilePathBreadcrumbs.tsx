@@ -2,23 +2,31 @@ import classNames from 'classnames'
 import * as React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { toTreeURL } from '../util/url'
 
 import styles from './FilePathBreadcrumbs.module.scss'
 
+interface Props extends RepoRevision, TelemetryProps {
+    filePath: string
+    isDir: boolean
+    repoUrl: string
+}
+
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumbs: React.FunctionComponent<
-    RepoRevision & {
-        filePath: string
-        isDir: boolean
-        repoUrl: string
-    }
-> = ({ repoName, repoUrl, revision, filePath, isDir }) => {
+export const FilePathBreadcrumbs: React.FunctionComponent<Props> = ({
+    repoName,
+    repoUrl,
+    revision,
+    filePath,
+    isDir,
+    telemetryService,
+}) => {
     const parts = filePath.split('/')
     const partToUrl = (index: number): string => {
         const partPath = parts.slice(0, index + 1).join('/')
@@ -38,6 +46,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
             className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
             to={repoUrl}
             aria-current={false}
+            onClick={() => telemetryService.log('RootBreadcrumbClicked', { action: 'click', label: 'root directory' })}
         >
             /
         </LinkOrSpan>,

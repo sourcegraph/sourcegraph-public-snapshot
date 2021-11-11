@@ -809,7 +809,6 @@ Yarn,warning,4.0.3,MIT,https://github.com/BerkeleyTrue/warning,Approved
 Yarn,watchpack,2.2.0,MIT,https://github.com/webpack/watchpack,Approved
 Yarn,webext-additional-permissions,1.0.0,MIT,bfred.it,Approved
 Yarn,webext-domain-permission-toggle,1.0.1,MIT,bfred.it,Approved
-Yarn,webext-patterns,0.9.0,MIT,bfred.it,Approved
 Yarn,webextension-polyfill,0.6.0,Mozilla Public License 2.0,https://github.com/mozilla/webextension-polyfill,Approved
 Yarn,webpack,5.45.1,MIT,https://github.com/webpack/webpack,Approved
 Yarn,webpack-sources,2.3.0,MIT,https://github.com/webpack/webpack-sources#readme,Approved

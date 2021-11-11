@@ -30,7 +30,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
     - [Remove our CSRF tokens](#remove-our-csrf-tokens)
     - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
-    - [Deprecate `corsOrigin`, add `api.corsOrigin`](#deprecate-corsorigin-add-apicorsorigin)
 
 # Living document
 
@@ -39,6 +38,9 @@ This is a living document, with a changelog as follows:
 * Aug 13th, 2021: [@slimsag](https://github.com/slimsag) does an in-depth analysis & review of our CSRF threat model and creates this document.
 * Nov 8th, 2021: [@slimsag](https://github.com/slimsag) audited all potential instances of pre-fetched content embedded into pages and found we have none, the following is NOT true ([#27236](https://github.com/sourcegraph/sourcegraph/pull/27236)):
   * "Some Sourcegraph pages pre-fetch content: on the backend, data is pre-fetched for the user so that they need not make a request for the data corresponding to the page immediately upon loading it. Instead, we fetch it and embed it into the `GET` page response, giving JavaScript access to it immediately upon page load."
+* Nov 8th, 2021: [@slimsag](https://github.com/slimsag) adjusted CORS handling to forbid cross-origin requests on all non-API routes. ([#27240](https://github.com/sourcegraph/sourcegraph/pull/27240), [#27245](https://github.com/sourcegraph/sourcegraph/pull/27245)):
+  * Non-API routes, such as sign in / sign out, no longer allow cross-origin requests even if the origin matches an allowed origin in the `corsOrigin` site configuration setting.
+  * The `corsOrigin` site configuration setting now only configures cross-origin requests for _API routes_ (nobody should ever need a cross-origin request for non-API routes.)
 
 # Prerequisites
 
@@ -284,29 +286,3 @@ This one is really a no-brainer, really:
    2. github1s.com's author requesting API access: [Bug: Using Sourcegraph.com GraphQL API from other websites is broken #18847](https://github.com/sourcegraph/sourcegraph/issues/18847)
    3. Various enterprise customers requesting it.
 3. By making our API endpoints CORS-restrictive as they are today, even when access token authentication is being performed, we have pushed ourselves and customers into performing more risky behavior by allowing "trusted" origins in their site `corsOrigin` setting (or, much worse, setting it to `"*"`). Again, this is much worse than having a CORS setting of `*` IFF token authentication is being performed. See "[How we protect against CSRF in API endpoints](#how-we-protect-against-csrf-in-api-endpoints)", "[Known issue](#known-issue)"
-
-### Deprecate `corsOrigin`, add `api.corsOrigin`
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-Think about this for a minute: `corsOrigin` allows one the privilege of performing CSRF attacks against a Sourcegraph instance, even against endpoints like:
-
-* Sign up
-* Site initialization (admin account creation)
-* Sign in
-* Sign out
-* Reset password
-* Reset password code entry
-* Verify email
-* Checking if username is taken
-
-This is not helpful, nobody should be using these endpoints outside of Sourcegraph's own site. What people *do* need, however, is the ability to set the CORS origin specifically for our API endpoints.
-
-That is because there ARE origins where session-based authentication with Sourcegraph's API should be allowed:
-
-* The browser extension
-* Code hosts
-* Trusted internal tools at enterprise deployments
-* etc.
-
-It should be possible for a site admin to configure the CORS policy for the API (`api.corsOrigin`) without granting CORS access to all our other routes - which is NOT useful.

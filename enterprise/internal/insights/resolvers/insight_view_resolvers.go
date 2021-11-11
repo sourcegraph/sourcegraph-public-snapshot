@@ -254,8 +254,10 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-
-	// TODO: Check permissions #25971
+	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	if err != nil {
+		return nil, err
+	}
 
 	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
 	if err != nil {
@@ -581,8 +583,7 @@ func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.D
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
 
-	validator := InsightPermissionsValidator{baseInsightResolver: r.baseInsightResolver}
-	err = validator.validateUserAccessForView(ctx, viewId)
+	err = r.permissionsValidator.validateUserAccessForView(ctx, viewId)
 	if err != nil {
 		return nil, err
 	}

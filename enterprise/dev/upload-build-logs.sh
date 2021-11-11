@@ -7,8 +7,9 @@ Usage: upload-build-logs.sh
 Upload a buildkite build result in Loki.
 
 Requires:
-- \$BUILDKITE_COMMIT
-- \$LOKI_URL
+- \$BUILDKITE_BUILD_NUMBER
+- \$BUILDKITE_JOB_ID
+- \$BUILD_LOGS_LOKI_URL
 EOF
 }
 
@@ -29,5 +30,8 @@ echo "--- :go: Building sg"
   popd
 )
 
-echo "--- :arrow_up: Uploading logs (if build failed)"
-./ci_sg ci logs --out="$BUILD_LOGS_LOKI_URL" --state="failed" --build="$BUILDKITE_BUILD_NUMBER"
+echo "--- :file_cabinet: Uploading logs"
+# Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
+# Passing --state="" just overrides the default. It's not set to any specific state because this script caller
+# is responsible of making sure the job has failed.
+./ci_sg ci logs --out="$BUILD_LOGS_LOKI_URL" --state="" --overwrite-state="failed" --build="$BUILDKITE_BUILD_NUMBER" --job="$BUILDKITE_JOB_ID"

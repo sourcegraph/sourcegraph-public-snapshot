@@ -10,4 +10,5 @@ import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/d
 export const isDashboardConfigurable = (
     currentDashboard: InsightDashboard | undefined
 ): currentDashboard is SettingsBasedInsightDashboard =>
-    isRealDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)
+    isRealDashboard(currentDashboard) &&
+    (isSettingsBasedInsightsDashboard(currentDashboard) || !!currentDashboard.grants)

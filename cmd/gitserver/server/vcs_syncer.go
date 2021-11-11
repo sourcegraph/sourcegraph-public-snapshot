@@ -135,6 +135,9 @@ type FusionConfig struct {
 	// NetworkThreads: The number of threads in the threadpool for running network
 	// calls. Defaults to the number of logical CPUs.
 	NetworkThreads int
+	// NetworkThreadsFetch: The same as network threads but specifically used when
+	// fetching rather than cloning.
+	NetworkThreadsFetch int
 	// PrintBatch:  The p4 print batch size
 	PrintBatch int
 	// Refresh: How many times a connection should be reused before it is refreshed
@@ -342,7 +345,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--client", s.FusionConfig.Client,
 			"--user", username,
 			"--src", root+".git",
-			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
+			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreadsFetch),
 			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
 			"--port", host,
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),

@@ -40,6 +40,7 @@ export function parseTemplate(template: string): TemplateExpression {
 const FUNCS: { [name: string]: (...args: any[]) => any } = {
     get: (object: any, key: string): any => object?.[key] ?? undefined,
     json: (object: any): string => JSON.stringify(object),
+    sub: (whole: string, oldValue: string, newValue: string): string => whole.replaceAll(oldValue, newValue),
 }
 
 function exec<C>(node: ExpressionNode, context: Context<C>): any {

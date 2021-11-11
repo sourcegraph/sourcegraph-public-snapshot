@@ -122,7 +122,7 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	if r.stepInfo.Diff != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, *r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repo, r.baseRev, *r.stepInfo.Diff)
 	}
 	return nil, nil
 }

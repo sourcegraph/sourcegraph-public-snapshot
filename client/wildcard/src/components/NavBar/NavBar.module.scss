@@ -53,6 +53,7 @@
     height: 100%;
     margin: 0;
     padding: 0;
+    gap: 1rem;
     @media (--sm-breakpoint-down) {
         border-radius: var(--border-radius);
         border: 1px solid var(--border-color-2);

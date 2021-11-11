@@ -11,12 +11,13 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         class="d-flex"
       />
       <div
-        class="file-locations fileLocations"
+        class="fileLocations fileLocations"
       >
         <div>
           <div
             class="test-search-result result-container"
             data-testid="result-container"
+            role="none"
           >
             <div
               class="result-container__header"
@@ -91,7 +92,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
                     <code
-                      class="code-excerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      data-testid="code-excerpt"
                     >
                       <table>
                         <tbody>
@@ -228,12 +230,13 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         </div>
       </div>
       <div
-        class="file-locations fileLocations"
+        class="fileLocations fileLocations"
       >
         <div>
           <div
             class="test-search-result result-container"
             data-testid="result-container"
+            role="none"
           >
             <div
               class="result-container__header"
@@ -310,7 +313,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
                   >
                     <code
-                      class="code-excerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      data-testid="code-excerpt"
                     >
                       <table>
                         <tbody>
@@ -400,12 +404,13 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         class="d-flex"
       />
       <div
-        class="file-locations fileLocations"
+        class="fileLocations fileLocations"
       >
         <div>
           <div
             class="test-search-result result-container"
             data-testid="result-container"
+            role="none"
           >
             <div
               class="result-container__header"
@@ -480,7 +485,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
                     <code
-                      class="code-excerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      data-testid="code-excerpt"
                     >
                       <table>
                         <tbody>

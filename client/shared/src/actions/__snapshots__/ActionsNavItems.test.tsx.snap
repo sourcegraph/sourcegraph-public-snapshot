@@ -5,7 +5,7 @@ exports[`ActionItem Renders contributed action items 1`] = `
    
   <li>
     <span
-      class="action-item actions-nav-items__action-item action-item--variant-action-item"
+      class="actionItem"
       data-tooltip="This is Action A"
     >
        Action A

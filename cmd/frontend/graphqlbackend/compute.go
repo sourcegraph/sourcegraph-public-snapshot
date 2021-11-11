@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -180,7 +179,7 @@ func toComputeResultResolver(fm *result.FileMatch, result compute.Result, repoRe
 	}
 }
 
-func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db dbutil.DB) ([]*computeResultResolver, error) {
+func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db database.DB) ([]*computeResultResolver, error) {
 	type repoKey struct {
 		Name types.MinimalRepo
 		Rev  string
@@ -190,7 +189,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(database.NewDB(db), repoName.ToRepo())
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
@@ -212,7 +211,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
+func NewComputeImplementer(ctx context.Context, db database.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
 	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
@@ -225,7 +224,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	log15.Info("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := NewSearchImplementer(ctx, database.NewDB(db), &SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}
