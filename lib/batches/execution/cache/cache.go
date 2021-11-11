@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/cockroachdb/errors"
 
@@ -159,7 +158,7 @@ func marshalAndHashStepsCacheKey(key StepsCacheKey, globalEnv []string) (string,
 	}
 
 	// Resolve environment only for the subset of Steps
-	envs, err := resolveStepsEnvironment(os.Environ(), clone.Steps)
+	envs, err := resolveStepsEnvironment(globalEnv, clone.Steps)
 	if err != nil {
 		return "", err
 	}
