@@ -661,6 +661,25 @@ Check constraints:
 
 ```
 
+# Table "public.executor_heartbeats"
+```
+    Column    |           Type           | Collation | Nullable |                     Default                     
+--------------+--------------------------+-----------+----------+-------------------------------------------------
+ id           | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
+ hostname     | text                     |           | not null | 
+ last_seen_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
+    "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+
+```
+
+Tracks the most recent activity of executors attached to this Sourcegraph instance.
+
+**hostname**: The uniquely identifying name of the executor.
+
+**last_seen_at**: The last time a heartbeat from the executor was received.
+
 # Table "public.external_service_repos"
 ```
        Column        |  Type   | Collation | Nullable | Default 
