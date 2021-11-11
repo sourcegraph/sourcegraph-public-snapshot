@@ -1498,12 +1498,12 @@ type Executor implements Node {
     id: ID!
 
     """
-    TODO - document
+    The hostname of the executor instance.
     """
     hostname: String!
 
     """
-    TODO - document
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
     """
     lastSeenAt: DateTime!
 }
