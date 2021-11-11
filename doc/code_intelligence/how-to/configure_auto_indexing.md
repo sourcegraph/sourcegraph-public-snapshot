@@ -29,7 +29,7 @@ The second front determines the set of index jobs that can run over candidate co
 
 ## Configure auto-indexing policies
 
-This guide shows how to configure policies to control the scheduling of precise code intelligence indexing jobs. Indexing jobs [produce a precise code intelligence index](../explanations/precise_code_intelligence) and uploads it to your Sourcegraph instance for use with code navigation.
+This guide shows how to configure policies to control the scheduling of precise code intelligence indexing jobs. Indexing jobs [produce a precise code intelligence index](../explanations/precise_code_intelligence.md) and uploads it to your Sourcegraph instance for use with code navigation.
 
 Each policy has a number of configurable options, including:
 
@@ -74,7 +74,7 @@ In this example, we create an indexing policy that applies to all _versioned_ ta
 
 ## Explicit index job configuration
 
-Explicit index job configuration can be supplied to a repository in two ways (listed below in order of decreasing precedence). Both methods of configuration share a common expected schema. See the [reference documentation](../references/auto_indexing_configuration) for additional information on the shape and content of the configuration.
+Explicit index job configuration can be supplied to a repository in two ways (listed below in order of decreasing precedence). Both methods of configuration share a common expected schema. See the [reference documentation](../references/auto_indexing_configuration.md) for additional information on the shape and content of the configuration.
 
 1. Configure index jobs by committing a `sourcegraph.yaml` file to the root of the target repository. If you're new to YAML and want a short introduction, see [Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/). Note that YAML is a strict superset of JSON, therefore the file contents can also be encoded as valid JSON (despite the file extension).
 

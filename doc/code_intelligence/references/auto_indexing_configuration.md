@@ -62,7 +62,7 @@ The basic outline of an index job is as follows.
 3. A separate Docker container for the indexer is started.
 4. Local steps (if configured) are executed within the running container.
 5. The indexer is invoked within the running container to produce an index artifact.
-6. The [`src` CLI](/cli/index.md) binary is invoked to upload the index artifact to the Sourcegraph instance.
+6. The [`src` CLI](../../cli/index.md) binary is invoked to upload the index artifact to the Sourcegraph instance.
 
 The pre-indexing steps, indexer container, local steps, and indexer arguments are configurable via this object.
 
@@ -92,7 +92,7 @@ The working directory within the Docker container where the provided local steps
 
 #### [`outfile`](#index-job-outfile)
 
-The path to the precise code intelligence index artifact produced by the indexer, which is uploaded to the target Sourcegraph instance via [`src` CLI](/cli/index.md) after the index step has completed successfully. This path is relative to the index job `root` (defined above). If not supplied, the value is assumed to be `dump.lsif` (which is the default artifact name of many indexers).
+The path to the precise code intelligence index artifact produced by the indexer, which is uploaded to the target Sourcegraph instance via [`src` CLI](../../cli/index.md) after the index step has completed successfully. This path is relative to the index job `root` (defined above). If not supplied, the value is assumed to be `dump.lsif` (which is the default artifact name of many indexers).
 
 Supply this argument when the target indexer produces a differently named artifact. Alternatively, some indexers provide flags to change the artifact name; in which case `dump.lsif` can be supplied there and a value for this key can be omitted.
 
