@@ -909,7 +909,6 @@ input SearchInsightLivePreviewInput {
 }
 
 type SearchInsightLivePreviewSeries {
-
     """
     The data points for the time series.
     """
