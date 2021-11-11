@@ -14,9 +14,11 @@ import (
 )
 
 type ActionJob struct {
-	Id           int
-	Email        int64
-	TriggerEvent int
+	Id                int
+	Email             *int64
+	Webhook           *int64
+	SlackNotification *int64
+	TriggerEvent      int
 
 	// Fields demanded by any dbworker.
 	State          string
@@ -45,6 +47,8 @@ type ActionJobMetadata struct {
 var ActionJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.id"),
 	sqlf.Sprintf("cm_action_jobs.email"),
+	sqlf.Sprintf("cm_action_jobs.webhook"),
+	sqlf.Sprintf("cm_action_jobs.slack_notification"),
 	sqlf.Sprintf("cm_action_jobs.trigger_event"),
 	sqlf.Sprintf("cm_action_jobs.state"),
 	sqlf.Sprintf("cm_action_jobs.failure_message"),
@@ -107,8 +111,9 @@ func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, trigg
 
 const enqueueActionEmailFmtStr = `
 WITH due AS (
-	SELECT e.id, e.monitor, e.enabled, e.priority, e.header, e.created_by, e.created_at, e.changed_by, e.changed_at
-	FROM cm_emails e INNER JOIN cm_queries q ON e.monitor = q.monitor
+	SELECT e.id
+	FROM cm_emails e 
+	INNER JOIN cm_queries q ON e.monitor = q.monitor
 	WHERE q.id = %s AND e.enabled = true
 ),
 busy AS (
