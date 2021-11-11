@@ -16,8 +16,6 @@ type graph struct {
 	Elements []reader.Element
 }
 
-func (g *graph) AddVertex(label string, elem reader.Element) {}
-func (g *graph) AddEdge(label string, elem reader.Element)   {}
 func (g *graph) Add(Type, Label string, Payload interface{}) {
 	g.ID++
 	g.Elements = append(g.Elements, reader.Element{
@@ -27,23 +25,38 @@ func (g *graph) Add(Type, Label string, Payload interface{}) {
 		Payload: Payload,
 	})
 }
+func (g *graph) AddVertex(label string, Payload interface{}) {
+	g.Add("vertex", label, Payload)
+}
+func (g *graph) AddEdge(label string, Payload interface{}) {
+	g.Add("edge", label, Payload)
+}
+func (g *graph) AddPackage(doc *proto.Package)   {}
+func (g *graph) AddDocument(doc *proto.Document) {}
+func (g *graph) AddMoniker(doc *proto.Moniker)   {}
 
 func convertFlatToGraph(vals *proto.LsifValues) []reader.Element {
-	elements := []reader.Element{}
-	id := 0
-	elements = append(elements, reader.Element{
-		ID:    id,
-		Type:  "vertex",
-		Label: "metaData",
-		Payload: reader.MetaData{
+	g := graph{ID: 0, Elements: []reader.Element{}}
+	g.AddVertex(
+		"metaData",
+		reader.MetaData{
 			Version:     "0.1.0",
 			ProjectRoot: "file:///",
 		},
-	})
-	for _, value := range vals.Values {
+	)
+	for _, lsifValue := range vals.Values {
+		switch value := lsifValue.Value.(type) {
+		case *proto.LsifValue_Package:
+			g.AddPackage(value.Package)
+		case *proto.LsifValue_Document:
+			g.AddDocument(value.Document)
+		case *proto.LsifValue_Moniker:
+			g.AddMoniker(value.Moniker)
+		default:
+		}
 
 	}
-	return elements
+	return g.Elements
 }
 
 func compile() *proto.LsifValues {
