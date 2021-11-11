@@ -14,7 +14,7 @@ import (
 // applySubRepoPerms drops matches the actor in the given context does not have read access to.
 func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, event *streaming.SearchEvent) error {
 	actor := actor.FromContext(ctx)
-	var errs error
+	errs := &multierror.Error{}
 	var n int
 	for _, match := range event.Results {
 		key := match.Key()
@@ -37,5 +37,5 @@ func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, 
 	// Drop all unauthorized matches
 	event.Results = event.Results[:n]
 
-	return errs
+	return errs.ErrorOrNil()
 }
