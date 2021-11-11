@@ -25,17 +25,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type DataStores struct {
-	dbStore         *store.Store
+type Services struct {
+	dbStore     *store.Store
+	lsifStore   *lsifstore.Store
+	repoStore   database.RepoStore
+	uploadStore uploadstore.Store
+
 	locker          *locker.Locker
-	lsifStore       *lsifstore.Store
-	repoStore       database.RepoStore
-	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 }
 
-func NewDataStores(ctx context.Context, db dbutil.DB) (*DataStores, error) {
+func NewServices(ctx context.Context, db dbutil.DB) (*Services, error) {
 	if err := config.UploadStoreConfig.Validate(); err != nil {
 		return nil, errors.Errorf("failed to load config: %s", err)
 	}
@@ -65,12 +66,13 @@ func NewDataStores(ctx context.Context, db dbutil.DB) (*DataStores, error) {
 	// Initialize the index enqueuer
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{Store: dbStore}, gitserverClient, repoupdater.DefaultClient, config.AutoIndexEnqueuerConfig, observationContext)
 
-	return &DataStores{
-		dbStore:         dbStore,
-		locker:          locker,
-		lsifStore:       lsifStore,
-		repoStore:       database.ReposWith(dbStore.Store),
-		uploadStore:     uploadStore,
+	return &Services{
+		dbStore:     dbStore,
+		lsifStore:   lsifStore,
+		repoStore:   database.ReposWith(dbStore.Store),
+		uploadStore: uploadStore,
+		locker:      locker,
+
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
 	}, nil

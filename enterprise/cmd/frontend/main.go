@@ -44,13 +44,11 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context, *codeintel.DataStores) error
+type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
 	"licensing":      licensing.Init,
-	"executor":       executor.Init,
-	"codeintel":      codeintel.Init,
 	"insights":       insights.Init,
 	"batches":        batches.Init,
 	"codemonitors":   codemonitors.Init,
@@ -75,13 +73,23 @@ func enterpriseSetupHook(db database.DB, outOfBandMigrationRunner *oobmigration.
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	datastore, err := codeintel.NewDataStores(ctx, db)
+	services, err := codeintel.NewServices(ctx, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Initialize enterprise-specific services with the code-intel services.
+	if err := executor.Init(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
+		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
+	}
+
+	if err := codeintel.Init(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
+		log.Fatal(fmt.Sprintf("failed to initialize codeintel: %s", err))
+	}
+
+	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext, datastore); err != nil {
+		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}
