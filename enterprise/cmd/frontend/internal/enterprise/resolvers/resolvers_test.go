@@ -48,7 +48,7 @@ func TestOrganizationRepositories(t *testing.T) {
 			Schema: func() *graphql.Schema {
 				t.Helper()
 
-				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, &fakeOrgRepoResolver{db: db, repo: repo})
+				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, &mockEnterpriseResolver{db: db, repo: repo})
 				if parseSchemaErr != nil {
 					t.Fatal(parseSchemaErr)
 				}
@@ -84,24 +84,24 @@ func TestOrganizationRepositories(t *testing.T) {
 	})
 }
 
-type fakeOrgRepoResolver struct {
+type mockEnterpriseResolver struct {
 	db   database.DB
 	repo *types.Repo
 }
 
-func (r *fakeOrgRepoResolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org) (graphqlbackend.RepositoryConnectionResolver, error) {
+func (r *mockEnterpriseResolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org) (graphqlbackend.RepositoryConnectionResolver, error) {
 	return r, nil
 }
 
-func (r fakeOrgRepoResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
+func (r mockEnterpriseResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
 	return []*graphqlbackend.RepositoryResolver{graphqlbackend.NewRepositoryResolver(r.db, r.repo)}, nil
 }
 
-func (r fakeOrgRepoResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
+func (r mockEnterpriseResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
 	one := int32(1)
 	return &one, nil
 }
 
-func (r fakeOrgRepoResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r mockEnterpriseResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return nil, nil
 }
