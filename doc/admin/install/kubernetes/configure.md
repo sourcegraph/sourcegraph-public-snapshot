@@ -232,6 +232,8 @@ kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort
 minikube service list
 ```
 
+> NOTE: For Mac Users, run `minikube service sourcegraph -n ns-sourcegraph` to open the newly deployed Sourcegraph in your browser
+
 To tear it down:
 
 ```sh
