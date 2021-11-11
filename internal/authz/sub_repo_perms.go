@@ -177,5 +177,9 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, &ErrUnauthenticated{}
 	}
 
-	return s.Permissions(ctx, a.UID, content)
+	perms, err := s.Permissions(ctx, a.UID, content)
+	if err != nil {
+		return None, errors.Wrapf(err, "getting actor permissions for actor", a.UID)
+	}
+	return perms, nil
 }
