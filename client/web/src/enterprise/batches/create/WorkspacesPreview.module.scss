@@ -1,9 +1,11 @@
 .header {
+    align-self: flex-start;
+    width: 100%;
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border-color);
 }
 
-.empty {
+.preview-prompt {
     &-icon {
         height: 50px;
         width: 50px;
@@ -12,7 +14,7 @@
         background-color: var(--white);
     }
 
-    &-header-prompt {
+    &-header {
         margin-top: 1rem;
         margin-bottom: 1rem;
         font-weight: 300;

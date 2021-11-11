@@ -8,64 +8,65 @@ import { useHistory, useLocation } from 'react-router'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
+import {
+    BatchSpecWithWorkspacesFields,
+    WorkspaceResolutionStatusResult,
+    WorkspaceResolutionStatusVariables,
+} from '../../../graphql-operations'
 
-import { fetchBatchSpec } from './backend'
+import { fetchBatchSpec, WORKSPACE_RESOLUTION_STATUS } from './backend'
 import styles from './WorkspacesPreview.module.scss'
-import { hasOnStatement } from './yaml-util'
 
 interface WorkspacesPreviewProps {
-    batchSpecInput: string
-    disabled: boolean
+    batchSpecID?: Scalars['ID']
+    /**
+     * Whether or not the preview button should be disabled due to their being a problem
+     * with the input batch spec YAML, or a preview request is already happening.
+     */
+    previewDisabled: boolean
+    /**
+     * Function to submit the current input batch spec YAML to trigger a workspaces
+     * preview request.
+     */
     preview: () => void
     // excludeRepo: (repo: string, branch: string) => void
-    // preview: BatchSpecWithWorkspacesFields | Error | undefined
-    // previewStale: boolean
+    /** Whether or not the workspaces preview list is stale. */
+    previewStale: boolean
 }
 
 export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
-    batchSpecInput,
-    disabled,
+    batchSpecID,
+    previewDisabled,
     preview,
+    previewStale,
 }) => {
-    const previewDisabled = useMemo(() => disabled || !hasOnStatement(batchSpecInput), [batchSpecInput, disabled])
+    const [resolutionError, setResolutionError] = useState<string>()
+
+    const [showPreviewPrompt, previewPromptForm] = useMemo(() => {
+        const showPreviewPrompt = !batchSpecID || previewStale || resolutionError
+        const previewPromptForm: PreviewPromptForm = !batchSpecID ? 'Initial' : resolutionError ? 'Error' : 'Update'
+
+        return [showPreviewPrompt, previewPromptForm]
+    }, [batchSpecID, previewStale, resolutionError])
+
+    const clearErrorAndPreview = useCallback(() => {
+        setResolutionError(undefined)
+        preview()
+    }, [preview])
 
     return (
-        // if (!preview || previewStale) {
-        //     return <LoadingSpinner />
-        // }
-        // if (isErrorLike(preview)) {
-        //     return <ErrorAlert error={preview} className="mb-0" />
-        // }
-        // if (!preview.workspaceResolution) {
-        //     throw new Error('Expected workspace resolution to exist.')
-        // }
-        <div className="h-100">
+        <div className="h-100 d-flex flex-column align-items-center">
             <h3 className={styles.header}>Workspaces preview</h3>
-            {/* {preview.workspaceResolution.failureMessage !== null && (
-                <ErrorAlert error={preview.workspaceResolution.failureMessage} />
-            )}
-            {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.QUEUED && (
-                <LoadingSpinner className="icon-inline" />
-            )}
-            {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.PROCESSING && (
-                <LoadingSpinner className="icon-inline" />
-            )}
-            {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.ERRORED && (
-                <WarningIcon className="text-danger icon-inline" />
+            {resolutionError && <ErrorAlert error={resolutionError} className="mb-3" />}
             {showPreviewPrompt && (
                 <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
-            {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.FAILED && (
-                <WarningIcon className="text-danger icon-inline" />
-            )}
-            <p className="text-monospace">
-                allowUnsupported: {JSON.stringify(preview.allowUnsupported)}
-                <br />
-                allowIgnored: {JSON.stringify(preview.allowIgnored)}
-            </p>
+            {batchSpecID && <WithBatchSpec batchSpecID={batchSpecID} setResolutionError={setResolutionError} />}
+            {/*
             <ul className="list-group p-1 mb-0">
                 {preview.workspaceResolution.workspaces.nodes.map(item => (
                     <li
@@ -173,4 +174,49 @@ const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, d
                 </>
             )
     }
+}
+
+type WorkspaceResolutionStatus = (WorkspaceResolutionStatusResult['node'] & {
+    __typename: 'BatchSpec'
+})['workspaceResolution']
+
+const getResolution = (queryResult?: WorkspaceResolutionStatusResult): WorkspaceResolutionStatus =>
+    queryResult?.node?.__typename === 'BatchSpec' ? queryResult.node.workspaceResolution : null
+
+const WithBatchSpec: React.FunctionComponent<{
+    batchSpecID: Scalars['ID']
+    setResolutionError: (error: string) => void
+}> = ({ batchSpecID, setResolutionError }) => {
+    const { data, loading, startPolling, stopPolling } = useQuery<
+        WorkspaceResolutionStatusResult,
+        WorkspaceResolutionStatusVariables
+    >(WORKSPACE_RESOLUTION_STATUS, {
+        variables: { batchSpec: batchSpecID },
+        // This data is intentionally transient, so there's no need to cache it.
+        fetchPolicy: 'no-cache',
+        // Report new errors back to the parent.
+        onCompleted: data => {
+            const resolution = getResolution(data)
+            if (
+                resolution?.state === BatchSpecWorkspaceResolutionState.ERRORED ||
+                resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
+            ) {
+                setResolutionError(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
+            }
+        },
+        onError: error => setResolutionError(error.message),
+    })
+
+    const resolution = getResolution(data)
+
+    return (
+        <>
+            {loading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
+                // TODO: Show cooler loading indicator
+                <LoadingSpinner className="my-4" />
+            ) : null}
+            <Button onClick={() => startPolling(500)}>Start polling</Button>
+            <Button onClick={() => stopPolling()}>Stop polling</Button>
+        </>
+    )
 }

@@ -114,6 +114,20 @@ export const REPLACE_BATCH_SPEC_INPUT = gql`
     }
 `
 
+export const WORKSPACE_RESOLUTION_STATUS = gql`
+    query WorkspaceResolutionStatus($batchSpec: ID!) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                workspaceResolution {
+                    state
+                    failureMessage
+                }
+            }
+        }
+    }
+`
+
 export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWithWorkspacesFields> {
     return requestGraphQL<BatchSpecWorkspacesByIDResult, BatchSpecWorkspacesByIDVariables>(
         gql`
