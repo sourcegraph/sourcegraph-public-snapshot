@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package lsif.v1;
 
-option go_package = "github.com/sourcegraph/sourcegraph/proto/lsif";
+option go_package = "proto/";
 
 // LsifValue defines a single LSIF value that. An LSIF index is a stream of values.
 message LsifValues {

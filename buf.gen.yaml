@@ -1,4 +1,4 @@
 version: v1
 plugins:
   - name: go
-    out: gen/proto/go
+    out: lib/codeintel/tools/lsif-flat
