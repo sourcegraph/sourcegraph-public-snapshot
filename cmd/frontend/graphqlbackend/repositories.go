@@ -89,7 +89,14 @@ type RepositoryConnectionResolver interface {
 }
 
 func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
-	return &repositoryConnectionResolver{db: db, opt: opt, cloned: cloned, notCloned: notCloned, indexed: indexed, notIndexed: notIndexed}
+	return &repositoryConnectionResolver{
+		db:         db,
+		opt:        opt,
+		cloned:     cloned,
+		notCloned:  notCloned,
+		indexed:    indexed,
+		notIndexed: notIndexed,
+	}
 }
 
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}

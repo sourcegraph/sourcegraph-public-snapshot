@@ -24,9 +24,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
+	ienterprise "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/enterprise"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepositories"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
@@ -48,16 +48,16 @@ func init() {
 type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
-	"authz":           authz.Init,
-	"licensing":       licensing.Init,
-	"executor":        executor.Init,
-	"codeintel":       codeintel.Init,
-	"insights":        insights.Init,
-	"batches":         batches.Init,
-	"codemonitors":    codemonitors.Init,
-	"dotcom":          dotcom.Init,
-	"searchcontexts":  searchcontexts.Init,
-	"orgRepositories": orgrepositories.Init,
+	"authz":          authz.Init,
+	"licensing":      licensing.Init,
+	"executor":       executor.Init,
+	"codeintel":      codeintel.Init,
+	"insights":       insights.Init,
+	"batches":        batches.Init,
+	"codemonitors":   codemonitors.Init,
+	"dotcom":         dotcom.Init,
+	"searchcontexts": searchcontexts.Init,
+	"enterprise":     ienterprise.Init,
 }
 
 func enterpriseSetupHook(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {

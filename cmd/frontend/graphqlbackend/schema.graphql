@@ -811,7 +811,7 @@ input AddExternalServiceInput {
     config: String!
     """
     The namespace this external service belongs to.
-    Currently, this can only be used for a user or an org.
+    This can be used both for a user and an organization.
     """
     namespace: ID
 }

@@ -42,7 +42,7 @@ func TestOrganization(t *testing.T) {
 	})
 }
 
-func TestOrganizationRepositories_oss(t *testing.T) {
+func TestOrganizationRepositories_OSS(t *testing.T) {
 	db := dbmock.NewMockDB()
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
