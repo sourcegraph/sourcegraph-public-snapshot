@@ -17,6 +17,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockSubRepoPermsStore struct {
+	// AllSupportedReposFunc is an instance of a mock function object
+	// controlling the behavior of the method AllSupportedRepos.
+	AllSupportedReposFunc *SubRepoPermsStoreAllSupportedReposFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *SubRepoPermsStoreDoneFunc
@@ -48,6 +51,11 @@ type MockSubRepoPermsStore struct {
 // overwritten.
 func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 	return &MockSubRepoPermsStore{
+		AllSupportedReposFunc: &SubRepoPermsStoreAllSupportedReposFunc{
+			defaultHook: func(context.Context) ([]api.RepoName, error) {
+				return nil, nil
+			},
+		},
 		DoneFunc: &SubRepoPermsStoreDoneFunc{
 			defaultHook: func(error) error {
 				return nil
@@ -96,6 +104,9 @@ func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 // implementation, unless overwritten.
 func NewMockSubRepoPermsStoreFrom(i database.SubRepoPermsStore) *MockSubRepoPermsStore {
 	return &MockSubRepoPermsStore{
+		AllSupportedReposFunc: &SubRepoPermsStoreAllSupportedReposFunc{
+			defaultHook: i.AllSupportedRepos,
+		},
 		DoneFunc: &SubRepoPermsStoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -121,6 +132,115 @@ func NewMockSubRepoPermsStoreFrom(i database.SubRepoPermsStore) *MockSubRepoPerm
 			defaultHook: i.With,
 		},
 	}
+}
+
+// SubRepoPermsStoreAllSupportedReposFunc describes the behavior when the
+// AllSupportedRepos method of the parent MockSubRepoPermsStore instance is
+// invoked.
+type SubRepoPermsStoreAllSupportedReposFunc struct {
+	defaultHook func(context.Context) ([]api.RepoName, error)
+	hooks       []func(context.Context) ([]api.RepoName, error)
+	history     []SubRepoPermsStoreAllSupportedReposFuncCall
+	mutex       sync.Mutex
+}
+
+// AllSupportedRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSubRepoPermsStore) AllSupportedRepos(v0 context.Context) ([]api.RepoName, error) {
+	r0, r1 := m.AllSupportedReposFunc.nextHook()(v0)
+	m.AllSupportedReposFunc.appendCall(SubRepoPermsStoreAllSupportedReposFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the AllSupportedRepos
+// method of the parent MockSubRepoPermsStore instance is invoked and the
+// hook queue is empty.
+func (f *SubRepoPermsStoreAllSupportedReposFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AllSupportedRepos method of the parent MockSubRepoPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SubRepoPermsStoreAllSupportedReposFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SubRepoPermsStoreAllSupportedReposFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SubRepoPermsStoreAllSupportedReposFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context) ([]api.RepoName, error) {
+		return r0, r1
+	})
+}
+
+func (f *SubRepoPermsStoreAllSupportedReposFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SubRepoPermsStoreAllSupportedReposFunc) appendCall(r0 SubRepoPermsStoreAllSupportedReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SubRepoPermsStoreAllSupportedReposFuncCall
+// objects describing the invocations of this function.
+func (f *SubRepoPermsStoreAllSupportedReposFunc) History() []SubRepoPermsStoreAllSupportedReposFuncCall {
+	f.mutex.Lock()
+	history := make([]SubRepoPermsStoreAllSupportedReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SubRepoPermsStoreAllSupportedReposFuncCall is an object that describes an
+// invocation of method AllSupportedRepos on an instance of
+// MockSubRepoPermsStore.
+type SubRepoPermsStoreAllSupportedReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoName
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SubRepoPermsStoreAllSupportedReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SubRepoPermsStoreAllSupportedReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // SubRepoPermsStoreDoneFunc describes the behavior when the Done method of
