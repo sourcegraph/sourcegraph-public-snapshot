@@ -1,4 +1,4 @@
-# Configure code intelligence auto indexing
+# Configure code intelligence auto-indexing
 
 <style>
 img.screenshot {
