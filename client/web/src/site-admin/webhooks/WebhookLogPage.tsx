@@ -63,6 +63,7 @@ export const WebhookLogPage: React.FunctionComponent<Props> = ({
                     hideSearch={true}
                     headComponent={Header}
                     listClassName={classNames('mt-3', styles.logs)}
+                    emptyElement={<div className="m-4 w-100 text-center">No webhook logs found</div>}
                 />
             </Container>
         </>
