@@ -71,7 +71,7 @@ const Header: React.FunctionComponent<{}> = () => (
     </>
 )
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 3
 
 const GlobalWebhookLogs: React.FunctionComponent<{ onlyErrors: boolean; onlyUnmatched: boolean }> = ({
     onlyErrors,
@@ -84,13 +84,6 @@ const GlobalWebhookLogs: React.FunctionComponent<{ onlyErrors: boolean; onlyUnma
             after: null,
             onlyErrors,
             onlyUnmatched,
-        },
-        options: {
-            // The caching seems to break around the message fields: the fields
-            // inherited from the common WebhookLogMessage type aren't
-            // persisted. Since we always want the freshest webhooks anyway,
-            // we'll just bypass the cache altogether.
-            fetchPolicy: 'no-cache',
         },
         getConnection: result => dataOrThrowErrors(result).webhookLogs,
     })
@@ -110,13 +103,6 @@ const ExternalServiceWebhookLogs: React.FunctionComponent<{ externalService: Sca
             id: externalService,
             onlyErrors,
         },
-        options: {
-            // The caching seems to break around the message fields: the fields
-            // inherited from the common WebhookLogMessage type aren't
-            // persisted. Since we always want the freshest webhooks anyway,
-            // we'll just bypass the cache altogether.
-            fetchPolicy: 'no-cache',
-        },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
 
@@ -131,9 +117,12 @@ const ExternalServiceWebhookLogs: React.FunctionComponent<{ externalService: Sca
     return <Connection result={result} />
 }
 
-const Connection: React.FunctionComponent<{ result: UseConnectionResult<WebhookLogFields> }> = ({
-    result: { connection, error, loading, fetchMore, hasNextPage },
-}) => (
+const Connection: React.FunctionComponent<{
+    result: Pick<
+        UseConnectionResult<WebhookLogFields>,
+        'connection' | 'error' | 'loading' | 'fetchMore' | 'hasNextPage'
+    >
+}> = ({ result: { connection, error, loading, fetchMore, hasNextPage } }) => (
     <ConnectionContainer>
         {error && <ConnectionError errors={[error.message]} />}
         <ConnectionList className={classNames('mt-3', styles.logs)}>
