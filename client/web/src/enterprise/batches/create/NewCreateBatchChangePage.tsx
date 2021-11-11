@@ -41,7 +41,7 @@ import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { useNamespaces } from './useNamespaces'
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { excludeRepo as excludeRepoFromYaml } from './yaml-util'
+import { excludeRepo as excludeRepoFromYaml, hasOnStatement } from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)
@@ -91,17 +91,28 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         isLoading,
         error: previewError,
         clearError: clearPreviewError,
+        isStale,
+        markStale,
     } = usePreviewBatchSpec(selectedNamespace)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
             clearPreviewError()
+            markStale()
             handleCodeChange(newCode)
         },
-        [handleCodeChange, clearPreviewError]
+        [handleCodeChange, clearPreviewError, markStale]
     )
 
     const preview = useCallback(() => previewBatchSpec(code), [code, previewBatchSpec])
+
+    // Disable the preview button if the batch spec code is invalid or the on statement is
+    // missing, or if we're already processing a preview.
+    const previewDisabled = useMemo(() => !isValid || !hasOnStatement(debouncedCode) || isLoading, [
+        isValid,
+        isLoading,
+        debouncedCode,
+    ])
 
     // const history = useHistory()
     // const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
@@ -183,7 +194,12 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         />
                     )}
                     {previewError && <ErrorAlert error={previewError} />}
-                    <WorkspacesPreview batchSpecInput={debouncedCode} disabled={isValid !== true} preview={preview} />
+                    <WorkspacesPreview
+                        batchSpecID={currentBatchSpecID}
+                        previewDisabled={previewDisabled}
+                        preview={preview}
+                        previewStale={isStale}
+                    />
                 </Container>
             </div>
         </div>
@@ -297,11 +313,11 @@ interface UsePreviewBatchSpecResult {
     isLoading: boolean
     error?: Error
     clearError: () => void
+    isStale: boolean
+    markStale: () => void
 }
 
 const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject): UsePreviewBatchSpecResult => {
-    const [error, setError] = useState<Error>()
-
     const [
         createBatchSpecFromRaw,
         { data: createBatchSpecFromRawData, loading: createBatchSpecFromRawLoading },
@@ -326,6 +342,9 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
         replaceBatchSpecInputLoading,
     ])
 
+    const [error, setError] = useState<Error>()
+    const [isStale, setIsStale] = useState(false)
+
     const previewBatchSpec = useCallback(
         (code: string) => {
             setError(undefined)
@@ -333,12 +352,16 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
             // If we have a batch spec ID already, we're replacing the exiting batch spec with
             // a new one.
             if (currentBatchSpecID) {
-                replaceBatchSpecInput({ variables: { spec: code, previousSpec: currentBatchSpecID } }).catch(setError)
+                replaceBatchSpecInput({ variables: { spec: code, previousSpec: currentBatchSpecID } })
+                    .then(() => setIsStale(false))
+                    .catch(setError)
             } else {
                 // Otherwise, we're creating a new batch spec from the raw spec input YAML.
                 createBatchSpecFromRaw({
                     variables: { spec: code, namespace: namespace.id },
-                }).catch(setError)
+                })
+                    .then(() => setIsStale(false))
+                    .catch(setError)
             }
         },
         [currentBatchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput]
@@ -350,5 +373,7 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
         isLoading,
         error,
         clearError: () => setError(undefined),
+        isStale,
+        markStale: () => setIsStale(true),
     }
 }
