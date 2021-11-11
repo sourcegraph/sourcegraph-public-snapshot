@@ -114,7 +114,7 @@ indexer_args:
 root: dev/sg
 ```
 
-The following example uses the Docker image `sourcegraph/lsif-node` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer in the `editors/code` directory. In this job, the `npm install` and the `lsif-tsc` are performed using the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
+The following example uses the Docker image `sourcegraph/lsif-node` pinned at the tag `autoindex`. This index configuration will run `npm install` followed by the TypeScript indexer `lsif-tsc` in the `editors/code` directory. In this job, both commands run in the same workspace, but are invoked in different Docker containers. Both containers happen to be based on the same image, but that's not necessary.
 
 ```yaml
 steps:
