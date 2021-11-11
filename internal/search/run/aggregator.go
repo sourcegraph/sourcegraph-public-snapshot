@@ -9,7 +9,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -21,13 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// TODO
-func NewAggregator(ctx context.Context, db dbutil.DB, stream streaming.Sender) *Aggregator {
+func NewAggregator(ctx context.Context, db dbutil.DB, stream streaming.Sender, subRepoPerms authz.SubRepoPermissionChecker) *Aggregator {
 	return &Aggregator{
 		ctx:          ctx,
 		db:           db,
 		parentStream: stream,
-		subRepoPerms: authz.NewSubRepoPermsClient(database.SubRepoPerms(db)),
+		subRepoPerms: subRepoPerms,
 		errors:       &multierror.Error{},
 	}
 }

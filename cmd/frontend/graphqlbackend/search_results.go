@@ -1562,7 +1562,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		defer cancelOnLimit()
 	}
 
-	agg := run.NewAggregator(ctx, r.db, stream)
+	agg := run.NewAggregator(ctx, r.db, stream, subRepoPermsClient(r.db))
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
