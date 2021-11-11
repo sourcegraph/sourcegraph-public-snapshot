@@ -129,7 +129,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 	return NewSearchImplementer(ctx, r.db, args)
 }
 
-// detectSearchType returns the search type to perfrom ("regexp", or
+// detectSearchType returns the search type to perform ("regexp", or
 // "literal"). The search type derives from three sources: the version and
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
