@@ -1930,10 +1930,21 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 
 // subRepoPermsFilter drops matches the actor in the given context does not have read access to.
 func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) error {
+	actor := actor.FromContext(ctx)
+
 	return func(event *streaming.SearchEvent) error {
-		actor := actor.FromContext(ctx)
+		tr, ctx := trace.New(ctx, "subRepoPermsFilter", "")
 		errs := &multierror.Error{}
 		authorized := event.Results[:0]
+		resultsCount := len(event.Results)
+
+		defer func() {
+			tr.SetError(errs.ErrorOrNil())
+			tr.LazyPrintf("actor=(%s) authorized=%d unauthorized=%d",
+				actor.String(), len(authorized), resultsCount-len(authorized))
+			tr.Finish()
+		}()
+
 		for _, match := range event.Results {
 			key := match.Key()
 			perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
