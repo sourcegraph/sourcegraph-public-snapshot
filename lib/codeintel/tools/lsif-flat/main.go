@@ -51,6 +51,14 @@ func (g *graph) AddDocument(doc *proto.Document) {
 			},
 		})
 		rangeIDs = append(rangeIDs, rangeID)
+		// TODO: emit resultSet (if missing)
+		switch occ.Role {
+		case proto.MonikerOccurrence_ROLE_DEFINITION:
+			// definitionResult -> item edge -> rangeID
+		case proto.MonikerOccurrence_ROLE_REFERENCE:
+			// referenceResult -> item edge -> rangeID
+		default:
+		}
 	}
 	g.AddEdge("contains", reader.Edge{OutV: documentID, InVs: rangeIDs})
 }
