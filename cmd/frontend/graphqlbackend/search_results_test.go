@@ -463,6 +463,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
+	unauthorizedFileName := "cant-see-me.md"
 
 	repoWithIDs := &types.Repo{
 		ID:   api.RepoID(id),
@@ -517,6 +518,18 @@ func TestSearchResultsHydration(t *testing.T) {
 			},
 		},
 		Checksum: []byte{0, 1, 2},
+	}, {
+		Score:        3.0,
+		FileName:     unauthorizedFileName, // Gets filtered out
+		RepositoryID: uint32(repoWithIDs.ID),
+		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
+		Branches:     []string{"master"},
+		LineMatches: []zoekt.LineMatch{
+			{
+				Line: nil,
+			},
+		},
+		Checksum: []byte{0, 1, 3},
 	}}
 
 	z := &searchbackend.FakeSearcher{
@@ -524,7 +537,10 @@ func TestSearchResultsHydration(t *testing.T) {
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	}
 
+	// Act in a user context
+	var ctxUser int32 = 1234
 	ctx := context.Background()
+	ctx = actor.WithActor(ctx, actor.FromUser(ctxUser))
 
 	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
@@ -532,7 +548,16 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	srp := authz.NewMockSubRepoPermissionChecker()
-	srp.EnabledFunc.SetDefaultReturn(false)
+	srp.EnabledFunc.SetDefaultReturn(true)
+	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, i int32, rc authz.RepoContent) (authz.Perms, error) {
+		if i != 1234 {
+			return authz.Read, nil
+		}
+		if rc.Path != unauthorizedFileName {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
 
 	resolver := &searchResolver{
 		db: database.NewDB(db),
