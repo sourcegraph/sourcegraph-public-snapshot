@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"lsif-flat/proto"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-flat/proto"
 )
 
 func main() {
