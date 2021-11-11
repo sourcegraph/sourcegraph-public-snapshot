@@ -78,7 +78,7 @@ export const MessagePanel: React.FunctionComponent<Props> = ({ className, messag
     return (
         <div className={className}>
             <CodeSnippet language="http" code={rawHeaders} />
-            <CodeSnippet className={styles.body} language={language} code={body} />
+            <CodeSnippet className={styles.messageBody} language={language} code={body} />
         </div>
     )
 }
