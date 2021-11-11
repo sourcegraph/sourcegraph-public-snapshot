@@ -539,7 +539,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	// Act in a user context
 	var ctxUser int32 = 1234
-	ctx := actor.WithActor(context.Background(), actor.FromUser(ctxUser))
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(ctxUser))
 
 	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {

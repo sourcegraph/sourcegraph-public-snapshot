@@ -449,7 +449,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
 		a := actor.FromContext(ctx)
-		if a.IsAuthenticated() {
+		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
