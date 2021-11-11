@@ -67,19 +67,23 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) (js []*ActionJob, err error) {
-	var where *sqlf.Query
-	if triggerEventID == nil {
-		where = sqlf.Sprintf("email = %s", emailID)
-	} else {
-		where = sqlf.Sprintf("email = %s AND trigger_event = %s", emailID, *triggerEventID)
+func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
+	conditions := []*sqlf.Query{sqlf.Sprintf("email = %s", emailID)}
+	if triggerEventID != nil {
+		conditions = append(conditions, sqlf.Sprintf("trigger_event = %s", *triggerEventID))
 	}
-	var rows *sql.Rows
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
-	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, sqlf.Join(ActionJobsColumns, ", "), where, after, args.First))
+	q := sqlf.Sprintf(
+		readActionEmailEventsFmtStr,
+		sqlf.Join(ActionJobsColumns, ","),
+		sqlf.Join(conditions, "AND"),
+		after,
+		args.First,
+	)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
