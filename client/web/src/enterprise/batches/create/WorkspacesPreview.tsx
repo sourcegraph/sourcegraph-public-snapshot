@@ -1,28 +1,27 @@
+import { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useHistory, useLocation } from 'react-router'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
-    BatchSpecWithWorkspacesFields,
-    WorkspaceResolutionStatusResult,
+    BatchSpecWorkspaceResolutionState,
+    Scalars,
     WorkspaceResolutionStatusVariables,
+    WorkspaceResolutionStatusResult,
 } from '../../../graphql-operations'
 
-import { fetchBatchSpec, WORKSPACE_RESOLUTION_STATUS } from './backend'
+import { WORKSPACE_RESOLUTION_STATUS } from './backend'
 import styles from './WorkspacesPreview.module.scss'
+import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
 interface WorkspacesPreviewProps {
     batchSpecID?: Scalars['ID']
+    currentJobTime?: string
     /**
      * Whether or not the preview button should be disabled due to their being a problem
      * with the input batch spec YAML, or a preview request is already happening.
@@ -33,25 +32,34 @@ interface WorkspacesPreviewProps {
      * preview request.
      */
     preview: () => void
-    // excludeRepo: (repo: string, branch: string) => void
-    /** Whether or not the workspaces preview list is stale. */
-    previewStale: boolean
+    /**
+     * Whether or not the batch spec YAML on the server is up-to-date with that which is
+     * presently in the editor.
+     */
+    batchSpecStale: boolean
+    /**
+     * Function to automatically update repo query of input batch spec YAML to exclude the
+     * provided repo + branch.
+     */
+    excludeRepo: (repo: string, branch: string) => void
 }
 
 export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
     batchSpecID,
+    currentJobTime,
     previewDisabled,
     preview,
-    previewStale,
+    batchSpecStale,
+    excludeRepo,
 }) => {
     const [resolutionError, setResolutionError] = useState<string>()
 
     const [showPreviewPrompt, previewPromptForm] = useMemo(() => {
-        const showPreviewPrompt = !batchSpecID || previewStale || resolutionError
+        const showPreviewPrompt = !batchSpecID || batchSpecStale || resolutionError
         const previewPromptForm: PreviewPromptForm = !batchSpecID ? 'Initial' : resolutionError ? 'Error' : 'Update'
 
         return [showPreviewPrompt, previewPromptForm]
-    }, [batchSpecID, previewStale, resolutionError])
+    }, [batchSpecID, batchSpecStale, resolutionError])
 
     const clearErrorAndPreview = useCallback(() => {
         setResolutionError(undefined)
@@ -65,64 +73,14 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             {showPreviewPrompt && (
                 <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
-            {batchSpecID && <WithBatchSpec batchSpecID={batchSpecID} setResolutionError={setResolutionError} />}
-            {/*
-            <ul className="list-group p-1 mb-0">
-                {preview.workspaceResolution.workspaces.nodes.map(item => (
-                    <li
-                        className="d-flex border-bottom mb-3"
-                        key={`${item.repository.id}_${item.branch.target.oid}_${item.path || '/'}`}
-                    >
-                        <button
-                            className="btn align-self-start p-0 m-0 mr-3"
-                            data-tooltip="Omit this repository from batch spec file"
-                            type="button"
-                            // TODO: Alert that for monorepos, we will exclude all paths
-                            onClick={() => excludeRepo(item.repository.name, item.branch.displayName)}
-                        >
-                            <CloseIcon className="icon-inline" />
-                        </button>
-                        <div className="mb-2 flex-1">
-                            <p>
-                                {item.repository.name}:{item.branch.abbrevName} Path: {item.path || '/'}
-                            </p>
-                            <p>
-                                {item.searchResultPaths.length} {pluralize('result', item.searchResultPaths.length)}
-                            </p>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-            {preview.workspaceResolution.workspaces.nodes.length === 0 && (
-                <span className="text-muted">No workspaces found</span>
+            {batchSpecID && currentJobTime && (
+                <WithBatchSpec
+                    batchSpecID={batchSpecID}
+                    setResolutionError={setResolutionError}
+                    excludeRepo={excludeRepo}
+                    currentJobTime={currentJobTime}
+                />
             )}
-            {preview.importingChangesets && preview.importingChangesets.totalCount > 0 && (
-                <>
-                    <h3>Importing changesets</h3>
-                    <ul>
-                        {preview.importingChangesets?.nodes.map(node => (
-                            <li key={node.id}>
-                                <LinkOrSpan
-                                    to={
-                                        node.__typename === 'VisibleChangesetSpec' &&
-                                        node.description.__typename === 'ExistingChangesetReference'
-                                            ? node.description.baseRepository.url
-                                            : undefined
-                                    }
-                                >
-                                    {node.__typename === 'VisibleChangesetSpec' &&
-                                        node.description.__typename === 'ExistingChangesetReference' &&
-                                        node.description.baseRepository.name}
-                                </LinkOrSpan>{' '}
-                                #
-                                {node.__typename === 'VisibleChangesetSpec' &&
-                                    node.description.__typename === 'ExistingChangesetReference' &&
-                                    node.description.externalID}
-                            </li>
-                        ))}
-                    </ul>
-                </>
-            )} */}
         </div>
     )
 }
@@ -171,10 +129,13 @@ const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, d
                         Finish editing your batch spec, then manually preview repositories.
                     </h4>
                     {previewButton}
+                    <div className="mb-4" />
                 </>
             )
     }
 }
+
+const POLLING_INTERVAL = 1000
 
 type WorkspaceResolutionStatus = (WorkspaceResolutionStatusResult['node'] & {
     __typename: 'BatchSpec'
@@ -183,11 +144,22 @@ type WorkspaceResolutionStatus = (WorkspaceResolutionStatusResult['node'] & {
 const getResolution = (queryResult?: WorkspaceResolutionStatusResult): WorkspaceResolutionStatus =>
     queryResult?.node?.__typename === 'BatchSpec' ? queryResult.node.workspaceResolution : null
 
-const WithBatchSpec: React.FunctionComponent<{
-    batchSpecID: Scalars['ID']
+interface WithBatchSpecProps
+    extends Required<Pick<WorkspacesPreviewProps, 'batchSpecID' | 'excludeRepo' | 'currentJobTime'>> {
     setResolutionError: (error: string) => void
-}> = ({ batchSpecID, setResolutionError }) => {
-    const { data, loading, startPolling, stopPolling } = useQuery<
+}
+
+const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
+    batchSpecID,
+    currentJobTime,
+    setResolutionError,
+    excludeRepo,
+    /**
+     * Whether or not the workspaces previewed in the list are up-to-date with the batch
+     * spec YAML that was last submitted for a preview.
+     */
+}) => {
+    const { data, refetch, loading, startPolling, stopPolling } = useQuery<
         WorkspaceResolutionStatusResult,
         WorkspaceResolutionStatusVariables
     >(WORKSPACE_RESOLUTION_STATUS, {
@@ -198,6 +170,11 @@ const WithBatchSpec: React.FunctionComponent<{
         onError: error => setResolutionError(error.message),
     })
 
+    // Requery the workspace resolution status when there's a new job requested.
+    useEffect(() => {
+        refetch().catch((error: ApolloError) => setResolutionError(error.message))
+    }, [currentJobTime, refetch, setResolutionError])
+
     useEffect(() => {
         const resolution = getResolution(data)
         if (
@@ -205,7 +182,7 @@ const WithBatchSpec: React.FunctionComponent<{
             resolution?.state === BatchSpecWorkspaceResolutionState.PROCESSING
         ) {
             // If the workspace resolution is still queued or processing, start polling.
-            startPolling(1000)
+            startPolling(POLLING_INTERVAL)
         } else if (
             resolution?.state === BatchSpecWorkspaceResolutionState.ERRORED ||
             resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
@@ -226,9 +203,13 @@ const WithBatchSpec: React.FunctionComponent<{
                 // TODO: Show cooler loading indicator
                 <LoadingSpinner className="my-4" />
             ) : null}
-            <Button onClick={() => startPolling(500)}>Start polling</Button>
-            <Button onClick={() => stopPolling()}>Stop polling</Button>
-            {resolution?.state === 'COMPLETED' && <h1>Done!!</h1>}
+            {resolution?.state === 'COMPLETED' ? (
+                <WorkspacesPreviewList
+                    batchSpecID={batchSpecID}
+                    setResolutionError={setResolutionError}
+                    excludeRepo={excludeRepo}
+                />
+            ) : null}
         </>
     )
 }

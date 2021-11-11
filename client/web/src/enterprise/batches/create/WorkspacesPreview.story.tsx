@@ -27,7 +27,8 @@ add('initial', () => (
                 // batchSpecInput={text('Batch spec input', minimalSample)}
                 previewDisabled={!boolean('Valid batch spec?', true)}
                 preview={noop}
-                previewStale={false}
+                batchSpecStale={false}
+                excludeRepo={noop}
             />
         )}
     </WebStory>
@@ -62,7 +63,8 @@ add('first preview, loading', () => {
                         batchSpecID="fakelol"
                         previewDisabled={false}
                         preview={noop}
-                        previewStale={false}
+                        batchSpecStale={false}
+                        excludeRepo={noop}
                     />
                 </MockedTestProvider>
             )}
@@ -100,7 +102,8 @@ add('first preview, error', () => {
                         batchSpecID="fakelol"
                         previewDisabled={false}
                         preview={noop}
-                        previewStale={false}
+                        batchSpecStale={false}
+                        excludeRepo={noop}
                     />
                 </MockedTestProvider>
             )}
@@ -132,7 +135,8 @@ add('first preview, success', () => {
                         batchSpecID="fakelol"
                         previewDisabled={false}
                         preview={noop}
-                        previewStale={false}
+                        batchSpecStale={false}
+                        excludeRepo={noop}
                     />
                 </MockedTestProvider>
             )}
@@ -164,7 +168,8 @@ add('first preview, stale', () => {
                         batchSpecID="fakelol"
                         previewDisabled={false}
                         preview={noop}
-                        previewStale={true}
+                        batchSpecStale={true}
+                        excludeRepo={noop}
                     />
                 </MockedTestProvider>
             )}

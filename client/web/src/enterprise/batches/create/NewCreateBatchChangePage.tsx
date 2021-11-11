@@ -1,16 +1,11 @@
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
-import classNames from 'classnames'
 import { load as loadYAML } from 'js-yaml'
 import { debounce } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
-import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useMutation } from '@sourcegraph/shared/src/graphql/graphql'
 import {
     SettingsCascadeProps,
@@ -34,7 +29,7 @@ import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { CREATE_BATCH_SPEC_FROM_RAW, executeBatchSpec, fetchBatchSpec, REPLACE_BATCH_SPEC_INPUT } from './backend'
+import { CREATE_BATCH_SPEC_FROM_RAW, executeBatchSpec, REPLACE_BATCH_SPEC_INPUT } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './examples/hello-world.batch.yaml'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -87,7 +82,8 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     const {
         previewBatchSpec,
-        currentBatchSpecID,
+        batchSpecID,
+        currentJobTime,
         isLoading,
         error: previewError,
         clearError: clearPreviewError,
@@ -195,10 +191,12 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     )}
                     {previewError && <ErrorAlert error={previewError} />}
                     <WorkspacesPreview
-                        batchSpecID={currentBatchSpecID}
+                        batchSpecID={batchSpecID}
+                        currentJobTime={currentJobTime}
                         previewDisabled={previewDisabled}
                         preview={preview}
-                        previewStale={isStale}
+                        batchSpecStale={isStale}
+                        excludeRepo={excludeRepo}
                     />
                 </Container>
             </div>
@@ -309,7 +307,8 @@ const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult => {
 
 interface UsePreviewBatchSpecResult {
     previewBatchSpec: (code: string) => void
-    currentBatchSpecID?: Scalars['ID']
+    batchSpecID?: Scalars['ID']
+    currentJobTime?: string
     isLoading: boolean
     error?: Error
     clearError: () => void
@@ -328,7 +327,7 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
         { data: replaceBatchSpecInputData, loading: replaceBatchSpecInputLoading },
     ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT, {})
 
-    const currentBatchSpecID = useMemo(
+    const batchSpecID = useMemo(
         () =>
             // If we have replaced the batch spec input already, the initial batch spec
             // has been superseded, so prefer that one.
@@ -343,33 +342,37 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
     ])
 
     const [error, setError] = useState<Error>()
+    const [currentJobTime, setCurrentJobTime] = useState<string>()
     const [isStale, setIsStale] = useState(false)
 
     const previewBatchSpec = useCallback(
         (code: string) => {
             setError(undefined)
 
-            // If we have a batch spec ID already, we're replacing the exiting batch spec with
-            // a new one.
-            if (currentBatchSpecID) {
-                replaceBatchSpecInput({ variables: { spec: code, previousSpec: currentBatchSpecID } })
-                    .then(() => setIsStale(false))
-                    .catch(setError)
-            } else {
-                // Otherwise, we're creating a new batch spec from the raw spec input YAML.
-                createBatchSpecFromRaw({
-                    variables: { spec: code, namespace: namespace.id },
+            // If we have a batch spec ID already, we're replacing the existing batch spec
+            // input YAML with a new one.
+            const preview = (): Promise<unknown> =>
+                batchSpecID
+                    ? replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID } })
+                    : // Otherwise, we're creating a new batch spec from the raw spec input YAML.
+                      createBatchSpecFromRaw({
+                          variables: { spec: code, namespace: namespace.id },
+                      })
+
+            preview()
+                .then(() => {
+                    setIsStale(false)
+                    setCurrentJobTime(new Date().toISOString())
                 })
-                    .then(() => setIsStale(false))
-                    .catch(setError)
-            }
+                .catch(setError)
         },
-        [currentBatchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput]
+        [batchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput]
     )
 
     return {
         previewBatchSpec,
-        currentBatchSpecID,
+        batchSpecID,
+        currentJobTime,
         isLoading,
         error,
         clearError: () => setError(undefined),
