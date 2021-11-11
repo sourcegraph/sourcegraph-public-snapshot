@@ -141,9 +141,10 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	options := database.ReposListOptions{
-		IncludePatterns: includePatterns,
-		ExcludePattern:  UnionRegExps(excludePatterns),
-		Cursors:         op.Cursors,
+		IncludePatterns:       includePatterns,
+		ExcludePattern:        UnionRegExps(excludePatterns),
+		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
 		NoForks:                op.NoForks,

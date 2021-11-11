@@ -534,6 +534,10 @@ type ReposListOptions struct {
 	// returned in the list.
 	ExcludePattern string
 
+	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
+	// with case sensitivity or not.
+	CaseSensitivePatterns bool
+
 	// Names is a list of repository names used to limit the results to that
 	// set of repositories.
 	// Note: This is currently used for version contexts. In future iterations,
@@ -856,7 +860,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	for _, includePattern := range opt.IncludePatterns {
-		extraConds, err := parsePattern(includePattern)
+		extraConds, err := parsePattern(includePattern, opt.CaseSensitivePatterns)
 		if err != nil {
 			return nil, err
 		}
@@ -864,7 +868,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if opt.ExcludePattern != "" {
-		where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
+		if opt.CaseSensitivePatterns {
+			where = append(where, sqlf.Sprintf("name !~* %s", opt.ExcludePattern))
+		} else {
+			where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
+		}
 	}
 
 	if len(opt.IDs) > 0 {
@@ -1032,14 +1040,16 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		return nil, err
 	}
 
-	return sqlf.Sprintf(
+	q := sqlf.Sprintf(
 		fmt.Sprintf(listReposQueryFmtstr, strings.Join(columns, ",")),
 		queryPrefix,
 		sqlf.Join(joins, "\n"),
 		queryConds,
 		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
-	), nil
+	)
+
+	return q, nil
 }
 
 const userReposCTEFmtstr = `
@@ -1532,7 +1542,7 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 	return api.RepoName(name), nil
 }
 
-func parsePattern(p string) ([]*sqlf.Query, error) {
+func parsePattern(p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
@@ -1545,13 +1555,19 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 			conds = append(conds, sqlf.Sprintf("name = ANY (%s)", pq.Array(exact)))
 		}
 	}
-	if len(like) > 0 {
-		for _, v := range like {
+	for _, v := range like {
+		if caseSensitive {
+			conds = append(conds, sqlf.Sprintf(`name::text LIKE %s`, v))
+		} else {
 			conds = append(conds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
 		}
 	}
 	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
+		if caseSensitive {
+			conds = append(conds, sqlf.Sprintf("name::text ~ %s", pattern))
+		} else {
+			conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
+		}
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }

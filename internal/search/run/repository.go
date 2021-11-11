@@ -58,21 +58,14 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 
 	tr.LogFields(
 		otlog.String("pattern", s.Args.PatternInfo.Pattern),
-		otlog.Bool("negated", s.Args.PatternInfo.IsNegated),
 		otlog.Int("limit", s.Limit))
 
 	opts := s.Args.RepoOptions // copy
 
 	if s.Args.PatternInfo.Pattern != "" {
-		var repoFilters *[]string
-		if s.Args.PatternInfo.IsNegated {
-			repoFilters = &opts.MinusRepoFilters
-		} else {
-			repoFilters = &opts.RepoFilters
-		}
-
-		*repoFilters = append(make([]string, 0, len(*repoFilters)), *repoFilters...)
-		*repoFilters = append(*repoFilters, s.Args.PatternInfo.Pattern)
+		opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+		opts.RepoFilters = append(opts.RepoFilters, s.Args.PatternInfo.Pattern)
+		opts.CaseSensitiveRepoFilters = s.Args.Query.IsCaseSensitive()
 	}
 
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
