@@ -123,6 +123,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                     caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
                     isVisible={isFuzzyFinderVisible}
+                    telemetryService={props.telemetryService}
                 />
             )}
         </Form>
