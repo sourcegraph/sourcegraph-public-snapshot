@@ -14,6 +14,7 @@ Administration is usually handled by site administrators are the admins responsi
 - [Upgrading PostgreSQL](postgres.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
+- <span class="badge badge-experimental">Experimental</span> [Executors](executors.md)
 - <span class="badge badge-experimental">Experimental</span> [Deploy executors](deploy_executors.md)
 
 ## [Upgrade Sourcegraph](updates/index.md)
