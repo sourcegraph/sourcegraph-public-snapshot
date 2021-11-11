@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-flat/proto"
 )
@@ -16,7 +17,7 @@ type graph struct {
 	Elements []reader.Element
 }
 
-func (g *graph) Add(Type, Label string, Payload interface{}) {
+func (g *graph) Add(Type, Label string, Payload interface{}) int {
 	g.ID++
 	g.Elements = append(g.Elements, reader.Element{
 		ID:      g.ID,
@@ -24,17 +25,36 @@ func (g *graph) Add(Type, Label string, Payload interface{}) {
 		Label:   Label,
 		Payload: Payload,
 	})
+	return g.ID
 }
-func (g *graph) AddVertex(label string, Payload interface{}) {
-	g.Add("vertex", label, Payload)
+func (g *graph) AddVertex(label string, Payload interface{}) int {
+	return g.Add("vertex", label, Payload)
 }
-func (g *graph) AddEdge(label string, Payload interface{}) {
-	g.Add("edge", label, Payload)
+func (g *graph) AddEdge(label string, Payload interface{}) int {
+	return g.Add("edge", label, Payload)
 }
-func (g *graph) AddPackage(doc *proto.Package)   {}
-func (g *graph) AddDocument(doc *proto.Document) {}
-func (g *graph) AddMoniker(doc *proto.Moniker)   {}
-
+func (g *graph) AddPackage(doc *proto.Package) {}
+func (g *graph) AddDocument(doc *proto.Document) {
+	documentID := g.AddVertex("document", doc.Uri)
+	rangeIDs := []int{}
+	for _, occ := range doc.Occurrences {
+		rangeID := g.AddVertex("range", reader.Range{
+			RangeData: protocol.RangeData{
+				Start: protocol.Pos{
+					Line:      int(occ.Range.Start.Line),
+					Character: int(occ.Range.Start.Character),
+				},
+				End: protocol.Pos{
+					Line:      int(occ.Range.End.Line),
+					Character: int(occ.Range.End.Character),
+				},
+			},
+		})
+		rangeIDs = append(rangeIDs, rangeID)
+	}
+	g.AddEdge("contains", reader.Edge{OutV: documentID, InVs: rangeIDs})
+}
+func (g *graph) AddMoniker(doc *proto.Moniker) {}
 func convertFlatToGraph(vals *proto.LsifValues) []reader.Element {
 	g := graph{ID: 0, Elements: []reader.Element{}}
 	g.AddVertex(
