@@ -30,7 +30,7 @@ export const StreamingProgressCount: React.FunctionComponent<
     <>
         <small
             className={classNames(
-                'd-flex align-items-center px-0',
+                'd-flex align-items-center',
                 className,
                 styles.count,
                 state === 'loading' && styles.countInProgress
