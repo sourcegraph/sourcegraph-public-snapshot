@@ -15,6 +15,10 @@ export interface Props {
     labelClassName?: string
 }
 
+/**
+ * A performance gauge is a component that renders a numeric value with a label
+ * in a way that focuses attention on the numeric value.
+ */
 export const PerformanceGauge: React.FunctionComponent<Props> = ({
     count,
     className,
