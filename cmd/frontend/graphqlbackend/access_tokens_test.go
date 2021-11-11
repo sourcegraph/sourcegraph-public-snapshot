@@ -254,7 +254,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 	})
 
-	t.Run("disable sudo access token on Sourcegraph.com", func(t *testing.T) {
+	t.Run("disable sudo access token creation on Sourcegraph.com", func(t *testing.T) {
 		users := dbmock.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
