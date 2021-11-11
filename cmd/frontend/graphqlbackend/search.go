@@ -9,7 +9,6 @@ import (
 	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -132,7 +131,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 	return NewSearchImplementer(ctx, r.db, args)
 }
 
-// detectSearchType returns the search type to perfrom ("regexp", or
+// detectSearchType returns the search type to perform ("regexp", or
 // "literal"). The search type derives from three sources: the version and
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
@@ -286,6 +285,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		tr.Finish()
 	}()
 
+	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
+	//  which are the last call sites of resolveRepositories (which does caching).
 	if options.CacheLookup {
 		// Cache if opts are empty, so that multiple calls to resolveRepositories only
 		// hit the database once.
@@ -304,10 +305,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 	tr.LazyPrintf("resolveRepositories - start")
 	defer tr.LazyPrintf("resolveRepositories - done")
 
-	repositoryResolver := &searchrepos.Resolver{
-		DB:                  r.db,
-		SearchableReposFunc: backend.Repos.ListSearchable,
-	}
+	repositoryResolver := &searchrepos.Resolver{DB: r.db}
 
 	return repositoryResolver.Resolve(ctx, options)
 }
@@ -337,6 +335,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
+	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
+	//  which are the last call sites of resolveRepositories (which does caching).
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {

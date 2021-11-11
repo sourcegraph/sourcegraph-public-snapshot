@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -66,7 +67,7 @@ func TestExecutionKey_RegressionTest(t *testing.T) {
 	}
 }
 
-func TestExecutionKey(t *testing.T) {
+func TestExecutionKeyWithEnvResolution(t *testing.T) {
 	// Let's set up an array of steps that we can test with. One step will
 	// depend on an environment variable outside the spec.
 	var steps []batches.Step
@@ -84,15 +85,18 @@ func TestExecutionKey(t *testing.T) {
 	}
 
 	// And now we can set up a key to work with.
-	key := ExecutionKey{
-		Repository: batches.Repository{
-			ID:          "graphql-id",
-			Name:        "github.com/sourcegraph/src-cli",
-			BaseRef:     "refs/heads/f00b4r",
-			BaseRev:     "c0mmit",
-			FileMatches: []string{"aa.go"},
+	key := ExecutionKeyWithGlobalEnv{
+		ExecutionKey: &ExecutionKey{
+			Repository: batches.Repository{
+				ID:          "graphql-id",
+				Name:        "github.com/sourcegraph/src-cli",
+				BaseRef:     "refs/heads/f00b4r",
+				BaseRev:     "c0mmit",
+				FileMatches: []string{"aa.go"},
+			},
+			Steps: steps,
 		},
-		Steps: steps,
+		GlobalEnv: os.Environ(),
 	}
 
 	// All righty. Let's get ourselves a baseline cache key here.
@@ -103,9 +107,7 @@ func TestExecutionKey(t *testing.T) {
 
 	// Let's set an unrelated environment variable and ensure we still have the
 	// same key.
-	if err := os.Setenv(testExecutionCacheKeyEnv+"_UNRELATED", "foo"); err != nil {
-		t.Fatal(err)
-	}
+	key.GlobalEnv = append(key.GlobalEnv, fmt.Sprintf("%s=%s", testExecutionCacheKeyEnv+"_UNRELATED", "foo"))
 	have, err := key.Key()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
@@ -116,9 +118,7 @@ func TestExecutionKey(t *testing.T) {
 
 	// Let's now set the environment variable referenced in the steps and verify
 	// that the cache key does change.
-	if err := os.Setenv(testExecutionCacheKeyEnv, "foo"); err != nil {
-		t.Fatal(err)
-	}
+	key.GlobalEnv = append(key.GlobalEnv, fmt.Sprintf("%s=%s", testExecutionCacheKeyEnv, "foo"))
 	have, err = key.Key()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
@@ -128,9 +128,7 @@ func TestExecutionKey(t *testing.T) {
 	}
 
 	// And, just to be sure, let's change it again.
-	if err := os.Setenv(testExecutionCacheKeyEnv, "bar"); err != nil {
-		t.Fatal(err)
-	}
+	key.GlobalEnv[len(key.GlobalEnv)-1] = fmt.Sprintf("%s=%s", testExecutionCacheKeyEnv, "bar")
 	again, err := key.Key()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
@@ -141,9 +139,7 @@ func TestExecutionKey(t *testing.T) {
 
 	// Finally, if we unset the environment variable again, we should get a key
 	// that matches the initial key.
-	if err := os.Unsetenv(testExecutionCacheKeyEnv); err != nil {
-		t.Fatal(err)
-	}
+	key.GlobalEnv = key.GlobalEnv[:len(key.GlobalEnv)-1]
 	have, err = key.Key()
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)

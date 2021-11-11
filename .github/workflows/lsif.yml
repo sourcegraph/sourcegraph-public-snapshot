@@ -6,7 +6,7 @@ jobs:
     # Skip running on forks
     if: github.repository == 'sourcegraph/sourcegraph'
     runs-on: ubuntu-latest
-    container: sourcegraph/lsif-go:v1.7.2 # Pinned in preparation for upgrade
+    container: sourcegraph/lsif-go
     strategy:
       matrix:
         root:
@@ -20,7 +20,8 @@ jobs:
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: lsif-go --no-animation
+        # --dep-batch-size=100 avoids loading all deps into memory and getting OOM killed
+        run: lsif-go --no-animation --dep-batch-size=100
 
       # Upload lsif-go data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-go dump to Cloud

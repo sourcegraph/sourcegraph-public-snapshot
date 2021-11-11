@@ -4,7 +4,8 @@
         border-bottom-width: 1px;
     }
     &:not(:last-of-type) {
-        margin-bottom: 0.5rem;
+        /* Added important flag here to prevent overide. To be worked on during module migraton. */
+        margin-bottom: 0.5rem !important;
     }
 
     &__header {

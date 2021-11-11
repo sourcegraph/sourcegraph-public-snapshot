@@ -1,109 +1,105 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`LicenseExpirationAlert.test.tsx expired 1`] = `
-<div
-  className="alert container alert-warning align-items-center"
->
+exports[`LicenseExpirationAlert expired 1`] = `
+<DocumentFragment>
   <div
-    className="content"
+    class="alert container alert-warning align-items-center"
   >
-    Your Sourcegraph license
-     
-    expired 3 months ago
-    . 
-    <a
-      className="site-alert__link"
-      href="/site-admin/license"
+    <div
+      class="content"
     >
-      <span
-        className="underline"
+      Your Sourcegraph license expired 3 months ago. 
+      <a
+        class="site-alert__link"
+        href="/site-admin/license"
       >
-        Renew now
-      </span>
-    </a>
-     or 
-    <a
-      className="site-alert__link"
-      href="https://about.sourcegraph.com/contact"
+        <span
+          class="underline"
+        >
+          Renew now
+        </span>
+      </a>
+       or 
+      <a
+        class="site-alert__link"
+        href="https://about.sourcegraph.com/contact"
+      >
+        <span
+          class="underline"
+        >
+          contact Sourcegraph
+        </span>
+      </a>
+    </div>
+    <button
+      aria-label="Close alert"
+      class="btn btn-icon closeButton"
+      type="button"
     >
-      <span
-        className="underline"
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
       >
-        contact Sourcegraph
-      </span>
-    </a>
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
+    </button>
   </div>
-  <button
-    aria-label="Close alert"
-    className="btn btn-icon closeButton"
-    onClick={[Function]}
-    type="button"
-  >
-    <svg
-      className="mdi-icon icon-inline"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-      />
-    </svg>
-  </button>
-</div>
+</DocumentFragment>
 `;
 
-exports[`LicenseExpirationAlert.test.tsx expiring soon 1`] = `
-<div
-  className="alert container alert-warning align-items-center"
->
+exports[`LicenseExpirationAlert expiring soon 1`] = `
+<DocumentFragment>
   <div
-    className="content"
+    class="alert container alert-warning align-items-center"
   >
-    Your Sourcegraph license
-     
-    will expire in 3 days
-    . 
-    <a
-      className="site-alert__link"
-      href="/site-admin/license"
+    <div
+      class="content"
     >
-      <span
-        className="underline"
+      Your Sourcegraph license will expire in 3 days. 
+      <a
+        class="site-alert__link"
+        href="/site-admin/license"
       >
-        Renew now
-      </span>
-    </a>
-     or 
-    <a
-      className="site-alert__link"
-      href="https://about.sourcegraph.com/contact"
+        <span
+          class="underline"
+        >
+          Renew now
+        </span>
+      </a>
+       or 
+      <a
+        class="site-alert__link"
+        href="https://about.sourcegraph.com/contact"
+      >
+        <span
+          class="underline"
+        >
+          contact Sourcegraph
+        </span>
+      </a>
+    </div>
+    <button
+      aria-label="Close alert"
+      class="btn btn-icon closeButton"
+      type="button"
     >
-      <span
-        className="underline"
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
       >
-        contact Sourcegraph
-      </span>
-    </a>
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
+    </button>
   </div>
-  <button
-    aria-label="Close alert"
-    className="btn btn-icon closeButton"
-    onClick={[Function]}
-    type="button"
-  >
-    <svg
-      className="mdi-icon icon-inline"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
-      />
-    </svg>
-  </button>
-</div>
+</DocumentFragment>
 `;

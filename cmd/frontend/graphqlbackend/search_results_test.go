@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
@@ -22,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -46,7 +44,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 	t.Helper()
 
 	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
+		t.Errorf("(-want +got):\n%s", diff)
 	}
 }
 
@@ -57,8 +55,6 @@ func TestSearchResults(t *testing.T) {
 		t.Skip("TestSeachResults only works in local dev and is not reliable in CI")
 	}
 	db := new(dbtesting.MockDB)
-
-	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{db: database.NewDB(db)}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -113,10 +109,6 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			calledReposListMinimalRepos = true
 
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.ListMinimalRepos, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
 			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
@@ -146,24 +138,12 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			calledReposListMinimalRepos = true
 
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+			return []types.MinimalRepo{}, nil
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
-
-		calledSearchRepositories := false
-		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
-			calledSearchRepositories = true
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
 		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
@@ -189,9 +169,6 @@ func TestSearchResults(t *testing.T) {
 		if !calledReposListMinimalRepos {
 			t.Error("!calledReposListMinimalRepos")
 		}
-		if !calledSearchRepositories {
-			t.Error("!calledSearchRepositories")
-		}
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
@@ -208,24 +185,12 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 			calledReposListMinimalRepos = true
 
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+			return []types.MinimalRepo{}, nil
 		}
 		defer func() { database.Mocks = database.MockStores{} }()
 		database.Mocks.Repos.MockGetByName(t, "repo", 1)
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
-
-		calledSearchRepositories := false
-		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
-			calledSearchRepositories = true
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
 		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
@@ -250,9 +215,6 @@ func TestSearchResults(t *testing.T) {
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
 		if !calledReposListMinimalRepos {
 			t.Error("!calledReposListMinimalRepos")
-		}
-		if !calledSearchRepositories {
-			t.Error("!calledSearchRepositories")
 		}
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
@@ -907,6 +869,9 @@ func TestEvaluateAnd(t *testing.T) {
 			ctx := context.Background()
 
 			database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+				if len(op.IncludePatterns) > 0 || len(op.ExcludePattern) > 0 {
+					return nil, nil
+				}
 				repoNames := make([]types.MinimalRepo, len(minimalRepos))
 				for i := range minimalRepos {
 					repoNames[i] = types.MinimalRepo{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
@@ -939,7 +904,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			if tt.wantAlert {
 				if results.SearchResults.Alert == nil {
-					t.Errorf("Expected results")
+					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
 				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
@@ -1009,7 +974,6 @@ func TestSearchContext(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mockrequire.CalledN(t, ns.GetByNameFunc, tt.numContexts)
 		})
 	}
 }

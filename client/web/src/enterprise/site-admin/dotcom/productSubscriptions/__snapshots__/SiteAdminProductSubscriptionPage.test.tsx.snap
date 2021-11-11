@@ -1,235 +1,286 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteAdminProductSubscriptionPage renders 1`] = `
-<div
-  className="site-admin-product-subscription-page"
->
+<DocumentFragment>
   <div
-    className="mb-2"
-  >
-    <a
-      className="btn btn-link btn-sm"
-      href="/site-admin/dotcom/product/subscriptions"
-      onClick={[Function]}
-    >
-      <ArrowLeftIcon
-        className="icon-inline"
-      />
-       All subscriptions
-    </a>
-  </div>
-  <h2>
-    Product subscription 
-  </h2>
-  <div
-    className="mb-3"
-  >
-    <button
-      className="btn btn-danger"
-      disabled={false}
-      onClick={[Function]}
-      type="button"
-    >
-      Archive
-    </button>
-  </div>
-  <div
-    className="card mt-3"
+    class="site-admin-product-subscription-page"
   >
     <div
-      className="card-header"
+      class="mb-2"
     >
-      Details
+      <a
+        class="btn btn-link btn-sm"
+        href="/site-admin/dotcom/product/subscriptions"
+      >
+        <arrowlefticon
+          class="icon-inline"
+        />
+         All subscriptions
+      </a>
     </div>
-    <table
-      className="table mb-0"
-    >
-      <tbody>
-        <tr>
-          <th
-            className="text-nowrap"
-          >
-            ID
-          </th>
-          <td
-            className="w-100"
-          />
-        </tr>
-        <tr>
-          <th
-            className="text-nowrap"
-          >
-            Plan
-          </th>
-          <td
-            className="w-100"
-          >
-            <span
-              className=""
-            >
-              <span
-                className="text-muted font-italic"
-              >
-                No plan selected
-              </span>
-            </span>
-          </td>
-        </tr>
-        <tr>
-          <th
-            className="text-nowrap"
-          >
-            Account
-          </th>
-          <td
-            className="w-100"
-          >
-            <AccountName />
-             —
-             
-            <a
-              href="/s"
-              onClick={[Function]}
-            >
-              View as user
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <th
-            className="text-nowrap"
-          >
-            Account emails
-          </th>
-          <td
-            className="w-100"
-          />
-        </tr>
-        <tr>
-          <th
-            className="text-nowrap"
-          >
-            Billing
-          </th>
-          <td
-            className="w-100"
-          >
-            <div
-              className="site-admin-product-subscription-billing-link"
-            >
-              <div
-                className="d-flex align-items-center"
-              >
-                <button
-                  className="btn btn-secondary btn-sm"
-                  disabled={false}
-                  onClick={[Function]}
-                  type="button"
-                >
-                  Link billing subscription
-                </button>
-              </div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <th
-            className="text-nowrap"
-          >
-            Created at
-          </th>
-          <td
-            className="w-100"
-          >
-            <span
-              className="timestamp"
-              data-tooltip="2020-01-01"
-            >
-              in almost 14 years
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div
-    className="card mt-1"
-  >
+    <h2>
+      Product subscription 
+    </h2>
     <div
-      className="card-header d-flex align-items-center justify-content-between"
+      class="mb-3"
     >
-      Licenses
       <button
-        className="btn btn-primary btn-sm"
-        onClick={[Function]}
+        class="btn btn-danger"
         type="button"
       >
-        <AddIcon
-          className="icon-inline"
-        />
-         Generate new license manually
+        Archive
       </button>
     </div>
     <div
-      className="normal list-group list-group-flush"
-      data-testid="filtered-connection"
+      class="card mt-3"
     >
       <div
-        className="normal"
+        class="card-header"
       >
-        
+        Details
       </div>
-      <ul
-        className="normal"
-        data-testid="filtered-connection-nodes"
+      <table
+        class="table mb-0"
       >
-        <SiteAdminProductLicenseNode
-          node={
-            Object {
-              "createdAt": "2020-01-01",
-              "id": "l1",
-              "info": Object {
-                "__typename": "ProductLicenseInfo",
-                "expiresAt": "2021-01-01",
-                "productNameWithBrand": "NB",
-                "tags": Array [
-                  "a",
-                ],
-                "userCount": 123,
-              },
-              "licenseKey": "lk1",
-              "subscription": Object {
-                "activeLicense": Object {
-                  "id": "l1",
-                },
-              },
-            }
-          }
-          showSubscription={false}
-        />
-      </ul>
+        <tbody>
+          <tr>
+            <th
+              class="text-nowrap"
+            >
+              ID
+            </th>
+            <td
+              class="w-100"
+            />
+          </tr>
+          <tr>
+            <th
+              class="text-nowrap"
+            >
+              Plan
+            </th>
+            <td
+              class="w-100"
+            >
+              <span
+                class=""
+              >
+                <span
+                  class="text-muted font-italic"
+                >
+                  No plan selected
+                </span>
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="text-nowrap"
+            >
+              Account
+            </th>
+            <td
+              class="w-100"
+            >
+              <em>
+                (Account deleted)
+              </em>
+               — 
+              <a
+                href="/s"
+              >
+                View as user
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="text-nowrap"
+            >
+              Account emails
+            </th>
+            <td
+              class="w-100"
+            />
+          </tr>
+          <tr>
+            <th
+              class="text-nowrap"
+            >
+              Billing
+            </th>
+            <td
+              class="w-100"
+            >
+              <div
+                class="site-admin-product-subscription-billing-link"
+              >
+                <div
+                  class="d-flex align-items-center"
+                >
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    type="button"
+                  >
+                    Link billing subscription
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th
+              class="text-nowrap"
+            >
+              Created at
+            </th>
+            <td
+              class="w-100"
+            >
+              <span
+                class="timestamp"
+                data-tooltip="2020-01-01"
+              >
+                in almost 14 years
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="card mt-1"
+    >
       <div
-        className="normal"
-      />
-    </div>
-  </div>
-  <div
-    className="card mt-3"
-  >
-    <div
-      className="card-header"
-    >
-      History
-    </div>
-    <div
-      className="card-body"
-    >
-      <span
-        className="text-muted"
+        class="card-header d-flex align-items-center justify-content-between"
       >
-        No events
-      </span>
+        Licenses
+        <button
+          class="btn btn-primary btn-sm"
+          type="button"
+        >
+          <addicon
+            class="icon-inline"
+          />
+           Generate new license manually
+        </button>
+      </div>
+      <div
+        class="normal list-group list-group-flush"
+        data-testid="filtered-connection"
+      >
+        <div
+          class="normal"
+        />
+        <ul
+          class="normal"
+          data-testid="filtered-connection-nodes"
+        >
+          <li
+            class="list-group-item py-2"
+          >
+            <div
+              class="d-flex align-items-center justify-content-between"
+            >
+              <div>
+                <span
+                  class="mr-3"
+                  title="Tags: a"
+                >
+                  NB (123 users)
+                </span>
+                <div
+                  class="d-inline-block mr-3"
+                  data-tooltip="Jan 1, 2021, 12:00:00 AM"
+                >
+                  <strong
+                    class="text-success"
+                  >
+                    Valid
+                  </strong>
+                   (15 years remaining)
+                </div>
+                <span
+                  class="text-muted"
+                >
+                  Created 
+                  <span
+                    class="timestamp"
+                    data-tooltip="2020-01-01"
+                  >
+                    in almost 14 years
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div>
+              Tags: 
+              <div
+                class="mr-1 badge badge-secondary"
+              >
+                a
+              </div>
+            </div>
+            <div
+              class="form-inline mt-2 d-block"
+            >
+              <div
+                class="input-group"
+              >
+                <input
+                  class="form-control input"
+                  readonly=""
+                  type="text"
+                  value="lk1"
+                />
+                <div
+                  class="input-group-append"
+                >
+                  <button
+                    class="btn btn-secondary"
+                    type="button"
+                  >
+                    <svg
+                      class="mdi-icon icon-inline"
+                      fill="currentColor"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      width="24"
+                    >
+                      <path
+                        d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                      />
+                    </svg>
+                     Copy
+                  </button>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+        <div
+          class="normal"
+        />
+      </div>
+    </div>
+    <div
+      class="card mt-3"
+    >
+      <div
+        class="card-header"
+      >
+        History
+      </div>
+      <div
+        class="card-body"
+      >
+        <span
+          class="text-muted"
+        >
+          No events
+        </span>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;

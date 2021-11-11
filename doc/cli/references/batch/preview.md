@@ -24,6 +24,7 @@
 | `-timeout` | The maximum duration a single batch spec step can take. | `1h0m0s` |
 | `-tmp` | Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable. | `/tmp` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 | `-v` | print verbose output | `false` |
 | `-workspace` | Workspace mode to use ("auto", "bind", or "volume") | `auto` |
 
@@ -70,6 +71,8 @@ Usage of 'src batch preview':
     	Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable. (default "/tmp")
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -v	print verbose output
   -workspace string
     	Workspace mode to use ("auto", "bind", or "volume") (default "auto")

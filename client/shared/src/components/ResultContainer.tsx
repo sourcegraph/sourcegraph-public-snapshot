@@ -85,6 +85,11 @@ export interface Props {
      * The time the repo was last updated from the code host
      */
     repoLastFetched?: string
+
+    /**
+     * Click event for when the result is clicked
+     */
+    onResultClicked?: () => void
 }
 
 /**
@@ -104,6 +109,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     description,
     matchCountLabel,
     repoStars,
+    onResultClicked,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -116,9 +122,20 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         }
     }
 
+    const trackReferencePanelClick = (): void => {
+        if (onResultClicked) {
+            onResultClicked()
+        }
+    }
+
     const Icon = icon
     return (
-        <div className="test-search-result result-container" data-testid="result-container">
+        <div
+            className="test-search-result result-container"
+            data-testid="result-container"
+            onClick={trackReferencePanelClick}
+            role="none"
+        >
             <div className="result-container__header">
                 <Icon className="icon-inline flex-shrink-0" />
                 <div className="result-container__header-divider mx-1" />

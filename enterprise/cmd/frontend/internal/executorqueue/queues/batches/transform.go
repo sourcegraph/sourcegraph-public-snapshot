@@ -130,14 +130,9 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{
-					"batch",
-					"exec",
-					"-f", "input.json",
-					"-clear-cache",
-				},
-				Dir: ".",
-				Env: cliEnv,
+				Commands: []string{"batch", "exec", "-f", "input.json"},
+				Dir:      ".",
+				Env:      cliEnv,
 			},
 		},
 		RedactedValues: map[string]string{

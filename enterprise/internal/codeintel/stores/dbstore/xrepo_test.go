@@ -36,7 +36,7 @@ func TestDefinitionDumps(t *testing.T) {
 			Scheme: "npm",
 		},
 		PackageInformationData: precise.PackageInformationData{
-			Name:    "north-pad",
+			Name:    "rightpad",
 			Version: "0.2.0",
 		},
 	}
@@ -80,19 +80,39 @@ func TestDefinitionDumps(t *testing.T) {
 		Indexer:           "lsif-tsc",
 		AssociatedIndexID: nil,
 	}
+	expected3 := Dump{
+		ID:             3,
+		Commit:         makeCommit(3),
+		Root:           "sub/",
+		VisibleAtTip:   true,
+		UploadedAt:     uploadedAt,
+		State:          "completed",
+		FailureMessage: nil,
+		StartedAt:      &startedAt,
+		FinishedAt:     &finishedAt,
+		RepositoryID:   50,
+		RepositoryName: "n-50",
+		Indexer:        "lsif-go",
+	}
 
-	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2))
+	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2), dumpToUpload(expected3))
 	insertVisibleAtTip(t, db, 50, 1)
 
 	if err := store.UpdatePackages(context.Background(), 1, []precise.Package{
-		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
 		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
 	}); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
 	if err := store.UpdatePackages(context.Background(), 2, []precise.Package{
-		{Scheme: "npm", Name: "north-pad", Version: "0.2.0"},
+		{Scheme: "npm", Name: "rightpad", Version: "0.2.0"},
+	}); err != nil {
+		t.Fatalf("unexpected error updating packages: %s", err)
+	}
+
+	// Duplicate package
+	if err := store.UpdatePackages(context.Background(), 3, []precise.Package{
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
 	}); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}

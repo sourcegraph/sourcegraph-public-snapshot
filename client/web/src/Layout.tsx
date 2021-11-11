@@ -272,7 +272,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             ? 'low-profile-with-logo'
                             : 'default'
                     }
-                    hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}

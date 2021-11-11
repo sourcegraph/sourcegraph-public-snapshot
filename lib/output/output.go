@@ -70,7 +70,7 @@ var newOutputPlatformQuirks func(o *Output) error
 // newCapabilityWatcher returns a channel that receives a message when
 // capabilities are updated. By default, no watching functionality is
 // available.
-var newCapabilityWatcher func() chan capabilities = func() chan capabilities { return nil }
+var newCapabilityWatcher = func() chan capabilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
 	caps, err := detectCapabilities()

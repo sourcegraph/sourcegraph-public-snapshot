@@ -8,15 +8,18 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func NewAggregator(db dbutil.DB, stream streaming.Sender, filterFunc func(*streaming.SearchEvent) error) *Aggregator {
@@ -69,9 +72,20 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	// Do not aggregate results if we are streaming.
+	// Only aggregate results if we are not streaming.
 	if a.parentStream == nil {
 		a.results = append(a.results, event.Results...)
+
+		if a.stats.Repos == nil {
+			a.stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+		}
+
+		for _, r := range event.Results {
+			repo := r.RepoName()
+			if _, ok := a.stats.Repos[repo.ID]; !ok {
+				a.stats.Repos[repo.ID] = repo
+			}
+		}
 	}
 
 	a.matchCount += len(event.Results)
@@ -82,21 +96,12 @@ func (a *Aggregator) Error(err error) {
 	a.mu.Lock()
 	a.errors = multierror.Append(a.errors, err)
 	a.mu.Unlock()
+	if err != nil {
+		log15.Debug("aggregated search error", "error", err)
+	}
 }
 
-func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParameters, limit int32) (err error) {
-	tr, ctx := trace.New(ctx, "doRepoSearch", "")
-	defer func() {
-		a.Error(err)
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	err = SearchRepositories(ctx, args, limit, a)
-	return errors.Wrap(err, "repository search failed")
-}
-
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos []*search.RepositoryRevisions, mode search.GlobalSearchMode) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos searchrepos.Pager, mode search.GlobalSearchMode) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
@@ -107,7 +112,6 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos []*search.Repo
 
 	err = job.Run(ctx, a, repos)
 	return errors.Wrap(err, job.Name()+" search failed")
-
 }
 
 func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int) (err error) {

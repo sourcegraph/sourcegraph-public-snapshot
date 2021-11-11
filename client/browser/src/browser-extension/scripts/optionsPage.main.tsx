@@ -30,6 +30,7 @@ import { assertEnvironment } from '../environmentAssertion'
 import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
 import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
 import { ThemeWrapper } from '../ThemeWrapper'
+import { checkUrlPermissions } from '../util'
 import { background } from '../web-extension-api/runtime'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
 
@@ -70,9 +71,7 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
     }
     const hasPrivateCloudError = await background.checkPrivateCloudError(id)
     const { host, protocol } = new URL(url)
-    const hasPermissions = await browser.permissions.contains({
-        origins: [`${protocol}//${host}/*`],
-    })
+    const hasPermissions = await checkUrlPermissions(url)
     return { hasPrivateCloudError, host, protocol, hasPermissions }
 }
 

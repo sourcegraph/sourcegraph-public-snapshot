@@ -49,7 +49,9 @@ func (c *Stats) Update(other *Stats) {
 		c.Repos = make(map[api.RepoID]types.MinimalRepo, len(other.Repos))
 	}
 	for id, r := range other.Repos {
-		c.Repos[id] = r
+		if _, ok := c.Repos[id]; !ok {
+			c.Repos[id] = r
+		}
 	}
 
 	c.Status.Union(&other.Status)

@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/cockroachdb/errors"
 
@@ -45,19 +44,43 @@ type ExecutionKey struct {
 // Key converts the key into a string form that can be used to uniquely identify
 // the cache key in a more concise form than the entire Task.
 func (key *ExecutionKey) Key() (string, error) {
-	envs, err := resolveStepsEnvironment(key.Steps)
+	envs, err := resolveStepsEnvironment([]string{}, key.Steps)
 	if err != nil {
 		return "", err
 	}
 
-	return marshalHash(key, envs)
+	return marshalAndHash(key, envs)
 }
 
 func (key ExecutionKey) Slug() string {
 	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }
 
-func resolveStepsEnvironment(steps []batches.Step) ([]map[string]string, error) {
+func (key *ExecutionKey) WithGlobalEnv(global []string) *ExecutionKeyWithGlobalEnv {
+	return &ExecutionKeyWithGlobalEnv{
+		ExecutionKey: key,
+		GlobalEnv:    global,
+	}
+}
+
+// ExecutionKeyWithGlobalEnv implements the Keyer interface by embedding
+// ExecutionKey but adding a global environment in which the steps could be
+// resolved.
+type ExecutionKeyWithGlobalEnv struct {
+	*ExecutionKey
+	GlobalEnv []string
+}
+
+func (key *ExecutionKeyWithGlobalEnv) Key() (string, error) {
+	envs, err := resolveStepsEnvironment(key.GlobalEnv, key.Steps)
+	if err != nil {
+		return "", err
+	}
+
+	return marshalAndHash(key.ExecutionKey, envs)
+}
+
+func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[string]string, error) {
 	// We have to resolve the step environments and include them in the cache
 	// key to ensure that the cache is properly invalidated when an environment
 	// variable changes.
@@ -65,11 +88,10 @@ func resolveStepsEnvironment(steps []batches.Step) ([]map[string]string, error) 
 	// Note that we don't base the cache key on the entire global environment:
 	// if an unrelated environment variable changes, that's fine. We're only
 	// interested in the ones that actually make it into the step container.
-	global := os.Environ()
 	envs := make([]map[string]string, len(steps))
 	for i, step := range steps {
 		// TODO: This should also render templates inside env vars.
-		env, err := step.Env.Resolve(global)
+		env, err := step.Env.Resolve(globalEnv)
 		if err != nil {
 			return nil, errors.Wrapf(err, "resolving environment for step %d", i)
 		}
@@ -78,12 +100,12 @@ func resolveStepsEnvironment(steps []batches.Step) ([]map[string]string, error) 
 	return envs, nil
 }
 
-func marshalHash(t *ExecutionKey, envs []map[string]string) (string, error) {
+func marshalAndHash(key *ExecutionKey, envs []map[string]string) (string, error) {
 	raw, err := json.Marshal(struct {
 		*ExecutionKey
 		Environments []map[string]string
 	}{
-		ExecutionKey: t,
+		ExecutionKey: key,
 		Environments: envs,
 	})
 	if err != nil {
@@ -105,6 +127,26 @@ type StepsCacheKey struct {
 // Key converts the key into a string form that can be used to uniquely identify
 // the cache key in a more concise form than the entire Task.
 func (key StepsCacheKey) Key() (string, error) {
+	return marshalAndHashStepsCacheKey(key, []string{})
+}
+
+func (key StepsCacheKey) Slug() string {
+	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
+}
+
+// ExecutionKeyWithGlobalEnv implements the Keyer interface by embedding
+// StepsCacheKey but adding a global environment in which the steps could be
+// resolved.
+type StepsCacheKeyWithGlobalEnv struct {
+	*StepsCacheKey
+	GlobalEnv []string
+}
+
+func (key *StepsCacheKeyWithGlobalEnv) Key() (string, error) {
+	return marshalAndHashStepsCacheKey(*key.StepsCacheKey, key.GlobalEnv)
+}
+
+func marshalAndHashStepsCacheKey(key StepsCacheKey, globalEnv []string) (string, error) {
 	// Setup a copy of the Task that only includes the Steps up to and
 	// including key.StepIndex.
 	clone := &ExecutionKey{
@@ -116,18 +158,14 @@ func (key StepsCacheKey) Key() (string, error) {
 	}
 
 	// Resolve environment only for the subset of Steps
-	envs, err := resolveStepsEnvironment(clone.Steps)
+	envs, err := resolveStepsEnvironment(globalEnv, clone.Steps)
 	if err != nil {
 		return "", err
 	}
 
-	hash, err := marshalHash(clone, envs)
+	hash, err := marshalAndHash(clone, envs)
 	if err != nil {
 		return "", err
 	}
 	return fmt.Sprintf("%s-step-%d", hash, key.StepIndex), err
-}
-
-func (key StepsCacheKey) Slug() string {
-	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
 }

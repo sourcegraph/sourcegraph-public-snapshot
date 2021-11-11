@@ -1,739 +1,486 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`HoverOverlay actions and hover empty 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
-    <small
-      className="hoverEmpty"
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
     >
-      No hover information available.
-    </small>
+      <small
+        class="hoverEmpty"
+      >
+        No hover information available.
+      </small>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay actions and hover error 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      className="hoverError"
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
     >
-      M2
+      <div
+        class="hoverError"
+      >
+        M2
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay actions and hover loading 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents hoverOverlayContentsLoading"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      className="loaderRow"
+      class="hoverOverlayContents hoverOverlayContentsLoading"
+      data-testid="hover-overlay-contents"
     >
       <div
-        className="loading-spinner "
-      />
+        class="loaderRow"
+      >
+        <div
+          class="loading-spinner "
+        />
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay actions and hover present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
-  >
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
-  </div>
-  <div
-    className="actions"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      className="actionsInner"
-    >
-      <ActionItem
-        action={
-          Object {
-            "command": "c",
-            "id": "a",
-          }
-        }
-        active={true}
-        className="action test-tooltip-untitled"
-        disabledDuringExecution={true}
-        extensionsController={
-          Object {
-            "executeCommand": [Function],
-          }
-        }
-        location={
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          }
-        }
-        platformContext={
-          Object {
-            "forceUpdateTooltip": [Function],
-            "settings": Observable {
-              "_isScalar": false,
-              "_subscribe": [Function],
-            },
-          }
-        }
-        showInlineError={true}
-        showLoadingSpinnerDuringExecution={true}
-        telemetryService={
-          Object {
-            "log": [Function],
-            "logViewEvent": [Function],
-          }
-        }
-        variant="actionItem"
-      />
-    </div>
-  </div>
-</div>
-`;
-
-exports[`HoverOverlay actions and hover undefined 1`] = `null`;
-
-exports[`HoverOverlay actions empty 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
-  />
-</div>
-`;
-
-exports[`HoverOverlay actions error 1`] = `null`;
-
-exports[`HoverOverlay actions error, hover present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
-  >
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
-  </div>
-</div>
-`;
-
-exports[`HoverOverlay actions loading 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
-  />
-</div>
-`;
-
-exports[`HoverOverlay actions present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
-  />
-  <div
-    className="actions"
-  >
-    <div
-      className="actionsInner"
-    >
-      <ActionItem
-        action={
-          Object {
-            "command": "c",
-            "id": "a",
-            "title": "Some title",
-          }
-        }
-        active={true}
-        className="action test-tooltip-some-title"
-        disabledDuringExecution={true}
-        extensionsController={
-          Object {
-            "executeCommand": [Function],
-          }
-        }
-        location={
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          }
-        }
-        platformContext={
-          Object {
-            "forceUpdateTooltip": [Function],
-            "settings": Observable {
-              "_isScalar": false,
-              "_subscribe": [Function],
-            },
-          }
-        }
-        showInlineError={true}
-        showLoadingSpinnerDuringExecution={true}
-        telemetryService={
-          Object {
-            "log": [Function],
-            "logViewEvent": [Function],
-          }
-        }
-        variant="actionItem"
-      />
-    </div>
-  </div>
-</div>
-`;
-
-exports[`HoverOverlay actions present, hover loading 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hoverOverlayContents hoverOverlayContentsLoading"
-    data-testid="hover-overlay-contents"
-  >
-    <div
-      className="loaderRow"
-    >
-      <div
-        className="loading-spinner "
-      />
-    </div>
-  </div>
-  <div
-    className="actions"
-  >
-    <div
-      className="actionsInner"
-    >
-      <ActionItem
-        action={
-          Object {
-            "command": "c",
-            "id": "a",
-          }
-        }
-        active={true}
-        className="action test-tooltip-untitled"
-        disabledDuringExecution={true}
-        extensionsController={
-          Object {
-            "executeCommand": [Function],
-          }
-        }
-        location={
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          }
-        }
-        platformContext={
-          Object {
-            "forceUpdateTooltip": [Function],
-            "settings": Observable {
-              "_isScalar": false,
-              "_subscribe": [Function],
-            },
-          }
-        }
-        showInlineError={true}
-        showLoadingSpinnerDuringExecution={true}
-        telemetryService={
-          Object {
-            "log": [Function],
-            "logViewEvent": [Function],
-          }
-        }
-        variant="actionItem"
-      />
-    </div>
-  </div>
-</div>
-`;
-
-exports[`HoverOverlay actions, hover and alert present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
-  <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
-  >
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
-  </div>
-  <div
-    className="hoverOverlayAlerts"
-  >
-    <div
-      className="alert"
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
     >
       <span
-        className="hoverOverlayContent hoverOverlayContent"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>Testing <code>markdown</code> rendering.</p>
-",
-          }
-        }
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
         data-testid="hover-overlay-content"
-      />
+      >
+        <p>
+          v
+        </p>
+        
+
+      </span>
+    </div>
+    <div
+      class="actions"
+    >
       <div
-        className="alertDismiss"
+        class="actionsInner"
       >
         <a
+          class="action-item test-action-item action test-tooltip-untitled"
           href=""
-          onClick={[Function]}
           role="button"
+          tabindex="0"
         >
-          <small>
-            Dismiss
-          </small>
+            
         </a>
       </div>
     </div>
   </div>
-  <div
-    className="actions"
-  >
-    <div
-      className="actionsInner"
-    >
-      <ActionItem
-        action={
-          Object {
-            "command": "c",
-            "id": "a",
-          }
-        }
-        active={true}
-        className="action test-tooltip-untitled"
-        disabledDuringExecution={true}
-        extensionsController={
-          Object {
-            "executeCommand": [Function],
-          }
-        }
-        location={
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          }
-        }
-        platformContext={
-          Object {
-            "forceUpdateTooltip": [Function],
-            "settings": Observable {
-              "_isScalar": false,
-              "_subscribe": [Function],
-            },
-          }
-        }
-        showInlineError={true}
-        showLoadingSpinnerDuringExecution={true}
-        telemetryService={
-          Object {
-            "log": [Function],
-            "logViewEvent": [Function],
-          }
-        }
-        variant="actionItem"
-      />
-    </div>
-  </div>
-</div>
+</DocumentFragment>
 `;
 
-exports[`HoverOverlay hover empty 1`] = `null`;
+exports[`HoverOverlay actions and hover undefined 1`] = `<DocumentFragment />`;
 
-exports[`HoverOverlay hover error 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+exports[`HoverOverlay actions empty 1`] = `
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      className="hoverError"
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay actions error 1`] = `<DocumentFragment />`;
+
+exports[`HoverOverlay actions error, hover present 1`] = `
+<DocumentFragment>
+  <div
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
     >
-      M
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
+        
+
+      </span>
     </div>
   </div>
-</div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay actions loading 1`] = `
+<DocumentFragment>
+  <div
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    />
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay actions present 1`] = `
+<DocumentFragment>
+  <div
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    />
+    <div
+      class="actions"
+    >
+      <div
+        class="actionsInner"
+      >
+        <a
+          class="action-item test-action-item action test-tooltip-some-title"
+          href=""
+          role="button"
+          tabindex="0"
+        >
+           Some title 
+        </a>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay actions present, hover loading 1`] = `
+<DocumentFragment>
+  <div
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents hoverOverlayContentsLoading"
+      data-testid="hover-overlay-contents"
+    >
+      <div
+        class="loaderRow"
+      >
+        <div
+          class="loading-spinner "
+        />
+      </div>
+    </div>
+    <div
+      class="actions"
+    >
+      <div
+        class="actionsInner"
+      >
+        <a
+          class="action-item test-action-item action test-tooltip-untitled"
+          href=""
+          role="button"
+          tabindex="0"
+        >
+            
+        </a>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay actions, hover and alert present 1`] = `
+<DocumentFragment>
+  <div
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
+        
+
+      </span>
+    </div>
+    <div
+      class="hoverOverlayAlerts"
+    >
+      <div
+        class="alert"
+      >
+        <span
+          class="hoverOverlayContent hoverOverlayContent"
+          data-testid="hover-overlay-content"
+        >
+          <p>
+            Testing 
+            <code>
+              markdown
+            </code>
+             rendering.
+          </p>
+          
+
+        </span>
+        <div
+          class="alertDismiss"
+        >
+          <a
+            href=""
+            role="button"
+          >
+            <small>
+              Dismiss
+            </small>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div
+      class="actions"
+    >
+      <div
+        class="actionsInner"
+      >
+        <a
+          class="action-item test-action-item action test-tooltip-untitled"
+          href=""
+          role="button"
+          tabindex="0"
+        >
+            
+        </a>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`HoverOverlay hover empty 1`] = `<DocumentFragment />`;
+
+exports[`HoverOverlay hover error 1`] = `
+<DocumentFragment>
+  <div
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
+  >
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <div
+        class="hoverError"
+      >
+        M
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay hover error, actions present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      className="hoverError"
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
     >
-      M
+      <div
+        class="hoverError"
+      >
+        M
+      </div>
     </div>
-  </div>
-  <div
-    className="actions"
-  >
     <div
-      className="actionsInner"
+      class="actions"
     >
-      <ActionItem
-        action={
-          Object {
-            "command": "c",
-            "id": "a",
-          }
-        }
-        active={true}
-        className="action test-tooltip-untitled"
-        disabledDuringExecution={true}
-        extensionsController={
-          Object {
-            "executeCommand": [Function],
-          }
-        }
-        location={
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          }
-        }
-        platformContext={
-          Object {
-            "forceUpdateTooltip": [Function],
-            "settings": Observable {
-              "_isScalar": false,
-              "_subscribe": [Function],
-            },
-          }
-        }
-        showInlineError={true}
-        showLoadingSpinnerDuringExecution={true}
-        telemetryService={
-          Object {
-            "log": [Function],
-            "logViewEvent": [Function],
-          }
-        }
-        variant="actionItem"
-      />
+      <div
+        class="actionsInner"
+      >
+        <a
+          class="action-item test-action-item action test-tooltip-untitled"
+          href=""
+          role="button"
+          tabindex="0"
+        >
+            
+        </a>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay hover loading 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents hoverOverlayContentsLoading"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
     <div
-      className="loaderRow"
+      class="hoverOverlayContents hoverOverlayContentsLoading"
+      data-testid="hover-overlay-contents"
     >
       <div
-        className="loading-spinner "
-      />
+        class="loaderRow"
+      >
+        <div
+          class="loading-spinner "
+        />
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay hover present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
+        
+
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay hover present, actions loading 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
+        
+
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`HoverOverlay multiple hovers present 1`] = `
-<div
-  className="hoverOverlay"
-  data-testid="hover-overlay"
-  style={
-    Object {
-      "left": "0px",
-      "opacity": 1,
-      "top": "0px",
-      "visibility": "visible",
-    }
-  }
->
+<DocumentFragment>
   <div
-    className="hoverOverlayContents"
-    data-testid="hover-overlay-contents"
+    class="hoverOverlay"
+    data-testid="hover-overlay"
+    style="opacity: 1; visibility: visible; left: 0px; top: 0px;"
   >
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
-    <hr />
-    <span
-      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v2</p>
-",
-        }
-      }
-      data-testid="hover-overlay-content"
-    />
+    <div
+      class="hoverOverlayContents"
+      data-testid="hover-overlay-contents"
+    >
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v
+        </p>
+        
+
+      </span>
+      <hr />
+      <span
+        class="hoverOverlayContent hoverOverlayContent test-tooltip-content"
+        data-testid="hover-overlay-content"
+      >
+        <p>
+          v2
+        </p>
+        
+
+      </span>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;

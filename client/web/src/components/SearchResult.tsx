@@ -10,19 +10,20 @@ import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import styles from './SearchResult.module.scss'
 
-interface Props {
+interface Props extends TelemetryProps {
     result: CommitMatch | RepositoryMatch
     repoName: string
     icon: React.ComponentType<{ className?: string }>
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, telemetryService }) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (

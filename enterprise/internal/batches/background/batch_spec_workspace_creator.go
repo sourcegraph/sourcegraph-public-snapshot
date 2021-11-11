@@ -54,9 +54,12 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
-		AllowArrayEnvironments: true,
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
+		AllowTransformChanges: true,
+		AllowConditionalExec:  true,
+		// We don't allow forwarding of environment variables in server-side
+		// batch changes, since we'd then leak the executor/Firecracker
+		// internal environment.
+		AllowArrayEnvironments: false,
 	})
 	if err != nil {
 		return err
@@ -106,7 +109,7 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		workspace.BatchSpecExecutionCacheEntryID = entry.ID
+		workspace.CachedResultFound = true
 
 		changesetSpecs, err := changesetSpecsFromCache(spec, w, entry)
 		if err != nil {
