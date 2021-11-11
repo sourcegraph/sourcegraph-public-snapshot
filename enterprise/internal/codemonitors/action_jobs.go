@@ -8,6 +8,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -185,11 +186,7 @@ func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
 	return ajs, rows.Err()
 }
 
-type rowScanner interface {
-	Scan(...interface{}) error
-}
-
-func scanActionJob(row rowScanner) (*ActionJob, error) {
+func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 	aj := &ActionJob{}
 	return aj, row.Scan(
 		&aj.Id,
