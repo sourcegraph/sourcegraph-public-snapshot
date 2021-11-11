@@ -17,6 +17,8 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { isExternalLink } from '../util/url'
 
+import styles from './ActionItem.module.scss'
+
 export interface ActionItemAction {
     /**
      * The action specified in the menu item's {@link module:sourcegraph.module/protocol.MenuItemContribution#action}
@@ -207,15 +209,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
             tooltip += ' (inactive)'
         }
 
-        const variantClassName = this.props.variant === 'actionItem' ? 'action-item--variant-action-item' : ''
-
         // Simple display if the action is a noop.
         if (!this.props.action.command) {
             return (
                 <span
                     data-tooltip={tooltip}
                     data-content={this.props.dataContent}
-                    className={classNames('action-item', this.props.className, variantClassName)}
+                    className={this.props.className}
                     tabIndex={this.props.tabIndex}
                 >
                     {content}
@@ -256,13 +256,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     this.props.disabledWhen
                 }
                 disabledClassName={this.props.inactiveClassName}
+                data-action-item-pressed={pressed}
                 className={classNames(
                     'action-item',
                     'test-action-item',
                     this.props.className,
-                    showLoadingSpinner && 'action-item--loading',
-                    variantClassName,
-                    pressed && ['action-item--pressed', this.props.pressedClassName]
+                    showLoadingSpinner && styles.actionItemLoading,
+                    pressed && [this.props.pressedClassName]
                 )}
                 pressed={pressed}
                 onSelect={this.runAction}
@@ -277,7 +277,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     <OpenInNewIcon className={this.props.iconClassName} />
                 )}
                 {showLoadingSpinner && (
-                    <div className="action-item__loader">
+                    <div className={styles.loader}>
                         <LoadingSpinner className={this.props.iconClassName} />
                     </div>
                 )}

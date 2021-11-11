@@ -109,7 +109,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                       partialVisibility={true}
                     >
                       <code
-                        className="code-excerpt file-match-children__item-code-excerpt"
+                        className="codeExcerpt file-match-children__item-code-excerpt"
+                        data-testid="code-excerpt"
                       >
                         <table>
                           <tbody>
@@ -352,7 +353,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                       partialVisibility={true}
                     >
                       <code
-                        className="code-excerpt file-match-children__item-code-excerpt"
+                        className="codeExcerpt file-match-children__item-code-excerpt"
+                        data-testid="code-excerpt"
                       >
                         <table>
                           <tbody>
@@ -541,7 +543,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                       partialVisibility={true}
                     >
                       <code
-                        className="code-excerpt file-match-children__item-code-excerpt"
+                        className="codeExcerpt file-match-children__item-code-excerpt"
+                        data-testid="code-excerpt"
                       >
                         <table>
                           <tbody>
