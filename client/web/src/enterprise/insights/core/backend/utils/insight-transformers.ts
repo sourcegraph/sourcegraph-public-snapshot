@@ -78,9 +78,12 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
                 query:
                     insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
                     'QUERY NOT FOUND',
-                stroke: insight.presentation.seriesPresentation.find(
-                    presentation => presentation.seriesId === series.seriesId
-                )?.color,
+                stroke:
+                    'seriesPresentation' in insight.presentation
+                        ? insight.presentation.seriesPresentation.find(
+                              presentation => presentation.seriesId === series.seriesId
+                          )?.color
+                        : '',
             }))
 
             if (isBackendInsight) {
@@ -109,6 +112,17 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
                 step,
                 repositories,
                 series,
+            }
+        }
+        // TODO: Just adding this to remove an error. This will need to cover pie charts instad.
+        default: {
+            return {
+                type: InsightType.Backend,
+                presentationType: 'LineChartInsightViewPresentation',
+                id: insight.id,
+                visibility: '',
+                title: '',
+                series: [],
             }
         }
     }
