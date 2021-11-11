@@ -63,12 +63,12 @@ Code intelligence provides advanced code navigation features that let developers
   - [Find references](explanations/features.md#find-references)
   - [Symbol search](explanations/features.md#symbol-search)
 - [Writing an indexer](explanations/writing_an_indexer.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto indexing](explanations/auto_indexing.md)
-- <span class="badge badge-experimental">Experimental</span> [Auto indexing inference](explanations/auto_indexing_inference.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 ## [References](references/index.md)
 
 - [Troubleshooting](references/troubleshooting.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
 - [LSIF.dev](https://lsif.dev/)
-- <span class="badge badge-experimental">Experimental</span> [Auto indexing configuration](references/auto_indexing_configuration.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)

@@ -1,4 +1,4 @@
-# Enable code intelligence auto indexing
+# Enable code intelligence auto-indexing
 
 <aside class="experimental">
 <p><span class="badge badge-experimental">Experimental</span> This feature is available as an experimental feature in Sourcegraph 3.33 or later. As long as this feature is marked as experimental, instance and deployment requirements, behavior, and performance profiles are subject to change in the future without notice.</p>
@@ -12,7 +12,7 @@ First, [deploy the executor service](../../../../admin/deploy_executors) targeti
 
 ## Enable index job scheduling
 
-Next, enable the precise code intelligence auto indexing feature by enabling the following feature flag in your Sourcegraph instance's site configuration.
+Next, enable the precise code intelligence auto-indexing feature by enabling the following feature flag in your Sourcegraph instance's site configuration.
 
 ```yaml
 {
@@ -22,11 +22,11 @@ Next, enable the precise code intelligence auto indexing feature by enabling the
 
 This step will control the scheduling of indexing jobs which are made available to the executors deployed in the previous step.
 
-## Configure auto indexing policies
+## Configure auto-indexing policies
 
-Once auto indexing has been enabled, [create auto indexing policies](configure_auto_indexing) to control the set of repositories and commits that are eligible for indexing.
+Once auto-indexing has been enabled, [create auto-indexing policies](configure_auto_indexing) to control the set of repositories and commits that are eligible for indexing.
 
-> NOTE: If you are running Sourcegraph 3.33, then only the repositories that exist within one or more [search contexts](../../../../code_search/how-to/search_contexts) are eligible for auto indexing. This is a temporary and vestigial artifact of auto-indexing being developed on our Cloud instance, which has an extremely large corpus of repositories. We advise you to create a `code-intel-indexing-corpus` search context and add the set of repositories you wish to have indexed. This is not required post-Sourcegraph 3.33.
+> NOTE: If you are running Sourcegraph 3.33, then only the repositories that exist within one or more [search contexts](../../../../code_search/how-to/search_contexts) are eligible for auto-indexing. This is a temporary and vestigial artifact of auto-indexing being developed on our Cloud instance, which has an extremely large corpus of repositories. We advise you to create a `code-intel-indexing-corpus` search context and add the set of repositories you wish to have indexed. This is not required post-Sourcegraph 3.33.
 
 ## Tune the index scheduler
 

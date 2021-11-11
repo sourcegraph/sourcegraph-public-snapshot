@@ -1,4 +1,4 @@
-# Auto indexing configuration reference
+# Auto-indexing configuration reference
 
 <aside class="experimental">
 <p><span class="badge badge-experimental">Experimental</span> This feature is available as an experimental feature in Sourcegraph 3.33 or later. As long as this feature is marked as experimental, instance and deployment requirements, behavior, and performance profiles are subject to change in the future without notice.</p>

@@ -23,11 +23,11 @@ img.screenshot.thin-screenshot {
 
 Precise code intelligence auto-indexing jobs are scheduled based on two fronts of configuration.
 
-The first front selects the set of repositories and commits within those repositories that are candidates for auto-indexing. These candidates are controlled by [configuring auto indexing policies](#configure-auto-indexing-policies).
+The first front selects the set of repositories and commits within those repositories that are candidates for auto-indexing. These candidates are controlled by [configuring auto-indexing policies](#configure-auto-indexing-policies).
 
 The second front determines the set of index jobs that can run over candidate commits. By default, index jobs are [inferred](../explanations/auto_indexing_inference.md) from the repository structure's on disk. Index job inference uses heuristics such as the presence or contents of particular files to determine the paths and commands required to index a repository. Alternatively, index job configuration [can be supplied explicitly](#explicit-index-job-configuration) for a repository when the inference heuristics are not powerful enough to create an index job that produces the correct results. This might be necessary for projects that have non-standard or complex dependency resolution or pre-compilation steps, for example.
 
-## Configure auto indexing policies
+## Configure auto-indexing policies
 
 This guide shows how to configure policies to control the scheduling of precise code intelligence indexing jobs. Indexing jobs [produce a precise code intelligence index](../explanations/precise_code_intelligence) and uploads it to your Sourcegraph instance for use with code navigation.
 
@@ -37,7 +37,7 @@ Each policy has a number of configurable options, including:
 - The maximum age of commits that should be indexed (e.g., skip indexing commits made last year)
 - For branches, whether or not to consider the _tip_ of the branch only, or all commits contained in that branch
 
-Note that when auto indexing is enabled, we will also attempt to schedule index jobs for _dependencies_ of repositories which receive an uploaded precise code intelligence index. This helps to ensure that no matter where symbols are defined, you will be able to navigate to its definition and find a relevant set of references as long as your Sourcegraph instance has knowledge of that code.
+Note that when auto-indexing is enabled, we will also attempt to schedule index jobs for _dependencies_ of repositories which receive an uploaded precise code intelligence index. This helps to ensure that no matter where symbols are defined, you will be able to navigate to its definition and find a relevant set of references as long as your Sourcegraph instance has knowledge of that code.
 
 Precise code intelligence indexing jobs are scheduled periodically in the background for each repository matching an indexing policy.
 

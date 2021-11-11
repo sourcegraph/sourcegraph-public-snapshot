@@ -12,5 +12,5 @@ For now here's some documentation we _do_ have:
 
 - [Enable auto-indexing](../how-to/enable_auto_indexing.md)
 - [Configure auto-indexing](../how-to/configure_auto_indexing.md)
-- [Auto indexing inference](auto_indexing_inference.md)
-- [Auto indexing configuration](../references/auto_indexing_configuration.md)
+- [Auto-indexing inference](auto_indexing_inference.md)
+- [Auto-indexing configuration](../references/auto_indexing_configuration.md)
