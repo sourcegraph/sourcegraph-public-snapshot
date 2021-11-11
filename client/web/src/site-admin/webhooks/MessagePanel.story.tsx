@@ -11,7 +11,7 @@ const { add } = storiesOf('web/site-admin/webhooks/MessagePanel', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
-            viewports: [320, 576, 978, 1440],
+            viewports: [576, 1440],
         },
     })
 
