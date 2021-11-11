@@ -483,7 +483,7 @@ func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
 		firstSourceURL = firstSourceURLCookie.Value
 	}
 
-	lastSourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
+	lastSourceURLCookie, err := r.Cookie("sourcegraphRecentSourceUrl")
 	var lastSourceURL string
 	if err == nil && lastSourceURLCookie != nil {
 		lastSourceURL = lastSourceURLCookie.Value
