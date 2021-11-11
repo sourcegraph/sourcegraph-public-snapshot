@@ -17,48 +17,29 @@ export interface Props {
 }
 
 export const MessagePanel: React.FunctionComponent<Props> = ({ className, message, requestOrStatusCode }) => {
-    const headers = useMemo(() => {
-        const headers: Map<string, { name: string; values: string[] }> = new Map()
+    const [headers, language, body] = useMemo(() => {
+        const headers = []
+        let language = 'nohighlight'
+        let body = message.body
 
         for (const header of message.headers) {
-            headers.set(header.name.toLowerCase(), {
-                name: header.name,
-                values: header.values,
-            })
-        }
-
-        return headers
-    }, [message.headers])
-
-    const [language, body] = useMemo((): [string, string] => {
-        const contentType = headers.get('content-type')
-        if (contentType) {
-            // We only really ever expect JSON here, so let's just look for that
-            // for now.
-            if (contentType.values[0].includes('/json')) {
-                try {
-                    // Let's reindent the JSON, since it probably came over the
-                    // wire in the minimal form.
-                    return ['json', JSON.stringify(JSON.parse(message.body), null, 2)]
-                } catch {
-                    // Fall through to the fallback case without highlighting,
-                    // since this apparently isn't JSON after all.
-                }
+            if (
+                header.name.toLowerCase() === 'content-type' &&
+                header.values.find(value => value.includes('/json')) !== undefined
+            ) {
+                language = 'json'
+                body = JSON.stringify(JSON.parse(message.body), null, 2)
             }
-        }
-        return ['nohighlight', message.body]
-    }, [headers, message.body])
 
-    const rawHeaders = useMemo(() => {
-        const raw = []
-
-        for (const { name, values } of headers.values()) {
-            for (const value of values) {
-                raw.push(`${name}: ${value}`)
-            }
+            headers.push(...header.values.map(value => `${header.name}: ${value}`))
         }
 
-        raw.sort()
+        // Since the headers aren't in any useful order when they're returned
+        // from the backend, let's just sort them alphabetically.
+        headers.sort()
+
+        // We want to prepend either the request line or the status line,
+        // depending on what type of message this is.
         if (typeof requestOrStatusCode === 'number') {
             let reason
             try {
@@ -67,17 +48,17 @@ export const MessagePanel: React.FunctionComponent<Props> = ({ className, messag
                 reason = ''
             }
 
-            raw.unshift(`HTTP/1.1 ${requestOrStatusCode}${reason}`)
+            headers.unshift(`HTTP/1.1 ${requestOrStatusCode}${reason}`)
         } else {
-            raw.unshift(`${requestOrStatusCode.method} ${requestOrStatusCode.url} ${requestOrStatusCode.version}`)
+            headers.unshift(`${requestOrStatusCode.method} ${requestOrStatusCode.url} ${requestOrStatusCode.version}`)
         }
 
-        return raw.join('\n')
-    }, [headers, requestOrStatusCode])
+        return [headers.join('\n'), language, body]
+    }, [message.body, message.headers, requestOrStatusCode])
 
     return (
         <div className={className}>
-            <CodeSnippet language="http" code={rawHeaders} />
+            <CodeSnippet language="http" code={headers} />
             <CodeSnippet className={styles.messageBody} language={language} code={body} />
         </div>
     )
