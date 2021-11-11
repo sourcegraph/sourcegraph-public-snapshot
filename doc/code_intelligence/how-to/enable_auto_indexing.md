@@ -8,7 +8,7 @@
 
 ## Deploy executors
 
-First, [deploy the executor service](../../../../admin/deploy_executors) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, analyze the code to produce a precise code intelligence index, then upload that index to your Sourcegraph instance for processing.
+First, [deploy the executor service](../../../../admin/deploy_executors) targeting your Sourcegraph instance. This will provide the necessary compute resources that clone the target Git repository, securely analyze the code to produce a precise code intelligence index, then upload that index to your Sourcegraph instance for processing.
 
 ## Enable index job scheduling
 
