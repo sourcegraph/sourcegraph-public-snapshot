@@ -1,33 +1,15 @@
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { requestGraphQL } from '../../../backend/graphql'
-import {
-    ExecuteBatchSpecFields,
-    ExecuteBatchSpecResult,
-    ExecuteBatchSpecVariables,
-    Scalars,
-} from '../../../graphql-operations'
-
-export async function executeBatchSpec(spec: Scalars['ID']): Promise<ExecuteBatchSpecFields> {
-    const result = await requestGraphQL<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
-        gql`
-            mutation ExecuteBatchSpec($id: ID!) {
-                executeBatchSpec(batchSpec: $id) {
-                    ...ExecuteBatchSpecFields
-                }
+export const EXECUTE_BATCH_SPEC = gql`
+    mutation ExecuteBatchSpec($batchSpec: ID!) {
+        executeBatchSpec(batchSpec: $batchSpec) {
+            id
+            namespace {
+                url
             }
-
-            fragment ExecuteBatchSpecFields on BatchSpec {
-                id
-                namespace {
-                    url
-                }
-            }
-        `,
-        { id: spec }
-    ).toPromise()
-    return dataOrThrowErrors(result).executeBatchSpec
-}
+        }
+    }
+`
 
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
     mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {

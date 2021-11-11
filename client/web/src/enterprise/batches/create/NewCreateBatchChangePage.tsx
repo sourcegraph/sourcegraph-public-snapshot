@@ -1,7 +1,7 @@
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
-import { debounce } from 'lodash'
+import { debounce, noop } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
@@ -24,12 +24,14 @@ import {
     CreateBatchSpecFromRawVariables,
     ReplaceBatchSpecInputResult,
     ReplaceBatchSpecInputVariables,
+    ExecuteBatchSpecResult,
+    ExecuteBatchSpecVariables,
 } from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
-import { CREATE_BATCH_SPEC_FROM_RAW, executeBatchSpec, REPLACE_BATCH_SPEC_INPUT } from './backend'
+import { CREATE_BATCH_SPEC_FROM_RAW, EXECUTE_BATCH_SPEC, REPLACE_BATCH_SPEC_INPUT } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './examples/hello-world.batch.yaml'
 import { NamespaceSelector } from './NamespaceSelector'
@@ -110,31 +112,23 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         debouncedCode,
     ])
 
-    // const history = useHistory()
-    // const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
-    //     if (!previewID) {
-    //         return
-    //     }
-    //     setIsLoading(true)
-    //     try {
-    //         const execution = await executeBatchSpec(previewID)
-    //         history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
-    //     } catch (error) {
-    //         setIsLoading(error)
-    //     }
-    // }, [previewID, history])
+    const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec()
+
+    const execute = useCallback(() => executeBatchSpec(batchSpecID), [batchSpecID, executeBatchSpec])
 
     const [canExecute, executionTooltip] = useMemo(() => {
-        const canExecute = isValid && !previewError && !isLoading
+        const canExecute = isValid && !previewError && !isLoading && batchSpecID && !isExecuting
         const executionTooltip =
             !isValid || previewError
                 ? "There's a problem with your batch spec."
+                : !batchSpecID
+                ? 'Preview workspaces first before you run.'
                 : isLoading
                 ? 'Wait for the preview to finish.'
                 : undefined
 
         return [canExecute, executionTooltip]
-    }, [isValid, previewError, isLoading])
+    }, [batchSpecID, isValid, previewError, isLoading, isExecuting])
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
@@ -163,7 +157,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     <ButtonTooltip
                         type="button"
                         className="btn btn-primary mb-2"
-                        // onClick={submitBatchSpec}
+                        onClick={execute}
                         disabled={!canExecute}
                         tooltip={executionTooltip}
                     >
@@ -190,6 +184,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         />
                     )}
                     {previewError && <ErrorAlert error={previewError} />}
+                    {executeError && <ErrorAlert error={executeError} />}
                     <WorkspacesPreview
                         batchSpecID={batchSpecID}
                         currentJobTime={currentJobTime}
@@ -320,12 +315,12 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
     const [
         createBatchSpecFromRaw,
         { data: createBatchSpecFromRawData, loading: createBatchSpecFromRawLoading },
-    ] = useMutation<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(CREATE_BATCH_SPEC_FROM_RAW, {})
+    ] = useMutation<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(CREATE_BATCH_SPEC_FROM_RAW)
 
     const [
         replaceBatchSpecInput,
         { data: replaceBatchSpecInputData, loading: replaceBatchSpecInputLoading },
-    ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT, {})
+    ] = useMutation<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(REPLACE_BATCH_SPEC_INPUT)
 
     const batchSpecID = useMemo(
         () =>
@@ -378,5 +373,45 @@ const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject
         clearError: () => setError(undefined),
         isStale,
         markStale: () => setIsStale(true),
+    }
+}
+
+interface UseExecuteBatchSpecResult {
+    executeBatchSpec: (batchSpecID?: Scalars['ID']) => void
+    isLoading: boolean
+    error?: Error
+}
+
+const useExecuteBatchSpec = (): UseExecuteBatchSpecResult => {
+    const [submitBatchSpec, { loading }] = useMutation<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
+        EXECUTE_BATCH_SPEC
+    )
+
+    const [executionError, setExecutionError] = useState<Error>()
+
+    const history = useHistory()
+    const executeBatchSpec = useCallback(
+        (batchSpecID?: Scalars['ID']) => {
+            if (!batchSpecID) {
+                return
+            }
+
+            submitBatchSpec({ variables: { batchSpec: batchSpecID } })
+                .then(({ data }) => {
+                    if (data?.executeBatchSpec) {
+                        history.push(
+                            `${data.executeBatchSpec.namespace.url}/batch-changes/executions/${data.executeBatchSpec.id}`
+                        )
+                    }
+                })
+                .catch(setExecutionError)
+        },
+        [submitBatchSpec, history]
+    )
+
+    return {
+        executeBatchSpec,
+        isLoading: loading,
+        error: executionError,
     }
 }
