@@ -25,7 +25,7 @@ type TimeDataPoint struct {
 	Count int
 }
 
-func GroupIt(results []ComputeResult) []GroupedResults {
+func GroupByCaptureMatch(results []ComputeResult) []GroupedResults {
 	if len(results) < 1 {
 		return nil
 	}
@@ -108,17 +108,6 @@ func (c computeMatchContext) MatchValues() []string {
 	}
 	return results
 }
-
-// type computeText struct {
-// 	Commit     *string
-// 	Repository struct {
-// 		Name string
-// 		Id   string
-// 	}
-// 	Path  string
-// 	Kind  *string
-// 	Value string
-// }
 
 type computeMatch struct {
 	Value       string

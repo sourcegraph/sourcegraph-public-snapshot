@@ -151,7 +151,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				return nil, errors.Wrapf(err, "failed to execute capture group search for repository:%s commit:%s", repository, execution.Revision)
 			}
 
-			grouped := queryrunner.GroupIt(results)
+			grouped := queryrunner.GroupByCaptureMatch(results)
 			sort.Slice(grouped, func(i, j int) bool {
 				return grouped[i].Value < grouped[j].Value
 			})
