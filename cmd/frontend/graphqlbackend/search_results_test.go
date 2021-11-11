@@ -18,7 +18,6 @@ import (
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -499,7 +498,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
-	unauthorizedFileName := "README.md"
 
 	repoWithIDs := &types.Repo{
 
@@ -556,18 +554,6 @@ func TestSearchResultsHydration(t *testing.T) {
 			},
 		},
 		Checksum: []byte{0, 1, 2},
-	}, {
-		Score:        3.0,
-		FileName:     unauthorizedFileName, // Gets filtered out
-		RepositoryID: uint32(repoWithIDs.ID),
-		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
-		Branches:     []string{"master"},
-		LineMatches: []zoekt.LineMatch{
-			{
-				Line: nil,
-			},
-		},
-		Checksum: []byte{0, 1, 3},
 	}}
 
 	z := &searchbackend.FakeSearcher{
@@ -575,10 +561,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	}
 
-	// Act in a user context
-	var ctxUser int32 = 1234
 	ctx := context.Background()
-	ctx = actor.WithActor(ctx, actor.FromUser(ctxUser))
 
 	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
