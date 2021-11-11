@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -290,20 +289,21 @@ func (p *TextPatternInfo) String() string {
 }
 
 type RepoOptions struct {
-	RepoFilters       []string
-	MinusRepoFilters  []string
-	SearchContextSpec string
-	UserSettings      *schema.Settings
-	NoForks           bool
-	OnlyForks         bool
-	NoArchived        bool
-	OnlyArchived      bool
-	CommitAfter       string
-	Visibility        query.RepoVisibility
-	Ranked            bool // Return results ordered by rank
-	Limit             int
-	CacheLookup       bool
-	Query             query.Q
+	RepoFilters              []string
+	MinusRepoFilters         []string
+	CaseSensitiveRepoFilters bool
+	SearchContextSpec        string
+	UserSettings             *schema.Settings
+	NoForks                  bool
+	OnlyForks                bool
+	NoArchived               bool
+	OnlyArchived             bool
+	CommitAfter              string
+	Visibility               query.RepoVisibility
+	Limit                    int
+	Cursors                  []*types.Cursor
+	CacheLookup              bool
+	Query                    query.Q
 }
 
 func (op *RepoOptions) String() string {
@@ -323,6 +323,10 @@ func (op *RepoOptions) String() string {
 	}
 	if op.CommitAfter != "" {
 		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
+	}
+
+	if op.CaseSensitiveRepoFilters {
+		b.WriteString(" CaseSensitiveRepoFilters")
 	}
 
 	if op.NoForks {
