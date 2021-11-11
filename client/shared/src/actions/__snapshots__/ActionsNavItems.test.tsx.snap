@@ -1,15 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ActionItem Renders contributed action items 1`] = `
-Array [
-  " ",
+<DocumentFragment>
+   
   <li>
     <span
-      className="actionItem"
+      class="actionItem"
       data-tooltip="This is Action A"
     >
        Action A
     </span>
-  </li>,
-]
+  </li>
+</DocumentFragment>
 `;

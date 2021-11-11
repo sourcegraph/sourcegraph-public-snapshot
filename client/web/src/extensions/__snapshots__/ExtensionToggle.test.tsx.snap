@@ -1,64 +1,64 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ExtensionToggle extension disabled in settings 1`] = `
-<button
-  aria-checked={false}
-  className="toggle"
-  data-test="extension-toggle-x/y"
-  disabled={false}
-  onClick={[Function]}
-  role="switch"
-  title="Click to enable"
-  type="button"
-  value={0}
->
-  <span
-    className="bar"
-  />
-  <span
-    className="knob"
-  />
-</button>
+<DocumentFragment>
+  <button
+    aria-checked="false"
+    class="toggle"
+    data-test="extension-toggle-x/y"
+    role="switch"
+    title="Click to enable"
+    type="button"
+    value="0"
+  >
+    <span
+      class="bar"
+    />
+    <span
+      class="knob"
+    />
+  </button>
+</DocumentFragment>
 `;
 
 exports[`ExtensionToggle extension enabled in settings 1`] = `
-<button
-  aria-checked={true}
-  className="toggle"
-  data-test="extension-toggle-x/y"
-  disabled={false}
-  onClick={[Function]}
-  role="switch"
-  title="Click to disable"
-  type="button"
-  value={1}
->
-  <span
-    className="bar barOn"
-  />
-  <span
-    className="knob knobOn"
-  />
-</button>
+<DocumentFragment>
+  <button
+    aria-checked="true"
+    class="toggle"
+    data-test="extension-toggle-x/y"
+    role="switch"
+    title="Click to disable"
+    type="button"
+    value="1"
+  >
+    <span
+      class="bar barOn"
+    />
+    <span
+      class="knob knobOn"
+    />
+  </button>
+</DocumentFragment>
 `;
 
 exports[`ExtensionToggle extension not present in settings 1`] = `
-<button
-  aria-checked={false}
-  className="toggle"
-  data-test="extension-toggle-x/y"
-  disabled={false}
-  onClick={[Function]}
-  role="switch"
-  title="Click to enable"
-  type="button"
-  value={0}
->
-  <span
-    className="bar"
-  />
-  <span
-    className="knob"
-  />
-</button>
+<DocumentFragment>
+  <button
+    aria-checked="false"
+    class="toggle"
+    data-test="extension-toggle-x/y"
+    role="switch"
+    title="Click to enable"
+    type="button"
+    value="0"
+  >
+    <span
+      class="bar"
+    />
+    <span
+      class="knob"
+    />
+  </button>
+</DocumentFragment>
 `;

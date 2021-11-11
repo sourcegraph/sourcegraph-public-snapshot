@@ -1,48 +1,48 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteAdminCustomerBillingLink linked billing account 1`] = `
-<div
-  className="site-admin-customer-billing-link"
->
+<DocumentFragment>
   <div
-    className="d-flex align-items-center"
+    class="site-admin-customer-billing-link"
   >
-    <a
-      className="mr-2 d-flex align-items-center"
-      href="https://example.com"
+    <div
+      class="d-flex align-items-center"
     >
-      View customer account 
-      <ExternalLinkIcon
-        className="icon-inline ml-1"
-      />
-    </a>
-    <button
-      className="btn btn-secondary"
-      disabled={false}
-      onClick={[Function]}
-      type="button"
-    >
-      Unlink
-    </button>
+      <a
+        class="mr-2 d-flex align-items-center"
+        href="https://example.com"
+      >
+        View customer account 
+        <externallinkicon
+          class="icon-inline ml-1"
+        />
+      </a>
+      <button
+        class="btn btn-secondary"
+        type="button"
+      >
+        Unlink
+      </button>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`SiteAdminCustomerBillingLink no linked billing account 1`] = `
-<div
-  className="site-admin-customer-billing-link"
->
+<DocumentFragment>
   <div
-    className="d-flex align-items-center"
+    class="site-admin-customer-billing-link"
   >
-    <button
-      className="btn btn-secondary"
-      disabled={false}
-      onClick={[Function]}
-      type="button"
+    <div
+      class="d-flex align-items-center"
     >
-      Link billing customer
-    </button>
+      <button
+        class="btn btn-secondary"
+        type="button"
+      >
+        Link billing customer
+      </button>
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;

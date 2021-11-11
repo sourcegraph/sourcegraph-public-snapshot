@@ -1,64 +1,70 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
-<div
-  className="user-subscriptions-product-subscription-page"
->
+<DocumentFragment>
   <div
-    className="d-flex align-items-center justify-content-between"
-  >
-    <BackToAllSubscriptionsLink
-      user={
-        Object {
-          "settingsURL": "/u",
-        }
-      }
-    />
-  </div>
-  <h2>
-    Subscription 
-  </h2>
-  <div
-    className="card mt-3"
+    class="user-subscriptions-product-subscription-page"
   >
     <div
-      className="card-header"
+      class="d-flex align-items-center justify-content-between"
     >
-      Billing
-    </div>
-    <div
-      className="card-body"
-    >
-      <span
-        className="text-muted "
+      <a
+        class="btn btn-link btn-sm mb-3"
+        href="/u/subscriptions"
       >
-        No billing information is associated with this subscription.
-         
-        <a
-          href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
+        <svg
+          class="mdi-icon icon-inline"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
         >
-          Contact sales
-        </a>
-         
-        for help.
-      </span>
+          <path
+            d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"
+          />
+        </svg>
+         All subscriptions
+      </a>
     </div>
-  </div>
-  <div
-    className="card mt-3"
-  >
+    <h2>
+      Subscription 
+    </h2>
     <div
-      className="card-header"
+      class="card mt-3"
     >
-      History
+      <div
+        class="card-header"
+      >
+        Billing
+      </div>
+      <div
+        class="card-body"
+      >
+        <span
+          class="text-muted "
+        >
+          No billing information is associated with this subscription. 
+          <a
+            href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
+          >
+            Contact sales
+          </a>
+           for help.
+        </span>
+      </div>
     </div>
-    <ProductSubscriptionHistory
-      productSubscription={
-        Object {
-          "__typename": "ProductSubscription",
-        }
-      }
-    />
+    <div
+      class="card mt-3"
+    >
+      <div
+        class="card-header"
+      >
+        History
+      </div>
+      <productsubscriptionhistory
+        productsubscription="[object Object]"
+      />
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;

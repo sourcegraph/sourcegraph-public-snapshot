@@ -1,11 +1,11 @@
+import { render } from '@testing-library/react'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { RepoFileLink } from './RepoFileLink'
 
 describe('RepoFileLink', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = render(
             <RepoFileLink
                 repoName="example.com/my/repo"
                 repoURL="https://example.com"
@@ -13,6 +13,6 @@ describe('RepoFileLink', () => {
                 fileURL="https://example.com/file"
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

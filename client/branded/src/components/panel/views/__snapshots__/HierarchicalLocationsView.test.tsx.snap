@@ -1,47 +1,43 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<HierarchicalLocationsView /> displays a single location when complete 1`] = `
-<div>
-  <div
-    className="referencesContainer"
-    data-testid="hierarchical-locations-view"
-  >
+<DocumentFragment>
+  <div>
     <div
-      className="d-flex"
-    />
-    <div
-      className="fileLocations fileLocations"
+      class="referencesContainer"
+      data-testid="hierarchical-locations-view"
     >
-      <div>
-        <VisibilitySensor
-          onChange={[Function]}
-          partialVisibility={true}
-        >
+      <div
+        class="d-flex"
+      />
+      <div
+        class="fileLocations fileLocations"
+      >
+        <div>
           <div
-            className="test-search-result result-container"
+            class="test-search-result result-container"
             data-testid="result-container"
-            onClick={[Function]}
             role="none"
           >
             <div
-              className="result-container__header"
+              class="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
-                height={24}
+                height="24"
                 viewBox="0 0 24 24"
-                width={24}
+                width="24"
               >
                 <path
                   d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
                 />
               </svg>
               <div
-                className="result-container__header-divider mx-1"
+                class="result-container__header-divider mx-1"
               />
               <div
-                className="result-container__header-title test-search-result-label"
+                class="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -50,11 +46,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   title="github.com"
                 >
                   <svg
-                    className="mdi-icon icon-inline text-muted"
+                    class="mdi-icon icon-inline text-muted"
                     fill="currentColor"
-                    height={24}
+                    height="24"
                     viewBox="0 0 24 24"
-                    width={24}
+                    width="24"
                   >
                     <path
                       d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
@@ -62,25 +58,22 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </svg>
                 </span>
                 <div
-                  className="ml-1"
+                  class="ml-1"
                 >
                   <a
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
-                   ›
-                   
+                   › 
                   <a
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
-                    <strong>
-                      
-                    </strong>
+                    <strong />
                   </a>
                 </div>
                 <span
-                  className="result-container__header-description ml-2"
+                  class="result-container__header-description ml-2"
                 />
               </div>
               <small>
@@ -88,204 +81,182 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               </small>
             </div>
             <div
-              className="file-match-children"
+              class="file-match-children"
             >
               <div>
                 <div
-                  className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                   <a
-                    className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                    onClick={[Function]}
                   >
-                    <VisibilitySensor
-                      offset={
-                        Object {
-                          "bottom": -500,
-                        }
-                      }
-                      onChange={[Function]}
-                      partialVisibility={true}
+                    <code
+                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      data-testid="code-excerpt"
                     >
-                      <code
-                        className="codeExcerpt file-match-children__item-code-excerpt"
-                        data-testid="code-excerpt"
-                      >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
-                    </VisibilitySensor>
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              1
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              2
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              3
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </code>
                   </a>
                 </div>
               </div>
             </div>
           </div>
-        </VisibilitySensor>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`<HierarchicalLocationsView /> displays multiple locations grouped by file 1`] = `
-<div>
-  <div
-    className="referencesContainer"
-    data-testid="hierarchical-locations-view"
-  >
+<DocumentFragment>
+  <div>
     <div
-      className="d-flex"
+      class="referencesContainer"
+      data-testid="hierarchical-locations-view"
     >
       <div
-        className="resizable resizableGroup"
-        style={
-          Object {
-            "width": "200px",
-          }
-        }
+        class="d-flex"
       >
         <div
-          className="list-group groupList"
-          data-testid="hierarchical-locations-view-list"
-        >
-          <button
-            className="list-group-item list-group-item-action locationButton active"
-            data-testid="hierarchical-locations-view-button"
-            onClick={[Function]}
-            type="button"
-          >
-            <span
-              className="locationName"
-              title="file1.txt"
-            >
-              <span
-                className="locationNameText"
-              >
-                <span
-                  className=""
-                >
-                   
-                  <span>
-                    file1.txt
-                  </span>
-                </span>
-              </span>
-            </span>
-            <span
-              className="locationBadge ml-1"
-            >
-              2
-            </span>
-          </button>
-          <button
-            className="list-group-item list-group-item-action locationButton"
-            data-testid="hierarchical-locations-view-button"
-            onClick={[Function]}
-            type="button"
-          >
-            <span
-              className="locationName"
-              title="file2.txt"
-            >
-              <span
-                className="locationNameText"
-              >
-                <span
-                  className=""
-                >
-                   
-                  <span>
-                    file2.txt
-                  </span>
-                </span>
-              </span>
-            </span>
-            <span
-              className="locationBadge ml-1"
-            >
-              3
-            </span>
-          </button>
-        </div>
-        <div
-          className="handle handleRight resizableHandle"
-          onMouseDown={[Function]}
-          role="presentation"
-        />
-      </div>
-    </div>
-    <div
-      className="fileLocations fileLocations"
-    >
-      <div>
-        <VisibilitySensor
-          onChange={[Function]}
-          partialVisibility={true}
+          class="resizable resizableGroup"
+          style="width: 200px;"
         >
           <div
-            className="test-search-result result-container"
+            class="list-group groupList"
+            data-testid="hierarchical-locations-view-list"
+          >
+            <button
+              class="list-group-item list-group-item-action locationButton active"
+              data-testid="hierarchical-locations-view-button"
+              type="button"
+            >
+              <span
+                class="locationName"
+                title="file1.txt"
+              >
+                <span
+                  class="locationNameText"
+                >
+                  <span
+                    class=""
+                  >
+                     
+                    <span>
+                      file1.txt
+                    </span>
+                  </span>
+                </span>
+              </span>
+              <span
+                class="locationBadge ml-1"
+              >
+                2
+              </span>
+            </button>
+            <button
+              class="list-group-item list-group-item-action locationButton"
+              data-testid="hierarchical-locations-view-button"
+              type="button"
+            >
+              <span
+                class="locationName"
+                title="file2.txt"
+              >
+                <span
+                  class="locationNameText"
+                >
+                  <span
+                    class=""
+                  >
+                     
+                    <span>
+                      file2.txt
+                    </span>
+                  </span>
+                </span>
+              </span>
+              <span
+                class="locationBadge ml-1"
+              >
+                3
+              </span>
+            </button>
+          </div>
+          <div
+            class="handle handleRight resizableHandle"
+            role="presentation"
+          />
+        </div>
+      </div>
+      <div
+        class="fileLocations fileLocations"
+      >
+        <div>
+          <div
+            class="test-search-result result-container"
             data-testid="result-container"
-            onClick={[Function]}
             role="none"
           >
             <div
-              className="result-container__header"
+              class="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
-                height={24}
+                height="24"
                 viewBox="0 0 24 24"
-                width={24}
+                width="24"
               >
                 <path
                   d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
                 />
               </svg>
               <div
-                className="result-container__header-divider mx-1"
+                class="result-container__header-divider mx-1"
               />
               <div
-                className="result-container__header-title test-search-result-label"
+                class="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -294,11 +265,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   title="github.com"
                 >
                   <svg
-                    className="mdi-icon icon-inline text-muted"
+                    class="mdi-icon icon-inline text-muted"
                     fill="currentColor"
-                    height={24}
+                    height="24"
                     viewBox="0 0 24 24"
-                    width={24}
+                    width="24"
                   >
                     <path
                       d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
@@ -306,15 +277,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </svg>
                 </span>
                 <div
-                  className="ml-1"
+                  class="ml-1"
                 >
                   <a
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
-                   ›
-                   
+                   › 
                   <a
                     href="/github.com/foo/bar/-/blob/file1.txt?subtree=true"
                   >
@@ -324,7 +294,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </a>
                 </div>
                 <span
-                  className="result-container__header-description ml-2"
+                  class="result-container__header-description ml-2"
                 />
               </div>
               <small>
@@ -332,150 +302,135 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               </small>
             </div>
             <div
-              className="file-match-children"
+              class="file-match-children"
             >
               <div>
                 <div
-                  className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                   <a
-                    className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                     href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
-                    onClick={[Function]}
                   >
-                    <VisibilitySensor
-                      offset={
-                        Object {
-                          "bottom": -500,
-                        }
-                      }
-                      onChange={[Function]}
-                      partialVisibility={true}
+                    <code
+                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      data-testid="code-excerpt"
                     >
-                      <code
-                        className="codeExcerpt file-match-children__item-code-excerpt"
-                        data-testid="code-excerpt"
-                      >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                4
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                5
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
-                    </VisibilitySensor>
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              1
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              2
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              3
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              4
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              5
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </code>
                   </a>
                 </div>
               </div>
             </div>
           </div>
-        </VisibilitySensor>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`<HierarchicalLocationsView /> displays partial locations before complete 1`] = `
-<div>
-  <div
-    className="referencesContainer"
-    data-testid="hierarchical-locations-view"
-  >
+<DocumentFragment>
+  <div>
     <div
-      className="d-flex"
-    />
-    <div
-      className="fileLocations fileLocations"
+      class="referencesContainer"
+      data-testid="hierarchical-locations-view"
     >
-      <div>
-        <VisibilitySensor
-          onChange={[Function]}
-          partialVisibility={true}
-        >
+      <div
+        class="d-flex"
+      />
+      <div
+        class="fileLocations fileLocations"
+      >
+        <div>
           <div
-            className="test-search-result result-container"
+            class="test-search-result result-container"
             data-testid="result-container"
-            onClick={[Function]}
             role="none"
           >
             <div
-              className="result-container__header"
+              class="result-container__header"
             >
               <svg
-                className="mdi-icon icon-inline flex-shrink-0"
+                class="mdi-icon icon-inline flex-shrink-0"
                 fill="currentColor"
-                height={24}
+                height="24"
                 viewBox="0 0 24 24"
-                width={24}
+                width="24"
               >
                 <path
                   d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"
                 />
               </svg>
               <div
-                className="result-container__header-divider mx-1"
+                class="result-container__header-divider mx-1"
               />
               <div
-                className="result-container__header-title test-search-result-label"
+                class="result-container__header-title test-search-result-label"
                 data-testid="result-container-header"
               >
                 <span
@@ -484,11 +439,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   title="github.com"
                 >
                   <svg
-                    className="mdi-icon icon-inline text-muted"
+                    class="mdi-icon icon-inline text-muted"
                     fill="currentColor"
-                    height={24}
+                    height="24"
                     viewBox="0 0 24 24"
-                    width={24}
+                    width="24"
                   >
                     <path
                       d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
@@ -496,25 +451,22 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </svg>
                 </span>
                 <div
-                  className="ml-1"
+                  class="ml-1"
                 >
                   <a
                     href="/github.com/foo/bar"
                   >
                     foo/bar
                   </a>
-                   ›
-                   
+                   › 
                   <a
                     href="/github.com/foo/bar/-/blob/?subtree=true"
                   >
-                    <strong>
-                      
-                    </strong>
+                    <strong />
                   </a>
                 </div>
                 <span
-                  className="result-container__header-description ml-2"
+                  class="result-container__header-description ml-2"
                 />
               </div>
               <small>
@@ -522,92 +474,85 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               </small>
             </div>
             <div
-              className="file-match-children"
+              class="file-match-children"
             >
               <div>
                 <div
-                  className="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
                 >
                   <a
-                    className="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                    onClick={[Function]}
                   >
-                    <VisibilitySensor
-                      offset={
-                        Object {
-                          "bottom": -500,
-                        }
-                      }
-                      onChange={[Function]}
-                      partialVisibility={true}
+                    <code
+                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      data-testid="code-excerpt"
                     >
-                      <code
-                        className="codeExcerpt file-match-children__item-code-excerpt"
-                        data-testid="code-excerpt"
-                      >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                className="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                className="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
-                    </VisibilitySensor>
+                      <table>
+                        <tbody>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              1
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              2
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                          <tr>
+                            <td
+                              class="line"
+                            >
+                              3
+                            </td>
+                            <td
+                              class="code"
+                            >
+                               
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </code>
                   </a>
                 </div>
               </div>
             </div>
           </div>
-        </VisibilitySensor>
+        </div>
       </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
-<div
-  className="loading-spinner icon-inline m-1 test-loading-spinner"
-/>
+<DocumentFragment>
+  <div
+    class="loading-spinner icon-inline m-1 test-loading-spinner"
+  />
+</DocumentFragment>
 `;
 
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
-<div
-  className="loading-spinner icon-inline m-1 test-loading-spinner"
-/>
+<DocumentFragment>
+  <div
+    class="loading-spinner icon-inline m-1 test-loading-spinner"
+  />
+</DocumentFragment>
 `;
