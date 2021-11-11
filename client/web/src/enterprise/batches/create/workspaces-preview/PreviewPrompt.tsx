@@ -28,6 +28,10 @@ interface PreviewPromptProps {
     form: PreviewPromptForm
 }
 
+/**
+ * The preview prompt provides a CTA for users to submit their working batch spec YAML to
+ * the backend in order to preview the workspaces it will affect.
+ */
 export const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, disabled, form }) => {
     const previewButton = (
         <Button variant="success" disabled={disabled} onClick={preview}>
