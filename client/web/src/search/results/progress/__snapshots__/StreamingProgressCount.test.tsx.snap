@@ -13,7 +13,7 @@ exports[`StreamingProgressCount should not render a trace link when not opted in
   state="loading"
 >
   <small
-    className="d-flex align-items-center count countInProgress"
+    className="d-flex align-items-center px-0 count countInProgress"
   >
     0
      
@@ -38,7 +38,7 @@ exports[`StreamingProgressCount should render correctly for 0 items in progress 
   state="loading"
 >
   <small
-    className="d-flex align-items-center count countInProgress"
+    className="d-flex align-items-center px-0 count countInProgress"
   >
     0
      
@@ -64,7 +64,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
   state="loading"
 >
   <small
-    className="d-flex align-items-center count countInProgress"
+    className="d-flex align-items-center px-0 count countInProgress"
   >
     0
      
@@ -73,11 +73,10 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
      
     0.00
     s
-     
-    from 
-    0
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 0 repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -95,7 +94,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
   state="complete"
 >
   <small
-    className="d-flex align-items-center count"
+    className="d-flex align-items-center px-0 count"
   >
     1
      
@@ -104,11 +103,10 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
      
     1.25
     s
-     
-    from 
-    1
-     
-    repository
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 1 repository"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -126,7 +124,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
   state="complete"
 >
   <small
-    className="d-flex align-items-center count"
+    className="d-flex align-items-center px-0 count"
   >
     123
      
@@ -135,11 +133,10 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
      
     1.25
     s
-     
-    from 
-    500
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 500 repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -157,7 +154,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
   state="complete"
 >
   <small
-    className="d-flex align-items-center count"
+    className="d-flex align-items-center px-0 count"
   >
     1.2m
      
@@ -166,11 +163,10 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
      
     52.50
     s
-     
-    from 
-    8.9k
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 8.9k repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -195,7 +191,7 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
   state="complete"
 >
   <small
-    className="d-flex align-items-center count"
+    className="d-flex align-items-center px-0 count"
   >
     123
     +
@@ -205,11 +201,10 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
      
     1.25
     s
-     
-    from 
-    500
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 500 repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -228,7 +223,7 @@ exports[`StreamingProgressCount should render correctly when a trace url is prov
   state="loading"
 >
   <small
-    className="d-flex align-items-center count countInProgress"
+    className="d-flex align-items-center px-0 count countInProgress"
   >
     0
      
