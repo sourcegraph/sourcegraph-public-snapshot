@@ -54,7 +54,7 @@ func TestSearchResults(t *testing.T) {
 		// in CI but not locally. They should be removed or improved.
 		t.Skip("TestSeachResults only works in local dev and is not reliable in CI")
 	}
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{db: database.NewDB(db)}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -226,7 +226,7 @@ func TestSearchResults(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 
 	repo := types.MinimalRepo{Name: "testRepo"}
 	repoMatch := &result.RepoMatch{Name: "testRepo"}
@@ -458,7 +458,7 @@ func TestLonger(t *testing.T) {
 }
 
 func TestSearchResultsHydration(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 
 	id := 42
 	repoName := "reponame-foobar"
@@ -539,8 +539,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	// Act in a user context
 	var ctxUser int32 = 1234
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, actor.FromUser(ctxUser))
+	ctx := actor.WithActor(context.Background(), actor.FromUser(ctxUser))
 
 	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
@@ -550,7 +549,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	srp := authz.NewMockSubRepoPermissionChecker()
 	srp.EnabledFunc.SetDefaultReturn(true)
 	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, i int32, rc authz.RepoContent) (authz.Perms, error) {
-		if i != 1234 {
+		if i != ctxUser {
 			return authz.Read, nil
 		}
 		if rc.Path != unauthorizedFileName {
@@ -593,7 +592,7 @@ func TestSearchResultsHydration(t *testing.T) {
 }
 
 func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 	type fields struct {
 		results             []result.Match
 		searchResultsCommon streaming.Stats
@@ -852,7 +851,7 @@ func TestCompareSearchResults(t *testing.T) {
 }
 
 func TestEvaluateAnd(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 
 	tests := []struct {
 		name         string
