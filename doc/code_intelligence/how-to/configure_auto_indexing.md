@@ -21,7 +21,7 @@ img.screenshot.thin-screenshot {
 <p><b>We'd love to ensure that this feature is meeting the requirements of our users.</b> If you have input or feedback on this feature, you can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-Precise code intelligence auto indexing jobs are scheduled based on two fronts of configuration.
+Precise code intelligence auto-indexing jobs are scheduled based on two fronts of configuration.
 
 The first front selects the set of repositories and commits within those repositories that are candidates for auto-indexing. These candidates are controlled by [configuring auto indexing policies](#configure-auto-indexing-policies).
 
