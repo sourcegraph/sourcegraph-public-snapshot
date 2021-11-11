@@ -11,11 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db database.DB) graphqlbackend.OrgRepositoryResolver {
+func NewResolver(db database.DB) graphqlbackend.EnterpriseResolver {
 	return &resolver{db: db}
 }
 
-var _ graphqlbackend.OrgRepositoryResolver = &resolver{}
+var _ graphqlbackend.EnterpriseResolver = &resolver{}
 
 type resolver struct {
 	db database.DB
