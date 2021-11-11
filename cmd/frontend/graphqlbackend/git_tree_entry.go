@@ -229,7 +229,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := gitReadDir(
 		ctx,
-		r.db,
+		subRepoPermsClient(r.db),
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
@@ -205,7 +204,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := gitStat(ctx, r.db, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := gitStat(ctx, subRepoPermsClient(r.db), r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -226,7 +225,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := gitStat(ctx, r.db, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := gitStat(ctx, subRepoPermsClient(r.db), r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -362,8 +361,8 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	return &url
 }
 
-func gitStat(ctx context.Context, db dbutil.DB, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	perms, err := authz.CurrentUserPermissions(ctx, subRepoPermsClient(db), authz.RepoContent{
+func gitStat(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
 		Repo: repo,
 		Path: path,
 	})

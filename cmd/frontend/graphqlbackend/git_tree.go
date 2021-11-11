@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -49,9 +48,10 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
+	srp := subRepoPermsClient(r.db)
 	// First check if we are able to view the tree at all, if not we can return early
 	// and don't need to hit gitserver.
-	perms, err := authz.CurrentUserPermissions(ctx, subRepoPermsClient(r.db), authz.RepoContent{
+	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
 		Repo: r.commit.repoResolver.RepoName(),
 		Path: r.Path(),
 	})
@@ -66,7 +66,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 
 	entries, err := gitReadDir(
 		ctx,
-		r.db,
+		srp,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),
@@ -138,14 +138,13 @@ func (s byDirectory) Less(i, j int) bool {
 }
 
 // gitReadDir call git.ReadDir but applies sub-repo filtering to the returned entries.
-func gitReadDir(ctx context.Context, db dbutil.DB, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
+func gitReadDir(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
 	entries, err := git.ReadDir(ctx, repo, commit, path, recurse)
 	if err != nil {
 		return nil, err
 	}
 
-	client := subRepoPermsClient(db)
-	if !client.Enabled() {
+	if !srp.Enabled() {
 		return entries, nil
 	}
 
@@ -154,7 +153,7 @@ func gitReadDir(ctx context.Context, db dbutil.DB, repo api.RepoName, commit api
 	a := actor.FromContext(ctx)
 	for _, entry := range entries {
 		// Check whether to filter out this entry due to sub-repo permissions
-		perms, err := authz.ActorPermissions(ctx, client, a, authz.RepoContent{
+		perms, err := authz.ActorPermissions(ctx, srp, a, authz.RepoContent{
 			Repo: repo,
 			Path: entry.Name(),
 		})
