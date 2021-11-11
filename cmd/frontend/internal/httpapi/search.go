@@ -74,9 +74,9 @@ type searchIndexerServer struct {
 		Enabled() bool
 	}
 
-	// MinLastChangedEnabled is a feature flag for enabling more efficient
-	// polling by zoekt.
-	MinLastChangedEnabled bool
+	// MinLastChangedDisabled is a feature flag for disabling more efficient
+	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
+	MinLastChangedDisabled bool
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -112,7 +112,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	}
 
 	var minLastChanged time.Time
-	if h.MinLastChangedEnabled {
+	if !h.MinLastChangedDisabled {
 		var err error
 		minLastChanged, err = searchbackend.ParseAndSetConfigFingerprint(w, r, &siteConfig)
 		if err != nil {
