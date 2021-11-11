@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -106,8 +107,9 @@ func (c *Coordinator) CheckCache(ctx context.Context, tasks []*Task) (uncached [
 // CheckStepResultsCache checks the cache for each Task, but only for cached
 // step results. This is used by `src batch exec` when executing server-side.
 func (c *Coordinator) CheckStepResultsCache(ctx context.Context, tasks []*Task) error {
+	globalEnv := os.Environ()
 	for _, t := range tasks {
-		if err := c.loadCachedStepResults(ctx, t); err != nil {
+		if err := c.loadCachedStepResults(ctx, t, globalEnv); err != nil {
 			return err
 		}
 	}
@@ -115,14 +117,15 @@ func (c *Coordinator) CheckStepResultsCache(ctx context.Context, tasks []*Task) 
 }
 
 func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
+	globalEnv := os.Environ()
+
 	for _, task := range tasks {
-		cacheKey := task.cacheKey()
+		cacheKey := task.cacheKey(globalEnv)
 		if err := c.cache.Clear(ctx, cacheKey); err != nil {
 			return errors.Wrapf(err, "clearing cache for %q", task.Repository.Name)
 		}
 		for i := len(task.Steps) - 1; i > -1; i-- {
-			key := cache.StepsCacheKey{ExecutionKey: task.cacheKey(), StepIndex: i}
-
+			key := cacheKeyForStep(cacheKey, i)
 			if err := c.cache.Clear(ctx, key); err != nil {
 				return errors.Wrapf(err, "clearing cache for step %d in %q", i, task.Repository.Name)
 			}
@@ -132,8 +135,10 @@ func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 }
 
 func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs []*batcheslib.ChangesetSpec, found bool, err error) {
+	globalEnv := os.Environ()
+
 	// Check if the task is cached.
-	cacheKey := task.cacheKey()
+	cacheKey := task.cacheKey(globalEnv)
 
 	var result execution.Result
 	result, found, err = c.cache.Get(ctx, cacheKey)
@@ -144,7 +149,7 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 	if !found {
 		// If we are here, that means we didn't find anything in the cache for the
 		// complete task. So, what if we have cached results for the steps?
-		if err := c.loadCachedStepResults(ctx, task); err != nil {
+		if err := c.loadCachedStepResults(ctx, task, globalEnv); err != nil {
 			return specs, false, err
 		}
 
@@ -195,11 +200,12 @@ func (c Coordinator) buildChangesetSpecs(task *Task, result execution.Result) ([
 	})
 }
 
-func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task) error {
+func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, globalEnv []string) error {
 	// We start at the back so that we can find the _last_ cached step,
 	// then restart execution on the following step.
+	taskKey := task.cacheKey(globalEnv)
 	for i := len(task.Steps) - 1; i > -1; i-- {
-		key := cache.StepsCacheKey{ExecutionKey: task.cacheKey(), StepIndex: i}
+		key := cacheKeyForStep(taskKey, i)
 
 		result, found, err := c.cache.GetStepResult(ctx, key)
 		if err != nil {
@@ -219,17 +225,15 @@ func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task) err
 
 func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
 	// Add to the cache, even if no diff was produced.
-	cacheKey := taskResult.task.cacheKey()
+	globalEnv := os.Environ()
+	cacheKey := taskResult.task.cacheKey(globalEnv)
 	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
 		return nil, errors.Wrapf(err, "caching result for %q", taskResult.task.Repository.Name)
 	}
 
 	// Save the per-step results
 	for _, stepResult := range taskResult.stepResults {
-		key := cache.StepsCacheKey{
-			ExecutionKey: taskResult.task.cacheKey(),
-			StepIndex:    stepResult.StepIndex,
-		}
+		key := cacheKeyForStep(cacheKey, stepResult.StepIndex)
 		if err := c.cache.SetStepResult(ctx, key, stepResult); err != nil {
 			return nil, errors.Wrapf(err, "caching result for step %d in %q", stepResult.StepIndex, taskResult.task.Repository.Name)
 		}

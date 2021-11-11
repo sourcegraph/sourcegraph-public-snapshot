@@ -43,18 +43,31 @@ func (t *Task) ArchivePathToFetch() string {
 	return ""
 }
 
-func (t *Task) cacheKey() *cache.ExecutionKey {
-	return &cache.ExecutionKey{
-		Repository: batcheslib.Repository{
-			ID:          t.Repository.ID,
-			Name:        t.Repository.Name,
-			BaseRef:     t.Repository.BaseRef(),
-			BaseRev:     t.Repository.Rev(),
-			FileMatches: t.Repository.SortedFileMatches(),
+func (t *Task) cacheKey(globalEnv []string) *cache.ExecutionKeyWithGlobalEnv {
+	return &cache.ExecutionKeyWithGlobalEnv{
+		GlobalEnv: globalEnv,
+		ExecutionKey: &cache.ExecutionKey{
+			Repository: batcheslib.Repository{
+				ID:          t.Repository.ID,
+				Name:        t.Repository.Name,
+				BaseRef:     t.Repository.BaseRef(),
+				BaseRev:     t.Repository.Rev(),
+				FileMatches: t.Repository.SortedFileMatches(),
+			},
+			Path:                  t.Path,
+			OnlyFetchWorkspace:    t.OnlyFetchWorkspace,
+			Steps:                 t.Steps,
+			BatchChangeAttributes: t.BatchChangeAttributes,
 		},
-		Path:                  t.Path,
-		OnlyFetchWorkspace:    t.OnlyFetchWorkspace,
-		Steps:                 t.Steps,
-		BatchChangeAttributes: t.BatchChangeAttributes,
+	}
+}
+
+func cacheKeyForStep(key *cache.ExecutionKeyWithGlobalEnv, stepIndex int) *cache.StepsCacheKeyWithGlobalEnv {
+	return &cache.StepsCacheKeyWithGlobalEnv{
+		StepsCacheKey: &cache.StepsCacheKey{
+			ExecutionKey: key.ExecutionKey,
+			StepIndex:    stepIndex,
+		},
+		GlobalEnv: key.GlobalEnv,
 	}
 }
