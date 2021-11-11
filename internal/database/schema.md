@@ -1730,6 +1730,7 @@ Indexes:
     "repo_fork" btree (fork)
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
     "repo_metadata_gin_idx" gin (metadata)
+    "repo_name_case_sensitive_trgm_idx" gin ((name::text) gin_trgm_ops)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_non_deleted_id_name_idx" btree (id, name) WHERE deleted_at IS NULL

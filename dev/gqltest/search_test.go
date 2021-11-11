@@ -275,7 +275,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query       string
 			zeroResult  bool
 			wantMissing []string
-			want []string
+			want        []string
 		}{
 			{
 				name:       `archived excluded, zero results`,
@@ -333,12 +333,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
 			},
 			{
-				name: `case sensitive`,
-				query:  `case:yes type:repo Diff`,
+				name:       `case sensitive`,
+				query:      `case:yes type:repo Diff`,
 				zeroResult: true,
 			},
 			{
-				name: `case insensitive`,
+				name:  `case insensitive`,
 				query: `case:no type:repo Diff`,
 				want: []string{
 					"github.com/sgtest/go-diff",
