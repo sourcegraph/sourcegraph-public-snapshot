@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { noop } from 'lodash'
 import React, { useCallback, useMemo, useState } from 'react'
 
@@ -98,7 +99,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
-    const previewDisabled = useMemo(() => !isValid || !hasOnStatement(debouncedCode) || isLoading, [
+    const previewDisabled = useMemo(() => isValid !== true || !hasOnStatement(debouncedCode) || isLoading, [
         isValid,
         isLoading,
         debouncedCode,
@@ -111,10 +112,10 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     // previewed (and sent a batch spec to the backend) yet, if there was an error with
     // the preview, or if we're already in the middle of previewing or executing.
     const [canExecute, executionTooltip] = useMemo(() => {
-        const canExecute = isValid && !previewError && !isLoading && batchSpecID && !isExecuting
+        const canExecute = isValid === true && !previewError && !isLoading && batchSpecID && !isExecuting
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            !isValid || previewError
+            isValid !== true || previewError
                 ? "There's a problem with your batch spec."
                 : !batchSpecID
                 ? 'Preview workspaces first before you run.'
@@ -124,6 +125,16 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
         return [canExecute, executionTooltip]
     }, [batchSpecID, isValid, previewError, isLoading, isExecuting])
+
+    const errors =
+        codeErrors.update || codeErrors.validation || previewError || executeError ? (
+            <div className="w-100">
+                {codeErrors.update && <ErrorAlert error={codeErrors.update} />}
+                {codeErrors.validation && <ErrorAlert error={codeErrors.validation} />}
+                {previewError && <ErrorAlert error={previewError} />}
+                {executeError && <ErrorAlert error={executeError} />}
+            </div>
+        ) : null
 
     return (
         <div className="d-flex flex-column p-4 w-100 h-100">
@@ -163,7 +174,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     </BatchSpecDownloadLink>
                 </div>
             </div>
-            <div className="d-flex flex-1">
+            <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
                 <div className={styles.editorContainer}>
                     <MonacoBatchSpecEditor
                         isLightTheme={isLightTheme}
@@ -171,15 +182,13 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         onChange={clearErrorsAndHandleCodeChange}
                     />
                 </div>
-                <Container className={styles.workspacesPreviewContainer}>
-                    {codeErrors.update && <ErrorAlert error={codeErrors.update} />}
-                    {!isValid && codeErrors.validation.length > 0 && (
-                        <ErrorAlert
-                            error={`The entered spec is invalid:\n  * ${codeErrors.validation.join('\n  * ')}`}
-                        />
+                <div
+                    className={classNames(
+                        styles.workspacesPreviewContainer,
+                        'd-flex flex-column align-items-center pl-4'
                     )}
-                    {previewError && <ErrorAlert error={previewError} />}
-                    {executeError && <ErrorAlert error={executeError} />}
+                >
+                    {errors}
                     <WorkspacesPreview
                         batchSpecID={batchSpecID}
                         currentPreviewRequestTime={currentPreviewRequestTime}
@@ -188,7 +197,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         batchSpecStale={batchSpecStale}
                         excludeRepo={excludeRepo}
                     />
-                </Container>
+                </div>
             </div>
         </div>
     )

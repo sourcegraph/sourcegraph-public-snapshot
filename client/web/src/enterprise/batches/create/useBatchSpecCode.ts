@@ -15,7 +15,7 @@ const ajv = new AJV()
 addFormats(ajv)
 const VALIDATE_SPEC = ajv.compile<BatchSpec>(batchSpecSchemaJSON)
 
-const DEBOUNCE_AMOUNT = 250
+const DEBOUNCE_AMOUNT = 500
 
 interface UseBatchSpecCodeResult {
     /** The current YAML code in the editor. */
@@ -26,7 +26,7 @@ interface UseBatchSpecCodeResult {
     handleCodeChange: (newCode: string) => void
     /**
      * Boolean representing if `debouncedCode` is valid YAML code and satisfies the batch
-     * spec schema requirements.
+     * spec schema requirements, or 'unknown' if validation has not yet recomputed.
      */
     isValid: boolean | 'unknown'
     /**
@@ -34,7 +34,7 @@ interface UseBatchSpecCodeResult {
      * trying to automatically update it (i.e. to automatically exclude a repo).
      */
     errors: {
-        validation: string[]
+        validation?: string
         update?: string
     }
     /**
@@ -57,11 +57,11 @@ export const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult =>
     const [code, setCode] = useState<string>(initialCode)
     const debouncedCode = useDebounce(code, 250)
 
-    const [validationErrors, setValidationErrors] = useState<string[]>([])
+    const [validationError, setValidationErrors] = useState<string>()
     const [updateError, setUpdateError] = useState<string>()
 
     const clearErrors = useCallback(() => {
-        setValidationErrors([])
+        setValidationErrors(undefined)
         setUpdateError(undefined)
     }, [])
 
@@ -72,16 +72,20 @@ export const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult =>
             const parsed = loadYAML(newCode)
             const valid = VALIDATE_SPEC(parsed)
             setIsValid(valid)
-            if (!valid && VALIDATE_SPEC.errors) {
-                setValidationErrors(VALIDATE_SPEC.errors.map(error => error.message || '') || [])
+            if (!valid && VALIDATE_SPEC.errors?.length) {
+                setValidationErrors(
+                    `The entered spec is invalid:\n  * ${VALIDATE_SPEC.errors
+                        .map(error => error.message || '')
+                        .join('\n  * ')}`
+                )
             }
         } catch (error: unknown) {
             setIsValid(false)
             // Try to extract the error message.
             if (error && typeof error === 'object' && 'reason' in error) {
-                setValidationErrors([(error as { reason: string }).reason])
+                setValidationErrors((error as { reason: string }).reason)
             } else {
-                setValidationErrors(['unknown validation error occurred'])
+                setValidationErrors('unknown validation error occurred')
             }
         }
     }, [])
@@ -137,7 +141,7 @@ export const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult =>
         handleCodeChange,
         isValid,
         errors: {
-            validation: validationErrors,
+            validation: validationError,
             update: updateError,
         },
         excludeRepo,

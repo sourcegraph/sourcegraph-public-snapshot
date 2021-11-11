@@ -69,7 +69,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     }, [preview])
 
     return (
-        <div className="h-100 d-flex flex-column align-items-center">
+        <>
             <h3 className={styles.header}>Workspaces preview</h3>
             {resolutionError && <ErrorAlert error={resolutionError} className="mb-3" />}
             {showPreviewPrompt && (
@@ -83,7 +83,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
                     currentPreviewRequestTime={currentPreviewRequestTime}
                 />
             )}
-        </div>
+        </>
     )
 }
 
@@ -157,11 +157,13 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
             ) : null}
             {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
             {resolution?.state === 'COMPLETED' ? (
-                <WorkspacesPreviewList
-                    batchSpecID={batchSpecID}
-                    setResolutionError={setResolutionError}
-                    excludeRepo={excludeRepo}
-                />
+                <div className="d-flex flex-column align-items-center overflow-auto w-100">
+                    <WorkspacesPreviewList
+                        batchSpecID={batchSpecID}
+                        setResolutionError={setResolutionError}
+                        excludeRepo={excludeRepo}
+                    />
+                </div>
             ) : null}
         </>
     )
