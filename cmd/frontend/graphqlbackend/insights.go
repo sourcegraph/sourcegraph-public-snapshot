@@ -19,8 +19,6 @@ type InsightsResolver interface {
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
-	CaptureGroup(ctx context.Context, args CaptureGroupArgs) ([]CaptureGroupResultsResolver, error)
-
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
 	// Mutations
@@ -344,25 +342,6 @@ type InsightViewQueryArgs struct {
 
 type DeleteInsightViewArgs struct {
 	Id graphql.ID
-}
-
-type CaptureGroupResultsResolver interface {
-	Value(ctx context.Context) string
-	Groups(ctx context.Context) ([]CaptureGroupMatchResolver, error)
-}
-
-// type CaptureGroupResolver interface {
-// 	Repo(ctx context.Context) string
-// 	Matches(ctx context.Context) []CaptureGroupMatchResolver
-// }
-type CaptureGroupMatchResolver interface {
-	Time(ctx context.Context) DateTime
-	Count(ctx context.Context) int32
-}
-
-type CaptureGroupArgs struct {
-	Query string
-	Repo  string
 }
 
 type SearchInsightLivePreviewSeriesResolver interface {

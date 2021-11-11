@@ -200,67 +200,11 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	return calculated, nil
 }
 
-func (r *Resolver) CaptureGroup(ctx context.Context, args graphqlbackend.CaptureGroupArgs) ([]graphqlbackend.CaptureGroupResultsResolver, error) {
-
-	var resolvers []graphqlbackend.CaptureGroupResultsResolver
-
-	return resolvers, nil
-}
-
 func withCountUnlimited(s string) string {
 	if strings.Contains(s, "count:") {
 		return s
 	}
 	return s + " count:all"
-}
-
-// to generate a time series:
-// execute one search per commit
-// for each results, save time with search results
-// group by matched values
-// sort each series by time
-// result is array of timeseries
-
-func (r *disabledResolver) CaptureGroup(ctx context.Context, args graphqlbackend.CaptureGroupArgs) ([]graphqlbackend.CaptureGroupResultsResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
-type captureGroupResultsResolver struct {
-	results []queryrunner.TimeDataPoint
-	value   string
-}
-
-func (c *captureGroupResultsResolver) Value(ctx context.Context) string {
-	return c.value
-}
-
-// func (c *captureGroupResultsResolver) Groups(ctx context.Context) ([]graphqlbackend.CaptureGroupResolver, error) {
-// 	var resolvers []graphqlbackend.CaptureGroupResolver
-// 	for _, result := range c.results {
-// 		resolvers = append(resolvers, &captureGroupResolver{result: result})
-// 	}
-// 	return resolvers, nil
-// }
-
-func (c *captureGroupResultsResolver) Groups(ctx context.Context) ([]graphqlbackend.CaptureGroupMatchResolver, error) {
-	var resolvers []graphqlbackend.CaptureGroupMatchResolver
-	for _, result := range c.results {
-		resolvers = append(resolvers, &captureGroupMatchResolver{time: result.Time, count: int32(result.Count)})
-	}
-	return resolvers, nil
-}
-
-type captureGroupMatchResolver struct {
-	time  time.Time
-	count int32
-}
-
-func (c *captureGroupMatchResolver) Time(ctx context.Context) graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: c.time}
-}
-
-func (c *captureGroupMatchResolver) Count(ctx context.Context) int32 {
-	return c.count
 }
 
 func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {

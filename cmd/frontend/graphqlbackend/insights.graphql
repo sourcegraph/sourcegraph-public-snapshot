@@ -197,23 +197,7 @@ extend type Query {
     """
     insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
 
-    captureGroup(query: String!, repo: String!): [CaptureGroupResults!]!
-
     searchInsightLivePreview(input: SearchInsightLivePreviewInput!): [SearchInsightLivePreviewSeries!]!
-}
-
-type CaptureGroupResults {
-    value: String!
-    groups: [CaptureGroupMatch!]!
-}
-#type CaptureGroup {
-#    repo: String!
-#    matches: [CaptureGroupMatch!]!
-#}
-
-type CaptureGroupMatch {
-    time: DateTime!
-    count: Int!
 }
 
 extend type Mutation {
