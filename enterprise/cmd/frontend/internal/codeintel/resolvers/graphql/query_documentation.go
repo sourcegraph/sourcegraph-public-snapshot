@@ -34,7 +34,7 @@ func (r *DocumentationPageResolver) Tree() gql.JSONValue {
 }
 
 func (r *QueryResolver) DocumentationPathInfo(ctx context.Context, args *gql.LSIFDocumentationPathInfoArgs) (gql.JSONValue, error) {
-	var maxDepth int = 1
+	var maxDepth = 1
 	if args.MaxDepth != nil {
 		maxDepth = int(*args.MaxDepth)
 		if maxDepth < 0 {

@@ -465,7 +465,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 		err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 			for _, match := range matches {
 				switch m := match.(type) {
-				case (*streamhttp.EventPathMatch):
+				case *streamhttp.EventPathMatch:
 					// We use path.Dir and not filepath.Dir here, because while
 					// src-cli might be executed on Windows, we need the paths to
 					// be Unix paths, since they will be used inside Docker

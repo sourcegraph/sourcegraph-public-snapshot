@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff"
 )
 
