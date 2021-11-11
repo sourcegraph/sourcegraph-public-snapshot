@@ -61,7 +61,18 @@ var ActionJobsColumns = []*sqlf.Query{
 }
 
 const readActionEmailEventsFmtStr = `
-SELECT id, email, trigger_event, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT 
+	id, 
+	email, 
+	trigger_event, 
+	state, 
+	failure_message, 
+	started_at, 
+	finished_at, 
+	process_after, 
+	num_resets, 
+	num_failures, 
+	log_contents
 FROM cm_action_jobs
 WHERE %s
 AND id > %s
@@ -130,12 +141,16 @@ func (s *Store) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID 
 }
 
 const getActionJobMetadataFmtStr = `
-select cm.description, ctj.query_string, cm.id as monitorID, ctj.num_results from
-cm_action_jobs caj
-inner join cm_trigger_jobs ctj on caj.trigger_event = ctj.id
-inner join cm_queries cq on cq.id = ctj.query
-inner join cm_monitors cm on cm.id = cq.monitor
-where caj.id = %s
+SELECT 
+	cm.description, 
+	ctj.query_string, 
+	cm.id AS monitorID, 
+	ctj.num_results 
+FROM cm_action_jobs caj
+INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
+INNER JOIN cm_queries cq on cq.id = ctj.query
+INNER JOIN cm_monitors cm on cm.id = cq.monitor
+WHERE caj.id = %s
 `
 
 func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (m *ActionJobMetadata, err error) {
@@ -149,7 +164,18 @@ func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (m *Acti
 }
 
 const actionJobForIDFmtStr = `
-SELECT id, email, trigger_event, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT 
+	id, 
+	email, 
+	trigger_event, 
+	state, 
+	failure_message, 
+	started_at, 
+	finished_at, 
+	process_after, 
+	num_resets, 
+	num_failures, 
+	log_contents
 FROM cm_action_jobs
 WHERE id = %s
 `
