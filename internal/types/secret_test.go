@@ -59,6 +59,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		P4Passwd: someSecret,
 		P4User:   "admin",
 	}
+	jvmPackagesConfig := schema.JVMPackagesConnection{
+		Maven: &schema.Maven{
+			Credentials:  "top secret credentials",
+			Dependencies: []string{"placeholder"},
+		},
+	}
 	otherConfig := schema.OtherExternalServiceConnection{
 		Url:                   someSecret,
 		RepositoryPathPattern: "foo",
@@ -113,6 +119,11 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			kind:      extsvc.KindPerforce,
 			config:    &perforceConfig,
 			editField: func(cfg interface{}) *string { return &cfg.(*schema.PerforceConnection).P4User },
+		},
+		{
+			kind:      extsvc.KindJVMPackages,
+			config:    &jvmPackagesConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.JVMPackagesConnection).Maven.Dependencies[0] },
 		},
 		{
 			kind:   extsvc.KindOther,
