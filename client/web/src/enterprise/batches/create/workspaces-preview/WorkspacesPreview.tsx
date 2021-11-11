@@ -1,12 +1,9 @@
 import { ApolloError } from '@apollo/client'
-import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -16,6 +13,7 @@ import {
 } from '../../../../graphql-operations'
 import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
+import { PreviewPrompt, PreviewPromptForm } from './PreviewPrompt'
 import styles from './WorkspacesPreview.module.scss'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
@@ -87,65 +85,6 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             )}
         </div>
     )
-}
-
-/** Example snippet show in preview prompt if user has not yet added an on: statement. */
-const ON_STATEMENT = `on:
-  - repositoriesMatchingQuery: repo:my-org/.*
-`
-
-/**
- * The preview prompt shows different elements depending on the state of the editor and
- * workspaces preview resolution.
- * - Initial: If the user has not yet requested any workspaces preview.
- * - Error: If the latest workspaces preview request failed to reach a resolution.
- * - Update: If the user has requested a workspaces preview before but has made changes to
- * their batch spec input YAML since the last time it had a resolution.
- */
-type PreviewPromptForm = 'Initial' | 'Error' | 'Update'
-
-interface PreviewPromptProps {
-    preview: () => void
-    disabled: boolean
-    form: PreviewPromptForm
-}
-
-const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, disabled, form }) => {
-    const previewButton = (
-        <Button variant="success" disabled={disabled} onClick={preview}>
-            <SearchIcon className="icon-inline mr-1" />
-            Preview workspaces
-        </Button>
-    )
-
-    switch (form) {
-        case 'Initial':
-            return (
-                <>
-                    <div className={classNames(styles.previewPromptIcon, 'mt-4')} />
-                    <h4 className={styles.previewPromptHeader}>
-                        Use an <span className="text-monospace">on:</span> statement to preview repositories.
-                    </h4>
-                    {previewButton}
-                    <div className={styles.previewPromptOnExample}>
-                        <h3 className="align-self-start pt-4 text-muted">Example:</h3>
-                        <CodeSnippet className="w-100" code={ON_STATEMENT} language="yaml" />
-                    </div>
-                </>
-            )
-        case 'Error':
-            return previewButton
-        case 'Update':
-            return (
-                <>
-                    <h4 className={styles.previewPromptHeader}>
-                        Finish editing your batch spec, then manually preview repositories.
-                    </h4>
-                    {previewButton}
-                    <div className="mb-4" />
-                </>
-            )
-    }
 }
 
 const POLLING_INTERVAL = 1000
