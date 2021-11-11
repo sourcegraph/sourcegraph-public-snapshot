@@ -28,7 +28,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 
 	testCases := []struct {
 		name     string
-		ctx      context.Context
 		userID   int32
 		content  RepoContent
 		clientFn func() *subRepoPermsClient
@@ -36,7 +35,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 	}{
 		{
 			name:   "Not supported",
-			ctx:    context.Background(),
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -53,7 +51,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		},
 		{
 			name:   "Empty path",
-			ctx:    context.Background(),
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -67,7 +64,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		},
 		{
 			name:   "No rules",
-			ctx:    context.Background(),
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -89,7 +85,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		},
 		{
 			name:   "Exclude",
-			ctx:    context.Background(),
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -111,7 +106,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		},
 		{
 			name:   "Include",
-			ctx:    context.Background(),
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -132,7 +126,6 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		},
 		{
 			name:   "Exclude takes precedence",
-			ctx:    context.Background(),
 			userID: 1,
 			content: RepoContent{
 				Repo: "sample",
@@ -156,7 +149,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			have, err := tc.clientFn().Permissions(tc.ctx, tc.userID, tc.content)
+			have, err := tc.clientFn().Permissions(context.Background(), tc.userID, tc.content)
 			if err != nil {
 				t.Fatal(err)
 			}
