@@ -65,7 +65,7 @@ export function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepU
  *
  * @param insight - gql insight model
  */
-export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => {
+export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight | undefined => {
     // TODO [VK] Support lang stats insight
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {

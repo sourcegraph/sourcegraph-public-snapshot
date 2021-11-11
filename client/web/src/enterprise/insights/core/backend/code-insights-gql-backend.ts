@@ -70,7 +70,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 this.apolloClient.watchQuery<GetInsightsResult>({
                     query: GET_INSIGHTS_GQL,
                 })
-            ).pipe(map(({ data }) => data.insightViews.nodes.map(getInsightView)))
+            ).pipe(map(({ data }) => data.insightViews.nodes.map(getInsightView).filter(Boolean) as Insight[]))
         }
 
         // Get all insights from the user-created dashboard
@@ -79,7 +79,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 query: GET_DASHBOARD_INSIGHTS_GQL,
                 variables: { id: dashboardId },
             })
-        ).pipe(map(({ data }) => data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView) ?? []))
+        ).pipe(
+            map(
+                ({ data }) =>
+                    (data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView).filter(Boolean) as Insight[]) ??
+                    []
+            )
+        )
     }
 
     public getInsightById = (id: string): Observable<Insight | null> =>
@@ -96,7 +102,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return getInsightView(insightData)
+                return getInsightView(insightData) || null
             })
         )
 
