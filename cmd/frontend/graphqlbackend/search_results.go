@@ -1952,8 +1952,12 @@ func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker)
 				Path: key.Path,
 			})
 			if err != nil {
-				errs = multierror.Append(errs, fmt.Errorf("applySubRepoPerms: failed to check sub-repo permissions (actor.uid: %d, match.key: %v): %w",
-					actor.UID, key, err))
+				// Log error but don't propagate upwards to ensure data does not leak
+				log15.Error("subRepoPermsFilter check failed",
+					"actor.UID", actor.UID,
+					"match.Key", key,
+					"error", err)
+				errs = multierror.Append(errs, fmt.Errorf("subRepoPermsFilter: failed to check sub-repo permissions"))
 			}
 			if perms.Include(authz.Read) {
 				authorized = append(authorized, match)
