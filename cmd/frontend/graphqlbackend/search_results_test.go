@@ -132,7 +132,7 @@ func TestSearchResults(t *testing.T) {
 			// Validate that the following options are invariant when calling the DB through
 			// Repos.ListMinimalRepos, no matter how many times it is called for a single
 			// Search(...) operation.
-			assert.Equal(t, wantLimitOffset, opt.LimitOffset)
+			require.Equal(t, wantLimitOffset, opt.LimitOffset)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
 		})
@@ -187,7 +187,7 @@ func TestSearchResults(t *testing.T) {
 			// Validate that the following options are invariant when calling the DB through
 			// Repos.ListMinimalRepos, no matter how many times it is called for a single
 			// Search(...) operation.
-			assert.Equal(t, wantLimitOffset, opt.LimitOffset)
+			require.Equal(t, wantLimitOffset, opt.LimitOffset)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
 		})

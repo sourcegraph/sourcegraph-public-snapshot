@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -159,7 +159,7 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledReposListMinimalRepos = true
 
-			assert.Equal(t, []string{"foo"}, op.IncludePatterns)
+			require.Equal(t, []string{"foo"}, op.IncludePatterns)
 
 			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
 		}
@@ -266,7 +266,7 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledReposListMinimalRepos = true
 
-			assert.Equal(t, []string{"foo"}, op.IncludePatterns)
+			require.Equal(t, []string{"foo"}, op.IncludePatterns)
 
 			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
 		}
