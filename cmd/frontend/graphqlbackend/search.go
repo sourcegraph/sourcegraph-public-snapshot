@@ -116,8 +116,6 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 			DefaultLimit:  defaultLimit,
 		},
 
-		subRepoPerms: subRepoPermsClient(db),
-
 		stream: args.Stream,
 
 		zoekt:        search.Indexed(),
