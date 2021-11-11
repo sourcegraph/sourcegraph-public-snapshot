@@ -73,11 +73,11 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
                         'd-flex',
                         'align-items-center',
                         styles.control,
-                        onlyErrors ? 'btn-secondary' : 'btn-outline-secondary'
+                        onlyErrors ? 'btn-danger' : 'btn-outline-danger'
                     )}
                     onClick={onErrorToggle}
                 >
-                    <AlertCircleIcon className={styles.icon} />
+                    <AlertCircleIcon className={classNames(styles.icon, onlyErrors && styles.enabled)} />
                     <span className="ml-1">Only errors</span>
                 </button>
             </div>

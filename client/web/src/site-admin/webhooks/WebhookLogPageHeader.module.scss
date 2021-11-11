@@ -5,3 +5,7 @@
 .icon {
     fill: var(--danger) !important;
 }
+
+.icon.enabled {
+    fill: var(--light-text) !important;
+}
