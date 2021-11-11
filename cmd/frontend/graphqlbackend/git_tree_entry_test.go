@@ -80,7 +80,7 @@ func TestGitTreeEntry_Content_Sub_Repo_Filtering(t *testing.T) {
 
 	db := dbmock.NewMockDB()
 	gitTree := NewGitTreeEntryResolver(db,
-		NewGitCommitResolver(nil, NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}), "", nil),
+		NewGitCommitResolver(db, NewRepositoryResolver(db, &types.Repo{Name: "my/repo"}), "", nil),
 		CreateFileInfo(wantPath, false))
 
 	srp := authz.NewMockSubRepoPermissionChecker()

@@ -465,6 +465,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 				for i, res := range results.Matches {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
+							db:           r.db,
 							FileMatch:    *fm,
 							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}
