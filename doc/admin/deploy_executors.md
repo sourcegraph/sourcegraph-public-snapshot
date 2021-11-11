@@ -10,7 +10,7 @@ Executors are an experimental service that powers automatically indexing a repos
 
 Executors operate outside of your Sourcegraph instance and must be provisioned separately from your Sourcegraph server deployment method.
 
-In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. These requests are authenticated via a shared secret value known by the Sourcegraph instance. Before provisioning executor compute resources, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config#view-and-edit-site-configuration).
+In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. These requests are authenticated via a shared secret value known by the Sourcegraph instance. Before provisioning executor compute resources, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config.md#view-and-edit-site-configuration).
 
 Once the access token is set, executor compute resources can be provisioned. We supply [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) to provision such resources on common cloud providers ([Google Cloud](https://github.com/sourcegraph/terraform-google-executors) and [AWS](https://github.com/sourcegraph/terraform-aws-executors)).
 
