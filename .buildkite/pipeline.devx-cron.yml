@@ -1,0 +1,4 @@
+steps:
+  - command:
+      - $REPORT_SCRIPT
+    label: $REPORT_LABEL

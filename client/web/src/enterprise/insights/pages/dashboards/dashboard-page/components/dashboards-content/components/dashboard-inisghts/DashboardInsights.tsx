@@ -13,8 +13,6 @@ import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDa
 
 import { DashboardInsightsContext } from './DashboardInsightsContext'
 
-const DEFAULT_INSIGHT_IDS: string[] = []
-
 interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
     subjects?: SupportedInsightSubject[]
@@ -26,9 +24,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
-    const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
-    const insightIds = useDistinctValue(dashboardInsightIds)
-
+    const insightIds = useDistinctValue(dashboard.insightIds)
     const insights = useObservable(useMemo(() => getInsights(insightIds), [getInsights, insightIds]))
 
     if (insights === undefined) {

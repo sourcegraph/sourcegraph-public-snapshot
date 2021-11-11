@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { StreamingProgressProps } from './StreamingProgress'
+import styles from './StreamingProgressSkippedButton.module.scss'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 export const StreamingProgressSkippedButton: React.FunctionComponent<
@@ -30,9 +31,10 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
             {progress.skipped.length > 0 && (
                 <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                     <DropdownToggle
-                        className="streaming-progress__skipped mb-0 d-flex align-items-center text-decoration-none btn-sm"
+                        className="mb-0 d-flex align-items-center text-decoration-none btn-sm"
                         caret={true}
                         color={skippedWithWarningOrError ? 'outline-danger' : 'outline-secondary'}
+                        data-testid="streaming-progress-skipped"
                     >
                         {skippedWithWarningOrError ? (
                             <AlertCircleIcon className="mr-2 icon-inline" />
@@ -41,7 +43,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         )}
                         Some results excluded
                     </DropdownToggle>
-                    <DropdownMenu className="streaming-progress__skipped-popover">
+                    <DropdownMenu className={styles.skippedPopover} data-testid="streaming-progress-skipped-popover">
                         <StreamingProgressSkippedPopover
                             progress={progress}
                             onSearchAgain={onSearchAgainWithPopupClose}

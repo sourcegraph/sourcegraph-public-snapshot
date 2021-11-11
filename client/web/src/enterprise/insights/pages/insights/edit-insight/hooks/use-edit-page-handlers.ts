@@ -52,7 +52,8 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
             }
 
             if (!dashboard.owner) {
-                throw new Error('TODO: support GraphQL API')
+                history.push(`/insights/dashboards/${dashboard.id}`)
+                return
             }
 
             // If insight's visible area has been changed explicit redirect to new

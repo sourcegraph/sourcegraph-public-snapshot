@@ -124,10 +124,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
 
-	db, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
+	sqlDB, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
+	db := database.NewDB(sqlDB)
 	// Generally we'll mark the service as ready sometime after the database
 	// has been connected; migrations may take a while and we don't want to
 	// start accepting traffic until we've fully constructed the server we'll
@@ -173,7 +174,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(sqlDB, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -208,7 +209,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	if !envvar.SourcegraphDotComMode() {
 		// git-server repos purging thread
-		go repos.RunRepositoryPurgeWorker(ctx, database.NewDB(db))
+		go repos.RunRepositoryPurgeWorker(ctx, db)
 	}
 
 	// Git fetches scheduler

@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"testing"
 	"time"
@@ -303,6 +304,7 @@ func TestGetUploads(t *testing.T) {
 	t8 := t1.Add(-time.Minute * 7)
 	t9 := t1.Add(-time.Minute * 8)
 	t10 := t1.Add(-time.Minute * 9)
+	t11 := t1.Add(-time.Minute * 10)
 	failureMessage := "unlucky 333"
 
 	insertUploads(t, db,
@@ -316,11 +318,12 @@ func TestGetUploads(t *testing.T) {
 		Upload{ID: 8, UploadedAt: t8, Indexer: "lsif-tsc"},
 		Upload{ID: 9, UploadedAt: t9, State: "queued"},
 		Upload{ID: 10, UploadedAt: t10, Root: "sub1/", Indexer: "lsif-tsc"},
+		Upload{ID: 11, UploadedAt: t11, Root: "sub1/", Indexer: "lsif-tsc"},
 
 		// Deleted duplicates
-		Upload{ID: 11, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "deleted"},
-		Upload{ID: 12, UploadedAt: t2, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
-		Upload{ID: 13, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "deleted"},
+		Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "deleted"},
+		Upload{ID: 13, UploadedAt: t2, State: "deleted", FailureMessage: &failureMessage, Indexer: "lsif-tsc"},
+		Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "deleted"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
@@ -328,13 +331,16 @@ func TestGetUploads(t *testing.T) {
 	insertPackages(t, store, []shared.Package{
 		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
 		{DumpID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
+		{DumpID: 11, Scheme: "npm", Name: "foo", Version: "0.1.0"}, // duplicate package
 	})
 	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 7, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
 		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
 	})
 
-	testCases := []struct {
+	type testCase struct {
 		repositoryID   int
 		state          string
 		term           string
@@ -345,73 +351,90 @@ func TestGetUploads(t *testing.T) {
 		uploadedAfter  *time.Time
 		oldestFirst    bool
 		expectedIDs    []int
-	}{
-		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
-		{oldestFirst: true, expectedIDs: []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
-		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
-		{state: "completed", expectedIDs: []int{7, 8, 10}},
-		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10}}, // searches root
-		{term: "003", expectedIDs: []int{1, 3, 5}},           // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},        // searches commits and failure message
-		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10}},    // searches indexer
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},     // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},              // search repo names
-		{state: "failed", expectedIDs: []int{2}},             // treats errored/failed states equivalently
+	}
+	testCases := []testCase{
+		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
+		{oldestFirst: true, expectedIDs: []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
+		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10, 11}},
+		{state: "completed", expectedIDs: []int{7, 8, 10, 11}},
+		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // searches root
+		{term: "003", expectedIDs: []int{1, 3, 5}},               // searches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // searches commits and failure message
+		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10, 11}},    // searches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // searches text status
+		{term: "bAr", expectedIDs: []int{4, 6}},                  // search repo names
+		{state: "failed", expectedIDs: []int{2}},                 // treats errored/failed states equivalently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
-		{dependencyOf: 10, expectedIDs: []int{7, 8}},
-		{dependentOf: 7, expectedIDs: []int{10}},
-		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10}},
+		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
+		{dependencyOf: 7, expectedIDs: []int{8}},
+		{dependentOf: 7, expectedIDs: []int{10}},
+		{dependencyOf: 8, expectedIDs: []int{}},
+		{dependentOf: 8, expectedIDs: []int{7, 10, 11}},
+		{dependencyOf: 10, expectedIDs: []int{7, 8}},
+		{dependentOf: 10, expectedIDs: []int{}},
+		{dependencyOf: 11, expectedIDs: []int{8}},
+		{dependentOf: 11, expectedIDs: []int{}},
 	}
 
-	for _, testCase := range testCases {
-		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
-			hi := lo + 3
-			if hi > len(testCase.expectedIDs) {
-				hi = len(testCase.expectedIDs)
+	runTest := func(testCase testCase, lo, hi int) (errors int) {
+		name := fmt.Sprintf(
+			"repositoryID=%d state=%s term=%s visibleAtTip=%v dependencyOf=%d dependentOf=%d offset=%d",
+			testCase.repositoryID,
+			testCase.state,
+			testCase.term,
+			testCase.visibleAtTip,
+			testCase.dependencyOf,
+			testCase.dependentOf,
+			lo,
+		)
+
+		t.Run(name, func(t *testing.T) {
+			uploads, totalCount, err := store.GetUploads(ctx, GetUploadsOptions{
+				RepositoryID:   testCase.repositoryID,
+				State:          testCase.state,
+				Term:           testCase.term,
+				VisibleAtTip:   testCase.visibleAtTip,
+				DependencyOf:   testCase.dependencyOf,
+				DependentOf:    testCase.dependentOf,
+				UploadedBefore: testCase.uploadedBefore,
+				UploadedAfter:  testCase.uploadedAfter,
+				OldestFirst:    testCase.oldestFirst,
+				Limit:          3,
+				Offset:         lo,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error getting uploads for repo: %s", err)
+			}
+			if totalCount != len(testCase.expectedIDs) {
+				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
+				errors++
 			}
 
-			name := fmt.Sprintf(
-				"repositoryID=%d state=%s term=%s visibleAtTip=%v dependencyOf=%d dependentOf=%d offset=%d",
-				testCase.repositoryID,
-				testCase.state,
-				testCase.term,
-				testCase.visibleAtTip,
-				testCase.dependencyOf,
-				testCase.dependentOf,
-				lo,
-			)
-
-			t.Run(name, func(t *testing.T) {
-				uploads, totalCount, err := store.GetUploads(ctx, GetUploadsOptions{
-					RepositoryID:   testCase.repositoryID,
-					State:          testCase.state,
-					Term:           testCase.term,
-					VisibleAtTip:   testCase.visibleAtTip,
-					DependencyOf:   testCase.dependencyOf,
-					DependentOf:    testCase.dependentOf,
-					UploadedBefore: testCase.uploadedBefore,
-					UploadedAfter:  testCase.uploadedAfter,
-					OldestFirst:    testCase.oldestFirst,
-					Limit:          3,
-					Offset:         lo,
-				})
-				if err != nil {
-					t.Fatalf("unexpected error getting uploads for repo: %s", err)
-				}
-				if totalCount != len(testCase.expectedIDs) {
-					t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
-				}
-
+			if totalCount != 0 {
 				var ids []int
 				for _, upload := range uploads {
 					ids = append(ids, upload.ID)
 				}
-
 				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
 					t.Errorf("unexpected upload ids at offset %d (-want +got):\n%s", lo, diff)
+					errors++
 				}
-			})
+			}
+		})
+
+		return errors
+	}
+
+	for _, testCase := range testCases {
+		if n := len(testCase.expectedIDs); n == 0 {
+			runTest(testCase, 0, 0)
+		} else {
+			for lo := 0; lo < n; lo++ {
+				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
+					break
+				}
+			}
 		}
 	}
 
@@ -880,28 +903,121 @@ func TestHardDeleteUploadByID(t *testing.T) {
 		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
 	})
 
-	if err := store.UpdateNumReferences(context.Background(), []int{51, 52, 53, 54}); err != nil {
-		t.Fatalf("unexpected error updating num references: %s", err)
+	if err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54}, DependencyReferenceCountUpdateTypeNone); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
+	assertReferenceCounts(t, store, map[int]int{
+		51: 0,
+		52: 2, // referenced by 51, 54
+		53: 2, // referenced by 51, 52
+		54: 0,
+	})
 
 	if err := store.HardDeleteUploadByID(context.Background(), 51); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	}
-
-	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
-	if err != nil {
-		t.Fatalf("unexpected error querying num_references: %s", err)
-	}
-
-	expectedNumReferencesByID := map[int]int{
+	assertReferenceCounts(t, store, map[int]int{
 		// 51 was deleted
-		52: 1,
-		53: 1,
+		52: 1, // referenced by 54
+		53: 1, // referenced by 54
 		54: 0,
+	})
+}
+
+func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
-	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
-		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"},
+		Upload{ID: 54, State: "completed"},
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+	})
+
+	if err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54}, DependencyReferenceCountUpdateTypeNone); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
+	assertReferenceCounts(t, store, map[int]int{
+		51: 0,
+		52: 2, // referenced by 51, 54
+		53: 2, // referenced by 51, 54
+		54: 0,
+	})
+
+	if err := store.HardDeleteUploadByID(context.Background(), 52); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	}
+	assertReferenceCounts(t, store, map[int]int{
+		51: 0,
+		// 52 was deleted
+		53: 2, // referenced by 51, 54
+		54: 0,
+	})
+}
+
+func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"},
+		Upload{ID: 54, State: "completed"},
+		Upload{ID: 55, State: "completed"},
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Name: "p2", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+	})
+
+	if err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54, 55}, DependencyReferenceCountUpdateTypeNone); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
+	}
+	assertReferenceCounts(t, store, map[int]int{
+		51: 0,
+		52: 3, // referenced by 51, 53, 55
+		53: 2, // referenced by 52, 54
+		54: 0,
+		55: 0,
+	})
+
+	if err := store.HardDeleteUploadByID(context.Background(), 52); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	}
+	assertReferenceCounts(t, store, map[int]int{
+		51: 0,
+		// 52 was deleted
+		53: 1, // referenced by 54
+		54: 3, // referenced by 51, 53, 55
+		55: 0,
+	})
 }
 
 func TestSelectRepositoriesForIndexScan(t *testing.T) {
@@ -1074,7 +1190,7 @@ func TestUpdateUploadRetention(t *testing.T) {
 	}
 }
 
-func TestUpdateNumReferences(t *testing.T) {
+func TestUpdateReferenceCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1107,18 +1223,14 @@ func TestUpdateNumReferences(t *testing.T) {
 		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p3", Version: "1.2.4"}}, // future version
 	})
 
-	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
-		t.Fatalf("unexpected error updating num references: %s", err)
+	if err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeNone); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 
-	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
-	if err != nil {
-		t.Fatalf("unexpected error querying num_references: %s", err)
-	}
-
-	expectedNumReferencesByID := map[int]int{
+	assertReferenceCounts(t, store, map[int]int{
 		50: 0,
 		51: 0,
 		52: 0,
@@ -1126,76 +1238,76 @@ func TestUpdateNumReferences(t *testing.T) {
 		54: 1, // referenced by 52
 		55: 1, // referenced by 51
 		56: 2, // referenced by 52, 53
-	}
-	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
-		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
-	}
-}
-
-func TestUpdateDependencyNumReferences(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
-
-	insertUploads(t, db,
-		Upload{ID: 50, State: "completed"}, // removed
-		Upload{ID: 51, State: "completed"}, // removed
-		Upload{ID: 52, State: "completed"}, // removed
-		Upload{ID: 53, State: "completed"},
-		Upload{ID: 54, State: "completed"},
-		Upload{ID: 55, State: "completed"},
-		Upload{ID: 56, State: "completed"},
-	)
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
-		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
-		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
-		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
-	})
-	insertPackageReferences(t, store, []shared.PackageReference{
-		// References removed
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-
-		// Remaining references
-		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
-	// Set correct initial counts
-	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
-		t.Fatalf("unexpected error updating num references: %s", err)
-	}
+	t.Run("add uploads", func(t *testing.T) {
+		insertUploads(t, db,
+			Upload{ID: 62, State: "completed"},
+			Upload{ID: 63, State: "completed"},
+			Upload{ID: 64, State: "completed"},
+		)
+		insertPackages(t, store, []shared.Package{
+			{DumpID: 62, Scheme: "test", Name: "p1", Version: "1.2.3"}, // duplicate version
+			{DumpID: 63, Scheme: "test", Name: "p2", Version: "1.2.3"}, // duplicate version
+			{DumpID: 64, Scheme: "test", Name: "p3", Version: "1.2.4"}, // new version
+		})
 
-	// Remove ref counts from uploads 50, 51, and 52
-	if err := store.UpdateDependencyNumReferences(context.Background(), []int{50, 51, 52}, true); err != nil {
-		t.Fatalf("unexpected error updating num references: %s", err)
-	}
+		// Update commit dates so that the newly inserted uploads come first
+		// in the commit graph. We use a heuristic to select the "oldest" upload
+		// as the canonical provider ofa package for the same repository and root.
+		// This ensures that we "usurp" the package provider with a younger upload.
 
-	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
-	if err != nil {
-		t.Fatalf("unexpected error querying num_references: %s", err)
-	}
+		query := `
+			UPDATE lsif_uploads
+			SET committed_at = CASE
+				WHEN id < 60 THEN NOW()
+				ELSE              NOW() - '1 day'::interval
+			END
+		`
+		if _, err := db.ExecContext(context.Background(), query); err != nil {
+			t.Fatalf("unexpected error updating upload commit date: %s", err)
+		}
 
-	expectedNumReferencesByID := map[int]int{
-		50: 0,
-		51: 0,
-		52: 0,
-		53: 3, // referenced by 54, 55, 56 (reference from 51, 52 removed)
-		54: 0, // referenced by nothing    (reference from 52 removed)
-		55: 0, // referenced by nothing    (reference from 51 removed)
-		56: 1, // referenced by 53         (reference from 52 removed)
-	}
-	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
-		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
-	}
+		if err := store.UpdateReferenceCounts(context.Background(), []int{62, 63, 64}, DependencyReferenceCountUpdateTypeAdd); err != nil {
+			t.Fatalf("unexpected error updating reference counts: %s", err)
+		}
+
+		assertReferenceCounts(t, store, map[int]int{
+			50: 0,
+			51: 0,
+			52: 0,
+			53: 0, // usurped by 62
+			54: 0, // usurped by 63
+			55: 1, // referenced by 51
+			56: 2, // referenced by 52, 53
+			62: 5, // referenced by 51, 52, 54, 55, 56 (usurped from 53)
+			63: 1, // referenced by 52                 (usurped from 54)
+			64: 1, // referenced by 56
+		})
+	})
+
+	t.Run("remove uploads", func(t *testing.T) {
+		if err := store.UpdateReferenceCounts(context.Background(), []int{53, 56, 63, 64}, DependencyReferenceCountUpdateTypeRemove); err != nil {
+			t.Fatalf("unexpected error updating reference counts: %s", err)
+		}
+
+		if _, err := db.ExecContext(context.Background(), `DELETE FROM lsif_uploads WHERE id IN (53, 56, 63, 64)`); err != nil {
+			t.Fatalf("unexpected error deleting uploads: %s", err)
+		}
+
+		assertReferenceCounts(t, store, map[int]int{
+			50: 0,
+			51: 0,
+			52: 0,
+			// 53 deleted
+			54: 1, // referenced by 52             (usurped from 63)
+			55: 1, // referenced by 51
+			// 56 deleted
+			62: 4, // referenced by 51, 52, 54, 55 (usurped from 53)
+			// 63 deleted
+			// 64 deleted
+		})
+	})
 }
 
 func TestSoftDeleteExpiredUploads(t *testing.T) {
@@ -1239,8 +1351,8 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
-		t.Fatalf("unexpected error updating num references: %s", err)
+	if err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeAdd); err != nil {
+		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 
 	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {

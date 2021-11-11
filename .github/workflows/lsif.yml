@@ -20,7 +20,8 @@ jobs:
       # Run lsif-go
       - name: Run lsif-go
         working-directory: ${{ matrix.root }}
-        run: lsif-go --no-animation
+        # --dep-batch-size=100 avoids loading all deps into memory and getting OOM killed
+        run: lsif-go --no-animation --dep-batch-size=100
 
       # Upload lsif-go data to Cloud, Dogfood, and Demo instances
       - name: Upload lsif-go dump to Cloud
