@@ -3,16 +3,19 @@ package main
 import (
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-flat/proto"
 )
 
 func main() {
-	for _, val := range compile().Values {
-		fmt.Println(val)
-	}
+	fmt.Println(convertFlatToGraph(compile()))
 }
 
-func compile() proto.LsifValues {
+func convertFlatToGraph(vals *proto.LsifValues) []reader.Element {
+	return []reader.Element{}
+}
+
+func compile() *proto.LsifValues {
 	vals := []*proto.LsifValue{}
 
 	s := "miso cat miso "
@@ -45,5 +48,5 @@ func compile() proto.LsifValues {
 		}
 	}
 	vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Document{Document: &doc}})
-	return proto.LsifValues{Values: vals}
+	return &proto.LsifValues{Values: vals}
 }
