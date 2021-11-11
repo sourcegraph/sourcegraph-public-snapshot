@@ -44,7 +44,6 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
         // }
         <div className="h-100">
             <h3 className={styles.header}>Workspaces preview</h3>
-            <Empty previewDisabled={previewDisabled} preview={preview} />
             {/* {preview.workspaceResolution.failureMessage !== null && (
                 <ErrorAlert error={preview.workspaceResolution.failureMessage} />
             )}
@@ -56,6 +55,8 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             )}
             {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.ERRORED && (
                 <WarningIcon className="text-danger icon-inline" />
+            {showPreviewPrompt && (
+                <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
             {preview.workspaceResolution.state === BatchSpecWorkspaceResolutionState.FAILED && (
                 <WarningIcon className="text-danger icon-inline" />
@@ -129,22 +130,47 @@ const ON_STATEMENT = `on:
   - repositoriesMatchingQuery: repo:my-org/.*
 `
 
-const Empty: React.FunctionComponent<{ preview: () => void; previewDisabled: boolean }> = ({
-    preview,
-    previewDisabled,
-}) => (
-    <div className="d-flex flex-column align-items-center pt-4">
-        <div className={styles.emptyIcon} />
-        <h4 className={styles.emptyHeaderPrompt}>
-            Use an <span className="text-monospace">on:</span> statement to preview repositories.
-        </h4>
-        <Button variant="success" disabled={previewDisabled} onClick={preview}>
+type PreviewPromptForm = 'Initial' | 'Error' | 'Update'
+
+interface PreviewPromptProps {
+    preview: () => void
+    disabled: boolean
+    form: PreviewPromptForm
+}
+
+const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ preview, disabled, form }) => {
+    const previewButton = (
+        <Button variant="success" disabled={disabled} onClick={preview}>
             <SearchIcon className="icon-inline mr-1" />
             Preview workspaces
         </Button>
-        <div className={styles.emptyOnExample}>
-            <h3 className="align-self-start pt-4 text-muted">Example:</h3>
-            <CodeSnippet className="w-100" code={ON_STATEMENT} language="yaml" />
-        </div>
-    </div>
-)
+    )
+
+    switch (form) {
+        case 'Initial':
+            return (
+                <>
+                    <div className={classNames(styles.previewPromptIcon, 'mt-4')} />
+                    <h4 className={styles.previewPromptHeader}>
+                        Use an <span className="text-monospace">on:</span> statement to preview repositories.
+                    </h4>
+                    {previewButton}
+                    <div className={styles.previewPromptOnExample}>
+                        <h3 className="align-self-start pt-4 text-muted">Example:</h3>
+                        <CodeSnippet className="w-100" code={ON_STATEMENT} language="yaml" />
+                    </div>
+                </>
+            )
+        case 'Error':
+            return previewButton
+        case 'Update':
+            return (
+                <>
+                    <h4 className={styles.previewPromptHeader}>
+                        Finish editing your batch spec, then manually preview repositories.
+                    </h4>
+                    {previewButton}
+                </>
+            )
+    }
+}
