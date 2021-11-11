@@ -36,8 +36,8 @@ func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.H
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
-func (s *InsightStore) With(other *InsightStore) *InsightStore {
-	return &InsightStore{Store: s.Store.With(other.Store), Now: other.Now}
+func (s *InsightStore) With(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: s.Store.With(other), Now: s.Now}
 }
 
 func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
