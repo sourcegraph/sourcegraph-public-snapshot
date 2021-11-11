@@ -20,6 +20,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           <div
             className="test-search-result result-container"
             data-testid="result-container"
+            onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -44,6 +46,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <span
                   aria-label="github.com"
+                  role="img"
                   title="github.com"
                 >
                   <svg
@@ -260,6 +263,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           <div
             className="test-search-result result-container"
             data-testid="result-container"
+            onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -284,6 +289,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <span
                   aria-label="github.com"
+                  role="img"
                   title="github.com"
                 >
                   <svg
@@ -446,6 +452,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           <div
             className="test-search-result result-container"
             data-testid="result-container"
+            onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -470,6 +478,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <span
                   aria-label="github.com"
+                  role="img"
                   title="github.com"
                 >
                   <svg

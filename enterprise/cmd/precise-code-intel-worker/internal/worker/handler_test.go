@@ -120,18 +120,12 @@ func TestHandle(t *testing.T) {
 	}
 
 	expectedIDsForRefcountUpdate := []int{42}
-	if len(mockDBStore.UpdateNumReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateNumReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdateNumReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateNumReferencesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdateNumReferences args (-want +got):\n%s", diff)
-	}
-
-	if len(mockDBStore.UpdateDependencyNumReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateDependencyNumReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdateDependencyNumReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateDependencyNumReferencesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(false, mockDBStore.UpdateDependencyNumReferencesFunc.History()[0].Arg2); diff != "" {
-		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
+	if len(mockDBStore.UpdateReferenceCountsFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateReferenceCountsFunc.History()))
+	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
+	} else if diff := cmp.Diff(dbstore.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg2); diff != "" {
+		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDBStore.InsertDependencySyncingJobFunc.History()) != 1 {

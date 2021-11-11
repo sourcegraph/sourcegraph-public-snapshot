@@ -15,6 +15,7 @@ import { DEFAULT_LINE_STROKE } from '../constants'
 import { generateAccessors } from '../helpers/generate-accessors'
 import { getProcessedChartData } from '../helpers/get-processed-chart-data'
 import { getYAxisWidth } from '../helpers/get-y-axis-width'
+import { getYTicks } from '../helpers/get-y-ticks'
 import { usePointerEventEmitters } from '../helpers/use-event-emitters'
 import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-scales'
 import { onDatumZoneClick, Point } from '../types'
@@ -27,7 +28,6 @@ import { TooltipContent } from './TooltipContent'
 
 // Chart configuration
 const WIDTH_PER_TICK = 70
-const HEIGHT_PER_TICK = 40
 const MARGIN = { top: 10, left: 0, bottom: 26, right: 20 }
 const SCALES_CONFIG = {
     x: {
@@ -53,14 +53,20 @@ export interface LineChartContentProps<Datum extends object>
     extends Omit<LineChartContentType<Datum, keyof Datum>, 'chart'> {
     /** Chart width value in px */
     width: number
+
     /** Chart height value in px */
     height: number
+
     /**
      * Callback calls every time when a point-zone (zone around point) but not point itself
      * on the chart was clicked.
      */
     onDatumZoneClick?: onDatumZoneClick
-    /** Callback calls every time when link-point and only link-point on the chart was clicked. */
+
+    /**
+     * Callback calls every time when link-point and only link-point
+     * on the chart was clicked.
+     */
     onDatumLinkClick?: (event: React.MouseEvent) => void
 }
 
@@ -81,10 +87,10 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     })
 
     const innerHeight = height - MARGIN.top - MARGIN.bottom
-    const numberOfTicksY = Math.max(1, Math.floor(innerHeight / HEIGHT_PER_TICK))
 
     const yScale = useYScale({ config: scalesConfiguration.y, height: innerHeight })
-    const yAxisWidth = getYAxisWidth(yScale, numberOfTicksY)
+    const yTicks = getYTicks(yScale, innerHeight)
+    const yAxisWidth = getYAxisWidth(yTicks)
 
     // Calculate inner sizes for chart without padding values
     const innerWidth = width - MARGIN.left - MARGIN.right - yAxisWidth
@@ -246,7 +252,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                 <Group aria-hidden={true} top={dynamicMargin.top} left={dynamicMargin.left}>
                                     <GridRows
                                         scale={yScale}
-                                        numTicks={numberOfTicksY}
+                                        tickValues={yTicks}
                                         width={innerWidth}
                                         className={styles.gridLine}
                                     />
@@ -254,7 +260,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
                                 <Axis
                                     orientation="left"
-                                    numTicks={numberOfTicksY}
+                                    tickValues={yTicks}
                                     tickFormat={numberFormatter}
                                     tickLabelProps={getTickYProps}
                                     tickComponent={Tick}

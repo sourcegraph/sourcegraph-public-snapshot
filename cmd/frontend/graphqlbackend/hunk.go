@@ -3,12 +3,12 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type hunkResolver struct {
-	db   dbutil.DB
+	db   database.DB
 	repo *RepositoryResolver
 	hunk *git.Hunk
 }

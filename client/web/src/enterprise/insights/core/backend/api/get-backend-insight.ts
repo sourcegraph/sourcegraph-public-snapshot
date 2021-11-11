@@ -4,7 +4,7 @@ import { map, switchMap } from 'rxjs/operators'
 import { SearchBackendBasedInsight } from '../../types/insight/search-insight'
 import { fetchBackendInsights } from '../requests/fetch-backend-insights'
 import { BackendInsightData } from '../types'
-import { createViewContent } from '../utils/create-view-content'
+import { createLineChartContent } from '../utils/create-line-chart-content'
 
 export class InsightStillProcessingError extends Error {
     constructor(message: string = 'Your insight is being processed') {
@@ -28,8 +28,8 @@ export function getBackendInsight(insight: SearchBackendBasedInsight): Observabl
             id: backendInsight.id,
             view: {
                 title: insight.title ?? backendInsight.title,
-                subtitle: backendInsight.description,
-                content: [createViewContent(backendInsight, series)],
+                subtitle: '',
+                content: [createLineChartContent(backendInsight, series)],
                 isFetchingHistoricalData: backendInsight.series.some(
                     ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
                 ),

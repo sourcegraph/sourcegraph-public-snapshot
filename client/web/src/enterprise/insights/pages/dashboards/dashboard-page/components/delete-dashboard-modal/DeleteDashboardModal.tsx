@@ -26,7 +26,9 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
 
     const handleDeleteSuccess = (): void => {
         if (!dashboard.owner) {
-            throw new Error('TODO: support GraphQL API')
+            history.push('/insights/dashboards')
+            onClose()
+            return
         }
 
         history.push(`/insights/dashboards/${dashboard.owner.id}`)

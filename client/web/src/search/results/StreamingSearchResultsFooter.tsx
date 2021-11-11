@@ -7,13 +7,13 @@ import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/
 import { ErrorAlert } from '../../components/alerts'
 
 import { StreamingProgressCount } from './progress/StreamingProgressCount'
-import styles from './StreamingSearchResultsFooter.module.scss'
+import styles from './StreamingSearchResults.module.scss'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<{
     results?: AggregateStreamingSearchResults
     children?: React.ReactChild | React.ReactChild[]
 }> = ({ results, children }) => (
-    <div className={classNames(styles.footer, 'd-flex flex-column align-items-center')}>
+    <div className={classNames(styles.streamingSearchResultsContentCentered, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
                 <LoadingSpinner className="icon-inline" />

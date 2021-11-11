@@ -8,9 +8,6 @@ import { LineChartSettingsContext } from '../line-chart-settings-provider'
 import { Accessors } from '../types'
 
 import { getMinAndMax } from './get-min-max'
-import { getRangeWithPadding } from './get-range-with-padding'
-
-const LINE_VERTICAL_PADDING = 0.15
 
 interface ScalesConfiguration {
     x: ScaleConfig<AxisScaleOutput, any, any>
@@ -50,7 +47,7 @@ export function useScalesConfiguration<Datum>(props: UseScalesConfiguration<Datu
             ...config,
             y: {
                 ...config.y,
-                domain: getRangeWithPadding([min, max], LINE_VERTICAL_PADDING),
+                domain: [min, max],
             },
         }
     }, [data, accessors, zeroYAxisMin, config])

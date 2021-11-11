@@ -44,7 +44,7 @@ describe('Sourcegraph browser extension on github.com', function () {
         // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
         lineSelector: '.js-file-line-container tr',
         goToDefinitionURL:
-            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L9:6',
+            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
     })
 
     const tokens = {

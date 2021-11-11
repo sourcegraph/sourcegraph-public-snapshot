@@ -12,7 +12,7 @@ export function convertMarkdownToBlocks(markdown: string): BlockInput[] {
         if (markdownRawTokens.length === 0) {
             return
         }
-        blocks.push(deserializeBlockInput('md', markdownRawTokens.join('')))
+        blocks.push(deserializeBlockInput('md', markdownRawTokens.join('').trimStart()))
         markdownRawTokens = []
     }
 

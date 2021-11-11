@@ -254,8 +254,10 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	if err != nil {
 		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
-
-	// TODO: Check permissions #25971
+	err = r.permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	if err != nil {
+		return nil, err
+	}
 
 	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
 	if err != nil {
@@ -572,4 +574,24 @@ func getExistingSeriesRepositories(seriesId string, existingSeries []types.Insig
 		}
 	}
 	return nil
+}
+
+func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
+	var viewId string
+	err := relay.UnmarshalSpec(args.Id, &viewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+
+	err = r.permissionsValidator.validateUserAccessForView(ctx, viewId)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.insightStore.DeleteViewByUniqueID(ctx, viewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "DeleteView")
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }

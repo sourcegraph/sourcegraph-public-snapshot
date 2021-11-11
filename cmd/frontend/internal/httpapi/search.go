@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/google/zoekt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -70,6 +73,10 @@ type searchIndexerServer struct {
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
+
+	// MinLastChangedEnabled is a feature flag for enabling more efficient
+	// polling by zoekt.
+	MinLastChangedEnabled bool
 }
 
 // serveConfiguration is _only_ used by the zoekt index server. Zoekt does
@@ -104,9 +111,23 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		return nil
 	}
 
+	var minLastChanged time.Time
+	if h.MinLastChangedEnabled {
+		var err error
+		minLastChanged, err = searchbackend.ParseAndSetConfigFingerprint(w, r, &siteConfig)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Preload repos to support fast lookups by repo ID.
 	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
 		IDs: indexedIDs,
+		// When minLastChanged is non-zero we will only return the
+		// repositories that have changed since minLastChanged. This takes
+		// into account repo metadata, repo content and search context
+		// changes.
+		MinLastChanged: minLastChanged,
 		// Not needed here and expensive to compute for so many repos.
 		ExcludeSources: true,
 	})
@@ -126,6 +147,7 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		}
 
 		getVersion := func(branch string) (string, error) {
+			metricGetVersion.Inc()
 			// Do not to trigger a repo-updater lookup since this is a batch job.
 			commitID, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{})
 			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
@@ -226,3 +248,8 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	return json.NewEncoder(w).Encode(&data)
 }
+
+var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_search_get_version_total",
+	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
+})

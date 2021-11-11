@@ -8,16 +8,16 @@ RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=t
 RUN ls '/generated/prometheus'
 
 # To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-FROM prom/prometheus:v2.28.1@sha256:5c030438c1e4c86bdc7428f24ee1ad18476eefdfa8a7f76a8ccc9b74f1970d81 AS prom_upstream
-FROM prom/alertmanager:v0.22.2@sha256:624c1a5063c7c80635081a504c3e1b020d89809651978eb5d0b652a394f3022d AS am_upstream
+FROM prom/prometheus:v2.31.1@sha256:a8779cfe553e0331e9046268e26c539fa39ecf90d59836d828163e65e8f4fa35 AS prom_upstream
+FROM prom/alertmanager:v0.23.0@sha256:9ab73a421b65b80be072f96a88df756fc5b52a1bc8d983537b8ec5be8b624c5a AS am_upstream
 
 # Prepare final image
 # hadolint ignore=DL3007
 FROM quay.io/prometheus/busybox-linux-amd64:latest@sha256:de4af55df1f648a334e16437c550a2907e0aed4f0b0edf454b0b215a9349bdbb
 
 # Should reflect versions above
-LABEL com.sourcegraph.prometheus.version=v2.28.1
-LABEL com.sourcegraph.alertmanager.version=v0.22.2
+LABEL com.sourcegraph.prometheus.version=v2.31.1
+LABEL com.sourcegraph.alertmanager.version=v0.23.0
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

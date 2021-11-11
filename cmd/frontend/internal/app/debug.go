@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -32,7 +31,7 @@ func init() {
 	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
 }
 
-func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
+func addNoK8sClientHandler(r *mux.Router, db database.DB) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Cluster information not available`)
 		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
@@ -42,7 +41,7 @@ func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
 
 // addDebugHandlers registers the reverse proxies to each services debug
 // endpoints.
-func addDebugHandlers(r *mux.Router, db dbutil.DB) {
+func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
 	addZoekt(r, db)
@@ -57,9 +56,11 @@ func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 				Addr:    s.Host,
 			})
 		}
-		rph.Populate(peps)
+		rph.Populate(db, peps)
 	} else if conf.IsDeployTypeKubernetes(conf.DeployType()) {
-		err := debugproxies.StartClusterScanner(rph.Populate)
+		err := debugproxies.StartClusterScanner(func(endpoints []debugproxies.Endpoint) {
+			rph.Populate(db, endpoints)
+		})
 		if err != nil {
 			// we ended up here because cluster is not a k8s cluster
 			addNoK8sClientHandler(r, db)
@@ -69,7 +70,7 @@ func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 		addNoK8sClientHandler(r, db)
 	}
 
-	rph.AddToRouter(r)
+	rph.AddToRouter(r, db)
 }
 
 // PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
@@ -79,14 +80,14 @@ var PreMountGrafanaHook func() error
 // This error is returned if the current license does not support monitoring.
 const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
 
-func addNoGrafanaHandler(r *mux.Router, db dbutil.DB) {
+func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
 	})
 	r.Handle("/grafana", adminOnly(noGrafana, db))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db dbutil.DB) {
+func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
 	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
 	})
@@ -94,7 +95,7 @@ func addGrafanaNotLicensedHandler(r *mux.Router, db dbutil.DB) {
 }
 
 // addReverseProxyForService registers a reverse proxy for the specified service.
-func addGrafana(r *mux.Router, db dbutil.DB) {
+func addGrafana(r *mux.Router, db database.DB) {
 	if PreMountGrafanaHook != nil {
 		if err := PreMountGrafanaHook(); err != nil {
 			addGrafanaNotLicensedHandler(r, db)
@@ -126,14 +127,14 @@ func addGrafana(r *mux.Router, db dbutil.DB) {
 	}
 }
 
-func addNoJaegerHandler(r *mux.Router, db dbutil.DB) {
+func addNoJaegerHandler(r *mux.Router, db database.DB) {
 	noJaeger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Jaeger endpoint proxying: Please set env var JAEGER_SERVER_URL`)
 	})
 	r.Handle("/jaeger", adminOnly(noJaeger, db))
 }
 
-func addJaeger(r *mux.Router, db dbutil.DB) {
+func addJaeger(r *mux.Router, db database.DB) {
 	if len(jaegerURLFromEnv) > 0 {
 		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
 		jaegerURL, err := url.Parse(jaegerURLFromEnv)
@@ -157,7 +158,7 @@ func addJaeger(r *mux.Router, db dbutil.DB) {
 	}
 }
 
-func addZoekt(r *mux.Router, db dbutil.DB) {
+func addZoekt(r *mux.Router, db database.DB) {
 	z := search.Indexed()
 	if z == nil {
 		return
@@ -177,9 +178,9 @@ func addZoekt(r *mux.Router, db dbutil.DB) {
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.
-func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
+func adminOnly(next http.Handler, db database.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), database.NewDB(db)); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}

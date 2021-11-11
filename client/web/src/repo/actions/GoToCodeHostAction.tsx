@@ -199,6 +199,8 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
 
     const TARGET_ID = 'go-to-code-host'
 
+    const descriptiveText = `View on ${displayName}`
+
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
@@ -214,7 +216,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 onAuxClick={onClick}
             >
                 <Icon className="icon-inline" />
-                <span>View on {displayName}</span>
+                <span>{descriptiveText}</span>
             </a>
         )
     }
@@ -228,10 +230,11 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 href={hijackLink ? '' : url}
                 target="_blank"
                 rel="noopener noreferrer"
-                data-tooltip={`View on ${displayName}`}
                 id={TARGET_ID}
                 onClick={onClick}
                 onAuxClick={onClick}
+                data-tooltip={descriptiveText}
+                aria-label={descriptiveText}
             >
                 <Icon className="icon-inline" />
             </a>

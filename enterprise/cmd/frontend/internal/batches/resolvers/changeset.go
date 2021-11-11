@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/config"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -60,7 +59,7 @@ func NewChangesetResolver(store *store.Store, changeset *btypes.Changeset, repo 
 	return &changesetResolver{
 		store:        store,
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(database.NewDB(store.DB()), repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), repo),
 		changeset:    changeset,
 	}
 }
@@ -167,7 +166,7 @@ func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbacke
 		opts.Cursor = cursor
 	}
 
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.store.DB()))
+	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
 	if authErr != nil && authErr != backend.ErrMustBeSiteAdmin {
 		return nil, err
 	}
@@ -247,7 +246,7 @@ func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
 	}
 
 	return graphqlbackend.NewPersonResolver(
-		r.store.DB(),
+		r.store.DatabaseDB(),
 		name,
 		email,
 		// Try to find the corresponding Sourcegraph user.
@@ -484,7 +483,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 
 		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
 			ctx,
-			r.store.DB(),
+			r.store.DatabaseDB(),
 			r.repoResolver,
 			desc.BaseRev,
 			diff,
@@ -519,7 +518,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.Repository
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
+	return graphqlbackend.NewRepositoryComparison(ctx, r.store.DatabaseDB(), r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
 		Base:         &base,
 		Head:         &head,
 		FetchMissing: true,
