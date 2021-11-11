@@ -12,16 +12,16 @@ export const EXECUTE_BATCH_SPEC = gql`
 `
 
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
-    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
-        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
+    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!, $noCache: Boolean!) {
+        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace, noCache: $noCache) {
             id
         }
     }
 `
 
 export const REPLACE_BATCH_SPEC_INPUT = gql`
-    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
-        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
+    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!, $noCache: Boolean!) {
+        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec, noCache: $noCache) {
             id
         }
     }

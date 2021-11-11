@@ -61,6 +61,17 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         defaultSelectedNamespace
     )
 
+    const [noCache, setNoCache] = useState<boolean>(false)
+
+    const onChangeNoCache = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => {
+            setNoCache(event.target.checked)
+            // Mark that the batch spec code on the backend is now stale.
+            setBatchSpecStale(true)
+        },
+        [setNoCache]
+    )
+
     // Manage the batch spec input YAML code that's being edited.
     const { code, debouncedCode, isValid, handleCodeChange, excludeRepo, errors: codeErrors } = useBatchSpecCode(
         helloWorldSample
@@ -79,7 +90,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         isLoading: isLoadingPreview,
         error: previewError,
         clearError: clearPreviewError,
-    } = usePreviewBatchSpec(selectedNamespace, markUnstale)
+    } = usePreviewBatchSpec(selectedNamespace, noCache, markUnstale)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -196,6 +207,12 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                     <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
                         or download for src-cli
                     </BatchSpecDownloadLink>
+                    <div className="form-group">
+                        <label>
+                            <input type="checkbox" className="mr-2" checked={noCache} onChange={onChangeNoCache} />
+                            Disable cache
+                        </label>
+                    </div>
                 </div>
             </div>
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>

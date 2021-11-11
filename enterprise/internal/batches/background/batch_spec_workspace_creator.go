@@ -74,6 +74,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces))
 
+	// Build DB workspaces and check for cache entries.
 	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
 		workspace := &btypes.BatchSpecWorkspace{
@@ -94,36 +95,38 @@ func (r *batchSpecWorkspaceCreator) process(
 
 		ws = append(ws, workspace)
 
-		rawKey, err := cacheKeyForWorkspace(spec, w)
-		if err != nil {
-			return err
-		}
-
-		entry, err := tx.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
-			Key: rawKey,
-		})
-		if err != nil && err != store.ErrNoResults {
-			return err
-		}
-		if err == store.ErrNoResults {
-			continue
-		}
-
-		workspace.CachedResultFound = true
-
-		changesetSpecs, err := changesetSpecsFromCache(spec, w, entry)
-		if err != nil {
-			return err
-		}
-		for _, spec := range changesetSpecs {
-			if err := tx.CreateChangesetSpec(ctx, spec); err != nil {
+		if !spec.NoCache {
+			rawKey, err := cacheKeyForWorkspace(spec, w)
+			if err != nil {
 				return err
 			}
-			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
-		}
 
-		if err := tx.MarkUsedBatchSpecExecutionCacheEntry(ctx, entry.ID); err != nil {
-			return err
+			entry, err := tx.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
+				Key: rawKey,
+			})
+			if err != nil && err != store.ErrNoResults {
+				return err
+			}
+			if err == store.ErrNoResults {
+				continue
+			}
+
+			workspace.CachedResultFound = true
+
+			changesetSpecs, err := changesetSpecsFromCache(spec, w, entry)
+			if err != nil {
+				return err
+			}
+			for _, spec := range changesetSpecs {
+				if err := tx.CreateChangesetSpec(ctx, spec); err != nil {
+					return err
+				}
+				workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
+			}
+
+			if err := tx.MarkUsedBatchSpecExecutionCacheEntry(ctx, entry.ID); err != nil {
+				return err
+			}
 		}
 	}
 
