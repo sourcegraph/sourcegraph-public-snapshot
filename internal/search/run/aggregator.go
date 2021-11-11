@@ -50,17 +50,6 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Er
 }
 
 func (a *Aggregator) Send(event streaming.SearchEvent) {
-	if event.Stats.Repos == nil {
-		event.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
-	}
-
-	for _, r := range event.Results {
-		repo := r.RepoName()
-		if _, ok := event.Stats.Repos[repo.ID]; !ok {
-			event.Stats.Repos[repo.ID] = repo
-		}
-	}
-
 	if a.parentStream != nil {
 		a.parentStream.Send(event)
 	}
@@ -71,6 +60,17 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 	// Only aggregate results if we are not streaming.
 	if a.parentStream == nil {
 		a.results = append(a.results, event.Results...)
+
+		if a.stats.Repos == nil {
+			a.stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+		}
+
+		for _, r := range event.Results {
+			repo := r.RepoName()
+			if _, ok := a.stats.Repos[repo.ID]; !ok {
+				a.stats.Repos[repo.ID] = repo
+			}
+		}
 	}
 
 	a.matchCount += len(event.Results)
