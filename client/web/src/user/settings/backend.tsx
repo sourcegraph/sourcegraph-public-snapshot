@@ -164,6 +164,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
         userCookieID: eventLogger.getAnonymousUserID(),
         cohortID: eventLogger.getCohortID() || null,
         firstSourceURL: eventLogger.getFirstSourceURL(),
+        lastSourceURL: eventLogger.getLastSourceURL(),
         referrer: eventLogger.getReferrer(),
         url: window.location.href,
         source: EventSource.WEB,
