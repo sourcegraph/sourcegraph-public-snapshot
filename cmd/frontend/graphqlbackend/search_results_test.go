@@ -58,7 +58,7 @@ func TestSearchResults(t *testing.T) {
 		require.Nil(t, err)
 
 		results, err := r.Results(ctx)
-		require.Nil(t, err)
+		require.NoError(t, err)
 
 		resultDescriptions := make([]string, len(results.Matches))
 		for i, match := range results.Matches {
@@ -105,7 +105,7 @@ func TestSearchResults(t *testing.T) {
 			// Validate that the following options are invariant when calling the DB through
 			// Repos.ListMinimalRepos, no matter how many times it is called for a single
 			// Search(...) operation.
-			assert.Equal(t, wantLimitOffset, opt.LimitOffset)
+			require.Equal(t, wantLimitOffset, opt.LimitOffset)
 			assert.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
