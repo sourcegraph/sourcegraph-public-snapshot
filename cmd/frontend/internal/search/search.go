@@ -158,10 +158,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if progress.Stats.Repos == nil {
-			progress.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
-		}
-
 		for i, match := range event.Results {
 			repo := match.RepoName()
 
@@ -170,10 +166,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// searched repos that user shouldn't have access to.
 			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
-			}
-
-			if _, ok := progress.Stats.Repos[repo.ID]; !ok {
-				progress.Stats.Repos[repo.ID] = repo
 			}
 
 			eventMatch := fromMatch(match, repoMetadata)
