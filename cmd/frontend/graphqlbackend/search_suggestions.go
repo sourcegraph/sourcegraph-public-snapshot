@@ -408,9 +408,9 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 			suggestions = append(suggestions, symbolSuggestionResolver{
 				symbol: symbolResolver{
 					db: r.db,
-					commit: toGitCommitResolver(
-						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+					commit: NewGitCommitResolver(
 						r.db,
+						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
 						fileMatch.CommitID,
 						nil,
 					),

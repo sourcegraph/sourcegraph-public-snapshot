@@ -48,7 +48,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	srp := subRepoPermsClient(r.db)
+	srp := r.subRepoPerms
 	// First check if we are able to view the tree at all, if not we can return early
 	// and don't need to hit gitserver.
 	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
@@ -90,11 +90,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, &GitTreeEntryResolver{
-				db:     r.db,
-				commit: r.commit,
-				stat:   entry,
-			})
+			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
 		}
 	}
 

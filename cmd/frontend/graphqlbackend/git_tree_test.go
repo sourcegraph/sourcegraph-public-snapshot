@@ -80,7 +80,7 @@ func TestGitTree(t *testing.T) {
 }
 
 func TestGitTree_SubRepo_Deny(t *testing.T) {
-	ctx := setupSubRepoDeny(context.Background(), t, []string{"foo bar/testFile"})
+	ctx := setupGlobalSubRepoDeny(context.Background(), t, []string{"foo bar/testFile"})
 	db := database.NewDB(nil)
 	tests := []*Test{
 		{
