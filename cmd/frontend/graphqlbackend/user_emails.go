@@ -9,6 +9,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,9 +18,17 @@ import (
 var timeNow = time.Now
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
-	// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only the authenticated user can view their email on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the self user and site admins can fetch a user's emails.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	userEmails, err := database.UserEmails(r.db).ListByUser(ctx, database.UserEmailsListOptions{
@@ -63,6 +72,11 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		return false, nil
+	}
+
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
@@ -71,13 +85,29 @@ func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, 
 	return true, nil
 }
 
-func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
+type addUserEmailArgs struct {
 	User  graphql.ID
 	Email string
-}) (*EmptyResponse, error) {
+}
+
+func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArgs) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
+	}
+
+	// 🚨 SECURITY: Only the authenticated user can add new email to their accounts
+	// on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the authenticated user or site admins can add new email to
+		// users' accounts.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := backend.UserEmails.Add(ctx, r.db, userID, args.Email); err != nil {
@@ -93,18 +123,29 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
+type removeUserEmailArgs struct {
 	User  graphql.ID
 	Email string
-}) (*EmptyResponse, error) {
+}
+
+func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEmailArgs) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the user and site admins can remove an email address from a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only the authenticated user can remove email from their accounts
+	// on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the authenticated user and site admins can remove email
+		// from users' accounts.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := r.db.UserEmails().Remove(ctx, userID, args.Email); err != nil {
@@ -125,18 +166,29 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *struct {
+type setUserEmailPrimaryArgs struct {
 	User  graphql.ID
 	Email string
-}) (*EmptyResponse, error) {
+}
+
+func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserEmailPrimaryArgs) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only the authenticated user can set the primary email for their
+	// accounts on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
+		// email for users' accounts.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := database.UserEmails(r.db).SetPrimaryEmail(ctx, userID, args.Email); err != nil {
@@ -152,11 +204,18 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct {
+type setUserEmailVerifiedArgs struct {
 	User     graphql.ID
 	Email    string
 	Verified bool
-}) (*EmptyResponse, error) {
+}
+
+func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUserEmailVerifiedArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: No one can manually verify user's email on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("manually verify user email is disabled")
+	}
+
 	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email verification
 	// status. Users themselves must go through the normal email verification process.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -178,24 +237,39 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
 		}); err != nil {
-			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
+			log15.Error("schemaResolver.SetUserEmailVerified: failed to grant user pending permissions",
+				"userID", userID,
+				"error", err,
+			)
 		}
 	}
 
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *struct {
+type resendVerificationEmailArgs struct {
 	User  graphql.ID
 	Email string
-}) (*EmptyResponse, error) {
+}
+
+func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *resendVerificationEmailArgs) (*EmptyResponse, error) {
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Only the user and site admins can set the primary email address from a user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
-		return nil, err
+
+	// 🚨 SECURITY: Only the authenticated user can resend verification email for
+	// their accounts on Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the authenticated user and site admins can resend
+		// verification email for their accounts.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+			return nil, err
+		}
 	}
 
 	user, err := database.Users(r.db).GetByID(ctx, userID)
