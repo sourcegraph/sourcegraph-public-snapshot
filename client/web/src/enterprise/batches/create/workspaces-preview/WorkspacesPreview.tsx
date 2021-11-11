@@ -19,7 +19,7 @@ import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
 interface WorkspacesPreviewProps {
     batchSpecID?: Scalars['ID']
-    currentJobTime?: string
+    currentPreviewRequestTime?: string
     /**
      * Whether or not the preview button should be disabled due to their being a problem
      * with the input batch spec YAML, or a preview request is already happening.
@@ -31,8 +31,8 @@ interface WorkspacesPreviewProps {
      */
     preview: () => void
     /**
-     * Whether or not the batch spec YAML on the server is up-to-date with that which is
-     * presently in the editor.
+     * Whether or not the batch spec YAML on the server which was used to preview
+     * workspaces is up-to-date with that which is presently in the editor.
      */
     batchSpecStale: boolean
     /**
@@ -44,7 +44,7 @@ interface WorkspacesPreviewProps {
 
 export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> = ({
     batchSpecID,
-    currentJobTime,
+    currentPreviewRequestTime,
     previewDisabled,
     preview,
     batchSpecStale,
@@ -75,12 +75,12 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             {showPreviewPrompt && (
                 <PreviewPrompt disabled={previewDisabled} preview={clearErrorAndPreview} form={previewPromptForm} />
             )}
-            {batchSpecID && currentJobTime && (
+            {batchSpecID && currentPreviewRequestTime && (
                 <WithBatchSpec
                     batchSpecID={batchSpecID}
                     setResolutionError={setResolutionError}
                     excludeRepo={excludeRepo}
-                    currentJobTime={currentJobTime}
+                    currentPreviewRequestTime={currentPreviewRequestTime}
                 />
             )}
         </div>
@@ -97,13 +97,13 @@ const getResolution = (queryResult?: WorkspaceResolutionStatusResult): Workspace
     queryResult?.node?.__typename === 'BatchSpec' ? queryResult.node.workspaceResolution : null
 
 interface WithBatchSpecProps
-    extends Required<Pick<WorkspacesPreviewProps, 'batchSpecID' | 'excludeRepo' | 'currentJobTime'>> {
+    extends Required<Pick<WorkspacesPreviewProps, 'batchSpecID' | 'excludeRepo' | 'currentPreviewRequestTime'>> {
     setResolutionError: (error: string) => void
 }
 
 const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
     batchSpecID,
-    currentJobTime,
+    currentPreviewRequestTime,
     setResolutionError,
     excludeRepo,
     /**
@@ -122,10 +122,10 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
         onError: error => setResolutionError(error.message),
     })
 
-    // Requery the workspace resolution status when there's a new job requested.
+    // Re-query the workspace resolution status when there's a new job requested.
     useEffect(() => {
         refetch().catch((error: ApolloError) => setResolutionError(error.message))
-    }, [currentJobTime, refetch, setResolutionError])
+    }, [currentPreviewRequestTime, refetch, setResolutionError])
 
     useEffect(() => {
         const resolution = getResolution(data)
