@@ -109,14 +109,14 @@ func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, trigg
 const enqueueActionEmailFmtStr = `
 WITH due AS (
 	SELECT e.id
-	FROM cm_emails e 
+	FROM cm_emails e
 	INNER JOIN cm_queries q ON e.monitor = q.monitor
 	WHERE q.id = %s AND e.enabled = true
 ),
 busy AS (
-    SELECT DISTINCT email as id FROM cm_action_jobs
-    WHERE state = 'queued'
-    OR state = 'processing'
+	SELECT DISTINCT email as id FROM cm_action_jobs
+	WHERE state = 'queued'
+	OR state = 'processing'
 )
 INSERT INTO cm_action_jobs (email, trigger_event)
 SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
@@ -128,11 +128,11 @@ func (s *Store) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID 
 }
 
 const getActionJobMetadataFmtStr = `
-SELECT 
-	cm.description, 
-	ctj.query_string, 
-	cm.id AS monitorID, 
-	ctj.num_results 
+SELECT
+	cm.description,
+	ctj.query_string,
+	cm.id AS monitorID,
+	ctj.num_results
 FROM cm_action_jobs caj
 INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
 INNER JOIN cm_queries cq on cq.id = ctj.query
