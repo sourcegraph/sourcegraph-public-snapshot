@@ -1,11 +1,10 @@
-import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { RepositoryPopoverFields } from '../../graphql-operations'
+import { ConnectionPopoverNode, ConnectionPopoverNodeLink } from '../RevisionsPopover/components'
 
 interface RepositoryNodeProps {
     node: RepositoryPopoverFields
@@ -13,15 +12,9 @@ interface RepositoryNodeProps {
 }
 
 export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({ node, currentRepo }) => (
-    <li key={node.id} className="connection-popover__node">
-        <Link
-            to={`/${node.name}`}
-            className={classNames(
-                'connection-popover__node-link',
-                node.id === currentRepo && 'connection-popover__node-link--active'
-            )}
-        >
+    <ConnectionPopoverNode key={node.id}>
+        <ConnectionPopoverNodeLink to={`/${node.name}`} active={node.id === currentRepo}>
             {displayRepoName(node.name)}
-        </Link>
-    </li>
+        </ConnectionPopoverNodeLink>
+    </ConnectionPopoverNode>
 )
