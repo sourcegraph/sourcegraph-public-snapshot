@@ -410,6 +410,10 @@ type Mutation {
         """
         firstSourceURL: String
         """
+        The last sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        lastSourceURL: String
+        """
         The URL when the event was logged.
         """
         url: String!
@@ -748,6 +752,10 @@ input Event {
     The first sourcegraph URL visited by the user, stored in a browser cookie.
     """
     firstSourceURL: String
+    """
+    The last sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    lastSourceURL: String
     """
     The URL when the event was logged.
     """

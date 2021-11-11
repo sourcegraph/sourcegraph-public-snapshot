@@ -244,7 +244,7 @@ func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
-// resulting list may be smaller than the the input list as any locations with a commit not known by
+// resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.
 func resolveLocations(ctx context.Context, locationResolver *CachedLocationResolver, locations []resolvers.AdjustedLocation) ([]gql.LocationResolver, error) {
 	resolvedLocations := make([]gql.LocationResolver, 0, len(locations))

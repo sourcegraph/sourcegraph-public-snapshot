@@ -33,19 +33,8 @@ const batchSpecWorkspaceFieldsFragment = gql`
         failureMessage
         state
         changesetSpecs {
-            id
-            type
             __typename
-            ... on VisibleChangesetSpec {
-                description {
-                    ... on GitBranchChangesetDescription {
-                        title
-                    }
-                    ... on ExistingChangesetReference {
-                        externalID
-                    }
-                }
-            }
+            ...BatchSpecWorkspaceChangesetSpecFields
         }
         diffStat {
             added
@@ -109,6 +98,33 @@ const batchSpecWorkspaceFieldsFragment = gql`
         exitCode
         out
         durationMilliseconds
+    }
+
+    fragment BatchSpecWorkspaceChangesetSpecFields on ChangesetSpec {
+        id
+        type
+        __typename
+        ... on VisibleChangesetSpec {
+            description {
+                __typename
+                ... on GitBranchChangesetDescription {
+                    title
+                    body
+                    baseRepository {
+                        name
+                        url
+                    }
+                    published
+                    baseRef
+                    headRef
+                    diffStat {
+                        added
+                        changed
+                        deleted
+                    }
+                }
+            }
+        }
     }
 `
 

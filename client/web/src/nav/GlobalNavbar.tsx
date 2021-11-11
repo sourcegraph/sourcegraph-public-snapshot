@@ -102,9 +102,6 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
-
-    /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
-    hideNavLinks: boolean
 }
 
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
@@ -112,7 +109,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     showSearchBox,
     caseSensitive,
     patternType,
-    hideNavLinks,
     variant,
     isLightTheme,
     branding,

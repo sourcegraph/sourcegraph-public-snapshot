@@ -29,7 +29,7 @@ Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sour
 [React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
 
 - See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
-- See [existing test files that use `react-test-renderer`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+react-test-renderer) for usage examples.
+- See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
 - Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `yarn test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
 
 ## Browser-based tests

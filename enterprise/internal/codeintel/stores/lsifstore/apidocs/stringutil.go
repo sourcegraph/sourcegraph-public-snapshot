@@ -48,5 +48,5 @@ func Reverse(s string) string {
 		}
 		i = j
 	}
-	return (string(r[start:]))
+	return string(r[start:])
 }

@@ -1,7 +1,7 @@
 import * as util from 'util'
 
+import { render } from '@testing-library/react'
 import * as React from 'react'
-import renderer from 'react-test-renderer'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 
@@ -17,8 +17,8 @@ describe.skip('withActivation', () => {
     const ComponentWithActivation = withActivation(Component)
 
     test('no user', () => {
-        const component = renderer.create(<ComponentWithActivation authenticatedUser={null} />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<ComponentWithActivation authenticatedUser={null} />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
     test('user, admin', () => {
         const mockUser = {
@@ -27,8 +27,8 @@ describe.skip('withActivation', () => {
             email: 'user@me.com',
             siteAdmin: true,
         }
-        const component = renderer.create(<ComponentWithActivation authenticatedUser={mockUser as AuthenticatedUser} />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<ComponentWithActivation authenticatedUser={mockUser as AuthenticatedUser} />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
     test('user, non-admin', () => {
         const mockUser = {
@@ -37,7 +37,7 @@ describe.skip('withActivation', () => {
             email: 'user@me.com',
             siteAdmin: false,
         }
-        const component = renderer.create(<ComponentWithActivation authenticatedUser={mockUser as AuthenticatedUser} />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<ComponentWithActivation authenticatedUser={mockUser as AuthenticatedUser} />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

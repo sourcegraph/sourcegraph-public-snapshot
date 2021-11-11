@@ -89,6 +89,22 @@ The Prometheus configuration must add the following scraping job that uses [GCE 
     module: [node]
   gce_sd_configs: *executor_gce_config
   relabel_configs: *executor_relabel_config
+- job_name: 'sourcegraph-executors-docker-registry-mirrors'
+  metrics_path: /proxy
+  params:
+    module: [registry]
+  gce_sd_configs: &gce_executor_mirror_config
+    - project: {GCP_PROJECT}
+      port: 9999
+      zone: {GCP_ZONE}
+      filter: '(labels.executor_tag = {INSTANCE_TAG}-docker-mirror)'
+  relabel_configs: *executor_relabel_config
+- job_name: 'sourcegraph-executors-docker-registry-mirror-nodes'
+  metrics_path: /proxy
+  params:
+    module: [node]
+  gce_sd_configs: *gce_executor_mirror_config
+  relabel_configs: *executor_relabel_config
 ```
 
 The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22instance_tag%22&patternType=literal).
@@ -127,6 +143,23 @@ The Prometheus configuration must add the following scraping job that uses [EC2 
   params:
     module: [node]
   ec2_sd_configs: *executor_ec2_config
+  relabel_configs: *executor_relabel_config
+- job_name: 'sourcegraph-executors-docker-registry-mirrors'
+  metrics_path: /proxy
+  params:
+    module: [registry]
+  ec2_sd_configs: &ec2_executor_mirror_config
+    - region: {AWS_REGION}
+      port: 9999
+      filters:
+        - name: tag:executor_tag
+          values: [{INSTANCE_TAG}-docker-mirror]
+  relabel_configs: *executor_relabel_config
+- job_name: 'sourcegraph-executors-docker-registry-mirror-nodes'
+  metrics_path: /proxy
+  params:
+    module: [node]
+  ec2_sd_configs: *ec2_executor_mirror_config
   relabel_configs: *executor_relabel_config
 ```
 

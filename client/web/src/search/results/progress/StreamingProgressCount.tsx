@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
@@ -39,11 +40,14 @@ export const StreamingProgressCount: React.FunctionComponent<
             {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
             {(progress.durationMs / 1000).toFixed(2)}s
             {progress.repositoriesCount !== undefined && (
-                <>
-                    {' '}
-                    from {abbreviateNumber(progress.repositoriesCount)}{' '}
-                    {pluralize('repository', progress.repositoriesCount, 'repositories')}
-                </>
+                <InformationOutlineIcon
+                    className="ml-1 icon-inline"
+                    data-tooltip={`From ${abbreviateNumber(progress.repositoriesCount)} ${pluralize(
+                        'repository',
+                        progress.repositoriesCount,
+                        'repositories'
+                    )}`}
+                />
             )}
         </small>
         {showTrace && progress.trace && (

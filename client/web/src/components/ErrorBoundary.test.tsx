@@ -1,5 +1,5 @@
+import { render } from '@testing-library/react'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { ErrorBoundary } from './ErrorBoundary'
 
@@ -20,34 +20,28 @@ const ThrowChunkError: React.FunctionComponent = () => {
 describe('ErrorBoundary', () => {
     test('passes through if non-error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <ThrowError />
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            render(
+                <ErrorBoundary location={null}>
+                    <ThrowError />
+                </ErrorBoundary>
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('renders error page if error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <span>hello</span>
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            render(
+                <ErrorBoundary location={null}>
+                    <span>hello</span>
+                </ErrorBoundary>
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('renders reload page if chunk error', () =>
         expect(
-            renderer
-                .create(
-                    <ErrorBoundary location={null}>
-                        <ThrowChunkError />
-                    </ErrorBoundary>
-                )
-                .toJSON()
+            render(
+                <ErrorBoundary location={null}>
+                    <ThrowChunkError />
+                </ErrorBoundary>
+            ).asFragment()
         ).toMatchSnapshot())
 })

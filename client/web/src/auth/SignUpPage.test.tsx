@@ -1,7 +1,7 @@
+import { render } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer from 'react-test-renderer'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -33,47 +33,43 @@ describe('SignUpPage', () => {
 
     it('renders sign up page (server)', () => {
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <SignUpPage
-                            {...commonProps}
-                            authenticatedUser={null}
-                            context={{
-                                allowSignup: true,
-                                sourcegraphDotComMode: false,
-                                experimentalFeatures: { enablePostSignupFlow: false },
-                                authProviders,
-                                xhrHeaders: {},
-                            }}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            render(
+                <MemoryRouter>
+                    <SignUpPage
+                        {...commonProps}
+                        authenticatedUser={null}
+                        context={{
+                            allowSignup: true,
+                            sourcegraphDotComMode: false,
+                            experimentalFeatures: { enablePostSignupFlow: false },
+                            authProviders,
+                            xhrHeaders: {},
+                        }}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MemoryRouter>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     it('renders sign up page (cloud)', () => {
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <SignUpPage
-                            {...commonProps}
-                            authenticatedUser={null}
-                            context={{
-                                allowSignup: true,
-                                sourcegraphDotComMode: true,
-                                experimentalFeatures: { enablePostSignupFlow: false },
-                                authProviders,
-                                xhrHeaders: {},
-                            }}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            render(
+                <MemoryRouter>
+                    <SignUpPage
+                        {...commonProps}
+                        authenticatedUser={null}
+                        context={{
+                            allowSignup: true,
+                            sourcegraphDotComMode: true,
+                            experimentalFeatures: { enablePostSignupFlow: false },
+                            authProviders,
+                            xhrHeaders: {},
+                        }}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MemoryRouter>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -87,24 +83,22 @@ describe('SignUpPage', () => {
         } as AuthenticatedUser
 
         expect(
-            renderer
-                .create(
-                    <MemoryRouter>
-                        <SignUpPage
-                            {...commonProps}
-                            authenticatedUser={mockUser}
-                            context={{
-                                allowSignup: true,
-                                sourcegraphDotComMode: false,
-                                experimentalFeatures: { enablePostSignupFlow: false },
-                                authProviders,
-                                xhrHeaders: {},
-                            }}
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                        />
-                    </MemoryRouter>
-                )
-                .toJSON()
+            render(
+                <MemoryRouter>
+                    <SignUpPage
+                        {...commonProps}
+                        authenticatedUser={mockUser}
+                        context={{
+                            allowSignup: true,
+                            sourcegraphDotComMode: false,
+                            experimentalFeatures: { enablePostSignupFlow: false },
+                            authProviders,
+                            xhrHeaders: {},
+                        }}
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                    />
+                </MemoryRouter>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })
