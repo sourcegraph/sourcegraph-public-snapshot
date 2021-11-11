@@ -1,4 +1,4 @@
-import { BatchSpecWorkspaceResolutionState, WorkspaceResolutionStatusResult } from '../../../graphql-operations'
+import { BatchSpecWorkspaceResolutionState, WorkspaceResolutionStatusResult } from '../../../../graphql-operations'
 
 export const mockWorkspaceResolutionStatus = (
     status: BatchSpecWorkspaceResolutionState,

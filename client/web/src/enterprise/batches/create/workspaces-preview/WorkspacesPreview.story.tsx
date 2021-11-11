@@ -7,10 +7,10 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
-import { WebStory } from '../../../components/WebStory'
+import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
-import { WORKSPACE_RESOLUTION_STATUS } from './backend'
 import { WorkspacesPreview } from './WorkspacesPreview'
 import { mockWorkspaceResolutionStatus } from './WorkspacesPreview.mock'
 

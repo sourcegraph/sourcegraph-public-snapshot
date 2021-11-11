@@ -5,15 +5,14 @@ import React from 'react'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
-
 import { LoadingSpinner } from '@sourcegraph/wildcard'
+
 import {
     WorkspacesAndImportingChangesetsResult,
     WorkspacesAndImportingChangesetsVariables,
     Scalars,
-} from '../../../graphql-operations'
-
-import { WORKSPACES_AND_IMPORTING_CHANGESETS } from './backend'
+} from '../../../../graphql-operations'
+import { WORKSPACES_AND_IMPORTING_CHANGESETS } from '../backend'
 
 interface WorkspacesPreviewListProps {
     batchSpecID: Scalars['ID']

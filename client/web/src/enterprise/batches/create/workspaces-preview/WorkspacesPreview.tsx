@@ -13,9 +13,9 @@ import {
     Scalars,
     WorkspaceResolutionStatusVariables,
     WorkspaceResolutionStatusResult,
-} from '../../../graphql-operations'
+} from '../../../../graphql-operations'
+import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
-import { WORKSPACE_RESOLUTION_STATUS } from './backend'
 import styles from './WorkspacesPreview.module.scss'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
@@ -54,8 +54,12 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
 }) => {
     const [resolutionError, setResolutionError] = useState<string>()
 
+    // We show a prompt for the user to trigger a new workspaces preview request (and
+    // update the batch spec input YAML) if they haven't yet done so, if the preview
+    // workspaces resolution failed, or if the batch spec YAML on the server is out of
+    // date with the one in the editor.
     const [showPreviewPrompt, previewPromptForm] = useMemo(() => {
-        const showPreviewPrompt = !batchSpecID || batchSpecStale || resolutionError
+        const showPreviewPrompt = !batchSpecID || resolutionError || batchSpecStale
         const previewPromptForm: PreviewPromptForm = !batchSpecID ? 'Initial' : resolutionError ? 'Error' : 'Update'
 
         return [showPreviewPrompt, previewPromptForm]
@@ -85,10 +89,19 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
     )
 }
 
+/** Example snippet show in preview prompt if user has not yet added an on: statement. */
 const ON_STATEMENT = `on:
   - repositoriesMatchingQuery: repo:my-org/.*
 `
 
+/**
+ * The preview prompt shows different elements depending on the state of the editor and
+ * workspaces preview resolution.
+ * - Initial: If the user has not yet requested any workspaces preview.
+ * - Error: If the latest workspaces preview request failed to reach a resolution.
+ * - Update: If the user has requested a workspaces preview before but has made changes to
+ * their batch spec input YAML since the last time it had a resolution.
+ */
 type PreviewPromptForm = 'Initial' | 'Error' | 'Update'
 
 interface PreviewPromptProps {

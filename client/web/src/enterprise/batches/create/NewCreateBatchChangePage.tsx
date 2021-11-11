@@ -37,7 +37,7 @@ import helloWorldSample from './examples/hello-world.batch.yaml'
 import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { useNamespaces } from './useNamespaces'
-import { WorkspacesPreview } from './WorkspacesPreview'
+import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 import { excludeRepo as excludeRepoFromYaml, hasOnStatement } from './yaml-util'
 
 const ajv = new AJV()
