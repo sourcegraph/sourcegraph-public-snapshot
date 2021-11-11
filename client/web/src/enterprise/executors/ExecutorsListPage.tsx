@@ -1,4 +1,5 @@
 import { useApolloClient } from '@apollo/client'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
@@ -51,10 +52,9 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                 className="mb-3"
             />
 
-            <Container className="mb-2">
+            <Container>
                 <FilteredConnection<ExecutorFields, {}>
-                    // listComponent
-                    // listClassName
+                    listComponent="div"
                     noun="executor"
                     pluralNoun="executors"
                     querySubject={querySubject}
@@ -64,8 +64,8 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     history={history}
                     location={props.location}
                     cursorPaging={true}
-                    // filters
-                    // emptyElement
+                    hideSearch={true}
+                    emptyElement={<NoExecutors />}
                 />
             </Container>
         </>
@@ -76,12 +76,33 @@ export interface ExecutorNodeProps {
     node: ExecutorFields
 }
 
+// TODO: style
+// TODO: add additional data
 export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
-    <div>
-        <p>ID: {node.id}</p>
-        <p>Hostname: {node.hostname}</p>
-        <p>
-            Last seen at: <Timestamp date={node.lastSeenAt} />
-        </p>
+    <div className="mb-2">
+        <table>
+            <tr>
+                <td>ID</td>
+                <td>{node.id}</td>
+            </tr>
+            <tr>
+                <td>Hostname</td>
+                <td>{node.hostname}</td>
+            </tr>
+            <tr>
+                <td>Last seen at</td>
+                <td>
+                    <Timestamp date={node.lastSeenAt} />
+                </td>
+            </tr>
+        </table>
     </div>
+)
+
+export const NoExecutors: React.FunctionComponent = () => (
+    <p className="text-muted text-center w-100 mb-0 mt-1" data-testid="summary">
+        <MapSearchIcon className="mb-2" />
+        <br />
+        No executors yet.
+    </p>
 )

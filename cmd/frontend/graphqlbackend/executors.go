@@ -118,6 +118,7 @@ func (e *executorResolver) LastSeenAt() DateTime {
 }
 
 //
+// TODO:
 // Deduplicate from codeintel/util.go
 
 // toInt32 translates the given int pointer into an int32 pointer.
@@ -131,6 +132,7 @@ func toInt32(val *int) *int32 {
 }
 
 //
+// TODO:
 // Deduplicate from codeintel/util.go
 
 // nextOffset determines the offset that should be used for a subsequent request.
@@ -145,6 +147,7 @@ func nextOffset(offset, count, totalCount int) *int {
 }
 
 //
+// TODO:
 // Deduplicate from codeintel/cursors.go
 
 // encodeCursor creates a PageInfo object from the given cursor. If the cursor is not
