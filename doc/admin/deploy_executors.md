@@ -96,7 +96,7 @@ The Prometheus configuration must add the following scraping job that uses [GCE 
   gce_sd_configs: &gce_executor_mirror_config
     - project: {GCP_PROJECT}
       port: 9999
-      zone: ]{GCP_ZONE}
+      zone: {GCP_ZONE}
       filter: '(labels.executor_tag = {INSTANCE_TAG}-docker-mirror)'
   relabel_configs: *executor_relabel_config
 - job_name: 'sourcegraph-executors-docker-registry-mirror-nodes'
