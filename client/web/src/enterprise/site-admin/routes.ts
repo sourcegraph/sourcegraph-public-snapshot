@@ -106,7 +106,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
 
-    // Auto indexing routes
+    // Auto-indexing routes
     {
         path: '/code-intelligence/indexes',
         render: lazyComponent(() => import('../codeintel/list/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),

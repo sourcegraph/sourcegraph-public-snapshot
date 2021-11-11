@@ -25,7 +25,7 @@ const (
 	DefaultIndexPageSize  = 50
 )
 
-var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto indexing is not enabled")
+var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).

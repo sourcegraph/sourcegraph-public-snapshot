@@ -6,24 +6,52 @@
 
 Executors are an experimental service that powers automatically indexing a repository for precise code intelligence.
 
-We supply Terraform modules to provision executors on multiple clouds:
+## Installation
 
-- [Google Cloud](https://github.com/sourcegraph/terraform-google-executors)
-- [AWS](https://github.com/sourcegraph/terraform-aws-executors)
+Executors operate outside of your Sourcegraph instance and must be provisioned separately from your Sourcegraph server deployment method.
 
-## Configuring executors and instance communication
+In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. These requests are authenticated via a shared secret value known by the Sourcegraph instance. Before provisioning executor compute resources, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config.md#view-and-edit-site-configuration).
 
-In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. Therefor, a shared secret value is used. Generate any arbitrary secret string with at least 20 characters.
+Once the access token is set, executor compute resources can be provisioned. We supply [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) to provision such resources on common cloud providers ([Google Cloud](https://github.com/sourcegraph/terraform-google-executors) and [AWS](https://github.com/sourcegraph/terraform-aws-executors)).
 
-- In Sourcegraph, set `executors.accessToken` in your site-config.
-- For the `executor`,
-  - define the environment variable `EXECUTOR_FRONTEND_PASSWORD` with the secret value configured in Sourcegraph,
-  - and the environment variable `EXECUTOR_FRONTEND_URL` set to the external URL of your Sourcegraph instance.
+A Terraform definition of executor compute resources will look similar to the following basic, minimal usage. Here, we configure the use of a Terraform module defined in the public registry - no explicit installation or clone step is required to use the modules provided by Sourcegraph.
 
-When using a Sourcegraph Terraform module to provision executors, the required executor environment variables can be set via:
+```hcl
+module "executors" {
+  source  = "sourcegraph/executors/<cloud>"
+  version = "<version>"
 
-- `sourcegraph_external_url`: [Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal)
-- `sourcegraph_executor_proxy_password`: [Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal)
+  executor_sourcegraph_external_url            = "<sourcegraph_external_url>"
+  executor_sourcegraph_executor_proxy_password = "<sourcegraph_executor_proxy_password>"
+  executor_queue_name                          = "codeintel" # Type of work (e.g., codeintel, batches)
+  executor_instance_tag                        = "codeintel"
+  executor_metrics_environment_label           = "prod"
+  docker_mirror_static_ip                      = "10.0.1.4"
+}
+```
+
+Two variables must be supplied to the module in order for it to contact your Sourcegraph instance:
+
+- `sourcegraph_external_url` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal)): The **public** URL of your Sourcegraph instance.
+- `sourcegraph_executor_proxy_password` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal)): The access token chosen and configured above.
+
+Additional values may need to be supplied for a specific cloud provider. Refer to the relevant Terraform module documentation for specifics.
+
+To deploy executor compute resources defined in the Terraform file above, simply run `terraform apply`.
+
+<!-- TODO: Write docs on how to validate it's up -->
+
+### Examples
+
+The following are complete examples of provisioning a _single_ executor type using each of the provided Terraform modules. In these examples, executors pull from the queue `codeintel`, which controls auto-indexing.
+
+- [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/single-executor)
+- [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/single-executor)
+
+The following are complete examples of provisioning _multiple_ executor types using the provided Terraform submodules. In these examples, two pools of executors pull from the `codeintel` and `batches` queues, which control auto-indexing and server-side batch changes, respectively.
+
+- [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/multiple-executors)
+- [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/multiple-executors)
 
 ## Configuring auto scaling
 
