@@ -1,16 +1,16 @@
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { parseBrowserRepoURL } from '../../util/url'
 
 import { Block, BlockInput } from '.'
 
-export function serializeBlockInput(block: BlockInput): string {
+export function serializeBlockInput(block: BlockInput, sourcegraphURL: string): string {
     switch (block.type) {
         case 'md':
         case 'query':
             return block.input
         case 'file':
-            return toPrettyBlobURL({
+            return toAbsoluteBlobURL(sourcegraphURL, {
                 repoName: block.input.repositoryName,
                 revision: block.input.revision,
                 filePath: block.input.filePath,

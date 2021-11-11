@@ -38,7 +38,12 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const onSerializeBlocks = useCallback(
         (blocks: Block[]) => {
             const serializedBlocks = blocks
-                .map(block => `${encodeURIComponent(block.type)}:${encodeURIComponent(serializeBlockInput(block))}`)
+                .map(
+                    block =>
+                        `${encodeURIComponent(block.type)}:${encodeURIComponent(
+                            serializeBlockInput(block, window.location.origin)
+                        )}`
+                )
                 .join(',')
             history.replace({ hash: serializedBlocks })
         },
