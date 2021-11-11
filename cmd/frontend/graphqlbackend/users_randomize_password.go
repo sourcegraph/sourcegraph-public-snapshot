@@ -50,10 +50,10 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	User graphql.ID
 }) (*randomizeUserPasswordResult, error) {
 	if !userpasswd.ResetPasswordEnabled() {
-		return nil, errors.New("Resetting passwords is not enabled")
+		return nil, errors.New("resetting passwords is not enabled")
 	}
 	if envvar.SourcegraphDotComMode() && !conf.CanSendEmail() {
-		return nil, errors.New("Unable to reset password because email sending is not configured")
+		return nil, errors.New("unable to reset password because email sending is not configured")
 	}
 	// 🚨 SECURITY: Only site admins can randomize user passwords.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -62,7 +62,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
-		return nil, errors.New("Cannot parse user ID")
+		return nil, errors.Wrap(err, "cannot parse user ID")
 	}
 
 	if err := database.Users(r.db).RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
