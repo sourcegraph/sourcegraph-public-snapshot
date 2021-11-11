@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -57,7 +56,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	})
 	if err != nil {
 		log15.Error("checking sub-repo permissions", "error", err)
-		return nil, errors.New("checking sub-repo permissions")
+		return nil, err
 	}
 	// No access
 	if !perms.Include(authz.Read) {

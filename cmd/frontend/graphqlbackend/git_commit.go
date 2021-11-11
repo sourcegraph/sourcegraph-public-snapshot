@@ -369,7 +369,7 @@ func gitStat(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.R
 	})
 	if err != nil {
 		log15.Error("checking sub-repo permissions in gitStat", "error", err)
-		return nil, errors.New("checking sub-repo permissions")
+		return nil, err
 	}
 	// No access
 	if !perms.Include(authz.Read) {

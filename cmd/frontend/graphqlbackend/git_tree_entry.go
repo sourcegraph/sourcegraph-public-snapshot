@@ -90,7 +90,7 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		})
 		if err != nil {
 			log15.Error("checking sub-repo permissions", "error", err)
-			r.content, r.contentErr = nil, errors.New("checking sub-repo permissions")
+			r.content, r.contentErr = nil, err
 		}
 		// No access
 		if !perms.Include(authz.Read) {
