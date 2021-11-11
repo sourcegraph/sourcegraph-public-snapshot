@@ -27,7 +27,7 @@ export const PerformanceGauge: React.FunctionComponent<Props> = ({
     labelClassName,
     plural,
 }) => (
-    <div className={classNames(styles.gauge, 'p-3', 'd-flex', 'align-items-center', className)}>
+    <div className={classNames(styles.gauge, 'px-4', 'py-3', 'd-flex', 'align-items-center', className)}>
         {count === undefined ? (
             <span className={classNames(styles.count, 'text-muted', countClassName)}>&hellip;</span>
         ) : (
