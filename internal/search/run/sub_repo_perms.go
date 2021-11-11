@@ -15,7 +15,7 @@ import (
 func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, event *streaming.SearchEvent) error {
 	actor := actor.FromContext(ctx)
 	errs := &multierror.Error{}
-	var n int
+	authorized := event.Results[:0]
 	for _, match := range event.Results {
 		key := match.Key()
 		perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
@@ -26,16 +26,13 @@ func applySubRepoPerms(ctx context.Context, srp authz.SubRepoPermissionChecker, 
 			errs = multierror.Append(errs, fmt.Errorf("applySubRepoPerms: failed to check sub-repo permissions (actor.uid: %d, match.key: %v): %w",
 				actor.UID, key, err))
 		}
-
 		if perms.Include(authz.Read) {
-			// Authorized - keep result and continue
-			event.Results[n] = match
-			n++
+			authorized = append(authorized, match)
 		}
 	}
 
-	// Drop all unauthorized matches
-	event.Results = event.Results[:n]
+	// Only keep authorized matches
+	event.Results = authorized
 
 	return errs.ErrorOrNil()
 }
