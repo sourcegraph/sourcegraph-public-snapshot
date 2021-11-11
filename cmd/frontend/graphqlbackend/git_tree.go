@@ -143,6 +143,9 @@ func gitReadDir(ctx context.Context, db dbutil.DB, repo api.RepoName, commit api
 	}
 
 	client := subRepoPermsClient(db)
+	if !client.Enabled() {
+		return entries, nil
+	}
 
 	// Filter in place
 	n := 0
