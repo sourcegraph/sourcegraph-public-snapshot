@@ -37,7 +37,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 
 	want := &ActionJob{
 		Id:             1,
-		Email:          1,
+		Email:          int64Ptr(1),
 		TriggerEvent:   1,
 		State:          "queued",
 		FailureMessage: nil,
@@ -51,6 +51,10 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("diff: %s", diff)
 	}
+}
+
+func int64Ptr(i int64) *int64 {
+	return &i
 }
 
 func TestGetActionJobMetadata(t *testing.T) {
@@ -124,7 +128,7 @@ func TestScanActionJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, testRecordID))
+	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), testRecordID))
 	record, _, err := ScanActionJobs(rows, err)
 	if err != nil {
 		t.Fatal(err)

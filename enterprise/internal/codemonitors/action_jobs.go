@@ -61,18 +61,7 @@ var ActionJobsColumns = []*sqlf.Query{
 }
 
 const readActionEmailEventsFmtStr = `
-SELECT 
-	id, 
-	email, 
-	trigger_event, 
-	state, 
-	failure_message, 
-	started_at, 
-	finished_at, 
-	process_after, 
-	num_resets, 
-	num_failures, 
-	log_contents
+SELECT %s -- ActionJobsColumns
 FROM cm_action_jobs
 WHERE %s
 AND id > %s
@@ -92,7 +81,7 @@ func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, trigge
 	if err != nil {
 		return nil, err
 	}
-	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, where, after, args.First))
+	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, sqlf.Join(ActionJobsColumns, ", "), where, after, args.First))
 	if err != nil {
 		return nil, err
 	}
@@ -164,24 +153,13 @@ func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (m *Acti
 }
 
 const actionJobForIDFmtStr = `
-SELECT 
-	id, 
-	email, 
-	trigger_event, 
-	state, 
-	failure_message, 
-	started_at, 
-	finished_at, 
-	process_after, 
-	num_resets, 
-	num_failures, 
-	log_contents
+SELECT %s -- ActionJobsColumns
 FROM cm_action_jobs
 WHERE id = %s
 `
 
 func (s *Store) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
-	return s.runActionJobQuery(ctx, sqlf.Sprintf(actionJobForIDFmtStr, recordID))
+	return s.runActionJobQuery(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), recordID))
 }
 
 func (s *Store) runActionJobQuery(ctx context.Context, q *sqlf.Query) (ajs *ActionJob, err error) {
@@ -218,9 +196,12 @@ func scanActionJobs(rows *sql.Rows, err error) ([]*ActionJob, error) {
 	var ajs []*ActionJob
 	for rows.Next() {
 		aj := &ActionJob{}
+		// Columns should be kept in sync with ActionJobsColumns
 		if err := rows.Scan(
 			&aj.Id,
 			&aj.Email,
+			&aj.Webhook,
+			&aj.SlackNotification,
 			&aj.TriggerEvent,
 			&aj.State,
 			&aj.FailureMessage,
