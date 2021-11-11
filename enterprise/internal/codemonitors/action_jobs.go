@@ -14,7 +14,9 @@ import (
 
 type ActionJob struct {
 	Id           int
-	Email        int64
+	Email        *int64
+	Webhook      *int64
+	SlackWebhook *int64
 	TriggerEvent int
 
 	// Fields demanded by any dbworker.
@@ -44,6 +46,8 @@ type ActionJobMetadata struct {
 var ActionJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.id"),
 	sqlf.Sprintf("cm_action_jobs.email"),
+	sqlf.Sprintf("cm_action_jobs.webhook"),
+	sqlf.Sprintf("cm_action_jobs.slack_webhook"),
 	sqlf.Sprintf("cm_action_jobs.trigger_event"),
 	sqlf.Sprintf("cm_action_jobs.state"),
 	sqlf.Sprintf("cm_action_jobs.failure_message"),
@@ -191,6 +195,8 @@ func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 	return aj, row.Scan(
 		&aj.Id,
 		&aj.Email,
+		&aj.Webhook,
+		&aj.SlackWebhook,
 		&aj.TriggerEvent,
 		&aj.State,
 		&aj.FailureMessage,
