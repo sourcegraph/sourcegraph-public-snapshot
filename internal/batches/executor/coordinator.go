@@ -103,6 +103,17 @@ func (c *Coordinator) CheckCache(ctx context.Context, tasks []*Task) (uncached [
 	return uncached, specs, nil
 }
 
+// CheckStepResultsCache checks the cache for each Task, but only for cached
+// step results. This is used by `src batch exec` when executing server-side.
+func (c *Coordinator) CheckStepResultsCache(ctx context.Context, tasks []*Task) error {
+	for _, t := range tasks {
+		if err := c.loadCachedStepResults(ctx, t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 	for _, task := range tasks {
 		cacheKey := task.cacheKey()
