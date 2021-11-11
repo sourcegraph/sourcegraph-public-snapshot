@@ -15,6 +15,8 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -39,33 +41,25 @@ import (
 
 var mockCount = func(_ context.Context, options database.ReposListOptions) (int, error) { return 0, nil }
 
-func assertEqual(t *testing.T, got, want interface{}) {
-	t.Helper()
-
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
-	}
-}
-
 func TestSearchResults(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		// #25936: Some unit tests rely on external services that break
 		// in CI but not locally. They should be removed or improved.
-		t.Skip("TestSeachResults only works in local dev and is not reliable in CI")
+		t.Skip("TestSearchResults only works in local dev and is not reliable in CI")
 	}
-	db := new(dbtesting.MockDB)
 
-	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
+	ctx := context.Background()
+	db := dbmock.NewMockDB()
+
+	wantLimitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := (&schemaResolver{db: database.NewDB(db)}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
-		if err != nil {
-			t.Fatal("Search:", err)
-		}
-		results, err := r.Results(context.Background())
-		if err != nil {
-			t.Fatal("Results:", err)
-		}
+		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
+		require.Nil(t, err)
+
+		results, err := r.Results(ctx)
+		require.Nil(t, err)
+
 		resultDescriptions := make([]string, len(results.Matches))
 		for i, match := range results.Matches {
 			// NOTE: Only supports one match per line. If we need to test other cases,
@@ -76,7 +70,7 @@ func TestSearchResults(t *testing.T) {
 			case *result.FileMatch:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.LineMatches[0].LineNumber)
 			default:
-				t.Fatal("unexpected result type", match)
+				t.Fatal("unexpected result type:", match)
 			}
 		}
 		// dedup results since we expect our clients to do dedupping
@@ -106,21 +100,17 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListMinimalRepos bool
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-			calledReposListMinimalRepos = true
-
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.ListMinimalRepos, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			// Validate that the following options are invariant when calling the DB through
+			// Repos.ListMinimalRepos, no matter how many times it is called for a single
+			// Search(...) operation.
+			assert.Equal(t, wantLimitOffset, opt.LimitOffset)
+			assert.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
-		}
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		database.Mocks.Repos.MockGet(t, 1)
-		database.Mocks.Repos.Count = mockCount
+		})
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
@@ -129,9 +119,7 @@ func TestSearchResults(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
-			if !calledReposListMinimalRepos {
-				t.Error("!calledReposListMinimalRepos")
-			}
+			mockrequire.Called(t, repos.ListMinimalReposFunc)
 		}
 	})
 
@@ -139,21 +127,16 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListMinimalRepos bool
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-			calledReposListMinimalRepos = true
-
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			// Validate that the following options are invariant when calling the DB through
+			// Repos.ListMinimalRepos, no matter how many times it is called for a single
+			// Search(...) operation.
+			assert.Equal(t, wantLimitOffset, opt.LimitOffset)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		database.Mocks.Repos.MockGet(t, 1)
-		database.Mocks.Repos.Count = mockCount
+		})
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		calledSearchRepositories := false
 		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
@@ -183,9 +166,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
-		if !calledReposListMinimalRepos {
-			t.Error("!calledReposListMinimalRepos")
-		}
+		mockrequire.Called(t, repos.ListMinimalReposFunc)
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
 		}
@@ -201,21 +182,16 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListMinimalRepos bool
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-			calledReposListMinimalRepos = true
-
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			// Validate that the following options are invariant when calling the DB through
+			// Repos.ListMinimalRepos, no matter how many times it is called for a single
+			// Search(...) operation.
+			assert.Equal(t, wantLimitOffset, opt.LimitOffset)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		database.Mocks.Repos.MockGet(t, 1)
-		database.Mocks.Repos.Count = mockCount
+		})
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		calledSearchRepositories := false
 		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
@@ -245,9 +221,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
-		if !calledReposListMinimalRepos {
-			t.Error("!calledReposListMinimalRepos")
-		}
+		mockrequire.Called(t, repos.ListMinimalReposFunc)
 		if !calledSearchRepositories {
 			t.Error("!calledSearchRepositories")
 		}
@@ -261,8 +235,6 @@ func TestSearchResults(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	repo := types.MinimalRepo{Name: "testRepo"}
 	repoMatch := &result.RepoMatch{Name: "testRepo"}
 	fileMatch := func(path string) *result.FileMatch {
@@ -453,7 +425,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: database.NewDB(db), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: dbmock.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -599,7 +571,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 }
 
-func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
+func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	db := new(dbtesting.MockDB)
 	type fields struct {
 		results             []result.Match
