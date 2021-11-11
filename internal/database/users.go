@@ -950,6 +950,9 @@ var (
 )
 
 func (u *userStore) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+	if Mocks.Users.RenewPasswordResetCode != nil {
+		return Mocks.Users.RenewPasswordResetCode(ctx, id)
+	}
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
 	}

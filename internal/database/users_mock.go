@@ -25,6 +25,7 @@ type MockUsers struct {
 	HasTag                                          func(ctx context.Context, userID int32, tag string) (bool, error)
 	Tags                                            func(ctx context.Context, userID int32) (map[string]bool, error)
 	RandomizePasswordAndClearPasswordResetRateLimit func(ctx context.Context, userID int32) error
+	RenewPasswordResetCode                          func(ctx context.Context, id int32) (string, error)
 }
 
 func (s *MockUsers) MockGetByID_Return(t *testing.T, returns *types.User, returnsErr error) (called *bool) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,14 +26,14 @@ func TestRandomizeUserPassword(t *testing.T) {
 
 	db := database.NewDB(nil)
 	userID := int32(42)
-	userIDBase64 := MarshalUserID(userID)
+	userIDBase64 := string(MarshalUserID(userID))
 
 	t.Run("Errors when resetting passwords is not enabled", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-					mutation {
+					mutation($user: ID!) {
 						randomizeUserPassword(user: $user) {
 							resetPasswordURL
 						}
@@ -62,8 +64,8 @@ func TestRandomizeUserPassword(t *testing.T) {
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-					mutation {
-						randomizeUserPassword(user: "$user") {
+					mutation($user: ID!) {
+						randomizeUserPassword(user: $user) {
 							resetPasswordURL
 						}
 					}
@@ -94,8 +96,8 @@ func TestRandomizeUserPassword(t *testing.T) {
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-					mutation {
-						randomizeUserPassword(user: "$user") {
+					mutation($user: ID!) {
+						randomizeUserPassword(user: $user) {
 							resetPasswordURL
 						}
 					}
@@ -124,8 +126,8 @@ func TestRandomizeUserPassword(t *testing.T) {
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-					mutation {
-						randomizeUserPassword(user: "$user") {
+					mutation($user: ID!) {
+						randomizeUserPassword(user: $user) {
 							resetPasswordURL
 						}
 					}
@@ -147,6 +149,12 @@ func TestRandomizeUserPassword(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{SiteAdmin: true}, nil
 		}
+		database.Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit = func(ctx context.Context, userID int32) error {
+			return nil
+		}
+		database.Mocks.Users.RenewPasswordResetCode = func(ctx context.Context, id int32) (string, error) {
+			return "code", nil
+		}
 
 		defer resetMocks()
 
@@ -154,26 +162,71 @@ func TestRandomizeUserPassword(t *testing.T) {
 			{
 				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
-					mutation {
-						randomizeUserPassword(user: "$user") {
+					mutation($user: ID!) {
+						randomizeUserPassword(user: $user) {
 							resetPasswordURL
 						}
 					}
 				`,
-				ExpectedResult: "null",
-				ExpectedErrors: []*errors.QueryError{
-					{
-						Message: "must be site admin",
-						Path:    []interface{}{string("randomizeUserPassword")},
-					},
-				},
+				ExpectedResult: `{
+					"randomizeUserPassword": {
+						"resetPasswordURL": "http://example.com/password-reset?code=code&userID=42"
+					}
+				}`,
 				Variables: map[string]interface{}{"user": userIDBase64},
 			},
 		})
 	})
 
-	//t.Run("Does not return resetUrl when in Cloud", func(t *testing.T) {
-	//	envvar.MockSourcegraphDotComMode(true)
-	//
-	//})
+	t.Run("Does not return resetPasswordUrl when in Cloud", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+
+		db := database.NewDB(nil)
+		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return &types.User{SiteAdmin: true}, nil
+		}
+		database.Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit = func(ctx context.Context, userID int32) error {
+			return nil
+		}
+		database.Mocks.Users.RenewPasswordResetCode = func(ctx context.Context, id int32) (string, error) {
+			return "code", nil
+		}
+		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				Username: "alice",
+			}, nil
+		}
+		database.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (email string, verified bool, err error) {
+			return "alice@foo.bar", false, nil
+		}
+
+		txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+			return nil
+		}
+
+		defer func() {
+			resetMocks()
+			envvar.MockSourcegraphDotComMode(false)
+			txemail.MockSend = nil
+		}()
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+					mutation($user: ID!) {
+						randomizeUserPassword(user: $user) {
+							resetPasswordURL
+						}
+					}
+				`,
+				ExpectedResult: `{
+					"randomizeUserPassword": {
+						"resetPasswordURL": null
+					}
+				}`,
+				Variables: map[string]interface{}{"user": userIDBase64},
+			},
+		})
+	})
 }

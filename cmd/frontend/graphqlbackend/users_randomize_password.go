@@ -21,6 +21,9 @@ type randomizeUserPasswordResult struct {
 }
 
 func (r *randomizeUserPasswordResult) ResetPasswordURL() *string {
+	if r.resetURL == nil {
+		return nil
+	}
 	urlStr := globals.ExternalURL().ResolveReference(r.resetURL).String()
 	return &urlStr
 }
