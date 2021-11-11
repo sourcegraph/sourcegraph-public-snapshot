@@ -106,7 +106,7 @@ func TestSearchResults(t *testing.T) {
 			// Repos.ListMinimalRepos, no matter how many times it is called for a single
 			// Search(...) operation.
 			require.Equal(t, wantLimitOffset, opt.LimitOffset)
-			assert.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
+			require.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
 
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
 		})
