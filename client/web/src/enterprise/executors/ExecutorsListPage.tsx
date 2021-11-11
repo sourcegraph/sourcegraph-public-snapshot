@@ -1,30 +1,41 @@
-import React, { FunctionComponent, useEffect } from 'react'
+import { useApolloClient } from '@apollo/client'
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Subject } from 'rxjs'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import {
+    FilteredConnection,
+    FilteredConnectionQueryArguments,
+} from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
+import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { useExecutors } from './useExecutors'
+import { ExecutorFields } from '../../graphql-operations'
+
+import { useExecutors as defaultDoQueryExecutors } from './useExecutors'
 
 export interface ExecutorsListPageProps extends RouteComponentProps<{}>, TelemetryProps {
     telemetryService: TelemetryService
+    doQueryExecutors?: typeof defaultDoQueryExecutors
 }
 
-export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({ telemetryService }) => {
+export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
+    doQueryExecutors = defaultDoQueryExecutors,
+    telemetryService,
+    history,
+    ...props
+}) => {
     useEffect(() => telemetryService.logViewEvent('ExecutorsListPage'), [telemetryService])
 
-    const { executors, loading, error } = useExecutors()
+    const apolloClient = useApolloClient()
+    const queryExecutors = useCallback(
+        (args: FilteredConnectionQueryArguments) => doQueryExecutors(args, apolloClient),
+        [doQueryExecutors, apolloClient]
+    )
 
-    if (loading) {
-        return <LoadingSpinner className="icon-inline" />
-    }
-
-    if (error) {
-        return <ErrorAlert prefix="Error fetching executors" error={error} />
-    }
+    const querySubject = useMemo(() => new Subject<string>(), [])
 
     return (
         <>
@@ -40,18 +51,37 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({ t
                 className="mb-3"
             />
 
-            <Container>
-                <ul>
-                    {executors.map(executor => (
-                        <li key={executor.id}>
-                            <div>
-                                <p>Hostname: {executor.hostname}</p>
-                                <p>Last seen at: {executor.lastSeenAt}</p>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
+            <Container className="mb-2">
+                <FilteredConnection<ExecutorFields, {}>
+                    // listComponent
+                    // listClassName
+                    noun="executor"
+                    pluralNoun="executors"
+                    querySubject={querySubject}
+                    nodeComponent={ExecutorNode}
+                    nodeComponentProps={{}}
+                    queryConnection={queryExecutors}
+                    history={history}
+                    location={props.location}
+                    cursorPaging={true}
+                    // filters
+                    // emptyElement
+                />
             </Container>
         </>
     )
 }
+
+export interface ExecutorNodeProps {
+    node: ExecutorFields
+}
+
+export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
+    <div>
+        <p>ID: {node.id}</p>
+        <p>Hostname: {node.hostname}</p>
+        <p>
+            Last seen at: <Timestamp date={node.lastSeenAt} />
+        </p>
+    </div>
+)

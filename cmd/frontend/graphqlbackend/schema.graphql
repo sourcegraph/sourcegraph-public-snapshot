@@ -1485,7 +1485,7 @@ type ExecutorConnection {
     """
     Pagination information.
     """
-    pageInfo: PageInfo
+    pageInfo: PageInfo!
 }
 
 """

@@ -1,6 +1,9 @@
-import { ApolloError } from '@apollo/client'
+import { ApolloClient } from '@apollo/client'
+import { from, Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import { ExecutorFields, ExecutorsResult, ExecutorsVariables } from '../../graphql-operations'
 
@@ -14,9 +17,9 @@ export const executorFieldsFragment = gql`
 `
 
 interface ExecutorConnection {
-    executors: ExecutorFields[]
-    loading: boolean
-    error: ApolloError | undefined
+    nodes: ExecutorFields[]
+    totalCount: number | null
+    pageInfo: { endCursor: string | null; hasNextPage: boolean }
 }
 
 const EXECUTORS = gql`
@@ -36,22 +39,22 @@ const EXECUTORS = gql`
     ${executorFieldsFragment}
 `
 
-export const useExecutors = (): ExecutorConnection => {
-    const { data, loading, error } = useQuery<ExecutorsResult, ExecutorsVariables>(EXECUTORS, {
-        variables: {
-            first: null, // TODO
-            after: null, // TODO
-        },
-    })
-
-    return {
-        executors: (data?.executors.nodes || []).map(({ id, hostname, lastSeenAt }) => ({
-            __typename: 'Executor',
-            id,
-            hostname,
-            lastSeenAt,
-        })),
-        loading,
-        error,
+export const useExecutors = (
+    { first, after }: GQL.IExecutorsOnQueryArguments,
+    client: ApolloClient<object>
+): Observable<ExecutorConnection> => {
+    const vars = {
+        first: first ?? null,
+        after: after ?? null,
     }
+
+    return from(
+        client.query<ExecutorsResult, ExecutorsVariables>({
+            query: getDocumentNode(EXECUTORS),
+            variables: { ...vars },
+        })
+    ).pipe(
+        map(({ data }) => data),
+        map(({ executors }) => executors)
+    )
 }

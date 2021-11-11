@@ -20,10 +20,11 @@ type Executor struct {
 }
 
 type ExecutorStore interface {
-	List(ctx context.Context) ([]Executor, int, error)
+	List(ctx context.Context, args ExecutorStoreListOptions) ([]Executor, int, error)
 	GetByID(ctx context.Context, id int) (Executor, bool, error)
 	Heartbeat(ctx context.Context, hostname string) error
 	Transact(ctx context.Context) (ExecutorStore, error)
+	Done(err error) error
 	With(store basestore.ShareableStore) ExecutorStore
 	basestore.ShareableStore
 }
@@ -46,6 +47,10 @@ func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
 
 func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {
 	return &executorStore{Store: s.Store.With(other)}
+}
+
+func (s *executorStore) Done(err error) error {
+	return s.Store.Done(err)
 }
 
 func (s *executorStore) Transact(ctx context.Context) (ExecutorStore, error) {
@@ -88,22 +93,41 @@ func scanFirstExecutor(rows *sql.Rows, err error) (Executor, bool, error) {
 	return executors[0], true, nil
 }
 
-// TODO - document
+type ExecutorStoreListOptions struct {
+	Offset int
+	Limit  int
+}
+
 // TODO - test
+// List returns a set of executor activity records matching the given options.
 //
-// TODO - redocument security concern
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
-// specified user (i.e., that the actor is either the user or a site admin).
-func (s *executorStore) List(ctx context.Context) ([]Executor, int, error) {
-	executors, err := scanExecutors(s.Query(ctx, sqlf.Sprintf(executorStoreListQuery)))
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
+// (e.g., a site-admin).
+func (s *executorStore) List(ctx context.Context, opts ExecutorStoreListOptions) (_ []Executor, _ int, err error) {
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(executorStoreListCountQuery)))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// TODO - paginate
-	// TODO - query count
-	return executors, len(executors), nil
+	executors, err := scanExecutors(tx.Query(ctx, sqlf.Sprintf(executorStoreListQuery, opts.Limit, opts.Offset)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return executors, totalCount, nil
 }
+
+const executorStoreListCountQuery = `
+-- source: internal/database/executors.go:List
+SELECT COUNT(*)
+FROM executor_heartbeats h
+`
 
 const executorStoreListQuery = `
 -- source: internal/database/executors.go:List
@@ -112,14 +136,16 @@ SELECT
 	h.hostname,
 	h.last_seen_at
 FROM executor_heartbeats h
+ORDER BY h.last_seen_at DESC
+LIMIT %s OFFSET %s
 `
 
-// TODO - document
 // TODO - test
+// GetByID returns an executor activity record by identifier. If no such record exists, a
+// false-valued flag is returned.
 //
-// TODO - redocument security concern
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
-// specified user (i.e., that the actor is either the user or a site admin).
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
+// (e.g., a site-admin).
 func (s *executorStore) GetByID(ctx context.Context, id int) (Executor, bool, error) {
 	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetByIDQuery, id)))
 }
@@ -134,7 +160,7 @@ FROM executor_heartbeats h
 WHERE h.id = %s
 `
 
-// TODO - document
+// Heartbeat updates or creates an executor activity record for a particular executor instance.
 func (s *executorStore) Heartbeat(ctx context.Context, hostname string) error {
 	return s.heartbeat(ctx, hostname, timeutil.Now())
 }

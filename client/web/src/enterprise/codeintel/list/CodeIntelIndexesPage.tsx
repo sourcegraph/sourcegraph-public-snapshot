@@ -109,17 +109,15 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 description={`Auto-indexing jobs ${repo ? 'for this repository' : 'over all repositories'}.`}
                 className="mb-3"
             />
-
+            q
             {repo && authenticatedUser?.siteAdmin && (
                 <Container className="mb-2">
                     <EnqueueForm repoId={repo.id} querySubject={querySubject} />
                 </Container>
             )}
-
             {history.location.state && (
                 <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
             )}
-
             <Container>
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifIndexFields, Omit<CodeIntelIndexNodeProps, 'node'>>
