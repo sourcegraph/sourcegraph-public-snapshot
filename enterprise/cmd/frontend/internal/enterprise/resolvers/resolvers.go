@@ -15,7 +15,7 @@ func NewResolver(db database.DB) graphqlbackend.EnterpriseResolver {
 	return &resolver{db: db}
 }
 
-var _ graphqlbackend.EnterpriseResolver = &resolver{}
+var _ graphqlbackend.EnterpriseResolver = (*resolver)(nil)
 
 type resolver struct {
 	db database.DB

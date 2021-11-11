@@ -7,27 +7,17 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestOrganizationRepositories(t *testing.T) {
-	orgs := dbmock.NewMockOrgStore()
-	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
-	repo := &types.Repo{
-		Name: "acme-repo",
-	}
-	database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) (repos []*types.Repo, err error) {
-		return []*types.Repo{
-			repo,
-		}, nil
-	}
-
+func TestOrgRepositories(t *testing.T) {
 	users := dbmock.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
 
 	orgMembers := dbmock.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
@@ -35,11 +25,20 @@ func TestOrganizationRepositories(t *testing.T) {
 	featureFlags := dbmock.NewMockFeatureFlagStore()
 	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
 
+	repos := dbmock.NewMockRepoStore()
+	repos.ListFunc.SetDefaultReturn(
+		[]*types.Repo{
+			{Name: "acme-repo"},
+		},
+		nil,
+	)
+
 	db := dbmock.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
@@ -48,7 +47,7 @@ func TestOrganizationRepositories(t *testing.T) {
 			Schema: func() *graphql.Schema {
 				t.Helper()
 
-				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, &mockEnterpriseResolver{db: db, repo: repo})
+				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db))
 				if parseSchemaErr != nil {
 					t.Fatal(parseSchemaErr)
 				}
@@ -82,26 +81,4 @@ func TestOrganizationRepositories(t *testing.T) {
 			Context: ctx,
 		},
 	})
-}
-
-type mockEnterpriseResolver struct {
-	db   database.DB
-	repo *types.Repo
-}
-
-func (r *mockEnterpriseResolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org) (graphqlbackend.RepositoryConnectionResolver, error) {
-	return r, nil
-}
-
-func (r mockEnterpriseResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	return []*graphqlbackend.RepositoryResolver{graphqlbackend.NewRepositoryResolver(r.db, r.repo)}, nil
-}
-
-func (r mockEnterpriseResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
-	one := int32(1)
-	return &one, nil
-}
-
-func (r mockEnterpriseResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return nil, nil
 }
