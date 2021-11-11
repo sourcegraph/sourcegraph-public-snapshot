@@ -1,5 +1,6 @@
 import BrainIcon from 'mdi-react/BrainIcon'
 import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
+import GearIcon from 'mdi-react/GearIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 
 import { BatchChangesIcon } from '../../batches/icons'
@@ -98,11 +99,27 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+const executorsGroup: SiteAdminSideBarGroup = {
+    header: { label: 'Executors', icon: GearIcon, allowSingleton: true },
+    items: [
+        {
+            to: '/site-admin/executors',
+            label: 'Executors',
+        },
+    ],
+    // TODO - expand this to executors enabled when SSBC need this page
+    // as well. Right now we don't have an easy way to check if the
+    // executor accessToken is set in site-config, but that should be
+    // the condition of showing this.
+    condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     overviewGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
+    executorsGroup,
     usersGroup,
     maintenanceGroup,
     extensionsGroup,

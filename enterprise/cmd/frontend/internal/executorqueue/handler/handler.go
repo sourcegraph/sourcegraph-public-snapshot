@@ -8,12 +8,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type handler struct {
 	QueueOptions
+	executorStore database.ExecutorStore
 }
 
 type QueueOptions struct {
@@ -30,8 +32,11 @@ type QueueOptions struct {
 	CanceledRecordsFetcher func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
-func newHandler(queueOptions QueueOptions) *handler {
-	return &handler{queueOptions}
+func newHandler(executorStore database.ExecutorStore, queueOptions QueueOptions) *handler {
+	return &handler{
+		executorStore: executorStore,
+		QueueOptions:  queueOptions,
+	}
 }
 
 var ErrUnknownJob = errors.New("unknown job")
@@ -146,6 +151,12 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 
 // heartbeat calls Heartbeat for the given jobs.
 func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
+	// TODO - test?
+	// TODO - document
+	if err := h.executorStore.Heartbeat(ctx, executorName); err != nil {
+		return nil, err
+	}
+
 	return h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,

@@ -1451,6 +1451,61 @@ type Query {
         """
         until: DateTime
     ): WebhookLogConnection!
+
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        Returns the first n executors.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    TODO - document
+    """
+    hostname: String!
+
+    """
+    TODO - document
+    """
+    lastSeenAt: DateTime!
 }
 
 """

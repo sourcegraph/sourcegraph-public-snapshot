@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
@@ -39,7 +40,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		return err
 	}
 
-	queueHandler, err := newExecutorQueueHandler(queueOptions, accessToken, handler)
+	queueHandler, err := newExecutorQueueHandler(database.NewDB(db).Executors(), queueOptions, accessToken, handler)
 	if err != nil {
 		return err
 	}

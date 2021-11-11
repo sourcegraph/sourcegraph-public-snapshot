@@ -12,13 +12,14 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(queueOptionsMap map[string]QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore database.ExecutorStore, queueOptionsMap map[string]QueueOptions, router *mux.Router) {
 	for name, queueOptions := range queueOptionsMap {
-		h := newHandler(queueOptions)
+		h := newHandler(executorStore, queueOptions)
 
 		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
