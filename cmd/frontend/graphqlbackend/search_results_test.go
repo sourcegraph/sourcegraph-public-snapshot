@@ -465,7 +465,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	fileName := "foobar.go"
 
 	repoWithIDs := &types.Repo{
-
 		ID:   api.RepoID(id),
 		Name: api.RepoName(repoName),
 		ExternalRepo: api.ExternalRepoSpec{
@@ -476,7 +475,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	hydratedRepo := &types.Repo{
-
 		ID:           repoWithIDs.ID,
 		ExternalRepo: repoWithIDs.ExternalRepo,
 		Name:         repoWithIDs.Name,
@@ -532,6 +530,10 @@ func TestSearchResultsHydration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	srp := authz.NewMockSubRepoPermissionChecker()
+	srp.EnabledFunc.SetDefaultReturn(false)
+
 	resolver := &searchResolver{
 		db: database.NewDB(db),
 		SearchInputs: &run.SearchInputs{
@@ -539,9 +541,10 @@ func TestSearchResultsHydration(t *testing.T) {
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
-		zoekt:    z,
-		reposMu:  &sync.Mutex{},
-		resolved: &searchrepos.Resolved{},
+		zoekt:        z,
+		reposMu:      &sync.Mutex{},
+		resolved:     &searchrepos.Resolved{},
+		subRepoPerms: srp,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -887,6 +890,10 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			srp := authz.NewMockSubRepoPermissionChecker()
+			srp.EnabledFunc.SetDefaultReturn(false)
+
 			resolver := &searchResolver{
 				db: database.NewDB(db),
 				SearchInputs: &run.SearchInputs{
@@ -894,9 +901,10 @@ func TestEvaluateAnd(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				zoekt:    z,
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				zoekt:        z,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
+				subRepoPerms: srp,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -958,16 +966,20 @@ func TestSearchContext(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.NamespacesFunc.SetDefaultReturn(ns)
 
+			srp := authz.NewMockSubRepoPermissionChecker()
+			srp.EnabledFunc.SetDefaultReturn(false)
+
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
-				zoekt:    mockZoekt,
-				db:       db,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
+				zoekt:        mockZoekt,
+				db:           db,
+				subRepoPerms: srp,
 			}
 
 			_, err = resolver.Results(context.Background())
