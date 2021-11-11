@@ -415,6 +415,9 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 	if len(views) == 0 {
 		return nil, errors.New("No insight view found with this id")
 	}
+	if len(views[0].Series) == 0 {
+		return nil, errors.New("No matching series found for this view. The view data may be corrupted.")
+	}
 
 	view, err := tx.UpdateView(ctx, types.InsightView{
 		UniqueID:         insightViewId,
