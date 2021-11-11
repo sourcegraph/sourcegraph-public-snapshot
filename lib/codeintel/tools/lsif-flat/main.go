@@ -2,21 +2,59 @@ package main
 
 import (
 	"fmt"
+	"os"
+
+	pb "github.com/golang/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-flat/proto"
 )
 
 func main() {
-	fmt.Println(convertFlatToGraph(compile()))
+	// parse file into LsifValues proto
+	file := os.Args[1]
+	bytes, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+	values := proto.LsifValues{}
+	pb.Unmarshal(bytes, &values)
+	fmt.Println("PROTOBUF", file, &values)
+	g := convertFlatToGraph(&values)
+	// bytes := proto.ReadFile(file)
+
+	// g := convertFlatToGraph(compile())
+	writeGraphToJSON(g, writer.NewJSONWriter(os.Stdout))
+}
+
+type ResultIDs struct {
+	ResultSet        int
+	DefinitionResult int
+	ReferenceResult  int
 }
 
 type graph struct {
 	ID       int
 	Elements []reader.Element
+	idCache  map[string]ResultIDs
 }
 
+func (g *graph) ResultIDs(moniker string) ResultIDs {
+	ids, ok := g.idCache[moniker]
+	if !ok {
+		ids = ResultIDs{
+			ResultSet:        g.AddVertex("resultSet", reader.ResultSet{}),
+			DefinitionResult: g.AddVertex("definitionResult", nil),
+			ReferenceResult:  g.AddVertex("referenceResult", nil),
+		}
+		g.AddEdge("textDocument/definition", reader.Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
+		g.AddEdge("textDocument/references", reader.Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
+		g.idCache[moniker] = ids
+	}
+	return ids
+}
 func (g *graph) Add(Type, Label string, Payload interface{}) int {
 	g.ID++
 	g.Elements = append(g.Elements, reader.Element{
@@ -30,7 +68,7 @@ func (g *graph) Add(Type, Label string, Payload interface{}) int {
 func (g *graph) AddVertex(label string, Payload interface{}) int {
 	return g.Add("vertex", label, Payload)
 }
-func (g *graph) AddEdge(label string, Payload interface{}) int {
+func (g *graph) AddEdge(label string, Payload reader.Edge) int {
 	return g.Add("edge", label, Payload)
 }
 func (g *graph) AddPackage(doc *proto.Package) {}
@@ -51,20 +89,27 @@ func (g *graph) AddDocument(doc *proto.Document) {
 			},
 		})
 		rangeIDs = append(rangeIDs, rangeID)
-		// TODO: emit resultSet (if missing)
+		ids := g.ResultIDs(occ.MonikerId)
 		switch occ.Role {
 		case proto.MonikerOccurrence_ROLE_DEFINITION:
-			// definitionResult -> item edge -> rangeID
+			g.AddEdge("item", reader.Edge{OutV: ids.DefinitionResult, InV: rangeID, Document: documentID})
 		case proto.MonikerOccurrence_ROLE_REFERENCE:
-			// referenceResult -> item edge -> rangeID
+			g.AddEdge("item", reader.Edge{OutV: ids.ReferenceResult, InV: rangeID, Document: documentID})
 		default:
 		}
 	}
 	g.AddEdge("contains", reader.Edge{OutV: documentID, InVs: rangeIDs})
 }
 func (g *graph) AddMoniker(doc *proto.Moniker) {}
+func writeGraphToJSON(elements []reader.Element, writer writer.JSONWriter) {
+	for _, e := range elements {
+		// TODO: marshall with switch
+		writer.Write(e)
+	}
+	writer.Flush()
+}
 func convertFlatToGraph(vals *proto.LsifValues) []reader.Element {
-	g := graph{ID: 0, Elements: []reader.Element{}}
+	g := graph{ID: 0, Elements: []reader.Element{}, idCache: map[string]ResultIDs{}}
 	g.AddVertex(
 		"metaData",
 		reader.MetaData{
