@@ -19,7 +19,7 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 		return nil, errors.New("live preview currently only supports a time interval time scope")
 	}
 
-	executor := query.NewCaptureGroupExecutor(ctx, r.postgresDB, r.insightsDB, time.Now)
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
 	interval := query.TimeInterval{
 		Unit:  args.Input.TimeScope.StepInterval.Unit,
 		Value: int(args.Input.TimeScope.StepInterval.Value),
