@@ -50,6 +50,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
             const type = dashboard.grants && parseDashboardType(dashboard.grants)
 
             await updateDashboard({
+                id: dashboard.id,
                 previousDashboard: dashboard,
                 nextDashboardInput: {
                     name: dashboard.title,
