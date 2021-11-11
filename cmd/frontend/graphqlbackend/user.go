@@ -335,7 +335,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: A user can only change their own password.
+	// 🚨 SECURITY: Only the authenticated user can change their password.
 	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -359,7 +359,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: A user can only create their own password.
+	// 🚨 SECURITY: Only the authenticated user can create their password.
 	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -367,6 +367,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	if user == nil {
 		return nil, errors.New("no authenticated user")
 	}
+
 	if err := database.Users(r.db).CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
