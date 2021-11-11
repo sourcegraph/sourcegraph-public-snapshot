@@ -78,7 +78,7 @@ Explicit index job configuration can be supplied to a repository in two ways (li
 
 1. Configure index jobs by committing a `sourcegraph.yaml` file to the root of the target repository. If you're new to YAML and want a short introduction, see [Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/). Note that YAML is a strict superset of JSON, therefore the file contents can also be encoded as valid JSON (despite the file extension).
 
-1. Configure index jobs via the target repository's code intelligence settings UI. In order to view and edit the indexing configuration for a repository, navigate navigate to the code intelligence settings in the target repository's index page.
+1. Configure index jobs via the target repository's code intelligence settings UI. In order to view and edit the indexing configuration for a repository, navigate to the code intelligence settings in the target repository's index page.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.33/repository-page.png" class="screenshot">
 
