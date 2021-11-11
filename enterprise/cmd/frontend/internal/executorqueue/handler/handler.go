@@ -151,8 +151,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 
 // heartbeat calls Heartbeat for the given jobs.
 func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
-	// TODO - test?
-	// TODO - document
+	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.Heartbeat(ctx, executorName); err != nil {
 		return nil, err
 	}
