@@ -194,18 +194,29 @@ const WithBatchSpec: React.FunctionComponent<{
         variables: { batchSpec: batchSpecID },
         // This data is intentionally transient, so there's no need to cache it.
         fetchPolicy: 'no-cache',
-        // Report new errors back to the parent.
-        onCompleted: data => {
-            const resolution = getResolution(data)
-            if (
-                resolution?.state === BatchSpecWorkspaceResolutionState.ERRORED ||
-                resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
-            ) {
-                setResolutionError(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
-            }
-        },
+        // Report Apollo client errors back to the parent.
         onError: error => setResolutionError(error.message),
     })
+
+    useEffect(() => {
+        const resolution = getResolution(data)
+        if (
+            resolution?.state === BatchSpecWorkspaceResolutionState.QUEUED ||
+            resolution?.state === BatchSpecWorkspaceResolutionState.PROCESSING
+        ) {
+            // If the workspace resolution is still queued or processing, start polling.
+            startPolling(1000)
+        } else if (
+            resolution?.state === BatchSpecWorkspaceResolutionState.ERRORED ||
+            resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
+        ) {
+            // Report new workspace resolution worker errors back to the parent.
+            setResolutionError(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
+        } else if (resolution?.state === BatchSpecWorkspaceResolutionState.COMPLETED) {
+            // We can stop polling once the workspace resolution is complete.
+            stopPolling()
+        }
+    }, [data, startPolling, stopPolling, setResolutionError])
 
     const resolution = getResolution(data)
 
@@ -217,6 +228,7 @@ const WithBatchSpec: React.FunctionComponent<{
             ) : null}
             <Button onClick={() => startPolling(500)}>Start polling</Button>
             <Button onClick={() => stopPolling()}>Stop polling</Button>
+            {resolution?.state === 'COMPLETED' && <h1>Done!!</h1>}
         </>
     )
 }
