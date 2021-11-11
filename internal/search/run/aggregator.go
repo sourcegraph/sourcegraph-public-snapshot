@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -20,26 +19,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func NewAggregator(ctx context.Context, db dbutil.DB, stream streaming.Sender, subRepoPerms authz.SubRepoPermissionChecker) *Aggregator {
+func NewAggregator(db dbutil.DB, stream streaming.Sender, filterFunc func(*streaming.SearchEvent) error) *Aggregator {
 	return &Aggregator{
-		ctx:          ctx,
 		db:           db,
 		parentStream: stream,
-		subRepoPerms: subRepoPerms,
+		filterFunc:   filterFunc,
 		errors:       &multierror.Error{},
 	}
 }
 
 type Aggregator struct {
-	ctx context.Context
-
 	parentStream streaming.Sender
 	db           dbutil.DB
 
-	// Responsible for filtering out sub-repository content.
-	//
-	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-	subRepoPerms authz.SubRepoPermissionChecker
+	// filterFunc is currently used to provide sub-repo perms filtering.
+	filterFunc func(*streaming.SearchEvent) error
 
 	mu         sync.Mutex
 	results    []result.Match
@@ -62,9 +56,8 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Er
 //
 // It currently also applies sub-repo permissions filtering (see inline docs).
 func (a *Aggregator) Send(event streaming.SearchEvent) {
-	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-	if a.subRepoPerms.Enabled() {
-		if err := applySubRepoPerms(a.ctx, a.subRepoPerms, &event); err != nil {
+	if a.filterFunc != nil {
+		if err := a.filterFunc(&event); err != nil {
 			a.Error(err)
 		}
 	}
