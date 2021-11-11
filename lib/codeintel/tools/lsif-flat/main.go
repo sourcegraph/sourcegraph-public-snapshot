@@ -11,8 +11,39 @@ func main() {
 	fmt.Println(convertFlatToGraph(compile()))
 }
 
+type graph struct {
+	ID       int
+	Elements []reader.Element
+}
+
+func (g *graph) AddVertex(label string, elem reader.Element) {}
+func (g *graph) AddEdge(label string, elem reader.Element)   {}
+func (g *graph) Add(Type, Label string, Payload interface{}) {
+	g.ID++
+	g.Elements = append(g.Elements, reader.Element{
+		ID:      g.ID,
+		Type:    Type,
+		Label:   Label,
+		Payload: Payload,
+	})
+}
+
 func convertFlatToGraph(vals *proto.LsifValues) []reader.Element {
-	return []reader.Element{}
+	elements := []reader.Element{}
+	id := 0
+	elements = append(elements, reader.Element{
+		ID:    id,
+		Type:  "vertex",
+		Label: "metaData",
+		Payload: reader.MetaData{
+			Version:     "0.1.0",
+			ProjectRoot: "file:///",
+		},
+	})
+	for _, value := range vals.Values {
+
+	}
+	return elements
 }
 
 func compile() *proto.LsifValues {
