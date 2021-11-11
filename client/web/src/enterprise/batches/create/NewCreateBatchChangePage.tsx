@@ -1,7 +1,7 @@
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
 import { load as loadYAML } from 'js-yaml'
-import { debounce, noop } from 'lodash'
+import { debounce } from 'lodash'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 

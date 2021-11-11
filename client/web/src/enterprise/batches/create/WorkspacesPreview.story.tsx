@@ -1,4 +1,4 @@
-import { boolean, text, select } from '@storybook/addon-knobs'
+import { boolean, select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
@@ -11,7 +11,6 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '../../../components/WebStory'
 
 import { WORKSPACE_RESOLUTION_STATUS } from './backend'
-import minimalSample from './examples/minimal.batch.yaml'
 import { WorkspacesPreview } from './WorkspacesPreview'
 import { mockWorkspaceResolutionStatus } from './WorkspacesPreview.mock'
 
