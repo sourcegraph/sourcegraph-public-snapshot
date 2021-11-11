@@ -51,15 +51,14 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
+    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
     const api = useMemo(() => {
         // Disabled by default condition
         const isNewGqlApiEnabled =
             !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
 
-        return isNewGqlApiEnabled
-            ? new CodeInsightsGqlBackend(apolloClient)
-            : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade, apolloClient])
+        return isNewGqlApiEnabled ? gqlApi : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
+    }, [platformContext, settingsCascade, gqlApi])
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>

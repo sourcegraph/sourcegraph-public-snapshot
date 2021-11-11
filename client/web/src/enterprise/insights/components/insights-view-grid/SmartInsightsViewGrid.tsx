@@ -16,6 +16,8 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
     insights: Insight[]
 }
 
+const INSIGHT_PAGE_CONTEXT = {}
+
 /**
  * Renders grid of smart (stateful) insight card. These cards can independently extract and update
  * the insights settings (settings cascade subjects).
@@ -33,7 +35,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     // Set execution insight context explicitly since this grid component is used
                     // only for the dashboard (insights) page
                     where="insightsPage"
-                    context={{}}
+                    context={INSIGHT_PAGE_CONTEXT}
                 />
             ))}
         </ViewGrid>
