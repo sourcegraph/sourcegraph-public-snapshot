@@ -34,10 +34,11 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		job := &btypes.BatchSpecWorkspace{
 			BatchSpecID:      int64(i + 567),
 			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
-			RepoID:           repo.ID,
-			Branch:           "master",
-			Commit:           "d34db33f",
-			Path:             "sub/dir/ectory",
+
+			RepoID: repo.ID,
+			Branch: "master",
+			Commit: "d34db33f",
+			Path:   "sub/dir/ectory",
 			FileMatches: []string{
 				"a.go",
 				"a/b/horse.go",
@@ -60,6 +61,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			Unsupported:        true,
 			Ignored:            true,
 			Skipped:            true,
+			CachedResultFound:  true,
 		}
 
 		if i == cap(workspaces)-1 {

@@ -275,6 +275,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query       string
 			zeroResult  bool
 			wantMissing []string
+			want        []string
 		}{
 			{
 				name:       `archived excluded, zero results`,
@@ -331,6 +332,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
 			},
+			{
+				name:       `case sensitive`,
+				query:      `case:yes type:repo Diff`,
+				zeroResult: true,
+			},
+			{
+				name:  `case insensitive`,
+				query: `case:no type:repo Diff`,
+				want: []string{
+					"github.com/sgtest/go-diff",
+				},
+			},
+			{
+				name:  `case insensitive regex`,
+				query: `case:no repo:Go-Diff|TypeScript`,
+				want: []string{
+					"github.com/sgtest/go-diff",
+					"github.com/sgtest/sourcegraph-typescript",
+				},
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -341,11 +362,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 				if test.zeroResult {
 					if len(results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results))
+						t.Errorf("Want zero result but got %d", len(results))
 					}
 				} else {
 					if len(results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
+						t.Errorf("Want non-zero results but got 0")
 					}
 				}
 
@@ -353,7 +374,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 					missing := results.Exists(test.wantMissing...)
 					sort.Strings(missing)
 					if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
-						t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+						t.Errorf("Missing mismatch (-want +got):\n%s", diff)
+					}
+				}
+
+				if test.want != nil {
+					var have []string
+					for _, r := range results {
+						have = append(have, r.Name)
+					}
+
+					sort.Strings(have)
+					if diff := cmp.Diff(test.want, have); diff != "" {
+						t.Errorf("Repos mismatch (-want +got):\n%s", diff)
 					}
 				}
 			})

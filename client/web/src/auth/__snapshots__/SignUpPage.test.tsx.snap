@@ -193,7 +193,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             Email
           </label>
           <div
-            className="loader-input__container"
+            className="container"
           >
             <input
               autoComplete="email"
@@ -221,7 +221,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             Username
           </label>
           <div
-            className="loader-input__container"
+            className="container"
           >
             <input
               autoCapitalize="off"
@@ -251,7 +251,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
             Password
           </label>
           <div
-            className="loader-input__container"
+            className="container"
           >
             <input
               autoComplete="new-password"

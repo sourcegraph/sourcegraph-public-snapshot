@@ -1950,7 +1950,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-observabi
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101420` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1969,7 +1969,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-observabi
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101421` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Distribution team](https://handbook.sourcegraph.com/engineering/distribution).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2154,7 +2154,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101600` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2173,7 +2173,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101601` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2192,7 +2192,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-container
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101602` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2235,7 +2235,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101700` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2254,7 +2254,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101701` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2273,7 +2273,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101710` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2292,7 +2292,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-provision
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101711` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2315,7 +2315,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gorout
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101800` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2334,7 +2334,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-go-gc-dur
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101801` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2355,7 +2355,7 @@ Refer to the [alert solutions reference](./alert_solutions.md#frontend-pods-avai
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101900` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
 
 <details>
 <summary>Technical details</summary>

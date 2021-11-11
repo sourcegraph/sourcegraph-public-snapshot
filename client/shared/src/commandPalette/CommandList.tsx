@@ -32,7 +32,9 @@ import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { memoizeObservable } from '../util/memoizeObservable'
 
+import styles from './CommandList.module.scss'
 import { EmptyCommandList } from './EmptyCommandList'
+import { EmptyCommandListContainer } from './EmptyCommandListContainer'
 
 /**
  * Customizable CSS classes for elements of the the command list button.
@@ -184,13 +186,13 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
     public render(): JSX.Element | null {
         if (!this.state.contributions) {
             return (
-                <div className="command-list empty-command-list">
+                <EmptyCommandListContainer className={styles.commandList}>
                     <div className="d-flex py-5 align-items-center justify-content-center">
                         <LoadingSpinner />
                         <span className="mx-2">Loading Sourcegraph extensions</span>
                         <PuzzleIcon className="icon-inline" />
                     </div>
-                </div>
+                </EmptyCommandListContainer>
             )
         }
 
@@ -204,7 +206,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         const selectedIndex = ((this.state.selectedIndex % items.length) + items.length) % items.length
 
         return (
-            <div className="command-list">
+            <div className={styles.commandList}>
                 <header>
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <form className={this.props.formClassName} onSubmit={this.onSubmit}>
@@ -391,7 +393,7 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     return (
         <ButtonElement
             role="button"
-            className={classNames('test-command-list-button command-list__popover-button', buttonClassName, {
+            className={classNames('test-command-list-button', styles.popoverButton, buttonClassName, {
                 [buttonOpenClassName]: isOpen,
             })}
             id={id}

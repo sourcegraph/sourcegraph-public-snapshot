@@ -91,6 +91,7 @@ Indexes:
  created_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_execution_cache_entries_key_unique" UNIQUE CONSTRAINT, btree (key)
 
 ```
 
@@ -168,6 +169,7 @@ Foreign-key constraints:
  ignored              | boolean                  |           | not null | false
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
+ cached_result_found  | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -1317,6 +1319,7 @@ Stores the retention policy of code intellience data for a repository.
  num_references         | integer                  |           |          | 
  expired                | boolean                  |           | not null | false
  last_retention_scan_at | timestamp with time zone |           |          | 
+ reference_count        | integer                  |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
@@ -1350,7 +1353,9 @@ Stores metadata about an LSIF index uploaded by a user.
 
 **num_parts**: The number of parts src-cli split the upload file into.
 
-**num_references**: The number of references to this upload data from other upload records (via lsif_references).
+**num_references**: Deprecated in favor of reference_count.
+
+**reference_count**: The number of references to this upload data from other upload records (via lsif_references).
 
 **root**: The path for which the index can resolve code intelligence relative to the repository root.
 
@@ -1725,10 +1730,12 @@ Indexes:
     "repo_fork" btree (fork)
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
     "repo_metadata_gin_idx" gin (metadata)
+    "repo_name_case_sensitive_trgm_idx" gin ((name::text) gin_trgm_ops)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
     "repo_non_deleted_id_name_idx" btree (id, name) WHERE deleted_at IS NULL
     "repo_private" btree (private)
+    "repo_stars_desc_id_desc_idx" btree (stars DESC NULLS LAST, id DESC) WHERE deleted_at IS NULL AND blocked IS NULL
     "repo_stars_idx" btree (stars DESC NULLS LAST)
     "repo_uri_idx" btree (uri)
 Check constraints:

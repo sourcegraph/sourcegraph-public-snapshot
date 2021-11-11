@@ -31,6 +31,7 @@ export interface DashboardCreationFields {
     name: string
     visibility: string
     type?: string
+    userId?: string
 }
 
 export interface InsightsDashboardCreationContentProps {

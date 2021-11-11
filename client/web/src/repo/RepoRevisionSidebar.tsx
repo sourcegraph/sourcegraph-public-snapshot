@@ -8,6 +8,7 @@ import { Button } from 'reactstrap'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
@@ -16,7 +17,7 @@ import { Tree } from '../tree/Tree'
 
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -36,7 +37,13 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const handleSidebarToggle = useCallback(() => setToggleSidebar(!toggleSidebar), [setToggleSidebar, toggleSidebar])
+    const handleSidebarToggle = useCallback(() => {
+        props.telemetryService.log('FileTreeViewClicked', {
+            action: 'click',
+            label: 'expand / collapse file tree view',
+        })
+        setToggleSidebar(!toggleSidebar)
+    }, [setToggleSidebar, toggleSidebar, props.telemetryService])
 
     if (!toggleSidebar) {
         return (

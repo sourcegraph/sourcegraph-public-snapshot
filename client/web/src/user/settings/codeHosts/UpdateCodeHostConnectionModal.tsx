@@ -1,5 +1,4 @@
 import Dialog from '@reach/dialog'
-import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 import React, { useState, useCallback } from 'react'
 
 import { Form } from '../../../../../branded/src/components/Form'
@@ -7,6 +6,8 @@ import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+
+import { EncryptedDataIcon } from './components/EncryptedDataIcon'
 
 interface CodeHostConfig {
     url: string
@@ -91,10 +92,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 className="form-control pr-4"
                                 autoComplete="off"
                             />
-                            <ShieldCheckIcon
-                                className="icon-inline user-code-hosts-page__icon--inside text-muted"
-                                data-tooltip="Data will be encrypted and will not be visible again."
-                            />
+                            <EncryptedDataIcon />
                         </div>
 
                         <p className="mt-1">{hintFragment}</p>

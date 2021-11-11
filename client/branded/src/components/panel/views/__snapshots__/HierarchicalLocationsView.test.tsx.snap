@@ -10,7 +10,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
       className="d-flex"
     />
     <div
-      className="file-locations fileLocations"
+      className="fileLocations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -20,6 +20,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           <div
             className="test-search-result result-container"
             data-testid="result-container"
+            onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -107,7 +109,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                       partialVisibility={true}
                     >
                       <code
-                        className="code-excerpt file-match-children__item-code-excerpt"
+                        className="codeExcerpt file-match-children__item-code-excerpt"
+                        data-testid="code-excerpt"
                       >
                         <table>
                           <tbody>
@@ -251,7 +254,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       </div>
     </div>
     <div
-      className="file-locations fileLocations"
+      className="fileLocations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -261,6 +264,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           <div
             className="test-search-result result-container"
             data-testid="result-container"
+            onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -348,7 +353,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                       partialVisibility={true}
                     >
                       <code
-                        className="code-excerpt file-match-children__item-code-excerpt"
+                        className="codeExcerpt file-match-children__item-code-excerpt"
+                        data-testid="code-excerpt"
                       >
                         <table>
                           <tbody>
@@ -438,7 +444,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
       className="d-flex"
     />
     <div
-      className="file-locations fileLocations"
+      className="fileLocations fileLocations"
     >
       <div>
         <VisibilitySensor
@@ -448,6 +454,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           <div
             className="test-search-result result-container"
             data-testid="result-container"
+            onClick={[Function]}
+            role="none"
           >
             <div
               className="result-container__header"
@@ -535,7 +543,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                       partialVisibility={true}
                     >
                       <code
-                        className="code-excerpt file-match-children__item-code-excerpt"
+                        className="codeExcerpt file-match-children__item-code-excerpt"
+                        data-testid="code-excerpt"
                       >
                         <table>
                           <tbody>

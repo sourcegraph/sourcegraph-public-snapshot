@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type AuthzResolver interface {
@@ -59,20 +60,17 @@ type PermissionsInfoResolver interface {
 	UpdatedAt() DateTime
 }
 
-// TODO: Remove usage of nolint
-
 var (
 	// subRepoPermsInstance should be initialized and used only via SubRepoPerms().
-	//nolint:unused
 	subRepoPermsInstance authz.SubRepoPermissionChecker
-	//nolint:unused
-	subRepoPermsOnce sync.Once
+	subRepoPermsOnce     sync.Once
 )
 
 // subRepoPermsClient returns a global instance of the SubRepoPermissionsChecker for use in
 // graphqlbackend only.
-//nolint:unused
-func subRepoPermsClient(db database.DB) authz.SubRepoPermissionChecker {
+//
+// Exposed as a variable so that it can be changed in tests
+var subRepoPermsClient = func(db dbutil.DB) authz.SubRepoPermissionChecker {
 	subRepoPermsOnce.Do(func() {
 		subRepoPermsInstance = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
 	})

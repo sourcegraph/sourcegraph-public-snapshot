@@ -630,6 +630,8 @@ type FusionClient struct {
 	MaxChanges int `json:"maxChanges,omitempty"`
 	// NetworkThreads description: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
 	NetworkThreads int `json:"networkThreads,omitempty"`
+	// NetworkThreadsFetch description: The number of threads in the threadpool for running network calls when performing fetches. Defaults to the number of logical CPUs.
+	NetworkThreadsFetch int `json:"networkThreadsFetch,omitempty"`
 	// PrintBatch description: The p4 print batch size
 	PrintBatch int `json:"printBatch,omitempty"`
 	// Refresh description: How many times a connection should be reused before it is refreshed

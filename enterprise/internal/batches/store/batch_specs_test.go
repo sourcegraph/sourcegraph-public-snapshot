@@ -386,8 +386,9 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 	var specIDs []int64
 	for _, setup := range []struct {
-		jobs                []*btypes.BatchSpecWorkspaceExecutionJob
-		additionalWorkspace int
+		jobs                       []*btypes.BatchSpecWorkspaceExecutionJob
+		additionalWorkspace        int
+		additionalSkippedWorkspace int
 	}{
 		{
 			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
@@ -398,7 +399,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
-			additionalWorkspace: 1,
+			additionalWorkspace:        1,
+			additionalSkippedWorkspace: 2,
 		},
 		{
 			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
@@ -411,7 +413,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
-			additionalWorkspace: 3,
+			additionalWorkspace:        3,
+			additionalSkippedWorkspace: 2,
 		},
 		{
 			jobs:                []*btypes.BatchSpecWorkspaceExecutionJob{},
@@ -447,6 +450,20 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			}
 		}
 
+		// Workspaces without execution job and skipped
+		if setup.additionalSkippedWorkspace > 0 {
+			for i := 0; i < setup.additionalSkippedWorkspace; i++ {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Skipped:     true,
+				}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
 		// Workspaces with execution jobs
 		for _, job := range setup.jobs {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
@@ -474,28 +491,30 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 	want := map[int64]btypes.BatchSpecStats{
 		specIDs[0]: {
-			StartedAt:  minAgo(99),
-			FinishedAt: minAgo(1),
-			Workspaces: 7,
-			Executions: 6,
-			Queued:     1,
-			Processing: 1,
-			Completed:  1,
-			Canceling:  1,
-			Canceled:   1,
-			Failed:     1,
+			StartedAt:         minAgo(99),
+			FinishedAt:        minAgo(1),
+			Workspaces:        9,
+			SkippedWorkspaces: 2,
+			Executions:        6,
+			Queued:            1,
+			Processing:        1,
+			Completed:         1,
+			Canceling:         1,
+			Canceled:          1,
+			Failed:            1,
 		},
 		specIDs[1]: {
-			StartedAt:  minAgo(55),
-			FinishedAt: minAgo(1),
-			Workspaces: 11,
-			Executions: 8,
-			Queued:     1,
-			Processing: 2,
-			Completed:  1,
-			Canceling:  2,
-			Canceled:   1,
-			Failed:     1,
+			StartedAt:         minAgo(55),
+			FinishedAt:        minAgo(1),
+			Workspaces:        13,
+			SkippedWorkspaces: 2,
+			Executions:        8,
+			Queued:            1,
+			Processing:        2,
+			Completed:         1,
+			Canceling:         2,
+			Canceled:          1,
+			Failed:            1,
 		},
 		specIDs[2]: {
 			StartedAt:  time.Time{},

@@ -3,6 +3,7 @@ package httpapi
 import (
 	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"time"
@@ -25,7 +26,6 @@ import (
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -39,7 +39,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimiter graphqlbackend.LimitWatcher) http.Handler {
+func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWebhook webhooks.Registerer, gitlabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimiter graphqlbackend.LimitWatcher) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -81,7 +81,7 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimiter, false))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(database.NewDB(db))))
+	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	// Return the minimum src-cli version that's compatible with this instance
 	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
@@ -124,6 +124,8 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 		RepoStore:           database.Repos(db),
 		SearchContextsStore: database.SearchContexts(db),
 		Indexers:            search.Indexers(),
+
+		MinLastChangedEnabled: os.Getenv("SRC_SEARCH_CORE_MIN_LAST_CHANGED") != "",
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
@@ -153,7 +155,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(database.NewDB(db))))
+	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
 

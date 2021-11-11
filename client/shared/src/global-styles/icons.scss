@@ -1,3 +1,10 @@
+:root {
+    // TODO find a better way to scale icons that is not proportional to the font size
+    // 14px font size -> 20px icon size
+    --icon-inline-md-size: #{(20 / 14)}em;
+    --icon-inline-size: #{(16 / 14)}em;
+}
+
 /**
  * Global style for user avatars.
  */
@@ -15,25 +22,20 @@
     align-items: center;
 }
 
-// TODO find a better way to scale icons that is not proportional to the font size
-// 14px font size -> 20px icon size
-$icon-inline-md-size: (20em / 14);
-$icon-inline-size: (16em / 14);
-
 svg.icon-inline,
 div.icon-inline,
 img.icon-inline,
 .icon-inline svg {
-    width: $icon-inline-size;
-    height: $icon-inline-size;
+    width: var(--icon-inline-size);
+    height: var(--icon-inline-size);
     // Match color of the text
     fill: currentColor;
     vertical-align: text-bottom;
 }
 
 .icon-inline-md {
-    width: $icon-inline-md-size;
-    height: $icon-inline-md-size;
+    width: var(--icon-inline-md-size);
+    height: var(--icon-inline-md-size);
 }
 
 // Special case for the loader
@@ -46,6 +48,7 @@ img.icon-inline,
     --loading-spinner-outer-color: var(--gray-05);
     --loading-spinner-inner-color: var(--gray-08);
 }
+
 .theme-dark {
     --loading-spinner-outer-color: var(--gray-07);
     --loading-spinner-inner-color: var(--white);

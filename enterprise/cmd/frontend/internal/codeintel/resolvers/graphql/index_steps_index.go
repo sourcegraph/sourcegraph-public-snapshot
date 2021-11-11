@@ -3,6 +3,7 @@ package graphql
 import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -19,7 +20,7 @@ func (r *indexStepResolver) Outfile() *string      { return strPtr(r.index.Outfi
 
 func (r *indexStepResolver) LogEntry() gql.ExecutionLogEntryResolver {
 	if r.entry != nil {
-		return gql.NewExecutionLogEntryResolver(dbconn.Global, *r.entry)
+		return gql.NewExecutionLogEntryResolver(database.NewDB(dbconn.Global), *r.entry)
 	}
 
 	return nil

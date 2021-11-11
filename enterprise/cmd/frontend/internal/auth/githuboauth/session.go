@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -30,7 +29,7 @@ import (
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	db          dbutil.DB
+	db          database.DB
 	clientID    string
 	allowSignup bool
 	allowOrgs   []string
@@ -98,7 +97,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	for i, attempt := range attempts {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, database.NewDB(s.db), auth.GetAndSaveUserOp{
+		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username:        login,
 				Email:           attempt.email,
