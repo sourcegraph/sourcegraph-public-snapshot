@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
@@ -149,9 +151,10 @@ func gitReadDir(ctx context.Context, db dbutil.DB, repo api.RepoName, commit api
 
 	// Filter in place
 	n := 0
+	a := actor.FromContext(ctx)
 	for _, entry := range entries {
 		// Check whether to filter out this entry due to sub-repo permissions
-		perms, err := authz.CurrentUserPermissions(ctx, client, authz.RepoContent{
+		perms, err := authz.ActorPermissions(ctx, client, a, authz.RepoContent{
 			Repo: repo,
 			Path: entry.Name(),
 		})
