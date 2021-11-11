@@ -3,10 +3,10 @@ import { uniq } from 'lodash'
 
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { GetInsightsResult, InsightViewsFields, TimeIntervalStepUnit } from '../../../../../graphql-operations'
+import { GetInsightsResult, TimeIntervalStepUnit, TimeIntervalStepInput } from '../../../../../graphql-operations'
 import { Insight, InsightType, SearchBasedInsight } from '../../types'
 
-function getDurationFromStep(step: InsightViewsFields['dataSeriesDefinitions'][number]['timeScope']): Duration {
+function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     switch (step.unit) {
         case TimeIntervalStepUnit.HOUR:
             return { hours: step.value }
@@ -70,10 +70,10 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(
-                series => series.repositoryScope.repositories.length > 0
+                series => series.repositoryScope.repositories.length === 0
             )
 
-            const series = insight.dataSeries.map(series => ({
+            const series = insight.presentation.seriesPresentation.map(series => ({
                 name: series.label,
                 query:
                     insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||

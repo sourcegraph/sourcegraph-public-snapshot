@@ -206,22 +206,26 @@ export const Panel = React.memo<Props>(props => {
         extensionPanels,
     ])
 
+    const trackTabClick = useCallback(
+        (label: string) => props.telemetryService.log('ReferencePanelClicked', { action: 'click', label }),
+        [props.telemetryService]
+    )
+
     const items = useMemo(
         () =>
             panelViews
                 ? panelViews
-                      .map(
-                          (panelView): PanelItem => ({
-                              label: panelView.title,
-                              id: panelView.id,
-                              priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} location={location} />,
-                              hasLocations: !!panelView.locationProvider,
-                          })
-                      )
+                      .map((panelView): PanelItem & { trackTabClick: () => void } => ({
+                          label: panelView.title,
+                          id: panelView.id,
+                          priority: panelView.priority,
+                          element: <PanelView {...props} panelView={panelView} location={location} />,
+                          hasLocations: !!panelView.locationProvider,
+                          trackTabClick: () => trackTabClick(panelView.title),
+                      }))
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [location, panelViews, props]
+        [location, panelViews, props, trackTabClick]
     )
 
     useEffect(() => {
@@ -255,9 +259,11 @@ export const Panel = React.memo<Props>(props => {
             <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
                 <TabList>
                     <div className="d-flex w-100">
-                        {items.map(({ label, id }) => (
+                        {items.map(({ label, id, trackTabClick }) => (
                             <Tab key={id}>
-                                <span className="tablist-wrapper--tab-label">{label}</span>
+                                <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
+                                    {label}
+                                </span>
                             </Tab>
                         ))}
                     </div>

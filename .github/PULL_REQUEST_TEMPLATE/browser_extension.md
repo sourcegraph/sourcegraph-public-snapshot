@@ -1,20 +1,35 @@
 
+Closes https://github.com/sourcegraph/sourcegraph/issues/TODO.
+
+#### Description
+
+TODO: Add brief description.
 
 
-#### Test Plan
+#### Screenshots (if applicable)
+| Before | After |
+| -: | :- |
+| | |
 
-##### Code Hosts
+#### How to test
 
-- [ ] GitHub
-- [ ] GitHub Enterprise
-- [ ] Refined GitHub
-- [ ] Phabricator
-- [ ] Phabricator integration
-- [ ] Bitbucket
-- [ ] Bitbucket integration
-- [ ] Gitlab
+TODO: Describe how to test for PR reviewers
 
-##### Browsers
 
-- [ ] Chrome
-- [ ] Firefox
+#### Before merging
+
+- [ ] Test on different code hosts (if applicable)
+    - [ ] GitHub
+    - [ ] Gitlab
+    - [ ] GitHub Enterprise
+    - [ ] Refined GitHub
+    - [ ] Phabricator
+    - [ ] Phabricator integration
+    - [ ] Bitbucket
+    - [ ] Bitbucket integration
+
+- [ ] Test on different browsers (if applicable)
+    - [ ] Chrome
+    - [ ] Firefox
+    - [ ] Safari
+- [ ] Add change log message to [client/browser/CHANGELOG.md](./client/browser/CHANGELOG.md), under "Unreleased" section. (if applicable)

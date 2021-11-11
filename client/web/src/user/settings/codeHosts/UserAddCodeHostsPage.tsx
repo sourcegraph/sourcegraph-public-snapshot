@@ -20,6 +20,7 @@ import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
+import { CodeHostListItem } from './CodeHostListItem'
 
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
@@ -313,7 +314,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     <ul className="list-group">
                         {Object.entries(codeHostExternalServices).map(([id, { kind, defaultDisplayName, icon }]) =>
                             authProvidersByKind[kind] ? (
-                                <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
+                                <CodeHostListItem key={id}>
                                     <CodeHostItem
                                         owner={owner}
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
@@ -329,7 +330,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}
                                     />
-                                </li>
+                                </CodeHostListItem>
                             ) : null
                         )}
                     </ul>

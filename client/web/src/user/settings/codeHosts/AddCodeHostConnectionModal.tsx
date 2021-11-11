@@ -1,5 +1,5 @@
 import Dialog from '@reach/dialog'
-import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
+import classNames from 'classnames'
 import React, { useState, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -10,6 +10,9 @@ import { defaultExternalServices } from '../../../components/externalServices/ex
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+
+import styles from './AddCodeHostConnectionModal.module.scss'
+import { EncryptedDataIcon } from './components/EncryptedDataIcon'
 
 interface CodeHostConfig {
     url: string
@@ -73,7 +76,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 
     return (
         <Dialog
-            className="modal-body modal-body--top-third user-code-hosts-page__modal--plain p-4 rounded border"
+            className={classNames('modal-body modal-body--top-third p-4 rounded border', styles.modalPlain)}
             aria-labelledby={`heading--connect-with-${serviceName}`}
             onDismiss={onDidCancel}
         >
@@ -95,10 +98,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 autoComplete="off"
                             />
                             <small>
-                                <ShieldCheckIcon
-                                    className="icon-inline user-code-hosts-page__icon--inside text-muted"
-                                    data-tooltip="Data will be encrypted and will not be visible again."
-                                />
+                                <EncryptedDataIcon />
                             </small>
                         </div>
 

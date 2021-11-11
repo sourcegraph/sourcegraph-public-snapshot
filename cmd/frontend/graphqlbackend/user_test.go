@@ -142,7 +142,21 @@ func TestUser(t *testing.T) {
 	})
 }
 
-func TestUser_SettingsCascade(t *testing.T) {
+func TestUser_Email(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := NewUserResolver(db, &types.User{ID: 1}).Email(context.Background())
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestUser_LatestSettings(t *testing.T) {
 	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := dbmock.NewMockUserStore()
@@ -187,7 +201,7 @@ func TestUser_SettingsCascade(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(context.Background())
+				_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(test.ctx)
 				got := fmt.Sprintf("%v", err)
 				want := "must be authenticated as user with id 1"
 				assert.Equal(t, want, got)
@@ -241,7 +255,7 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(context.Background())
+				ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(test.ctx)
 				assert.False(t, ok, "ViewerCanAdminister")
 			})
 		}
@@ -449,7 +463,8 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).UpdateUser(context.Background(),
+				_, err := newSchemaResolver(db).UpdateUser(
+					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
 					},

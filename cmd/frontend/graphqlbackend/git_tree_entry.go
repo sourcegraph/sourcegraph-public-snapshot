@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -75,6 +76,20 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	r.contentOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
+
+		perms, err := authz.CurrentUserPermissions(ctx, subRepoPermsClient(r.db), authz.RepoContent{
+			Repo: r.commit.repoResolver.RepoName(),
+			Path: r.Path(),
+		})
+		if err != nil {
+			log15.Error("checking sub-repo permissions", "error", err)
+			r.content, r.contentErr = nil, errors.New("checking sub-repo permissions")
+		}
+		// No access
+		if !perms.Include(authz.Read) {
+			r.content, r.contentErr = nil, nil
+			return
+		}
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
@@ -212,8 +227,9 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := git.ReadDir(
+	entries, err := gitReadDir(
 		ctx,
+		subRepoPermsClient(r.db),
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),

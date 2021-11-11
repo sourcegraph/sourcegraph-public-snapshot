@@ -3,6 +3,7 @@ import addFormats from 'ajv-formats'
 import classNames from 'classnames'
 import { load as loadYAML } from 'js-yaml'
 import CloseIcon from 'mdi-react/CloseIcon'
+import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -426,6 +427,7 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
                         >
                             <CloseIcon className="icon-inline" />
                         </button>
+                        {item.cachedResultFound && <ContentSaveIcon className="icon-inline" />}
                         <div className="mb-2 flex-1">
                             <p>
                                 {item.repository.name}:{item.branch.abbrevName} Path: {item.path || '/'}

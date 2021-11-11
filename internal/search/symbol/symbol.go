@@ -15,7 +15,6 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -384,7 +383,6 @@ func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commit
 	emptyString := ""
 	includePatterns := []string{regexp.QuoteMeta(filePath)}
 	symbolMatches, err := Compute(ctx, repo, commitID, &emptyString, &emptyString, &first, &includePatterns)
-
 	if err != nil {
 		return nil, err
 	}
@@ -417,22 +415,25 @@ type SymbolSearch struct {
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
 }
 
-func (s *SymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
+func (s *SymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cancel()
 
-	request, ok, err := zoektutil.OnlyUnindexed(repos, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
-	if err != nil {
-		return err
-	}
-
-	if !ok {
-		request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, repos, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
 			return err
 		}
-	}
-	return symbolSearchInRepos(ctx, request, s.PatternInfo, s.NotSearcherOnly, s.Limit, cancel, stream)
+
+		if !ok {
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			if err != nil {
+				return err
+			}
+		}
+
+		return symbolSearchInRepos(ctx, request, s.PatternInfo, s.NotSearcherOnly, s.Limit, cancel, stream)
+	})
 }
 
 func (*SymbolSearch) Name() string {

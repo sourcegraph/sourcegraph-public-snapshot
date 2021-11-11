@@ -19,20 +19,20 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
 
+import styles from './FileLocations.module.scss'
+
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
-    <div className="file-locations__error alert alert-danger m-2">
-        Error getting locations: {upperFirst(error.message)}
-    </div>
+    <div className="alert alert-danger m-2">Error getting locations: {upperFirst(error.message)}</div>
 )
 
 export const FileLocationsNotFound: React.FunctionComponent = () => (
-    <div className="file-locations__not-found m-2">
+    <div className={classNames('m-2', styles.notFound)}>
         <MapSearchIcon className="icon-inline" /> No locations found
     </div>
 )
 
 export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
-    <div className="file-locations__no-group-selected m-2">
+    <div className="m-2">
         <MapSearchIcon className="icon-inline" /> No locations found in the current repository
     </div>
 )
@@ -147,7 +147,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={classNames('file-locations', this.props.className)}>
+            <div className={classNames(styles.fileLocations, this.props.className)}>
                 <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}

@@ -2,7 +2,7 @@
 
 exports[`LoaderInput should not render a loading spinner when loading prop is false 1`] = `
 <div
-  className="loader-input__container"
+  className="container"
 >
   <input
     type="text"
@@ -12,13 +12,13 @@ exports[`LoaderInput should not render a loading spinner when loading prop is fa
 
 exports[`LoaderInput should render a loading spinner when loading prop is true 1`] = `
 <div
-  className="loader-input__container"
+  className="container"
 >
   <input
     type="text"
   />
   <LoadingSpinner
-    className="loader-input__spinner"
+    className="spinner"
   />
 </div>
 `;

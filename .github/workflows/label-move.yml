@@ -203,3 +203,25 @@ jobs:
                 }
               }
             }' -f project=$PROJECT_ID -f node_id=$NODE_ID
+  frontend-platform-board:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: PN_kwDOADy5QM2FqQ== # https://github.com/orgs/sourcegraph/projects/222
+      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
+    steps:
+    - name: Get issue if relevant
+      if: ${{ contains(github.event.issue.labels.*.name, 'team/frontend-platform') }}
+      env:
+        NODE_ID: ${{ github.event.issue.node_id }}
+      run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
+    - name: Add to Frontend Platform board
+      if: ${{ env.NODE_ID != '' }}
+      run: |
+        gh api graphql --header 'GraphQL-Features: projects_next_graphql' -f query='
+          mutation($project:ID!, $node_id:ID!) {
+            addProjectNextItem(input: {projectId: $project, contentId: $node_id}) {
+              projectNextItem {
+                id
+              }
+            }
+          }' -f project=$PROJECT_ID -f node_id=$NODE_ID

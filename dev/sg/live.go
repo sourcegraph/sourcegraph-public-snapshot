@@ -107,8 +107,8 @@ func printDeployedVersion(e environment) error {
 		author := elems[2]
 		message := elems[3]
 
-		var emoji string = "  "
-		var style output.Style = output.StylePending
+		var emoji = "  "
+		var style = output.StylePending
 		if sha[0:len(buildSha)] == buildSha {
 			emoji = "🚀"
 			style = output.StyleLogo

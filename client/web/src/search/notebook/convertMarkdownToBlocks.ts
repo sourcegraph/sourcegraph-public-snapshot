@@ -10,7 +10,7 @@ export function convertMarkdownToBlocks(markdown: string): BlockInitializer[] {
         if (markdownRawTokens.length === 0) {
             return
         }
-        blocks.push({ type: 'md', input: markdownRawTokens.join('') })
+        blocks.push({ type: 'md', input: markdownRawTokens.join('').trimStart() })
         markdownRawTokens = []
     }
 

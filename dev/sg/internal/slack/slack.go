@@ -8,15 +8,14 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/slack-go/slack"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-var (
-	out *output.Output = stdout.Out
-)
+var out = stdout.Out
 
 type slackToken struct {
 	Token string `json:"token"`
