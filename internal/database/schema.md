@@ -379,7 +379,7 @@ Referenced by:
       Column       |           Type           | Collation | Nullable |                  Default                   
 -------------------+--------------------------+-----------+----------+--------------------------------------------
  id                | integer                  |           | not null | nextval('cm_action_jobs_id_seq'::regclass)
- email             | bigint                   |           | not null | 
+ email             | bigint                   |           |          | 
  state             | text                     |           |          | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
@@ -392,13 +392,37 @@ Referenced by:
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  execution_logs    | json[]                   |           |          | 
+ webhook           | bigint                   |           |          | 
+ slack_webhook     | bigint                   |           |          | 
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "cm_action_jobs_only_one_action_type" CHECK ((
+CASE
+    WHEN email IS NULL THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN webhook IS NULL THEN 0
+    ELSE 1
+END +
+CASE
+    WHEN slack_webhook IS NULL THEN 0
+    ELSE 1
+END) = 1)
 Foreign-key constraints:
     "cm_action_jobs_email_fk" FOREIGN KEY (email) REFERENCES cm_emails(id) ON DELETE CASCADE
+    "cm_action_jobs_slack_webhook_fkey" FOREIGN KEY (slack_webhook) REFERENCES cm_slack_webhooks(id) ON DELETE CASCADE
     "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
+    "cm_action_jobs_webhook_fkey" FOREIGN KEY (webhook) REFERENCES cm_webhooks(id) ON DELETE CASCADE
 
 ```
+
+**email**: The ID of the cm_emails action to execute if this is an email job. Mutually exclusive with webhook and slack_webhook
+
+**slack_webhook**: The ID of the cm_slack_webhook action to execute if this is a slack webhook job. Mutually exclusive with email and webhook
+
+**webhook**: The ID of the cm_webhooks action to execute if this is a webhook job. Mutually exclusive with email and slack_webhook
 
 # Table "public.cm_emails"
 ```
@@ -447,7 +471,9 @@ Foreign-key constraints:
     "cm_monitors_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
 Referenced by:
     TABLE "cm_emails" CONSTRAINT "cm_emails_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    TABLE "cm_slack_webhooks" CONSTRAINT "cm_slack_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
     TABLE "cm_queries" CONSTRAINT "cm_triggers_monitor" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+    TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 
 ```
 
@@ -492,6 +518,36 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.cm_slack_webhooks"
+```
+   Column   |           Type           | Collation | Nullable |                    Default                    
+------------+--------------------------+-----------+----------+-----------------------------------------------
+ id         | bigint                   |           | not null | nextval('cm_slack_webhooks_id_seq'::regclass)
+ monitor    | bigint                   |           | not null | 
+ url        | text                     |           | not null | 
+ enabled    | boolean                  |           | not null | 
+ created_by | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ changed_by | integer                  |           | not null | 
+ changed_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "cm_slack_webhooks_pkey" PRIMARY KEY, btree (id)
+    "cm_slack_webhooks_monitor" btree (monitor)
+Foreign-key constraints:
+    "cm_slack_webhooks_changed_by_fkey" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_slack_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_slack_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_slack_webhook_fkey" FOREIGN KEY (slack_webhook) REFERENCES cm_slack_webhooks(id) ON DELETE CASCADE
+
+```
+
+Slack webhook actions configured on code monitors
+
+**monitor**: The code monitor that the action is defined on
+
+**url**: The Slack webhook URL we send the code monitor event to
+
 # Table "public.cm_trigger_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                   Default                   
@@ -520,6 +576,38 @@ Referenced by:
     TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_trigger_event_fk" FOREIGN KEY (trigger_event) REFERENCES cm_trigger_jobs(id) ON DELETE CASCADE
 
 ```
+
+# Table "public.cm_webhooks"
+```
+   Column   |           Type           | Collation | Nullable |                 Default                 
+------------+--------------------------+-----------+----------+-----------------------------------------
+ id         | bigint                   |           | not null | nextval('cm_webhooks_id_seq'::regclass)
+ monitor    | bigint                   |           | not null | 
+ url        | text                     |           | not null | 
+ enabled    | boolean                  |           | not null | 
+ created_by | integer                  |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ changed_by | integer                  |           | not null | 
+ changed_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "cm_webhooks_pkey" PRIMARY KEY, btree (id)
+    "cm_webhooks_monitor" btree (monitor)
+Foreign-key constraints:
+    "cm_webhooks_changed_by_fkey" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
+Referenced by:
+    TABLE "cm_action_jobs" CONSTRAINT "cm_action_jobs_webhook_fkey" FOREIGN KEY (webhook) REFERENCES cm_webhooks(id) ON DELETE CASCADE
+
+```
+
+Webhook actions configured on code monitors
+
+**enabled**: Whether this Slack webhook action is enabled. When not enabled, the action will not be run when its code monitor generates events
+
+**monitor**: The code monitor that the action is defined on
+
+**url**: The webhook URL we send the code monitor event to
 
 # Table "public.critical_and_site_config"
 ```
@@ -2166,8 +2254,12 @@ Referenced by:
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_slack_webhooks" CONSTRAINT "cm_slack_webhooks_changed_by_fkey" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_slack_webhooks" CONSTRAINT "cm_slack_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "cm_queries" CONSTRAINT "cm_triggers_changed_by_fk" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "cm_queries" CONSTRAINT "cm_triggers_created_by_fk" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_changed_by_fkey" FOREIGN KEY (changed_by) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_created_by_fkey" FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
