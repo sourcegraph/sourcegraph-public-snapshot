@@ -20,7 +20,7 @@ import { getUpdatedSubjectSettings } from '../../pages/insights/edit-insight/hoo
 import { addDashboardToSettings, removeDashboardFromSettings } from '../settings-action/dashboards'
 import { addInsight } from '../settings-action/insights'
 import { Insight, InsightDashboard, InsightTypePrefix, isRealDashboard } from '../types'
-import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../types/dashboard/real-dashboard'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/subjects'
 
 import { getBackendInsight } from './api/get-backend-insight'
@@ -151,9 +151,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         return of(getInsightsDashboards(subjects, final))
     }
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
         this.getDashboards().pipe(
-            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? 'all') ?? undefined))
+            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? 'all') ?? null))
         )
 
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> =>
@@ -161,7 +161,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
             switchMap(dashboards => {
                 const possibleDashboard = dashboards
                     .filter(isRealDashboard)
-                    .filter(isSettingsBasedInsightsDashboard)
+                    .filter(isCustomInsightDashboard)
                     .find(dashboard => dashboard.title === name)
 
                 return of(possibleDashboard ?? null)

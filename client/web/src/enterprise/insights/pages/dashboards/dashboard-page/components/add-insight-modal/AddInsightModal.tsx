@@ -11,8 +11,8 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { parseDashboardType } from '../../../../../core/backend/utils/parse-dashboard-type'
-import { SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { parseDashboardScope } from '../../../../../core/backend/utils/parse-dashboard-scope'
+import { CustomInsightDashboard } from '../../../../../core/types'
 
 import styles from './AddInsightModal.module.scss'
 import {
@@ -21,7 +21,7 @@ import {
 } from './components/add-insight-modal-content/AddInsightModalContent'
 
 export interface AddInsightModalProps {
-    dashboard: SettingsBasedInsightDashboard
+    dashboard: CustomInsightDashboard
     onClose: () => void
 }
 
@@ -47,7 +47,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
-            const type = dashboard.grants && parseDashboardType(dashboard.grants)
+            const type = dashboard.grants && parseDashboardScope(dashboard.grants)
 
             await assignInsightsToDashboard({
                 id: dashboard.id,

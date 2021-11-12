@@ -24,7 +24,14 @@ import {
     UpdateLineChartSearchInsightResult,
 } from '@sourcegraph/web/src/graphql-operations'
 
-import { Insight, InsightDashboard, InsightsDashboardType, isSearchBasedInsight, SearchBasedInsight } from '../types'
+import {
+    Insight,
+    InsightDashboard,
+    InsightsDashboardScope,
+    InsightsDashboardType,
+    isSearchBasedInsight,
+    SearchBasedInsight,
+} from '../types'
 import {
     isSearchBackendBasedInsight,
     SearchBackendBasedInsight,
@@ -58,7 +65,7 @@ import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
 import { createLineChartContent } from './utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView, getStepInterval } from './utils/insight-transformers'
-import { parseDashboardType } from './utils/parse-dashboard-type'
+import { parseDashboardScope } from './utils/parse-dashboard-scope'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
@@ -232,7 +239,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: { id: insightId },
-                update(cache: ApolloCache<DeleteDashboardResult>, result) {
+                update(cache: ApolloCache<DeleteDashboardResult>) {
                     const deletedInsightReference = cache.identify({ __typename: 'InsightView', id: insightId })
 
                     // Remove deleted insights from the apollo cache
@@ -251,22 +258,28 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             map(({ data }) => [
                 {
                     id: 'all',
-                    type: InsightsDashboardType.All,
+                    type: InsightsDashboardType.Virtual,
+                    scope: InsightsDashboardScope.Personal,
+                    title: 'All Insights',
                 },
                 ...data.insightsDashboards.nodes.map(
                     (dashboard): InsightDashboard => ({
                         id: dashboard.id,
-                        type: parseDashboardType(dashboard.grants),
+                        type: InsightsDashboardType.Custom,
+                        scope: parseDashboardScope(dashboard.grants),
                         title: dashboard.title,
                         insightIds: dashboard.views?.nodes.map(view => view.id),
                         grants: dashboard.grants,
+
+                        // BE gql dashboards don't have setting key (it's setting cascade conception only)
+                        settingsKey: null,
                     })
                 ),
             ])
         )
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
-        this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId)))
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
+        this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null))
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.

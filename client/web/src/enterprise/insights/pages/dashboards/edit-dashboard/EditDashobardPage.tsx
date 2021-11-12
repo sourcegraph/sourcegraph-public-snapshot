@@ -18,7 +18,7 @@ import { CodeInsightsIcon } from '../../../components'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { isVirtualDashboard } from '../../../core/types'
-import { isSettingsBasedInsightsDashboard } from '../../../core/types/dashboard/real-dashboard'
+import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
@@ -58,7 +58,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     }
 
     // In case if we got null that means we couldn't find this dashboard
-    if (dashboard === null || isVirtualDashboard(dashboard) || !isSettingsBasedInsightsDashboard(dashboard)) {
+    if (dashboard === null || isVirtualDashboard(dashboard) || isBuiltInInsightDashboard(dashboard)) {
         return (
             <HeroPage
                 icon={MapSearchIcon}
