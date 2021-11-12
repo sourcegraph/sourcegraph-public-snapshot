@@ -1457,6 +1457,16 @@ type Query {
     """
     executors(
         """
+        TODO
+        """
+        query: String
+
+        """
+        TODO
+        """
+        active: Boolean
+
+        """
         Returns the first n executors.
         """
         first: Int
@@ -1501,6 +1511,46 @@ type Executor implements Node {
     The hostname of the executor instance.
     """
     hostname: String!
+
+    """
+    TODO
+    """
+    queueName: String!
+
+    """
+    TODO
+    """
+    os: String!
+
+    """
+    TODO
+    """
+    architecture: String!
+
+    """
+    TODO
+    """
+    executorVersion: String!
+
+    """
+    TODO
+    """
+    srcCliVersion: String!
+
+    """
+    TODO
+    """
+    dockerVersion: String!
+
+    """
+    TODO
+    """
+    igniteVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
 
     """
     The last time the executor sent a heartbeat to the Sourcegraph instance.

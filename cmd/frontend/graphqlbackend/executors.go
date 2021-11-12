@@ -11,10 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type executorResolver struct {
-	executor database.Executor
+	executor types.Executor
 }
 
 type executorConnectionResolver struct {
@@ -26,11 +27,23 @@ type executorConnectionResolver struct {
 const DefaultExecutorsLimit = 50
 
 func (r *schemaResolver) Executors(ctx context.Context, args *struct {
-	First *int32
-	After *string
+	Query  *string
+	Active *bool
+	First  *int32
+	After  *string
 }) (*executorConnectionResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
+	}
+
+	query := ""
+	if args.Query != nil {
+		query = *args.Query
+	}
+
+	active := false
+	if args.Active != nil {
+		active = *args.Active
 	}
 
 	offset, err := decodeIntCursor(args.After)
@@ -44,6 +57,8 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	}
 
 	executors, totalCount, err := r.db.Executors().List(ctx, database.ExecutorStoreListOptions{
+		Query:  query,
+		Active: active,
 		Offset: offset,
 		Limit:  limit,
 	})
@@ -111,6 +126,38 @@ func (e *executorResolver) ID() graphql.ID {
 
 func (e *executorResolver) Hostname() string {
 	return e.executor.Hostname
+}
+
+func (e *executorResolver) QueueName() string {
+	return e.executor.QueueName
+}
+
+func (e *executorResolver) Os() string {
+	return e.executor.OS
+}
+
+func (e *executorResolver) Architecture() string {
+	return e.executor.Architecture
+}
+
+func (e *executorResolver) ExecutorVersion() string {
+	return e.executor.ExecutorVersion
+}
+
+func (e *executorResolver) SrcCliVersion() string {
+	return e.executor.SrcCliVersion
+}
+
+func (e *executorResolver) DockerVersion() string {
+	return e.executor.DockerVersion
+}
+
+func (e *executorResolver) IgniteVersion() string {
+	return e.executor.IgniteVersion
+}
+
+func (e *executorResolver) FirstSeenAt() DateTime {
+	return DateTime{e.executor.FirstSeenAt}
 }
 
 func (e *executorResolver) LastSeenAt() DateTime {

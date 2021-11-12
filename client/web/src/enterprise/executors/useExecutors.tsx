@@ -12,6 +12,14 @@ export const executorFieldsFragment = gql`
         __typename
         id
         hostname
+        queueName
+        os
+        architecture
+        executorVersion
+        srcCliVersion
+        dockerVersion
+        igniteVersion
+        firstSeenAt
         lastSeenAt
     }
 `
@@ -23,8 +31,8 @@ interface ExecutorConnection {
 }
 
 const EXECUTORS = gql`
-    query Executors($first: Int, $after: String) {
-        executors(first: $first, after: $after) {
+    query Executors($query: String, $active: Boolean, $first: Int, $after: String) {
+        executors(query: $query, active: $active, first: $first, after: $after) {
             nodes {
                 ...ExecutorFields
             }
@@ -40,10 +48,12 @@ const EXECUTORS = gql`
 `
 
 export const useExecutors = (
-    { first, after }: GQL.IExecutorsOnQueryArguments,
+    { query, active, first, after }: GQL.IExecutorsOnQueryArguments,
     client: ApolloClient<object>
 ): Observable<ExecutorConnection> => {
     const vars = {
+        query: query ?? null,
+        active: active ?? null,
         first: first ?? null,
         after: after ?? null,
     }

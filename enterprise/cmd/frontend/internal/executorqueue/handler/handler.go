@@ -3,12 +3,14 @@ package handler
 import (
 	"context"
 	"fmt"
+	"math/rand"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
@@ -151,8 +153,29 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 
 // heartbeat calls Heartbeat for the given jobs.
 func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
+	const valueSize = 32
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	randValue := func() (v string) {
+		for i := 0; i < valueSize; i++ {
+			v += string(alphabet[rand.Intn(len(alphabet))])
+		}
+		return
+	}
+
+	executor := types.Executor{
+		Hostname:        executorName,
+		QueueName:       randValue(), // TODO(eseliger) - fill me in
+		OS:              randValue(), // TODO(eseliger) - fill me in
+		Architecture:    randValue(), // TODO(eseliger) - fill me in
+		ExecutorVersion: randValue(), // TODO(eseliger) - fill me in
+		SrcCliVersion:   randValue(), // TODO(eseliger) - fill me in
+		GitVersion:      randValue(), // TODO(eseliger) - fill me in
+		DockerVersion:   randValue(), // TODO(eseliger) - fill me in
+		IgniteVersion:   randValue(), // TODO(eseliger) - fill me in
+	}
+
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
-	if err := h.executorStore.Heartbeat(ctx, executorName); err != nil {
+	if err := h.executorStore.Heartbeat(ctx, executor); err != nil {
 		return nil, err
 	}
 

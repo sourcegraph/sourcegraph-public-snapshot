@@ -31,7 +31,7 @@ export const SiteAdminSidebar: React.FunctionComponent<SiteAdminSidebarProps> = 
             {groups.map(
                 ({ header, items, condition = () => true }, index) =>
                     condition(props) &&
-                    (items.length > 1 || header?.allowSingleton ? (
+                    (items.length > 1 ? (
                         <ListGroupItem className="p-0" key={index}>
                             <SidebarCollapseItems icon={header?.icon} label={header?.label} openByDefault={true}>
                                 {items.map(

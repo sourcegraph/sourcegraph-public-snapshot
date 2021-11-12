@@ -64,7 +64,6 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     history={history}
                     location={props.location}
                     cursorPaging={true}
-                    hideSearch={true}
                     emptyElement={<NoExecutors />}
                 />
             </Container>
@@ -77,25 +76,47 @@ export interface ExecutorNodeProps {
 }
 
 // TODO: style
-// TODO: add additional data
 export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
-    <div className="mb-2">
-        <table>
-            <tr>
-                <td>ID</td>
-                <td>{node.id}</td>
-            </tr>
-            <tr>
-                <td>Hostname</td>
-                <td>{node.hostname}</td>
-            </tr>
-            <tr>
-                <td>Last seen at</td>
-                <td>
-                    <Timestamp date={node.lastSeenAt} />
-                </td>
-            </tr>
-        </table>
+    <div className="p-2">
+        <hr />
+
+        <dl>
+            {/*
+            <dt>ID</dt>
+            <dl>{node.id}</dl>
+            */}
+            <dt>Hostname</dt>
+            <dl>{node.hostname}</dl>
+            <dt>Queue Name</dt>
+            <dl>{node.queueName}</dl>
+
+            {/*
+            <dt>OS</dt>
+            <dl>{node.os}</dl>
+            <dt>Architecture</dt>
+            <dl>{node.architecture}</dl>
+            <dt>Executor version</dt>
+            <dl>{node.executorVersion}</dl>
+            <dt>src-cli version</dt>
+            <dl>{node.srcCliVersion}</dl>
+            <dt>Docker version</dt>
+            <dl>{node.dockerVersion}</dl>
+            <dt>Ignite version</dt>
+            <dl>{node.igniteVersion}</dl>
+            */}
+
+            <dt>First seen at</dt>
+            <dd>
+                <Timestamp date={node.firstSeenAt} />
+            </dd>
+
+            <dt>Last seen at</dt>
+            <dd>
+                <Timestamp date={node.lastSeenAt} />
+            </dd>
+        </dl>
+
+        <hr />
     </div>
 )
 
