@@ -166,12 +166,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 		},
 	}
 
-	opts := []cmp.Option{
-		cmpopts.IgnoreFields(btypes.BatchSpecWorkspace{}, "ID", "CreatedAt", "UpdatedAt"),
-	}
-	if diff := cmp.Diff(want, have, opts...); diff != "" {
-		t.Fatalf("wrong diff: %s", diff)
-	}
+	assertWorkspacesEqual(t, have, want)
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {

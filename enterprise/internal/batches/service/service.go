@@ -481,15 +481,10 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Delete ChangesetSpecs that are associated with BatchSpec.
-	err = tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
-	if err != nil {
-		return nil, err
-	}
-
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
+	// - changeset_specs
 	// associated with it
 	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
 		return nil, err
@@ -1101,6 +1096,8 @@ func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.Bat
 
 // RetryBatchSpecWorkspaces retries the BatchSpecWorkspaceExecutionJobs
 // attached to the given BatchSpecWorkspaces.
+// It only deletes changeset_specs created by workspaces. The imported changeset_specs
+// will not be altered.
 func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
 	ctx, endObservation := s.operations.retryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
