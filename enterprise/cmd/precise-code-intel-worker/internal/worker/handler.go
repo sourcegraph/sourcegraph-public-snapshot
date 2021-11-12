@@ -172,7 +172,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
 			// We always keep this value up to date - we also decrement reference counts of dependencies
 			// on upload deletion or when the set of uploads providing an existing package change.
-			if err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, dbstore.DependencyReferenceCountUpdateTypeAdd); err != nil {
+			if err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, store.DependencyReferenceCountUpdateTypeAdd); err != nil {
 				return errors.Wrap(err, "store.UpdateReferenceCount")
 			}
 
