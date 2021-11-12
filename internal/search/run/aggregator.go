@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -20,10 +21,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
+func NewAggregator(db dbutil.DB, stream streaming.Sender, filterFunc func(*streaming.SearchEvent) error) *Aggregator {
 	return &Aggregator{
 		db:           db,
 		parentStream: stream,
+		filterFunc:   filterFunc,
 		errors:       &multierror.Error{},
 	}
 }
@@ -31,6 +33,13 @@ func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
 type Aggregator struct {
 	parentStream streaming.Sender
 	db           dbutil.DB
+
+	// filterFunc can be applied to manipulate each SearchEvent before it gets propagated.
+	// It is currently used to provide sub-repo perms filtering.
+	//
+	// SearchEvent is still propagated even in an error case - filterFunc should make sure
+	// the appropriate manipulations are made before returning an error.
+	filterFunc func(*streaming.SearchEvent) error
 
 	mu         sync.Mutex
 	results    []result.Match
@@ -48,7 +57,19 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Er
 	return a.results, a.stats, a.matchCount, a.errors
 }
 
+// Send propagates the given event to the Aggregator's parent stream, or
+// aggregates it within results.
+//
+// It currently also applies sub-repo permissions filtering (see inline docs).
 func (a *Aggregator) Send(event streaming.SearchEvent) {
+	if a.filterFunc != nil {
+		// We don't need to return if we encounter an error because filterFunc should
+		// remove anything that should not be provided to the user before returning.
+		if err := a.filterFunc(&event); err != nil {
+			a.Error(err)
+		}
+	}
+
 	if a.parentStream != nil {
 		a.parentStream.Send(event)
 	}
