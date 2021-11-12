@@ -1457,12 +1457,13 @@ type Query {
     """
     executors(
         """
-        TODO
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
         """
         query: String
 
         """
-        TODO
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
         """
         active: Boolean
 
@@ -1513,37 +1514,42 @@ type Executor implements Node {
     hostname: String!
 
     """
-    TODO
+    The queue name that the executor polls for work.
     """
     queueName: String!
 
     """
-    TODO
+    The operating system running the executor.
     """
     os: String!
 
     """
-    TODO
+    The machine architure running the executor.
     """
     architecture: String!
 
     """
-    TODO
+    The version of the executor.
     """
     executorVersion: String!
 
     """
-    TODO
+    The version of src-cli used by the executor.
     """
     srcCliVersion: String!
 
     """
-    TODO
+    The version of Git used by the executor.
     """
     dockerVersion: String!
 
     """
-    TODO
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
     """
     igniteVersion: String!
 

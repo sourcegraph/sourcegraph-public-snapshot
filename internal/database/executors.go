@@ -118,8 +118,7 @@ func (s *executorStore) List(ctx context.Context, opts ExecutorStoreListOptions)
 		conds = append(conds, makeExecutorSearchCondition(opts.Query))
 	}
 	if opts.Active {
-		// TODO - configure this threshold
-		conds = append(conds, sqlf.Sprintf("NOW() - h.last_seen_at < '5 minutes'::interval"))
+		conds = append(conds, sqlf.Sprintf("NOW() - h.last_seen_at < '15 minutes'::interval"))
 	}
 
 	whereConditions := sqlf.Sprintf("TRUE")
