@@ -102,11 +102,11 @@ type HeartbeatRequest struct {
 
 	OS              string `json:"os"`
 	Architecture    string `json:"architecture"`
-	SrcCliVersion   string `json:"srcCliVersion"`
-	GitVersion      string `json:"gitVersion"`
 	DockerVersion   string `json:"dockerVersion"`
-	IgniteVersion   string `json:"igniteVersion"`
 	ExecutorVersion string `json:"executorVersion"`
+	GitVersion      string `json:"gitVersion"`
+	IgniteVersion   string `json:"igniteVersion"`
+	SrcCliVersion   string `json:"srcCliVersion"`
 }
 
 type CanceledRequest struct {

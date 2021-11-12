@@ -32,6 +32,10 @@ This job contains all of the backgrounds processes for Code Insights. These proc
 
 This job periodically removes stale log entries for incoming webhooks.
 
+#### `executors-janitor`
+
+This job periodically removes old heartbeat records for inactive executor instances.
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.

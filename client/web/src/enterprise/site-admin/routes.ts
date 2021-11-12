@@ -2,6 +2,7 @@ import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { lazyComponent } from '../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     ...siteAdminAreaRoutes,
@@ -143,5 +144,22 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/lsif-uploads/:id',
         render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
         exact: true,
+    },
+
+    // Executor routes
+    {
+        path: '/executors',
+        render: lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
+            () => import('../executors/ExecutorsListPage'),
+            'ExecutorsListPage'
+        ),
+        exact: true,
+        // TODO - expand this to executors enabled when SSBC need this page
+        // as well. Right now we don't have an easy way to check if the
+        // executor accessToken is set in site-config, but that should be
+        // the condition of showing this.
+        condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+            Boolean(window.context?.codeIntelAutoIndexingEnabled) ||
+            (batchChangesEnabled && batchChangesExecutionEnabled),
     },
 ]

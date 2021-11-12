@@ -14,11 +14,11 @@ import (
 type TelemetryOptions struct {
 	OS              string
 	Architecture    string
-	ExecutorVersion string
-	SrcCliVersion   string
 	DockerVersion   string
-	IgniteVersion   string
+	ExecutorVersion string
 	GitVersion      string
+	IgniteVersion   string
+	SrcCliVersion   string
 }
 
 func NewTelemetryOptions(ctx context.Context) TelemetryOptions {
