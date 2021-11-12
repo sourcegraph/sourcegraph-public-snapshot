@@ -69,6 +69,10 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             message:
               'Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback',
           },
+          {
+            element: 'button',
+            message: 'Use the Button component from @sourcegraph/wildcard.',
+          },
         ],
       },
     ],
