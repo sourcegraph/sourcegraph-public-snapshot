@@ -151,7 +151,7 @@ func TestExecutorsGetByID(t *testing.T) {
 	expected := types.Executor{
 		ID:              1,
 		Hostname:        "test-hostname",
-		QueueName:       "test-queueName",
+		QueueName:       "test-queue-name",
 		OS:              "test-os",
 		Architecture:    "test-architecture",
 		DockerVersion:   "test-docker-version",
@@ -168,7 +168,16 @@ func TestExecutorsGetByID(t *testing.T) {
 		t.Fatalf("unexpected error inserting heartbeat: %s", err)
 	}
 
-	// update last seen at
+	expected.QueueName += "-changed"
+	expected.OS += "-changed"
+	expected.Architecture += "-changed"
+	expected.DockerVersion += "-changed"
+	expected.ExecutorVersion += "-changed"
+	expected.GitVersion += "-changed"
+	expected.IgniteVersion += "-changed"
+	expected.SrcCliVersion += "-changed"
+
+	// update values as well as last seen at
 	if err := store.heartbeat(ctx, expected, t2); err != nil {
 		t.Fatalf("unexpected error inserting heartbeat: %s", err)
 	}

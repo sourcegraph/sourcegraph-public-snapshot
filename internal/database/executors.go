@@ -232,6 +232,8 @@ func (s *executorStore) Heartbeat(ctx context.Context, executor types.Executor) 
 func (s *executorStore) heartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
 	return s.Exec(ctx, sqlf.Sprintf(
 		executorStoryHeartbeatQuery,
+
+		// insert
 		executor.Hostname,
 		executor.QueueName,
 		executor.OS,
@@ -243,6 +245,16 @@ func (s *executorStore) heartbeat(ctx context.Context, executor types.Executor, 
 		executor.SrcCliVersion,
 		now,
 		now,
+
+		// update
+		executor.QueueName,
+		executor.OS,
+		executor.Architecture,
+		executor.DockerVersion,
+		executor.ExecutorVersion,
+		executor.GitVersion,
+		executor.IgniteVersion,
+		executor.SrcCliVersion,
 		now,
 	))
 }
@@ -263,5 +275,15 @@ INSERT INTO executor_heartbeats (
 	last_seen_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (hostname) DO UPDATE SET last_seen_at = %s
+ON CONFLICT (hostname) DO UPDATE
+SET
+	queue_name = %s,
+	os = %s,
+	architecture = %s,
+	docker_version = %s,
+	executor_version = %s,
+	git_version = %s,
+	ignite_version = %s,
+	src_cli_version = %s,
+	last_seen_at = %s
 `
