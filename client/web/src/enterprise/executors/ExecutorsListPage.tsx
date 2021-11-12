@@ -1,14 +1,11 @@
 import { useApolloClient } from '@apollo/client'
-import { parseISO } from 'date-fns'
 import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
-import { CopyableText } from '@sourcegraph/web/src/components/CopyableText'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
