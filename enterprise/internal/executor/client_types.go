@@ -66,6 +66,13 @@ type CliStep struct {
 }
 
 type DequeueRequest struct {
+	OS               string `json:"os"`
+	Architecture     string `json:"architecture"`
+	SrcCLIVersion    string `json:"srcCLIVersion"`
+	GitVersion       string `json:"gitVersion"`
+	DockerVersion    string `json:"dockerVersion"`
+	IgniteVersion    string `json:"igniteVersion"`
+	Version          string `json:"version"`
 	ExecutorName     string `json:"executorName"`
 	ExecutorHostname string `json:"executorHostname"`
 }
