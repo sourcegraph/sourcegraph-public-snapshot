@@ -8,6 +8,7 @@ import (
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // MockExecutorStore is a mock implementation of the ExecutorStore interface
@@ -47,8 +48,8 @@ func NewMockExecutorStore() *MockExecutorStore {
 			},
 		},
 		GetByIDFunc: &ExecutorStoreGetByIDFunc{
-			defaultHook: func(context.Context, int) (database.Executor, bool, error) {
-				return database.Executor{}, false, nil
+			defaultHook: func(context.Context, int) (types.Executor, bool, error) {
+				return types.Executor{}, false, nil
 			},
 		},
 		HandleFunc: &ExecutorStoreHandleFunc{
@@ -57,12 +58,12 @@ func NewMockExecutorStore() *MockExecutorStore {
 			},
 		},
 		HeartbeatFunc: &ExecutorStoreHeartbeatFunc{
-			defaultHook: func(context.Context, string) error {
+			defaultHook: func(context.Context, types.Executor) error {
 				return nil
 			},
 		},
 		ListFunc: &ExecutorStoreListFunc{
-			defaultHook: func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error) {
+			defaultHook: func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
 				return nil, 0, nil
 			},
 		},
@@ -213,15 +214,15 @@ func (c ExecutorStoreDoneFuncCall) Results() []interface{} {
 // ExecutorStoreGetByIDFunc describes the behavior when the GetByID method
 // of the parent MockExecutorStore instance is invoked.
 type ExecutorStoreGetByIDFunc struct {
-	defaultHook func(context.Context, int) (database.Executor, bool, error)
-	hooks       []func(context.Context, int) (database.Executor, bool, error)
+	defaultHook func(context.Context, int) (types.Executor, bool, error)
+	hooks       []func(context.Context, int) (types.Executor, bool, error)
 	history     []ExecutorStoreGetByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetByID delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExecutorStore) GetByID(v0 context.Context, v1 int) (database.Executor, bool, error) {
+func (m *MockExecutorStore) GetByID(v0 context.Context, v1 int) (types.Executor, bool, error) {
 	r0, r1, r2 := m.GetByIDFunc.nextHook()(v0, v1)
 	m.GetByIDFunc.appendCall(ExecutorStoreGetByIDFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -230,7 +231,7 @@ func (m *MockExecutorStore) GetByID(v0 context.Context, v1 int) (database.Execut
 // SetDefaultHook sets function that is called when the GetByID method of
 // the parent MockExecutorStore instance is invoked and the hook queue is
 // empty.
-func (f *ExecutorStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int) (database.Executor, bool, error)) {
+func (f *ExecutorStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int) (types.Executor, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -238,7 +239,7 @@ func (f *ExecutorStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int
 // GetByID method of the parent MockExecutorStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ExecutorStoreGetByIDFunc) PushHook(hook func(context.Context, int) (database.Executor, bool, error)) {
+func (f *ExecutorStoreGetByIDFunc) PushHook(hook func(context.Context, int) (types.Executor, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -246,21 +247,21 @@ func (f *ExecutorStoreGetByIDFunc) PushHook(hook func(context.Context, int) (dat
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ExecutorStoreGetByIDFunc) SetDefaultReturn(r0 database.Executor, r1 bool, r2 error) {
-	f.SetDefaultHook(func(context.Context, int) (database.Executor, bool, error) {
+func (f *ExecutorStoreGetByIDFunc) SetDefaultReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int) (types.Executor, bool, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ExecutorStoreGetByIDFunc) PushReturn(r0 database.Executor, r1 bool, r2 error) {
-	f.PushHook(func(context.Context, int) (database.Executor, bool, error) {
+func (f *ExecutorStoreGetByIDFunc) PushReturn(r0 types.Executor, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int) (types.Executor, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ExecutorStoreGetByIDFunc) nextHook() func(context.Context, int) (database.Executor, bool, error) {
+func (f *ExecutorStoreGetByIDFunc) nextHook() func(context.Context, int) (types.Executor, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -301,7 +302,7 @@ type ExecutorStoreGetByIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 database.Executor
+	Result0 types.Executor
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 bool
@@ -424,15 +425,15 @@ func (c ExecutorStoreHandleFuncCall) Results() []interface{} {
 // ExecutorStoreHeartbeatFunc describes the behavior when the Heartbeat
 // method of the parent MockExecutorStore instance is invoked.
 type ExecutorStoreHeartbeatFunc struct {
-	defaultHook func(context.Context, string) error
-	hooks       []func(context.Context, string) error
+	defaultHook func(context.Context, types.Executor) error
+	hooks       []func(context.Context, types.Executor) error
 	history     []ExecutorStoreHeartbeatFuncCall
 	mutex       sync.Mutex
 }
 
 // Heartbeat delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExecutorStore) Heartbeat(v0 context.Context, v1 string) error {
+func (m *MockExecutorStore) Heartbeat(v0 context.Context, v1 types.Executor) error {
 	r0 := m.HeartbeatFunc.nextHook()(v0, v1)
 	m.HeartbeatFunc.appendCall(ExecutorStoreHeartbeatFuncCall{v0, v1, r0})
 	return r0
@@ -441,7 +442,7 @@ func (m *MockExecutorStore) Heartbeat(v0 context.Context, v1 string) error {
 // SetDefaultHook sets function that is called when the Heartbeat method of
 // the parent MockExecutorStore instance is invoked and the hook queue is
 // empty.
-func (f *ExecutorStoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, string) error) {
+func (f *ExecutorStoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, types.Executor) error) {
 	f.defaultHook = hook
 }
 
@@ -449,7 +450,7 @@ func (f *ExecutorStoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, s
 // Heartbeat method of the parent MockExecutorStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *ExecutorStoreHeartbeatFunc) PushHook(hook func(context.Context, string) error) {
+func (f *ExecutorStoreHeartbeatFunc) PushHook(hook func(context.Context, types.Executor) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -458,7 +459,7 @@ func (f *ExecutorStoreHeartbeatFunc) PushHook(hook func(context.Context, string)
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ExecutorStoreHeartbeatFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, string) error {
+	f.SetDefaultHook(func(context.Context, types.Executor) error {
 		return r0
 	})
 }
@@ -466,12 +467,12 @@ func (f *ExecutorStoreHeartbeatFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ExecutorStoreHeartbeatFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, string) error {
+	f.PushHook(func(context.Context, types.Executor) error {
 		return r0
 	})
 }
 
-func (f *ExecutorStoreHeartbeatFunc) nextHook() func(context.Context, string) error {
+func (f *ExecutorStoreHeartbeatFunc) nextHook() func(context.Context, types.Executor) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -509,7 +510,7 @@ type ExecutorStoreHeartbeatFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 types.Executor
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -530,15 +531,15 @@ func (c ExecutorStoreHeartbeatFuncCall) Results() []interface{} {
 // ExecutorStoreListFunc describes the behavior when the List method of the
 // parent MockExecutorStore instance is invoked.
 type ExecutorStoreListFunc struct {
-	defaultHook func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error)
-	hooks       []func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error)
+	defaultHook func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error)
+	hooks       []func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error)
 	history     []ExecutorStoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExecutorStore) List(v0 context.Context, v1 database.ExecutorStoreListOptions) ([]database.Executor, int, error) {
+func (m *MockExecutorStore) List(v0 context.Context, v1 database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
 	r0, r1, r2 := m.ListFunc.nextHook()(v0, v1)
 	m.ListFunc.appendCall(ExecutorStoreListFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
@@ -546,7 +547,7 @@ func (m *MockExecutorStore) List(v0 context.Context, v1 database.ExecutorStoreLi
 
 // SetDefaultHook sets function that is called when the List method of the
 // parent MockExecutorStore instance is invoked and the hook queue is empty.
-func (f *ExecutorStoreListFunc) SetDefaultHook(hook func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error)) {
+func (f *ExecutorStoreListFunc) SetDefaultHook(hook func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -554,7 +555,7 @@ func (f *ExecutorStoreListFunc) SetDefaultHook(hook func(context.Context, databa
 // List method of the parent MockExecutorStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ExecutorStoreListFunc) PushHook(hook func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error)) {
+func (f *ExecutorStoreListFunc) PushHook(hook func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -562,21 +563,21 @@ func (f *ExecutorStoreListFunc) PushHook(hook func(context.Context, database.Exe
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ExecutorStoreListFunc) SetDefaultReturn(r0 []database.Executor, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error) {
+func (f *ExecutorStoreListFunc) SetDefaultReturn(r0 []types.Executor, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ExecutorStoreListFunc) PushReturn(r0 []database.Executor, r1 int, r2 error) {
-	f.PushHook(func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error) {
+func (f *ExecutorStoreListFunc) PushReturn(r0 []types.Executor, r1 int, r2 error) {
+	f.PushHook(func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *ExecutorStoreListFunc) nextHook() func(context.Context, database.ExecutorStoreListOptions) ([]database.Executor, int, error) {
+func (f *ExecutorStoreListFunc) nextHook() func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -617,7 +618,7 @@ type ExecutorStoreListFuncCall struct {
 	Arg1 database.ExecutorStoreListOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []database.Executor
+	Result0 []types.Executor
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 int
