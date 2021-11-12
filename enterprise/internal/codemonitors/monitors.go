@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type Monitor struct {
@@ -92,8 +93,9 @@ FROM cm_monitors
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (m *Monitor, err error) {
-	return s.runMonitorQuery(ctx, sqlf.Sprintf(monitorByIDFmtStr, monitorID))
+func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(monitorByIDFmtStr, monitorID))
+	return scanMonitor(row)
 }
 
 const totalCountMonitorsFmtStr = `
@@ -244,31 +246,29 @@ func (s *codeMonitorStore) deleteMonitorQuery(ctx context.Context, args *graphql
 func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
 	var ms []*Monitor
 	for rows.Next() {
-		m := &Monitor{}
-		if err := rows.Scan(
-			&m.ID,
-			&m.CreatedBy,
-			&m.CreatedAt,
-			&m.ChangedBy,
-			&m.ChangedAt,
-			&m.Description,
-			&m.Enabled,
-			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
-		); err != nil {
+		m, err := scanMonitor(rows)
+		if err != nil {
 			return nil, err
 		}
 		ms = append(ms, m)
 	}
-	err := rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
+	return ms, rows.Err()
+}
+
+func scanMonitor(scanner dbutil.Scanner) (*Monitor, error) {
+	m := &Monitor{}
+	err := scanner.Scan(
+		&m.ID,
+		&m.CreatedBy,
+		&m.CreatedAt,
+		&m.ChangedBy,
+		&m.ChangedAt,
+		&m.Description,
+		&m.Enabled,
+		&m.NamespaceUserID,
+		&m.NamespaceOrgID,
+	)
+	return m, err
 }
 
 func (s *codeMonitorStore) runMonitorQuery(ctx context.Context, q *sqlf.Query) (*Monitor, error) {
