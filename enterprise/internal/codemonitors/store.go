@@ -25,7 +25,6 @@ type CodeMonitorStore interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 
-	ReadActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error)
 	UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error)
 	CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error)
 	DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error)
