@@ -48,7 +48,7 @@ const EXECUTORS = gql`
     ${executorFieldsFragment}
 `
 
-export const useExecutors = (
+export const queryExecutors = (
     { query, active, first, after }: GQL.IExecutorsOnQueryArguments,
     client: ApolloClient<object>
 ): Observable<ExecutorConnection> => {

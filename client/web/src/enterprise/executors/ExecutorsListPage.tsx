@@ -1,10 +1,10 @@
 import { useApolloClient } from '@apollo/client'
+import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -15,8 +15,9 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ExecutorFields } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 
-import { useExecutors as defaultDoQueryExecutors } from './useExecutors'
+import { queryExecutors as defaultQueryExecutors } from './useExecutors'
 
 const filters: FilteredConnectionFilter[] = [
     {
@@ -40,18 +41,17 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export interface ExecutorsListPageProps extends RouteComponentProps<{}>, TelemetryProps {
-    telemetryService: TelemetryService
-    doQueryExecutors?: typeof defaultDoQueryExecutors
+export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
+    queryExecutors?: typeof defaultQueryExecutors
+    history: H.History
 }
 
 export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
-    doQueryExecutors = defaultDoQueryExecutors,
-    telemetryService,
+    queryExecutors: doQueryExecutors = defaultQueryExecutors,
     history,
     ...props
 }) => {
-    useEffect(() => telemetryService.logViewEvent('ExecutorsListPage'), [telemetryService])
+    useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
 
     const apolloClient = useApolloClient()
     const queryExecutors = useCallback(
