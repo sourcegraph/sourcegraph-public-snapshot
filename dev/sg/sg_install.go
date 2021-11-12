@@ -39,7 +39,10 @@ func installExec(ctx context.Context, args []string) error {
 	case "linux":
 		location = filepath.Join(homeDir, ".local", "bin", "sg")
 	case "darwin":
-		location = "/usr/local/bin/sg"
+		// We're using something in the home directory because on a fresh macOS
+		// installation the user doesn't have permission to create/open/write
+		// to /usr/local/bin. We're safe with ~/.sg/sg.
+		location = filepath.Join(homeDir, ".sg", "sg")
 	default:
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
