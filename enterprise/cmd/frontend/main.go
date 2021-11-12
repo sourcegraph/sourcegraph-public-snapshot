@@ -74,17 +74,17 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable, outOfB
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	services, err := codeintel.NewServices(ctx, db)
+	services, err := codeintel.NewServices(ctx, conf, db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Initialize enterprise-specific services with the code-intel services.
-	if err := executor.Init(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
+	if err := executor.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
 		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
 	}
 
-	if err := codeintel.Init(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
+	if err := codeintel.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
 		log.Fatal(fmt.Sprintf("failed to initialize codeintel: %s", err))
 	}
 
