@@ -152,6 +152,10 @@ func (e *executorResolver) DockerVersion() string {
 	return e.executor.DockerVersion
 }
 
+func (e *executorResolver) GitVersion() string {
+	return e.executor.GitVersion
+}
+
 func (e *executorResolver) IgniteVersion() string {
 	return e.executor.IgniteVersion
 }

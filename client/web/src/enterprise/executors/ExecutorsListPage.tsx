@@ -107,26 +107,28 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
         <dl>
             {/*
             <dt>ID</dt>
-            <dl>{node.id}</dl>
+            <dt>{node.id}</dt>
             */}
             <dt>Hostname</dt>
-            <dl>{node.hostname}</dl>
+            <dd>{node.hostname}</dd>
             <dt>Queue Name</dt>
-            <dl>{node.queueName}</dl>
+            <dd>{node.queueName}</dd>
 
             {/*
             <dt>OS</dt>
-            <dl>{node.os}</dl>
+            <dd>{node.os}</dd>
             <dt>Architecture</dt>
-            <dl>{node.architecture}</dl>
+            <dd>{node.architecture}</dd>
             <dt>Executor version</dt>
-            <dl>{node.executorVersion}</dl>
+            <dd>{node.executorVersion}</dd>
             <dt>src-cli version</dt>
-            <dl>{node.srcCliVersion}</dl>
+            <dd>{node.srcCliVersion}</dd>
             <dt>Docker version</dt>
-            <dl>{node.dockerVersion}</dl>
+            <dd>{node.dockerVersion}</dd>
+            <dt>Git version</dt>
+            <dd>{node.gitVersion}<dd>
             <dt>Ignite version</dt>
-            <dl>{node.igniteVersion}</dl>
+            <dd>{node.igniteVersion}</dd>
             */}
 
             <dt>First seen at</dt>

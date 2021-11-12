@@ -18,6 +18,7 @@ export const executorFieldsFragment = gql`
         executorVersion
         srcCliVersion
         dockerVersion
+        gitVersion
         igniteVersion
         firstSeenAt
         lastSeenAt

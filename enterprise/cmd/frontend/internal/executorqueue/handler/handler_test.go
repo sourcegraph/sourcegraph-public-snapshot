@@ -374,15 +374,15 @@ func TestHeartbeat(t *testing.T) {
 	executorStore := NewMockExecutorStore()
 
 	executor := types.Executor{
-		Hostname:        "test-executorName",
-		QueueName:       "test-queueName",
-		OS:              "test-os",
+		Hostname:        "test-hostname",
+		QueueName:       "test-queue-name",
+		OS:              "test-oS",
 		Architecture:    "test-architecture",
-		ExecutorVersion: "test-executorVersion",
-		SrcCliVersion:   "test-srcCliVersion",
-		GitVersion:      "test-gitVersion",
-		DockerVersion:   "test-dockerVersion",
-		IgniteVersion:   "test-igniteVersion",
+		ExecutorVersion: "test-executor-version",
+		SrcCliVersion:   "test-src-cli-version",
+		GitVersion:      "test-git-version",
+		DockerVersion:   "test-docker-version",
+		IgniteVersion:   "test-ignite-version",
 	}
 
 	handler := newHandler(executorStore, QueueOptions{Store: s, RecordTransformer: recordTransformer})
