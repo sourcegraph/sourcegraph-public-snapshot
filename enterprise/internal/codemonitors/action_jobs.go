@@ -122,7 +122,6 @@ const listActionsFmtStr = `
 SELECT %s -- ActionJobsColumns
 FROM cm_action_jobs
 WHERE %s
-AND id > %s
 ORDER BY id ASC
 LIMIT %s;
 `
@@ -148,7 +147,6 @@ const countActionsFmtStr = `
 SELECT COUNT(*)
 FROM cm_action_jobs
 WHERE %s
-ORDER BY id ASC
 LIMIT %s
 `
 
