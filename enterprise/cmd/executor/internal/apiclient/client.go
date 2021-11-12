@@ -210,13 +210,13 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
 
-		OS:            c.options.TelemetryOptions.OS,
-		Architecture:  c.options.TelemetryOptions.Arch,
-		Version:       c.options.TelemetryOptions.Version,
-		SrcCliVersion: c.options.TelemetryOptions.SrcCliVersion,
-		DockerVersion: c.options.TelemetryOptions.DockerVersion,
-		IgniteVersion: c.options.TelemetryOptions.IgniteVersion,
-		GitVersion:    c.options.TelemetryOptions.GitVersion,
+		OS:              c.options.TelemetryOptions.OS,
+		Architecture:    c.options.TelemetryOptions.Architecture,
+		ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+		DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+		GitVersion:      c.options.TelemetryOptions.GitVersion,
 	})
 	if err != nil {
 		return nil, err

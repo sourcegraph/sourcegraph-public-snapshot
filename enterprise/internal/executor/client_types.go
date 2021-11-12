@@ -100,13 +100,13 @@ type HeartbeatRequest struct {
 
 	// Telemetry data.
 
-	OS            string `json:"os"`
-	Architecture  string `json:"architecture"`
-	SrcCliVersion string `json:"srcCliVersion"`
-	GitVersion    string `json:"gitVersion"`
-	DockerVersion string `json:"dockerVersion"`
-	IgniteVersion string `json:"igniteVersion"`
-	Version       string `json:"version"`
+	OS              string `json:"os"`
+	Architecture    string `json:"architecture"`
+	SrcCliVersion   string `json:"srcCliVersion"`
+	GitVersion      string `json:"gitVersion"`
+	DockerVersion   string `json:"dockerVersion"`
+	IgniteVersion   string `json:"igniteVersion"`
+	ExecutorVersion string `json:"executorVersion"`
 }
 
 type CanceledRequest struct {

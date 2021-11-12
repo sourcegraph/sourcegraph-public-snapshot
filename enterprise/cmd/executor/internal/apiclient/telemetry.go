@@ -12,20 +12,20 @@ import (
 )
 
 type TelemetryOptions struct {
-	OS            string
-	Arch          string
-	Version       string
-	SrcCliVersion string
-	DockerVersion string
-	IgniteVersion string
-	GitVersion    string
+	OS              string
+	Architecture    string
+	ExecutorVersion string
+	SrcCliVersion   string
+	DockerVersion   string
+	IgniteVersion   string
+	GitVersion      string
 }
 
 func NewTelemetryOptions(ctx context.Context) TelemetryOptions {
 	t := TelemetryOptions{
-		OS:      runtime.GOOS,
-		Arch:    runtime.GOARCH,
-		Version: version.Version(),
+		OS:              runtime.GOOS,
+		Architecture:    runtime.GOARCH,
+		ExecutorVersion: version.Version(),
 	}
 
 	var err error
