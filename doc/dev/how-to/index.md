@@ -11,7 +11,7 @@
 - [Ignoring editor config files in Git](ignoring_editor_config_files.md)
 - [Use `golangci-lint`](use-golangci-lint.md)
 - [Set up local development with M1 mac](m1_mac_local_dev.md)
-- [How to add or remove repositories](add_remove_local_repositories.md)
+- [How to add or remove repositories](add_remove_local_repositories.md) 
 
 ## New features
 
