@@ -47,10 +47,9 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	srp := r.subRepoPerms
 	// First check if we are able to view the tree at all, if not we can return early
 	// and don't need to hit gitserver.
-	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
+	perms, err := authz.CurrentUserPermissions(ctx, r.subRepoPerms, authz.RepoContent{
 		Repo: r.commit.repoResolver.RepoName(),
 		Path: r.Path(),
 	})
@@ -65,7 +64,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 
 	entries, err := gitReadDir(
 		ctx,
-		srp,
+		r.subRepoPerms,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),
