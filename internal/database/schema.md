@@ -198,6 +198,7 @@ Referenced by:
  created_from_raw  | boolean                  |           | not null | false
  allow_unsupported | boolean                  |           | not null | false
  allow_ignored     | boolean                  |           | not null | false
+ no_cache          | boolean                  |           | not null | false
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
