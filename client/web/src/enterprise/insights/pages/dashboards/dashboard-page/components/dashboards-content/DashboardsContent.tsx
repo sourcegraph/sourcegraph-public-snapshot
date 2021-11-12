@@ -38,9 +38,9 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getInsightSubjects } = useContext(CodeInsightsBackendContext)
+    const { getDashboards, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
 
     // State to open/close add/remove insights modal UI

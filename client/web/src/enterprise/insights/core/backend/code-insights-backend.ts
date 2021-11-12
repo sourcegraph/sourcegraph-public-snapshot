@@ -37,6 +37,8 @@ export interface CodeInsightsBackend {
 
     getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
 
+    getDashboardSubjects: () => Observable<SupportedInsightSubject[]>
+
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
     createDashboard: (input: DashboardCreateInput) => Observable<void>

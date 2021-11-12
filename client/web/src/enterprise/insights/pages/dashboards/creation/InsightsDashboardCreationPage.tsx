@@ -27,9 +27,9 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const { telemetryService } = props
 
     const history = useHistory()
-    const { createDashboard, getInsightSubjects } = useContext(CodeInsightsBackendContext)
+    const { createDashboard, getDashboardSubjects } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
         try {

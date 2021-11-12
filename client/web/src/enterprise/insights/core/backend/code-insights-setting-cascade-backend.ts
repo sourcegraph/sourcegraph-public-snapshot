@@ -170,6 +170,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
             })
         )
 
+    public getDashboardSubjects = (): Observable<SupportedInsightSubject[]> =>
+        this.getInsightSubjects()
+
     public createDashboard = (input: DashboardCreateInput): Observable<void> =>
         getSubjectSettings(input.visibility).pipe(
             switchMap(settings => {

@@ -38,10 +38,10 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const { dashboardId, authenticatedUser } = props
     const history = useHistory()
 
-    const { getDashboardById, getInsightSubjects, updateDashboard } = useContext(CodeInsightsBackendContext)
+    const { getDashboardById, getDashboardSubjects, updateDashboard } = useContext(CodeInsightsBackendContext)
 
     // Load edit dashboard information
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
 
     const dashboard = useObservable(
         useMemo(
