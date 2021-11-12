@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql/schema'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -23,7 +24,7 @@ import { useBatchSpecCode } from './useBatchSpecCode'
 import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useNamespaces } from './useNamespaces'
-import { WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
+import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
 import { hasOnStatement } from './yaml-util'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
@@ -75,7 +76,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         previewBatchSpec,
         batchSpecID,
         currentPreviewRequestTime,
-        isLoading,
+        isLoading: isLoadingPreview,
         error: previewError,
         clearError: clearPreviewError,
     } = usePreviewBatchSpec(selectedNamespace, markUnstale)
@@ -92,32 +93,62 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
-    const previewDisabled = useMemo(() => isValid !== true || !hasOnStatement(debouncedCode) || isLoading, [
+    const previewDisabled = useMemo(() => isValid !== true || !hasOnStatement(debouncedCode) || isLoadingPreview, [
         isValid,
-        isLoading,
+        isLoadingPreview,
         debouncedCode,
     ])
+
+    const { resolution: workspacesPreviewResolution } = useBatchSpecWorkspaceResolution(
+        batchSpecID,
+        currentPreviewRequestTime,
+        {
+            fetchPolicy: 'cache-first',
+        }
+    )
 
     // Manage submitting a batch spec for execution.
     const { executeBatchSpec, isLoading: isExecuting, error: executeError } = useExecuteBatchSpec(batchSpecID)
 
-    // Disable the execute button if the batch spec code is invalid, if we haven't
-    // previewed (and sent a batch spec to the backend) yet, if there was an error with
-    // the preview, or if we're already in the middle of previewing or executing.
-    const [canExecute, executionTooltip] = useMemo(() => {
-        const canExecute = isValid === true && !previewError && !isLoading && batchSpecID && !isExecuting
+    // Disable the execute button if any of the following are true:
+    // * the batch spec code is invalid
+    // * there was an error with the preview
+    // * we're already in the middle of previewing or executing
+    // * we haven't submitted the batch spec to the backend yet for the preview
+    // * the batch spec on the backend is stale
+    // * the current workspaces evaluation is not complete
+    const [disableExecution, executionTooltip] = useMemo(() => {
+        const disableExecution = Boolean(
+            isValid !== true ||
+                previewError ||
+                isLoadingPreview ||
+                isExecuting ||
+                !batchSpecID ||
+                batchSpecStale ||
+                workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
+        )
         // The execution tooltip only shows if the execute button is disabled, and explains why.
         const executionTooltip =
-            isValid !== true || previewError
+            isValid === false || previewError
                 ? "There's a problem with your batch spec."
                 : !batchSpecID
                 ? 'Preview workspaces first before you run.'
-                : isLoading
-                ? 'Wait for the preview to finish.'
+                : batchSpecStale
+                ? 'Update your workspaces preview before you run.'
+                : isLoadingPreview || workspacesPreviewResolution?.state !== BatchSpecWorkspaceResolutionState.COMPLETED
+                ? 'Wait for the preview to finish first.'
                 : undefined
 
-        return [canExecute, executionTooltip]
-    }, [batchSpecID, isValid, previewError, isLoading, isExecuting])
+        return [disableExecution, executionTooltip]
+    }, [
+        batchSpecID,
+        isValid,
+        previewError,
+        isLoadingPreview,
+        isExecuting,
+        batchSpecStale,
+        workspacesPreviewResolution?.state,
+    ])
 
     const errors =
         codeErrors.update || codeErrors.validation || previewError || executeError ? (
@@ -157,7 +188,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         type="button"
                         className="btn btn-primary mb-2"
                         onClick={executeBatchSpec}
-                        disabled={!canExecute}
+                        disabled={disableExecution}
                         tooltip={executionTooltip}
                     >
                         Run batch spec
