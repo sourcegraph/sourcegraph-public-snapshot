@@ -51,10 +51,6 @@ type batchSpecResolver struct {
 	resolution     *btypes.BatchSpecResolutionJob
 	resolutionErr  error
 
-	workspacesOnce sync.Once
-	workspaces     []*btypes.BatchSpecWorkspace
-	workspacesErr  error
-
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
