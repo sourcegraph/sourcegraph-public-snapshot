@@ -212,34 +212,40 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		return errors.Errorf("store.GetActionJobMetadata: %w", err)
 	}
 
-	e, err := s.ActionEmailByIDInt64(ctx, j.Email)
-	if err != nil {
-		return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
-	}
-
-	recs, err := s.AllRecipientsForEmailIDInt64(ctx, j.Email)
-	if err != nil {
-		return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
-	}
-
-	data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
-	if err != nil {
-		return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
-	}
-	for _, rec := range recs {
-		if rec.NamespaceOrgID != nil {
-			// TODO (stefan): Send emails to org members.
-			continue
-		}
-		if rec.NamespaceUserID == nil {
-			return errors.Errorf("nil recipient")
-		}
-		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+	switch {
+	case j.Email != nil:
+		e, err := s.ActionEmailByIDInt64(ctx, int64(*j.Email))
 		if err != nil {
-			return err
+			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 		}
+
+		recs, err := s.AllRecipientsForEmailIDInt64(ctx, int64(*j.Email))
+		if err != nil {
+			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
+		}
+
+		data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
+		if err != nil {
+			return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
+		}
+		for _, rec := range recs {
+			if rec.NamespaceOrgID != nil {
+				// TODO (stefan): Send emails to org members.
+				continue
+			}
+			if rec.NamespaceUserID == nil {
+				return errors.Errorf("nil recipient")
+			}
+			err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		// TODO(camdencheek): handle j.SlackWebhook != nil and j.Webhook != nil
+		return errors.New("cannot yet handle non-email jobs")
 	}
-	return nil
 }
 
 // newQueryWithAfterFilter constructs a new query which finds search results
