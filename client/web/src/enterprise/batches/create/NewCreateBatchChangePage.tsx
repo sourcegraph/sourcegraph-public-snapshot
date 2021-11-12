@@ -104,11 +104,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
-    const previewDisabled = useMemo(() => isValid !== true || !hasOnStatement(debouncedCode) || isLoadingPreview, [
-        isValid,
-        isLoadingPreview,
-        debouncedCode,
-    ])
+    const previewDisabled = useMemo(() => isValid !== true || isLoadingPreview, [isValid, isLoadingPreview])
 
     const { resolution: workspacesPreviewResolution } = useBatchSpecWorkspaceResolution(
         batchSpecID,
