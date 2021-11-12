@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
@@ -17,9 +17,9 @@ import (
 )
 
 // Init initializes the executor endpoints required for use with the executor service.
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	accessToken := func() string {
-		if accessToken := conf.Get().ExecutorsAccessToken; accessToken != "" {
+		if accessToken := conf.SiteConfig().ExecutorsAccessToken; accessToken != "" {
 			return accessToken
 		}
 		// Fallback to old environment variable, for a smooth rollout.
@@ -34,7 +34,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		"batches":   batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, db, true)
+	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, conf, db, true)
 	if err != nil {
 		return err
 	}

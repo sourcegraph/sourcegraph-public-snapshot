@@ -83,7 +83,7 @@ func printDeployedVersion(e environment) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done updating list of commits"))
 
-	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%h|%ar|%an|%s`, "origin/main")
+	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%h|%cr|%an|%s`, "origin/main")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err

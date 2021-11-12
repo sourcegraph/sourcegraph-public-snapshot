@@ -114,7 +114,7 @@ func TestMakeGetUploadsOptions(t *testing.T) {
 			Query:           strPtr("q"),
 			State:           strPtr("s"),
 			IsLatestForRepo: boolPtr(true),
-			After:           encodeIntCursor(intPtr(25)).EndCursor(),
+			After:           graphqlutil.EncodeIntCursor(intPtr(25)).EndCursor(),
 		},
 		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
 	})
@@ -176,7 +176,7 @@ func TestMakeGetIndexesOptions(t *testing.T) {
 			},
 			Query: strPtr("q"),
 			State: strPtr("s"),
-			After: encodeIntCursor(intPtr(25)).EndCursor(),
+			After: graphqlutil.EncodeIntCursor(intPtr(25)).EndCursor(),
 		},
 		RepositoryID: graphql.ID(base64.StdEncoding.EncodeToString([]byte("Repo:50"))),
 	})

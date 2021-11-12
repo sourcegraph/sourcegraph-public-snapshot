@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -489,7 +490,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		}
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -515,7 +516,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 		return store.GetIndexesOptions{}, err
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}

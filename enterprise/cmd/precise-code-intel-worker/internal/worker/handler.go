@@ -15,7 +15,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -173,7 +172,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
 			// We always keep this value up to date - we also decrement reference counts of dependencies
 			// on upload deletion or when the set of uploads providing an existing package change.
-			if err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, dbstore.DependencyReferenceCountUpdateTypeAdd); err != nil {
+			if err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, store.DependencyReferenceCountUpdateTypeAdd); err != nil {
 				return errors.Wrap(err, "store.UpdateReferenceCount")
 			}
 
@@ -261,7 +260,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
 	// Upsert values used for documentation search that have high contention. We do this with the raw LSIF store
 	// instead of in the transaction below because the rows being upserted tend to have heavy contention.
 	repositoryNameID, languageNameID, err := lsifStore.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)

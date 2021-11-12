@@ -240,7 +240,7 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
 func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver *gql.GitCommitResolver, path string) (*gql.GitTreeEntryResolver, error) {
-	return gql.NewGitTreeEntryResolver(commitResolver, r.db, gql.CreateFileInfo(path, true)), nil
+	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, true)), nil
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
