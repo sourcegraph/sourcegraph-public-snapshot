@@ -17,7 +17,7 @@ import (
 )
 
 // Init initializes the executor endpoints required for use with the executor service.
-func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *codeintel.Services) error {
 	accessToken := func() string {
 		if accessToken := conf.SiteConfig().ExecutorsAccessToken; accessToken != "" {
 			return accessToken
@@ -34,7 +34,7 @@ func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, ou
 		"batches":   batches.QueueOptions(db, accessToken, observationContext),
 	}
 
-	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, conf, db, true)
+	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, conf, db, true, services)
 	if err != nil {
 		return err
 	}
