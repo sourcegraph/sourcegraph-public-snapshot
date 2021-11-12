@@ -34,7 +34,11 @@ type Aggregator struct {
 	parentStream streaming.Sender
 	db           dbutil.DB
 
-	// filterFunc is currently used to provide sub-repo perms filtering.
+	// filterFunc can be applied to manipulate each SearchEvent before it gets propagated.
+	// It is currently used to provide sub-repo perms filtering.
+	//
+	// SearchEvent is still propagated even in an error case - filterFunc should make sure
+	// the appropriate manipulations are before returning an error.
 	filterFunc func(*streaming.SearchEvent) error
 
 	mu         sync.Mutex
@@ -59,6 +63,8 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Er
 // It currently also applies sub-repo permissions filtering (see inline docs).
 func (a *Aggregator) Send(event streaming.SearchEvent) {
 	if a.filterFunc != nil {
+		// We don't need to return if we encounter an error because filterFunc should
+		// remove anything that should not be provided to the user before returning.
 		if err := a.filterFunc(&event); err != nil {
 			a.Error(err)
 		}
