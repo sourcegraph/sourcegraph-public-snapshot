@@ -29,6 +29,7 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public createDashboard = errorMockMethod('createDashboard')
     public deleteDashboard = errorMockMethod('deleteDashboard')
     public updateDashboard = errorMockMethod('updateDashboard')
+    public assignInsightsToDashboard = errorMockMethod('assignInsightsToDashboard')
 
     // Live preview fetchers
     public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
