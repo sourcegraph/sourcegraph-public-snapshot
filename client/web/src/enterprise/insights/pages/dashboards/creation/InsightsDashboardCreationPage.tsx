@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { camelCase } from 'lodash'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
@@ -31,14 +30,14 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
 
-    const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
+    const handleSubmit = async (values: DashboardCreationFields): Promise<SubmissionErrors> => {
         try {
-            await createDashboard(values).toPromise()
+            const createdDashboard = await createDashboard(values).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
             // Navigate user to the dashboard page with new created dashboard
-            history.push(`/insights/dashboards/${camelCase(values.name)}`)
+            history.push(`/insights/dashboards/${createdDashboard.id}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }

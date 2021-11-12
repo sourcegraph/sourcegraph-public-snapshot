@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -34,6 +34,7 @@ import { getSubjectSettings, updateSubjectSettings } from './api/subject-setting
 import { CodeInsightsBackend } from './code-insights-backend'
 import {
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
@@ -170,16 +171,17 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
             })
         )
 
-    public getDashboardSubjects = (): Observable<SupportedInsightSubject[]> =>
-        this.getInsightSubjects()
+    public getDashboardSubjects = (): Observable<SupportedInsightSubject[]> => this.getInsightSubjects()
 
-    public createDashboard = (input: DashboardCreateInput): Observable<void> =>
+    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
         getSubjectSettings(input.visibility).pipe(
             switchMap(settings => {
                 const dashboard = createSanitizedDashboard(input)
                 const editedSettings = addDashboardToSettings(settings.contents, dashboard)
 
-                return updateSubjectSettings(this.platformContext, input.visibility, editedSettings)
+                return updateSubjectSettings(this.platformContext, input.visibility, editedSettings).pipe(
+                    mapTo({ id: camelCase(dashboard.title) })
+                )
             })
         )
 

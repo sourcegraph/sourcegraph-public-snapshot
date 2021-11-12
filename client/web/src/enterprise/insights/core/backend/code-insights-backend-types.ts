@@ -13,6 +13,10 @@ export interface DashboardCreateInput {
     type?: string
 }
 
+export interface DashboardCreateResult {
+    id: string
+}
+
 export interface DashboardUpdateInput {
     previousDashboard: CustomInsightDashboard
     nextDashboardInput: DashboardCreateInput

@@ -51,6 +51,7 @@ import { CodeInsightsBackend } from './code-insights-backend'
 import {
     BackendInsightData,
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
@@ -304,7 +305,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public createDashboard = (input: DashboardCreateInput): Observable<void> => {
+    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> => {
         if (!input.type) {
             throw new Error('`grants` are required to create a new dashboard')
         }
@@ -321,13 +322,49 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         createInsightsDashboard(input: $input) {
                             dashboard {
                                 id
+                                title
+                                views {
+                                    nodes {
+                                        id
+                                    }
+                                }
                             }
                         }
                     }
                 `,
                 variables: { input: mappedInput },
+                update(cache, result) {
+                    const { data } = result
+
+                    if (!data) {
+                        return
+                    }
+
+                    cache.modify({
+                        fields: {
+                            insightsDashboards(dashboards) {
+                                const newDashboardsReference = cache.writeFragment({
+                                    data: data.createInsightsDashboard.dashboard,
+                                    fragment: gql`
+                                        fragment NewTodo on InsightsDashboard {
+                                            id
+                                            title
+                                            views {
+                                                nodes {
+                                                    id
+                                                }
+                                            }
+                                        }
+                                    `,
+                                })
+
+                                return { nodes: [...(dashboards.nodes ?? []), newDashboardsReference] }
+                            },
+                        },
+                    })
+                },
             })
-        ).pipe(mapTo(undefined))
+        ).pipe(map(result => ({ id: result.data?.createInsightsDashboard.dashboard.id ?? 'unknown' })))
     }
 
     public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {

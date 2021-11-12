@@ -10,6 +10,7 @@ import { SupportedInsightSubject } from '../types/subjects'
 import {
     BackendInsightData,
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
     DashboardUpdateResult,
@@ -41,7 +42,7 @@ export interface CodeInsightsBackend {
 
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
-    createDashboard: (input: DashboardCreateInput) => Observable<void>
+    createDashboard: (input: DashboardCreateInput) => Observable<DashboardCreateResult>
 
     updateDashboard: (input: DashboardUpdateInput) => Observable<DashboardUpdateResult>
 
