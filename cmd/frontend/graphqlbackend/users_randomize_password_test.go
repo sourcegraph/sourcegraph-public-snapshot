@@ -39,7 +39,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "Resetting passwords is not enabled",
+						Message: "resetting passwords is not enabled",
 						Path:    []interface{}{string("randomizeUserPassword")},
 					},
 				},
@@ -70,7 +70,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "Unable to reset password because email sending is not configured",
+						Message: "unable to reset password because email sending is not configured",
 						Path:    []interface{}{string("randomizeUserPassword")},
 					},
 				},
@@ -132,7 +132,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "Cannot parse user ID",
+						Message: "cannot parse user ID: illegal base64 data at input byte 4",
 						Path:    []interface{}{string("randomizeUserPassword")},
 					},
 				},
