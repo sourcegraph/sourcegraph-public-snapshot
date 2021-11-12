@@ -113,9 +113,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <span className="text-muted">{this.props.node.displayName}</span>
                     </div>
                     <div>
-                        <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
-                            <SettingsIcon className="icon-inline" /> Settings
-                        </Link>{' '}
+                        {!window.context.sourcegraphDotComMode && (
+                                <Link
+                                    className="btn btn-sm btn-secondary"
+                                    to={`${userURL(this.props.node.username)}/settings`}
+                                >
+                                    <SettingsIcon className="icon-inline" /> Settings
+                                </Link>
+                            ) &&
+                            ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
                                 type="button"

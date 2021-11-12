@@ -16,7 +16,6 @@ var Mocks, emptyMocks struct {
 	GetCommit        func(api.CommitID) (*gitapi.Commit, error)
 	ExecSafe         func(params []string) (stdout, stderr []byte, exitCode int, err error)
 	ExecReader       func(args []string) (reader io.ReadCloser, err error)
-	RawLogDiffSearch func(opt RawLogDiffSearchOptions) ([]*LogCommitSearchResult, bool, error)
 	NewFileReader    func(commit api.CommitID, name string) (io.ReadCloser, error)
 	ReadFile         func(commit api.CommitID, name string) ([]byte, error)
 	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error)

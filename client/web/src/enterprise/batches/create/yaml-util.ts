@@ -237,3 +237,12 @@ export const excludeRepo = (spec: string, repo: string, branch: string): YAMLMan
 
     return removeRepoResult
 }
+
+// TODO: Parse YAML and actually verify presence of on: key instead
+/**
+ * Simply checks for the presence of an "on: " string within the batch spec YAML. Does not
+ * check validity of the spec.
+ *
+ * @param spec the raw batch spec YAML string
+ */
+export const hasOnStatement = (spec: string): boolean => !!spec.match(/^on:\n\s*- \S+/m)

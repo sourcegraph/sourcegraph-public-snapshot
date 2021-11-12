@@ -3,8 +3,6 @@ package backend
 import (
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -74,39 +72,28 @@ func newConfigFingerprint(sc *schema.SiteConfiguration) (*configFingerprint, err
 // parseConfigFingerprint unmarshals s and returns ConfigFingerprint. This is
 // the inverse of Marshal.
 func parseConfigFingerprint(s string) (_ *configFingerprint, err error) {
-	parts := strings.Fields(s)
-
 	// We support no cursor.
-	if len(parts) == 0 {
+	if len(s) == 0 {
 		return &configFingerprint{}, nil
 	}
 
-	if len(parts) < 2 || parts[0] != "search-config-fingerprint" {
-		return nil, errors.Errorf("malformed search-config-fingerprint: %q", s)
-	}
-	if parts[1] != "1" {
-		// Unknown version, treat as if not specified
+	var (
+		version int
+		tsS     string
+		hash    uint64
+	)
+	n, err := fmt.Sscanf(s, "search-config-fingerprint %d %s %x", &version, &tsS, &hash)
+
+	// ignore different versions
+	if n >= 1 && version != 1 {
 		return &configFingerprint{}, nil
 	}
 
-	// Use consistent error wrapping from this point since we know it is a
-	// version 1 search-config-fingerprint.
-	defer func() {
-		if err != nil {
-			err = errors.Wrapf(err, "malformed search-config-fingerprint 1: %q", s)
-		}
-	}()
-
-	if len(parts) != 4 {
-		return nil, errors.New("expected 4 fields")
-	}
-
-	ts, err := time.Parse(time.RFC3339, parts[2])
 	if err != nil {
-		return nil, errors.Wrapf(err, "malformed search-config-fingerprint 1: %q", s)
+		return nil, errors.Newf("malformed search-config-fingerprint: %q", s)
 	}
 
-	hash, err := strconv.ParseUint(parts[3], 16, 64)
+	ts, err := time.Parse(time.RFC3339, tsS)
 	if err != nil {
 		return nil, errors.Wrapf(err, "malformed search-config-fingerprint 1: %q", s)
 	}

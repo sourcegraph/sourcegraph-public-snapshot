@@ -134,6 +134,52 @@ func TestConfigFingerprint_Marshal(t *testing.T) {
 	testMarshal(t, &cf)
 }
 
+func TestConfigFingerprint_parse(t *testing.T) {
+	ignore := []string{
+		// we ignore empty / not specified
+		"",
+		// we ignore different versions
+		"search-config-fingerprint 0",
+		"search-config-fingerprint 2",
+		"search-config-fingerprint 0 2006-01-02T15:04:05Z 7b",
+		"search-config-fingerprint 2 2006-01-02T15:04:05Z 7b",
+	}
+	valid := []string{
+		"search-config-fingerprint 1 2006-01-02T15:04:05Z 7b",
+	}
+	malformed := []string{
+		"foobar",
+		"search-config-fingerprint 1 2006-01-02T15:04:05Z",
+		"search-config 1 2006-01-02T15:04:05Z 7b",
+		"search-config 1 1 2",
+	}
+
+	for _, v := range ignore {
+		cf, err := parseConfigFingerprint(v)
+		if err != nil {
+			t.Fatalf("unexpected error parsing ignorable %q: %v", v, err)
+		}
+		if !cf.ts.IsZero() {
+			t.Fatalf("expected ignorable %q", v)
+		}
+	}
+	for _, v := range valid {
+		cf, err := parseConfigFingerprint(v)
+		if err != nil {
+			t.Fatalf("unexpected error parsing valid %q: %v", v, err)
+		}
+		if cf.ts.IsZero() {
+			t.Fatalf("expected valid %q", v)
+		}
+	}
+	for _, v := range malformed {
+		_, err := parseConfigFingerprint(v)
+		if err == nil {
+			t.Fatalf("expected malformed %q", v)
+		}
+	}
+}
+
 func testMarshal(t *testing.T, cf *configFingerprint) {
 	t.Helper()
 

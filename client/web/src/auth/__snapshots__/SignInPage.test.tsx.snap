@@ -1,20 +1,180 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`SignInPage renders redirect when user is authenticated 1`] = `null`;
+exports[`SignInPage renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
 
 exports[`SignInPage renders sign in page (cloud) 1`] = `
-<div
-  className="signinSignupPage"
->
+<DocumentFragment>
   <div
-    className="heroPage lessPadding"
+    class="signinSignupPage"
   >
     <div
-      className="icon bg-transparent"
+      class="heroPage lessPadding"
     >
-      <a
-        href="/search"
-        onClick={[Function]}
+      <div
+        class="icon bg-transparent"
+      >
+        <a
+          href="/search"
+        >
+          <svg
+            fill="none"
+            height="64"
+            viewBox="0 0 52 52"
+            width="65"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
+              fill="#FF5543"
+            />
+            <path
+              d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
+              fill="#A112FF"
+            />
+            <path
+              d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
+              fill="#00CBEC"
+            />
+          </svg>
+        </a>
+      </div>
+      <div
+        class="title"
+      >
+        Sign in to Sourcegraph Cloud
+      </div>
+      <div
+        class="mb-4 pb-5 signinPageContainer"
+      >
+        <div
+          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+        >
+          <form
+            class=""
+          >
+            <div
+              class="form-group d-flex flex-column align-content-start"
+            >
+              <label
+                class="align-self-start"
+                for="username-or-email"
+              >
+                Username or email
+              </label>
+              <input
+                autocapitalize="off"
+                autocomplete="username"
+                class="form-control"
+                id="username-or-email"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+            <div
+              class="form-group d-flex flex-column align-content-start"
+            >
+              <div
+                class="d-flex justify-content-between"
+              >
+                <label
+                  for="password"
+                >
+                  Password
+                </label>
+                <small
+                  class="form-text text-muted"
+                >
+                  <a
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </small>
+              </div>
+              <input
+                autocomplete="current-password"
+                class="form-control"
+                id="password"
+                name="password"
+                placeholder=" "
+                required=""
+                type="password"
+                value=""
+              />
+            </div>
+            <div
+              class="form-group"
+            >
+              <button
+                class="btn btn-primary btn-block"
+                type="submit"
+              >
+                Sign in
+              </button>
+            </div>
+          </form>
+          <div
+            class="mb-3 py-1 d-flex align-items-center"
+          >
+            <div
+              class="w-100 border"
+            />
+            <small
+              class="px-2 text-muted "
+            >
+              OR
+            </small>
+            <div
+              class="w-100 border"
+            />
+          </div>
+          <div
+            class="mb-2"
+          >
+            <a
+              class="btn btn-secondary btn-block"
+              href=""
+            >
+              <svg
+                class="mdi-icon icon-inline"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                />
+              </svg>
+               Continue with GitHub
+            </a>
+          </div>
+        </div>
+        <p>
+          New to Sourcegraph? 
+          <a
+            href="/sign-up"
+          >
+            Sign up
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`SignInPage renders sign in page (server) 1`] = `
+<DocumentFragment>
+  <div
+    class="signinSignupPage"
+  >
+    <div
+      class="heroPage lessPadding"
+    >
+      <div
+        class="icon bg-transparent"
       >
         <svg
           fill="none"
@@ -36,311 +196,130 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
             fill="#00CBEC"
           />
         </svg>
-      </a>
-    </div>
-    <div
-      className="title"
-    >
-      Sign in to Sourcegraph Cloud
-    </div>
-    <div
-      className="mb-4 pb-5 signinPageContainer"
-    >
+      </div>
       <div
-        className="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+        class="title"
       >
-        <form
-          className=""
-          onInvalid={[Function]}
-          onSubmit={[Function]}
+        Sign in to Sourcegraph Server
+      </div>
+      <div
+        class="mb-4 pb-5 signinPageContainer"
+      >
+        <div
+          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
         >
-          <div
-            className="form-group d-flex flex-column align-content-start"
-          >
-            <label
-              className="align-self-start"
-              htmlFor="username-or-email"
-            >
-              Username or email
-            </label>
-            <input
-              autoCapitalize="off"
-              autoComplete="username"
-              autoFocus={true}
-              className="form-control"
-              disabled={false}
-              id="username-or-email"
-              onChange={[Function]}
-              required={true}
-              type="text"
-              value=""
-            />
-          </div>
-          <div
-            className="form-group d-flex flex-column align-content-start"
+          <form
+            class=""
           >
             <div
-              className="d-flex justify-content-between"
+              class="form-group d-flex flex-column align-content-start"
             >
               <label
-                htmlFor="password"
+                class="align-self-start"
+                for="username-or-email"
               >
-                Password
+                Username or email
               </label>
-              <small
-                className="form-text text-muted"
-              >
-                <a
-                  href="/password-reset"
-                  onClick={[Function]}
-                >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
-            <input
-              autoComplete="current-password"
-              className="form-control"
-              disabled={false}
-              id="password"
-              name="password"
-              onChange={[Function]}
-              placeholder=" "
-              required={true}
-              type="password"
-              value=""
-            />
-          </div>
-          <div
-            className="form-group"
-          >
-            <button
-              className="btn btn-primary btn-block"
-              disabled={false}
-              type="submit"
-            >
-              Sign in
-            </button>
-          </div>
-        </form>
-        <div
-          className="mb-3 py-1 d-flex align-items-center"
-        >
-          <div
-            className="w-100 border"
-          />
-          <small
-            className="px-2 text-muted "
-          >
-            OR
-          </small>
-          <div
-            className="w-100 border"
-          />
-        </div>
-        <div
-          className="mb-2"
-        >
-          <a
-            className="btn btn-secondary btn-block"
-            href=""
-          >
-            <svg
-              className="mdi-icon icon-inline"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              <input
+                autocapitalize="off"
+                autocomplete="username"
+                class="form-control"
+                id="username-or-email"
+                required=""
+                type="text"
+                value=""
               />
-            </svg>
-             
-            Continue with 
-            GitHub
-          </a>
-        </div>
-      </div>
-      <p>
-        New to Sourcegraph? 
-        <a
-          href="/sign-up"
-          onClick={[Function]}
-        >
-          Sign up
-        </a>
-      </p>
-    </div>
-  </div>
-</div>
-`;
-
-exports[`SignInPage renders sign in page (server) 1`] = `
-<div
-  className="signinSignupPage"
->
-  <div
-    className="heroPage lessPadding"
-  >
-    <div
-      className="icon bg-transparent"
-    >
-      <svg
-        fill="none"
-        height="64"
-        viewBox="0 0 52 52"
-        width="65"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-          fill="#FF5543"
-        />
-        <path
-          d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-          fill="#A112FF"
-        />
-        <path
-          d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-          fill="#00CBEC"
-        />
-      </svg>
-    </div>
-    <div
-      className="title"
-    >
-      Sign in to Sourcegraph Server
-    </div>
-    <div
-      className="mb-4 pb-5 signinPageContainer"
-    >
-      <div
-        className="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
-      >
-        <form
-          className=""
-          onInvalid={[Function]}
-          onSubmit={[Function]}
-        >
-          <div
-            className="form-group d-flex flex-column align-content-start"
-          >
-            <label
-              className="align-self-start"
-              htmlFor="username-or-email"
+            </div>
+            <div
+              class="form-group d-flex flex-column align-content-start"
             >
-              Username or email
-            </label>
-            <input
-              autoCapitalize="off"
-              autoComplete="username"
-              autoFocus={true}
-              className="form-control"
-              disabled={false}
-              id="username-or-email"
-              onChange={[Function]}
-              required={true}
-              type="text"
-              value=""
-            />
-          </div>
+              <div
+                class="d-flex justify-content-between"
+              >
+                <label
+                  for="password"
+                >
+                  Password
+                </label>
+                <small
+                  class="form-text text-muted"
+                >
+                  <a
+                    href="/password-reset"
+                  >
+                    Forgot password?
+                  </a>
+                </small>
+              </div>
+              <input
+                autocomplete="current-password"
+                class="form-control"
+                id="password"
+                name="password"
+                placeholder=" "
+                required=""
+                type="password"
+                value=""
+              />
+            </div>
+            <div
+              class="form-group"
+            >
+              <button
+                class="btn btn-primary btn-block"
+                type="submit"
+              >
+                Sign in
+              </button>
+            </div>
+          </form>
           <div
-            className="form-group d-flex flex-column align-content-start"
+            class="mb-3 py-1 d-flex align-items-center"
           >
             <div
-              className="d-flex justify-content-between"
+              class="w-100 border"
+            />
+            <small
+              class="px-2 text-muted "
             >
-              <label
-                htmlFor="password"
-              >
-                Password
-              </label>
-              <small
-                className="form-text text-muted"
-              >
-                <a
-                  href="/password-reset"
-                  onClick={[Function]}
-                >
-                  Forgot password?
-                </a>
-              </small>
-            </div>
-            <input
-              autoComplete="current-password"
-              className="form-control"
-              disabled={false}
-              id="password"
-              name="password"
-              onChange={[Function]}
-              placeholder=" "
-              required={true}
-              type="password"
-              value=""
+              OR
+            </small>
+            <div
+              class="w-100 border"
             />
           </div>
           <div
-            className="form-group"
+            class="mb-2"
           >
-            <button
-              className="btn btn-primary btn-block"
-              disabled={false}
-              type="submit"
+            <a
+              class="btn btn-secondary btn-block"
+              href=""
             >
-              Sign in
-            </button>
+              <svg
+                class="mdi-icon icon-inline"
+                fill="currentColor"
+                height="24"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+                />
+              </svg>
+               Continue with GitHub
+            </a>
           </div>
-        </form>
-        <div
-          className="mb-3 py-1 d-flex align-items-center"
-        >
-          <div
-            className="w-100 border"
-          />
-          <small
-            className="px-2 text-muted "
-          >
-            OR
-          </small>
-          <div
-            className="w-100 border"
-          />
         </div>
-        <div
-          className="mb-2"
-        >
+        <p>
+          New to Sourcegraph? 
           <a
-            className="btn btn-secondary btn-block"
-            href=""
+            href="/sign-up"
           >
-            <svg
-              className="mdi-icon icon-inline"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-              />
-            </svg>
-             
-            Continue with 
-            GitHub
+            Sign up
           </a>
-        </div>
+        </p>
       </div>
-      <p>
-        New to Sourcegraph? 
-        <a
-          href="/sign-up"
-          onClick={[Function]}
-        >
-          Sign up
-        </a>
-      </p>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;

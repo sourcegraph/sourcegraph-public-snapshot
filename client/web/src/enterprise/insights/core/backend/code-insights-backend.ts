@@ -46,11 +46,13 @@ export interface CodeInsightsBackend {
 
     /**
      * Return all accessible for a user insights that are filtered by ids param.
-     * If ids is nullable value then returns all insights.
+     * If ids is nullable value then returns all insights. Insights in this case
+     * present only insight configurations and meta data without actual data about
+     * data series or pie chart data.
      *
      * @param ids - list of insight ids
      */
-    getInsights: (ids?: string[]) => Observable<Insight[]>
+    getInsights: (dashboardId: string) => Observable<Insight[]>
 
     /**
      * Returns all reachable subject's insights from subject with subjectId.
@@ -60,6 +62,12 @@ export interface CodeInsightsBackend {
      */
     getReachableInsights: (subjectId: string) => Observable<ReachableInsight[]>
 
+    /**
+     * Return insight (meta and presentation data) by insight id.
+     * Note that insight model doesn't contain any data series points.
+     *
+     * @param id
+     */
     getInsightById: (id: string) => Observable<Insight | null>
 
     findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
@@ -68,7 +76,7 @@ export interface CodeInsightsBackend {
 
     updateInsight: (event: InsightUpdateInput) => Observable<void[]>
 
-    deleteInsight: (insightId: string) => Observable<void[]>
+    deleteInsight: (insightId: string) => Observable<unknown>
 
     /**
      * Returns all available for users subjects (sharing levels, historically it was introduced

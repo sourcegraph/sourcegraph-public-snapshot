@@ -353,7 +353,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn release:ff"),
+		bk.Cmd("yarn release:firefox"),
 		bk.Cmd("popd"))
 
 	// Release to npm
@@ -707,18 +707,5 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
-	}
-}
-
-// uploadBuildLogs publishes logs from failed jobs to Grafana Cloud. It runs as soon as
-// all previous steps up until a "wait" has run.
-func uploadBuildLogs(key string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddEnsureStep(fmt.Sprintf(":file_cabinet: Uploading build logs (%s)", key),
-			// Allow the upload to fail without failing the build.
-			bk.Key(fmt.Sprintf("upload-logs:%s", key)),
-			bk.SoftFail(1),
-			bk.AllowDependencyFailure(),
-			bk.Cmd("./enterprise/dev/upload-build-logs.sh"))
 	}
 }

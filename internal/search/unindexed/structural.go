@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -157,23 +158,26 @@ type StructuralSearch struct {
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
-	request, ok, err := zoektutil.OnlyUnindexed(repos, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, repos, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, s.ZoektArgs.Zoekt, s.UseIndex, s.ContainsRefGlobs, s.OnMissingRepoRevs)
 		if err != nil {
 			return err
 		}
-	}
+		if !ok {
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, s.UseIndex, s.ZoektArgs, s.OnMissingRepoRevs)
+			if err != nil {
+				return err
+			}
+		}
 
-	partitionedRepos, err := PartitionRepos(request, s.NotSearcherOnly)
-	if err != nil {
-		return err
-	}
-	return runStructuralSearch(ctx, s.SearcherArgs, partitionedRepos, stream)
+		partitionedRepos, err := PartitionRepos(request, s.NotSearcherOnly)
+		if err != nil {
+			return err
+		}
+
+		return runStructuralSearch(ctx, s.SearcherArgs, partitionedRepos, stream)
+	})
 }
 
 func (*StructuralSearch) Name() string {

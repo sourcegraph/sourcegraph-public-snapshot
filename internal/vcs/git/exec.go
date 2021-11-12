@@ -1,9 +1,7 @@
 package git
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -71,23 +69,6 @@ func ExecReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadC
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 	return gitserver.StdoutReader(ctx, cmd)
-}
-
-func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) ([]byte, bool, error) {
-	stdout, err := cmd.Output(ctx)
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			return stdout, false, nil
-		}
-
-		stdout = bytes.TrimSpace(stdout)
-		if len(stdout) > 100 {
-			stdout = append(stdout[:100], []byte("... (truncated)")...)
-		}
-		return nil, false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, stdout))
-	}
-
-	return stdout, true, nil
 }
 
 var (

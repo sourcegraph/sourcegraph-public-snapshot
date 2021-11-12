@@ -5,7 +5,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { fetchBackendInsights } from '../requests/fetch-backend-insights'
 import { ViewInsightProviderResult, ViewInsightProviderSourceType } from '../types'
-import { createViewContent } from '../utils/create-view-content'
+import { createLineChartContent } from '../utils/create-line-chart-content'
 
 /**
  * Returns list of backend insights via gql API request.
@@ -47,7 +47,7 @@ function getRawBackendInsights(insightIds: string[]): Observable<ViewInsightProv
                     id: insight.id,
                     view: {
                         title: insight.title,
-                        content: [createViewContent(insight)],
+                        content: [createLineChartContent(insight)],
                     },
                     source: ViewInsightProviderSourceType.Backend,
                 })

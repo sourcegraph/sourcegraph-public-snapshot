@@ -5,6 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
@@ -37,12 +38,15 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import {
     BatchSpecExecutionFields,
+    BatchSpecWorkspaceChangesetSpecFields,
     BatchSpecWorkspaceFields,
     BatchSpecWorkspaceListFields,
     BatchSpecWorkspaceStepFields,
     Scalars,
 } from '../../../graphql-operations'
 import { BatchSpec } from '../BatchSpec'
+import { queryChangesetSpecFileDiffs } from '../preview/list/backend'
+import { ChangesetSpecFileDiffConnection } from '../preview/list/ChangesetSpecFileDiffConnection'
 
 import {
     cancelBatchSpecExecution,
@@ -204,8 +208,13 @@ const WorkspacesList: React.FunctionComponent<{ nodes: BatchSpecWorkspaceListFie
                 <li className="list-group-item" key={workspaceNode.id}>
                     <div className={classNames(styles.workspaceRepo, 'd-flex justify-content-between mb-1')}>
                         <div>
-                            <WorkspaceStateIcon state={workspaceNode.state} />{' '}
-                            <Link to={`?workspace=${workspaceNode.id}`}>{workspaceNode.repository.name}</Link>
+                            <WorkspaceStateIcon
+                                cachedResultFound={workspaceNode.cachedResultFound}
+                                state={workspaceNode.state}
+                            />{' '}
+                            <Link to={`?workspace=${workspaceNode.id}`} className={styles.workspaceName}>
+                                {workspaceNode.repository.name}
+                            </Link>
                         </div>
                         {workspaceNode.diffStat && <DiffStat {...workspaceNode.diffStat} expandedCounts={true} />}
                     </div>
@@ -223,7 +232,7 @@ const SelectedWorkspace: React.FunctionComponent<{ workspace: Scalars['ID'] | nu
     if (workspace === null) {
         return (
             <Container>
-                <h3 className="text-center">Select workspace to get started</h3>
+                <h3 className="text-center mb-0">Select workspace to get started</h3>
             </Container>
         )
     }
@@ -266,7 +275,8 @@ const WorkspaceNode: React.FunctionComponent<
         <>
             <div className="d-flex justify-content-between">
                 <h4>
-                    <WorkspaceStateIcon state={workspace.state} /> {workspace.repository.name}
+                    <WorkspaceStateIcon cachedResultFound={workspace.cachedResultFound} state={workspace.state} />{' '}
+                    {workspace.repository.name}
                 </h4>
                 <div>
                     {workspace.startedAt && (
@@ -283,6 +293,17 @@ const WorkspaceNode: React.FunctionComponent<
                     <SyncIcon className="icon-inline text-muted" /> #{workspace.placeInQueue} in queue
                 </p>
             )}
+            {workspace.state === BatchSpecWorkspaceState.COMPLETED && (
+                <>
+                    <h4>Changeset specs</h4>
+                    {workspace.changesetSpecs?.length === 0 && (
+                        <p className="mb-0 text-muted">This workspace generated no changeset specs.</p>
+                    )}
+                    {workspace.changesetSpecs?.map(changesetSpec => (
+                        <ChangesetSpecNode key={changesetSpec.id} node={changesetSpec} isLightTheme={isLightTheme} />
+                    ))}
+                </>
+            )}
             <h4>Steps</h4>
             {workspace.steps.map((step, index) => (
                 <WorkspaceStep
@@ -293,15 +314,81 @@ const WorkspaceNode: React.FunctionComponent<
                     isLightTheme={isLightTheme}
                 />
             ))}
-            <Collapsible
-                title={<h4 className="mb-0">Timeline</h4>}
-                titleClassName="flex-grow-1"
-                defaultExpanded={false}
-            >
-                <ExecutionTimeline node={workspace} />
-            </Collapsible>
+            {!workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
+                <Collapsible
+                    title={<h4 className="mb-0">Timeline</h4>}
+                    titleClassName="flex-grow-1"
+                    defaultExpanded={false}
+                >
+                    <ExecutionTimeline node={workspace} />
+                </Collapsible>
+            )}
         </>
     )
+}
+
+const ChangesetSpecNode: React.FunctionComponent<{ node: BatchSpecWorkspaceChangesetSpecFields } & ThemeProps> = ({
+    node,
+    isLightTheme,
+}) => {
+    const history = useHistory()
+    // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
+    if (node.__typename === 'HiddenChangesetSpec') {
+        return (
+            <div className="card">
+                <div className="card-body">
+                    <h4>Changeset in a hidden repo</h4>
+                </div>
+            </div>
+        )
+    }
+    // This should not happen.
+    if (node.description.__typename === 'ExistingChangesetReference') {
+        return null
+    }
+    return (
+        <div className="card mb-2">
+            <div className="card-body">
+                <div className="d-flex justify-content-between">
+                    <h4>{node.description.title}</h4>
+                    <DiffStat {...node.description.diffStat} expandedCounts={true} />
+                </div>
+                <p>
+                    <Link to={node.description.baseRepository.url}>{node.description.baseRepository.name}</Link>
+                </p>
+                <p>
+                    <span className="badge badge-secondary">{node.description.baseRef}</span> &larr;
+                    <span className="badge badge-secondary">{node.description.headRef}</span>
+                </p>
+                <p>
+                    <strong>Published:</strong> <PublishedValue published={node.description.published} />
+                </p>
+                <Collapsible
+                    title={<h4 className="mb-0">Changed files</h4>}
+                    titleClassName="flex-grow-1"
+                    defaultExpanded={false}
+                >
+                    <ChangesetSpecFileDiffConnection
+                        history={history}
+                        isLightTheme={isLightTheme}
+                        location={history.location}
+                        spec={node.id}
+                        queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
+                    />
+                </Collapsible>
+            </div>
+        </div>
+    )
+}
+
+const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedValue'] | null }> = ({ published }) => {
+    if (published === null) {
+        return <i>select from UI when applying</i>
+    }
+    if (published === 'draft') {
+        return <>draft</>
+    }
+    return <>String(published)</>
 }
 
 const WorkspaceStep: React.FunctionComponent<
@@ -324,73 +411,88 @@ const WorkspaceStep: React.FunctionComponent<
         }
     >
         <div className="p-2">
-            <Tabs size="medium">
-                <TabList>
-                    <Tab key="logs">Logs</Tab>
-                    <Tab key="output-variables">Output variables</Tab>
-                    <Tab key="diff">Diff</Tab>
-                    <Tab key="files-env">Files / Env</Tab>
-                    <Tab key="command-container">Commands / container</Tab>
-                </TabList>
-                <TabPanels>
-                    <TabPanel key="logs">
-                        <div className="p-2">
-                            {step.startedAt && step.outputLines && <LogOutput text={step.outputLines.join('\n')} />}
-                            {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                            {step.startedAt && !step.outputLines && <LogOutput text="_No logs.._" />}
-                        </div>
-                    </TabPanel>
-                    <TabPanel key="output-variables">
-                        <div className="p-2">
-                            {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                            <ul>
-                                {step.outputVariables?.map(variable => (
-                                    <li key={variable.name}>
-                                        {variable.name}: {variable.value}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </TabPanel>
-                    <TabPanel key="diff">
-                        <div className="p-2">
-                            {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                            {step.startedAt && (
-                                <WorkspaceStepFileDiffConnection
-                                    isLightTheme={isLightTheme}
-                                    step={stepIndex + 1}
-                                    workspaceID={workspaceID}
-                                />
-                            )}
-                        </div>
-                    </TabPanel>
-                    <TabPanel key="files-env">
-                        <div className="p-2">
-                            {step.environment.length === 0 && (
-                                <p className="text-muted">No environment variables specified</p>
-                            )}
-                            <ul>
-                                {step.environment.map(variable => (
-                                    <li key={variable.name}>
-                                        {variable.name}: {variable.value}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </TabPanel>
-                    <TabPanel key="command-container">
-                        <div className="p-2">
-                            <p className="text-monospace">{step.run}</p>
-                            <p className="text-monospace mb-0">{step.container}</p>
-                        </div>
-                    </TabPanel>
-                </TabPanels>
-            </Tabs>
+            {!step.skipped && (
+                <Tabs size="medium">
+                    <TabList>
+                        <Tab key="logs">Logs</Tab>
+                        <Tab key="output-variables">Output variables</Tab>
+                        <Tab key="diff">Diff</Tab>
+                        <Tab key="files-env">Files / Env</Tab>
+                        <Tab key="command-container">Commands / container</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel key="logs">
+                            <div className="p-2">
+                                {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                {step.startedAt && step.outputLines && <LogOutput text={step.outputLines.join('\n')} />}
+                                {step.startedAt && !step.outputLines && <LogOutput text="_No logs.._" />}
+                            </div>
+                        </TabPanel>
+                        <TabPanel key="output-variables">
+                            <div className="p-2">
+                                {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                {step.environment.length === 0 && (
+                                    <p className="text-muted mb-0">No output variables specified</p>
+                                )}
+                                <ul>
+                                    {step.outputVariables?.map(variable => (
+                                        <li key={variable.name}>
+                                            {variable.name}: {variable.value}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </TabPanel>
+                        <TabPanel key="diff">
+                            <div className="p-2">
+                                {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                {step.startedAt && (
+                                    <WorkspaceStepFileDiffConnection
+                                        isLightTheme={isLightTheme}
+                                        step={stepIndex + 1}
+                                        workspaceID={workspaceID}
+                                    />
+                                )}
+                            </div>
+                        </TabPanel>
+                        <TabPanel key="files-env">
+                            <div className="p-2">
+                                {step.environment.length === 0 && (
+                                    <p className="text-muted mb-0">No environment variables specified</p>
+                                )}
+                                <ul>
+                                    {step.environment.map(variable => (
+                                        <li key={variable.name}>
+                                            {variable.name}: {variable.value}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </TabPanel>
+                        <TabPanel key="command-container">
+                            <div className="p-2 pb-0">
+                                <LogOutput text={step.run} className="mb-2" />
+                                <p className="mb-0">
+                                    Using container <span className="text-monospace">{step.container}</span>
+                                </p>
+                            </div>
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            )}
+            {step.skipped && (
+                <p className="mb-0">
+                    <strong>Step has been skipped.</strong>
+                </p>
+            )}
         </div>
     </Collapsible>
 )
 
-const WorkspaceStateIcon: React.FunctionComponent<{ state: BatchSpecWorkspaceState }> = ({ state }) => {
+const WorkspaceStateIcon: React.FunctionComponent<{ cachedResultFound: boolean; state: BatchSpecWorkspaceState }> = ({
+    cachedResultFound,
+    state,
+}) => {
     switch (state) {
         case BatchSpecWorkspaceState.PENDING:
             return null
@@ -405,6 +507,9 @@ const WorkspaceStateIcon: React.FunctionComponent<{ state: BatchSpecWorkspaceSta
         case BatchSpecWorkspaceState.FAILED:
             return <AlertCircleIcon className="icon-inline text-danger" />
         case BatchSpecWorkspaceState.COMPLETED:
+            if (cachedResultFound) {
+                return <ContentSaveIcon className="icon-inline text-muted" />
+            }
             return <CheckCircleIcon className="icon-inline text-success" />
     }
 }

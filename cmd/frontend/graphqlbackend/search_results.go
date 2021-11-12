@@ -20,6 +20,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -520,7 +521,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 		Visibility:        visibility,
 		CommitAfter:       commitAfter,
 		Query:             q,
-		Ranked:            true,
 		Limit:             opts.limit,
 		CacheLookup:       CacheLookup,
 	}
@@ -644,6 +644,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// generate jobs that run searcher, but it is conditional on
 		// whether global zoekt search will run (value true).
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
+
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 			if !skipUnindexed {
 				typ := search.TextRequest
@@ -1596,7 +1597,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
-		userPrivateRepos, err := database.Repos(r.db).ListMinimalRepos(ctx, database.ReposListOptions{
+		userPrivateRepos, err := r.db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
@@ -1648,35 +1649,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	resolved, err := r.resolveRepositories(ctx, args.RepoOptions)
-	if err != nil {
-		if alert, err := errorToAlert(err); alert != nil {
-			return alert.wrapResults(), err
-		}
-		// Don't surface context errors to the user.
-		if errors.Is(err, context.Canceled) {
-			tr.LazyPrintf("context canceled during repo resolution: %v", err)
-			optionalWg.Wait()
-			requiredWg.Wait()
-			return r.toSearchResults(ctx, agg)
-		}
-		return nil, err
-	}
-	args.Repos = resolved.RepoRevs
-
-	tr.LazyPrintf("searching %d repos, %d missing", len(args.Repos), len(resolved.MissingRepoRevs))
-	if len(args.Repos) == 0 {
-		return r.alertForNoResolvedRepos(ctx, args.Query).wrapResults(), nil
-	}
-
-	if len(resolved.MissingRepoRevs) > 0 {
-		agg.Error(&missingRepoRevsError{Missing: resolved.MissingRepoRevs})
-		tr.LazyPrintf("adding error for missing repo revs - done")
-	}
-
-	agg.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: resolved.RepoSet}})
-	tr.LazyPrintf("sending first stats (repos %d) - done", len(resolved.RepoSet))
-
 	{
 		wg := waitGroup(true)
 		wg.Add(1)
@@ -1702,56 +1674,33 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeRepo) {
-		wg := waitGroup(true)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoRepoSearch(ctx, args, int32(limit))
+		jobs = append(jobs, &run.RepoSearch{
+			Args:  args,
+			Limit: limit,
 		})
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
-		addCommitSearch := func(diff bool) {
-			j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
-			if err != nil {
-				agg.Error(err)
-				return
-			}
-
-			if err := j.ExpandUsernames(ctx, r.db); err != nil {
-				agg.Error(err)
-				return
-			}
-
-			jobs = append(jobs, j)
+	addCommitSearch := func(diff bool) {
+		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
+		if err != nil {
+			agg.Error(err)
+			return
 		}
 
-		if args.ResultTypes.Has(result.TypeCommit) {
-			addCommitSearch(false)
+		if err := j.ExpandUsernames(ctx, r.db); err != nil {
+			agg.Error(err)
+			return
 		}
 
-		if args.ResultTypes.Has(result.TypeDiff) {
-			addCommitSearch(true)
-		}
-	} else {
-		if args.ResultTypes.Has(result.TypeDiff) {
-			wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.DoDiffSearch(ctx, args)
-			})
-		}
+		jobs = append(jobs, j)
+	}
 
-		if args.ResultTypes.Has(result.TypeCommit) {
-			wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.DoCommitSearch(ctx, args)
-			})
+	if args.ResultTypes.Has(result.TypeCommit) {
+		addCommitSearch(false)
+	}
 
-		}
+	if args.ResultTypes.Has(result.TypeDiff) {
+		addCommitSearch(true)
 	}
 
 	wgForJob := func(job run.Job) *sync.WaitGroup {
@@ -1762,6 +1711,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
 		case "Symbol":
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
+		case "Repo":
+			return waitGroup(true)
 		case "Text":
 			return waitGroup(true)
 		case "Structural":
@@ -1771,6 +1722,11 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
+	repos := &searchrepos.Resolver{
+		Opts: args.RepoOptions,
+		DB:   r.db,
+	}
+
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
 		job := job
@@ -1778,7 +1734,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoSearch(ctx, job, args.Repos, args.Mode)
+			_ = agg.DoSearch(ctx, job, repos, args.Mode)
 		})
 	}
 
@@ -1813,8 +1769,9 @@ func (r *searchResolver) toSearchResults(ctx context.Context, agg *run.Aggregato
 	}
 
 	ao := alertObserver{
-		Inputs:     r.SearchInputs,
-		hasResults: matchCount > 0,
+		searchResolver: r,
+		Inputs:         r.SearchInputs,
+		hasResults:     matchCount > 0,
 	}
 	for _, err := range aggErrs.Errors {
 		ao.Error(ctx, err)

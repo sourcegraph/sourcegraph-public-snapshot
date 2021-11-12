@@ -3,7 +3,10 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -26,6 +29,11 @@ type orgConnectionResolver struct {
 }
 
 func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, error) {
+	// 🚨 SECURITY: Not allowed on Cloud.
+	if envvar.SourcegraphDotComMode() {
+		return nil, errors.New("listing organizations is not allowed")
+	}
+
 	// 🚨 SECURITY: Only site admins can list organisations.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -47,6 +55,10 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 }
 
 func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: Not allowed on Cloud.
+	if envvar.SourcegraphDotComMode() {
+		return 0, errors.New("counting organizations is not allowed")
+	}
 	// 🚨 SECURITY: Only site admins can count organisations.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err

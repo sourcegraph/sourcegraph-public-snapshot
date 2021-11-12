@@ -47,7 +47,7 @@ func (r *resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.Lis
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
+		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{
