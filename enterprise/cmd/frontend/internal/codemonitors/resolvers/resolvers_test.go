@@ -367,7 +367,7 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { return r.store.EnqueueTriggerQueries(ctx) },
 		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
 		func() error {
-			return (&storetest.TestStore{Store: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
+			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
 		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
@@ -379,7 +379,7 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		func() error {
-			return (&storetest.TestStore{Store: r.store}).SetJobStatus(ctx, storetest.TriggerJobs, storetest.Completed, 1)
+			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.TriggerJobs, storetest.Completed, 1)
 		},
 		// This will create a second trigger job (id = 3) for the first monitor. Since
 		// the job with id = 2 is still queued, no new job will be enqueued for query 2.

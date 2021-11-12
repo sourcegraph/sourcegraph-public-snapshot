@@ -127,7 +127,7 @@ LIMIT %s;
 `
 
 // ListActionJobs lists events from cm_action_jobs using the provided options
-func (s *Store) ListActionJobs(ctx context.Context, opts ListActionEventsOpts) ([]*ActionJob, error) {
+func (s *codeMonitorStore) ListActionJobs(ctx context.Context, opts ListActionEventsOpts) ([]*ActionJob, error) {
 	q := sqlf.Sprintf(
 		listActionsFmtStr,
 		sqlf.Join(ActionJobColumns, ","),
@@ -151,7 +151,7 @@ LIMIT %s
 `
 
 // CountActionJobs returns a count of the number of action jobs matching the provided list options
-func (s *Store) CountActionJobs(ctx context.Context, opts ListActionEventsOpts) (int, error) {
+func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionEventsOpts) (int, error) {
 	q := sqlf.Sprintf(
 		countActionsFmtStr,
 		opts.Conds(),
@@ -163,7 +163,7 @@ func (s *Store) CountActionJobs(ctx context.Context, opts ListActionEventsOpts) 
 	return count, err
 }
 
-func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
+func (s *codeMonitorStore) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
@@ -176,7 +176,7 @@ func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, trigge
 	})
 }
 
-func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (int, error) {
+func (s *codeMonitorStore) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (int, error) {
 	return s.CountActionJobs(ctx, ListActionEventsOpts{
 		EmailID:        intPtr(int(emailID)),
 		TriggerEventID: triggerEventID,
@@ -202,7 +202,7 @@ SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY
 `
 
 // TODO(camdencheek): could we enqueue based on monitor ID rather than query ID? Would avoid joins above.
-func (s *Store) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error) {
+func (s *codeMonitorStore) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerEventID, triggerEventID))
 }
 
@@ -219,7 +219,7 @@ INNER JOIN cm_monitors cm on cm.id = cq.monitor
 WHERE caj.id = %s
 `
 
-func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error) {
+func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error) {
 	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, recordID))
 	m := &ActionJobMetadata{}
 	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
@@ -231,7 +231,7 @@ FROM cm_action_jobs
 WHERE id = %s
 `
 
-func (s *Store) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
+func (s *codeMonitorStore) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
 	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), recordID)
 	row := s.QueryRow(ctx, q)
 	return scanActionJob(row)

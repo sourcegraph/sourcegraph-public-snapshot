@@ -30,7 +30,7 @@ func newResolverWithClock(db dbutil.DB, clock func() time.Time) graphqlbackend.C
 }
 
 type Resolver struct {
-	store *cm.Store
+	store cm.CodeMonitorStore
 }
 
 func (r *Resolver) Now() time.Time {

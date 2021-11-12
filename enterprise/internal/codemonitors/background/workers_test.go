@@ -40,7 +40,7 @@ func TestActionRunner(t *testing.T) {
 	now := time.Now()
 	clock := func() time.Time { return now }
 	s := codemonitors.NewStoreWithClock(db, clock)
-	ctx, ts := storetest.NewTestStoreWithStore(t, s)
+	ctx, ts := storetest.NewTestStore(t)
 
 	tests := []struct {
 		name               string
