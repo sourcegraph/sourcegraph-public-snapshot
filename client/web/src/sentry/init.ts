@@ -1,7 +1,9 @@
 // Import only types to avoid including @sentry/browser into the main chunk.
 import type { Hub, init, onLoad } from '@sentry/browser'
 
-import { authenticatedUser } from './auth'
+import { authenticatedUser } from '../auth'
+
+import { shouldErrorBeReported } from './shouldErrorBeReported'
 
 window.addEventListener('error', error => {
     /**
@@ -37,6 +39,19 @@ if (typeof Sentry !== 'undefined') {
             Sentry.init({
                 dsn: window.context.sentryDSN,
                 release: 'frontend@' + window.context.version,
+                beforeSend(event, hint) {
+                    // Report errors only in production environment.
+                    if (process.env.NODE_ENV !== 'production') {
+                        return null
+                    }
+
+                    // Use `originalException` to check if we want to ignore the error.
+                    if (!hint || shouldErrorBeReported(hint.originalException)) {
+                        return event
+                    }
+
+                    return null
+                },
             })
 
             // Sentry is never un-initialized.

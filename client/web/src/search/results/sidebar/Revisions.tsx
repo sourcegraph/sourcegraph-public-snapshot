@@ -15,7 +15,7 @@ import {
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { QueryUpdate } from '../../navbarSearchQueryState'
+import { QueryUpdate } from '../../../stores/navbarSearchQueryState'
 
 import { FilterLink } from './FilterLink'
 import styles from './SearchSidebarSection.module.scss'

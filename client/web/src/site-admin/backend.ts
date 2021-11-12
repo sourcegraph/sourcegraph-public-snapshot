@@ -73,6 +73,13 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                         id
                         username
                         displayName
+                        emails {
+                            email
+                            verified
+                            verificationPending
+                            viewerCanManuallyVerify
+                            isPrimary
+                        }
                         createdAt
                         siteAdmin
                         organizations {

@@ -74,6 +74,7 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces))
 
+	// Build DB workspaces and check for cache entries.
 	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
 		workspace := &btypes.BatchSpecWorkspace{
@@ -93,6 +94,10 @@ func (r *batchSpecWorkspaceCreator) process(
 		}
 
 		ws = append(ws, workspace)
+
+		if spec.NoCache {
+			continue
+		}
 
 		rawKey, err := cacheKeyForWorkspace(spec, w)
 		if err != nil {

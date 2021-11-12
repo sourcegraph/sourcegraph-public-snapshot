@@ -52,7 +52,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (ids?: string[]) => Observable<Insight[]>
+    getInsights: (dashboardId: string) => Observable<Insight[]>
 
     /**
      * Returns all reachable subject's insights from subject with subjectId.
@@ -76,7 +76,7 @@ export interface CodeInsightsBackend {
 
     updateInsight: (event: InsightUpdateInput) => Observable<void[]>
 
-    deleteInsight: (insightId: string) => Observable<void[]>
+    deleteInsight: (insightId: string) => Observable<unknown>
 
     /**
      * Returns all available for users subjects (sharing levels, historically it was introduced

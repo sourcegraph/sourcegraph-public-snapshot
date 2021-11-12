@@ -2,10 +2,20 @@
     max-width: 300px;
 }
 
+.editor-layout-container {
+    // Default of min-height: auto when this element is display: flex allows children to
+    // set its height. We want to keep this fixed and have children overflow: auto
+    // instead.
+    min-height: 0;
+}
+
 .editor-container {
     width: 70%;
 }
 
 .workspaces-preview-container {
+    padding-top: 0.25rem;
+    background: none;
+    border: none;
     width: 30%;
 }
