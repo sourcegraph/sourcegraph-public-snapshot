@@ -1909,7 +1909,7 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 }
 
 // subRepoPermsFilter drops matches the actor in the given context does not have read access to.
-func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) error {
+func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) (err error) {
 	actor := actor.FromContext(ctx)
 
 	return func(event *streaming.SearchEvent) error {
