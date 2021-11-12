@@ -1061,6 +1061,7 @@ func TestIsContextError(t *testing.T) {
 		})
 	}
 }
+
 func TestSubRepoPermsFilter(t *testing.T) {
 	unauthorizedFileName := "README.md"
 	errorFileName := "file.go"
