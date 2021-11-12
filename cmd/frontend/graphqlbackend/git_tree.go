@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -48,16 +47,15 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	srp := subRepoPermsClient(r.db)
 	// First check if we are able to view the tree at all, if not we can return early
 	// and don't need to hit gitserver.
-	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
+	perms, err := authz.CurrentUserPermissions(ctx, r.subRepoPerms, authz.RepoContent{
 		Repo: r.commit.repoResolver.RepoName(),
 		Path: r.Path(),
 	})
 	if err != nil {
 		log15.Error("checking sub-repo permissions", "error", err)
-		return nil, errors.New("checking sub-repo permissions")
+		return nil, err
 	}
 	// No access
 	if !perms.Include(authz.Read) {
@@ -66,7 +64,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 
 	entries, err := gitReadDir(
 		ctx,
-		srp,
+		r.subRepoPerms,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),
@@ -90,11 +88,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, &GitTreeEntryResolver{
-				db:     r.db,
-				commit: r.commit,
-				stat:   entry,
-			})
+			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
 		}
 	}
 
