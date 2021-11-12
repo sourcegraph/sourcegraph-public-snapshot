@@ -7,6 +7,7 @@ import { Subject } from 'rxjs'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     FilteredConnection,
+    FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
@@ -16,6 +17,28 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { ExecutorFields } from '../../graphql-operations'
 
 import { useExecutors as defaultDoQueryExecutors } from './useExecutors'
+
+const filters: FilteredConnectionFilter[] = [
+    {
+        id: 'filters',
+        label: 'State',
+        type: 'select',
+        values: [
+            {
+                label: 'All',
+                value: 'all',
+                tooltip: 'Show all executors',
+                args: {},
+            },
+            {
+                label: 'Active',
+                value: 'active',
+                tooltip: 'Show only active executors',
+                args: { active: true },
+            },
+        ],
+    },
+]
 
 export interface ExecutorsListPageProps extends RouteComponentProps<{}>, TelemetryProps {
     telemetryService: TelemetryService
@@ -64,6 +87,7 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     history={history}
                     location={props.location}
                     cursorPaging={true}
+                    filters={filters}
                     emptyElement={<NoExecutors />}
                 />
             </Container>

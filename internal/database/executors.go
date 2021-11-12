@@ -164,7 +164,7 @@ SELECT
 	h.last_seen_at
 FROM executor_heartbeats h
 WHERE %s
-ORDER BY h.last_seen_at DESC
+ORDER BY h.first_seen_at DESC, h.id
 LIMIT %s OFFSET %s
 `
 
