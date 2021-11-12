@@ -1,5 +1,5 @@
 import { Observable, of } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -35,6 +35,7 @@ import {
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
@@ -43,6 +44,7 @@ import {
     ReachableInsight,
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
+import { camelCase } from 'lodash'
 
 export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     constructor(
@@ -190,7 +192,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         )
     }
 
-    public updateDashboard = (input: DashboardUpdateInput): Observable<void> => {
+    public updateDashboard = (input: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
         const { previousDashboard, nextDashboardInput } = input
 
         if (!previousDashboard.owner || !previousDashboard.settingsKey) {
@@ -239,7 +241,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
 
                 settingsContent = addDashboardToSettings(settingsContent, updatedDashboard)
 
-                return updateSubjectSettings(this.platformContext, nextDashboardInput.visibility, settingsContent)
+                return updateSubjectSettings(this.platformContext, nextDashboardInput.visibility, settingsContent).pipe(
+                    map(() => ({ id: camelCase(updatedDashboard.title) }))
+                )
             })
         )
     }

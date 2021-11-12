@@ -42,16 +42,9 @@ export interface InsightDashboard {
     scope: InsightsDashboardScope
     title: string
     insightIds?: string[]
-
-    /**
-     * Subject that has a particular dashboard, it can be personal setting
-     * or organization setting subject.
-     */
-    owner?: InsightDashboardOwner
-
     grants?: {
-        users?: string[]
-        organizations?: string[]
-        global?: boolean
+        users: string[]
+        organizations: string[]
+        global: boolean
     }
 }

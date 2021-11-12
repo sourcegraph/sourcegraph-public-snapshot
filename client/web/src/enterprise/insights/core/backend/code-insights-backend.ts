@@ -12,6 +12,7 @@ import {
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetBuiltInsightInput,
     GetLangStatsInsightContentInput,
@@ -40,7 +41,7 @@ export interface CodeInsightsBackend {
 
     createDashboard: (input: DashboardCreateInput) => Observable<void>
 
-    updateDashboard: (input: DashboardUpdateInput) => Observable<void>
+    updateDashboard: (input: DashboardUpdateInput) => Observable<DashboardUpdateResult>
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 

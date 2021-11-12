@@ -1,4 +1,4 @@
-import { InsightDashboard, InsightsDashboardType } from './core'
+import { InsightDashboard, InsightDashboardOwner, InsightsDashboardType } from './core'
 
 /**
  * Derived dashboard from the setting cascade subject.
@@ -16,6 +16,12 @@ export interface BuiltInInsightDashboard extends InsightDashboard {
      * "Global level" - all insights from site (global) setting subject.
      */
     type: InsightsDashboardType.BuiltIn
+
+    /**
+     * Subject that has a particular dashboard, it can be personal setting
+     * or organization setting subject.
+     */
+    owner: InsightDashboardOwner
 }
 
 /**
@@ -30,6 +36,12 @@ export interface CustomInsightDashboard extends InsightDashboard {
      * BE migration.
      */
     settingsKey: string | null
+
+    /**
+     * Subject that has a particular dashboard, it can be personal setting
+     * or organization setting subject.
+     */
+    owner?: InsightDashboardOwner
 }
 
 /**

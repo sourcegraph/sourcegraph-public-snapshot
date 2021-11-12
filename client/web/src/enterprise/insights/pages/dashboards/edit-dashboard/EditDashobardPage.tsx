@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { camelCase } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
@@ -17,8 +16,9 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
 import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { isVirtualDashboard } from '../../../core/types'
+import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
 import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
+import { isGlobalSubject, SupportedInsightSubject } from '../../../core/types/subjects'
 import {
     DashboardCreationFields,
     InsightsDashboardCreationContent,
@@ -74,13 +74,6 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         )
     }
 
-    if (!dashboard.owner) {
-        throw new Error('TODO: support GraphQL API')
-    }
-
-    // Convert dashboard info to initial form values
-    const dashboardInitialValues = dashboard ? { name: dashboard.title, visibility: dashboard.owner.id } : undefined
-
     const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<void | unknown> => {
         if (!dashboard) {
             return
@@ -89,7 +82,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         const { name, visibility, type } = dashboardValues
 
         try {
-            await updateDashboard({
+            const updatedDashboard = await updateDashboard({
                 previousDashboard: dashboard,
                 nextDashboardInput: {
                     name,
@@ -98,7 +91,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 },
             }).toPromise()
 
-            history.push(`/insights/dashboards/${camelCase(dashboardValues.name.trim())}`)
+            history.push(`/insights/dashboards/${updatedDashboard.id}`)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -126,7 +119,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
-                    initialValues={dashboardInitialValues}
+                    initialValues={getDashboardInitialValues(dashboard, subjects)}
                     subjects={subjects}
                     onSubmit={handleSubmit}
                 >
@@ -157,4 +150,29 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             </Container>
         </Page>
     )
+}
+
+function getDashboardInitialValues(
+    dashboard: CustomInsightDashboard,
+    subjects: SupportedInsightSubject[]
+): DashboardCreationFields | undefined {
+    if (dashboard.owner) {
+        return { name: dashboard.title, visibility: dashboard.owner.id }
+    }
+
+    if (dashboard.grants) {
+        const { users, organizations, global } = dashboard.grants
+        const globalSubject = subjects.find(isGlobalSubject)
+
+        if (global && globalSubject) {
+            return { name: dashboard.title, visibility: globalSubject.id }
+        }
+
+        return {
+            name: dashboard.title,
+            visibility: users[0] ?? organizations[0] ?? 'unkown',
+        }
+    }
+
+    return
 }

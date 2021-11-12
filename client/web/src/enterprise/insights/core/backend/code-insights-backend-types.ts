@@ -11,13 +11,16 @@ export interface DashboardCreateInput {
     visibility: string
     insightIds?: string[]
     type?: string
-    userIds?: string[]
 }
 
 export interface DashboardUpdateInput {
     previousDashboard: CustomInsightDashboard
     nextDashboardInput: DashboardCreateInput
     id?: string
+}
+
+export interface DashboardUpdateResult {
+    id: string
 }
 
 export interface DashboardDeleteInput {

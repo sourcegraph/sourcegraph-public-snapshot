@@ -8,7 +8,6 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { authenticatedUser, AuthenticatedUser } from '../../../../../auth'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
@@ -22,9 +21,7 @@ import {
 } from './components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 import styles from './InsightsDashboardCreationPage.module.scss'
 
-interface InsightsDashboardCreationPageProps extends TelemetryProps {
-    authenticatedUser: AuthenticatedUser
-}
+interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDashboardCreationPageProps> = props => {
     const { telemetryService } = props
@@ -33,14 +30,10 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const { createDashboard, getInsightSubjects } = useContext(CodeInsightsBackendContext)
 
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
-    const user = useObservable(authenticatedUser)
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
         try {
-            await createDashboard({
-                ...values,
-                userIds: user?.id ? [user?.id] : [],
-            }).toPromise()
+            await createDashboard(values).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 

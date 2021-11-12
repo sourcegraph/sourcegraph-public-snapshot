@@ -16,6 +16,7 @@ import {
     GetInsightsResult,
     GetInsightViewResult,
     InsightsDashboardsResult,
+    InsightSubjectsResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     RemoveInsightViewFromDashboardResult,
@@ -32,6 +33,7 @@ import {
     isSearchBasedInsight,
     SearchBasedInsight,
 } from '../types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../types/dashboard/virtual-dashboard'
 import {
     isSearchBackendBasedInsight,
     SearchBackendBasedInsight,
@@ -51,6 +53,7 @@ import {
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
@@ -61,6 +64,7 @@ import {
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
+import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
 import { createLineChartContent } from './utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
@@ -74,7 +78,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getInsights = (dashboardId: string): Observable<Insight[]> => {
         // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
         // we need to use here insightViews query to fetch all available insights
-        if (dashboardId === 'all') {
+        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return fromObservableQuery(
                 this.apolloClient.watchQuery<GetInsightsResult>({
                     query: GET_INSIGHTS_GQL,
@@ -171,7 +175,20 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // We don't have insight visibility and subject levels in the new GQL API anymore.
     // it was part of setting-cascade based API.
-    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => of([])
+    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> =>
+        from(
+            this.apolloClient.query<InsightSubjectsResult>({ query: GET_INSIGHTS_SUBJECTS_GQL })
+        ).pipe(
+            map(({ data }) => {
+                const { currentUser, site } = data
+
+                if (!currentUser) {
+                    return []
+                }
+
+                return [{ ...currentUser }, ...currentUser.organizations.nodes, site]
+            })
+        )
 
     public createInsight = (input: InsightCreateInput): Observable<unknown> => {
         const { insight, dashboard } = input
@@ -330,11 +347,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<void> => {
-        if (!id) {
-            throw new Error('`id` is required to update a dashboard')
-        }
-
+    public updateDashboard = ({
+        previousDashboard,
+        nextDashboardInput,
+    }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
         if (!nextDashboardInput.type) {
             throw new Error('`grants` are required to update a dashboard')
         }
@@ -362,11 +378,21 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: {
-                    id,
+                    id: previousDashboard.id,
                     input,
                 },
             })
-        ).pipe(mapTo(undefined))
+        ).pipe(
+            map(result => {
+                const { data } = result
+
+                if (!data?.updateInsightsDashboard) {
+                    throw new Error('The dashboard update was not successful')
+                }
+
+                return data.updateInsightsDashboard.dashboard
+            })
+        )
     }
 
     // Live preview fetchers
