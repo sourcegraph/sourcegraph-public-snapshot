@@ -140,6 +140,62 @@ func (s *codeMonitorStore) updateActionEmailQuery(ctx context.Context, monitorID
 	), nil
 }
 
+// ListActionsOpts holds list options for listing actions
+type ListActionsOpts struct {
+	// MonitorID, if set, will constrain the listed actions to only
+	// those that are defined as part of the given monitor.
+	// References cm_monitors(id)
+	MonitorID *int
+
+	// First, if set, limits the number of actions returned
+	// to the first n.
+	First *int
+
+	// After, if set, begins listing actions after the given id
+	After *int
+}
+
+func (o ListActionsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o.MonitorID != nil {
+		conds = append(conds, sqlf.Sprintf("monitor = %s", *o.MonitorID))
+	}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+func (o ListActionsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
+}
+
+const listEmailActionsFmtStr = `
+SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
+FROM cm_emails
+WHERE %s
+ORDER BY id ASC
+LIMIT %s;
+`
+
+// ListEmailActions lists emails from cm_emails with the given opts
+func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error) {
+	q := sqlf.Sprintf(
+		listEmailActionsFmtStr,
+		opts.Conds(),
+		opts.Limit(),
+	)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return ScanEmails(rows)
+}
+
 const readActionEmailFmtStr = `
 SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
 FROM cm_emails

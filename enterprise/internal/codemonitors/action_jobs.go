@@ -90,7 +90,7 @@ type ListActionJobsOpts struct {
 
 // Conds generates a set of conditions for a SQL WHERE clause
 func (o ListActionJobsOpts) Conds() *sqlf.Query {
-	var conds []*sqlf.Query
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.TriggerEventID != nil {
 		conds = append(conds, sqlf.Sprintf("trigger_event = %s", *o.TriggerEventID))
 	}
