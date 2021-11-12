@@ -5,6 +5,7 @@ package handler
 import (
 	"context"
 	"sync"
+	"time"
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -15,6 +16,9 @@ import (
 // (from the package github.com/sourcegraph/sourcegraph/internal/database)
 // used for unit testing.
 type MockExecutorStore struct {
+	// DeleteInactiveHeartbeatsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteInactiveHeartbeats.
+	DeleteInactiveHeartbeatsFunc *ExecutorStoreDeleteInactiveHeartbeatsFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *ExecutorStoreDoneFunc
@@ -24,15 +28,15 @@ type MockExecutorStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *ExecutorStoreHandleFunc
-	// HeartbeatFunc is an instance of a mock function object controlling
-	// the behavior of the method Heartbeat.
-	HeartbeatFunc *ExecutorStoreHeartbeatFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *ExecutorStoreListFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *ExecutorStoreTransactFunc
+	// UpsertHeartbeatFunc is an instance of a mock function object
+	// controlling the behavior of the method UpsertHeartbeat.
+	UpsertHeartbeatFunc *ExecutorStoreUpsertHeartbeatFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *ExecutorStoreWithFunc
@@ -42,6 +46,11 @@ type MockExecutorStore struct {
 // All methods return zero values for all results, unless overwritten.
 func NewMockExecutorStore() *MockExecutorStore {
 	return &MockExecutorStore{
+		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
+			defaultHook: func(context.Context, time.Duration) error {
+				return nil
+			},
+		},
 		DoneFunc: &ExecutorStoreDoneFunc{
 			defaultHook: func(error) error {
 				return nil
@@ -57,11 +66,6 @@ func NewMockExecutorStore() *MockExecutorStore {
 				return nil
 			},
 		},
-		HeartbeatFunc: &ExecutorStoreHeartbeatFunc{
-			defaultHook: func(context.Context, types.Executor) error {
-				return nil
-			},
-		},
 		ListFunc: &ExecutorStoreListFunc{
 			defaultHook: func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
 				return nil, 0, nil
@@ -70,6 +74,11 @@ func NewMockExecutorStore() *MockExecutorStore {
 		TransactFunc: &ExecutorStoreTransactFunc{
 			defaultHook: func(context.Context) (database.ExecutorStore, error) {
 				return nil, nil
+			},
+		},
+		UpsertHeartbeatFunc: &ExecutorStoreUpsertHeartbeatFunc{
+			defaultHook: func(context.Context, types.Executor) error {
+				return nil
 			},
 		},
 		WithFunc: &ExecutorStoreWithFunc{
@@ -85,6 +94,9 @@ func NewMockExecutorStore() *MockExecutorStore {
 // overwritten.
 func NewMockExecutorStoreFrom(i database.ExecutorStore) *MockExecutorStore {
 	return &MockExecutorStore{
+		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
+			defaultHook: i.DeleteInactiveHeartbeats,
+		},
 		DoneFunc: &ExecutorStoreDoneFunc{
 			defaultHook: i.Done,
 		},
@@ -94,19 +106,129 @@ func NewMockExecutorStoreFrom(i database.ExecutorStore) *MockExecutorStore {
 		HandleFunc: &ExecutorStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		HeartbeatFunc: &ExecutorStoreHeartbeatFunc{
-			defaultHook: i.Heartbeat,
-		},
 		ListFunc: &ExecutorStoreListFunc{
 			defaultHook: i.List,
 		},
 		TransactFunc: &ExecutorStoreTransactFunc{
 			defaultHook: i.Transact,
 		},
+		UpsertHeartbeatFunc: &ExecutorStoreUpsertHeartbeatFunc{
+			defaultHook: i.UpsertHeartbeat,
+		},
 		WithFunc: &ExecutorStoreWithFunc{
 			defaultHook: i.With,
 		},
 	}
+}
+
+// ExecutorStoreDeleteInactiveHeartbeatsFunc describes the behavior when the
+// DeleteInactiveHeartbeats method of the parent MockExecutorStore instance
+// is invoked.
+type ExecutorStoreDeleteInactiveHeartbeatsFunc struct {
+	defaultHook func(context.Context, time.Duration) error
+	hooks       []func(context.Context, time.Duration) error
+	history     []ExecutorStoreDeleteInactiveHeartbeatsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteInactiveHeartbeats delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockExecutorStore) DeleteInactiveHeartbeats(v0 context.Context, v1 time.Duration) error {
+	r0 := m.DeleteInactiveHeartbeatsFunc.nextHook()(v0, v1)
+	m.DeleteInactiveHeartbeatsFunc.appendCall(ExecutorStoreDeleteInactiveHeartbeatsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteInactiveHeartbeats method of the parent MockExecutorStore instance
+// is invoked and the hook queue is empty.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) SetDefaultHook(hook func(context.Context, time.Duration) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteInactiveHeartbeats method of the parent MockExecutorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) PushHook(hook func(context.Context, time.Duration) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, time.Duration) error {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) nextHook() func(context.Context, time.Duration) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) appendCall(r0 ExecutorStoreDeleteInactiveHeartbeatsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ExecutorStoreDeleteInactiveHeartbeatsFuncCall objects describing the
+// invocations of this function.
+func (f *ExecutorStoreDeleteInactiveHeartbeatsFunc) History() []ExecutorStoreDeleteInactiveHeartbeatsFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreDeleteInactiveHeartbeatsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreDeleteInactiveHeartbeatsFuncCall is an object that describes
+// an invocation of method DeleteInactiveHeartbeats on an instance of
+// MockExecutorStore.
+type ExecutorStoreDeleteInactiveHeartbeatsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreDeleteInactiveHeartbeatsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreDeleteInactiveHeartbeatsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ExecutorStoreDoneFunc describes the behavior when the Done method of the
@@ -422,112 +544,6 @@ func (c ExecutorStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ExecutorStoreHeartbeatFunc describes the behavior when the Heartbeat
-// method of the parent MockExecutorStore instance is invoked.
-type ExecutorStoreHeartbeatFunc struct {
-	defaultHook func(context.Context, types.Executor) error
-	hooks       []func(context.Context, types.Executor) error
-	history     []ExecutorStoreHeartbeatFuncCall
-	mutex       sync.Mutex
-}
-
-// Heartbeat delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockExecutorStore) Heartbeat(v0 context.Context, v1 types.Executor) error {
-	r0 := m.HeartbeatFunc.nextHook()(v0, v1)
-	m.HeartbeatFunc.appendCall(ExecutorStoreHeartbeatFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Heartbeat method of
-// the parent MockExecutorStore instance is invoked and the hook queue is
-// empty.
-func (f *ExecutorStoreHeartbeatFunc) SetDefaultHook(hook func(context.Context, types.Executor) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Heartbeat method of the parent MockExecutorStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *ExecutorStoreHeartbeatFunc) PushHook(hook func(context.Context, types.Executor) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *ExecutorStoreHeartbeatFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, types.Executor) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *ExecutorStoreHeartbeatFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, types.Executor) error {
-		return r0
-	})
-}
-
-func (f *ExecutorStoreHeartbeatFunc) nextHook() func(context.Context, types.Executor) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ExecutorStoreHeartbeatFunc) appendCall(r0 ExecutorStoreHeartbeatFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ExecutorStoreHeartbeatFuncCall objects
-// describing the invocations of this function.
-func (f *ExecutorStoreHeartbeatFunc) History() []ExecutorStoreHeartbeatFuncCall {
-	f.mutex.Lock()
-	history := make([]ExecutorStoreHeartbeatFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ExecutorStoreHeartbeatFuncCall is an object that describes an invocation
-// of method Heartbeat on an instance of MockExecutorStore.
-type ExecutorStoreHeartbeatFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 types.Executor
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ExecutorStoreHeartbeatFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ExecutorStoreHeartbeatFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // ExecutorStoreListFunc describes the behavior when the List method of the
 // parent MockExecutorStore instance is invoked.
 type ExecutorStoreListFunc struct {
@@ -743,6 +759,113 @@ func (c ExecutorStoreTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c ExecutorStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ExecutorStoreUpsertHeartbeatFunc describes the behavior when the
+// UpsertHeartbeat method of the parent MockExecutorStore instance is
+// invoked.
+type ExecutorStoreUpsertHeartbeatFunc struct {
+	defaultHook func(context.Context, types.Executor) error
+	hooks       []func(context.Context, types.Executor) error
+	history     []ExecutorStoreUpsertHeartbeatFuncCall
+	mutex       sync.Mutex
+}
+
+// UpsertHeartbeat delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExecutorStore) UpsertHeartbeat(v0 context.Context, v1 types.Executor) error {
+	r0 := m.UpsertHeartbeatFunc.nextHook()(v0, v1)
+	m.UpsertHeartbeatFunc.appendCall(ExecutorStoreUpsertHeartbeatFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpsertHeartbeat
+// method of the parent MockExecutorStore instance is invoked and the hook
+// queue is empty.
+func (f *ExecutorStoreUpsertHeartbeatFunc) SetDefaultHook(hook func(context.Context, types.Executor) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpsertHeartbeat method of the parent MockExecutorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ExecutorStoreUpsertHeartbeatFunc) PushHook(hook func(context.Context, types.Executor) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ExecutorStoreUpsertHeartbeatFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.Executor) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ExecutorStoreUpsertHeartbeatFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.Executor) error {
+		return r0
+	})
+}
+
+func (f *ExecutorStoreUpsertHeartbeatFunc) nextHook() func(context.Context, types.Executor) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExecutorStoreUpsertHeartbeatFunc) appendCall(r0 ExecutorStoreUpsertHeartbeatFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExecutorStoreUpsertHeartbeatFuncCall
+// objects describing the invocations of this function.
+func (f *ExecutorStoreUpsertHeartbeatFunc) History() []ExecutorStoreUpsertHeartbeatFuncCall {
+	f.mutex.Lock()
+	history := make([]ExecutorStoreUpsertHeartbeatFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExecutorStoreUpsertHeartbeatFuncCall is an object that describes an
+// invocation of method UpsertHeartbeat on an instance of MockExecutorStore.
+type ExecutorStoreUpsertHeartbeatFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.Executor
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExecutorStoreUpsertHeartbeatFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExecutorStoreUpsertHeartbeatFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ExecutorStoreWithFunc describes the behavior when the With method of the

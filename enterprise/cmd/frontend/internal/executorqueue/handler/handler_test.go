@@ -393,9 +393,9 @@ func TestHeartbeat(t *testing.T) {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 	}
 
-	if callCount := len(executorStore.HeartbeatFunc.History()); callCount != 1 {
-		t.Errorf("unexpected heartbeat call count. want=%d have=%d", 1, callCount)
-	} else if name := executorStore.HeartbeatFunc.History()[0].Arg1; name != executor {
+	if callCount := len(executorStore.UpsertHeartbeatFunc.History()); callCount != 1 {
+		t.Errorf("unexpected heartbeat upsert count. want=%d have=%d", 1, callCount)
+	} else if name := executorStore.UpsertHeartbeatFunc.History()[0].Arg1; name != executor {
 		t.Errorf("unexpected heartbeat name. want=%q have=%q", "deadbeef", name)
 	}
 }
