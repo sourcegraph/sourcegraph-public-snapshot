@@ -198,6 +198,12 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <CopyableText text={this.state.resetPasswordURL} size={40} />
                     </div>
                 )}
+                {this.state.resetPasswordURL === null && (
+                    <div className="alert alert-success mt-2">
+                        Password was reset. The reset link was sent to the primary email of the user:{' '}
+                        <strong>{this.props.node.emails.find(item => item.isPrimary)?.email}</strong>
+                    </div>
+                )}
             </li>
         )
     }
