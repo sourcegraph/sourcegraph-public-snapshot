@@ -8,7 +8,6 @@ import { SmartInsightsViewGrid } from '../../../../../../../components/insights-
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
-import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 import { DashboardInsightsContext } from './DashboardInsightsContext'
@@ -24,8 +23,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
-    const insightIds = useDistinctValue(dashboard.insightIds)
-    const insights = useObservable(useMemo(() => getInsights(insightIds), [getInsights, insightIds]))
+    const insights = useObservable(useMemo(() => getInsights(dashboard.id), [getInsights, dashboard.id]))
 
     if (insights === undefined) {
         return <LoadingSpinner />

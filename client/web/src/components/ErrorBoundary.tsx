@@ -3,8 +3,9 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
 
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
+import { isWebpackChunkError } from '../sentry/shouldErrorBeReported'
 
 import { HeroPage } from './HeroPage'
 
@@ -50,14 +51,12 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidCatch(error: unknown, errorInfo: React.ErrorInfo): void {
-        if (shouldErrorBeReported(error)) {
-            Sentry.withScope(scope => {
-                for (const [key, value] of Object.entries(errorInfo)) {
-                    scope.setExtra(key, value)
-                }
-                Sentry.captureException(error)
-            })
-        }
+        Sentry.withScope(scope => {
+            for (const [key, value] of Object.entries(errorInfo)) {
+                scope.setExtra(key, value)
+            }
+            Sentry.captureException(error)
+        })
     }
 
     public componentDidUpdate(previousProps: Props): void {
@@ -122,32 +121,4 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     private onReloadClick: React.MouseEventHandler<HTMLElement> = () => {
         window.location.reload() // hard page reload
     }
-}
-
-function shouldErrorBeReported(error: unknown): boolean {
-    // Report errors only in production environment.
-    if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
-        return false
-    }
-
-    if (error instanceof HTTPStatusError) {
-        // Ignore Server error responses (5xx)
-        return error.status < 500
-    }
-    if (isWebpackChunkError(error) || isAbortError(error) || isNotAuthenticatedError(error)) {
-        return false
-    }
-    return true
-}
-
-function isWebpackChunkError(value: unknown): boolean {
-    return isErrorLike(value) && value.name === 'ChunkLoadError'
-}
-
-function isAbortError(value: unknown): boolean {
-    return isErrorLike(value) && value.name === 'AbortError'
-}
-
-function isNotAuthenticatedError(value: unknown): boolean {
-    return isErrorLike(value) && value.message.includes('not authenticated')
 }

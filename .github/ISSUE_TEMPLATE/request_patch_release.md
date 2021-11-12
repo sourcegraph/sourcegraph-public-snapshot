@@ -1,13 +1,13 @@
 ---
 name: Request patch release
-about: Sourcegraph teams, use this issue to request the Distribution team perform a patch release or include your changes in a patch release..
+about: Sourcegraph teams, use this issue to request the Delivery team perform a patch release or include your changes in a patch release..
 title: ''
-labels: 'team/distribution,patch-release-request'
+labels: 'team/delivery,patch-release-request'
 assignees: ''
 
 ---
 
-@sourcegraph/distribution I am requesting the following commits be included in a patch release. They are already merged into `main`:
+@sourcegraph/delivery I am requesting the following commits be included in a patch release. They are already merged into `main`:
 
 - <!-- LINK TO EXACT MERGED COMMITS HERE -->
 

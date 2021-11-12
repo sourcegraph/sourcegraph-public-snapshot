@@ -2,10 +2,12 @@ package compute
 
 import (
 	"context"
+	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hexops/autogold"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -25,6 +27,20 @@ func Test_output(t *testing.T) {
 			MatchPattern:  &Regexp{Value: regexp.MustCompile(`(\d)`)},
 			OutputPattern: "($1)",
 			Separator:     "~",
+		}))
+
+	// If we are not on CI skip the test if comby is not installed.
+	if os.Getenv("CI") == "" && !comby.Exists() {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
+	autogold.Want(
+		"structural search output",
+		`train(regional, intercity)
+train(commuter, lightrail)`).
+		Equal(t, test("Im a train. train(intercity, regional). choo choo. train(lightrail, commuter)", &Output{
+			MatchPattern:  &Comby{Value: `train(:[x], :[y])`},
+			OutputPattern: "train(:[y], :[x])",
 		}))
 }
 

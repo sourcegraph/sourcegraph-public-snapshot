@@ -11,7 +11,9 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -115,6 +117,54 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err e
 		return n
 	})
 	return err
+}
+
+// expandUsernamesToEmails expands references to usernames to mention all possible (known and
+// verified) email addresses for the user.
+//
+// For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
+// "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
+// "alice@example\\.org"].
+func expandUsernamesToEmails(ctx context.Context, db dbutil.DB, values []string) (expandedValues []string, err error) {
+	expandOne := func(ctx context.Context, value string) ([]string, error) {
+		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
+			return nil, nil
+		}
+
+		user, err := database.Users(db).GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		} else if err != nil {
+			return nil, err
+		}
+		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
+			UserID: user.ID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		values := make([]string, 0, len(emails))
+		for _, email := range emails {
+			if email.VerifiedAt != nil {
+				values = append(values, regexp.QuoteMeta(email.Email))
+			}
+		}
+		return values, nil
+	}
+
+	expandedValues = make([]string, 0, len(values))
+	for _, v := range values {
+		x, err := expandOne(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		if x == nil {
+			expandedValues = append(expandedValues, v) // not a username or couldn't expand
+		} else {
+			expandedValues = append(expandedValues, x...)
+		}
+	}
+	return expandedValues, nil
 }
 
 func HasTimeFilter(q query.Q) bool {

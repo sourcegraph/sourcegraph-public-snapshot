@@ -47,5 +47,5 @@ func (r *UploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
-	return encodeIntCursor(toInt32(r.uploadsResolver.NextOffset)), nil
+	return graphqlutil.EncodeIntCursor(toInt32(r.uploadsResolver.NextOffset)), nil
 }
