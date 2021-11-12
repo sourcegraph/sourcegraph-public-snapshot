@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { noop } from 'lodash'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import {
