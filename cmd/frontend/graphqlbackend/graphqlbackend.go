@@ -545,7 +545,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := database.Repos(r.db).Get(ctx, repoID)
+	repo, err := r.db.Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
@@ -596,7 +596,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.db.Repos()).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
