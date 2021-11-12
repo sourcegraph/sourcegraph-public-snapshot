@@ -122,7 +122,7 @@ func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
 		ColumnExpressions: cm.ActionJobsColumns,
-		Scan:              cm.ScanActionJobs,
+		Scan:              cm.ScanActionJobRecord,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,

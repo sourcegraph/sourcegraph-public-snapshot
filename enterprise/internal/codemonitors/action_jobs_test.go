@@ -124,8 +124,8 @@ func TestScanActionJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, testRecordID))
-	record, _, err := ScanActionJobs(rows, err)
+	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), testRecordID))
+	record, _, err := ScanActionJobRecord(rows, err)
 	if err != nil {
 		t.Fatal(err)
 	}

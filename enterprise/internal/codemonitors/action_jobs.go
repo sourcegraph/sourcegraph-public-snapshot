@@ -5,11 +5,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -57,7 +56,7 @@ var ActionJobsColumns = []*sqlf.Query{
 }
 
 const readActionEmailEventsFmtStr = `
-SELECT id, email, trigger_event, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT %s -- ActionJobsColumns
 FROM cm_action_jobs
 WHERE %s
 AND id > %s
@@ -65,24 +64,28 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) (js []*ActionJob, err error) {
-	var where *sqlf.Query
-	if triggerEventID == nil {
-		where = sqlf.Sprintf("email = %s", emailID)
-	} else {
-		where = sqlf.Sprintf("email = %s AND trigger_event = %s", emailID, *triggerEventID)
+func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
+	conditions := []*sqlf.Query{sqlf.Sprintf("email = %s", emailID)}
+	if triggerEventID != nil {
+		conditions = append(conditions, sqlf.Sprintf("trigger_event = %s", *triggerEventID))
 	}
-	var rows *sql.Rows
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
-	rows, err = s.Query(ctx, sqlf.Sprintf(readActionEmailEventsFmtStr, where, after, args.First))
+	q := sqlf.Sprintf(
+		readActionEmailEventsFmtStr,
+		sqlf.Join(ActionJobsColumns, ","),
+		sqlf.Join(conditions, "AND"),
+		after,
+		args.First,
+	)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanActionJobs(rows, err)
+	return scanActionJobs(rows)
 }
 
 const totalActionEmailEventsFmtStr = `
@@ -107,105 +110,95 @@ func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, trigg
 
 const enqueueActionEmailFmtStr = `
 WITH due AS (
-	SELECT e.id, e.monitor, e.enabled, e.priority, e.header, e.created_by, e.created_at, e.changed_by, e.changed_at
-	FROM cm_emails e INNER JOIN cm_queries q ON e.monitor = q.monitor
+	SELECT e.id
+	FROM cm_emails e
+	INNER JOIN cm_queries q ON e.monitor = q.monitor
 	WHERE q.id = %s AND e.enabled = true
 ),
 busy AS (
-    SELECT DISTINCT email as id FROM cm_action_jobs
-    WHERE state = 'queued'
-    OR state = 'processing'
+	SELECT DISTINCT email as id FROM cm_action_jobs
+	WHERE state = 'queued'
+	OR state = 'processing'
 )
 INSERT INTO cm_action_jobs (email, trigger_event)
 SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
 `
 
+// TODO(camdencheek): could we enqueue based on monitor ID rather than query ID? Would avoid joins above.
 func (s *Store) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerEventID, triggerEventID))
 }
 
 const getActionJobMetadataFmtStr = `
-select cm.description, ctj.query_string, cm.id as monitorID, ctj.num_results from
-cm_action_jobs caj
-inner join cm_trigger_jobs ctj on caj.trigger_event = ctj.id
-inner join cm_queries cq on cq.id = ctj.query
-inner join cm_monitors cm on cm.id = cq.monitor
-where caj.id = %s
+SELECT
+	cm.description,
+	ctj.query_string,
+	cm.id AS monitorID,
+	ctj.num_results
+FROM cm_action_jobs caj
+INNER JOIN cm_trigger_jobs ctj on caj.trigger_event = ctj.id
+INNER JOIN cm_queries cq on cq.id = ctj.query
+INNER JOIN cm_monitors cm on cm.id = cq.monitor
+WHERE caj.id = %s
 `
 
-func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (m *ActionJobMetadata, err error) {
+func (s *Store) GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error) {
 	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, recordID))
-	m = &ActionJobMetadata{}
-	err = row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	m := &ActionJobMetadata{}
+	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
 }
 
 const actionJobForIDFmtStr = `
-SELECT id, email, trigger_event, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
+SELECT %s -- ActionJobsColumns
 FROM cm_action_jobs
 WHERE id = %s
 `
 
 func (s *Store) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
-	return s.runActionJobQuery(ctx, sqlf.Sprintf(actionJobForIDFmtStr, recordID))
+	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), recordID)
+	row := s.QueryRow(ctx, q)
+	return scanActionJob(row)
 }
 
-func (s *Store) runActionJobQuery(ctx context.Context, q *sqlf.Query) (ajs *ActionJob, err error) {
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, q)
+// ScanActionJobRecord implements the worker RecordScanFn
+func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
-		return nil, err
+		return &TriggerJobs{}, false, err
 	}
 	defer rows.Close()
-	var es []*ActionJob
-	es, err = scanActionJobs(rows, err)
-	if err != nil {
-		return nil, err
-	}
-	if len(es) == 0 {
-		return nil, errors.Errorf("operation failed. Query should have returned at least 1 row")
-	}
-	return es[0], nil
-}
 
-func ScanActionJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	records, err := scanActionJobs(rows, err)
+	records, err := scanActionJobs(rows)
 	if err != nil || len(records) == 0 {
 		return &TriggerJobs{}, false, err
 	}
 	return records[0], true, nil
 }
 
-func scanActionJobs(rows *sql.Rows, err error) ([]*ActionJob, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
 	var ajs []*ActionJob
 	for rows.Next() {
-		aj := &ActionJob{}
-		if err := rows.Scan(
-			&aj.Id,
-			&aj.Email,
-			&aj.TriggerEvent,
-			&aj.State,
-			&aj.FailureMessage,
-			&aj.StartedAt,
-			&aj.FinishedAt,
-			&aj.ProcessAfter,
-			&aj.NumResets,
-			&aj.NumFailures,
-			&aj.LogContents,
-		); err != nil {
+		aj, err := scanActionJob(rows)
+		if err != nil {
 			return nil, err
 		}
 		ajs = append(ajs, aj)
 	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return ajs, nil
+	return ajs, rows.Err()
+}
+
+func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
+	aj := &ActionJob{}
+	return aj, row.Scan(
+		&aj.Id,
+		&aj.Email,
+		&aj.TriggerEvent,
+		&aj.State,
+		&aj.FailureMessage,
+		&aj.StartedAt,
+		&aj.FinishedAt,
+		&aj.ProcessAfter,
+		&aj.NumResets,
+		&aj.NumFailures,
+		&aj.LogContents,
+	)
 }
