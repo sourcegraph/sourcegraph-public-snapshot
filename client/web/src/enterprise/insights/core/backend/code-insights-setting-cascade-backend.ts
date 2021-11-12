@@ -1,3 +1,4 @@
+import { camelCase } from 'lodash'
 import { Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
@@ -44,7 +45,6 @@ import {
     ReachableInsight,
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
-import { camelCase } from 'lodash'
 
 export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     constructor(
