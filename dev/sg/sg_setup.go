@@ -201,7 +201,8 @@ sh /tmp/install-nvm.sh`,
 		prompt: `Install the current recommended version of Node JS by running the following in the sourcegraph/sourcegraph repository clone`,
 		comment: `After doing this, node -v should show the same version mentioned in .nvmrc at the root of the sourcegraph repository.
 NOTE: Although there is a Homebrew package for Node, we advise using nvm instead, to ensure you get a Node version compatible with the current state of the sourcegraph repository.`,
-		command: `nvm install
+		command: `# Run the following two commands in the 'sourcegraph' repository:
+nvm install
 nvm use --delete-prefix`,
 	},
 	// step 4
