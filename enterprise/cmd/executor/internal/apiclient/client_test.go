@@ -348,7 +348,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
+		expectedPayload:  `{"architecture":"","dockerVersion":"","executorName":"deadbeef","executorVersion":"","gitVersion":"","igniteVersion":"","jobIds":[1,2,3],"os":"","srcCliVersion":""}`,
 		responseStatus:   http.StatusOK,
 		responsePayload:  `[1]`,
 	}
@@ -371,7 +371,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
+		expectedPayload:  `{"architecture":"","dockerVersion":"","executorName":"deadbeef","executorVersion":"","gitVersion":"","igniteVersion":"","jobIds":[1,2,3],"os":"","srcCliVersion":""}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
 	}
