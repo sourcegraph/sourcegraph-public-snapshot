@@ -1,8 +1,7 @@
 import { useApolloClient } from '@apollo/client'
-import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
 import {
@@ -43,15 +42,15 @@ const filters: FilteredConnectionFilter[] = [
 
 export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
     queryExecutors?: typeof defaultQueryExecutors
-    history: H.History
 }
 
 export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
     queryExecutors = defaultQueryExecutors,
-    history,
     ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
+
+    const history = useHistory()
 
     const apolloClient = useApolloClient()
     const queryExecutorsCallback = useCallback(
