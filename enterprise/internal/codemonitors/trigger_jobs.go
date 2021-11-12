@@ -201,15 +201,12 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
-func unmarshalAfter(after *string) (int64, error) {
-	var a int64
+func unmarshalAfter(after *string) (int, error) {
 	if after == nil {
-		a = 0
-	} else {
-		err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-		if err != nil {
-			return -1, err
-		}
+		return 0, nil
 	}
-	return a, nil
+
+	var a int
+	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
+	return a, err
 }

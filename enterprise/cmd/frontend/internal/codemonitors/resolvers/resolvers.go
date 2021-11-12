@@ -824,11 +824,25 @@ func (m *monitorEmail) ID() graphql.ID {
 }
 
 func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
-	ajs, err := m.store.ReadActionEmailEvents(ctx, m.Id, m.triggerEventID, args)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
-	totalCount, err := m.store.TotalActionEmailEvents(ctx, m.Id, m.triggerEventID)
+
+	ajs, err := m.store.ListActionJobs(ctx, cm.ListActionJobsOpts{
+		EmailID:        intPtr(int(m.Id)),
+		TriggerEventID: m.triggerEventID,
+		First:          intPtr(int(args.First)),
+		After:          &after,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount, err := m.store.CountActionJobs(ctx, cm.ListActionJobsOpts{
+		EmailID:        intPtr(int(m.Id)),
+		TriggerEventID: m.triggerEventID,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -837,6 +851,18 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
 	}
 	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
+}
+
+func intPtr(i int) *int { return &i }
+
+func unmarshalAfter(after *string) (int, error) {
+	if after == nil {
+		return 0, nil
+	}
+
+	var a int
+	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
+	return a, err
 }
 
 //
