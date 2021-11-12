@@ -15,7 +15,7 @@ type ElementMapper func(lineContext LineContext)
 // are invoked on each parsed element.
 func Read(r io.Reader, stasher *Stasher, vertexMapper, edgeMapper ElementMapper) error {
 	index := 0
-	for pair := range reader.Read(context.Background(), r) {
+	for pair := range reader.Read(context.Background(), r, reader.StandardFormat) {
 		if pair.Err != nil {
 			return pair.Err
 		}

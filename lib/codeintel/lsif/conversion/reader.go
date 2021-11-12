@@ -20,15 +20,15 @@ func Read(ctx context.Context, r io.Reader) <-chan Pair {
 	go func() {
 		defer close(elements)
 
-		for pair := range reader.Read(ctx, r) {
+		for e := range reader.Read(ctx, r, reader.StandardFormat) {
 			element := Element{
-				ID:      pair.Element.ID,
-				Type:    pair.Element.Type,
-				Label:   pair.Element.Label,
-				Payload: translatePayload(pair.Element.Payload),
+				ID:      e.Element.ID,
+				Type:    e.Element.Type,
+				Label:   e.Element.Label,
+				Payload: translatePayload(e.Element.Payload),
 			}
 
-			elements <- Pair{Element: element, Err: pair.Err}
+			elements <- Pair{Element: element, Err: e.Err}
 		}
 	}()
 

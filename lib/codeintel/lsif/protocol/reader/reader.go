@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-type Pair struct {
+type ElementAndErr struct {
 	Element Element
 	Err     error
 }
@@ -22,36 +22,24 @@ const (
 	FlatProtobufFormat LsifFormat = 3
 )
 
-type LsifInput struct {
-	Format    LsifFormat
-	NewReader func() (io.Reader, error)
-}
-
-func ReadInput(ctx context.Context, input LsifInput) <-chan Pair {
-	switch input.Format {
+// Read unmarshals the given LSIF dump one element at a time and sends them back through a channel.
+func Read(ctx context.Context, r io.Reader, format LsifFormat) <-chan ElementAndErr {
+	switch format {
+	case FlatProtobufFormat:
+		// TODO
+		return make(chan ElementAndErr, ChannelBufferSize)
 	case FlatFormat:
-		pairCh := make(chan Pair, ChannelBufferSize)
-		return pairCh
+		// TODO
+		return make(chan ElementAndErr, ChannelBufferSize)
+	case StandardFormat:
+		interner := NewInterner()
+		return readLines(ctx, r, func(line []byte) (Element, error) {
+			return unmarshalElement(interner, line)
+		})
 	default:
-		reader, err := input.NewReader()
-		if err != nil {
-			pairCh := make(chan Pair, 1)
-			pairCh <- Pair{Err: err}
-			close(pairCh)
-			return pairCh
-		}
-		return Read(ctx, reader)
+		// gohno
+		return make(chan ElementAndErr, ChannelBufferSize)
 	}
-}
-
-// Read reads the given content as line-separated JSON objects and returns a channel of Pair values for each
-// non-empty line.
-func Read(ctx context.Context, r io.Reader) <-chan Pair {
-	interner := NewInterner()
-
-	return readLines(ctx, r, func(line []byte) (Element, error) {
-		return unmarshalElement(interner, line)
-	})
 }
 
 // LineBufferSize is the maximum size of the buffer used to read each line of a raw LSIF index. Lines in
@@ -69,7 +57,7 @@ var NumUnmarshalGoRoutines = runtime.GOMAXPROCS(0)
 
 // readLines reads the given content as line-separated objects which are unmarshallable by the given function
 // and returns a channel of Pair values for each non-empty line.
-func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (Element, error)) <-chan Pair {
+func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (Element, error)) <-chan ElementAndErr {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
@@ -96,7 +84,7 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 		}
 	}()
 
-	pairCh := make(chan Pair, ChannelBufferSize)
+	pairCh := make(chan ElementAndErr, ChannelBufferSize)
 	go func() {
 		defer close(pairCh)
 
@@ -114,7 +102,7 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 		lines := make([]*bytes.Buffer, NumUnmarshalGoRoutines)
 
 		// The result slice
-		pairs := make([]Pair, NumUnmarshalGoRoutines)
+		pairs := make([]ElementAndErr, NumUnmarshalGoRoutines)
 
 		for i := 0; i < NumUnmarshalGoRoutines; i++ {
 			go func() {
@@ -171,7 +159,7 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 
 		// If there was an error reading from the source, output it here
 		if err := scanner.Err(); err != nil {
-			pairCh <- Pair{Err: err}
+			pairCh <- ElementAndErr{Err: err}
 		}
 	}()
 
