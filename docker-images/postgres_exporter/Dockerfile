@@ -1,5 +1,5 @@
 FROM prometheuscommunity/postgres-exporter:v0.9.0@sha256:9100e51f477827840e06638f7ebec111799eece916c603fac2d2369bfbc9f507 as postgres_exporter
-FROM sourcegraph/alpine-3.12:16223_2021-11-12_dfe1246@sha256:e65a7eda595b35f45bc3c2d3abcdfca623b3f4a5b9d7af9a52c3eca6cf0ff3b4
+FROM sourcegraph/alpine-3.12:114329_2021-10-28_bc663f1@sha256:f5ed5ba991b86c8307d8b2cf485585e3246194092b2fd29829bed1b218c23f64
 LABEL com.sourcegraph.postgres_exporter.version=v0.9.0
 
 ARG COMMIT_SHA="unknown"
