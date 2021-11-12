@@ -13,7 +13,6 @@ assignees: 'gitstart-sourcegraph'
   2. Add a created issue to the board: https://github.com/orgs/sourcegraph/projects/206.
   3. Use the `important` label if the issue is urgent.
   4. Issues placed higher in the "To do" column have higher priority.
-  > A P50 cost estimate is the project cost with sufficient contingency to provide 50 per cent likelihood that this cost would not be exceeded.
 -->
 
 ## Problem statement
