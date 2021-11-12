@@ -47,16 +47,16 @@ export interface ExecutorsListPageProps extends RouteComponentProps<{}> {
 }
 
 export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
-    queryExecutors: doQueryExecutors = defaultQueryExecutors,
+    queryExecutors = defaultQueryExecutors,
     history,
     ...props
 }) => {
     useEffect(() => eventLogger.logViewEvent('ExecutorsList'))
 
     const apolloClient = useApolloClient()
-    const queryExecutors = useCallback(
-        (args: FilteredConnectionQueryArguments) => doQueryExecutors(args, apolloClient),
-        [doQueryExecutors, apolloClient]
+    const queryExecutorsCallback = useCallback(
+        (args: FilteredConnectionQueryArguments) => queryExecutors(args, apolloClient),
+        [queryExecutors, apolloClient]
     )
 
     const querySubject = useMemo(() => new Subject<string>(), [])
@@ -83,7 +83,7 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                     querySubject={querySubject}
                     nodeComponent={ExecutorNode}
                     nodeComponentProps={{}}
-                    queryConnection={queryExecutors}
+                    queryConnection={queryExecutorsCallback}
                     history={history}
                     location={props.location}
                     cursorPaging={true}
@@ -105,16 +105,12 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
         <hr />
 
         <dl>
-            {/*
             <dt>ID</dt>
-            <dt>{node.id}</dt>
-            */}
+            <dd>{node.id}</dd>
             <dt>Hostname</dt>
             <dd>{node.hostname}</dd>
             <dt>Queue Name</dt>
             <dd>{node.queueName}</dd>
-
-            {/*
             <dt>OS</dt>
             <dd>{node.os}</dd>
             <dt>Architecture</dt>
@@ -126,16 +122,13 @@ export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => 
             <dt>Docker version</dt>
             <dd>{node.dockerVersion}</dd>
             <dt>Git version</dt>
-            <dd>{node.gitVersion}<dd>
+            <dd>{node.gitVersion}</dd>
             <dt>Ignite version</dt>
             <dd>{node.igniteVersion}</dd>
-            */}
-
             <dt>First seen at</dt>
             <dd>
                 <Timestamp date={node.firstSeenAt} />
             </dd>
-
             <dt>Last seen at</dt>
             <dd>
                 <Timestamp date={node.lastSeenAt} />
