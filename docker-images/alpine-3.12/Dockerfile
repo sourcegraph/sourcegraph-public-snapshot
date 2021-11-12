@@ -31,4 +31,5 @@ RUN apk update && apk add --no-cache \
     curl \ 
     mailcap \
     tini \ 
-    wget 
+    # Required due to ssl_clent upgrade with busybox
+    'wget=1.21.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main
