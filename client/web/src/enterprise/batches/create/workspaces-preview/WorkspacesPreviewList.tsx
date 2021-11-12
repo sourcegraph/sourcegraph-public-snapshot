@@ -1,5 +1,6 @@
 import CloseIcon from 'mdi-react/CloseIcon'
 import ContentSaveIcon from 'mdi-react/ContentSaveIcon'
+import ImportIcon from 'mdi-react/ImportIcon'
 import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
@@ -94,6 +95,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
                                                 : undefined
                                         }
                                     >
+                                        <ImportIcon className="icon-inline" />{' '}
                                         {node.description.__typename === 'ExistingChangesetReference' &&
                                             node.description.baseRepository.name}
                                     </LinkOrSpan>{' '}
