@@ -23,7 +23,6 @@ type CodeMonitorStore interface {
 	Now() time.Time
 	Clock() func() time.Time
 	Exec(ctx context.Context, query *sqlf.Query) error
-	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 
 	UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error)
 	CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error)

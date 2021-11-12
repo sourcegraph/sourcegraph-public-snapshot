@@ -2,13 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -398,54 +396,21 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 }
 
 func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner graphql.ID, err error) {
-	var (
-		q      *sqlf.Query
-		rows   *sql.Rows
-		userID *int32
-		orgID  *int32
-	)
-	q, err = ownerForID64Query(ctx, monitorID)
+	monitor, err := r.store.MonitorByIDInt64(ctx, monitorID)
 	if err != nil {
 		return "", err
 	}
-	rows, err = r.store.Query(ctx, q)
-	if err != nil {
-		return "", err
-	}
-	defer rows.Close()
 
-	for rows.Next() {
-		if err = rows.Scan(
-			&userID,
-			&orgID,
-		); err != nil {
-			return "", err
-		}
-	}
-	err = rows.Close()
-	if err != nil {
-		return "", err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err = rows.Err(); err != nil {
-		return "", err
-	}
+	userID, orgID := monitor.NamespaceUserID, monitor.NamespaceOrgID
 	if (userID == nil && orgID == nil) || (userID != nil && orgID != nil) {
 		return "", errors.Errorf("invalid owner")
 	}
+
 	if orgID != nil {
 		return graphqlbackend.MarshalOrgID(*orgID), nil
 	} else {
 		return graphqlbackend.MarshalUserID(*userID), nil
 	}
-}
-
-func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
-	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s`
-	return sqlf.Sprintf(
-		ownerForId32Query,
-		monitorID,
-	), nil
 }
 
 //
