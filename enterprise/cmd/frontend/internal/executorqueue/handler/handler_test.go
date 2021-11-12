@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -372,9 +373,21 @@ func TestHeartbeat(t *testing.T) {
 
 	executorStore := NewMockExecutorStore()
 
+	executor := types.Executor{
+		Hostname:        "test-executorName",
+		QueueName:       "test-queueName",
+		OS:              "test-os",
+		Architecture:    "test-architecture",
+		ExecutorVersion: "test-executorVersion",
+		SrcCliVersion:   "test-srcCliVersion",
+		GitVersion:      "test-gitVersion",
+		DockerVersion:   "test-dockerVersion",
+		IgniteVersion:   "test-igniteVersion",
+	}
+
 	handler := newHandler(executorStore, QueueOptions{Store: s, RecordTransformer: recordTransformer})
 
-	if knownIDs, err := handler.heartbeat(context.Background(), "deadbeef", []int{testKnownID, 10}); err != nil {
+	if knownIDs, err := handler.heartbeat(context.Background(), executor, []int{testKnownID, 10}); err != nil {
 		t.Fatalf("unexpected error performing heartbeat: %s", err)
 	} else if diff := cmp.Diff([]int{testKnownID}, knownIDs); diff != "" {
 		t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
@@ -382,7 +395,7 @@ func TestHeartbeat(t *testing.T) {
 
 	if callCount := len(executorStore.HeartbeatFunc.History()); callCount != 1 {
 		t.Errorf("unexpected heartbeat call count. want=%d have=%d", 1, callCount)
-	} else if name := executorStore.HeartbeatFunc.History()[0].Arg1; name != "deadbeef" {
+	} else if name := executorStore.HeartbeatFunc.History()[0].Arg1; name != executor {
 		t.Errorf("unexpected heartbeat name. want=%q have=%q", "deadbeef", name)
 	}
 }

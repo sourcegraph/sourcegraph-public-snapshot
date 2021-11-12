@@ -13,6 +13,7 @@ import (
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
@@ -119,7 +120,19 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.HeartbeatRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		unknownIDs, err := h.heartbeat(r.Context(), payload.ExecutorName, payload.JobIDs)
+		executor := types.Executor{
+			Hostname:        payload.ExecutorName,
+			QueueName:       payload.QueueName,
+			OS:              payload.OS,
+			Architecture:    payload.Architecture,
+			ExecutorVersion: payload.ExecutorVersion,
+			SrcCliVersion:   payload.SrcCliVersion,
+			GitVersion:      payload.GitVersion,
+			DockerVersion:   payload.DockerVersion,
+			IgniteVersion:   payload.IgniteVersion,
+		}
+
+		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
 	})
 }

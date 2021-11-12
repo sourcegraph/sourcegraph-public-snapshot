@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"math/rand"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -152,28 +151,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 }
 
 // heartbeat calls Heartbeat for the given jobs.
-func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
-	const valueSize = 32
-	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	randValue := func() (v string) {
-		for i := 0; i < valueSize; i++ {
-			v += string(alphabet[rand.Intn(len(alphabet))])
-		}
-		return
-	}
-
-	executor := types.Executor{
-		Hostname:        executorName,
-		QueueName:       randValue(), // TODO(eseliger) - fill me in
-		OS:              randValue(), // TODO(eseliger) - fill me in
-		Architecture:    randValue(), // TODO(eseliger) - fill me in
-		ExecutorVersion: randValue(), // TODO(eseliger) - fill me in
-		SrcCliVersion:   randValue(), // TODO(eseliger) - fill me in
-		GitVersion:      randValue(), // TODO(eseliger) - fill me in
-		DockerVersion:   randValue(), // TODO(eseliger) - fill me in
-		IgniteVersion:   randValue(), // TODO(eseliger) - fill me in
-	}
-
+func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
 	if err := h.executorStore.Heartbeat(ctx, executor); err != nil {
 		return nil, err
@@ -183,7 +161,7 @@ func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int)
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
+		WorkerHostname: executor.Hostname,
 	})
 }
 

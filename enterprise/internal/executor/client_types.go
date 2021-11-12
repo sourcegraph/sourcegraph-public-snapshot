@@ -95,8 +95,16 @@ type MarkErroredRequest struct {
 }
 
 type HeartbeatRequest struct {
-	ExecutorName string `json:"executorName"`
-	JobIDs       []int  `json:"jobIds"`
+	ExecutorName    string `json:"executorName"`
+	QueueName       string `json:"queueName"`
+	OS              string `json:"os"`
+	Architecture    string `json:"architecture"`
+	ExecutorVersion string `json:"executorVersion"`
+	SrcCliVersion   string `json:"srcCliVersion"`
+	GitVersion      string `json:"gitVersion"`
+	DockerVersion   string `json:"dockerVersion"`
+	IgniteVersion   string `json:"igniteVersion"`
+	JobIDs          []int  `json:"jobIds"`
 }
 
 type CanceledRequest struct {
