@@ -42,7 +42,7 @@ type CodeMonitorStore interface {
 	ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (m *Monitor, err error)
 	DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (err error)
 	Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error)
-	MonitorByIDInt64(ctx context.Context, monitorID int64) (m *Monitor, err error)
+	GetMonitor(ctx context.Context, monitorID int64) (m *Monitor, err error)
 	TotalCountMonitors(ctx context.Context, userID int32) (count int32, err error)
 	CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error)
 	UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error)

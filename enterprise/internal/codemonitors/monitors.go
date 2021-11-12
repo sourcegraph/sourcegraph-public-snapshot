@@ -90,7 +90,7 @@ FROM cm_monitors
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) MonitorByIDInt64(ctx context.Context, monitorID int64) (m *Monitor, err error) {
+func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (m *Monitor, err error) {
 	return s.runMonitorQuery(ctx, sqlf.Sprintf(monitorByIDFmtStr, monitorID))
 }
 

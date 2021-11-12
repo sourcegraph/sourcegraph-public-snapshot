@@ -73,7 +73,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = r.store.MonitorByIDInt64(ctx, got.(*monitor).Monitor.ID)
+	_, err = r.store.GetMonitor(ctx, got.(*monitor).Monitor.ID)
 	if err == nil {
 		t.Fatalf("monitor should have been deleted")
 	}
