@@ -66,13 +66,6 @@ type CliStep struct {
 }
 
 type DequeueRequest struct {
-	OS               string `json:"os"`
-	Architecture     string `json:"architecture"`
-	SrcCLIVersion    string `json:"srcCLIVersion"`
-	GitVersion       string `json:"gitVersion"`
-	DockerVersion    string `json:"dockerVersion"`
-	IgniteVersion    string `json:"igniteVersion"`
-	Version          string `json:"version"`
 	ExecutorName     string `json:"executorName"`
 	ExecutorHostname string `json:"executorHostname"`
 }
@@ -104,6 +97,16 @@ type MarkErroredRequest struct {
 type HeartbeatRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobIDs       []int  `json:"jobIds"`
+
+	// Telemetry data.
+
+	OS            string `json:"os"`
+	Architecture  string `json:"architecture"`
+	SrcCliVersion string `json:"srcCliVersion"`
+	GitVersion    string `json:"gitVersion"`
+	DockerVersion string `json:"dockerVersion"`
+	IgniteVersion string `json:"igniteVersion"`
+	Version       string `json:"version"`
 }
 
 type CanceledRequest struct {

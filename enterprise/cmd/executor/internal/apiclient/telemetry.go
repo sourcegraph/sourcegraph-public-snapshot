@@ -11,41 +11,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
-type telemetryOptions struct {
-	os            string
-	arch          string
-	version       string
-	srcCliVersion string
-	dockerVersion string
-	igniteVersion string
-	gitVersion    string
+type TelemetryOptions struct {
+	OS            string
+	Arch          string
+	Version       string
+	SrcCliVersion string
+	DockerVersion string
+	IgniteVersion string
+	GitVersion    string
 }
 
-func newTelemetryOptions(ctx context.Context) telemetryOptions {
-	t := telemetryOptions{
-		os:      runtime.GOOS,
-		arch:    runtime.GOARCH,
-		version: version.Version(),
+func NewTelemetryOptions(ctx context.Context) TelemetryOptions {
+	t := TelemetryOptions{
+		OS:      runtime.GOOS,
+		Arch:    runtime.GOARCH,
+		Version: version.Version(),
 	}
 
 	var err error
 
-	t.gitVersion, err = getGitVersion(ctx)
+	t.GitVersion, err = getGitVersion(ctx)
 	if err != nil {
 		log15.Error("Failed to get git version", "err", err)
 	}
 
-	t.srcCliVersion, err = getSrcVersion(ctx)
+	t.SrcCliVersion, err = getSrcVersion(ctx)
 	if err != nil {
 		log15.Error("Failed to get src-cli version", "err", err)
 	}
 
-	t.dockerVersion, err = getDockerVersion(ctx)
+	t.DockerVersion, err = getDockerVersion(ctx)
 	if err != nil {
 		log15.Error("Failed to get docker version", "err", err)
 	}
 
-	t.igniteVersion, err = getIgniteVersion(ctx)
+	t.IgniteVersion, err = getIgniteVersion(ctx)
 	if err != nil {
 		log15.Error("Failed to get ignite version", "err", err)
 	}

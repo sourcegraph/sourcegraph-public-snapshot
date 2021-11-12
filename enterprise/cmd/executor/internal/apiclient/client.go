@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -20,7 +19,6 @@ import (
 // Client is the client used to communicate with a remote job queue API.
 type Client struct {
 	options    Options
-	telemetry  telemetryOptions
 	client     *BaseClient
 	operations *operations
 }
@@ -40,6 +38,9 @@ type Options struct {
 
 	// BaseClientOptions are the underlying HTTP client options.
 	BaseClientOptions BaseClientOptions
+
+	// TelemetryOptions captures additional parameters sent in heartbeat requests.
+	TelemetryOptions TelemetryOptions
 }
 
 type EndpointOptions struct {
@@ -51,14 +52,8 @@ type EndpointOptions struct {
 }
 
 func New(options Options, observationContext *observation.Context) *Client {
-	// Run for at most 5s to get telemetry options.
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	telemetry := newTelemetryOptions(ctx)
-
 	return &Client{
 		options:    options,
-		telemetry:  telemetry,
 		client:     NewBaseClient(options.BaseClientOptions),
 		operations: newOperations(observationContext),
 	}
@@ -73,13 +68,6 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
 		ExecutorName:     c.options.ExecutorName,
 		ExecutorHostname: c.options.ExecutorHostname,
-		OS:               c.telemetry.os,
-		Architecture:     c.telemetry.arch,
-		Version:          c.telemetry.version,
-		SrcCLIVersion:    c.telemetry.srcCliVersion,
-		DockerVersion:    c.telemetry.dockerVersion,
-		IgniteVersion:    c.telemetry.igniteVersion,
-		GitVersion:       c.telemetry.gitVersion,
 	})
 	if err != nil {
 		return false, err
@@ -221,6 +209,14 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
+
+		OS:            c.options.TelemetryOptions.OS,
+		Architecture:  c.options.TelemetryOptions.Arch,
+		Version:       c.options.TelemetryOptions.Version,
+		SrcCliVersion: c.options.TelemetryOptions.SrcCliVersion,
+		DockerVersion: c.options.TelemetryOptions.DockerVersion,
+		IgniteVersion: c.options.TelemetryOptions.IgniteVersion,
+		GitVersion:    c.options.TelemetryOptions.GitVersion,
 	})
 	if err != nil {
 		return nil, err
