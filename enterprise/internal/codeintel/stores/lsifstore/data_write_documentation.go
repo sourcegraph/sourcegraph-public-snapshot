@@ -739,7 +739,7 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 		return errors.Wrap(err, "counting table size")
 	}
 
-	searchIndexLimitFactor := conf.Get().ApidocsSearchIndexSizeLimitFactor
+	searchIndexLimitFactor := s.config.SiteConfig().ApidocsSearchIndexSizeLimitFactor
 	if searchIndexLimitFactor <= 0 {
 		searchIndexLimitFactor = 1.0
 	}

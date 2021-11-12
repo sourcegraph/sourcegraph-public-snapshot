@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,7 +18,7 @@ func TestClear(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	for i := 0; i < 5; i++ {
 		query := sqlf.Sprintf("INSERT INTO lsif_data_metadata (dump_id, num_result_chunks) VALUES (%s, 0)", i+1)

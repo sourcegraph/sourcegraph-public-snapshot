@@ -51,8 +51,8 @@ func Start(additionalJobs map[string]job.Job) {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 	if err := keyring.Init(context.Background()); err != nil {
 		log.Fatalf("Failed to intialise keyring: %v", err)

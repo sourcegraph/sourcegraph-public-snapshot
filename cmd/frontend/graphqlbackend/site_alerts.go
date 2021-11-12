@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -85,10 +86,10 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", "disables security upgrade notices"))
 
 func init() {
-	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if c.ExternalURL == "" {
+	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		if c.SiteConfig().ExternalURL == "" {
 			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		} else if conf.DeployType() != conf.DeployDev && strings.HasPrefix(c.ExternalURL, "http://") {
+		} else if conf.DeployType() != conf.DeployDev && strings.HasPrefix(c.SiteConfig().ExternalURL, "http://") {
 			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
 		}
 
