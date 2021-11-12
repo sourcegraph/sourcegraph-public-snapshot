@@ -21,7 +21,7 @@ type graphQLQuery struct {
 	Variables interface{} `json:"variables"`
 }
 
-const gqlSearchQuery = `query Search(
+const gqlSearchQuery = `query CodeMonitorSearch(
 	$query: String!,
 ) {
 	search(query: $query) {
