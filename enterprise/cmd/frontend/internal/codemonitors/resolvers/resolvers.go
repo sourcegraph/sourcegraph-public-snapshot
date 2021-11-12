@@ -99,7 +99,7 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (m graphqlbac
 		return nil, err
 	}
 	var mo *cm.Monitor
-	mo, err = r.store.MonitorByIDInt64(ctx, monitorID)
+	mo, err = r.store.GetMonitor(ctx, monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +396,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 }
 
 func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner graphql.ID, err error) {
-	monitor, err := r.store.MonitorByIDInt64(ctx, monitorID)
+	monitor, err := r.store.GetMonitor(ctx, monitorID)
 	if err != nil {
 		return "", err
 	}

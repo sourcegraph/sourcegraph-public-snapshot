@@ -465,7 +465,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.LogSearch,
 		},
 		MonitorByIDInt64Func: &CodeMonitorStoreMonitorByIDInt64Func{
-			defaultHook: i.MonitorByIDInt64,
+			defaultHook: i.GetMonitor,
 		},
 		MonitorsFunc: &CodeMonitorStoreMonitorsFunc{
 			defaultHook: i.Monitors,
