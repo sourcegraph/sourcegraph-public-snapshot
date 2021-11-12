@@ -226,7 +226,6 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	}
 
 	resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-
 	creator := &batchSpecWorkspaceCreator{store: s}
 	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
 		t.Fatalf("proces failed: %s", err)

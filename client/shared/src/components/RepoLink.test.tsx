@@ -1,16 +1,16 @@
+import { render } from '@testing-library/react'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { RepoLink } from './RepoLink'
 
 describe('RepoLink', () => {
     test('renders a link when "to" is set', () => {
-        const component = renderer.create(<RepoLink repoName="my/repo" to="http://example.com" />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<RepoLink repoName="my/repo" to="http://example.com" />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('renders a fragment when "to" is null', () => {
-        const component = renderer.create(<RepoLink repoName="my/repo" to={null} />)
-        expect(component.toJSON()).toMatchSnapshot()
+        const component = render(<RepoLink repoName="my/repo" to={null} />)
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

@@ -29,14 +29,17 @@ type Event struct {
 	EventName    string
 	UserID       int32
 	UserCookieID string
-	// FirstSourceURL is only measured for Cloud events; therefore, this only goes to the BigQuery database
+	// FirstSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
 	FirstSourceURL *string
-	URL            string
-	Source         string
-	FeatureFlags   featureflag.FlagSet
-	CohortID       *string
-	// Referrer is only measured for Cloud events; therefore, this only goes to the BigQuery database
+	// LastSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
+	LastSourceURL *string
+	URL           string
+	Source        string
+	FeatureFlags  featureflag.FlagSet
+	CohortID      *string
+	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
 	Referrer       *string
 	Argument       json.RawMessage
@@ -100,6 +103,7 @@ type bigQueryEvent struct {
 	EventName       string  `json:"name"`
 	AnonymousUserID string  `json:"anonymous_user_id"`
 	FirstSourceURL  string  `json:"first_source_url"`
+	LastSourceURL   string  `json:"last_source_url"`
 	UserID          int     `json:"user_id"`
 	Source          string  `json:"source"`
 	Timestamp       string  `json:"timestamp"`
@@ -142,6 +146,10 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if event.FirstSourceURL != nil {
 			firstSourceURL = *event.FirstSourceURL
 		}
+		lastSourceURL := ""
+		if event.LastSourceURL != nil {
+			lastSourceURL = *event.LastSourceURL
+		}
 		referrer := ""
 		if event.Referrer != nil {
 			referrer = *event.Referrer
@@ -156,6 +164,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			UserID:          int(event.UserID),
 			AnonymousUserID: event.UserCookieID,
 			FirstSourceURL:  firstSourceURL,
+			LastSourceURL:   lastSourceURL,
 			Referrer:        referrer,
 			Source:          event.Source,
 			Timestamp:       time.Now().UTC().Format(time.RFC3339),

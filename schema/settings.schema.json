@@ -268,7 +268,7 @@
       }
     },
     "codeIntelligence.autoIndexPopularRepoLimit": {
-      "description": "Up to this number of repos are auto indexed automatically. Ordered by star count.",
+      "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
       "type": "integer",
       "minimum": 0,
       "default": 0

@@ -127,20 +127,26 @@ export const SiteAdminOrgsPage: React.FunctionComponent<Props> = ({ telemetrySer
                 <Link to="/help/admin/organizations">Sourcegraph documentation</Link> for information about configuring
                 organizations.
             </p>
-            <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
-                className="list-group list-group-flush mt-3"
-                noun="organization"
-                pluralNoun="organizations"
-                queryConnection={fetchAllOrganizations}
-                nodeComponent={OrgNode}
-                nodeComponentProps={{
-                    onDidUpdate: onDidUpdateOrg,
-                    history,
-                }}
-                updates={orgUpdates}
-                history={history}
-                location={location}
-            />
+            {window.context.sourcegraphDotComMode ? (
+                <div className="alert alert-info">
+                    Only organization members can view & modify organization settings.
+                </div>
+            ) : (
+                <FilteredConnection<OrganizationFields, Omit<OrgNodeProps, 'node'>>
+                    className="list-group list-group-flush mt-3"
+                    noun="organization"
+                    pluralNoun="organizations"
+                    queryConnection={fetchAllOrganizations}
+                    nodeComponent={OrgNode}
+                    nodeComponentProps={{
+                        onDidUpdate: onDidUpdateOrg,
+                        history,
+                    }}
+                    updates={orgUpdates}
+                    history={history}
+                    location={location}
+                />
+            )}
         </div>
     )
 }

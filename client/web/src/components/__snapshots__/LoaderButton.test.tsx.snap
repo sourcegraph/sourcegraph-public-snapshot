@@ -1,21 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`LoaderButton should not render a loading spinner when loading prop is false 1`] = `
-<button
-  className="d-flex justify-content-center align-items-center"
-  type="button"
->
-  Test
-</button>
+<DocumentFragment>
+  <button
+    class="d-flex justify-content-center align-items-center"
+    type="button"
+  >
+    Test
+  </button>
+</DocumentFragment>
 `;
 
 exports[`LoaderButton should render a loading spinner when loading prop is true 1`] = `
-<button
-  className="d-flex justify-content-center align-items-center"
-  type="button"
->
-  <LoadingSpinner
-    className="icon-inline"
-  />
-</button>
+<DocumentFragment>
+  <button
+    class="d-flex justify-content-center align-items-center"
+    type="button"
+  >
+    <div
+      class="loading-spinner icon-inline"
+    />
+  </button>
+</DocumentFragment>
 `;

@@ -7,10 +7,13 @@ import (
 	"strings"
 	"time"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -29,53 +32,56 @@ type CommitSearch struct {
 	Limit         int
 }
 
-func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
-	resultType := "commit"
-	if j.Diff {
-		resultType = "diff"
-	}
-	if err := CheckSearchLimits(j.HasTimeFilter, len(repos), resultType); err != nil {
-		return err
-	}
-
-	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range repos {
-		repoRev := repoRev // we close over repoRev in onMatches
-
-		// Skip the repo if no revisions were resolved for it
-		if len(repoRev.Revs) == 0 {
-			continue
+func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		resultType := "commit"
+		if j.Diff {
+			resultType = "diff"
 		}
-
-		args := &protocol.SearchRequest{
-			Repo:        repoRev.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-			Query:       j.Query,
-			IncludeDiff: j.Diff,
-			Limit:       j.Limit,
-		}
-
-		onMatches := func(in []protocol.CommitMatch) {
-			res := make([]result.Match, 0, len(in))
-			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
-			}
-			stream.Send(streaming.SearchEvent{
-				Results: res,
-			})
-		}
-
-		g.Go(func() error {
-			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-			stream.Send(streaming.SearchEvent{
-				Stats: streaming.Stats{
-					IsLimitHit: limitHit,
-				},
-			})
+		if err := CheckSearchLimits(j.HasTimeFilter, len(page.RepoRevs), resultType); err != nil {
 			return err
-		})
-	}
-	return g.Wait()
+		}
+
+		g, ctx := errgroup.WithContext(ctx)
+		for _, repoRev := range page.RepoRevs {
+			repoRev := repoRev // we close over repoRev in onMatches
+
+			// Skip the repo if no revisions were resolved for it
+			if len(repoRev.Revs) == 0 {
+				continue
+			}
+
+			args := &protocol.SearchRequest{
+				Repo:        repoRev.Repo.Name,
+				Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
+				Query:       j.Query,
+				IncludeDiff: j.Diff,
+				Limit:       j.Limit,
+			}
+
+			onMatches := func(in []protocol.CommitMatch) {
+				res := make([]result.Match, 0, len(in))
+				for _, protocolMatch := range in {
+					res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
+				}
+				stream.Send(streaming.SearchEvent{
+					Results: res,
+				})
+			}
+
+			g.Go(func() error {
+				limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
+				stream.Send(streaming.SearchEvent{
+					Stats: streaming.Stats{
+						IsLimitHit: limitHit,
+					},
+				})
+				return err
+			})
+		}
+
+		return g.Wait()
+	})
 }
 
 func (j CommitSearch) Name() string {
@@ -111,6 +117,54 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err e
 		return n
 	})
 	return err
+}
+
+// expandUsernamesToEmails expands references to usernames to mention all possible (known and
+// verified) email addresses for the user.
+//
+// For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
+// "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
+// "alice@example\\.org"].
+func expandUsernamesToEmails(ctx context.Context, db dbutil.DB, values []string) (expandedValues []string, err error) {
+	expandOne := func(ctx context.Context, value string) ([]string, error) {
+		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
+			return nil, nil
+		}
+
+		user, err := database.Users(db).GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		} else if err != nil {
+			return nil, err
+		}
+		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
+			UserID: user.ID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		values := make([]string, 0, len(emails))
+		for _, email := range emails {
+			if email.VerifiedAt != nil {
+				values = append(values, regexp.QuoteMeta(email.Email))
+			}
+		}
+		return values, nil
+	}
+
+	expandedValues = make([]string, 0, len(values))
+	for _, v := range values {
+		x, err := expandOne(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		if x == nil {
+			expandedValues = append(expandedValues, v) // not a username or couldn't expand
+		} else {
+			expandedValues = append(expandedValues, x...)
+		}
+	}
+	return expandedValues, nil
 }
 
 func HasTimeFilter(q query.Q) bool {
@@ -347,8 +401,10 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type RepoLimitError DiffCommitError
-type TimeLimitError DiffCommitError
+type (
+	RepoLimitError DiffCommitError
+	TimeLimitError DiffCommitError
+)
 
 func (*RepoLimitError) Error() string {
 	return "repo limit error"

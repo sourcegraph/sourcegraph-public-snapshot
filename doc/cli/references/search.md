@@ -14,6 +14,7 @@
 | `-less` | Pipe output to 'less -R' (only if stdout is terminal, and not json flag). | `true` |
 | `-stream` | Consume results as stream. Streaming search only supports a subset of flags and parameters: trace, insecure-skip-verify, display, json. | `false` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 
 
 ## Usage
@@ -38,6 +39,8 @@ Usage of 'src search':
     	Consume results as stream. Streaming search only supports a subset of flags and parameters: trace, insecure-skip-verify, display, json.
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
 Examples:
 

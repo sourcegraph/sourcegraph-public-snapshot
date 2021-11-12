@@ -15,13 +15,13 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -138,13 +138,6 @@ func TestSearchResults(t *testing.T) {
 		})
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		calledSearchRepositories := false
-		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
-			calledSearchRepositories = true
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchRepositories = nil }()
-
 		calledSearchSymbols := false
 		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
@@ -167,9 +160,6 @@ func TestSearchResults(t *testing.T) {
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
 		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if !calledSearchRepositories {
-			t.Error("!calledSearchRepositories")
-		}
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
@@ -193,13 +183,6 @@ func TestSearchResults(t *testing.T) {
 		})
 		db.ReposFunc.SetDefaultReturn(repos)
 
-		calledSearchRepositories := false
-		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
-			calledSearchRepositories = true
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchRepositories = nil }()
-
 		calledSearchSymbols := false
 		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
 			calledSearchSymbols = true
@@ -222,9 +205,6 @@ func TestSearchResults(t *testing.T) {
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
 		mockrequire.Called(t, repos.ListMinimalReposFunc)
-		if !calledSearchRepositories {
-			t.Error("!calledSearchRepositories")
-		}
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
@@ -876,6 +856,9 @@ func TestEvaluateAnd(t *testing.T) {
 			ctx := context.Background()
 
 			database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+				if len(op.IncludePatterns) > 0 || len(op.ExcludePattern) > 0 {
+					return nil, nil
+				}
 				repoNames := make([]types.MinimalRepo, len(minimalRepos))
 				for i := range minimalRepos {
 					repoNames[i] = types.MinimalRepo{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
@@ -908,7 +891,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			if tt.wantAlert {
 				if results.SearchResults.Alert == nil {
-					t.Errorf("Expected results")
+					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
 				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
@@ -978,7 +961,6 @@ func TestSearchContext(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mockrequire.CalledN(t, ns.GetByNameFunc, tt.numContexts)
 		})
 	}
 }

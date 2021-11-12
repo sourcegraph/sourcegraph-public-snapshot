@@ -20,7 +20,7 @@ import { ErrorAlert } from '../components/alerts'
 import { LoaderButton } from '../components/LoaderButton'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
-import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tracking/eventLogger'
+import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial, signupTerms } from '../util/features'
 
 import { OrDivider } from './OrDivider'
@@ -34,6 +34,7 @@ export interface SignUpArguments {
     requestedTrial: boolean
     anonymousUserId?: string
     firstSourceUrl?: string
+    lastSourceUrl?: string
 }
 
 interface SignUpFormProps extends FeatureFlagProps {
@@ -113,6 +114,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 requestedTrial,
                 anonymousUserId: cookies.get(ANONYMOUS_USER_ID_KEY),
                 firstSourceUrl: cookies.get(FIRST_SOURCE_URL_KEY),
+                lastSourceUrl: cookies.get(LAST_SOURCE_URL_KEY),
             }).catch(error => {
                 setError(asError(error))
                 setLoading(false)
