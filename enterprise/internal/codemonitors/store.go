@@ -33,6 +33,7 @@ type CodeMonitorStore interface {
 	ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error)
 	ListActionJobs(ctx context.Context, opts ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(ctx context.Context, opts ListActionJobsOpts) (int, error)
+	ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error)
 	EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
 	ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error)

@@ -573,21 +573,21 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 }
 
 func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int, monitorID int64, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
-	q, err := r.store.ReadActionEmailQuery(ctx, monitorID, args)
+	es, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
+		MonitorID: intPtr(int(monitorID)),
+		After:     after,
+		First:     intPtr(int(args.First)),
+	})
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.store.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	es, err := cm.ScanEmails(rows)
-	if err != nil {
-		return nil, err
-	}
+
 	totalCount, err := r.store.TotalCountActionEmails(ctx, monitorID)
 	if err != nil {
 		return nil, err
@@ -833,7 +833,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 		EmailID:        intPtr(int(m.Id)),
 		TriggerEventID: m.triggerEventID,
 		First:          intPtr(int(args.First)),
-		After:          &after,
+		After:          after,
 	})
 	if err != nil {
 		return nil, err
@@ -855,14 +855,14 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 
 func intPtr(i int) *int { return &i }
 
-func unmarshalAfter(after *string) (int, error) {
+func unmarshalAfter(after *string) (*int, error) {
 	if after == nil {
-		return 0, nil
+		return nil, nil
 	}
 
 	var a int
 	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-	return a, err
+	return &a, err
 }
 
 //
