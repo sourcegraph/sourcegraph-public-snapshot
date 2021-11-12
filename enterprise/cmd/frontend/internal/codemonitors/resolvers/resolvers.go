@@ -836,7 +836,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 	for i, aj := range ajs {
 		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
 	}
-	return &monitorActionEventConnection{events: events, totalCount: totalCount}, nil
+	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
 }
 
 //

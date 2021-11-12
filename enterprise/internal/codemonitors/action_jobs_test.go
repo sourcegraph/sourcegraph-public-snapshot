@@ -37,7 +37,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 
 	want := &ActionJob{
 		Id:             1,
-		Email:          1,
+		Email:          intPtr(1),
 		TriggerEvent:   1,
 		State:          "queued",
 		FailureMessage: nil,
@@ -124,7 +124,7 @@ func TestScanActionJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), testRecordID))
+	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
 	record, _, err := ScanActionJobRecord(rows, err)
 	if err != nil {
 		t.Fatal(err)

@@ -121,7 +121,7 @@ func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
-		ColumnExpressions: cm.ActionJobsColumns,
+		ColumnExpressions: cm.ActionJobColumns,
 		Scan:              cm.ScanActionJobRecord,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
@@ -202,53 +202,50 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 	}
 	defer func() { err = s.Done(err) }()
 
-	var (
-		j    *cm.ActionJob
-		m    *cm.ActionJobMetadata
-		e    *cm.MonitorEmail
-		recs []*cm.Recipient
-		data *email.TemplateDataNewSearchResults
-	)
-
-	var ok bool
-	j, ok = record.(*cm.ActionJob)
+	j, ok := record.(*cm.ActionJob)
 	if !ok {
 		return errors.Errorf("type assertion failed")
 	}
 
-	m, err = s.GetActionJobMetadata(ctx, record.RecordID())
+	m, err := s.GetActionJobMetadata(ctx, record.RecordID())
 	if err != nil {
 		return errors.Errorf("store.GetActionJobMetadata: %w", err)
 	}
 
-	e, err = s.ActionEmailByIDInt64(ctx, j.Email)
-	if err != nil {
-		return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
-	}
-
-	recs, err = s.AllRecipientsForEmailIDInt64(ctx, j.Email)
-	if err != nil {
-		return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
-	}
-
-	data, err = email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
-	if err != nil {
-		return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
-	}
-	for _, rec := range recs {
-		if rec.NamespaceOrgID != nil {
-			// TODO (stefan): Send emails to org members.
-			continue
-		}
-		if rec.NamespaceUserID == nil {
-			return errors.Errorf("nil recipient")
-		}
-		err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+	switch {
+	case j.Email != nil:
+		e, err := s.ActionEmailByIDInt64(ctx, int64(*j.Email))
 		if err != nil {
-			return err
+			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 		}
+
+		recs, err := s.AllRecipientsForEmailIDInt64(ctx, int64(*j.Email))
+		if err != nil {
+			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
+		}
+
+		data, err := email.NewTemplateDataForNewSearchResults(ctx, m.Description, m.Query, e, zeroOrVal(m.NumResults))
+		if err != nil {
+			return errors.Errorf("email.NewTemplateDataForNewSearchResults: %w", err)
+		}
+		for _, rec := range recs {
+			if rec.NamespaceOrgID != nil {
+				// TODO (stefan): Send emails to org members.
+				continue
+			}
+			if rec.NamespaceUserID == nil {
+				return errors.Errorf("nil recipient")
+			}
+			err = email.SendEmailForNewSearchResult(ctx, *rec.NamespaceUserID, data)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	default:
+		// TODO(camdencheek): handle j.SlackWebhook != nil and j.Webhook != nil
+		return errors.New("cannot yet handle non-email jobs")
 	}
-	return nil
 }
 
 // newQueryWithAfterFilter constructs a new query which finds search results

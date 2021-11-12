@@ -14,7 +14,9 @@ import (
 
 type ActionJob struct {
 	Id           int
-	Email        int64
+	Email        *int
+	Webhook      *int
+	SlackWebhook *int
 	TriggerEvent int
 
 	// Fields demanded by any dbworker.
@@ -41,9 +43,13 @@ type ActionJobMetadata struct {
 	Query string
 }
 
-var ActionJobsColumns = []*sqlf.Query{
+// ActionJobColumns is the list of db columns used to populate an ActionJob struct.
+// This must stay in sync with the scanned columns in scanActionJob.
+var ActionJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.id"),
 	sqlf.Sprintf("cm_action_jobs.email"),
+	sqlf.Sprintf("cm_action_jobs.webhook"),
+	sqlf.Sprintf("cm_action_jobs.slack_webhook"),
 	sqlf.Sprintf("cm_action_jobs.trigger_event"),
 	sqlf.Sprintf("cm_action_jobs.state"),
 	sqlf.Sprintf("cm_action_jobs.failure_message"),
@@ -55,31 +61,80 @@ var ActionJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.log_contents"),
 }
 
-const readActionEmailEventsFmtStr = `
+// ListActionEventsOpts is a struct that contains options for listing and
+// counting action events.
+type ListActionEventsOpts struct {
+	// TriggerEventID, if set, will filter to only action jobs that were
+	// created in response to the provided trigger event.  Refers to
+	// cm_trigger_jobs(id)
+	TriggerEventID *int
+
+	// EmailID, if set, will filter to only actions jobs that are executing the
+	// given email action. Refers to cm_emails(id)
+	EmailID *int
+
+	// WebhookID, if set, will filter to only actions jobs that are executing
+	// the given webhook action. Refers to cm_webhooks(id)
+	WebhookID *int
+
+	// WebhookID, if set, will filter to only actions jobs that are executing
+	// the given slack webhook action. Refers to cm_slack_webhooks(id)
+	SlackWebhookID *int
+
+	// First, if defined, limits the operation to only the first n results
+	First *int
+
+	// After, if defined, starts after the provided id. Refers to
+	// cm_action_jobs(id)
+	After *int
+}
+
+// Conds generates a set of conditions for a SQL WHERE clause
+func (o ListActionEventsOpts) Conds() *sqlf.Query {
+	var conds []*sqlf.Query
+	if o.TriggerEventID != nil {
+		conds = append(conds, sqlf.Sprintf("trigger_event = %s", *o.TriggerEventID))
+	}
+	if o.EmailID != nil {
+		conds = append(conds, sqlf.Sprintf("email = %s", *o.EmailID))
+	}
+	if o.WebhookID != nil {
+		conds = append(conds, sqlf.Sprintf("webhook = %s", *o.WebhookID))
+	}
+	if o.SlackWebhookID != nil {
+		conds = append(conds, sqlf.Sprintf("slack_webhook = %s", *o.SlackWebhookID))
+	}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+// Limit generates an argument for a SQL LIMIT clause
+func (o ListActionEventsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
+}
+
+const listActionsFmtStr = `
 SELECT %s -- ActionJobsColumns
 FROM cm_action_jobs
 WHERE %s
-AND id > %s
 ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
-	conditions := []*sqlf.Query{sqlf.Sprintf("email = %s", emailID)}
-	if triggerEventID != nil {
-		conditions = append(conditions, sqlf.Sprintf("trigger_event = %s", *triggerEventID))
-	}
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
+// ListActionJobs lists events from cm_action_jobs using the provided options
+func (s *Store) ListActionJobs(ctx context.Context, opts ListActionEventsOpts) ([]*ActionJob, error) {
 	q := sqlf.Sprintf(
-		readActionEmailEventsFmtStr,
-		sqlf.Join(ActionJobsColumns, ","),
-		sqlf.Join(conditions, "AND"),
-		after,
-		args.First,
+		listActionsFmtStr,
+		sqlf.Join(ActionJobColumns, ","),
+		opts.Conds(),
+		opts.Limit(),
 	)
+
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -88,25 +143,47 @@ func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, trigge
 	return scanActionJobs(rows)
 }
 
-const totalActionEmailEventsFmtStr = `
+const countActionsFmtStr = `
 SELECT COUNT(*)
 FROM cm_action_jobs
 WHERE %s
+LIMIT %s
 `
 
-func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (totalCount int32, err error) {
-	var where *sqlf.Query
-	if triggerEventID == nil {
-		where = sqlf.Sprintf("email = %s", emailID)
-	} else {
-		where = sqlf.Sprintf("email = %s AND trigger_event = %s", emailID, *triggerEventID)
-	}
-	err = s.QueryRow(ctx, sqlf.Sprintf(totalActionEmailEventsFmtStr, where)).Scan(&totalCount)
-	if err != nil {
-		return -1, err
-	}
-	return totalCount, nil
+// CountActionJobs returns a count of the number of action jobs matching the provided list options
+func (s *Store) CountActionJobs(ctx context.Context, opts ListActionEventsOpts) (int, error) {
+	q := sqlf.Sprintf(
+		countActionsFmtStr,
+		opts.Conds(),
+		opts.Limit(),
+	)
+
+	var count int
+	err := s.QueryRow(ctx, q).Scan(&count)
+	return count, err
 }
+
+func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+	return s.ListActionJobs(ctx, ListActionEventsOpts{
+		TriggerEventID: triggerEventID,
+		EmailID:        intPtr(int(emailID)),
+		First:          intPtr(int(args.First)),
+		After:          intPtr(int(after)),
+	})
+}
+
+func (s *Store) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (int, error) {
+	return s.CountActionJobs(ctx, ListActionEventsOpts{
+		EmailID:        intPtr(int(emailID)),
+		TriggerEventID: triggerEventID,
+	})
+}
+
+func intPtr(i int) *int { return &i }
 
 const enqueueActionEmailFmtStr = `
 WITH due AS (
@@ -155,7 +232,7 @@ WHERE id = %s
 `
 
 func (s *Store) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
-	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobsColumns, ", "), recordID)
+	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), recordID)
 	row := s.QueryRow(ctx, q)
 	return scanActionJob(row)
 }
@@ -191,6 +268,8 @@ func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 	return aj, row.Scan(
 		&aj.Id,
 		&aj.Email,
+		&aj.Webhook,
+		&aj.SlackWebhook,
 		&aj.TriggerEvent,
 		&aj.State,
 		&aj.FailureMessage,
