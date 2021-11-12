@@ -1457,6 +1457,7 @@ func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlback
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
+		NoCache:          args.NoCache,
 	})
 	if err != nil {
 		return nil, err
@@ -1612,6 +1613,7 @@ func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbacke
 		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
+		NoCache:          args.NoCache,
 	})
 	if err != nil {
 		return nil, err

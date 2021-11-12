@@ -234,6 +234,7 @@ type CreateBatchSpecFromRawOpts struct {
 
 	AllowIgnored     bool
 	AllowUnsupported bool
+	NoCache          bool
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -269,6 +270,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 		spec:             spec,
 		allowIgnored:     opts.AllowIgnored,
 		allowUnsupported: opts.AllowUnsupported,
+		noCache:          opts.NoCache,
 	})
 }
 
@@ -276,6 +278,7 @@ type createBatchSpecForExecutionOpts struct {
 	spec             *btypes.BatchSpec
 	allowUnsupported bool
 	allowIgnored     bool
+	noCache          bool
 }
 
 // createBatchSpecForExecution persists the given BatchSpec in the given
@@ -287,6 +290,7 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
+	opts.spec.NoCache = opts.noCache
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
@@ -479,6 +483,7 @@ type ReplaceBatchSpecInputOpts struct {
 	RawSpec          string
 	AllowIgnored     bool
 	AllowUnsupported bool
+	NoCache          bool
 }
 
 // ReplaceBatchSpecInput creates BatchSpecWorkspaceExecutionJobs for every created
@@ -540,6 +545,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		spec:             newSpec,
 		allowUnsupported: opts.AllowUnsupported,
 		allowIgnored:     opts.AllowIgnored,
+		noCache:          opts.NoCache,
 	})
 }
 

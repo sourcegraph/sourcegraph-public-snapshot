@@ -68,8 +68,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Signals health of startup
@@ -108,9 +108,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	dsn := conf.Get().ServiceConnections.PostgresDSN
+	dsn := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		newDSN := conf.Get().ServiceConnections().PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do

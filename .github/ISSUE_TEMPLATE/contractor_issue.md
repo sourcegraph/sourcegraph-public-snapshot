@@ -9,7 +9,7 @@ assignees: 'gitstart-sourcegraph'
 
 <!-- FOR THE ISSUE CREATOR -->
 <!--
-  1. Replace **X hours** with your estimate in the "Time estimate" section. Use rough upper bound estimate.
+  1. Replace **X hours** with your estimate in the "Time estimate" section. Use a P50 cost estimate. (_P50_ means there is a 50% probability the work takes more than the estimated time, and 50% probability that it takes less.)
   2. Add a created issue to the board: https://github.com/orgs/sourcegraph/projects/206.
   3. Use the `important` label if the issue is urgent.
   4. Issues placed higher in the "To do" column have higher priority.

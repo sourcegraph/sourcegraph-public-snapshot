@@ -3416,14 +3416,14 @@
     prop-types "^15.6.2"
 
 "@sourcegraph/codeintellify@^7.3.0":
-  version "7.3.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.3.0.tgz#bfe3018f9a7db6741120724495ca47e971f51603"
-  integrity sha512-Y8b66rxNiUr7SbT9agyjGgGFVivlwF5KMScnDYrRyuvkXmjxEankMdlRczjGXAxHdiH5+SFPOq86ILe9i+qnVA==
+  version "7.4.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.4.0.tgz#9a7392494c5b3a16305c9d51d09f3f85c8ac2d9f"
+  integrity sha512-8I6Bi889i8M2kn3Z6B56VGKs4CoXHn1wr0ULzPIUu7uIluYr9tGQBYSSjmEh6BcHNtFE6ibxnF0Y0sQ339oT8Q==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.4"
     "@sourcegraph/extension-api-types" "^2.1.0"
     lodash "^4.17.10"
-    rxjs "^6.5.5"
+    rxjs "6.6.3"
     sourcegraph "^24.0.0 || ^25.0.0 || ^25.0.0"
     ts-key-enum "^2.0.0"
 
@@ -20650,7 +20650,7 @@ rxjs-report-usage@^1.0.4:
     glob "~7.1.6"
     prompts "~2.3.2"
 
-rxjs@^6.3.2, rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.5.5, rxjs@^6.6.0, rxjs@^6.6.3:
+rxjs@6.6.3, rxjs@^6.3.2, rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.6.0, rxjs@^6.6.3:
   version "6.6.3"
   resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.6.3.tgz#8ca84635c4daa900c0d3967a6ee7ac60271ee552"
   integrity sha512-trsQc+xYYXZ3urjOiJOuCOa5N3jAZ3eiSpQB5hIT8zGlL2QfnHLJ2r7GMkBGuIausdJN1OneaI6gQlsqNHHmZQ==
@@ -22718,9 +22718,9 @@ ts-invariant@^0.9.0:
     tslib "^2.1.0"
 
 ts-key-enum@^2.0.0, ts-key-enum@^2.0.7:
-  version "2.0.7"
-  resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.7.tgz#ea2c6f3bd770257a3d70fd60625bc3e99d19ab1e"
-  integrity sha512-i5K1p6o5J2EMNS3DVpVdpsJnFMWNE01kBjnw5evS/XgBYiu/oo/mxamOOEVYn/uPbIaxl5iDVSbAcFCDY55tmw==
+  version "2.0.8"
+  resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.8.tgz#ff83012837e3e7f999eee84dba1a1dcb8c66fbeb"
+  integrity sha512-ccRzCVr98faP5pKYpX0IlrPvf2VcepEFSH115CWti0eM1anh774ndXf0RlBOFecTuM103gMwaHSo0tDPlQnyNQ==
 
 ts-log@^2.2.3:
   version "2.2.3"
@@ -22764,9 +22764,9 @@ tsconfig-paths@^3.9.0:
     strip-bom "^3.0.0"
 
 tslib@^1.0.0, tslib@^1.10.0, tslib@^1.11.1, tslib@^1.11.2, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
-  version "1.13.0"
-  resolved "https://registry.npmjs.org/tslib/-/tslib-1.13.0.tgz#c881e13cc7015894ed914862d276436fa9a47043"
-  integrity sha512-i/6DQjL8Xf3be4K/E6Wgpekn5Qasl1usyw++dAA35Ue5orEn65VIxOA+YvNNl9HV3qv70T7CNwjODHZrLwvd1Q==
+  version "1.14.1"
+  resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
+  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
 tslib@^2, tslib@^2.0.0, tslib@^2.0.1, tslib@^2.0.3, tslib@^2.1.0, tslib@^2.2.0, tslib@^2.3.0, tslib@~2.3.0:
   version "2.3.0"

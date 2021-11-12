@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -29,14 +30,26 @@ func substituteRegexp(content string, match *regexp.Regexp, replacePattern, sepa
 }
 
 func output(ctx context.Context, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (*Text, error) {
-	var newFragment string
+	var newContent string
+	var err error
 	switch match := matchPattern.(type) {
 	case *Regexp:
-		newFragment = substituteRegexp(fragment, match.Value, replacePattern, separator)
+		newContent = substituteRegexp(fragment, match.Value, replacePattern, separator)
 	case *Comby:
-		return nil, nil
+		newContent, err = comby.Outputs(ctx, comby.Args{
+			Input:           comby.FileContent(fragment),
+			MatchTemplate:   match.Value,
+			RewriteTemplate: replacePattern,
+			Matcher:         ".generic", // TODO(rvantoner): use language or file filter
+			ResultKind:      comby.NewlineSeparatedOutput,
+			NumWorkers:      0,
+		})
+		if err != nil {
+			return nil, err
+		}
+
 	}
-	return &Text{Value: newFragment, Kind: "output"}, nil
+	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
 func (c *Output) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {

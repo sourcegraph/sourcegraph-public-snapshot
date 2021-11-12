@@ -42,6 +42,7 @@ type BatchSpec struct {
 
 	AllowUnsupported bool
 	AllowIgnored     bool
+	NoCache          bool
 
 	CreatedAt time.Time
 	UpdatedAt time.Time

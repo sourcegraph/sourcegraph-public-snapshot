@@ -125,7 +125,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 		SearchContextsStore: database.SearchContexts(db),
 		Indexers:            search.Indexers(),
 
-		MinLastChangedEnabled: os.Getenv("SRC_SEARCH_CORE_MIN_LAST_CHANGED") != "",
+		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))

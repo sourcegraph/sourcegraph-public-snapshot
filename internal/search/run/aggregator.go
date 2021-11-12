@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -120,46 +119,4 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, zoektArgs zoektutil.I
 	}()
 
 	return unindexed.SearchFilesInRepos(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
-}
-
-func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters) (err error) {
-	tr, ctx := trace.New(ctx, "doDiffSearch", "")
-	defer func() {
-		a.Error(err)
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if err := commit.CheckSearchLimits(commit.HasTimeFilter(tp.Query), len(tp.Repos), "diff"); err != nil {
-		return err
-	}
-
-	args, err := commit.ResolveCommitParameters(ctx, tp)
-	if err != nil {
-		log15.Warn("doDiffSearch: error while resolving commit parameters", "error", err)
-		return nil
-	}
-
-	return commit.SearchCommitDiffsInRepos(ctx, a.db, args, a)
-}
-
-func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParameters) (err error) {
-	tr, ctx := trace.New(ctx, "doCommitSearch", "")
-	defer func() {
-		a.Error(err)
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if err := commit.CheckSearchLimits(commit.HasTimeFilter(tp.Query), len(tp.Repos), "commit"); err != nil {
-		return err
-	}
-
-	args, err := commit.ResolveCommitParameters(ctx, tp)
-	if err != nil {
-		log15.Warn("doCommitSearch: error while resolving commit parameters", "error", err)
-		return nil
-	}
-
-	return commit.SearchCommitLogInRepos(ctx, a.db, args, a)
 }

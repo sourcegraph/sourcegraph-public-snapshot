@@ -4,18 +4,31 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
+type eventLogsArgs struct {
 	graphqlutil.ConnectionArgs
 	EventName *string // return only event logs matching the event name
-}) (*userEventLogsConnectionResolver, error) {
-	// 🚨 SECURITY: Event logs can only be viewed by the user or site admin.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return nil, err
+}
+
+func (r *UserResolver) EventLogs(ctx context.Context, args *eventLogsArgs) (*userEventLogsConnectionResolver, error) {
+	// 🚨 SECURITY: Only the authenticated user can view their event logs on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		// 🚨 SECURITY: Only the authenticated user and site admins can view users'
+		// event logs.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
+
 	var opt database.EventLogsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	opt.UserID = r.user.ID
