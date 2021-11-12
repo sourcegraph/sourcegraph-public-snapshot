@@ -25,6 +25,8 @@ type Monitor struct {
 	NamespaceUserID int32
 }
 
+// monitorColumns are the columns needed to fill out a Monitor.
+// Its fields and order must be kept in sync with scanMonitor.
 var monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.id"),
 	sqlf.Sprintf("cm_monitors.created_by"),
@@ -86,13 +88,19 @@ func (s *codeMonitorStore) Monitors(ctx context.Context, userID int32, args *gra
 }
 
 const monitorByIDFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id
+SELECT %s -- monitorColumns
 FROM cm_monitors
 WHERE id = %s
 `
 
+// GetMonitor fetches the monitor with the given ID, or returns sql.ErrNoRows if it does not exist
 func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(monitorByIDFmtStr, monitorID))
+	q := sqlf.Sprintf(
+		monitorByIDFmtStr,
+		sqlf.Join(monitorColumns, ","),
+		monitorID,
+	)
+	row := s.QueryRow(ctx, q)
 	return scanMonitor(row)
 }
 
@@ -250,6 +258,8 @@ func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
 	return ms, rows.Err()
 }
 
+// scanMonitor scans a monitor from either a *sql.Row or *sql.Rows.
+// It must be kept in sync with monitorColumns.
 func scanMonitor(scanner dbutil.Scanner) (*Monitor, error) {
 	m := &Monitor{}
 	err := scanner.Scan(
