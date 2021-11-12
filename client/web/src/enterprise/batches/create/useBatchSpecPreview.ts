@@ -46,8 +46,12 @@ interface UsePreviewBatchSpecResult {
  *
  * @param namespace The user or organization `SettingsSubject` which determines where the
  * resultant batch change would live.
+ * @param onComplete An optional (stable) callback to invoke when the mutation is complete.
  */
-export const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrgSubject): UsePreviewBatchSpecResult => {
+export const usePreviewBatchSpec = (
+    namespace: SettingsUserSubject | SettingsOrgSubject,
+    onComplete?: () => void
+): UsePreviewBatchSpecResult => {
     // Mutation to create a new batch spec from the raw input YAML code.
     const [
         createBatchSpecFromRaw,
@@ -98,10 +102,11 @@ export const usePreviewBatchSpec = (namespace: SettingsUserSubject | SettingsOrg
             return preview()
                 .then(() => {
                     setCurrentPreviewRequestTime(new Date().toISOString())
+                    onComplete?.()
                 })
                 .catch(setError)
         },
-        [batchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput]
+        [batchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput, onComplete]
     )
 
     return {

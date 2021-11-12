@@ -69,6 +69,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
     // Track whenever the batch spec code that is presently in the editor gets ahead of
     // the batch spec that was last submitted to the backend.
     const [batchSpecStale, setBatchSpecStale] = useState(false)
+    const markUnstale = useCallback(() => setBatchSpecStale(false), [])
 
     // Manage the batch spec that was last submitted to the backend for the workspaces preview.
     const {
@@ -78,7 +79,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         isLoading,
         error: previewError,
         clearError: clearPreviewError,
-    } = usePreviewBatchSpec(selectedNamespace)
+    } = usePreviewBatchSpec(selectedNamespace, markUnstale)
 
     const clearErrorsAndHandleCodeChange = useCallback(
         (newCode: string) => {
@@ -89,13 +90,6 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
         },
         [handleCodeChange, clearPreviewError]
     )
-
-    const preview = useCallback(() => {
-        previewBatchSpec(code)
-            // Mark that the batch spec code on the backend is no longer stale.
-            .then(() => setBatchSpecStale(false))
-            .catch(noop)
-    }, [code, previewBatchSpec])
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
@@ -193,7 +187,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         batchSpecID={batchSpecID}
                         currentPreviewRequestTime={currentPreviewRequestTime}
                         previewDisabled={previewDisabled}
-                        preview={preview}
+                        preview={() => previewBatchSpec(code)}
                         batchSpecStale={batchSpecStale}
                         excludeRepo={excludeRepo}
                     />
