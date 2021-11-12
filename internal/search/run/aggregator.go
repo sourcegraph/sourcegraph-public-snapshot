@@ -38,7 +38,7 @@ type Aggregator struct {
 	// It is currently used to provide sub-repo perms filtering.
 	//
 	// SearchEvent is still propagated even in an error case - filterFunc should make sure
-	// the appropriate manipulations are before returning an error.
+	// the appropriate manipulations are made before returning an error.
 	filterFunc func(*streaming.SearchEvent) error
 
 	mu         sync.Mutex
