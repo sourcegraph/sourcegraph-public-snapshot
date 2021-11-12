@@ -20,16 +20,16 @@
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 0.5rem;
 
-        a.anchor {
+        a:global(.anchor) {
             opacity: 0;
-            font-size: $font-size-base;
+            font-size: var(font-size-base);
             margin-left: -1rem;
             padding: 0.125rem;
             &::before {
                 content: '#';
             }
         }
-        &:hover a.anchor {
+        &:hover a:global(.anchor) {
             opacity: 1;
         }
     }
@@ -76,21 +76,5 @@
 
     img {
         max-width: 100%;
-    }
-
-    &.search-result-match__markdown {
-        &.markdown {
-            table,
-            th,
-            td {
-                border: none;
-                padding: 0;
-            }
-            code,
-            pre {
-                background-color: transparent;
-                padding: 0;
-            }
-        }
     }
 }

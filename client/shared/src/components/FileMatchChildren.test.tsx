@@ -58,7 +58,7 @@ describe('FileMatchChildren', () => {
 
     it('calls onSelect callback when an item is clicked', () => {
         const { container } = render(<FileMatchChildren {...defaultProps} onSelect={onSelect} />)
-        const item = container.querySelector('.file-match-children__item')
+        const item = container.querySelector('[data-testid="file-match-children-item"]')
         expect(item).toBeVisible()
         fireEvent.click(item!)
         expect(onSelect.calledOnce).toBe(true)
