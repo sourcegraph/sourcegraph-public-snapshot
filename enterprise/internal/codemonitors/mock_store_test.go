@@ -86,6 +86,9 @@ type MockCodeMonitorStore struct {
 	// GetEventsForQueryIDInt64Func is an instance of a mock function object
 	// controlling the behavior of the method GetEventsForQueryIDInt64.
 	GetEventsForQueryIDInt64Func *CodeMonitorStoreGetEventsForQueryIDInt64Func
+	// GetMonitorFunc is an instance of a mock function object controlling
+	// the behavior of the method GetMonitor.
+	GetMonitorFunc *CodeMonitorStoreGetMonitorFunc
 	// GetQueryByRecordIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetQueryByRecordID.
 	GetQueryByRecordIDFunc *CodeMonitorStoreGetQueryByRecordIDFunc
@@ -101,9 +104,6 @@ type MockCodeMonitorStore struct {
 	// LogSearchFunc is an instance of a mock function object controlling
 	// the behavior of the method LogSearch.
 	LogSearchFunc *CodeMonitorStoreLogSearchFunc
-	// MonitorByIDInt64Func is an instance of a mock function object
-	// controlling the behavior of the method MonitorByIDInt64.
-	MonitorByIDInt64Func *CodeMonitorStoreMonitorByIDInt64Func
 	// MonitorsFunc is an instance of a mock function object controlling the
 	// behavior of the method Monitors.
 	MonitorsFunc *CodeMonitorStoreMonitorsFunc
@@ -270,6 +270,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil, nil
 			},
 		},
+		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
+			defaultHook: func(context.Context, int64) (*Monitor, error) {
+				return nil, nil
+			},
+		},
 		GetQueryByRecordIDFunc: &CodeMonitorStoreGetQueryByRecordIDFunc{
 			defaultHook: func(context.Context, int) (*MonitorQuery, error) {
 				return nil, nil
@@ -293,11 +298,6 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 		LogSearchFunc: &CodeMonitorStoreLogSearchFunc{
 			defaultHook: func(context.Context, string, int, int) error {
 				return nil
-			},
-		},
-		MonitorByIDInt64Func: &CodeMonitorStoreMonitorByIDInt64Func{
-			defaultHook: func(context.Context, int64) (*Monitor, error) {
-				return nil, nil
 			},
 		},
 		MonitorsFunc: &CodeMonitorStoreMonitorsFunc{
@@ -449,6 +449,9 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		GetEventsForQueryIDInt64Func: &CodeMonitorStoreGetEventsForQueryIDInt64Func{
 			defaultHook: i.GetEventsForQueryIDInt64,
 		},
+		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
+			defaultHook: i.GetMonitor,
+		},
 		GetQueryByRecordIDFunc: &CodeMonitorStoreGetQueryByRecordIDFunc{
 			defaultHook: i.GetQueryByRecordID,
 		},
@@ -463,9 +466,6 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		},
 		LogSearchFunc: &CodeMonitorStoreLogSearchFunc{
 			defaultHook: i.LogSearch,
-		},
-		MonitorByIDInt64Func: &CodeMonitorStoreMonitorByIDInt64Func{
-			defaultHook: i.GetMonitor,
 		},
 		MonitorsFunc: &CodeMonitorStoreMonitorsFunc{
 			defaultHook: i.Monitors,
@@ -2941,6 +2941,115 @@ func (c CodeMonitorStoreGetEventsForQueryIDInt64FuncCall) Results() []interface{
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// CodeMonitorStoreGetMonitorFunc describes the behavior when the GetMonitor
+// method of the parent MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreGetMonitorFunc struct {
+	defaultHook func(context.Context, int64) (*Monitor, error)
+	hooks       []func(context.Context, int64) (*Monitor, error)
+	history     []CodeMonitorStoreGetMonitorFuncCall
+	mutex       sync.Mutex
+}
+
+// GetMonitor delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetMonitor(v0 context.Context, v1 int64) (*Monitor, error) {
+	r0, r1 := m.GetMonitorFunc.nextHook()(v0, v1)
+	m.GetMonitorFunc.appendCall(CodeMonitorStoreGetMonitorFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetMonitor method of
+// the parent MockCodeMonitorStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeMonitorStoreGetMonitorFunc) SetDefaultHook(hook func(context.Context, int64) (*Monitor, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetMonitor method of the parent MockCodeMonitorStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreGetMonitorFunc) PushHook(hook func(context.Context, int64) (*Monitor, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
+	f.PushHook(func(context.Context, int64) (*Monitor, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetMonitorFunc) nextHook() func(context.Context, int64) (*Monitor, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetMonitorFunc) appendCall(r0 CodeMonitorStoreGetMonitorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetMonitorFuncCall objects
+// describing the invocations of this function.
+func (f *CodeMonitorStoreGetMonitorFunc) History() []CodeMonitorStoreGetMonitorFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetMonitorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetMonitorFuncCall is an object that describes an
+// invocation of method GetMonitor on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreGetMonitorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *Monitor
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetMonitorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // CodeMonitorStoreGetQueryByRecordIDFunc describes the behavior when the
 // GetQueryByRecordID method of the parent MockCodeMonitorStore instance is
 // invoked.
@@ -3486,118 +3595,6 @@ func (c CodeMonitorStoreLogSearchFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeMonitorStoreLogSearchFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// CodeMonitorStoreMonitorByIDInt64Func describes the behavior when the
-// MonitorByIDInt64 method of the parent MockCodeMonitorStore instance is
-// invoked.
-type CodeMonitorStoreMonitorByIDInt64Func struct {
-	defaultHook func(context.Context, int64) (*Monitor, error)
-	hooks       []func(context.Context, int64) (*Monitor, error)
-	history     []CodeMonitorStoreMonitorByIDInt64FuncCall
-	mutex       sync.Mutex
-}
-
-// MonitorByIDInt64 delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) MonitorByIDInt64(v0 context.Context, v1 int64) (*Monitor, error) {
-	r0, r1 := m.MonitorByIDInt64Func.nextHook()(v0, v1)
-	m.MonitorByIDInt64Func.appendCall(CodeMonitorStoreMonitorByIDInt64FuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the MonitorByIDInt64
-// method of the parent MockCodeMonitorStore instance is invoked and the
-// hook queue is empty.
-func (f *CodeMonitorStoreMonitorByIDInt64Func) SetDefaultHook(hook func(context.Context, int64) (*Monitor, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// MonitorByIDInt64 method of the parent MockCodeMonitorStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *CodeMonitorStoreMonitorByIDInt64Func) PushHook(hook func(context.Context, int64) (*Monitor, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *CodeMonitorStoreMonitorByIDInt64Func) SetDefaultReturn(r0 *Monitor, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64) (*Monitor, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *CodeMonitorStoreMonitorByIDInt64Func) PushReturn(r0 *Monitor, r1 error) {
-	f.PushHook(func(context.Context, int64) (*Monitor, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeMonitorStoreMonitorByIDInt64Func) nextHook() func(context.Context, int64) (*Monitor, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreMonitorByIDInt64Func) appendCall(r0 CodeMonitorStoreMonitorByIDInt64FuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of CodeMonitorStoreMonitorByIDInt64FuncCall
-// objects describing the invocations of this function.
-func (f *CodeMonitorStoreMonitorByIDInt64Func) History() []CodeMonitorStoreMonitorByIDInt64FuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreMonitorByIDInt64FuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreMonitorByIDInt64FuncCall is an object that describes an
-// invocation of method MonitorByIDInt64 on an instance of
-// MockCodeMonitorStore.
-type CodeMonitorStoreMonitorByIDInt64FuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int64
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *Monitor
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreMonitorByIDInt64FuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreMonitorByIDInt64FuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreMonitorsFunc describes the behavior when the Monitors
