@@ -18,8 +18,8 @@ type LsifFormat int32
 
 const (
 	StandardFormat     LsifFormat = 1
-	ProtobufFormat     LsifFormat = 2
-	ProtobufJsonFormat LsifFormat = 3
+	FlatFormat         LsifFormat = 2
+	FlatProtobufFormat LsifFormat = 3
 )
 
 type LsifInput struct {
@@ -29,7 +29,7 @@ type LsifInput struct {
 
 func ReadInput(ctx context.Context, input LsifInput) <-chan Pair {
 	switch input.Format {
-	case ProtobufFormat:
+	case FlatFormat:
 		pairCh := make(chan Pair, ChannelBufferSize)
 		return pairCh
 	default:
