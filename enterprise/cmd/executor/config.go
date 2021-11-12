@@ -63,7 +63,7 @@ func (c *Config) Validate() error {
 	return c.BaseConfig.Validate()
 }
 
-func (c *Config) APIWorkerOptions() apiworker.Options {
+func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:             c.VMPrefix,
 		QueueName:            c.QueueName,
@@ -72,7 +72,7 @@ func (c *Config) APIWorkerOptions() apiworker.Options {
 		ResourceOptions:      c.ResourceOptions(),
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(),
+		ClientOptions:        c.ClientOptions(telemetryOptions),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -109,7 +109,7 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) ClientOptions() apiclient.Options {
+func (c *Config) ClientOptions(telemetryOptions apiclient.TelemetryOptions) apiclient.Options {
 	hn := hostname.Get()
 
 	return apiclient.Options{
@@ -119,6 +119,7 @@ func (c *Config) ClientOptions() apiclient.Options {
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
 		BaseClientOptions: c.BaseClientOptions(),
+		TelemetryOptions:  telemetryOptions,
 	}
 }
 
