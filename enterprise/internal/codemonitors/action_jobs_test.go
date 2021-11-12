@@ -53,8 +53,6 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	}
 }
 
-func intPtr(i int) *int { return &i }
-
 func TestGetActionJobMetadata(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
