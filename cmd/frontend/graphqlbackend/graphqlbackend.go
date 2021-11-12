@@ -352,7 +352,7 @@ func NewSchema(
 	license LicenseResolver,
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
-	enterpriseResolver EnterpriseResolver,
+	orgRepositoryResolver OrgRepositoryResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -426,10 +426,10 @@ func NewSchema(
 		}
 	}
 
-	if enterpriseResolver != nil {
-		EnterpriseResolvers.enterpriseResolver = enterpriseResolver
-		resolver.EnterpriseResolver = enterpriseResolver
-		schemas = append(schemas, enterpriseSchema)
+	if orgRepositoryResolver != nil {
+		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
+		resolver.OrgRepositoryResolver = orgRepositoryResolver
+		schemas = append(schemas, orgSchema)
 	}
 
 	schemas = append(schemas, computeSchema)
@@ -455,7 +455,7 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	SearchContextsResolver
-	EnterpriseResolver
+	OrgRepositoryResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -528,7 +528,7 @@ var EnterpriseResolvers = struct {
 	licenseResolver        LicenseResolver
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
-	enterpriseResolver     EnterpriseResolver
+	orgRepositoryResolver  OrgRepositoryResolver
 }{}
 
 // DEPRECATED

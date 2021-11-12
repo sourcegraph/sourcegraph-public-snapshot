@@ -277,7 +277,7 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 		enterprise.LicenseResolver,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
-		enterprise.EnterpriseResolver,
+		enterprise.OrgRepositoryResolver,
 	)
 	if err != nil {
 		return err

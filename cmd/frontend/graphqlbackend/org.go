@@ -325,8 +325,12 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if EnterpriseResolvers.enterpriseResolver == nil {
+	if EnterpriseResolvers.orgRepositoryResolver == nil {
 		return nil, errors.New("listing organization repositories is not supported")
 	}
-	return EnterpriseResolvers.enterpriseResolver.OrgRepositories(ctx, args, o.org)
+	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
+}
+
+type OrgRepositoryResolver interface {
+	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }
