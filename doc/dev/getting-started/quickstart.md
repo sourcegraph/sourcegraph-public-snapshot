@@ -82,6 +82,54 @@ and then, in another terminal window, start the monitoring stack:
 sg start monitoring
 ```
 
+### Optional: asdf
+
+[asdf](https://github.com/asdf-vm/asdf) is a CLI tool that manages runtime versions for a number of different languages and tools. It can be likened to a language-agnostic version of [nvm](https://github.com/nvm-sh/nvm) or [pyenv](https://github.com/pyenv/pyenv).
+
+We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
+
+#### Install asdf
+
+##### asdf binary
+
+See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf?id=install).
+
+##### Plugins
+
+sourcegraph/sourcegraph uses the following plugins:
+
+- [Go](https://github.com/kennyp/asdf-golang)
+
+```bash
+asdf plugin add golang
+```
+
+- [NodeJS](https://github.com/asdf-vm/asdf-nodejs)
+
+```bash
+asdf plugin add nodejs
+
+# Import the Node.js release team's OpenPGP keys to main keyring
+bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+
+# Have asdf read .nvmrc for auto-switching between node version
+## Add the following to $HOME/.asdfrc:
+legacy_version_file = yes
+```
+
+- [Yarn](https://github.com/twuni/asdf-yarn)
+
+```bash
+asdf plugin add yarn
+```
+
+#### Usage instructions
+
+[asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
+
+You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
+
+
 ## Additional resources
 
 Here are some additional resources to help you go further:
