@@ -71,8 +71,8 @@ func NewServices(ctx context.Context, db dbutil.DB) (*Services, error) {
 		lsifStore:   lsifStore,
 		repoStore:   database.ReposWith(dbStore.Store),
 		uploadStore: uploadStore,
-		locker:      locker,
 
+		locker:          locker,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
 	}, nil
