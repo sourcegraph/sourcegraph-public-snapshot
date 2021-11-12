@@ -3,9 +3,13 @@ package authz
 import (
 	"context"
 	"path"
+	"strconv"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -70,13 +74,27 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *subRepoP
 	}
 }
 
+// subRepoPermsPermissionsDuration tracks the behaviour and performance of Permissions()
+var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "authz_sub_repo_perms_permissions_duration_seconds",
+	Help: "Time spent syncing",
+}, []string{"hard_error"})
+
 func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	// Are sub-repo permissions enabled at the site level
 	if !s.Enabled() {
 		return Read, nil
 	}
 
+	began := time.Now()
+	hardError := false // indicates an unexpected error
+	defer func() {
+		took := time.Since(began).Seconds()
+		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(hardError)).Observe(took)
+	}()
+
 	if s.permissionsGetter == nil {
+		hardError = true
 		return None, errors.New("PermissionsGetter is nil")
 	}
 
@@ -91,6 +109,7 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	}
 
 	if supported, err := s.permissionsGetter.RepoSupported(ctx, content.Repo); err != nil {
+		hardError = true
 		return None, errors.Wrap(err, "checking for sub-repo permissions support")
 	} else if !supported {
 		// We assume that repo level access has already been granted
@@ -99,6 +118,7 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 
 	srp, err := s.permissionsGetter.GetByUser(ctx, userID)
 	if err != nil {
+		hardError = true
 		return None, errors.Wrap(err, "getting permissions")
 	}
 
@@ -116,6 +136,7 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	for _, rule := range repoRules.PathIncludes {
 		g, err := glob.Compile(rule, '/')
 		if err != nil {
+			hardError = true
 			return None, errors.Wrap(err, "building include matcher")
 		}
 		includeMatchers = append(includeMatchers, g)
@@ -124,6 +145,7 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	for _, rule := range repoRules.PathExcludes {
 		g, err := glob.Compile(rule, '/')
 		if err != nil {
+			hardError = true
 			return None, errors.Wrap(err, "building exclude matcher")
 		}
 		excludeMatchers = append(excludeMatchers, g)
