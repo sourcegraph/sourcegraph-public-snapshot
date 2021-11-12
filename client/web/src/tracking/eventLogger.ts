@@ -126,6 +126,8 @@ export class EventLogger implements TelemetryService {
     }
 
     public getLastSourceURL(): string {
+        // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
+        // lives in Google Tag Manager.
         const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
 
         const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
