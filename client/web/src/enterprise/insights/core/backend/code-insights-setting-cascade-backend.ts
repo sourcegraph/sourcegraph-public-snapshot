@@ -46,6 +46,7 @@ import {
     ReachableInsight,
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
+import { camelCase } from 'lodash'
 
 export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     constructor(
