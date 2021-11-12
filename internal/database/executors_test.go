@@ -36,7 +36,7 @@ func TestExecutorsList(t *testing.T) {
 	}
 
 	for _, executor := range executors {
-		store.Heartbeat(ctx, executor)
+		store.UpsertHeartbeat(ctx, executor)
 	}
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -164,7 +164,7 @@ func TestExecutorsGetByID(t *testing.T) {
 	}
 
 	// update first seen at
-	if err := store.heartbeat(ctx, expected, t1); err != nil {
+	if err := store.upsertHeartbeat(ctx, expected, t1); err != nil {
 		t.Fatalf("unexpected error inserting heartbeat: %s", err)
 	}
 
@@ -178,7 +178,7 @@ func TestExecutorsGetByID(t *testing.T) {
 	expected.SrcCliVersion += "-changed"
 
 	// update values as well as last seen at
-	if err := store.heartbeat(ctx, expected, t2); err != nil {
+	if err := store.upsertHeartbeat(ctx, expected, t2); err != nil {
 		t.Fatalf("unexpected error inserting heartbeat: %s", err)
 	}
 
@@ -188,5 +188,50 @@ func TestExecutorsGetByID(t *testing.T) {
 		t.Fatal("expected record to exist")
 	} else if diff := cmp.Diff(expected, executor); diff != "" {
 		t.Errorf("unexpected executor (-want +got):\n%s", diff)
+	}
+}
+
+func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := executors(db)
+	ctx := context.Background()
+
+	for i := 0; i < 10; i++ {
+		store.UpsertHeartbeat(ctx, types.Executor{Hostname: fmt.Sprintf("h%02d", i+1)})
+	}
+
+	now := time.Unix(1587396557, 0).UTC()
+	t1 := now.Add(-time.Minute * 10) // active
+	t2 := now.Add(-time.Minute * 45) // inactive
+
+	lastSeenAtByID := map[int]time.Time{
+		1:  t1,
+		2:  t1,
+		3:  t1,
+		4:  t1,
+		5:  t1,
+		6:  t2,
+		7:  t2,
+		8:  t2,
+		9:  t2,
+		10: t2,
+	}
+	for id, lastSeenAt := range lastSeenAtByID {
+		if err := store.Exec(ctx, sqlf.Sprintf(`UPDATE executor_heartbeats SET last_seen_at = %s WHERE id = %s`, lastSeenAt, id)); err != nil {
+			t.Fatalf("failed to set up executors for test: %s", err)
+		}
+	}
+
+	if err := store.deleteInactiveHeartbeats(ctx, time.Minute*30, now); err != nil {
+		t.Fatalf("unexpected error deleting inactive heartbeats: %s", err)
+	}
+
+	if _, totalCount, err := store.List(ctx, ExecutorStoreListOptions{}); err != nil {
+		t.Fatalf("unexpected error listing executors: %s", err)
+	} else if totalCount != 5 {
+		t.Fatalf("unexpected total count. want=%d have=%d", 5, totalCount)
 	}
 }

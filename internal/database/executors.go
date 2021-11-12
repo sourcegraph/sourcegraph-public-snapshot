@@ -16,10 +16,12 @@ import (
 type ExecutorStore interface {
 	List(ctx context.Context, args ExecutorStoreListOptions) ([]types.Executor, int, error)
 	GetByID(ctx context.Context, id int) (types.Executor, bool, error)
-	Heartbeat(ctx context.Context, executor types.Executor) error
+	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
+	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
+
+	With(store basestore.ShareableStore) ExecutorStore
 	Transact(ctx context.Context) (ExecutorStore, error)
 	Done(err error) error
-	With(store basestore.ShareableStore) ExecutorStore
 	basestore.ShareableStore
 }
 
@@ -46,14 +48,13 @@ func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
 func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {
 	return &executorStore{Store: s.Store.With(other)}
 }
-
-func (s *executorStore) Done(err error) error {
-	return s.Store.Done(err)
-}
-
 func (s *executorStore) Transact(ctx context.Context) (ExecutorStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &executorStore{Store: txBase}, err
+}
+
+func (s *executorStore) Done(err error) error {
+	return s.Store.Done(err)
 }
 
 // scanExecutors reads executor objects from the given row object.
@@ -224,14 +225,14 @@ FROM executor_heartbeats h
 WHERE h.id = %s
 `
 
-// Heartbeat updates or creates an executor activity record for a particular executor instance.
-func (s *executorStore) Heartbeat(ctx context.Context, executor types.Executor) error {
-	return s.heartbeat(ctx, executor, timeutil.Now())
+// UpsertHeartbeat updates or creates an executor activity record for a particular executor instance.
+func (s *executorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
+	return s.upsertHeartbeat(ctx, executor, timeutil.Now())
 }
 
-func (s *executorStore) heartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
+func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
 	return s.Exec(ctx, sqlf.Sprintf(
-		executorStoryHeartbeatQuery,
+		executorStoreUpsertHeartbeatQuery,
 
 		// insert
 		executor.Hostname,
@@ -259,7 +260,7 @@ func (s *executorStore) heartbeat(ctx context.Context, executor types.Executor, 
 	))
 }
 
-const executorStoryHeartbeatQuery = `
+const executorStoreUpsertHeartbeatQuery = `
 -- source: internal/database/executors.go:HeartbeatHeartbeat
 INSERT INTO executor_heartbeats (
 	hostname,
@@ -286,4 +287,20 @@ SET
 	ignite_version = %s,
 	src_cli_version = %s,
 	last_seen_at = %s
+`
+
+// DeleteInactiveHeartbeats deletes heartbeat records belonging to executor instances that have not pinged
+// the Sourcegraph instance in at least the given duration.
+func (s *executorStore) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
+	return s.deleteInactiveHeartbeats(ctx, minAge, timeutil.Now())
+}
+
+func (s *executorStore) deleteInactiveHeartbeats(ctx context.Context, minAge time.Duration, now time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInactiveHeartbeatsQuery, now, minAge/time.Second))
+}
+
+const executorStoreDeleteInactiveHeartbeatsQuery = `
+-- source: internal/database/executors.go:DeleteInactiveHeartbeats
+DELETE FROM executor_heartbeats
+WHERE %s - last_seen_at >= %s * interval '1 second'
 `
