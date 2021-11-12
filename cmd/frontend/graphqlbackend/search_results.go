@@ -1679,47 +1679,27 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
-		addCommitSearch := func(diff bool) {
-			j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
-			if err != nil {
-				agg.Error(err)
-				return
-			}
-
-			if err := j.ExpandUsernames(ctx, r.db); err != nil {
-				agg.Error(err)
-				return
-			}
-
-			jobs = append(jobs, j)
+	addCommitSearch := func(diff bool) {
+		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
+		if err != nil {
+			agg.Error(err)
+			return
 		}
 
-		if args.ResultTypes.Has(result.TypeCommit) {
-			addCommitSearch(false)
+		if err := j.ExpandUsernames(ctx, r.db); err != nil {
+			agg.Error(err)
+			return
 		}
 
-		if args.ResultTypes.Has(result.TypeDiff) {
-			addCommitSearch(true)
-		}
-	} else {
-		if args.ResultTypes.Has(result.TypeDiff) {
-			wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.DoDiffSearch(ctx, args)
-			})
-		}
+		jobs = append(jobs, j)
+	}
 
-		if args.ResultTypes.Has(result.TypeCommit) {
-			wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				_ = agg.DoCommitSearch(ctx, args)
-			})
-		}
+	if args.ResultTypes.Has(result.TypeCommit) {
+		addCommitSearch(false)
+	}
+
+	if args.ResultTypes.Has(result.TypeDiff) {
+		addCommitSearch(true)
 	}
 
 	wgForJob := func(job run.Job) *sync.WaitGroup {
