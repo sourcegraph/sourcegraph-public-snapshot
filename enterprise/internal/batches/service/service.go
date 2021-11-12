@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -285,8 +284,6 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	reposStore := tx.Repos()
-
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
@@ -294,42 +291,6 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
-	}
-
-	// If there are "importChangesets" statements in the spec we evaluate
-	// them now and create ChangesetSpecs for them.
-	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, opts.spec.Spec.ImportChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
-		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
-		// whether the user has access to the repository or not.
-		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
-		if err != nil {
-			return nil, err
-		}
-
-		repoNameIDs := make(map[string]string, len(repos))
-		for _, r := range repos {
-			repoNameIDs[string(r.Name)] = string(graphqlbackend.MarshalRepositoryID(r.ID))
-		}
-		return repoNameIDs, nil
-	})
-	if err != nil {
-		return err
-	}
-	for _, cs := range specs {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cs.BaseRepository))
-		if err != nil {
-			return err
-		}
-		changesetSpec := &btypes.ChangesetSpec{
-			UserID:      opts.spec.UserID,
-			RepoID:      repoID,
-			Spec:        cs,
-			BatchSpecID: opts.spec.ID,
-		}
-
-		if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-			return err
-		}
 	}
 
 	// Return spec and enqueue resolution
