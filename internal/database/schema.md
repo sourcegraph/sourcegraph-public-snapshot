@@ -750,6 +750,52 @@ Check constraints:
 
 ```
 
+# Table "public.executor_heartbeats"
+```
+      Column      |           Type           | Collation | Nullable |                     Default                     
+------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
+ hostname         | text                     |           | not null | 
+ queue_name       | text                     |           | not null | 
+ os               | text                     |           | not null | 
+ architecture     | text                     |           | not null | 
+ docker_version   | text                     |           | not null | 
+ executor_version | text                     |           | not null | 
+ git_version      | text                     |           | not null | 
+ ignite_version   | text                     |           | not null | 
+ src_cli_version  | text                     |           | not null | 
+ first_seen_at    | timestamp with time zone |           | not null | now()
+ last_seen_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
+    "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+
+```
+
+Tracks the most recent activity of executors attached to this Sourcegraph instance.
+
+**architecture**: The machine architure running the executor.
+
+**docker_version**: The version of Docker used by the executor.
+
+**executor_version**: The version of the executor.
+
+**first_seen_at**: The first time a heartbeat from the executor was received.
+
+**git_version**: The version of Git used by the executor.
+
+**hostname**: The uniquely identifying name of the executor.
+
+**ignite_version**: The version of Ignite used by the executor.
+
+**last_seen_at**: The last time a heartbeat from the executor was received.
+
+**os**: The operating system running the executor.
+
+**queue_name**: The queue name that the executor polls for work.
+
+**src_cli_version**: The version of src-cli used by the executor.
+
 # Table "public.external_service_repos"
 ```
        Column        |  Type   | Collation | Nullable | Default 
