@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
@@ -44,7 +43,8 @@ func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	return s.runMonitorQuery(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanMonitor(row)
 }
 
 func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m *Monitor, err error) {
@@ -53,7 +53,8 @@ func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	return s.runMonitorQuery(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanMonitor(row)
 }
 
 func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (m *Monitor, err error) {
@@ -62,7 +63,8 @@ func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbacke
 	if err != nil {
 		return nil, err
 	}
-	return s.runMonitorQuery(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanMonitor(row)
 }
 
 func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (err error) {
@@ -273,20 +275,4 @@ func scanMonitor(scanner dbutil.Scanner) (*Monitor, error) {
 		&m.NamespaceUserID,
 	)
 	return m, err
-}
-
-func (s *codeMonitorStore) runMonitorQuery(ctx context.Context, q *sqlf.Query) (*Monitor, error) {
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ms, err := scanMonitors(rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(ms) == 0 {
-		return nil, errors.Errorf("operation failed. Query should have returned 1 row")
-	}
-	return ms[0], nil
 }
