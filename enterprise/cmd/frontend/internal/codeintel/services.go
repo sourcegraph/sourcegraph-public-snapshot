@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -36,7 +37,7 @@ type Services struct {
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 }
 
-func NewServices(ctx context.Context, db dbutil.DB) (*Services, error) {
+func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db dbutil.DB) (*Services, error) {
 	if err := config.UploadStoreConfig.Validate(); err != nil {
 		return nil, errors.Errorf("failed to load config: %s", err)
 	}
@@ -54,7 +55,7 @@ func NewServices(ctx context.Context, db dbutil.DB) (*Services, error) {
 	// Initialize stores
 	dbStore := store.NewWithDB(db, observationContext)
 	locker := locker.NewWithDB(db, "codeintel")
-	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
+	lsifStore := lsifstore.NewStore(codeIntelDB, siteConfig, observationContext)
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
 	if err != nil {
 		log.Fatalf("Failed to initialize upload store: %s", err)
@@ -79,9 +80,9 @@ func NewServices(ctx context.Context, db dbutil.DB) (*Services, error) {
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
 	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
 			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})

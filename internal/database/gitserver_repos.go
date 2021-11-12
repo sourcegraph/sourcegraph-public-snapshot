@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// GitserverReposStore is responsible for data stored in the gitserver_repos table.
+// GitserverRepoStore is responsible for data stored in the gitserver_repos table.
 type GitserverRepoStore struct {
 	*basestore.Store
 }

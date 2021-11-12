@@ -2,7 +2,6 @@
 import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
-import { without } from 'lodash'
 import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
@@ -18,7 +17,6 @@ import {
     distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
-import { patternToRegex } from 'webext-patterns'
 
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
@@ -34,6 +32,7 @@ import { initSentry } from '../../shared/sentry'
 import { observeSourcegraphURL } from '../../shared/util/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
+import { checkUrlPermissions } from '../util'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
@@ -47,8 +46,6 @@ const INTERVAL_FOR_SOURCEGRPAH_URL_CHECK = 5 /* minutes */ * 60 * 1000
 assertEnvironment('BACKGROUND')
 
 initSentry('background')
-
-let customServerOrigins: string[] = []
 
 /**
  * For each tab, we store a flag if we know that we are on a private
@@ -81,21 +78,6 @@ const tabPrivateCloudErrorCache = (() => {
         },
     }
 })()
-
-const contentScripts = browser.runtime.getManifest().content_scripts
-
-// jsContentScriptOrigins are the required URLs inside of the manifest. When checking for permissions to inject
-// the content script on optional pages (inside browser.tabs.onUpdated) we need to skip manual injection of the
-// script since the browser extension will automatically inject it.
-const jsContentScriptOrigins: string[] = []
-if (contentScripts) {
-    for (const contentScript of contentScripts) {
-        if (!contentScript || !contentScript.js || !contentScript.matches) {
-            continue
-        }
-        jsContentScriptOrigins.push(...contentScript.matches)
-    }
-}
 
 const configureOmnibox = (serverUrl: string): void => {
     browser.omnibox.setDefaultSuggestion({
@@ -167,50 +149,31 @@ async function main(): Promise<void> {
 
     const permissions = await browser.permissions.getAll()
     if (!permissions.origins) {
-        customServerOrigins = []
         return
     }
-    customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
 
-    // Not supported in Firefox
-    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
-    if (browser.permissions.onAdded) {
-        browser.permissions.onAdded.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            const origins = without(permissions.origins, ...jsContentScriptOrigins)
-            customServerOrigins.push(...origins)
-        })
-    }
-    if (browser.permissions.onRemoved) {
-        browser.permissions.onRemoved.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            customServerOrigins = without(customServerOrigins, ...permissions.origins)
-            const urlsToRemove: string[] = []
-            for (const url of permissions.origins) {
-                urlsToRemove.push(url.replace('/*', ''))
-            }
-        })
-    }
-
-    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
             tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
             return
         }
 
-        if (
-            changeInfo.status === 'complete' &&
-            customServerOrigins.some(
-                origin => origin === '<all_urls>' || (!!tab.url && urlMatchesPattern(tab.url, origin))
-            )
-        ) {
-            // Inject content script whenever a new tab was opened with a URL for which we have permission
-            await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+        if (tab.url && changeInfo.status === 'complete') {
+            checkUrlPermissions(tab.url)
+                .then(async hasPermissions => {
+                    if (hasPermissions) {
+                        /**
+                         * Loading content script dynamically
+                         * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
+                         */
+                        await browser.tabs.executeScript(tabId, {
+                            file: 'js/inject.bundle.js',
+                            runAt: 'document_end',
+                        })
+                    }
+                })
+                .catch(console.warn)
         }
     })
 
@@ -457,17 +420,4 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
         }),
         distinctUntilChanged()
     )
-}
-
-function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
-    // Workaround for bug in `webext-patterns`. Remove workaround when fixed upstream.
-    // https://github.com/fregante/webext-patterns/issues/2
-    if (originPermissionPattern.includes('://*.')) {
-        const bareDomainPattern = originPermissionPattern.replace('://*.', '://')
-        if (patternToRegex(bareDomainPattern).test(url)) {
-            return true
-        }
-    }
-
-    return patternToRegex(originPermissionPattern).test(url)
 }

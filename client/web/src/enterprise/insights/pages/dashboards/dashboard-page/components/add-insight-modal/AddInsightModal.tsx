@@ -27,7 +27,7 @@ export interface AddInsightModalProps {
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
     const { dashboard, onClose } = props
-    const { getReachableInsights, updateDashboard } = useContext(CodeInsightsBackendContext)
+    const { getReachableInsights, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
 
     const insights = useObservable(
         useMemo(() => getReachableInsights(dashboard.owner?.id || '') || of([]), [
@@ -49,7 +49,8 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
             const { insightIds } = values
             const type = dashboard.grants && parseDashboardType(dashboard.grants)
 
-            await updateDashboard({
+            await assignInsightsToDashboard({
+                id: dashboard.id,
                 previousDashboard: dashboard,
                 nextDashboardInput: {
                     name: dashboard.title,

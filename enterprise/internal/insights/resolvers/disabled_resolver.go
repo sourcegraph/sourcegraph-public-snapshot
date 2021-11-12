@@ -60,6 +60,14 @@ func (r *disabledResolver) UpdateLineChartSearchInsight(ctx context.Context, arg
 	return nil, errors.New(r.reason)
 }
 
+func (r *disabledResolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
 func (r *disabledResolver) InsightViews(ctx context.Context, args *graphqlbackend.InsightViewQueryArgs) (graphqlbackend.InsightViewConnectionResolver, error) {
 	return nil, errors.New(r.reason)
 }

@@ -97,6 +97,16 @@ type MarkErroredRequest struct {
 type HeartbeatRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobIDs       []int  `json:"jobIds"`
+
+	// Telemetry data.
+
+	OS              string `json:"os"`
+	Architecture    string `json:"architecture"`
+	SrcCliVersion   string `json:"srcCliVersion"`
+	GitVersion      string `json:"gitVersion"`
+	DockerVersion   string `json:"dockerVersion"`
+	IgniteVersion   string `json:"igniteVersion"`
+	ExecutorVersion string `json:"executorVersion"`
 }
 
 type CanceledRequest struct {

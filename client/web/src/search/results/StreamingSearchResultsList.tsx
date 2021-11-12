@@ -98,9 +98,23 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         />
                     )
                 case 'commit':
-                    return <SearchResult icon={SourceCommitIcon} result={result} repoName={result.repository} />
+                    return (
+                        <SearchResult
+                            icon={SourceCommitIcon}
+                            result={result}
+                            repoName={result.repository}
+                            telemetryService={telemetryService}
+                        />
+                    )
                 case 'repo':
-                    return <SearchResult icon={SourceRepositoryIcon} result={result} repoName={result.repository} />
+                    return (
+                        <SearchResult
+                            icon={SourceRepositoryIcon}
+                            result={result}
+                            repoName={result.repository}
+                            telemetryService={telemetryService}
+                        />
+                    )
             }
         },
         [

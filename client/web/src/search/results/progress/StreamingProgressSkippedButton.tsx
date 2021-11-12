@@ -1,5 +1,4 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -36,11 +35,7 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
                         color={skippedWithWarningOrError ? 'outline-danger' : 'outline-secondary'}
                         data-testid="streaming-progress-skipped"
                     >
-                        {skippedWithWarningOrError ? (
-                            <AlertCircleIcon className="mr-2 icon-inline" />
-                        ) : (
-                            <InformationOutlineIcon className="mr-2 icon-inline" />
-                        )}
+                        {skippedWithWarningOrError ? <AlertCircleIcon className="mr-2 icon-inline" /> : null}
                         Some results excluded
                     </DropdownToggle>
                     <DropdownMenu className={styles.skippedPopover} data-testid="streaming-progress-skipped-popover">

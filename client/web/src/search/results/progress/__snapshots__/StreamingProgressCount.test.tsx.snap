@@ -73,11 +73,10 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
      
     0.00
     s
-     
-    from 
-    0
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 0 repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -104,11 +103,10 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
      
     1.25
     s
-     
-    from 
-    1
-     
-    repository
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 1 repository"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -135,11 +133,10 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
      
     1.25
     s
-     
-    from 
-    500
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 500 repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -166,11 +163,10 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
      
     52.50
     s
-     
-    from 
-    8.9k
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 8.9k repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;
@@ -205,11 +201,10 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
      
     1.25
     s
-     
-    from 
-    500
-     
-    repositories
+    <Memo(InformationOutlineIcon)
+      className="ml-1 icon-inline"
+      data-tooltip="From 500 repositories"
+    />
   </small>
 </StreamingProgressCount>
 `;

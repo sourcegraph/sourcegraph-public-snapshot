@@ -75,7 +75,7 @@ func (r *batchSpecWorkspaceStepResolver) Environment() ([]graphqlbackend.BatchSp
 	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
 	// resolve workspaces step.
 
-	var env map[string]string = r.stepInfo.Environment
+	var env = r.stepInfo.Environment
 
 	// Not yet resolved, do a server-side pass.
 	if env == nil {

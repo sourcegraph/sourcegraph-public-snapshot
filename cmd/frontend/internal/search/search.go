@@ -157,13 +157,25 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Error("failed to get repo metadata", "error", err)
 			return
 		}
+
+		if progress.Stats.Repos == nil {
+			progress.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+		}
+
 		for i, match := range event.Results {
+			repo := match.RepoName()
+
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
 			// searched repos that user shouldn't have access to.
-			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
 			}
+
+			if _, ok := progress.Stats.Repos[repo.ID]; !ok {
+				progress.Stats.Repos[repo.ID] = repo
+			}
+
 			eventMatch := fromMatch(match, repoMetadata)
 			if args.DecorationLimit == -1 || args.DecorationLimit > i {
 				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
@@ -181,7 +193,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
 		}
-
 	}
 
 LOOP:
@@ -668,7 +679,6 @@ func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-cha
 				}
 			}
 		}
-
 	}()
 	return results
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -12,7 +11,6 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -20,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -184,7 +181,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		alert := alertForError(test.multiErr)
+		alert, _ := (&searchResolver{}).errorToAlert(context.Background(), test.multiErr)
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -218,169 +215,12 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert := alertForError(multiErr)
+		haveAlert, _ := (&searchResolver{}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
 		}
 
-	}
-}
-
-func TestAlertForOverRepoLimit(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	generateRepoRevs := func(numRepos int) []*search.RepositoryRevisions {
-		repoRevs := make([]*search.RepositoryRevisions, numRepos)
-		chars := []string{"a", "b", "c"} // create some parent names
-		j := 0
-		for i := range repoRevs {
-			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: types.MinimalRepo{
-					ID:   api.RepoID(i),
-					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
-				},
-			}
-			if j == 2 {
-				j = 0
-			} else {
-				j++
-			}
-		}
-		return repoRevs
-	}
-
-	setMockResolveRepositories := func(numRepos int) {
-		mockResolveRepositories = func() (resolved searchrepos.Resolved, err error) {
-			return searchrepos.Resolved{
-				RepoRevs:        generateRepoRevs(numRepos),
-				MissingRepoRevs: make([]*search.RepositoryRevisions, 0),
-				OverLimit:       true,
-			}, nil
-		}
-	}
-	defer func() { mockResolveRepositories = nil }()
-
-	cases := []struct {
-		name      string
-		globbing  bool
-		repoRevs  int
-		query     string
-		wantAlert *searchAlert
-
-		// simulates a timeout in alertForOverRepoLimit if "true"
-		cancelContext bool
-	}{
-		{
-			name:          "should return default alert because of 0 resolved repos",
-			cancelContext: false,
-			repoRevs:      0,
-			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
-			},
-		},
-		{
-			name:          "should return default alert because time limit is reached",
-			cancelContext: true,
-			repoRevs:      1,
-			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType: "over_repo_limit",
-				title:          "Too many matching repositories",
-				proposedQueries: []*searchQueryDescription{
-					{
-						"in the repository a/repoName0",
-						"repo:^a/repoName0$ foo",
-						query.SearchType(0),
-					},
-				},
-				description: "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
-			},
-		},
-		{
-			name:          "should return default alert because globbing is activated",
-			globbing:      true,
-			cancelContext: false,
-			repoRevs:      1,
-			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
-			},
-		},
-		{
-			name:          "this query is not basic, so return a default alert without suggestions",
-			cancelContext: false,
-			repoRevs:      1,
-			query:         "a or (b and c)",
-			wantAlert: &searchAlert{
-				prometheusType:  "over_repo_limit",
-				title:           "Too many matching repositories",
-				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
-			},
-		},
-		{
-			name:          "should return smart alert",
-			cancelContext: false,
-			repoRevs:      1,
-			query:         "foo",
-			wantAlert: &searchAlert{
-				prometheusType: "over_repo_limit",
-				title:          "Too many matching repositories",
-				proposedQueries: []*searchQueryDescription{
-					{
-						"in repositories under a (further filtering required)",
-						"repo:^a/ foo",
-						query.SearchType(0),
-					},
-				},
-				description: "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
-			},
-		},
-	}
-	for _, test := range cases {
-		t.Run(test.name, func(t *testing.T) {
-			setMockResolveRepositories(test.repoRevs)
-			plan, err := query.Pipeline(
-				query.InitRegexp(test.query),
-				query.With(test.globbing, query.Globbing),
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			sr := searchResolver{
-				db: database.NewDB(db),
-				SearchInputs: &run.SearchInputs{
-					OriginalQuery: test.query,
-					Plan:          plan,
-					Query:         plan.ToParseTree(),
-					UserSettings: &schema.Settings{
-						SearchGlobbing: &test.globbing,
-					}},
-			}
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			if test.cancelContext {
-				cancel()
-			}
-			alert, err := errorToAlert(sr.errorForOverRepoLimit(ctx))
-			if err != nil {
-				t.Fatalf("unexpected error: %s", err)
-			}
-
-			wantAlert := test.wantAlert
-			if !reflect.DeepEqual(alert, wantAlert) {
-				t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
-			}
-		})
 	}
 }
 

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -26,8 +27,10 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-var sessionStore sessions.Store
-var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
+var (
+	sessionStore     sessions.Store
+	sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
+)
 
 // defaultExpiryPeriod is the default session expiry period (if none is specified explicitly): 90 days.
 const defaultExpiryPeriod = 90 * 24 * time.Hour
@@ -36,12 +39,12 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 const cookieName = "sgs"
 
 func init() {
-	conf.ContributeValidator(func(c conf.Unified) (problems conf.Problems) {
-		if c.AuthSessionExpiry == "" {
+	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		if c.SiteConfig().AuthSessionExpiry == "" {
 			return nil
 		}
 
-		d, err := time.ParseDuration(c.AuthSessionExpiry)
+		d, err := time.ParseDuration(c.SiteConfig().AuthSessionExpiry)
 		if err != nil {
 			return conf.NewSiteProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
 		}

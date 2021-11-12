@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,9 +26,9 @@ const (
 	DefaultIndexPageSize  = 50
 )
 
-var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto indexing is not enabled")
+var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
 
-// Resolver is the main interface to code intel-related operations exposted to the GraphQL API. This
+// Resolver is the main interface to code intel-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
@@ -489,7 +490,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		}
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -515,7 +516,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 		return store.GetIndexesOptions{}, err
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}

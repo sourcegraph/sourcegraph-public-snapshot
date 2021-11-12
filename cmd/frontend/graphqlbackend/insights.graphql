@@ -662,6 +662,7 @@ input PieChartSearchInsightInput {
     The query string.
     """
     query: String!
+
     """
     The scope of repositories.
     """
@@ -670,7 +671,32 @@ input PieChartSearchInsightInput {
     """
     Options for this pie chart.
     """
-    options: PieChartOptionsInput!
+    presentationOptions: PieChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
+}
+
+"""
+Input for updating a pie chart search insight
+"""
+input UpdatePieChartSearchInsightInput {
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
+    presentationOptions: PieChartOptionsInput!
 }
 
 """
@@ -680,7 +706,8 @@ input PieChartOptionsInput {
     """
     The title for the pie chart.
     """
-    title: String
+    title: String!
+
     """
     The threshold for which groups fall into the "other category". Only categories with a percentage greater than
     this value will be separately rendered.
@@ -703,12 +730,21 @@ extend type Mutation {
     Create a line chart backed by search insights.
     """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
-    #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+
+    """
+    Create a pie chart backed by search insights.
+    """
+    createPieChartSearchInsight(input: PieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Update a line chart backed by search insights.
     """
     updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
+
+    """
+    Update a pie chart backed by search insights.
+    """
+    updatePieChartSearchInsight(id: ID!, input: UpdatePieChartSearchInsightInput!): InsightViewPayload!
 
     """
     Delete an insight view given the graphql ID.
@@ -759,8 +795,7 @@ union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
 """
 Defines presentation options for the insight.
 """
-union InsightPresentation = LineChartInsightViewPresentation
-#    | PieChartInsightViewPresentation
+union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
 
 """
 Defines a scope of time for which the insight data is generated.
