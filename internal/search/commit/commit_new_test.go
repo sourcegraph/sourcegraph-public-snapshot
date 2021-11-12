@@ -1,13 +1,17 @@
 package commit
 
 import (
+	"context"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -138,4 +142,37 @@ func TestQueryToGitQuery(t *testing.T) {
 			require.Equal(t, tc.output, output)
 		})
 	}
+}
+
+func TestExpandUsernamesToEmails(t *testing.T) {
+	resetMocks()
+	database.Mocks.Users.GetByUsername = func(ctx context.Context, username string) (*types.User, error) {
+		if want := "alice"; username != want {
+			t.Errorf("got %q, want %q", username, want)
+		}
+		return &types.User{ID: 123}, nil
+	}
+	database.Mocks.UserEmails.ListByUser = func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		if want := int32(123); opt.UserID != want {
+			t.Errorf("got %v, want %v", opt.UserID, want)
+		}
+		t := time.Now()
+		return []*database.UserEmail{
+			{Email: "alice@example.com", VerifiedAt: &t},
+			{Email: "alice@example.org", VerifiedAt: &t},
+		}, nil
+	}
+
+	x, err := expandUsernamesToEmails(context.Background(), nil, []string{"foo", "@alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
+		t.Errorf("got %q, want %q", x, want)
+	}
+}
+
+func resetMocks() {
+	database.Mocks = database.MockStores{}
+	backend.Mocks = backend.MockServices{}
 }
