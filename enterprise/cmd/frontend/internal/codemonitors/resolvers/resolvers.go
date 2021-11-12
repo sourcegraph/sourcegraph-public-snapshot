@@ -259,58 +259,17 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
-	limit := 50
-	var (
-		ids   []graphql.ID
-		after *string
-		q     *sqlf.Query
-	)
-	// Paging.
-	for {
-		q, err = r.store.ReadActionEmailQuery(ctx, monitorID, &graphqlbackend.ListActionArgs{
-			First: int32(limit),
-			After: after,
-		})
-		if err != nil {
-			return nil, err
-		}
-		es, cur, err := r.actionIDsForMonitorIDINT64SinglePage(ctx, q, limit)
-		if err != nil {
-			return nil, err
-		}
-		ids = append(ids, es...)
-		if cur == nil {
-			break
-		}
-		after = cur
+	emailActions, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
+		MonitorID: intPtr(int(monitorID)),
+	})
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]graphql.ID, len(emailActions))
+	for i, emailAction := range emailActions {
+		ids[i] = (&monitorEmail{MonitorEmail: emailAction}).ID()
 	}
 	return ids, nil
-}
-
-func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (ids []graphql.ID, cursor *string, err error) {
-	var rows *sql.Rows
-	rows, err = r.store.Query(ctx, q)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	var es []*cm.MonitorEmail
-	es, err = cm.ScanEmails(rows)
-	if err != nil {
-		return nil, nil, err
-	}
-	ids = make([]graphql.ID, 0, len(es))
-	for _, e := range es {
-		ids = append(ids, (&monitorEmail{MonitorEmail: e}).ID())
-	}
-
-	// Set the cursor if the result size equals limit.
-	if len(ids) == limit {
-		stringID := string(ids[len(ids)-1])
-		cursor = &stringID
-	}
-	return ids, cursor, nil
 }
 
 // splitActionIDs splits actions into three buckets: create, delete and update.

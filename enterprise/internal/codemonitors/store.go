@@ -25,15 +25,14 @@ type CodeMonitorStore interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 
-	ReadActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error)
 	UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error)
 	CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error)
 	DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error)
 	TotalCountActionEmails(ctx context.Context, monitorID int64) (count int32, err error)
 	ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error)
-	ListActionJobs(ctx context.Context, opts ListActionJobsOpts) ([]*ActionJob, error)
-	CountActionJobs(ctx context.Context, opts ListActionJobsOpts) (int, error)
-	ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error)
+	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
+	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
+	ListEmailActions(context.Context, ListActionsOpts) ([]*MonitorEmail, error)
 	EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
 	ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error)
