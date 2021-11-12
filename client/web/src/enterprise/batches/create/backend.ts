@@ -1,73 +1,64 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-
-import { requestGraphQL } from '../../../backend/graphql'
-import {
-    ExecuteBatchSpecFields,
-    ExecuteBatchSpecResult,
-    ExecuteBatchSpecVariables,
-    BatchSpecWorkspacesByIDResult,
-    BatchSpecWorkspacesByIDVariables,
-    BatchSpecWithWorkspacesFields,
-    CreateBatchSpecFromRawResult,
-    CreateBatchSpecFromRawVariables,
-    ReplaceBatchSpecInputResult,
-    ReplaceBatchSpecInputVariables,
-    Scalars,
-} from '../../../graphql-operations'
-
-export async function executeBatchSpec(spec: Scalars['ID']): Promise<ExecuteBatchSpecFields> {
-    const result = await requestGraphQL<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
-        gql`
-            mutation ExecuteBatchSpec($id: ID!) {
-                executeBatchSpec(batchSpec: $id) {
-                    ...ExecuteBatchSpecFields
-                }
+export const EXECUTE_BATCH_SPEC = gql`
+    mutation ExecuteBatchSpec($batchSpec: ID!) {
+        executeBatchSpec(batchSpec: $batchSpec) {
+            id
+            namespace {
+                url
             }
-
-            fragment ExecuteBatchSpecFields on BatchSpec {
-                id
-                namespace {
-                    url
-                }
-            }
-        `,
-        { id: spec }
-    ).toPromise()
-    return dataOrThrowErrors(result).executeBatchSpec
-}
-
-const fragment = gql`
-    fragment BatchSpecWithWorkspacesFields on BatchSpec {
-        id
-        originalInput
-        workspaceResolution {
-            workspaces(first: 10000) {
-                nodes {
-                    ...CreateBatchSpecWorkspaceFields
-                }
-            }
-            state
-            failureMessage
         }
-        allowUnsupported
-        allowIgnored
-        importingChangesets(first: 10000) {
-            totalCount
-            nodes {
-                __typename
-                id
-                ... on VisibleChangesetSpec {
-                    description {
+    }
+`
+
+export const CREATE_BATCH_SPEC_FROM_RAW = gql`
+    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
+        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
+            id
+        }
+    }
+`
+
+export const REPLACE_BATCH_SPEC_INPUT = gql`
+    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
+        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
+            id
+        }
+    }
+`
+
+export const WORKSPACE_RESOLUTION_STATUS = gql`
+    query WorkspaceResolutionStatus($batchSpec: ID!) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                workspaceResolution {
+                    state
+                    failureMessage
+                }
+            }
+        }
+    }
+`
+
+export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
+    query WorkspacesAndImportingChangesets($batchSpec: ID!) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                workspaceResolution {
+                    workspaces(first: 10000) {
+                        nodes {
+                            ...PreviewBatchSpecWorkspaceFields
+                        }
+                    }
+                }
+                importingChangesets(first: 10000) {
+                    totalCount
+                    nodes {
                         __typename
-                        ... on ExistingChangesetReference {
-                            baseRepository {
-                                name
-                                url
-                            }
-                            externalID
+                        ... on VisibleChangesetSpec {
+                            ...PreviewBatchSpecImportingChangesetFields
                         }
                     }
                 }
@@ -75,7 +66,7 @@ const fragment = gql`
         }
     }
 
-    fragment CreateBatchSpecWorkspaceFields on BatchSpecWorkspace {
+    fragment PreviewBatchSpecWorkspaceFields on BatchSpecWorkspace {
         repository {
             id
             name
@@ -92,81 +83,21 @@ const fragment = gql`
             }
         }
         path
-        onlyFetchWorkspace
-        steps {
-            run
-            container
-        }
         searchResultPaths
         cachedResultFound
     }
+
+    fragment PreviewBatchSpecImportingChangesetFields on VisibleChangesetSpec {
+        id
+        description {
+            __typename
+            ... on ExistingChangesetReference {
+                baseRepository {
+                    name
+                    url
+                }
+                externalID
+            }
+        }
+    }
 `
-
-export function createBatchSpecFromRaw(
-    spec: string,
-    namespace: Scalars['ID']
-): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(
-        gql`
-            mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
-                createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
-
-            ${fragment}
-        `,
-        { spec, namespace }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => result.createBatchSpecFromRaw)
-    )
-}
-
-export function replaceBatchSpecInput(
-    previousSpec: Scalars['ID'],
-    spec: string
-): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(
-        gql`
-            mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
-                replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
-
-            ${fragment}
-        `,
-        { previousSpec, spec }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => result.replaceBatchSpecInput)
-    )
-}
-
-export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<BatchSpecWorkspacesByIDResult, BatchSpecWorkspacesByIDVariables>(
-        gql`
-            query BatchSpecWorkspacesByID($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
-
-            ${fragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('Not found')
-            }
-            if (data.node.__typename !== 'BatchSpec') {
-                throw new Error(`Node is a ${data.node.__typename}, not a BatchSpec`)
-            }
-            return data.node
-        })
-    )
-}
