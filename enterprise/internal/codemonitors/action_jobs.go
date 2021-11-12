@@ -7,7 +7,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -61,9 +60,9 @@ var ActionJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_action_jobs.log_contents"),
 }
 
-// ListActionEventsOpts is a struct that contains options for listing and
+// ListActionJobsOpts is a struct that contains options for listing and
 // counting action events.
-type ListActionEventsOpts struct {
+type ListActionJobsOpts struct {
 	// TriggerEventID, if set, will filter to only action jobs that were
 	// created in response to the provided trigger event.  Refers to
 	// cm_trigger_jobs(id)
@@ -90,7 +89,7 @@ type ListActionEventsOpts struct {
 }
 
 // Conds generates a set of conditions for a SQL WHERE clause
-func (o ListActionEventsOpts) Conds() *sqlf.Query {
+func (o ListActionJobsOpts) Conds() *sqlf.Query {
 	var conds []*sqlf.Query
 	if o.TriggerEventID != nil {
 		conds = append(conds, sqlf.Sprintf("trigger_event = %s", *o.TriggerEventID))
@@ -111,7 +110,7 @@ func (o ListActionEventsOpts) Conds() *sqlf.Query {
 }
 
 // Limit generates an argument for a SQL LIMIT clause
-func (o ListActionEventsOpts) Limit() *sqlf.Query {
+func (o ListActionJobsOpts) Limit() *sqlf.Query {
 	if o.First == nil {
 		return sqlf.Sprintf("ALL")
 	}
@@ -127,7 +126,7 @@ LIMIT %s;
 `
 
 // ListActionJobs lists events from cm_action_jobs using the provided options
-func (s *codeMonitorStore) ListActionJobs(ctx context.Context, opts ListActionEventsOpts) ([]*ActionJob, error) {
+func (s *codeMonitorStore) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) ([]*ActionJob, error) {
 	q := sqlf.Sprintf(
 		listActionsFmtStr,
 		sqlf.Join(ActionJobColumns, ","),
@@ -151,7 +150,7 @@ LIMIT %s
 `
 
 // CountActionJobs returns a count of the number of action jobs matching the provided list options
-func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionEventsOpts) (int, error) {
+func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionJobsOpts) (int, error) {
 	q := sqlf.Sprintf(
 		countActionsFmtStr,
 		opts.Conds(),
@@ -162,28 +161,6 @@ func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionE
 	err := s.QueryRow(ctx, q).Scan(&count)
 	return count, err
 }
-
-func (s *codeMonitorStore) ReadActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int, args *graphqlbackend.ListEventsArgs) ([]*ActionJob, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return s.ListActionJobs(ctx, ListActionEventsOpts{
-		TriggerEventID: triggerEventID,
-		EmailID:        intPtr(int(emailID)),
-		First:          intPtr(int(args.First)),
-		After:          intPtr(int(after)),
-	})
-}
-
-func (s *codeMonitorStore) TotalActionEmailEvents(ctx context.Context, emailID int64, triggerEventID *int) (int, error) {
-	return s.CountActionJobs(ctx, ListActionEventsOpts{
-		EmailID:        intPtr(int(emailID)),
-		TriggerEventID: triggerEventID,
-	})
-}
-
-func intPtr(i int) *int { return &i }
 
 const enqueueActionEmailFmtStr = `
 WITH due AS (
