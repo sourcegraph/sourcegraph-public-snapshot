@@ -3,7 +3,7 @@
 // application of this library is not recommended at this point.
 // It is used here because it solves a very real performance issue
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
-import { SetState, GetState } from 'zustand'
+import { StateCreator } from 'zustand'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -14,7 +14,11 @@ import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery, canSu
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
 export type QueryUpdate =
-    | {
+    | /**
+     * Appends a filter to the current search query. If the filter is unique and
+     * already exists in the query, the update is ignored.
+     */
+    {
           type: 'appendFilter'
           field: FilterType
           value: string
@@ -24,6 +28,9 @@ export type QueryUpdate =
            */
           unique?: true
       }
+    /**
+     * Appends or updates a filter to/in the query.
+     */
     | {
           type: 'updateOrAppendFilter'
           field: FilterType
@@ -55,35 +62,38 @@ function updateQuery(query: string, updates: QueryUpdate[]): string {
 
 export interface NavbarQueryState {
     /**
-     * The current search query (usually visible in the main search input).
+     * The current seach query and auxiliary information needed by the
+     * MonacoQueryInput component. You most likely don't have to read this value
+     * directly.
+     * See {@link QueryState} for more information.
      */
     queryState: QueryState
+    /**
+     * setQueryState updates `queryState`
+     */
     setQueryState: (queryState: QueryStateUpdate) => void
     /**
      * submitSearch makes it possible to submit a new search query by updating
      * the current query via update directives. It won't submit the query if it
      * is empty.
+     * Note that this won't update `queryState` directly.
      */
     submitSearch: (parameters: Omit<SubmitSearchParameters, 'query'>, updates?: QueryUpdate[]) => void
 }
-export function createNavbarQueryStateStore<T extends NavbarQueryState>(
-    set: SetState<T>,
-    get: GetState<T>
-): NavbarQueryState {
-    return {
-        queryState: { query: '' },
-        setQueryState: queryStateUpdate => {
-            if (typeof queryStateUpdate === 'function') {
-                set({ queryState: queryStateUpdate(get().queryState) })
-            } else {
-                set({ queryState: queryStateUpdate })
-            }
-        },
-        submitSearch: (parameters, updates = []) => {
-            const query = updateQuery(get().queryState.query, updates)
-            if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
-                submitSearch({ ...parameters, query })
-            }
-        },
-    }
-}
+
+export const createNavbarQueryStateStore: StateCreator<NavbarQueryState> = (set, get) => ({
+    queryState: { query: '' },
+    setQueryState: queryStateUpdate => {
+        if (typeof queryStateUpdate === 'function') {
+            set({ queryState: queryStateUpdate(get().queryState) })
+        } else {
+            set({ queryState: queryStateUpdate })
+        }
+    },
+    submitSearch: (parameters, updates = []) => {
+        const query = updateQuery(get().queryState.query, updates)
+        if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
+            submitSearch({ ...parameters, query })
+        }
+    },
+})

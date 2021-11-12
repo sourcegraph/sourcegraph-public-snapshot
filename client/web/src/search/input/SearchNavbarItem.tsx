@@ -18,9 +18,9 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
+import { useGlobalStore } from '../../stores/global'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { SubmitSearchParameters } from '../helpers'
-import { useGlobalStore } from '../../stores/global'
 
 import { SearchBox } from './SearchBox'
 

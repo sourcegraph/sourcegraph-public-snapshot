@@ -11,9 +11,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { SubmitSearchParameters } from '../../helpers'
 import { useGlobalStore } from '../../../stores/global'
 import { NavbarQueryState, QueryUpdate } from '../../../stores/navbarSearchQueryState'
+import { SubmitSearchParameters } from '../../helpers'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'

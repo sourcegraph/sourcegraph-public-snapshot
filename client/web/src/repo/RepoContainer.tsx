@@ -50,8 +50,8 @@ import {
     searchQueryForRepoRevision,
     SearchStreamingProps,
 } from '../search'
-import { useGlobalStore } from '../stores/global'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { useGlobalStore } from '../stores/global'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
