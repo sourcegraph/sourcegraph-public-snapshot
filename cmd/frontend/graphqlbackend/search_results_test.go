@@ -18,8 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -50,8 +48,6 @@ func TestSearchResults(t *testing.T) {
 
 	ctx := context.Background()
 	db := dbmock.NewMockDB()
-
-	wantLimitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
@@ -102,12 +98,7 @@ func TestSearchResults(t *testing.T) {
 
 		repos := dbmock.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-			// Validate that the following options are invariant when calling the DB through
-			// Repos.ListMinimalRepos, no matter how many times it is called for a single
-			// Search(...) operation.
-			require.Equal(t, wantLimitOffset, opt.LimitOffset)
 			require.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
-
 			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
 		})
 		db.ReposFunc.SetDefaultReturn(repos)
@@ -128,14 +119,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		repos := dbmock.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-			// Validate that the following options are invariant when calling the DB through
-			// Repos.ListMinimalRepos, no matter how many times it is called for a single
-			// Search(...) operation.
-			require.Equal(t, wantLimitOffset, opt.LimitOffset)
-
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
-		})
+		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		calledSearchSymbols := false
@@ -173,14 +157,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
 		repos := dbmock.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-			// Validate that the following options are invariant when calling the DB through
-			// Repos.ListMinimalRepos, no matter how many times it is called for a single
-			// Search(...) operation.
-			require.Equal(t, wantLimitOffset, opt.LimitOffset)
-
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
-		})
+		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
 		calledSearchSymbols := false
