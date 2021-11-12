@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -51,6 +53,13 @@ func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oob
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
+
+	insightsMigrator := migration.NewMigrator(timescale, postgres)
+	// TODO: The int id should be gotten from somewhere else I think. It needs to map to the one we create in the db table.
+	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
+		log.Fatalf("failed to register settings migration job: %v", err)
+	}
+
 	return nil
 }
 
