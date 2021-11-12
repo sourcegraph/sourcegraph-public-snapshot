@@ -22,7 +22,7 @@ const (
 	eventRetentionInDays int = 7
 )
 
-func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newTriggerQueryRunner(ctx context.Context, s cm.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_trigger_jobs_worker",
 		NumHandlers:       1,
@@ -34,7 +34,7 @@ func newTriggerQueryRunner(ctx context.Context, s *cm.Store, metrics codeMonitor
 	return worker
 }
 
-func newTriggerQueryEnqueuer(ctx context.Context, store *cm.Store) goroutine.BackgroundRoutine {
+func newTriggerQueryEnqueuer(ctx context.Context, store cm.CodeMonitorStore) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_query_enqueuer",
 		func(ctx context.Context) error {
@@ -43,7 +43,7 @@ func newTriggerQueryEnqueuer(ctx context.Context, store *cm.Store) goroutine.Bac
 	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }
 
-func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
+func newTriggerQueryResetter(ctx context.Context, s cm.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStoreForTriggerJobs(s)
 
 	options := dbworker.ResetterOptions{
@@ -58,7 +58,7 @@ func newTriggerQueryResetter(ctx context.Context, s *cm.Store, metrics codeMonit
 	return dbworker.NewResetter(workerStore, options)
 }
 
-func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.BackgroundRoutine {
+func newTriggerJobsLogDeleter(ctx context.Context, store cm.CodeMonitorStore) goroutine.BackgroundRoutine {
 	deleteLogs := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
@@ -77,7 +77,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store *cm.Store) goroutine.Ba
 	return goroutine.NewPeriodicGoroutine(ctx, 60*time.Minute, deleteLogs)
 }
 
-func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *workerutil.Worker {
+func newActionRunner(ctx context.Context, s cm.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_action_jobs_worker",
 		NumHandlers:       1,
@@ -89,7 +89,7 @@ func newActionRunner(ctx context.Context, s *cm.Store, metrics codeMonitorsMetri
 	return worker
 }
 
-func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitorsMetrics) *dbworker.Resetter {
+func newActionJobResetter(ctx context.Context, s cm.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter {
 	workerStore := createDBWorkerStoreForActionJobs(s)
 
 	options := dbworker.ResetterOptions{
@@ -104,7 +104,7 @@ func newActionJobResetter(ctx context.Context, s *cm.Store, metrics codeMonitors
 	return dbworker.NewResetter(workerStore, options)
 }
 
-func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
+func createDBWorkerStoreForTriggerJobs(s cm.CodeMonitorStore) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
@@ -117,7 +117,7 @@ func createDBWorkerStoreForTriggerJobs(s *cm.Store) dbworkerstore.Store {
 	})
 }
 
-func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
+func createDBWorkerStoreForActionJobs(s cm.CodeMonitorStore) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
 		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
@@ -131,7 +131,7 @@ func createDBWorkerStoreForActionJobs(s *cm.Store) dbworkerstore.Store {
 }
 
 type queryRunner struct {
-	*cm.Store
+	cm.CodeMonitorStore
 }
 
 func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -141,7 +141,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		}
 	}()
 
-	s, err := r.Store.Transact(ctx)
+	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 }
 
 type actionRunner struct {
-	*cm.Store
+	cm.CodeMonitorStore
 }
 
 func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (err error) {
@@ -196,7 +196,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		}
 	}()
 
-	s, err := r.Store.Transact(ctx)
+	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
