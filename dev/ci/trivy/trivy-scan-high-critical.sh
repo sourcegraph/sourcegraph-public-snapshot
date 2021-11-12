@@ -73,7 +73,10 @@ case "${exitCode:-"0"}" in
   "${VULNERABILITY_EXIT_CODE}")
     # we found vulnerabilities - upload the annotation
     upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
-    exit "${VULNERABILITY_EXIT_CODE}"
+    # SoftErrors mark the whole pipeline as red which is confusing. For now we
+    # only upload the artifact report and do not mark the build.
+    exit 0
+    #exit "${VULNERABILITY_EXIT_CODE}"
     ;;
   *)
     # some other kind of error occurred
