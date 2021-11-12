@@ -244,6 +244,8 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         )
     }
 
+    public assignInsightsToDashboard = (input: DashboardUpdateInput): Observable<void> => this.updateDashboard(input)
+
     // Live preview fetchers
     public getSearchInsightContent = <D extends keyof ViewContexts>(
         input: GetSearchInsightContentInput<D>

@@ -7,6 +7,7 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import {
+    AddInsightViewToDashboardResult,
     CreateDashboardResult,
     CreateInsightResult,
     CreateInsightsDashboardInput,
@@ -17,6 +18,7 @@ import {
     InsightsDashboardsResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
+    RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
     UpdateLineChartSearchInsightResult,
@@ -315,11 +317,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    public updateDashboard = ({
-        id,
-        nextDashboardInput,
-        previousDashboard,
-    }: DashboardUpdateInput): Observable<void> => {
+    public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<void> => {
         if (!id) {
             throw new Error('`id` is required to update a dashboard')
         }
@@ -333,50 +331,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             grants: createDashboardGrants(nextDashboardInput),
         }
 
-        // Get array of added insight view ids
-        const addedInsightIds = nextDashboardInput.insightIds?.filter(
-            insightId => !previousDashboard.insightIds?.includes(insightId)
-        )
-
-        let addInsightToDashboardMutation = ''
-
-        if (addedInsightIds) {
-            addInsightToDashboardMutation = addedInsightIds
-                .map(
-                    insightId => `
-            addInsightViewToDashboard(input: { insightViewId: "${insightId}", dashboardId: "${previousDashboard.id}"  }) {
-                dashboard {
-                   id
-                }
-              }
-
-            `
-                )
-                .join('')
-        }
-
-        // Get array of removed insight view ids
-        const removedInsightIds = previousDashboard.insightIds?.filter(
-            insightId => !nextDashboardInput.insightIds?.includes(insightId)
-        )
-
-        let removeInsightViewFromDashboardMutation
-
-        if (removedInsightIds) {
-            removeInsightViewFromDashboardMutation = removedInsightIds
-                .map(
-                    insightId => `
-            removeInsightViewFromDashboard(input: { insightViewId: "${insightId}", dashboardId: "${previousDashboard.id}"  }) {
-                dashboard {
-                   id
-                }
-              }
-
-            `
-                )
-                .join('')
-        }
-
         return from(
             this.apolloClient.mutate<UpdateDashboardResult>({
                 mutation: gql`
@@ -386,8 +340,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                                 id
                             }
                         }
-                        ${addInsightToDashboardMutation}
-                        ${removeInsightViewFromDashboardMutation}
                     }
                 `,
                 variables: {
@@ -410,6 +362,56 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions
     public getResolvedSearchRepositories = getResolvedSearchRepositories
+
+    public assignInsightsToDashboard({
+        id,
+        nextDashboardInput,
+        previousDashboard,
+    }: DashboardUpdateInput): Observable<void> {
+        const addInsightViewToDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<AddInsightViewToDashboardResult>({
+                mutation: gql`
+                    mutation AddInsightViewToDashboard($insightViewId: ID!, $dashboardId: ID!) {
+                        addInsightViewToDashboard(input: { insightViewId: $insightViewId, dashboardId: $dashboardId }) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightViewId, dashboardId },
+            })
+
+        const removeInsightViewFromDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
+                mutation: gql`
+                    mutation RemoveInsightViewFromDashboard($insightViewId: ID!, $dashboardId: ID!) {
+                        removeInsightViewFromDashboard(
+                            input: { insightViewId: $insightViewId, dashboardId: $dashboardId }
+                        ) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightViewId, dashboardId },
+            })
+
+        const addedInsightIds =
+            nextDashboardInput.insightIds?.filter(insightId => !previousDashboard.insightIds?.includes(insightId)) || []
+
+        // Get array of removed insight view ids
+        const removedInsightIds =
+            previousDashboard.insightIds?.filter(insightId => !nextDashboardInput.insightIds?.includes(insightId)) || []
+
+        return from(
+            Promise.all([
+                ...addedInsightIds.map(insightId => addInsightViewToDashboard(insightId, id || '')),
+                ...removedInsightIds.map(insightId => removeInsightViewFromDashboard(insightId, id || '')),
+            ])
+        ).pipe(mapTo(undefined))
+    }
 
     private prepareSearchInsightCreateInput(
         insight: SearchBasedInsight,
