@@ -36,7 +36,9 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
             // as well. Right now we don't have an easy way to check if the
             // executor accessToken is set in site-config, but that should be
             // the condition of showing this.
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+            condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+                Boolean(window.context?.codeIntelAutoIndexingEnabled) ||
+                (batchChangesEnabled && batchChangesExecutionEnabled),
         },
     ],
 }

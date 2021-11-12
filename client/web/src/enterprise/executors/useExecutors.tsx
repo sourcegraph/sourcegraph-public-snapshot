@@ -13,6 +13,7 @@ export const executorFieldsFragment = gql`
         id
         hostname
         queueName
+        active
         os
         architecture
         dockerVersion
@@ -52,7 +53,7 @@ export const queryExecutors = (
     { query, active, first, after }: GQL.IExecutorsOnQueryArguments,
     client: ApolloClient<object>
 ): Observable<ExecutorConnection> => {
-    const vars = {
+    const vars: ExecutorsVariables = {
         query: query ?? null,
         active: active ?? null,
         first: first ?? null,
@@ -60,9 +61,9 @@ export const queryExecutors = (
     }
 
     return from(
-        client.query<ExecutorsResult, ExecutorsVariables>({
+        client.query<ExecutorsResult>({
             query: getDocumentNode(EXECUTORS),
-            variables: { ...vars },
+            variables: vars,
         })
     ).pipe(
         map(({ data }) => data),
