@@ -84,6 +84,7 @@ func (s *Store) ReadActionEmailEvents(ctx context.Context, emailID int64, trigge
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	return scanActionJobs(rows)
 }
 
@@ -164,6 +165,7 @@ func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, er
 	if err != nil {
 		return &TriggerJobs{}, false, err
 	}
+	defer rows.Close()
 
 	records, err := scanActionJobs(rows)
 	if err != nil || len(records) == 0 {
@@ -173,8 +175,6 @@ func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, er
 }
 
 func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
-	defer rows.Close()
-
 	var ajs []*ActionJob
 	for rows.Next() {
 		aj, err := scanActionJob(rows)
