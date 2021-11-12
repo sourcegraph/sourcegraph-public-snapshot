@@ -152,7 +152,7 @@ func TestExecutorsGetByID(t *testing.T) {
 		ID:              1,
 		Hostname:        "test-hostname",
 		QueueName:       "test-queueName",
-		OS:              "test-oS",
+		OS:              "test-os",
 		Architecture:    "test-architecture",
 		DockerVersion:   "test-docker-version",
 		ExecutorVersion: "test-executor-version",
