@@ -68,13 +68,17 @@ func (s *codeMonitorStore) TotalCountActionEmails(ctx context.Context, monitorID
 }
 
 const actionEmailByIDFmtStr = `
-SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
+SELECT %s -- EmailsColumns
 FROM cm_emails
 WHERE id = %s
 `
 
 func (s *codeMonitorStore) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
-	q := sqlf.Sprintf(actionEmailByIDFmtStr, emailID)
+	q := sqlf.Sprintf(
+		actionEmailByIDFmtStr,
+		sqlf.Join(EmailsColumns, ","),
+		emailID,
+	)
 	row := s.QueryRow(ctx, q)
 	return scanEmail(row)
 }
@@ -151,7 +155,7 @@ func (o ListActionsOpts) Limit() *sqlf.Query {
 }
 
 const listEmailActionsFmtStr = `
-SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
+SELECT %s -- EmailsColumns
 FROM cm_emails
 WHERE %s
 ORDER BY id ASC
@@ -162,6 +166,7 @@ LIMIT %s;
 func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error) {
 	q := sqlf.Sprintf(
 		listEmailActionsFmtStr,
+		sqlf.Join(EmailsColumns, ","),
 		opts.Conds(),
 		opts.Limit(),
 	)
@@ -197,7 +202,11 @@ func (s *codeMonitorStore) createActionEmailQuery(ctx context.Context, monitorID
 	), nil
 }
 
-const deleteActionEmailFmtStr = `DELETE FROM cm_emails WHERE id in (%s) AND MONITOR = %s`
+const deleteActionEmailFmtStr = `
+DELETE FROM cm_emails
+WHERE id in (%s)
+	AND MONITOR = %s
+`
 
 func deleteActionsEmailQuery(ctx context.Context, actionIDs []int64, monitorID int64) (*sqlf.Query, error) {
 	deleteIDs := make([]*sqlf.Query, 0, len(actionIDs))
