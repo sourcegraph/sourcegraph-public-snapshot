@@ -35,7 +35,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int6
 	return scanEmail(row)
 }
 
-func (s *codeMonitorStore) CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
 	q, err := s.createActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
 		return nil, err

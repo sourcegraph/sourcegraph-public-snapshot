@@ -399,7 +399,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.CountActionJobs,
 		},
 		CreateActionEmailFunc: &CodeMonitorStoreCreateActionEmailFunc{
-			defaultHook: i.CreateActionEmail,
+			defaultHook: i.CreateEmailAction,
 		},
 		CreateActionsFunc: &CodeMonitorStoreCreateActionsFunc{
 			defaultHook: i.CreateActions,
