@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"regexp"
 	"strings"
 
@@ -18,8 +17,8 @@ type Visualizer struct {
 	Context *VisualizationContext
 }
 
-func (v *Visualizer) Visualize(indexFile io.Reader, fromID, subgraphDepth int, exclude []string) error {
-	if err := reader.Read(indexFile, v.Context.Stasher, nil, nil); err != nil {
+func (v *Visualizer) Visualize(dump protocolReader.Dump, fromID, subgraphDepth int, exclude []string) error {
+	if err := reader.Read(dump, v.Context.Stasher, nil, nil); err != nil {
 		return err
 	}
 

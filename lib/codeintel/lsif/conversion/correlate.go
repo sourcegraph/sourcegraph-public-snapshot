@@ -2,7 +2,6 @@ package conversion
 
 import (
 	"context"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,15 +21,15 @@ import (
 // the same data canonicalized and pruned for storage.
 //
 // If getChildren == nil, no pruning of irrelevant data is performed.
-func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
+func Correlate(ctx context.Context, input reader.Dump, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
-	state, err := correlateFromReader(ctx, r, root)
+	state, err := CorrelateFromReader(ctx, input, root)
 	if err != nil {
 		return nil, err
 	}
 
 	// Remove duplicate elements, collapse linked elements
-	canonicalize(state)
+	Canonicalize(state)
 
 	if getChildren != nil {
 		// Remove elements we don't need to store
@@ -56,13 +55,18 @@ func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot strin
 
 	getChildrenFunc := pathexistence.LocalGitGetChildrenFunc(absoluteProjectRoot)
 
+	format, err := reader.DetectFormat(dumpPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
+	}
+
 	file, err := os.Open(dumpPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(context.Background(), file, "", getChildrenFunc)
+	bundle, err := Correlate(context.Background(), reader.Dump{Reader: file, Format: format}, "", getChildrenFunc)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
 	}
@@ -93,13 +97,18 @@ func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*prec
 		relRoot = ""
 	}
 
+	format, err := reader.DetectFormat(dumpPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
+	}
+
 	file, err := os.Open(dumpPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(context.Background(), file, relRoot, getChildrenFunc)
+	bundle, err := Correlate(context.Background(), reader.Dump{Reader: file, Format: format}, relRoot, getChildrenFunc)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
 	}
@@ -116,11 +125,11 @@ func gitRoot(path string) (string, error) {
 	return strings.Split(string(out), "\n")[0], nil
 }
 
-// correlateFromReader reads the given upload stream and returns a correlation state object.
+// CorrelateFromReader reads the given upload stream and returns a correlation state object.
 // The data in the correlation state is neither canonicalized nor pruned.
-func correlateFromReader(ctx context.Context, r io.Reader, root string) (*State, error) {
+func CorrelateFromReader(ctx context.Context, input reader.Dump, root string) (*State, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	ch := Read(ctx, r)
+	ch := Read(ctx, input)
 	defer func() {
 		// stop producer from reading more input on correlation error
 		cancel()

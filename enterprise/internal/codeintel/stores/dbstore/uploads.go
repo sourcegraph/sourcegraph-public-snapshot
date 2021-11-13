@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 )
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
@@ -44,6 +45,7 @@ type Upload struct {
 	UploadSize        *int64     `json:"uploadSize"`
 	Rank              *int       `json:"placeInQueue"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
+	Format            *string    `json:"format"`
 }
 
 func (u Upload) RecordID() int {
@@ -82,6 +84,7 @@ func scanUploads(rows *sql.Rows, queryErr error) (_ []Upload, err error) {
 			&upload.UploadSize,
 			&upload.AssociatedIndexID,
 			&upload.Rank,
+			&upload.Format,
 		); err != nil {
 			return nil, err
 		}
@@ -178,7 +181,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.format
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
@@ -235,7 +239,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.format
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
@@ -472,7 +477,8 @@ SELECT
 	u.uploaded_parts,
 	u.upload_size,
 	u.associated_index_id,
-	s.rank
+	s.rank,
+	u.format
 FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
@@ -565,6 +571,7 @@ func (s *Store) InsertUpload(ctx context.Context, upload Upload) (id int, err er
 			pq.Array(upload.UploadedParts),
 			upload.UploadSize,
 			upload.AssociatedIndexID,
+			upload.Format,
 		),
 	))
 
@@ -582,8 +589,9 @@ INSERT INTO lsif_uploads (
 	num_parts,
 	uploaded_parts,
 	upload_size,
-	associated_index_id
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+	associated_index_id,
+	format
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
@@ -663,6 +671,7 @@ var uploadColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf("u.upload_size"),
 	sqlf.Sprintf("u.associated_index_id"),
 	sqlf.Sprintf("NULL"),
+	sqlf.Sprintf("u.format"),
 }
 
 // DeleteUploadByID deletes an upload by its identifier. This method returns a true-valued flag if a record
@@ -1294,4 +1303,30 @@ func nilTimeToString(t *time.Time) string {
 	}
 
 	return t.String()
+}
+
+func FormatToString(format reader.LsifFormat) string {
+	switch format {
+	case reader.StandardFormat:
+		return ".lsif"
+	case reader.FlatFormat:
+		return ".lsif-flat"
+	case reader.FlatProtobufFormat:
+		return ".lsif-flat.pb"
+	default:
+		return "gohno"
+	}
+}
+
+func StringToFormat(s string) reader.LsifFormat {
+	if s == ".lsif" {
+		return reader.StandardFormat
+	} else if s == ".lsif-flat" {
+		return reader.FlatFormat
+	} else if s == ".lsif-flat.pb" {
+		return reader.FlatProtobufFormat
+	} else {
+		// gohno
+		return 0
+	}
 }

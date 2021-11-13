@@ -6,9 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 )
 
-// canonicalize deduplicates data in the raw correlation state and collapses range,
+// Canonicalize deduplicates data in the raw correlation state and collapses range,
 // result set, and moniker data that form chains via next edges.
-func canonicalize(state *State) {
+func Canonicalize(state *State) {
 	fns := []func(state *State){
 		canonicalizeDocuments,
 		canonicalizeReferenceResults,

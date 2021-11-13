@@ -8,13 +8,14 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var updateInterval = time.Second / 4
 
-func validate(indexFile *os.File) error {
+func validate(dump reader.Dump) error {
 	ctx := validation.NewValidationContext()
 	validator := &validation.Validator{Context: ctx}
 	errs := make(chan error, 1)
@@ -22,7 +23,7 @@ func validate(indexFile *os.File) error {
 	go func() {
 		defer close(errs)
 
-		if err := validator.Validate(indexFile); err != nil {
+		if err := validator.Validate(dump); err != nil {
 			errs <- err
 		}
 	}()

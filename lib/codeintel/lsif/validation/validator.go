@@ -1,9 +1,9 @@
 package validation
 
 import (
-	"io"
 	"sync/atomic"
 
+	protocolReader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
 )
 
@@ -12,8 +12,8 @@ type Validator struct {
 	raisedMissingMetadataError bool
 }
 
-func (v *Validator) Validate(indexFile io.Reader) error {
-	if err := reader.Read(indexFile, v.Context.Stasher, v.vertexMapper, v.edgeMapper); err != nil {
+func (v *Validator) Validate(input protocolReader.Dump) error {
+	if err := reader.Read(input, v.Context.Stasher, v.vertexMapper, v.edgeMapper); err != nil {
 		return err
 	}
 

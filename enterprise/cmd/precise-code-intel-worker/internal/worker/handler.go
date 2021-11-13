@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -115,7 +116,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 	}
 
 	return false, withUploadData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
-		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
+		groupedBundleData, err := conversion.Correlate(ctx, reader.Dump{Reader: r, Format: reader.FlatProtobufFormat}, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}
@@ -229,8 +230,7 @@ func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, uplo
 	return true, nil
 }
 
-// withUploadData will invoke the given function with a reader of the upload's raw data. The
-// consumer should expect raw newline-delimited JSON content. If the function returns without
+// withUploadData will invoke the given function with a reader of the upload's raw data. If the function returns without
 // an error, the upload file will be deleted.
 func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)

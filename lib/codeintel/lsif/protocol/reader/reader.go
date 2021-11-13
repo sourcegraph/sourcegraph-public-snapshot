@@ -4,9 +4,19 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"runtime"
+	"strings"
 	"sync"
+
+	pb "github.com/golang/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-flat/proto"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer"
 )
 
 type ElementAndErr struct {
@@ -22,18 +32,55 @@ const (
 	FlatProtobufFormat LsifFormat = 3
 )
 
+type Dump struct {
+	Format LsifFormat
+	Reader io.Reader
+}
+
+func DetectFormat(file string) (LsifFormat, error) {
+	if strings.HasSuffix(file, ".lsif") {
+		return StandardFormat, nil
+	} else if strings.HasSuffix(file, ".lsif-flat") {
+		return FlatFormat, nil
+	} else if strings.HasSuffix(file, ".lsif-flat.pb") {
+		return FlatProtobufFormat, nil
+	} else {
+		return 0, fmt.Errorf("unrecognized format %s, expected one of these: [.lsif, .lsif-flat, .lsif-flat.pb]", file)
+	}
+}
+
 // Read unmarshals the given LSIF dump one element at a time and sends them back through a channel.
-func Read(ctx context.Context, r io.Reader, format LsifFormat) <-chan ElementAndErr {
-	switch format {
+func Read(ctx context.Context, dump Dump) <-chan ElementAndErr {
+	switch dump.Format {
 	case FlatProtobufFormat:
-		// TODO
-		return make(chan ElementAndErr, ChannelBufferSize)
+		ch := make(chan ElementAndErr, ChannelBufferSize)
+
+		bytes, err := ioutil.ReadAll(dump.Reader)
+		if err != nil {
+			fmt.Println("Read err", err)
+			ch <- ElementAndErr{Err: err}
+		}
+		values := proto.LsifValues{}
+		err = pb.Unmarshal(bytes, &values)
+		if err != nil {
+			fmt.Println("Read err", err)
+			ch <- ElementAndErr{Err: err}
+		}
+		go func() {
+			defer close(ch)
+			for _, el := range ConvertFlatToGraph(&values) {
+				ch <- ElementAndErr{Element: el}
+			}
+		}()
+		return ch
 	case FlatFormat:
 		// TODO
-		return make(chan ElementAndErr, ChannelBufferSize)
+		ch := make(chan ElementAndErr, ChannelBufferSize)
+		close(ch)
+		return ch
 	case StandardFormat:
 		interner := NewInterner()
-		return readLines(ctx, r, func(line []byte) (Element, error) {
+		return readLines(ctx, dump.Reader, func(line []byte) (Element, error) {
 			return unmarshalElement(interner, line)
 		})
 	default:
@@ -164,4 +211,123 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 	}()
 
 	return pairCh
+}
+
+type ResultIDs struct {
+	ResultSet        int
+	DefinitionResult int
+	ReferenceResult  int
+}
+
+type graph struct {
+	ID       int
+	Elements []Element
+	idCache  map[string]ResultIDs
+}
+
+func (g *graph) ResultIDs(moniker string) ResultIDs {
+	ids, ok := g.idCache[moniker]
+	if !ok {
+		ids = ResultIDs{
+			ResultSet:        g.AddVertex("resultSet", ResultSet{}),
+			DefinitionResult: g.AddVertex("definitionResult", nil),
+			ReferenceResult:  g.AddVertex("referenceResult", nil),
+		}
+		g.AddEdge("textDocument/definition", Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
+		g.AddEdge("textDocument/references", Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
+		g.idCache[moniker] = ids
+	}
+	return ids
+}
+
+func (g *graph) Add(ty, label string, payload interface{}) int {
+	g.ID++
+	g.Elements = append(g.Elements, Element{
+		ID:      g.ID,
+		Type:    ty,
+		Label:   label,
+		Payload: payload,
+	})
+	return g.ID
+}
+
+func (g *graph) AddVertex(label string, payload interface{}) int {
+	return g.Add("vertex", label, payload)
+}
+
+func (g *graph) AddEdge(label string, payload Edge) int {
+	return g.Add("edge", label, payload)
+}
+
+func (g *graph) AddPackage(doc *proto.Package) {}
+
+func (g *graph) AddDocument(doc *proto.Document) {
+	documentID := g.AddVertex("document", "file:///"+doc.Uri)
+	rangeIDs := []int{}
+	for _, occ := range doc.Occurrences {
+		rangeID := g.AddVertex("range", Range{
+			RangeData: protocol.RangeData{
+				Start: protocol.Pos{
+					Line:      int(occ.Range.Start.Line),
+					Character: int(occ.Range.Start.Character),
+				},
+				End: protocol.Pos{
+					Line:      int(occ.Range.End.Line),
+					Character: int(occ.Range.End.Character),
+				},
+			},
+		})
+		rangeIDs = append(rangeIDs, rangeID)
+		ids := g.ResultIDs(occ.MonikerId)
+		switch occ.Role {
+		case proto.MonikerOccurrence_ROLE_DEFINITION:
+			g.AddEdge("item", Edge{OutV: ids.DefinitionResult, InV: rangeID, Document: documentID})
+		case proto.MonikerOccurrence_ROLE_REFERENCE:
+			g.AddEdge("item", Edge{OutV: ids.ReferenceResult, InV: rangeID, Document: documentID})
+		default:
+		}
+	}
+	g.AddEdge("contains", Edge{OutV: documentID, InVs: rangeIDs})
+}
+
+func (g *graph) AddMoniker(doc *proto.Moniker) {}
+
+func WriteNDJSON(elements []interface{}, out io.Writer) {
+	w := writer.NewJSONWriter(out)
+	for _, e := range elements {
+		w.Write(e)
+	}
+	w.Flush()
+}
+
+func ConvertFlatToGraph(vals *proto.LsifValues) []Element {
+	g := graph{ID: 0, Elements: []Element{}, idCache: map[string]ResultIDs{}}
+	g.AddVertex(
+		"metaData",
+		MetaData{
+			Version:     "0.1.0",
+			ProjectRoot: "file:///",
+		},
+	)
+	for _, lsifValue := range vals.Values {
+		switch value := lsifValue.Value.(type) {
+		case *proto.LsifValue_Package:
+			g.AddPackage(value.Package)
+		case *proto.LsifValue_Document:
+			g.AddDocument(value.Document)
+		case *proto.LsifValue_Moniker:
+			g.AddMoniker(value.Moniker)
+		default:
+		}
+
+	}
+	return g.Elements
+}
+
+func ElementsToEmptyInterfaces(els []Element) []interface{} {
+	r := []interface{}{}
+	for _, el := range els {
+		r = append(r, el)
+	}
+	return r
 }

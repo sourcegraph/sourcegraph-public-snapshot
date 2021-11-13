@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 )
 
 const version = "0.1.0"
@@ -20,5 +22,10 @@ func mainErr() error {
 	}
 	defer indexFile.Close()
 
-	return visualize(indexFile, fromID, subgraphDepth, exclude)
+	format, err := reader.DetectFormat(indexFile.Name())
+	if err != nil {
+		return err
+	}
+
+	return visualize(reader.Dump{Reader: indexFile, Format: format}, fromID, subgraphDepth, exclude)
 }

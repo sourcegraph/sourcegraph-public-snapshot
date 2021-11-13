@@ -2,7 +2,6 @@ package reader
 
 import (
 	"context"
-	"io"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 )
@@ -13,9 +12,9 @@ type ElementMapper func(lineContext LineContext)
 // Read consumes the given reader as newline-delimited JSON-encoded LSIF. Each parsed vertex and each
 // parsed edge element is registered to the given Stasher. If vertex or edge mappers are supplied, they
 // are invoked on each parsed element.
-func Read(r io.Reader, stasher *Stasher, vertexMapper, edgeMapper ElementMapper) error {
+func Read(input reader.Dump, stasher *Stasher, vertexMapper, edgeMapper ElementMapper) error {
 	index := 0
-	for pair := range reader.Read(context.Background(), r, reader.StandardFormat) {
+	for pair := range reader.Read(context.Background(), input) {
 		if pair.Err != nil {
 			return pair.Err
 		}

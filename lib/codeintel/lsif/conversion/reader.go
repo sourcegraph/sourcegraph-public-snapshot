@@ -2,7 +2,6 @@ package conversion
 
 import (
 	"context"
-	"io"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 )
@@ -14,13 +13,13 @@ type Pair struct {
 
 // Read reads the given content as line-separated JSON objects and returns a channel of Pair values
 // for each non-empty line.
-func Read(ctx context.Context, r io.Reader) <-chan Pair {
+func Read(ctx context.Context, input reader.Dump) <-chan Pair {
 	elements := make(chan Pair)
 
 	go func() {
 		defer close(elements)
 
-		for e := range reader.Read(ctx, r, reader.StandardFormat) {
+		for e := range reader.Read(ctx, input) {
 			element := Element{
 				ID:      e.Element.ID,
 				Type:    e.Element.Type,

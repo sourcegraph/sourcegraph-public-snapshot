@@ -210,6 +210,11 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		err = tx.Done(err)
 	}()
 
+	format := r.Header.Get("Format")
+	if format == "" {
+		format = ".lsif"
+	}
+
 	id, err := tx.InsertUpload(ctx, store.Upload{
 		Commit:            uploadArgs.Commit,
 		Root:              uploadArgs.Root,
@@ -219,6 +224,7 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 		State:             "uploading",
 		NumParts:          1,
 		UploadedParts:     []int{0},
+		Format:            &format,
 	})
 	if err != nil {
 		return nil, err
@@ -250,6 +256,11 @@ func (h *UploadHandler) handleEnqueueSinglePayload(r *http.Request, uploadArgs U
 func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs UploadArgs, numParts int) (interface{}, error) {
 	ctx := r.Context()
 
+	format := r.Header.Get("Format")
+	if format == "" {
+		format = ".lsif"
+	}
+
 	id, err := h.dbStore.InsertUpload(ctx, store.Upload{
 		Commit:            uploadArgs.Commit,
 		Root:              uploadArgs.Root,
@@ -259,6 +270,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(r *http.Request, uploadArgs 
 		State:             "uploading",
 		NumParts:          numParts,
 		UploadedParts:     nil,
+		Format:            &format,
 	})
 	if err != nil {
 		return nil, err
