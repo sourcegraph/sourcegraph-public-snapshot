@@ -34,7 +34,7 @@ INSERT INTO cm_trigger_jobs (query)
 SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
-func (s *codeMonitorStore) EnqueueTriggerQueries(ctx context.Context) (err error) {
+func (s *codeMonitorStore) EnqueueTriggerQueries(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
 }
 
@@ -106,16 +106,14 @@ WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
 `
 
-func (s *codeMonitorStore) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (totalCount int32, err error) {
+func (s *codeMonitorStore) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (int32, error) {
 	q := sqlf.Sprintf(
 		totalCountEventsForQueryIDInt64FmtStr,
 		queryID,
 	)
-	err = s.Store.QueryRow(ctx, q).Scan(&totalCount)
-	if err != nil {
-		return -1, err
-	}
-	return totalCount, nil
+	var count int32
+	err := s.Store.QueryRow(ctx, q).Scan(&count)
+	return count, err
 }
 
 type TriggerJobs struct {
