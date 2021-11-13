@@ -63,14 +63,7 @@ func scanRecipients(rows *sql.Rows) ([]*Recipient, error) {
 		}
 		ms = append(ms, m)
 	}
-	err := rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
+	return ms, rows.Err()
 }
 
 const allRecipientsForEmailIDInt64FmtStr = `
