@@ -25,46 +25,31 @@ type MonitorEmail struct {
 	ChangedAt time.Time
 }
 
-func (s *codeMonitorStore) UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error) {
-	var q *sqlf.Query
-	q, err = s.updateActionEmailQuery(ctx, monitorID, action.Email)
+func (s *codeMonitorStore) UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
+	q, err := s.updateActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
 		return nil, err
 	}
-	e, err = s.runEmailQuery(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return e, nil
+	return s.runEmailQuery(ctx, q)
 }
 
-func (s *codeMonitorStore) CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error) {
-	var q *sqlf.Query
-	q, err = s.createActionEmailQuery(ctx, monitorID, action.Email)
+func (s *codeMonitorStore) CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+	q, err := s.createActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
 		return nil, err
 	}
-	e, err = s.runEmailQuery(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return e, nil
+	return s.runEmailQuery(ctx, q)
 }
 
-func (s *codeMonitorStore) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error) {
+func (s *codeMonitorStore) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) error {
 	if len(actionIDs) == 0 {
 		return nil
 	}
-	var q *sqlf.Query
-	q, err = deleteActionsEmailQuery(ctx, actionIDs, monitorID)
+	q, err := deleteActionsEmailQuery(ctx, actionIDs, monitorID)
 	if err != nil {
 		return err
 	}
-	err = s.Exec(ctx, q)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.Exec(ctx, q)
 }
 
 const totalCountActionEmailsFmtStr = `
@@ -73,8 +58,9 @@ FROM cm_emails
 WHERE monitor = %s;
 `
 
-func (s *codeMonitorStore) TotalCountActionEmails(ctx context.Context, monitorID int64) (count int32, err error) {
-	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountActionEmailsFmtStr, monitorID)).Scan(&count)
+func (s *codeMonitorStore) TotalCountActionEmails(ctx context.Context, monitorID int64) (int32, error) {
+	var count int32
+	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountActionEmailsFmtStr, monitorID)).Scan(&count)
 	return count, err
 }
 
@@ -116,15 +102,17 @@ AND monitor = %s
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) updateActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.EditActionEmailArgs) (q *sqlf.Query, err error) {
-	var actionID int64
+func (s *codeMonitorStore) updateActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.EditActionEmailArgs) (*sqlf.Query, error) {
 	if args.Id == nil {
 		return nil, errors.Errorf("nil is not a valid action ID")
 	}
-	err = relay.UnmarshalSpec(*args.Id, &actionID)
+
+	var actionID int64
+	err := relay.UnmarshalSpec(*args.Id, &actionID)
 	if err != nil {
 		return nil, err
 	}
+
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
