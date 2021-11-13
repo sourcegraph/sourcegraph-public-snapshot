@@ -57,7 +57,7 @@ func main() {
 
 func ConvertGraphToFlat(r io.Reader) (*proto.LsifValues, error) {
 	// Build state
-	state, err := conversion.CorrelateFromReader(context.Background(), reader.Dump{Reader: r, Format: reader.StandardFormat}, "")
+	state, err := conversion.CorrelateFromReader(context.Background(), reader.Dump{Reader: r, Format: reader.GraphFormat}, "")
 	if err != nil {
 		return nil, err
 	}

@@ -27,7 +27,7 @@ type ElementAndErr struct {
 type LsifFormat int32
 
 const (
-	StandardFormat     LsifFormat = 1
+	GraphFormat        LsifFormat = 1
 	FlatFormat         LsifFormat = 2
 	FlatProtobufFormat LsifFormat = 3
 )
@@ -39,7 +39,7 @@ type Dump struct {
 
 func DetectFormat(file string) (LsifFormat, error) {
 	if strings.HasSuffix(file, ".lsif") {
-		return StandardFormat, nil
+		return GraphFormat, nil
 	} else if strings.HasSuffix(file, ".lsif-flat") {
 		return FlatFormat, nil
 	} else if strings.HasSuffix(file, ".lsif-flat.pb") {
@@ -78,7 +78,7 @@ func Read(ctx context.Context, dump Dump) <-chan ElementAndErr {
 		ch := make(chan ElementAndErr, ChannelBufferSize)
 		close(ch)
 		return ch
-	case StandardFormat:
+	case GraphFormat:
 		interner := NewInterner()
 		return readLines(ctx, dump.Reader, func(line []byte) (Element, error) {
 			return unmarshalElement(interner, line)

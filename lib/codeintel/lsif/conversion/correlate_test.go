@@ -19,7 +19,7 @@ func TestCorrelate(t *testing.T) {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	state, err := CorrelateFromReader(context.Background(), reader.Dump{Reader: bytes.NewReader(input), Format: reader.StandardFormat}, "root")
+	state, err := CorrelateFromReader(context.Background(), reader.Dump{Reader: bytes.NewReader(input), Format: reader.GraphFormat}, "root")
 	if err != nil {
 		t.Fatalf("unexpected error correlating input: %s", err)
 	}
@@ -207,7 +207,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	state, err := CorrelateFromReader(context.Background(), reader.Dump{Reader: bytes.NewReader(input), Format: reader.StandardFormat}, "root/")
+	state, err := CorrelateFromReader(context.Background(), reader.Dump{Reader: bytes.NewReader(input), Format: reader.GraphFormat}, "root/")
 	if err != nil {
 		t.Fatalf("unexpected error correlating input: %s", err)
 	}
@@ -257,7 +257,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		t.Fatalf("unexpected error reading test file: %s", err)
 	}
 
-	state, err := CorrelateFromReader(context.Background(), reader.Dump{Reader: bytes.NewReader(input), Format: reader.StandardFormat}, "")
+	state, err := CorrelateFromReader(context.Background(), reader.Dump{Reader: bytes.NewReader(input), Format: reader.GraphFormat}, "")
 	if err != nil {
 		t.Fatalf("unexpected error correlating input: %s", err)
 	}
