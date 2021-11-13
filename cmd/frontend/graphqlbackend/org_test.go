@@ -16,17 +16,24 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
 	envvar.MockSourcegraphDotComMode(false)
-	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
-		return &types.Org{ID: 1, Name: "acme"}, nil
-	}
-
 	t.Cleanup(func() {
-		resetMocks()
 		envvar.MockSourcegraphDotComMode(false)
 	})
+
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+	orgMembers := dbmock.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
 	t.Run("Default behavior", func(t *testing.T) {
 		RunTests(t, []*Test{
@@ -81,18 +88,16 @@ func TestOrganization(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{
-				ID:        1,
-				SiteAdmin: false,
-			}, nil
-		}
-		database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(context.Context, int32, int32) (*types.OrgMembership, error) {
-			return &types.OrgMembership{
-				OrgID:  1,
-				UserID: 1,
-			}, nil
-		}
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+		orgMembers := dbmock.NewMockOrgMemberStore()
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
+
+		db := dbmock.NewMockDBFrom(db)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
 		RunTests(t, []*Test{
 			{
 				Schema:  mustParseGraphQLSchema(t, db),
@@ -178,9 +183,11 @@ func TestOrganizationRepositories(t *testing.T) {
 }
 
 func TestNode_Org(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.Orgs.MockGetByID_Return(t, &types.Org{ID: 1, Name: "acme"}, nil)
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByIDFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{
