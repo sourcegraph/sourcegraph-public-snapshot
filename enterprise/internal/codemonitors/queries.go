@@ -195,18 +195,6 @@ func (s *codeMonitorStore) SetTriggerQueryNextRun(ctx context.Context, triggerQu
 	return s.Exec(ctx, q)
 }
 
-func scanTriggerQueries(rows *sql.Rows) ([]*MonitorQuery, error) {
-	var ms []*MonitorQuery
-	for rows.Next() {
-		m, err := scanTriggerQuery(rows)
-		if err != nil {
-			return nil, err
-		}
-		ms = append(ms, m)
-	}
-	return ms, rows.Err()
-}
-
 // scanQueryTrigger scans a *sql.Rows or *sql.Row into a MonitorQuery
 // It must be kept in sync with queryColumns
 func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
