@@ -162,6 +162,7 @@ func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	ms, err := scanTriggerQueries(rows)
 	if err != nil {
 		return nil, err
@@ -198,14 +199,7 @@ func scanTriggerQueries(rows *sql.Rows) ([]*MonitorQuery, error) {
 		}
 		ms = append(ms, m)
 	}
-	err := rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
+	return ms, rows.Err()
 }
 
 func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
