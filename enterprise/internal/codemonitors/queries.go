@@ -25,6 +25,8 @@ type MonitorQuery struct {
 	ChangedAt    time.Time
 }
 
+// queryColumns is the set of columns in cm_queries
+// It must be kept in sync with scanTriggerQuery
 var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.id"),
 	sqlf.Sprintf("cm_queries.monitor"),
@@ -205,6 +207,8 @@ func scanTriggerQueries(rows *sql.Rows) ([]*MonitorQuery, error) {
 	return ms, rows.Err()
 }
 
+// scanQueryTrigger scans a *sql.Rows or *sql.Row into a MonitorQuery
+// It must be kept in sync with queryColumns
 func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
 	m := &MonitorQuery{}
 	err := scanner.Scan(
