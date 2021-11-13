@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type MonitorQuery struct {
@@ -191,18 +192,8 @@ func (s *codeMonitorStore) SetTriggerQueryNextRun(ctx context.Context, triggerQu
 func scanTriggerQueries(rows *sql.Rows) ([]*MonitorQuery, error) {
 	var ms []*MonitorQuery
 	for rows.Next() {
-		m := &MonitorQuery{}
-		if err := rows.Scan(
-			&m.Id,
-			&m.Monitor,
-			&m.QueryString,
-			&m.NextRun,
-			&m.LatestResult,
-			&m.CreatedBy,
-			&m.CreatedAt,
-			&m.ChangedBy,
-			&m.ChangedAt,
-		); err != nil {
+		m, err := scanTriggerQuery(rows)
+		if err != nil {
 			return nil, err
 		}
 		ms = append(ms, m)
@@ -215,6 +206,22 @@ func scanTriggerQueries(rows *sql.Rows) ([]*MonitorQuery, error) {
 		return nil, err
 	}
 	return ms, nil
+}
+
+func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
+	m := &MonitorQuery{}
+	err := scanner.Scan(
+		&m.Id,
+		&m.Monitor,
+		&m.QueryString,
+		&m.NextRun,
+		&m.LatestResult,
+		&m.CreatedBy,
+		&m.CreatedAt,
+		&m.ChangedBy,
+		&m.ChangedAt,
+	)
+	return m, err
 }
 
 func (s *codeMonitorStore) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*MonitorQuery, error) {
