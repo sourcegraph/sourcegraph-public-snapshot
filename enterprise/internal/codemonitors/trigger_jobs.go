@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -151,27 +152,13 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 		return nil, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
-	var ms []*TriggerJobs
+	var js []*TriggerJobs
 	for rows.Next() {
-		m := &TriggerJobs{}
-		if err := rows.Scan(
-			&m.Id,
-			&m.Query,
-			&m.QueryString,
-			&m.Results,
-			&m.NumResults,
-			&m.State,
-			&m.FailureMessage,
-			&m.StartedAt,
-			&m.FinishedAt,
-			&m.ProcessAfter,
-			&m.NumResets,
-			&m.NumFailures,
-			&m.LogContents,
-		); err != nil {
+		j, err := scanTriggerJob(rows)
+		if err != nil {
 			return nil, err
 		}
-		ms = append(ms, m)
+		js = append(js, j)
 	}
 	if err != nil {
 		return nil, err
@@ -180,7 +167,27 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	return ms, nil
+	return js, nil
+}
+
+func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJobs, error) {
+	m := &TriggerJobs{}
+	err := scanner.Scan(
+		&m.Id,
+		&m.Query,
+		&m.QueryString,
+		&m.Results,
+		&m.NumResults,
+		&m.State,
+		&m.FailureMessage,
+		&m.StartedAt,
+		&m.FinishedAt,
+		&m.ProcessAfter,
+		&m.NumResets,
+		&m.NumFailures,
+		&m.LogContents,
+	)
+	return m, err
 }
 
 var TriggerJobsColumns = []*sqlf.Query{
