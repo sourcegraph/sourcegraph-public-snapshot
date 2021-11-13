@@ -76,7 +76,7 @@ WHERE id = %s
 func (s *codeMonitorStore) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
 	q := sqlf.Sprintf(
 		actionEmailByIDFmtStr,
-		sqlf.Join(EmailsColumns, ","),
+		sqlf.Join(emailsColumns, ","),
 		emailID,
 	)
 	row := s.QueryRow(ctx, q)
@@ -117,7 +117,7 @@ func (s *codeMonitorStore) updateActionEmailQuery(ctx context.Context, monitorID
 		now,
 		actionID,
 		monitorID,
-		sqlf.Join(EmailsColumns, ", "),
+		sqlf.Join(emailsColumns, ", "),
 	), nil
 }
 
@@ -166,7 +166,7 @@ LIMIT %s;
 func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error) {
 	q := sqlf.Sprintf(
 		listEmailActionsFmtStr,
-		sqlf.Join(EmailsColumns, ","),
+		sqlf.Join(emailsColumns, ","),
 		opts.Conds(),
 		opts.Limit(),
 	)
@@ -198,7 +198,7 @@ func (s *codeMonitorStore) createActionEmailQuery(ctx context.Context, monitorID
 		now,
 		a.UID,
 		now,
-		sqlf.Join(EmailsColumns, ", "),
+		sqlf.Join(emailsColumns, ", "),
 	), nil
 }
 
@@ -220,7 +220,7 @@ func deleteActionsEmailQuery(ctx context.Context, actionIDs []int64, monitorID i
 	), nil
 }
 
-var EmailsColumns = []*sqlf.Query{
+var emailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.id"),
 	sqlf.Sprintf("cm_emails.monitor"),
 	sqlf.Sprintf("cm_emails.enabled"),
