@@ -234,10 +234,11 @@ var EmailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.changed_at"),
 }
 
-func scanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
+func scanEmails(rows *sql.Rows) ([]*MonitorEmail, error) {
+	var ms []*MonitorEmail
 	for rows.Next() {
 		m := &MonitorEmail{}
-		if err = rows.Scan(
+		err := rows.Scan(
 			&m.Id,
 			&m.Monitor,
 			&m.Enabled,
@@ -247,17 +248,11 @@ func scanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
 			&m.CreatedAt,
 			&m.ChangedBy,
 			&m.ChangedAt,
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 		ms = append(ms, m)
 	}
-	err = rows.Close()
-	if err != nil {
-		return nil, err
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
+	return ms, rows.Err()
 }
