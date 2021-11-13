@@ -211,7 +211,7 @@ func (s *codeMonitorStore) createActionEmailQuery(ctx context.Context, monitorID
 const deleteActionEmailFmtStr = `DELETE FROM cm_emails WHERE id in (%s) AND MONITOR = %s`
 
 func deleteActionsEmailQuery(ctx context.Context, actionIDs []int64, monitorID int64) (*sqlf.Query, error) {
-	var deleteIDs []*sqlf.Query
+	deleteIDs := make([]*sqlf.Query, 0, len(actionIDs))
 	for _, ids := range actionIDs {
 		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
 	}
