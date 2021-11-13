@@ -31,6 +31,7 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.monitor"),
 	sqlf.Sprintf("cm_queries.query"),
 	sqlf.Sprintf("cm_queries.next_run"),
+	sqlf.Sprintf("cm_queries.latest_result"),
 	sqlf.Sprintf("cm_queries.created_by"),
 	sqlf.Sprintf("cm_queries.created_at"),
 	sqlf.Sprintf("cm_queries.changed_by"),
@@ -54,25 +55,33 @@ func (s *codeMonitorStore) UpdateTriggerQuery(ctx context.Context, args *graphql
 }
 
 const triggerQueryByMonitorFmtStr = `
-SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
+SELECT %s -- queryColumns
 FROM cm_queries
 WHERE monitor = %s;
 `
 
 func (s *codeMonitorStore) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*MonitorQuery, error) {
-	q := sqlf.Sprintf(triggerQueryByMonitorFmtStr, monitorID)
+	q := sqlf.Sprintf(
+		triggerQueryByMonitorFmtStr,
+		sqlf.Join(queryColumns, ","),
+		monitorID,
+	)
 	row := s.QueryRow(ctx, q)
 	return scanTriggerQuery(row)
 }
 
 const triggerQueryByIDFmtStr = `
-SELECT id, monitor, query, next_run, latest_result, created_by, created_at, changed_by, changed_at
+SELECT %s -- queryColumns
 FROM cm_queries
 WHERE id = %s;
 `
 
 func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*MonitorQuery, error) {
-	q := sqlf.Sprintf(triggerQueryByIDFmtStr, queryID)
+	q := sqlf.Sprintf(
+		triggerQueryByIDFmtStr,
+		sqlf.Join(queryColumns, ","),
+		queryID,
+	)
 	row := s.QueryRow(ctx, q)
 	return scanTriggerQuery(row)
 }
@@ -152,14 +161,16 @@ func (s *codeMonitorStore) updateTriggerQueryQuery(ctx context.Context, args *gr
 }
 
 const getQueryByRecordIDFmtStr = `
-SELECT q.id, q.monitor, q.query, q.next_run, q.latest_result, q.created_by, q.created_at, q.changed_by, q.changed_at
-FROM cm_queries q INNER JOIN cm_trigger_jobs j ON q.id = j.query
+SELECT %s -- queryColumns
+FROM cm_queries
+INNER JOIN cm_trigger_jobs j ON cm_queries.id = j.query
 WHERE j.id = %s
 `
 
 func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int) (*MonitorQuery, error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
+		sqlf.Join(queryColumns, ","),
 		recordID,
 	)
 	rows, err := s.Query(ctx, q)
