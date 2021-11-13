@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type MonitorEmail struct {
@@ -237,22 +238,27 @@ var EmailsColumns = []*sqlf.Query{
 func scanEmails(rows *sql.Rows) ([]*MonitorEmail, error) {
 	var ms []*MonitorEmail
 	for rows.Next() {
-		m := &MonitorEmail{}
-		err := rows.Scan(
-			&m.Id,
-			&m.Monitor,
-			&m.Enabled,
-			&m.Priority,
-			&m.Header,
-			&m.CreatedBy,
-			&m.CreatedAt,
-			&m.ChangedBy,
-			&m.ChangedAt,
-		)
+		m, err := scanEmail(rows)
 		if err != nil {
 			return nil, err
 		}
 		ms = append(ms, m)
 	}
 	return ms, rows.Err()
+}
+
+func scanEmail(scanner dbutil.Scanner) (*MonitorEmail, error) {
+	m := &MonitorEmail{}
+	err := scanner.Scan(
+		&m.Id,
+		&m.Monitor,
+		&m.Enabled,
+		&m.Priority,
+		&m.Header,
+		&m.CreatedBy,
+		&m.CreatedAt,
+		&m.ChangedBy,
+		&m.ChangedAt,
+	)
+	return m, err
 }
