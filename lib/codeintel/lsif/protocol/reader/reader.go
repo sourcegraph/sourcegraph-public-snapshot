@@ -279,11 +279,12 @@ func (g *graph) AddDocument(doc *proto.Document) {
 		})
 		rangeIDs = append(rangeIDs, rangeID)
 		ids := g.ResultIDs(occ.MonikerId)
+		g.AddEdge("next", Edge{OutV: rangeID, InV: ids.ResultSet})
 		switch occ.Role {
 		case proto.MonikerOccurrence_ROLE_DEFINITION:
-			g.AddEdge("item", Edge{OutV: ids.DefinitionResult, InV: rangeID, Document: documentID})
+			g.AddEdge("item", Edge{OutV: ids.DefinitionResult, InVs: []int{rangeID}, Document: documentID})
 		case proto.MonikerOccurrence_ROLE_REFERENCE:
-			g.AddEdge("item", Edge{OutV: ids.ReferenceResult, InV: rangeID, Document: documentID})
+			g.AddEdge("item", Edge{OutV: ids.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 		default:
 		}
 	}
