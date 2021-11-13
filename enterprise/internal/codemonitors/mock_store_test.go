@@ -266,7 +266,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		GetEventsForQueryIDInt64Func: &CodeMonitorStoreGetEventsForQueryIDInt64Func{
-			defaultHook: func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+			defaultHook: func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 				return nil, nil
 			},
 		},
@@ -2829,15 +2829,15 @@ func (c CodeMonitorStoreGetActionJobMetadataFuncCall) Results() []interface{} {
 // the GetEventsForQueryIDInt64 method of the parent MockCodeMonitorStore
 // instance is invoked.
 type CodeMonitorStoreGetEventsForQueryIDInt64Func struct {
-	defaultHook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error)
-	hooks       []func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error)
+	defaultHook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
+	hooks       []func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
 	history     []CodeMonitorStoreGetEventsForQueryIDInt64FuncCall
 	mutex       sync.Mutex
 }
 
 // GetEventsForQueryIDInt64 delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) GetEventsForQueryIDInt64(v0 context.Context, v1 int64, v2 *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (m *MockCodeMonitorStore) GetEventsForQueryIDInt64(v0 context.Context, v1 int64, v2 *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 	r0, r1 := m.GetEventsForQueryIDInt64Func.nextHook()(v0, v1, v2)
 	m.GetEventsForQueryIDInt64Func.appendCall(CodeMonitorStoreGetEventsForQueryIDInt64FuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -2846,7 +2846,7 @@ func (m *MockCodeMonitorStore) GetEventsForQueryIDInt64(v0 context.Context, v1 i
 // SetDefaultHook sets function that is called when the
 // GetEventsForQueryIDInt64 method of the parent MockCodeMonitorStore
 // instance is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error)) {
+func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)) {
 	f.defaultHook = hook
 }
 
@@ -2855,7 +2855,7 @@ func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) SetDefaultHook(hook func(
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) PushHook(hook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error)) {
+func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) PushHook(hook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2863,21 +2863,21 @@ func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) SetDefaultReturn(r0 []*TriggerJobs, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) SetDefaultReturn(r0 []*TriggerJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) PushReturn(r0 []*TriggerJobs, r1 error) {
-	f.PushHook(func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) PushReturn(r0 []*TriggerJob, r1 error) {
+	f.PushHook(func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) nextHook() func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (f *CodeMonitorStoreGetEventsForQueryIDInt64Func) nextHook() func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2923,7 +2923,7 @@ type CodeMonitorStoreGetEventsForQueryIDInt64FuncCall struct {
 	Arg2 *graphqlbackend.ListEventsArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*TriggerJobs
+	Result0 []*TriggerJob
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

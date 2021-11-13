@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func (r *TriggerJobs) RecordID() int {
+func (r *TriggerJob) RecordID() int {
 	return r.Id
 }
 
@@ -83,7 +83,7 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *codeMonitorStore) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (s *codeMonitorStore) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s *codeMonitorStore) TotalCountEventsForQueryIDInt64(ctx context.Context, 
 	return count, err
 }
 
-type TriggerJobs struct {
+type TriggerJob struct {
 	Id    int
 	Query int64
 
@@ -147,13 +147,13 @@ func ScanTriggerJobsRecord(rows *sql.Rows, err error) (workerutil.Record, bool, 
 	}
 	records, err := scanTriggerJobs(rows)
 	if err != nil || len(records) == 0 {
-		return &TriggerJobs{}, false, err
+		return &TriggerJob{}, false, err
 	}
 	return records[0], true, nil
 }
 
-func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJobs, error) {
-	var js []*TriggerJobs
+func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
+	var js []*TriggerJob
 	for rows.Next() {
 		j, err := scanTriggerJob(rows)
 		if err != nil {
@@ -164,8 +164,8 @@ func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJobs, error) {
 	return js, rows.Err()
 }
 
-func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJobs, error) {
-	m := &TriggerJobs{}
+func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
+	m := &TriggerJob{}
 	err := scanner.Scan(
 		&m.Id,
 		&m.Query,

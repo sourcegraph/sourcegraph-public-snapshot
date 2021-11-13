@@ -217,13 +217,13 @@ func (s *codeMonitorStore) ActionJobForIDInt(ctx context.Context, recordID int) 
 // ScanActionJobRecord implements the worker RecordScanFn
 func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
-		return &TriggerJobs{}, false, err
+		return &TriggerJob{}, false, err
 	}
 	defer rows.Close()
 
 	records, err := scanActionJobs(rows)
 	if err != nil || len(records) == 0 {
-		return &TriggerJobs{}, false, err
+		return &TriggerJob{}, false, err
 	}
 	return records[0], true, nil
 }

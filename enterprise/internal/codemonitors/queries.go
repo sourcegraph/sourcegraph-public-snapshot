@@ -2,7 +2,6 @@ package codemonitors
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"

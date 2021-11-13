@@ -555,9 +555,9 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 	events := make([]graphqlbackend.MonitorTriggerEventResolver, 0, len(es))
 	for _, e := range es {
 		events = append(events, graphqlbackend.MonitorTriggerEventResolver(&monitorTriggerEvent{
-			Resolver:    q.Resolver,
-			monitorID:   q.Monitor,
-			TriggerJobs: e,
+			Resolver:   q.Resolver,
+			monitorID:  q.Monitor,
+			TriggerJob: e,
 		}))
 	}
 	return &monitorTriggerEventConnection{Resolver: q.Resolver, events: events, totalCount: totalCount}, nil
@@ -592,7 +592,7 @@ func (a *monitorTriggerEventConnection) PageInfo(ctx context.Context) (*graphqlu
 //
 type monitorTriggerEvent struct {
 	*Resolver
-	*cm.TriggerJobs
+	*cm.TriggerJob
 	monitorID int64
 }
 
