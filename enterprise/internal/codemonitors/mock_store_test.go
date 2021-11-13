@@ -504,7 +504,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.TriggerQueryByMonitorIDInt64,
 		},
 		UpdateActionEmailFunc: &CodeMonitorStoreUpdateActionEmailFunc{
-			defaultHook: i.UpdateActionEmail,
+			defaultHook: i.UpdateEmailAction,
 		},
 		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
 			defaultHook: i.UpdateMonitor,

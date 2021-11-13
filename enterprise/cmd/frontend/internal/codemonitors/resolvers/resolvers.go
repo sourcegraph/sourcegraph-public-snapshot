@@ -334,7 +334,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		e, err = r.store.UpdateActionEmail(ctx, mo.ID, action)
+		e, err = r.store.UpdateEmailAction(ctx, mo.ID, action)
 		if err != nil {
 			return nil, err
 		}

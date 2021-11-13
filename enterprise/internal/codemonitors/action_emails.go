@@ -26,7 +26,7 @@ type MonitorEmail struct {
 	ChangedAt time.Time
 }
 
-func (s *codeMonitorStore) UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
+func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
 	q, err := s.updateActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
 		return nil, err
