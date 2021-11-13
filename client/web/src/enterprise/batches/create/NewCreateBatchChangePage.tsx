@@ -25,7 +25,6 @@ import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
-import { hasOnStatement } from './yaml-util'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -230,7 +229,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         batchSpecID={batchSpecID}
                         currentPreviewRequestTime={currentPreviewRequestTime}
                         previewDisabled={previewDisabled}
-                        preview={() => previewBatchSpec(code)}
+                        preview={() => previewBatchSpec(debouncedCode)}
                         batchSpecStale={batchSpecStale}
                         excludeRepo={excludeRepo}
                     />
