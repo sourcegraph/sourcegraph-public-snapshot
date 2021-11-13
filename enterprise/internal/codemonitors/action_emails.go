@@ -31,7 +31,8 @@ func (s *codeMonitorStore) UpdateActionEmail(ctx context.Context, monitorID int6
 	if err != nil {
 		return nil, err
 	}
-	return s.runEmailQuery(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanEmail(row)
 }
 
 func (s *codeMonitorStore) CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
@@ -39,7 +40,8 @@ func (s *codeMonitorStore) CreateActionEmail(ctx context.Context, monitorID int6
 	if err != nil {
 		return nil, err
 	}
-	return s.runEmailQuery(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanEmail(row)
 }
 
 func (s *codeMonitorStore) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) error {
@@ -72,10 +74,7 @@ WHERE id = %s
 `
 
 func (s *codeMonitorStore) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
-	return s.runEmailQuery(ctx, sqlf.Sprintf(actionEmailByIDFmtStr, emailID))
-}
-
-func (s *codeMonitorStore) runEmailQuery(ctx context.Context, q *sqlf.Query) (*MonitorEmail, error) {
+	q := sqlf.Sprintf(actionEmailByIDFmtStr, emailID)
 	row := s.QueryRow(ctx, q)
 	return scanEmail(row)
 }
