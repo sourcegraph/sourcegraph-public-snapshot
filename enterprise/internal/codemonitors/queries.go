@@ -60,7 +60,9 @@ WHERE monitor = %s;
 `
 
 func (s *codeMonitorStore) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*MonitorQuery, error) {
-	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByMonitorFmtStr, monitorID))
+	q := sqlf.Sprintf(triggerQueryByMonitorFmtStr, monitorID)
+	row := s.QueryRow(ctx, q)
+	return scanTriggerQuery(row)
 }
 
 const triggerQueryByIDFmtStr = `
@@ -70,7 +72,9 @@ WHERE id = %s;
 `
 
 func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*MonitorQuery, error) {
-	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByIDFmtStr, queryID))
+	q := sqlf.Sprintf(triggerQueryByIDFmtStr, queryID)
+	row := s.QueryRow(ctx, q)
+	return scanTriggerQuery(row)
 }
 
 const resetTriggerQueryTimestamps = `
@@ -130,7 +134,7 @@ func (s *codeMonitorStore) updateTriggerQueryQuery(ctx context.Context, args *gr
 	}
 
 	var monitorID int64
-	err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -216,9 +220,4 @@ func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
 		&m.ChangedAt,
 	)
 	return m, err
-}
-
-func (s *codeMonitorStore) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*MonitorQuery, error) {
-	row := s.QueryRow(ctx, q)
-	return scanTriggerQuery(row)
 }
