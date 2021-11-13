@@ -26,7 +26,7 @@ type CodeMonitorStore interface {
 
 	UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error)
 	CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error)
-	DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error)
+	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) (err error)
 	TotalCountActionEmails(ctx context.Context, monitorID int64) (count int32, err error)
 	ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error)
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)

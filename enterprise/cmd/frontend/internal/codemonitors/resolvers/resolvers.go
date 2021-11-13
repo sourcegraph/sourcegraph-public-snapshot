@@ -186,7 +186,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}
 	defer func() { err = tx.store.Done(err) }()
 
-	err = tx.store.DeleteActionsInt64(ctx, toDelete, monitorID)
+	err = tx.store.DeleteEmailActions(ctx, toDelete, monitorID)
 	if err != nil {
 		return nil, err
 	}

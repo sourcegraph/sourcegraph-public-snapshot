@@ -417,7 +417,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.CreateTriggerQuery,
 		},
 		DeleteActionsInt64Func: &CodeMonitorStoreDeleteActionsInt64Func{
-			defaultHook: i.DeleteActionsInt64,
+			defaultHook: i.DeleteEmailActions,
 		},
 		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
 			defaultHook: i.DeleteMonitor,

@@ -44,7 +44,7 @@ func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int6
 	return scanEmail(row)
 }
 
-func (s *codeMonitorStore) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) error {
+func (s *codeMonitorStore) DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error {
 	if len(actionIDs) == 0 {
 		return nil
 	}
