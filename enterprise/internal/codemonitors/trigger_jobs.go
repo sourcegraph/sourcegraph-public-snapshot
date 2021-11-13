@@ -10,7 +10,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -95,9 +94,12 @@ func (s *codeMonitorStore) GetEventsForQueryIDInt64(ctx context.Context, queryID
 		after,
 		args.First,
 	)
-	var rows *sql.Rows
-	rows, err = s.Store.Query(ctx, q)
-	return scanTriggerJobs(rows, err)
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanTriggerJobs(rows)
 }
 
 const totalCountEventsForQueryIDInt64FmtStr = `
@@ -140,18 +142,17 @@ type TriggerJobs struct {
 }
 
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	records, err := scanTriggerJobs(rows, err)
+	if err != nil {
+		return nil, false, err
+	}
+	records, err := scanTriggerJobs(rows)
 	if err != nil || len(records) == 0 {
 		return &TriggerJobs{}, false, err
 	}
 	return records[0], true, nil
 }
 
-func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJobs, error) {
 	var js []*TriggerJobs
 	for rows.Next() {
 		j, err := scanTriggerJob(rows)
@@ -160,14 +161,7 @@ func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
 		}
 		js = append(js, j)
 	}
-	if err != nil {
-		return nil, err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return js, nil
+	return js, rows.Err()
 }
 
 func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJobs, error) {
