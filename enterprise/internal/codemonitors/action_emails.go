@@ -76,19 +76,8 @@ func (s *codeMonitorStore) ActionEmailByIDInt64(ctx context.Context, emailID int
 }
 
 func (s *codeMonitorStore) runEmailQuery(ctx context.Context, q *sqlf.Query) (*MonitorEmail, error) {
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	es, err := scanEmails(rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(es) == 0 {
-		return nil, errors.Errorf("operation failed. Query should have returned 1 row")
-	}
-	return es[0], nil
+	row := s.QueryRow(ctx, q)
+	return scanEmail(row)
 }
 
 const updateActionEmailFmtStr = `
