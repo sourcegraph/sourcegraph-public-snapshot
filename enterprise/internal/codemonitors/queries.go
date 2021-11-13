@@ -36,18 +36,16 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.changed_at"),
 }
 
-func (s *codeMonitorStore) CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error) {
-	var q *sqlf.Query
-	q, err = s.createTriggerQueryQuery(ctx, monitorID, args)
+func (s *codeMonitorStore) CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error {
+	q, err := s.createTriggerQueryQuery(ctx, monitorID, args)
 	if err != nil {
 		return err
 	}
 	return s.Exec(ctx, q)
 }
 
-func (s *codeMonitorStore) UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error) {
-	var q *sqlf.Query
-	q, err = s.updateTriggerQueryQuery(ctx, args)
+func (s *codeMonitorStore) UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error {
+	q, err := s.updateTriggerQueryQuery(ctx, args)
 	if err != nil {
 		return err
 	}
@@ -120,18 +118,18 @@ AND monitor = %s
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (q *sqlf.Query, err error) {
+func (s *codeMonitorStore) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*sqlf.Query, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 
 	var triggerID int64
-	err = relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
+	err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
 	if err != nil {
 		return nil, err
 	}
 
 	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
 	if err != nil {
 		return nil, err
 	}
@@ -154,18 +152,16 @@ FROM cm_queries q INNER JOIN cm_trigger_jobs j ON q.id = j.query
 WHERE j.id = %s
 `
 
-func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int) (query *MonitorQuery, err error) {
+func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int) (*MonitorQuery, error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
 		recordID,
 	)
-	var ms []*MonitorQuery
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, q)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	ms, err = scanTriggerQueries(rows)
+	ms, err := scanTriggerQueries(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +188,8 @@ func (s *codeMonitorStore) SetTriggerQueryNextRun(ctx context.Context, triggerQu
 	return s.Exec(ctx, q)
 }
 
-func scanTriggerQueries(rows *sql.Rows) (ms []*MonitorQuery, err error) {
+func scanTriggerQueries(rows *sql.Rows) ([]*MonitorQuery, error) {
+	var ms []*MonitorQuery
 	for rows.Next() {
 		m := &MonitorQuery{}
 		if err := rows.Scan(
@@ -210,7 +207,7 @@ func scanTriggerQueries(rows *sql.Rows) (ms []*MonitorQuery, err error) {
 		}
 		ms = append(ms, m)
 	}
-	err = rows.Close()
+	err := rows.Close()
 	if err != nil {
 		return nil, err
 	}
