@@ -220,6 +220,8 @@ func deleteActionsEmailQuery(ctx context.Context, actionIDs []int64, monitorID i
 	), nil
 }
 
+// emailColumns is the set of columns in the cm_emails table
+// This must be kept in sync with scanEmail
 var emailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.id"),
 	sqlf.Sprintf("cm_emails.monitor"),
@@ -244,6 +246,8 @@ func scanEmails(rows *sql.Rows) ([]*MonitorEmail, error) {
 	return ms, rows.Err()
 }
 
+// scanEmail scans a MonitorEmail from a *sql.Row or *sql.Rows.
+// It must be kept in sync with emailsColumns.
 func scanEmail(scanner dbutil.Scanner) (*MonitorEmail, error) {
 	m := &MonitorEmail{}
 	err := scanner.Scan(
