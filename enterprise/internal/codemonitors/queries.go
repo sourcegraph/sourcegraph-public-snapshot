@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
@@ -173,19 +172,8 @@ func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int)
 		sqlf.Join(queryColumns, ","),
 		recordID,
 	)
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ms, err := scanTriggerQueries(rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(ms) != 1 {
-		return nil, errors.Errorf("query should have returned 1 row")
-	}
-	return ms[0], nil
+	row := s.QueryRow(ctx, q)
+	return scanTriggerQuery(row)
 }
 
 const setTriggerQueryNextRunFmtStr = `
