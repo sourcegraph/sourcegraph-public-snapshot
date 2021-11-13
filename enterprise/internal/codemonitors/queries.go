@@ -219,17 +219,6 @@ func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
 }
 
 func (s *codeMonitorStore) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*MonitorQuery, error) {
-	rows, err := s.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	ms, err := scanTriggerQueries(rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(ms) == 0 {
-		return nil, errors.Errorf("operation failed. Query should have returned 1 row")
-	}
-	return ms[0], nil
+	row := s.QueryRow(ctx, q)
+	return scanTriggerQuery(row)
 }
