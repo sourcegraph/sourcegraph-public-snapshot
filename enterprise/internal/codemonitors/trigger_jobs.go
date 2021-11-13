@@ -141,7 +141,7 @@ type TriggerJobs struct {
 	LogContents    *string
 }
 
-func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+func ScanTriggerJobsRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}

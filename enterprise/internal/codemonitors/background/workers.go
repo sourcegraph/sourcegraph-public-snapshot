@@ -109,7 +109,7 @@ func createDBWorkerStoreForTriggerJobs(s cm.CodeMonitorStore) dbworkerstore.Stor
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: cm.TriggerJobsColumns,
-		Scan:              cm.ScanTriggerJobs,
+		Scan:              cm.ScanTriggerJobsRecord,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
