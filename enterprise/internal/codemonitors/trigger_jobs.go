@@ -56,9 +56,9 @@ WHERE results IS NOT TRUE
 AND state = 'completed'
 `
 
-// DeleteObsoleteJobLogs deletes all runs which are marked as completed and did
+// DeleteObsoleteTriggerJobs deletes all runs which are marked as completed and did
 // not return results.
-func (s *codeMonitorStore) DeleteObsoleteJobLogs(ctx context.Context) error {
+func (s *codeMonitorStore) DeleteObsoleteTriggerJobs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
 }
 
