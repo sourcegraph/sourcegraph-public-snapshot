@@ -108,7 +108,7 @@ FROM cm_monitors
 WHERE namespace_user_id = %s;
 `
 
-func (s *codeMonitorStore) TotalCountMonitors(ctx context.Context, userID int32) (int32, error) {
+func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID int32) (int32, error) {
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountMonitorsFmtStr, userID)).Scan(&count)
 	return count, err

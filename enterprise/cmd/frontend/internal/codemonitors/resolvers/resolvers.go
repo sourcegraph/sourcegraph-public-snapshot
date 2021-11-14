@@ -66,7 +66,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 		return nil, err
 	}
 
-	totalCount, err := r.store.TotalCountMonitors(ctx, userID)
+	totalCount, err := r.store.CountMonitors(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

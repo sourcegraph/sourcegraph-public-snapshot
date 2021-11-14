@@ -32,7 +32,7 @@ type CodeMonitorStore interface {
 	DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) error
 	GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error)
 	Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error)
-	TotalCountMonitors(ctx context.Context, userID int32) (count int32, err error)
+	CountMonitors(ctx context.Context, userID int32) (count int32, err error)
 
 	UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*MonitorEmail, error)
 	CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)
