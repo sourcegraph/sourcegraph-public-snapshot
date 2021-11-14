@@ -14,6 +14,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+type TriggerJob struct {
+	Id    int
+	Query int64
+
+	// The query we ran including after: filter.
+	QueryString *string
+
+	// Whether we got any results.
+	Results    *bool
+	NumResults *int
+
+	// Fields demanded for any dbworker.
+	State          string
+	FailureMessage *string
+	StartedAt      *time.Time
+	FinishedAt     *time.Time
+	ProcessAfter   *time.Time
+	NumResets      int32
+	NumFailures    int32
+	LogContents    *string
+}
+
 func (r *TriggerJob) RecordID() int {
 	return r.Id
 }
@@ -117,28 +139,6 @@ func (s *codeMonitorStore) CountQueryTriggerJobs(ctx context.Context, queryID in
 	var count int32
 	err := s.Store.QueryRow(ctx, q).Scan(&count)
 	return count, err
-}
-
-type TriggerJob struct {
-	Id    int
-	Query int64
-
-	// The query we ran including after: filter.
-	QueryString *string
-
-	// Whether we got any results.
-	Results    *bool
-	NumResults *int
-
-	// Fields demanded for any dbworker.
-	State          string
-	FailureMessage *string
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	ProcessAfter   *time.Time
-	NumResets      int32
-	NumFailures    int32
-	LogContents    *string
 }
 
 func ScanTriggerJobsRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
