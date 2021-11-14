@@ -224,7 +224,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 		}
 
-		recs, err := s.AllRecipientsForEmailIDInt64(ctx, int64(*j.Email))
+		recs, err := s.ListAllRecipientsForEmailAction(ctx, int64(*j.Email))
 		if err != nil {
 			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 		}

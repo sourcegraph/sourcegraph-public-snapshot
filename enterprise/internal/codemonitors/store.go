@@ -61,7 +61,7 @@ type CodeMonitorStore interface {
 	CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) error
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error)
-	AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) ([]*Recipient, error)
+	ListAllRecipientsForEmailAction(ctx context.Context, emailID int64) ([]*Recipient, error)
 	TotalCountRecipients(ctx context.Context, emailID int64) (int32, error)
 
 	DeleteObsoleteJobLogs(ctx context.Context) error

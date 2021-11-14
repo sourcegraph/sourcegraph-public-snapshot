@@ -72,7 +72,7 @@ FROM cm_recipients
 WHERE email = %s
 `
 
-func (s *codeMonitorStore) AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) ([]*Recipient, error) {
+func (s *codeMonitorStore) ListAllRecipientsForEmailAction(ctx context.Context, emailID int64) ([]*Recipient, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(allRecipientsForEmailIDInt64FmtStr, emailID))
 	if err != nil {
 		return nil, errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)

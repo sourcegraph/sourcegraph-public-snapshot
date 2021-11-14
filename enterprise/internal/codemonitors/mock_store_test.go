@@ -384,7 +384,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 	return &MockCodeMonitorStore{
 		AllRecipientsForEmailIDInt64Func: &CodeMonitorStoreAllRecipientsForEmailIDInt64Func{
-			defaultHook: i.AllRecipientsForEmailIDInt64,
+			defaultHook: i.ListAllRecipientsForEmailAction,
 		},
 		ClockFunc: &CodeMonitorStoreClockFunc{
 			defaultHook: i.Clock,
