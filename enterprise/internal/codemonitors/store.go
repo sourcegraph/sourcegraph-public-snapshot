@@ -51,12 +51,12 @@ type CodeMonitorStore interface {
 
 	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) error
 
-	UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*MonitorEmail, error)
-	CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)
+	UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*EmailAction, error)
+	CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*EmailAction, error)
 	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error
 	CountEmailActions(ctx context.Context, monitorID int64) (int32, error)
-	GetEmailAction(ctx context.Context, emailID int64) (*MonitorEmail, error)
-	ListEmailActions(context.Context, ListActionsOpts) ([]*MonitorEmail, error)
+	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
+	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
 	CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) error
 	DeleteRecipients(ctx context.Context, emailID int64) error

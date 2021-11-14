@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-type MonitorEmail struct {
+type EmailAction struct {
 	Id        int64
 	Monitor   int64
 	Enabled   bool
@@ -26,7 +26,7 @@ type MonitorEmail struct {
 	ChangedAt time.Time
 }
 
-func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
+func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*EmailAction, error) {
 	q, err := s.updateActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int6
 	return scanEmail(row)
 }
 
-func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*EmailAction, error) {
 	q, err := s.createActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ FROM cm_emails
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) GetEmailAction(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
+func (s *codeMonitorStore) GetEmailAction(ctx context.Context, emailID int64) (m *EmailAction, err error) {
 	q := sqlf.Sprintf(
 		actionEmailByIDFmtStr,
 		sqlf.Join(emailsColumns, ","),
@@ -163,7 +163,7 @@ LIMIT %s;
 `
 
 // ListEmailActions lists emails from cm_emails with the given opts
-func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error) {
+func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*EmailAction, error) {
 	q := sqlf.Sprintf(
 		listEmailActionsFmtStr,
 		sqlf.Join(emailsColumns, ","),
@@ -234,8 +234,8 @@ var emailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.changed_at"),
 }
 
-func scanEmails(rows *sql.Rows) ([]*MonitorEmail, error) {
-	var ms []*MonitorEmail
+func scanEmails(rows *sql.Rows) ([]*EmailAction, error) {
+	var ms []*EmailAction
 	for rows.Next() {
 		m, err := scanEmail(rows)
 		if err != nil {
@@ -248,8 +248,8 @@ func scanEmails(rows *sql.Rows) ([]*MonitorEmail, error) {
 
 // scanEmail scans a MonitorEmail from a *sql.Row or *sql.Rows.
 // It must be kept in sync with emailsColumns.
-func scanEmail(scanner dbutil.Scanner) (*MonitorEmail, error) {
-	m := &MonitorEmail{}
+func scanEmail(scanner dbutil.Scanner) (*EmailAction, error) {
+	m := &EmailAction{}
 	err := scanner.Scan(
 		&m.Id,
 		&m.Monitor,

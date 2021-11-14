@@ -265,7 +265,7 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 	}
 	ids := make([]graphql.ID, len(emailActions))
 	for i, emailAction := range emailActions {
-		ids[i] = (&monitorEmail{MonitorEmail: emailAction}).ID()
+		ids[i] = (&monitorEmail{EmailAction: emailAction}).ID()
 	}
 	return ids, nil
 }
@@ -321,7 +321,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		}, nil
 	}
 	var emailID int64
-	var e *cm.MonitorEmail
+	var e *cm.EmailAction
 	for i, action := range args.Actions {
 		if action.Email == nil {
 			return nil, errors.Errorf("missing email object for action %d", i)
@@ -508,7 +508,7 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 		actions = append(actions, &action{
 			email: &monitorEmail{
 				Resolver:       r,
-				MonitorEmail:   e,
+				EmailAction:    e,
 				triggerEventID: triggerEventID,
 			},
 		})
@@ -674,7 +674,7 @@ func (a *action) ToMonitorEmail() (graphqlbackend.MonitorEmailResolver, bool) {
 //
 type monitorEmail struct {
 	*Resolver
-	*cm.MonitorEmail
+	*cm.EmailAction
 
 	// If triggerEventID == nil, all events of this action will be returned.
 	// Otherwise, only those events of this action which are related to the specified
@@ -719,15 +719,15 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 }
 
 func (m *monitorEmail) Enabled() bool {
-	return m.MonitorEmail.Enabled
+	return m.EmailAction.Enabled
 }
 
 func (m *monitorEmail) Priority() string {
-	return m.MonitorEmail.Priority
+	return m.EmailAction.Priority
 }
 
 func (m *monitorEmail) Header() string {
-	return m.MonitorEmail.Header
+	return m.EmailAction.Header
 }
 
 func (m *monitorEmail) ID() graphql.ID {
