@@ -36,7 +36,7 @@ func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) 
 	return s.Exec(ctx, q)
 }
 
-func (s *codeMonitorStore) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
+func (s *codeMonitorStore) ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
 	q, err := readRecipientQuery(ctx, emailID, args)
 	if err != nil {
 		return nil, err

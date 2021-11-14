@@ -477,7 +477,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.Now,
 		},
 		RecipientsForEmailIDInt64Func: &CodeMonitorStoreRecipientsForEmailIDInt64Func{
-			defaultHook: i.RecipientsForEmailIDInt64,
+			defaultHook: i.ListRecipientsForEmailAction,
 		},
 		ResetTriggerQueryTimestampsFunc: &CodeMonitorStoreResetTriggerQueryTimestampsFunc{
 			defaultHook: i.ResetQueryTriggerTimestamps,

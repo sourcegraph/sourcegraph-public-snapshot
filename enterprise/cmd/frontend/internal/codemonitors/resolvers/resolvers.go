@@ -684,7 +684,7 @@ type monitorEmail struct {
 
 func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
 	var ms []*cm.Recipient
-	ms, err = m.store.RecipientsForEmailIDInt64(ctx, m.Id, args)
+	ms, err = m.store.ListRecipientsForEmailAction(ctx, m.Id, args)
 	if err != nil {
 		return nil, err
 	}
