@@ -15,7 +15,7 @@ import (
 )
 
 type TriggerJob struct {
-	Id    int
+	Id    int32
 	Query int64
 
 	// The query we ran including after: filter.
@@ -23,7 +23,7 @@ type TriggerJob struct {
 
 	// Whether we got any results.
 	Results    *bool
-	NumResults *int
+	NumResults *int32
 
 	// Fields demanded for any dbworker.
 	State          string
@@ -37,7 +37,7 @@ type TriggerJob struct {
 }
 
 func (r *TriggerJob) RecordID() int {
-	return r.Id
+	return int(r.Id)
 }
 
 const enqueueTriggerQueryFmtStr = `

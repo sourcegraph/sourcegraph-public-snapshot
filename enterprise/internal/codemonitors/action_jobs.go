@@ -12,10 +12,10 @@ import (
 )
 
 type ActionJob struct {
-	Id           int
-	Email        *int
-	Webhook      *int
-	SlackWebhook *int
+	Id           int32
+	Email        *int64
+	Webhook      *int64
+	SlackWebhook *int64
 	TriggerEvent int
 
 	// Fields demanded by any dbworker.
@@ -30,7 +30,7 @@ type ActionJob struct {
 }
 
 func (a *ActionJob) RecordID() int {
-	return a.Id
+	return int(a.Id)
 }
 
 type ActionJobMetadata struct {
@@ -66,7 +66,7 @@ type ListActionJobsOpts struct {
 	// TriggerEventID, if set, will filter to only action jobs that were
 	// created in response to the provided trigger event.  Refers to
 	// cm_trigger_jobs(id)
-	TriggerEventID *int
+	TriggerEventID *int32
 
 	// EmailID, if set, will filter to only actions jobs that are executing the
 	// given email action. Refers to cm_emails(id)

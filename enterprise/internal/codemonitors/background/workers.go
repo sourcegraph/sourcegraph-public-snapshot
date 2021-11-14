@@ -219,12 +219,12 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 
 	switch {
 	case j.Email != nil:
-		e, err := s.GetEmailAction(ctx, int64(*j.Email))
+		e, err := s.GetEmailAction(ctx, *j.Email)
 		if err != nil {
 			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 		}
 
-		recs, err := s.ListAllRecipientsForEmailAction(ctx, int64(*j.Email))
+		recs, err := s.ListAllRecipientsForEmailAction(ctx, *j.Email)
 		if err != nil {
 			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 		}
