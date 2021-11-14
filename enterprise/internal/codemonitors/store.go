@@ -50,7 +50,7 @@ type CodeMonitorStore interface {
 
 	CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error)
 	UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error)
-	TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*QueryTrigger, error)
+	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error
 	SetTriggerQueryNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
 	EnqueueTriggerQueries(ctx context.Context) (err error)

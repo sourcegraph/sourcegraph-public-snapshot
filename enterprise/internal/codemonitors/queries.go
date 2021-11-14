@@ -60,7 +60,7 @@ FROM cm_queries
 WHERE monitor = %s;
 `
 
-func (s *codeMonitorStore) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*QueryTrigger, error) {
+func (s *codeMonitorStore) GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error) {
 	q := sqlf.Sprintf(
 		triggerQueryByMonitorFmtStr,
 		sqlf.Join(queryColumns, ","),

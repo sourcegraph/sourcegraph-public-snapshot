@@ -472,7 +472,7 @@ func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver
 }
 
 func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, error) {
-	t, err := m.store.TriggerQueryByMonitorIDInt64(ctx, m.Monitor.ID)
+	t, err := m.store.GetQueryTriggerForMonitor(ctx, m.Monitor.ID)
 	if err != nil {
 		return nil, err
 	}
