@@ -208,7 +208,7 @@ FROM cm_action_jobs
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
+func (s *codeMonitorStore) GetActionJob(ctx context.Context, recordID int) (*ActionJob, error) {
 	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), recordID)
 	row := s.QueryRow(ctx, q)
 	return scanActionJob(row)

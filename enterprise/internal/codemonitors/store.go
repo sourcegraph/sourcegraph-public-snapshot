@@ -29,13 +29,14 @@ type CodeMonitorStore interface {
 	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error
 	CountEmailActions(ctx context.Context, monitorID int64) (int32, error)
 	GetEmailAction(ctx context.Context, emailID int64) (*MonitorEmail, error)
+	ListEmailActions(context.Context, ListActionsOpts) ([]*MonitorEmail, error)
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
-	ListEmailActions(context.Context, ListActionsOpts) ([]*MonitorEmail, error)
-	EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
-	ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error)
+	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
+
+	EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error)
 	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error)
 	CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m *Monitor, err error)
 	CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (m *Monitor, err error)
