@@ -18,12 +18,6 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors) used
 // for unit testing.
 type MockCodeMonitorStore struct {
-	// ActionEmailByIDInt64Func is an instance of a mock function object
-	// controlling the behavior of the method ActionEmailByIDInt64.
-	ActionEmailByIDInt64Func *CodeMonitorStoreActionEmailByIDInt64Func
-	// ActionJobForIDIntFunc is an instance of a mock function object
-	// controlling the behavior of the method ActionJobForIDInt.
-	ActionJobForIDIntFunc *CodeMonitorStoreActionJobForIDIntFunc
 	// AllRecipientsForEmailIDInt64Func is an instance of a mock function
 	// object controlling the behavior of the method
 	// AllRecipientsForEmailIDInt64.
@@ -34,15 +28,18 @@ type MockCodeMonitorStore struct {
 	// CountActionJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method CountActionJobs.
 	CountActionJobsFunc *CodeMonitorStoreCountActionJobsFunc
-	// CreateActionEmailFunc is an instance of a mock function object
-	// controlling the behavior of the method CreateActionEmail.
-	CreateActionEmailFunc *CodeMonitorStoreCreateActionEmailFunc
+	// CountEmailActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountEmailActions.
+	CountEmailActionsFunc *CodeMonitorStoreCountEmailActionsFunc
 	// CreateActionsFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateActions.
 	CreateActionsFunc *CodeMonitorStoreCreateActionsFunc
 	// CreateCodeMonitorFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateCodeMonitor.
 	CreateCodeMonitorFunc *CodeMonitorStoreCreateCodeMonitorFunc
+	// CreateEmailActionFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateEmailAction.
+	CreateEmailActionFunc *CodeMonitorStoreCreateEmailActionFunc
 	// CreateMonitorFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateMonitor.
 	CreateMonitorFunc *CodeMonitorStoreCreateMonitorFunc
@@ -52,9 +49,9 @@ type MockCodeMonitorStore struct {
 	// CreateTriggerQueryFunc is an instance of a mock function object
 	// controlling the behavior of the method CreateTriggerQuery.
 	CreateTriggerQueryFunc *CodeMonitorStoreCreateTriggerQueryFunc
-	// DeleteActionsInt64Func is an instance of a mock function object
-	// controlling the behavior of the method DeleteActionsInt64.
-	DeleteActionsInt64Func *CodeMonitorStoreDeleteActionsInt64Func
+	// DeleteEmailActionsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteEmailActions.
+	DeleteEmailActionsFunc *CodeMonitorStoreDeleteEmailActionsFunc
 	// DeleteMonitorFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteMonitor.
 	DeleteMonitorFunc *CodeMonitorStoreDeleteMonitorFunc
@@ -80,9 +77,15 @@ type MockCodeMonitorStore struct {
 	// ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method Exec.
 	ExecFunc *CodeMonitorStoreExecFunc
+	// GetActionJobFunc is an instance of a mock function object controlling
+	// the behavior of the method GetActionJob.
+	GetActionJobFunc *CodeMonitorStoreGetActionJobFunc
 	// GetActionJobMetadataFunc is an instance of a mock function object
 	// controlling the behavior of the method GetActionJobMetadata.
 	GetActionJobMetadataFunc *CodeMonitorStoreGetActionJobMetadataFunc
+	// GetEmailActionFunc is an instance of a mock function object
+	// controlling the behavior of the method GetEmailAction.
+	GetEmailActionFunc *CodeMonitorStoreGetEmailActionFunc
 	// GetEventsForQueryIDInt64Func is an instance of a mock function object
 	// controlling the behavior of the method GetEventsForQueryIDInt64.
 	GetEventsForQueryIDInt64Func *CodeMonitorStoreGetEventsForQueryIDInt64Func
@@ -124,9 +127,6 @@ type MockCodeMonitorStore struct {
 	// ToggleMonitorFunc is an instance of a mock function object
 	// controlling the behavior of the method ToggleMonitor.
 	ToggleMonitorFunc *CodeMonitorStoreToggleMonitorFunc
-	// TotalCountActionEmailsFunc is an instance of a mock function object
-	// controlling the behavior of the method TotalCountActionEmails.
-	TotalCountActionEmailsFunc *CodeMonitorStoreTotalCountActionEmailsFunc
 	// TotalCountEventsForQueryIDInt64Func is an instance of a mock function
 	// object controlling the behavior of the method
 	// TotalCountEventsForQueryIDInt64.
@@ -144,9 +144,9 @@ type MockCodeMonitorStore struct {
 	// object controlling the behavior of the method
 	// TriggerQueryByMonitorIDInt64.
 	TriggerQueryByMonitorIDInt64Func *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func
-	// UpdateActionEmailFunc is an instance of a mock function object
-	// controlling the behavior of the method UpdateActionEmail.
-	UpdateActionEmailFunc *CodeMonitorStoreUpdateActionEmailFunc
+	// UpdateEmailActionFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateEmailAction.
+	UpdateEmailActionFunc *CodeMonitorStoreUpdateEmailActionFunc
 	// UpdateMonitorFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateMonitor.
 	UpdateMonitorFunc *CodeMonitorStoreUpdateMonitorFunc
@@ -160,16 +160,6 @@ type MockCodeMonitorStore struct {
 // overwritten.
 func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 	return &MockCodeMonitorStore{
-		ActionEmailByIDInt64Func: &CodeMonitorStoreActionEmailByIDInt64Func{
-			defaultHook: func(context.Context, int64) (*MonitorEmail, error) {
-				return nil, nil
-			},
-		},
-		ActionJobForIDIntFunc: &CodeMonitorStoreActionJobForIDIntFunc{
-			defaultHook: func(context.Context, int) (*ActionJob, error) {
-				return nil, nil
-			},
-		},
 		AllRecipientsForEmailIDInt64Func: &CodeMonitorStoreAllRecipientsForEmailIDInt64Func{
 			defaultHook: func(context.Context, int64) ([]*Recipient, error) {
 				return nil, nil
@@ -185,9 +175,9 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return 0, nil
 			},
 		},
-		CreateActionEmailFunc: &CodeMonitorStoreCreateActionEmailFunc{
-			defaultHook: func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
-				return nil, nil
+		CountEmailActionsFunc: &CodeMonitorStoreCountEmailActionsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				return 0, nil
 			},
 		},
 		CreateActionsFunc: &CodeMonitorStoreCreateActionsFunc{
@@ -197,6 +187,11 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 		},
 		CreateCodeMonitorFunc: &CodeMonitorStoreCreateCodeMonitorFunc{
 			defaultHook: func(context.Context, *graphqlbackend.CreateCodeMonitorArgs) (*Monitor, error) {
+				return nil, nil
+			},
+		},
+		CreateEmailActionFunc: &CodeMonitorStoreCreateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
 				return nil, nil
 			},
 		},
@@ -215,7 +210,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil
 			},
 		},
-		DeleteActionsInt64Func: &CodeMonitorStoreDeleteActionsInt64Func{
+		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
 			defaultHook: func(context.Context, []int64, int64) error {
 				return nil
 			},
@@ -260,8 +255,18 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil
 			},
 		},
+		GetActionJobFunc: &CodeMonitorStoreGetActionJobFunc{
+			defaultHook: func(context.Context, int) (*ActionJob, error) {
+				return nil, nil
+			},
+		},
 		GetActionJobMetadataFunc: &CodeMonitorStoreGetActionJobMetadataFunc{
 			defaultHook: func(context.Context, int) (*ActionJobMetadata, error) {
+				return nil, nil
+			},
+		},
+		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
+			defaultHook: func(context.Context, int64) (*MonitorEmail, error) {
 				return nil, nil
 			},
 		},
@@ -330,11 +335,6 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil, nil
 			},
 		},
-		TotalCountActionEmailsFunc: &CodeMonitorStoreTotalCountActionEmailsFunc{
-			defaultHook: func(context.Context, int64) (int32, error) {
-				return 0, nil
-			},
-		},
 		TotalCountEventsForQueryIDInt64Func: &CodeMonitorStoreTotalCountEventsForQueryIDInt64Func{
 			defaultHook: func(context.Context, int64) (int32, error) {
 				return 0, nil
@@ -360,7 +360,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil, nil
 			},
 		},
-		UpdateActionEmailFunc: &CodeMonitorStoreUpdateActionEmailFunc{
+		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
 			defaultHook: func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
 				return nil, nil
 			},
@@ -383,12 +383,6 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 // implementation, unless overwritten.
 func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 	return &MockCodeMonitorStore{
-		ActionEmailByIDInt64Func: &CodeMonitorStoreActionEmailByIDInt64Func{
-			defaultHook: i.ActionEmailByIDInt64,
-		},
-		ActionJobForIDIntFunc: &CodeMonitorStoreActionJobForIDIntFunc{
-			defaultHook: i.ActionJobForIDInt,
-		},
 		AllRecipientsForEmailIDInt64Func: &CodeMonitorStoreAllRecipientsForEmailIDInt64Func{
 			defaultHook: i.AllRecipientsForEmailIDInt64,
 		},
@@ -398,14 +392,17 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		CountActionJobsFunc: &CodeMonitorStoreCountActionJobsFunc{
 			defaultHook: i.CountActionJobs,
 		},
-		CreateActionEmailFunc: &CodeMonitorStoreCreateActionEmailFunc{
-			defaultHook: i.CreateEmailAction,
+		CountEmailActionsFunc: &CodeMonitorStoreCountEmailActionsFunc{
+			defaultHook: i.CountEmailActions,
 		},
 		CreateActionsFunc: &CodeMonitorStoreCreateActionsFunc{
 			defaultHook: i.CreateActions,
 		},
 		CreateCodeMonitorFunc: &CodeMonitorStoreCreateCodeMonitorFunc{
 			defaultHook: i.CreateCodeMonitor,
+		},
+		CreateEmailActionFunc: &CodeMonitorStoreCreateEmailActionFunc{
+			defaultHook: i.CreateEmailAction,
 		},
 		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
 			defaultHook: i.CreateMonitor,
@@ -416,7 +413,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		CreateTriggerQueryFunc: &CodeMonitorStoreCreateTriggerQueryFunc{
 			defaultHook: i.CreateTriggerQuery,
 		},
-		DeleteActionsInt64Func: &CodeMonitorStoreDeleteActionsInt64Func{
+		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
 			defaultHook: i.DeleteEmailActions,
 		},
 		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
@@ -443,8 +440,14 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		ExecFunc: &CodeMonitorStoreExecFunc{
 			defaultHook: i.Exec,
 		},
+		GetActionJobFunc: &CodeMonitorStoreGetActionJobFunc{
+			defaultHook: i.GetActionJob,
+		},
 		GetActionJobMetadataFunc: &CodeMonitorStoreGetActionJobMetadataFunc{
 			defaultHook: i.GetActionJobMetadata,
+		},
+		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
+			defaultHook: i.GetEmailAction,
 		},
 		GetEventsForQueryIDInt64Func: &CodeMonitorStoreGetEventsForQueryIDInt64Func{
 			defaultHook: i.GetEventsForQueryIDInt64,
@@ -485,9 +488,6 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		ToggleMonitorFunc: &CodeMonitorStoreToggleMonitorFunc{
 			defaultHook: i.ToggleMonitor,
 		},
-		TotalCountActionEmailsFunc: &CodeMonitorStoreTotalCountActionEmailsFunc{
-			defaultHook: i.TotalCountActionEmails,
-		},
 		TotalCountEventsForQueryIDInt64Func: &CodeMonitorStoreTotalCountEventsForQueryIDInt64Func{
 			defaultHook: i.TotalCountEventsForQueryIDInt64,
 		},
@@ -503,7 +503,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		TriggerQueryByMonitorIDInt64Func: &CodeMonitorStoreTriggerQueryByMonitorIDInt64Func{
 			defaultHook: i.TriggerQueryByMonitorIDInt64,
 		},
-		UpdateActionEmailFunc: &CodeMonitorStoreUpdateActionEmailFunc{
+		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
 			defaultHook: i.UpdateEmailAction,
 		},
 		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
@@ -513,231 +513,6 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.UpdateTriggerQuery,
 		},
 	}
-}
-
-// CodeMonitorStoreActionEmailByIDInt64Func describes the behavior when the
-// ActionEmailByIDInt64 method of the parent MockCodeMonitorStore instance
-// is invoked.
-type CodeMonitorStoreActionEmailByIDInt64Func struct {
-	defaultHook func(context.Context, int64) (*MonitorEmail, error)
-	hooks       []func(context.Context, int64) (*MonitorEmail, error)
-	history     []CodeMonitorStoreActionEmailByIDInt64FuncCall
-	mutex       sync.Mutex
-}
-
-// ActionEmailByIDInt64 delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) ActionEmailByIDInt64(v0 context.Context, v1 int64) (*MonitorEmail, error) {
-	r0, r1 := m.ActionEmailByIDInt64Func.nextHook()(v0, v1)
-	m.ActionEmailByIDInt64Func.appendCall(CodeMonitorStoreActionEmailByIDInt64FuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ActionEmailByIDInt64
-// method of the parent MockCodeMonitorStore instance is invoked and the
-// hook queue is empty.
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) SetDefaultHook(hook func(context.Context, int64) (*MonitorEmail, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ActionEmailByIDInt64 method of the parent MockCodeMonitorStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) PushHook(hook func(context.Context, int64) (*MonitorEmail, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) SetDefaultReturn(r0 *MonitorEmail, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64) (*MonitorEmail, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) PushReturn(r0 *MonitorEmail, r1 error) {
-	f.PushHook(func(context.Context, int64) (*MonitorEmail, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) nextHook() func(context.Context, int64) (*MonitorEmail, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) appendCall(r0 CodeMonitorStoreActionEmailByIDInt64FuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// CodeMonitorStoreActionEmailByIDInt64FuncCall objects describing the
-// invocations of this function.
-func (f *CodeMonitorStoreActionEmailByIDInt64Func) History() []CodeMonitorStoreActionEmailByIDInt64FuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreActionEmailByIDInt64FuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreActionEmailByIDInt64FuncCall is an object that describes
-// an invocation of method ActionEmailByIDInt64 on an instance of
-// MockCodeMonitorStore.
-type CodeMonitorStoreActionEmailByIDInt64FuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int64
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *MonitorEmail
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreActionEmailByIDInt64FuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreActionEmailByIDInt64FuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// CodeMonitorStoreActionJobForIDIntFunc describes the behavior when the
-// ActionJobForIDInt method of the parent MockCodeMonitorStore instance is
-// invoked.
-type CodeMonitorStoreActionJobForIDIntFunc struct {
-	defaultHook func(context.Context, int) (*ActionJob, error)
-	hooks       []func(context.Context, int) (*ActionJob, error)
-	history     []CodeMonitorStoreActionJobForIDIntFuncCall
-	mutex       sync.Mutex
-}
-
-// ActionJobForIDInt delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) ActionJobForIDInt(v0 context.Context, v1 int) (*ActionJob, error) {
-	r0, r1 := m.ActionJobForIDIntFunc.nextHook()(v0, v1)
-	m.ActionJobForIDIntFunc.appendCall(CodeMonitorStoreActionJobForIDIntFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ActionJobForIDInt
-// method of the parent MockCodeMonitorStore instance is invoked and the
-// hook queue is empty.
-func (f *CodeMonitorStoreActionJobForIDIntFunc) SetDefaultHook(hook func(context.Context, int) (*ActionJob, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ActionJobForIDInt method of the parent MockCodeMonitorStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *CodeMonitorStoreActionJobForIDIntFunc) PushHook(hook func(context.Context, int) (*ActionJob, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *CodeMonitorStoreActionJobForIDIntFunc) SetDefaultReturn(r0 *ActionJob, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (*ActionJob, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *CodeMonitorStoreActionJobForIDIntFunc) PushReturn(r0 *ActionJob, r1 error) {
-	f.PushHook(func(context.Context, int) (*ActionJob, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeMonitorStoreActionJobForIDIntFunc) nextHook() func(context.Context, int) (*ActionJob, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreActionJobForIDIntFunc) appendCall(r0 CodeMonitorStoreActionJobForIDIntFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of CodeMonitorStoreActionJobForIDIntFuncCall
-// objects describing the invocations of this function.
-func (f *CodeMonitorStoreActionJobForIDIntFunc) History() []CodeMonitorStoreActionJobForIDIntFuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreActionJobForIDIntFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreActionJobForIDIntFuncCall is an object that describes an
-// invocation of method ActionJobForIDInt on an instance of
-// MockCodeMonitorStore.
-type CodeMonitorStoreActionJobForIDIntFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *ActionJob
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreActionJobForIDIntFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreActionJobForIDIntFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreAllRecipientsForEmailIDInt64Func describes the behavior
@@ -1065,37 +840,37 @@ func (c CodeMonitorStoreCountActionJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// CodeMonitorStoreCreateActionEmailFunc describes the behavior when the
-// CreateActionEmail method of the parent MockCodeMonitorStore instance is
+// CodeMonitorStoreCountEmailActionsFunc describes the behavior when the
+// CountEmailActions method of the parent MockCodeMonitorStore instance is
 // invoked.
-type CodeMonitorStoreCreateActionEmailFunc struct {
-	defaultHook func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)
-	hooks       []func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)
-	history     []CodeMonitorStoreCreateActionEmailFuncCall
+type CodeMonitorStoreCountEmailActionsFunc struct {
+	defaultHook func(context.Context, int64) (int32, error)
+	hooks       []func(context.Context, int64) (int32, error)
+	history     []CodeMonitorStoreCountEmailActionsFuncCall
 	mutex       sync.Mutex
 }
 
-// CreateActionEmail delegates to the next hook function in the queue and
+// CountEmailActions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateActionEmail(v0 context.Context, v1 int64, v2 *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
-	r0, r1 := m.CreateActionEmailFunc.nextHook()(v0, v1, v2)
-	m.CreateActionEmailFunc.appendCall(CodeMonitorStoreCreateActionEmailFuncCall{v0, v1, v2, r0, r1})
+func (m *MockCodeMonitorStore) CountEmailActions(v0 context.Context, v1 int64) (int32, error) {
+	r0, r1 := m.CountEmailActionsFunc.nextHook()(v0, v1)
+	m.CountEmailActionsFunc.appendCall(CodeMonitorStoreCountEmailActionsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the CreateActionEmail
+// SetDefaultHook sets function that is called when the CountEmailActions
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreCreateActionEmailFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)) {
+func (f *CodeMonitorStoreCountEmailActionsFunc) SetDefaultHook(hook func(context.Context, int64) (int32, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CreateActionEmail method of the parent MockCodeMonitorStore instance
+// CountEmailActions method of the parent MockCodeMonitorStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreCreateActionEmailFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)) {
+func (f *CodeMonitorStoreCountEmailActionsFunc) PushHook(hook func(context.Context, int64) (int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1103,21 +878,21 @@ func (f *CodeMonitorStoreCreateActionEmailFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreCreateActionEmailFunc) SetDefaultReturn(r0 *MonitorEmail, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+func (f *CodeMonitorStoreCountEmailActionsFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (int32, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreCreateActionEmailFunc) PushReturn(r0 *MonitorEmail, r1 error) {
-	f.PushHook(func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+func (f *CodeMonitorStoreCountEmailActionsFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context, int64) (int32, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCreateActionEmailFunc) nextHook() func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+func (f *CodeMonitorStoreCountEmailActionsFunc) nextHook() func(context.Context, int64) (int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1130,39 +905,36 @@ func (f *CodeMonitorStoreCreateActionEmailFunc) nextHook() func(context.Context,
 	return hook
 }
 
-func (f *CodeMonitorStoreCreateActionEmailFunc) appendCall(r0 CodeMonitorStoreCreateActionEmailFuncCall) {
+func (f *CodeMonitorStoreCountEmailActionsFunc) appendCall(r0 CodeMonitorStoreCountEmailActionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of CodeMonitorStoreCreateActionEmailFuncCall
+// History returns a sequence of CodeMonitorStoreCountEmailActionsFuncCall
 // objects describing the invocations of this function.
-func (f *CodeMonitorStoreCreateActionEmailFunc) History() []CodeMonitorStoreCreateActionEmailFuncCall {
+func (f *CodeMonitorStoreCountEmailActionsFunc) History() []CodeMonitorStoreCountEmailActionsFuncCall {
 	f.mutex.Lock()
-	history := make([]CodeMonitorStoreCreateActionEmailFuncCall, len(f.history))
+	history := make([]CodeMonitorStoreCountEmailActionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CodeMonitorStoreCreateActionEmailFuncCall is an object that describes an
-// invocation of method CreateActionEmail on an instance of
+// CodeMonitorStoreCountEmailActionsFuncCall is an object that describes an
+// invocation of method CountEmailActions on an instance of
 // MockCodeMonitorStore.
-type CodeMonitorStoreCreateActionEmailFuncCall struct {
+type CodeMonitorStoreCountEmailActionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 int64
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *graphqlbackend.CreateActionArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *MonitorEmail
+	Result0 int32
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -1170,13 +942,13 @@ type CodeMonitorStoreCreateActionEmailFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CodeMonitorStoreCreateActionEmailFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+func (c CodeMonitorStoreCountEmailActionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CodeMonitorStoreCreateActionEmailFuncCall) Results() []interface{} {
+func (c CodeMonitorStoreCountEmailActionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1400,6 +1172,121 @@ func (c CodeMonitorStoreCreateCodeMonitorFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeMonitorStoreCreateCodeMonitorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreCreateEmailActionFunc describes the behavior when the
+// CreateEmailAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreCreateEmailActionFunc struct {
+	defaultHook func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)
+	hooks       []func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)
+	history     []CodeMonitorStoreCreateEmailActionFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateEmailAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) CreateEmailAction(v0 context.Context, v1 int64, v2 *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+	r0, r1 := m.CreateEmailActionFunc.nextHook()(v0, v1, v2)
+	m.CreateEmailActionFunc.appendCall(CodeMonitorStoreCreateEmailActionFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateEmailAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreCreateEmailActionFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateEmailAction method of the parent MockCodeMonitorStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeMonitorStoreCreateEmailActionFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreCreateEmailActionFunc) SetDefaultReturn(r0 *MonitorEmail, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreCreateEmailActionFunc) PushReturn(r0 *MonitorEmail, r1 error) {
+	f.PushHook(func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreCreateEmailActionFunc) nextHook() func(context.Context, int64, *graphqlbackend.CreateActionArgs) (*MonitorEmail, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreCreateEmailActionFunc) appendCall(r0 CodeMonitorStoreCreateEmailActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreCreateEmailActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreCreateEmailActionFunc) History() []CodeMonitorStoreCreateEmailActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreCreateEmailActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreCreateEmailActionFuncCall is an object that describes an
+// invocation of method CreateEmailAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreCreateEmailActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *graphqlbackend.CreateActionArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *MonitorEmail
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreCreateEmailActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreCreateEmailActionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1738,37 +1625,37 @@ func (c CodeMonitorStoreCreateTriggerQueryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// CodeMonitorStoreDeleteActionsInt64Func describes the behavior when the
-// DeleteActionsInt64 method of the parent MockCodeMonitorStore instance is
+// CodeMonitorStoreDeleteEmailActionsFunc describes the behavior when the
+// DeleteEmailActions method of the parent MockCodeMonitorStore instance is
 // invoked.
-type CodeMonitorStoreDeleteActionsInt64Func struct {
+type CodeMonitorStoreDeleteEmailActionsFunc struct {
 	defaultHook func(context.Context, []int64, int64) error
 	hooks       []func(context.Context, []int64, int64) error
-	history     []CodeMonitorStoreDeleteActionsInt64FuncCall
+	history     []CodeMonitorStoreDeleteEmailActionsFuncCall
 	mutex       sync.Mutex
 }
 
-// DeleteActionsInt64 delegates to the next hook function in the queue and
+// DeleteEmailActions delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) DeleteActionsInt64(v0 context.Context, v1 []int64, v2 int64) error {
-	r0 := m.DeleteActionsInt64Func.nextHook()(v0, v1, v2)
-	m.DeleteActionsInt64Func.appendCall(CodeMonitorStoreDeleteActionsInt64FuncCall{v0, v1, v2, r0})
+func (m *MockCodeMonitorStore) DeleteEmailActions(v0 context.Context, v1 []int64, v2 int64) error {
+	r0 := m.DeleteEmailActionsFunc.nextHook()(v0, v1, v2)
+	m.DeleteEmailActionsFunc.appendCall(CodeMonitorStoreDeleteEmailActionsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the DeleteActionsInt64
+// SetDefaultHook sets function that is called when the DeleteEmailActions
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreDeleteActionsInt64Func) SetDefaultHook(hook func(context.Context, []int64, int64) error) {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) SetDefaultHook(hook func(context.Context, []int64, int64) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// DeleteActionsInt64 method of the parent MockCodeMonitorStore instance
+// DeleteEmailActions method of the parent MockCodeMonitorStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreDeleteActionsInt64Func) PushHook(hook func(context.Context, []int64, int64) error) {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) PushHook(hook func(context.Context, []int64, int64) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1776,7 +1663,7 @@ func (f *CodeMonitorStoreDeleteActionsInt64Func) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreDeleteActionsInt64Func) SetDefaultReturn(r0 error) {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, []int64, int64) error {
 		return r0
 	})
@@ -1784,13 +1671,13 @@ func (f *CodeMonitorStoreDeleteActionsInt64Func) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreDeleteActionsInt64Func) PushReturn(r0 error) {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, []int64, int64) error {
 		return r0
 	})
 }
 
-func (f *CodeMonitorStoreDeleteActionsInt64Func) nextHook() func(context.Context, []int64, int64) error {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) nextHook() func(context.Context, []int64, int64) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1803,27 +1690,27 @@ func (f *CodeMonitorStoreDeleteActionsInt64Func) nextHook() func(context.Context
 	return hook
 }
 
-func (f *CodeMonitorStoreDeleteActionsInt64Func) appendCall(r0 CodeMonitorStoreDeleteActionsInt64FuncCall) {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) appendCall(r0 CodeMonitorStoreDeleteEmailActionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of CodeMonitorStoreDeleteActionsInt64FuncCall
+// History returns a sequence of CodeMonitorStoreDeleteEmailActionsFuncCall
 // objects describing the invocations of this function.
-func (f *CodeMonitorStoreDeleteActionsInt64Func) History() []CodeMonitorStoreDeleteActionsInt64FuncCall {
+func (f *CodeMonitorStoreDeleteEmailActionsFunc) History() []CodeMonitorStoreDeleteEmailActionsFuncCall {
 	f.mutex.Lock()
-	history := make([]CodeMonitorStoreDeleteActionsInt64FuncCall, len(f.history))
+	history := make([]CodeMonitorStoreDeleteEmailActionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CodeMonitorStoreDeleteActionsInt64FuncCall is an object that describes an
-// invocation of method DeleteActionsInt64 on an instance of
+// CodeMonitorStoreDeleteEmailActionsFuncCall is an object that describes an
+// invocation of method DeleteEmailActions on an instance of
 // MockCodeMonitorStore.
-type CodeMonitorStoreDeleteActionsInt64FuncCall struct {
+type CodeMonitorStoreDeleteEmailActionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1840,13 +1727,13 @@ type CodeMonitorStoreDeleteActionsInt64FuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CodeMonitorStoreDeleteActionsInt64FuncCall) Args() []interface{} {
+func (c CodeMonitorStoreDeleteEmailActionsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CodeMonitorStoreDeleteActionsInt64FuncCall) Results() []interface{} {
+func (c CodeMonitorStoreDeleteEmailActionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -2712,6 +2599,116 @@ func (c CodeMonitorStoreExecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// CodeMonitorStoreGetActionJobFunc describes the behavior when the
+// GetActionJob method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreGetActionJobFunc struct {
+	defaultHook func(context.Context, int) (*ActionJob, error)
+	hooks       []func(context.Context, int) (*ActionJob, error)
+	history     []CodeMonitorStoreGetActionJobFuncCall
+	mutex       sync.Mutex
+}
+
+// GetActionJob delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetActionJob(v0 context.Context, v1 int) (*ActionJob, error) {
+	r0, r1 := m.GetActionJobFunc.nextHook()(v0, v1)
+	m.GetActionJobFunc.appendCall(CodeMonitorStoreGetActionJobFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetActionJob method
+// of the parent MockCodeMonitorStore instance is invoked and the hook queue
+// is empty.
+func (f *CodeMonitorStoreGetActionJobFunc) SetDefaultHook(hook func(context.Context, int) (*ActionJob, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetActionJob method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreGetActionJobFunc) PushHook(hook func(context.Context, int) (*ActionJob, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetActionJobFunc) SetDefaultReturn(r0 *ActionJob, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetActionJobFunc) PushReturn(r0 *ActionJob, r1 error) {
+	f.PushHook(func(context.Context, int) (*ActionJob, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetActionJobFunc) nextHook() func(context.Context, int) (*ActionJob, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetActionJobFunc) appendCall(r0 CodeMonitorStoreGetActionJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetActionJobFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreGetActionJobFunc) History() []CodeMonitorStoreGetActionJobFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetActionJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetActionJobFuncCall is an object that describes an
+// invocation of method GetActionJob on an instance of MockCodeMonitorStore.
+type CodeMonitorStoreGetActionJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *ActionJob
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetActionJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetActionJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // CodeMonitorStoreGetActionJobMetadataFunc describes the behavior when the
 // GetActionJobMetadata method of the parent MockCodeMonitorStore instance
 // is invoked.
@@ -2822,6 +2819,117 @@ func (c CodeMonitorStoreGetActionJobMetadataFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeMonitorStoreGetActionJobMetadataFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeMonitorStoreGetEmailActionFunc describes the behavior when the
+// GetEmailAction method of the parent MockCodeMonitorStore instance is
+// invoked.
+type CodeMonitorStoreGetEmailActionFunc struct {
+	defaultHook func(context.Context, int64) (*MonitorEmail, error)
+	hooks       []func(context.Context, int64) (*MonitorEmail, error)
+	history     []CodeMonitorStoreGetEmailActionFuncCall
+	mutex       sync.Mutex
+}
+
+// GetEmailAction delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeMonitorStore) GetEmailAction(v0 context.Context, v1 int64) (*MonitorEmail, error) {
+	r0, r1 := m.GetEmailActionFunc.nextHook()(v0, v1)
+	m.GetEmailActionFunc.appendCall(CodeMonitorStoreGetEmailActionFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetEmailAction
+// method of the parent MockCodeMonitorStore instance is invoked and the
+// hook queue is empty.
+func (f *CodeMonitorStoreGetEmailActionFunc) SetDefaultHook(hook func(context.Context, int64) (*MonitorEmail, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetEmailAction method of the parent MockCodeMonitorStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeMonitorStoreGetEmailActionFunc) PushHook(hook func(context.Context, int64) (*MonitorEmail, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *CodeMonitorStoreGetEmailActionFunc) SetDefaultReturn(r0 *MonitorEmail, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*MonitorEmail, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *CodeMonitorStoreGetEmailActionFunc) PushReturn(r0 *MonitorEmail, r1 error) {
+	f.PushHook(func(context.Context, int64) (*MonitorEmail, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeMonitorStoreGetEmailActionFunc) nextHook() func(context.Context, int64) (*MonitorEmail, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeMonitorStoreGetEmailActionFunc) appendCall(r0 CodeMonitorStoreGetEmailActionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeMonitorStoreGetEmailActionFuncCall
+// objects describing the invocations of this function.
+func (f *CodeMonitorStoreGetEmailActionFunc) History() []CodeMonitorStoreGetEmailActionFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeMonitorStoreGetEmailActionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeMonitorStoreGetEmailActionFuncCall is an object that describes an
+// invocation of method GetEmailAction on an instance of
+// MockCodeMonitorStore.
+type CodeMonitorStoreGetEmailActionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *MonitorEmail
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeMonitorStoreGetEmailActionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeMonitorStoreGetEmailActionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -4262,119 +4370,6 @@ func (c CodeMonitorStoreToggleMonitorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// CodeMonitorStoreTotalCountActionEmailsFunc describes the behavior when
-// the TotalCountActionEmails method of the parent MockCodeMonitorStore
-// instance is invoked.
-type CodeMonitorStoreTotalCountActionEmailsFunc struct {
-	defaultHook func(context.Context, int64) (int32, error)
-	hooks       []func(context.Context, int64) (int32, error)
-	history     []CodeMonitorStoreTotalCountActionEmailsFuncCall
-	mutex       sync.Mutex
-}
-
-// TotalCountActionEmails delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) TotalCountActionEmails(v0 context.Context, v1 int64) (int32, error) {
-	r0, r1 := m.TotalCountActionEmailsFunc.nextHook()(v0, v1)
-	m.TotalCountActionEmailsFunc.appendCall(CodeMonitorStoreTotalCountActionEmailsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// TotalCountActionEmails method of the parent MockCodeMonitorStore instance
-// is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) SetDefaultHook(hook func(context.Context, int64) (int32, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// TotalCountActionEmails method of the parent MockCodeMonitorStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) PushHook(hook func(context.Context, int64) (int32, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) SetDefaultReturn(r0 int32, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64) (int32, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) PushReturn(r0 int32, r1 error) {
-	f.PushHook(func(context.Context, int64) (int32, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) nextHook() func(context.Context, int64) (int32, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) appendCall(r0 CodeMonitorStoreTotalCountActionEmailsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// CodeMonitorStoreTotalCountActionEmailsFuncCall objects describing the
-// invocations of this function.
-func (f *CodeMonitorStoreTotalCountActionEmailsFunc) History() []CodeMonitorStoreTotalCountActionEmailsFuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreTotalCountActionEmailsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreTotalCountActionEmailsFuncCall is an object that
-// describes an invocation of method TotalCountActionEmails on an instance
-// of MockCodeMonitorStore.
-type CodeMonitorStoreTotalCountActionEmailsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int64
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int32
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreTotalCountActionEmailsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreTotalCountActionEmailsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // CodeMonitorStoreTotalCountEventsForQueryIDInt64Func describes the
 // behavior when the TotalCountEventsForQueryIDInt64 method of the parent
 // MockCodeMonitorStore instance is invoked.
@@ -4932,37 +4927,37 @@ func (c CodeMonitorStoreTriggerQueryByMonitorIDInt64FuncCall) Results() []interf
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// CodeMonitorStoreUpdateActionEmailFunc describes the behavior when the
-// UpdateActionEmail method of the parent MockCodeMonitorStore instance is
+// CodeMonitorStoreUpdateEmailActionFunc describes the behavior when the
+// UpdateEmailAction method of the parent MockCodeMonitorStore instance is
 // invoked.
-type CodeMonitorStoreUpdateActionEmailFunc struct {
+type CodeMonitorStoreUpdateEmailActionFunc struct {
 	defaultHook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error)
 	hooks       []func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error)
-	history     []CodeMonitorStoreUpdateActionEmailFuncCall
+	history     []CodeMonitorStoreUpdateEmailActionFuncCall
 	mutex       sync.Mutex
 }
 
-// UpdateActionEmail delegates to the next hook function in the queue and
+// UpdateEmailAction delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) UpdateActionEmail(v0 context.Context, v1 int64, v2 *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
-	r0, r1 := m.UpdateActionEmailFunc.nextHook()(v0, v1, v2)
-	m.UpdateActionEmailFunc.appendCall(CodeMonitorStoreUpdateActionEmailFuncCall{v0, v1, v2, r0, r1})
+func (m *MockCodeMonitorStore) UpdateEmailAction(v0 context.Context, v1 int64, v2 *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
+	r0, r1 := m.UpdateEmailActionFunc.nextHook()(v0, v1, v2)
+	m.UpdateEmailActionFunc.appendCall(CodeMonitorStoreUpdateEmailActionFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the UpdateActionEmail
+// SetDefaultHook sets function that is called when the UpdateEmailAction
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreUpdateActionEmailFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error)) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateActionEmail method of the parent MockCodeMonitorStore instance
+// UpdateEmailAction method of the parent MockCodeMonitorStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreUpdateActionEmailFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error)) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4970,7 +4965,7 @@ func (f *CodeMonitorStoreUpdateActionEmailFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreUpdateActionEmailFunc) SetDefaultReturn(r0 *MonitorEmail, r1 error) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultReturn(r0 *MonitorEmail, r1 error) {
 	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
 		return r0, r1
 	})
@@ -4978,13 +4973,13 @@ func (f *CodeMonitorStoreUpdateActionEmailFunc) SetDefaultReturn(r0 *MonitorEmai
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreUpdateActionEmailFunc) PushReturn(r0 *MonitorEmail, r1 error) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) PushReturn(r0 *MonitorEmail, r1 error) {
 	f.PushHook(func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreUpdateActionEmailFunc) nextHook() func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) nextHook() func(context.Context, int64, *graphqlbackend.EditActionArgs) (*MonitorEmail, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4997,27 +4992,27 @@ func (f *CodeMonitorStoreUpdateActionEmailFunc) nextHook() func(context.Context,
 	return hook
 }
 
-func (f *CodeMonitorStoreUpdateActionEmailFunc) appendCall(r0 CodeMonitorStoreUpdateActionEmailFuncCall) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) appendCall(r0 CodeMonitorStoreUpdateEmailActionFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of CodeMonitorStoreUpdateActionEmailFuncCall
+// History returns a sequence of CodeMonitorStoreUpdateEmailActionFuncCall
 // objects describing the invocations of this function.
-func (f *CodeMonitorStoreUpdateActionEmailFunc) History() []CodeMonitorStoreUpdateActionEmailFuncCall {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) History() []CodeMonitorStoreUpdateEmailActionFuncCall {
 	f.mutex.Lock()
-	history := make([]CodeMonitorStoreUpdateActionEmailFuncCall, len(f.history))
+	history := make([]CodeMonitorStoreUpdateEmailActionFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CodeMonitorStoreUpdateActionEmailFuncCall is an object that describes an
-// invocation of method UpdateActionEmail on an instance of
+// CodeMonitorStoreUpdateEmailActionFuncCall is an object that describes an
+// invocation of method UpdateEmailAction on an instance of
 // MockCodeMonitorStore.
-type CodeMonitorStoreUpdateActionEmailFuncCall struct {
+type CodeMonitorStoreUpdateEmailActionFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -5037,13 +5032,13 @@ type CodeMonitorStoreUpdateActionEmailFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CodeMonitorStoreUpdateActionEmailFuncCall) Args() []interface{} {
+func (c CodeMonitorStoreUpdateEmailActionFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CodeMonitorStoreUpdateActionEmailFuncCall) Results() []interface{} {
+func (c CodeMonitorStoreUpdateEmailActionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

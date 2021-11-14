@@ -30,7 +30,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	}
 
 	var got *ActionJob
-	got, err = s.ActionJobForIDInt(ctx, 1)
+	got, err = s.GetActionJob(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

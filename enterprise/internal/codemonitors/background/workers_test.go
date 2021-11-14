@@ -95,7 +95,7 @@ func TestActionRunner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			record, err = ts.ActionJobForIDInt(ctx, 1)
+			record, err = ts.GetActionJob(ctx, 1)
 			if err != nil {
 				t.Fatal(err)
 			}
