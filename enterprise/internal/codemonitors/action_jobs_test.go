@@ -20,7 +20,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggers(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggers(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestScanActionJobs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggers(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

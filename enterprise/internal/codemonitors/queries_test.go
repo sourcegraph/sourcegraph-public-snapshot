@@ -18,7 +18,7 @@ func TestQueryByRecordID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggers(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggers(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

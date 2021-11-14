@@ -54,7 +54,7 @@ type CodeMonitorStore interface {
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
-	EnqueueTriggerQueries(ctx context.Context) (err error)
+	EnqueueQueryTriggers(ctx context.Context) (err error)
 
 	GetQueryByRecordID(ctx context.Context, recordID int) (query *QueryTrigger, err error)
 

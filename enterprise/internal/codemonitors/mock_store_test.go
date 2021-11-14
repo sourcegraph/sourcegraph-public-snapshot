@@ -435,7 +435,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.EnqueueActionEmailsForQueryIDInt64,
 		},
 		EnqueueTriggerQueriesFunc: &CodeMonitorStoreEnqueueTriggerQueriesFunc{
-			defaultHook: i.EnqueueTriggerQueries,
+			defaultHook: i.EnqueueQueryTriggers,
 		},
 		ExecFunc: &CodeMonitorStoreExecFunc{
 			defaultHook: i.Exec,

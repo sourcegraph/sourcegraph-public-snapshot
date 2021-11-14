@@ -356,7 +356,7 @@ func TestQueryMonitor(t *testing.T) {
 	// in the database. After we create the monitor they fill the job tables and
 	// update the job status.
 	postHookOpt := WithPostHooks([]hook{
-		func() error { return r.store.EnqueueTriggerQueries(ctx) },
+		func() error { return r.store.EnqueueQueryTriggers(ctx) },
 		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
 		func() error {
 			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
@@ -381,7 +381,7 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		// 3   1	 queued
-		func() error { return r.store.EnqueueTriggerQueries(ctx) },
+		func() error { return r.store.EnqueueQueryTriggers(ctx) },
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
 		func() error { return r.store.LogSearch(ctx, "", 1, 1) },
