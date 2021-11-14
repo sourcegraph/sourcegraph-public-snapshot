@@ -12,7 +12,7 @@ import (
 )
 
 type ActionJob struct {
-	Id           int32
+	ID           int32
 	Email        *int64
 	Webhook      *int64
 	SlackWebhook *int64
@@ -30,7 +30,7 @@ type ActionJob struct {
 }
 
 func (a *ActionJob) RecordID() int {
-	return int(a.Id)
+	return int(a.ID)
 }
 
 type ActionJobMetadata struct {
@@ -244,7 +244,7 @@ func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
 func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 	aj := &ActionJob{}
 	return aj, row.Scan(
-		&aj.Id,
+		&aj.ID,
 		&aj.Email,
 		&aj.Webhook,
 		&aj.SlackWebhook,

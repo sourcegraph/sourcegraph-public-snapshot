@@ -15,7 +15,7 @@ import (
 )
 
 type EmailAction struct {
-	Id        int64
+	ID        int64
 	Monitor   int64
 	Enabled   bool
 	Priority  string
@@ -251,7 +251,7 @@ func scanEmails(rows *sql.Rows) ([]*EmailAction, error) {
 func scanEmail(scanner dbutil.Scanner) (*EmailAction, error) {
 	m := &EmailAction{}
 	err := scanner.Scan(
-		&m.Id,
+		&m.ID,
 		&m.Monitor,
 		&m.Enabled,
 		&m.Priority,

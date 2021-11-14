@@ -15,7 +15,7 @@ import (
 )
 
 type TriggerJob struct {
-	Id    int32
+	ID    int32
 	Query int64
 
 	// The query we ran including after: filter.
@@ -37,7 +37,7 @@ type TriggerJob struct {
 }
 
 func (r *TriggerJob) RecordID() int {
-	return int(r.Id)
+	return int(r.ID)
 }
 
 const enqueueTriggerQueryFmtStr = `
@@ -167,7 +167,7 @@ func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
 func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
 	m := &TriggerJob{}
 	err := scanner.Scan(
-		&m.Id,
+		&m.ID,
 		&m.Query,
 		&m.QueryString,
 		&m.Results,

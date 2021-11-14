@@ -338,7 +338,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		err = r.store.CreateRecipients(ctx, action.Email.Update.Recipients, e.Id)
+		err = r.store.CreateRecipients(ctx, action.Email.Update.Recipients, e.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -536,7 +536,7 @@ type monitorQuery struct {
 }
 
 func (q *monitorQuery) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerQueryKind, q.Id)
+	return relay.MarshalID(monitorTriggerQueryKind, q.QueryTrigger.ID)
 }
 
 func (q *monitorQuery) Query() string {
@@ -544,11 +544,11 @@ func (q *monitorQuery) Query() string {
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
-	es, err := q.store.ListQueryTriggerJobs(ctx, q.Id, args)
+	es, err := q.store.ListQueryTriggerJobs(ctx, q.QueryTrigger.ID, args)
 	if err != nil {
 		return nil, err
 	}
-	totalCount, err := q.store.CountQueryTriggerJobs(ctx, q.Id)
+	totalCount, err := q.store.CountQueryTriggerJobs(ctx, q.QueryTrigger.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +597,7 @@ type monitorTriggerEvent struct {
 }
 
 func (m *monitorTriggerEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerEventKind, m.Id)
+	return relay.MarshalID(monitorTriggerEventKind, m.TriggerJob.ID)
 }
 
 // stateToStatus maps the state of the dbworker job to the public GraphQL status of
@@ -629,7 +629,7 @@ func (m *monitorTriggerEvent) Timestamp() (graphqlbackend.DateTime, error) {
 }
 
 func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	return m.actionConnectionResolverWithTriggerID(ctx, &m.Id, m.monitorID, args)
+	return m.actionConnectionResolverWithTriggerID(ctx, &m.TriggerJob.ID, m.monitorID, args)
 }
 
 // ActionConnection
@@ -684,7 +684,7 @@ type monitorEmail struct {
 
 func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
 	var ms []*cm.Recipient
-	ms, err = m.store.ListRecipientsForEmailAction(ctx, m.Id, args)
+	ms, err = m.store.ListRecipientsForEmailAction(ctx, m.EmailAction.ID, args)
 	if err != nil {
 		return nil, err
 	}
@@ -711,7 +711,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	}
 
 	var total int32
-	total, err = m.store.CountRecipients(ctx, m.Id)
+	total, err = m.store.CountRecipients(ctx, m.EmailAction.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -731,7 +731,7 @@ func (m *monitorEmail) Header() string {
 }
 
 func (m *monitorEmail) ID() graphql.ID {
-	return relay.MarshalID(monitorActionEmailKind, m.Id)
+	return relay.MarshalID(monitorActionEmailKind, m.EmailAction.ID)
 }
 
 func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
@@ -741,7 +741,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 	}
 
 	ajs, err := m.store.ListActionJobs(ctx, cm.ListActionJobsOpts{
-		EmailID:        intPtr(int(m.Id)),
+		EmailID:        intPtr(int(m.EmailAction.ID)),
 		TriggerEventID: m.triggerEventID,
 		First:          intPtr(int(args.First)),
 		After:          after,
@@ -751,7 +751,7 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 	}
 
 	totalCount, err := m.store.CountActionJobs(ctx, cm.ListActionJobsOpts{
-		EmailID:        intPtr(int(m.Id)),
+		EmailID:        intPtr(int(m.EmailAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
@@ -832,7 +832,7 @@ type monitorActionEvent struct {
 }
 
 func (m *monitorActionEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorActionEventKind, m.Id)
+	return relay.MarshalID(monitorActionEventKind, m.ID)
 }
 
 func (m *monitorActionEvent) Status() (string, error) {

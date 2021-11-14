@@ -12,7 +12,7 @@ func (s *codeMonitorStore) CreateActions(ctx context.Context, args []*graphqlbac
 		if err != nil {
 			return err
 		}
-		err = s.CreateRecipients(ctx, a.Email.Recipients, e.Id)
+		err = s.CreateRecipients(ctx, a.Email.Recipients, e.ID)
 		if err != nil {
 			return err
 		}

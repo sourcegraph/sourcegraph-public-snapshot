@@ -28,7 +28,7 @@ func TestQueryByRecordID(t *testing.T) {
 	}
 	now := s.Now()
 	want := &QueryTrigger{
-		Id:           1,
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
@@ -71,7 +71,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &QueryTrigger{
-		Id:           1,
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      wantNextRun,
@@ -100,7 +100,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 	}
 	now := s.Now()
 	want := &QueryTrigger{
-		Id:           1,
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
@@ -128,7 +128,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		t.Fatal(err)
 	}
 	want = &QueryTrigger{
-		Id:           1,
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,

@@ -13,7 +13,7 @@ import (
 )
 
 type QueryTrigger struct {
-	Id           int64
+	ID           int64
 	Monitor      int64
 	QueryString  string
 	NextRun      time.Time
@@ -199,7 +199,7 @@ func (s *codeMonitorStore) SetQueryTriggerNextRun(ctx context.Context, triggerQu
 func scanTriggerQuery(scanner dbutil.Scanner) (*QueryTrigger, error) {
 	m := &QueryTrigger{}
 	err := scanner.Scan(
-		&m.Id,
+		&m.ID,
 		&m.Monitor,
 		&m.QueryString,
 		&m.NextRun,

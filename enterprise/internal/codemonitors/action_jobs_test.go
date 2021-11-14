@@ -36,7 +36,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	}
 
 	want := &ActionJob{
-		Id:             1,
+		ID:             1,
 		Email:          int64Ptr(1),
 		TriggerEvent:   1,
 		State:          "queued",
