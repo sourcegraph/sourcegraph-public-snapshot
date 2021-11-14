@@ -67,9 +67,9 @@ DELETE FROM cm_trigger_jobs
 WHERE finished_at < (NOW() - (%s * '1 day'::interval));
 `
 
-// DeleteOldJobLogs deletes trigger jobs which have finished and are older than
+// DeleteOldTriggerJobs deletes trigger jobs which have finished and are older than
 // 'retention' days. Due to cascading, action jobs will be deleted as well.
-func (s *codeMonitorStore) DeleteOldJobLogs(ctx context.Context, retentionInDays int) error {
+func (s *codeMonitorStore) DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOldJobLogsFmtStr, retentionInDays))
 }
 

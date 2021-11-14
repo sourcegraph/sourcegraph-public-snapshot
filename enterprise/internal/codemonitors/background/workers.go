@@ -68,7 +68,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store cm.CodeMonitorStore) go
 				return err
 			}
 			// Delete old logs, even if they have search results.
-			err = store.DeleteOldJobLogs(ctx, eventRetentionInDays)
+			err = store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 			if err != nil {
 				return err
 			}

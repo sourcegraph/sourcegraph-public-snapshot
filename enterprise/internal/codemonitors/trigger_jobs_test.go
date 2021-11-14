@@ -49,7 +49,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = s.DeleteOldJobLogs(ctx, retentionInDays)
+	err = s.DeleteOldTriggerJobs(ctx, retentionInDays)
 	if err != nil {
 		t.Fatal(err)
 	}

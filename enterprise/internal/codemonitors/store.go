@@ -43,7 +43,7 @@ type CodeMonitorStore interface {
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
 	UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error
-	DeleteOldJobLogs(ctx context.Context, retentionInDays int) error
+	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
 	EnqueueQueryTriggerJobs(ctx context.Context) error
 	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
