@@ -34,7 +34,7 @@ INSERT INTO cm_trigger_jobs (query)
 SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
-func (s *codeMonitorStore) EnqueueQueryTriggers(ctx context.Context) error {
+func (s *codeMonitorStore) EnqueueQueryTriggerJobs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
 }
 

@@ -83,7 +83,7 @@ func TestActionRunner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueQueryTriggers(ctx)
+			err = ts.EnqueueQueryTriggerJobs(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
