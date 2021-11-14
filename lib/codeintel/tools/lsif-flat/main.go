@@ -72,9 +72,6 @@ func ConvertGraphToFlat(r io.Reader) (*proto.LsifValues, error) {
 	emitPackage := func(v *proto.Package) {
 		vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Package{Package: v}})
 	}
-	f_mkMonikerID := func(m conversion.Moniker) string {
-		return m.Kind + ":" + m.Scheme + ":" + m.Identifier
-	}
 	f_mkMonikerIDFromMoniker := func(g_docid int, g_range int) string {
 		if monikers := state.Monikers.Get(g_range); monikers != nil {
 			s := ""
@@ -85,7 +82,7 @@ func ConvertGraphToFlat(r io.Reader) (*proto.LsifValues, error) {
 						fmt.Printf("range %d has multiple import/export monikers, picked %s and will ignore the others\n", g_range, s)
 						return
 					}
-					s = f_mkMonikerID(state.MonikerData[g_moniker])
+					s = state.MonikerData[g_moniker].Identifier
 				}
 			})
 			if s != "" {
@@ -157,7 +154,7 @@ func ConvertGraphToFlat(r io.Reader) (*proto.LsifValues, error) {
 		nmonikers += 1
 		emitMoniker(&proto.Moniker{
 			Kind:      g_moniker.Kind,
-			Id:        f_mkMonikerID(g_moniker),
+			Id:        g_moniker.Identifier,
 			Scheme:    g_moniker.Scheme,
 			PackageId: f_mkPackageID(state.PackageInformationData[g_moniker.PackageInformationID]),
 		})
