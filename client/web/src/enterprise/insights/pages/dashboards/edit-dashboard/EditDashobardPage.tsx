@@ -14,7 +14,7 @@ import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
-import { FORM_ERROR } from '../../../components/form/hooks/useForm'
+import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CustomInsightDashboard, isVirtualDashboard } from '../../../core/types'
 import { isBuiltInInsightDashboard } from '../../../core/types/dashboard/real-dashboard'
@@ -74,7 +74,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         )
     }
 
-    const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<void | unknown> => {
+    const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<SubmissionErrors> => {
         if (!dashboard) {
             return
         }
