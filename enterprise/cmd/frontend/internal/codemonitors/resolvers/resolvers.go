@@ -544,7 +544,7 @@ func (q *monitorQuery) Query() string {
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
-	es, err := q.store.GetEventsForQueryIDInt64(ctx, q.Id, args)
+	es, err := q.store.ListQueryTriggerJobs(ctx, q.Id, args)
 	if err != nil {
 		return nil, err
 	}

@@ -450,7 +450,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.GetEmailAction,
 		},
 		GetEventsForQueryIDInt64Func: &CodeMonitorStoreGetEventsForQueryIDInt64Func{
-			defaultHook: i.GetEventsForQueryIDInt64,
+			defaultHook: i.ListQueryTriggerJobs,
 		},
 		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
 			defaultHook: i.GetMonitor,

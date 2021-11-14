@@ -68,7 +68,7 @@ type CodeMonitorStore interface {
 	LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error
 	DeleteOldJobLogs(ctx context.Context, retentionInDays int) error
 
-	GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
+	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
 	TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (int32, error)
 }
 

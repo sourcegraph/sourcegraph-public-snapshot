@@ -83,7 +83,7 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *codeMonitorStore) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
+func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
