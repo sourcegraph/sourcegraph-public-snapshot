@@ -61,7 +61,7 @@ FROM cm_emails
 WHERE monitor = %s;
 `
 
-func (s *codeMonitorStore) TotalCountActionEmails(ctx context.Context, monitorID int64) (int32, error) {
+func (s *codeMonitorStore) CountEmailActions(ctx context.Context, monitorID int64) (int32, error) {
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountActionEmailsFmtStr, monitorID)).Scan(&count)
 	return count, err
