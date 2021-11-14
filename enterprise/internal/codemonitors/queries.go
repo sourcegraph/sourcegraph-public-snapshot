@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-type MonitorQuery struct {
+type QueryTrigger struct {
 	Id           int64
 	Monitor      int64
 	QueryString  string
@@ -60,7 +60,7 @@ FROM cm_queries
 WHERE monitor = %s;
 `
 
-func (s *codeMonitorStore) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*MonitorQuery, error) {
+func (s *codeMonitorStore) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*QueryTrigger, error) {
 	q := sqlf.Sprintf(
 		triggerQueryByMonitorFmtStr,
 		sqlf.Join(queryColumns, ","),
@@ -76,7 +76,7 @@ FROM cm_queries
 WHERE id = %s;
 `
 
-func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*MonitorQuery, error) {
+func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*QueryTrigger, error) {
 	q := sqlf.Sprintf(
 		triggerQueryByIDFmtStr,
 		sqlf.Join(queryColumns, ","),
@@ -167,7 +167,7 @@ INNER JOIN cm_trigger_jobs j ON cm_queries.id = j.query
 WHERE j.id = %s
 `
 
-func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int) (*MonitorQuery, error) {
+func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int) (*QueryTrigger, error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
 		sqlf.Join(queryColumns, ","),
@@ -196,8 +196,8 @@ func (s *codeMonitorStore) SetTriggerQueryNextRun(ctx context.Context, triggerQu
 
 // scanQueryTrigger scans a *sql.Rows or *sql.Row into a MonitorQuery
 // It must be kept in sync with queryColumns
-func scanTriggerQuery(scanner dbutil.Scanner) (*MonitorQuery, error) {
-	m := &MonitorQuery{}
+func scanTriggerQuery(scanner dbutil.Scanner) (*QueryTrigger, error) {
+	m := &QueryTrigger{}
 	err := scanner.Scan(
 		&m.Id,
 		&m.Monitor,

@@ -281,7 +281,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		GetQueryByRecordIDFunc: &CodeMonitorStoreGetQueryByRecordIDFunc{
-			defaultHook: func(context.Context, int) (*MonitorQuery, error) {
+			defaultHook: func(context.Context, int) (*QueryTrigger, error) {
 				return nil, nil
 			},
 		},
@@ -356,7 +356,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		TriggerQueryByMonitorIDInt64Func: &CodeMonitorStoreTriggerQueryByMonitorIDInt64Func{
-			defaultHook: func(context.Context, int64) (*MonitorQuery, error) {
+			defaultHook: func(context.Context, int64) (*QueryTrigger, error) {
 				return nil, nil
 			},
 		},
@@ -3162,15 +3162,15 @@ func (c CodeMonitorStoreGetMonitorFuncCall) Results() []interface{} {
 // GetQueryByRecordID method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreGetQueryByRecordIDFunc struct {
-	defaultHook func(context.Context, int) (*MonitorQuery, error)
-	hooks       []func(context.Context, int) (*MonitorQuery, error)
+	defaultHook func(context.Context, int) (*QueryTrigger, error)
+	hooks       []func(context.Context, int) (*QueryTrigger, error)
 	history     []CodeMonitorStoreGetQueryByRecordIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetQueryByRecordID delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) GetQueryByRecordID(v0 context.Context, v1 int) (*MonitorQuery, error) {
+func (m *MockCodeMonitorStore) GetQueryByRecordID(v0 context.Context, v1 int) (*QueryTrigger, error) {
 	r0, r1 := m.GetQueryByRecordIDFunc.nextHook()(v0, v1)
 	m.GetQueryByRecordIDFunc.appendCall(CodeMonitorStoreGetQueryByRecordIDFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -3179,7 +3179,7 @@ func (m *MockCodeMonitorStore) GetQueryByRecordID(v0 context.Context, v1 int) (*
 // SetDefaultHook sets function that is called when the GetQueryByRecordID
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreGetQueryByRecordIDFunc) SetDefaultHook(hook func(context.Context, int) (*MonitorQuery, error)) {
+func (f *CodeMonitorStoreGetQueryByRecordIDFunc) SetDefaultHook(hook func(context.Context, int) (*QueryTrigger, error)) {
 	f.defaultHook = hook
 }
 
@@ -3188,7 +3188,7 @@ func (f *CodeMonitorStoreGetQueryByRecordIDFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreGetQueryByRecordIDFunc) PushHook(hook func(context.Context, int) (*MonitorQuery, error)) {
+func (f *CodeMonitorStoreGetQueryByRecordIDFunc) PushHook(hook func(context.Context, int) (*QueryTrigger, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3196,21 +3196,21 @@ func (f *CodeMonitorStoreGetQueryByRecordIDFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreGetQueryByRecordIDFunc) SetDefaultReturn(r0 *MonitorQuery, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (*MonitorQuery, error) {
+func (f *CodeMonitorStoreGetQueryByRecordIDFunc) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (*QueryTrigger, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreGetQueryByRecordIDFunc) PushReturn(r0 *MonitorQuery, r1 error) {
-	f.PushHook(func(context.Context, int) (*MonitorQuery, error) {
+func (f *CodeMonitorStoreGetQueryByRecordIDFunc) PushReturn(r0 *QueryTrigger, r1 error) {
+	f.PushHook(func(context.Context, int) (*QueryTrigger, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreGetQueryByRecordIDFunc) nextHook() func(context.Context, int) (*MonitorQuery, error) {
+func (f *CodeMonitorStoreGetQueryByRecordIDFunc) nextHook() func(context.Context, int) (*QueryTrigger, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3252,7 +3252,7 @@ type CodeMonitorStoreGetQueryByRecordIDFuncCall struct {
 	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *MonitorQuery
+	Result0 *QueryTrigger
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -4818,15 +4818,15 @@ func (c CodeMonitorStoreTransactFuncCall) Results() []interface{} {
 // when the TriggerQueryByMonitorIDInt64 method of the parent
 // MockCodeMonitorStore instance is invoked.
 type CodeMonitorStoreTriggerQueryByMonitorIDInt64Func struct {
-	defaultHook func(context.Context, int64) (*MonitorQuery, error)
-	hooks       []func(context.Context, int64) (*MonitorQuery, error)
+	defaultHook func(context.Context, int64) (*QueryTrigger, error)
+	hooks       []func(context.Context, int64) (*QueryTrigger, error)
 	history     []CodeMonitorStoreTriggerQueryByMonitorIDInt64FuncCall
 	mutex       sync.Mutex
 }
 
 // TriggerQueryByMonitorIDInt64 delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) TriggerQueryByMonitorIDInt64(v0 context.Context, v1 int64) (*MonitorQuery, error) {
+func (m *MockCodeMonitorStore) TriggerQueryByMonitorIDInt64(v0 context.Context, v1 int64) (*QueryTrigger, error) {
 	r0, r1 := m.TriggerQueryByMonitorIDInt64Func.nextHook()(v0, v1)
 	m.TriggerQueryByMonitorIDInt64Func.appendCall(CodeMonitorStoreTriggerQueryByMonitorIDInt64FuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -4835,7 +4835,7 @@ func (m *MockCodeMonitorStore) TriggerQueryByMonitorIDInt64(v0 context.Context, 
 // SetDefaultHook sets function that is called when the
 // TriggerQueryByMonitorIDInt64 method of the parent MockCodeMonitorStore
 // instance is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) SetDefaultHook(hook func(context.Context, int64) (*MonitorQuery, error)) {
+func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) SetDefaultHook(hook func(context.Context, int64) (*QueryTrigger, error)) {
 	f.defaultHook = hook
 }
 
@@ -4844,7 +4844,7 @@ func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) SetDefaultHook(hook f
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) PushHook(hook func(context.Context, int64) (*MonitorQuery, error)) {
+func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) PushHook(hook func(context.Context, int64) (*QueryTrigger, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4852,21 +4852,21 @@ func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) PushHook(hook func(co
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) SetDefaultReturn(r0 *MonitorQuery, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64) (*MonitorQuery, error) {
+func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*QueryTrigger, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) PushReturn(r0 *MonitorQuery, r1 error) {
-	f.PushHook(func(context.Context, int64) (*MonitorQuery, error) {
+func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) PushReturn(r0 *QueryTrigger, r1 error) {
+	f.PushHook(func(context.Context, int64) (*QueryTrigger, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) nextHook() func(context.Context, int64) (*MonitorQuery, error) {
+func (f *CodeMonitorStoreTriggerQueryByMonitorIDInt64Func) nextHook() func(context.Context, int64) (*QueryTrigger, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4909,7 +4909,7 @@ type CodeMonitorStoreTriggerQueryByMonitorIDInt64FuncCall struct {
 	Arg1 int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *MonitorQuery
+	Result0 *QueryTrigger
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

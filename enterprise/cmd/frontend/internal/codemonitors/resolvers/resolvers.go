@@ -532,7 +532,7 @@ func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, 
 //
 type monitorQuery struct {
 	*Resolver
-	*cm.MonitorQuery
+	*cm.QueryTrigger
 }
 
 func (q *monitorQuery) ID() graphql.ID {
