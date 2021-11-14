@@ -48,8 +48,8 @@ message Moniker {
     UNIQUE_SCHEME = 4;
     UNIQUE_GLOBAL = 5;
   }
-  // The identifier of this this moniker, which is can be referenced from
-  // MonikerOccurence.  An empty id means this moniker can be ignored.
+  // The identifier of this moniker, which can be referenced from
+  // MonikerOccurence. An empty id means this moniker can be ignored.
   string id = 1;
   // (optional) the syntax that is used for the scheme. Only relevant when
   // the `unique` field has value `Unique.SCHEME`.
@@ -73,6 +73,8 @@ message Moniker {
   // enable navigation across different LSIF indexes (whether they come from
   // different projects or git repositories).
   string package_id = 6;
+  // "import", "export", or "implementation"
+  string kind = 7;
 }
 
 // MonikerOccurrence describes the appearance of a moniker at a given range in a

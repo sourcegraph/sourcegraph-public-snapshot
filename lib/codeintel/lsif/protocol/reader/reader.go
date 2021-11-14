@@ -213,59 +213,89 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 	return pairCh
 }
 
+func ConvertFlatToGraph(vals *proto.LsifValues) []Element {
+	g := NewGraph()
+
+	g.EmitVertex("metaData", MetaData{Version: "0.1.0", ProjectRoot: "file:///"})
+
+	for _, lsifValue := range vals.Values {
+		if value, ok := lsifValue.Value.(*proto.LsifValue_Package); ok {
+			g.EmitPackage(value.Package)
+		}
+	}
+	for _, lsifValue := range vals.Values {
+		if value, ok := lsifValue.Value.(*proto.LsifValue_Moniker); ok {
+			g.EmitMoniker(value.Moniker)
+		}
+	}
+	for _, lsifValue := range vals.Values {
+		if value, ok := lsifValue.Value.(*proto.LsifValue_Document); ok {
+			g.EmitDocument(value.Document)
+		}
+	}
+
+	return g.Elements
+}
+
 type ResultIDs struct {
 	ResultSet        int
 	DefinitionResult int
 	ReferenceResult  int
+	HoverResult      int
+}
+
+type MonikerInfo struct {
+	g_ID    int
+	Moniker *proto.Moniker
 }
 
 type graph struct {
-	ID       int
-	Elements []Element
-	idCache  map[string]ResultIDs
+	ID          int
+	Elements    []Element
+	idCache     map[string]ResultIDs
+	f2g_package map[string]int
+	f2g_moniker map[string]MonikerInfo
 }
 
-func (g *graph) ResultIDs(moniker string) ResultIDs {
-	ids, ok := g.idCache[moniker]
-	if !ok {
-		ids = ResultIDs{
-			ResultSet:        g.AddVertex("resultSet", ResultSet{}),
-			DefinitionResult: g.AddVertex("definitionResult", nil),
-			ReferenceResult:  g.AddVertex("referenceResult", nil),
-		}
-		g.AddEdge("textDocument/definition", Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
-		g.AddEdge("textDocument/references", Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
-		g.idCache[moniker] = ids
+func NewGraph() graph {
+	return graph{
+		ID:          0,
+		Elements:    []Element{},
+		idCache:     map[string]ResultIDs{},
+		f2g_package: map[string]int{},
+		f2g_moniker: map[string]MonikerInfo{},
 	}
-	return ids
 }
 
-func (g *graph) Add(ty, label string, payload interface{}) int {
-	g.ID++
-	g.Elements = append(g.Elements, Element{
-		ID:      g.ID,
-		Type:    ty,
-		Label:   label,
-		Payload: payload,
+func (g *graph) EmitPackage(pkg *proto.Package) {
+	g.f2g_package[pkg.Id] = g.EmitVertex("packageInformation", PackageInformation{
+		Name:    pkg.Name,
+		Version: pkg.Version,
 	})
-	return g.ID
 }
 
-func (g *graph) AddVertex(label string, payload interface{}) int {
-	return g.Add("vertex", label, payload)
+func (g *graph) EmitMoniker(moniker *proto.Moniker) {
+	if pkgid, ok := g.f2g_package[moniker.PackageId]; ok {
+		g_id := g.EmitVertex("moniker", Moniker{
+			Kind:       moniker.Kind,
+			Scheme:     moniker.Scheme,
+			Identifier: moniker.Id,
+		})
+		g.f2g_moniker[moniker.Id] = MonikerInfo{
+			g_ID:    g_id,
+			Moniker: moniker,
+		}
+		g.EmitEdge("packageInformation", Edge{OutV: g_id, InV: pkgid})
+	} else {
+		fmt.Printf("package %s does not exist (from moniker %s, skipping it)", moniker.PackageId, moniker.Id)
+	}
 }
 
-func (g *graph) AddEdge(label string, payload Edge) int {
-	return g.Add("edge", label, payload)
-}
-
-func (g *graph) AddPackage(doc *proto.Package) {}
-
-func (g *graph) AddDocument(doc *proto.Document) {
-	documentID := g.AddVertex("document", "file:///"+doc.Uri)
+func (g *graph) EmitDocument(doc *proto.Document) {
+	documentID := g.EmitVertex("document", "file:///"+doc.Uri)
 	rangeIDs := []int{}
 	for _, occ := range doc.Occurrences {
-		rangeID := g.AddVertex("range", Range{
+		rangeID := g.EmitVertex("range", Range{
 			RangeData: protocol.RangeData{
 				Start: protocol.Pos{
 					Line:      int(occ.Range.Start.Line),
@@ -278,20 +308,57 @@ func (g *graph) AddDocument(doc *proto.Document) {
 			},
 		})
 		rangeIDs = append(rangeIDs, rangeID)
-		ids := g.ResultIDs(occ.MonikerId)
-		g.AddEdge("next", Edge{OutV: rangeID, InV: ids.ResultSet})
+		results := g.EmitResults(occ.MonikerId, strings.Join(occ.MarkdownHover, "\n"))
+		g.EmitEdge("next", Edge{OutV: rangeID, InV: results.ResultSet})
 		switch occ.Role {
 		case proto.MonikerOccurrence_ROLE_DEFINITION:
-			g.AddEdge("item", Edge{OutV: ids.DefinitionResult, InVs: []int{rangeID}, Document: documentID})
+			g.EmitEdge("item", Edge{OutV: results.DefinitionResult, InVs: []int{rangeID}, Document: documentID})
 		case proto.MonikerOccurrence_ROLE_REFERENCE:
-			g.AddEdge("item", Edge{OutV: ids.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
+			g.EmitEdge("item", Edge{OutV: results.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 		default:
 		}
 	}
-	g.AddEdge("contains", Edge{OutV: documentID, InVs: rangeIDs})
+	g.EmitEdge("contains", Edge{OutV: documentID, InVs: rangeIDs})
 }
 
-func (g *graph) AddMoniker(doc *proto.Moniker) {}
+func (g *graph) EmitResults(moniker string, hover string) ResultIDs {
+	ids, ok := g.idCache[moniker]
+	if !ok {
+		ids = ResultIDs{
+			ResultSet:        g.EmitVertex("resultSet", ResultSet{}),
+			DefinitionResult: g.EmitVertex("definitionResult", nil),
+			ReferenceResult:  g.EmitVertex("referenceResult", nil),
+			HoverResult:      g.EmitVertex("hoverResult", hover),
+		}
+		g.EmitEdge("textDocument/definition", Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
+		g.EmitEdge("textDocument/references", Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
+		g.EmitEdge("textDocument/hover", Edge{OutV: ids.ResultSet, InV: ids.HoverResult})
+		if info := g.f2g_moniker[moniker]; ok {
+			g.EmitEdge("moniker", Edge{OutV: ids.ResultSet, InV: info.g_ID})
+		}
+		g.idCache[moniker] = ids
+	}
+	return ids
+}
+
+func (g *graph) EmitVertex(label string, payload interface{}) int {
+	return g.Emit("vertex", label, payload)
+}
+
+func (g *graph) EmitEdge(label string, payload Edge) int {
+	return g.Emit("edge", label, payload)
+}
+
+func (g *graph) Emit(ty, label string, payload interface{}) int {
+	g.ID++
+	g.Elements = append(g.Elements, Element{
+		ID:      g.ID,
+		Type:    ty,
+		Label:   label,
+		Payload: payload,
+	})
+	return g.ID
+}
 
 func WriteNDJSON(elements []interface{}, out io.Writer) {
 	w := writer.NewJSONWriter(out)
@@ -299,30 +366,6 @@ func WriteNDJSON(elements []interface{}, out io.Writer) {
 		w.Write(e)
 	}
 	w.Flush()
-}
-
-func ConvertFlatToGraph(vals *proto.LsifValues) []Element {
-	g := graph{ID: 0, Elements: []Element{}, idCache: map[string]ResultIDs{}}
-	g.AddVertex(
-		"metaData",
-		MetaData{
-			Version:     "0.1.0",
-			ProjectRoot: "file:///",
-		},
-	)
-	for _, lsifValue := range vals.Values {
-		switch value := lsifValue.Value.(type) {
-		case *proto.LsifValue_Package:
-			g.AddPackage(value.Package)
-		case *proto.LsifValue_Document:
-			g.AddDocument(value.Document)
-		case *proto.LsifValue_Moniker:
-			g.AddMoniker(value.Moniker)
-		default:
-		}
-
-	}
-	return g.Elements
 }
 
 func ElementsToEmptyInterfaces(els []Element) []interface{} {
