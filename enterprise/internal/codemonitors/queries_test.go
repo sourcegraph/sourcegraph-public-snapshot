@@ -62,7 +62,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
 
-	err = s.SetTriggerQueryNextRun(ctx, 1, wantNextRun, wantLatestResult)
+	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
 	if err != nil {
 		t.Fatal(err)
 	}

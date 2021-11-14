@@ -177,7 +177,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
-	err = s.SetTriggerQueryNextRun(ctx, q.Id, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	err = s.SetQueryTriggerNextRun(ctx, q.Id, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}

@@ -184,7 +184,7 @@ latest_result = %s
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) SetTriggerQueryNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error {
+func (s *codeMonitorStore) SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error {
 	q := sqlf.Sprintf(
 		setTriggerQueryNextRunFmtStr,
 		next,

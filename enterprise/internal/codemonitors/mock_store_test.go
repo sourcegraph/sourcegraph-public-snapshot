@@ -483,7 +483,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.ResetQueryTriggerTimestamps,
 		},
 		SetTriggerQueryNextRunFunc: &CodeMonitorStoreSetTriggerQueryNextRunFunc{
-			defaultHook: i.SetTriggerQueryNextRun,
+			defaultHook: i.SetQueryTriggerNextRun,
 		},
 		ToggleMonitorFunc: &CodeMonitorStoreToggleMonitorFunc{
 			defaultHook: i.ToggleMonitor,
