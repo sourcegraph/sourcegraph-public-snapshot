@@ -548,7 +548,7 @@ func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEven
 	if err != nil {
 		return nil, err
 	}
-	totalCount, err := q.store.TotalCountEventsForQueryIDInt64(ctx, q.Id)
+	totalCount, err := q.store.CountQueryTriggerJobs(ctx, q.Id)
 	if err != nil {
 		return nil, err
 	}

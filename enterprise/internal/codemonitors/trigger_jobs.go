@@ -109,7 +109,7 @@ WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
 `
 
-func (s *codeMonitorStore) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (int32, error) {
+func (s *codeMonitorStore) CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error) {
 	q := sqlf.Sprintf(
 		totalCountEventsForQueryIDInt64FmtStr,
 		queryID,

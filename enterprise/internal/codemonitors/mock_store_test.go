@@ -489,7 +489,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.ToggleMonitor,
 		},
 		TotalCountEventsForQueryIDInt64Func: &CodeMonitorStoreTotalCountEventsForQueryIDInt64Func{
-			defaultHook: i.TotalCountEventsForQueryIDInt64,
+			defaultHook: i.CountQueryTriggerJobs,
 		},
 		TotalCountMonitorsFunc: &CodeMonitorStoreTotalCountMonitorsFunc{
 			defaultHook: i.CountMonitors,

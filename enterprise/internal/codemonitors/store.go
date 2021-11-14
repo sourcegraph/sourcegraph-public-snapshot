@@ -57,6 +57,8 @@ type CodeMonitorStore interface {
 	GetQueryTriggerForJob(ctx context.Context, jobID int) (*QueryTrigger, error)
 
 	EnqueueQueryTriggerJobs(ctx context.Context) error
+	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
+	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) error
 	DeleteRecipients(ctx context.Context, emailID int64) error
@@ -67,9 +69,6 @@ type CodeMonitorStore interface {
 	DeleteObsoleteJobLogs(ctx context.Context) error
 	LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error
 	DeleteOldJobLogs(ctx context.Context, retentionInDays int) error
-
-	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
-	TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (int32, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models
