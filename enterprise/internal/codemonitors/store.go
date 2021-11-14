@@ -54,10 +54,9 @@ type CodeMonitorStore interface {
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
+	GetQueryTriggerForJob(ctx context.Context, jobID int) (query *QueryTrigger, err error)
 
 	EnqueueQueryTriggerJobs(ctx context.Context) (err error)
-
-	GetQueryByRecordID(ctx context.Context, recordID int) (query *QueryTrigger, err error)
 
 	CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) (err error)
 	DeleteRecipients(ctx context.Context, emailID int64) (err error)

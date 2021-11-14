@@ -456,7 +456,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.GetMonitor,
 		},
 		GetQueryByRecordIDFunc: &CodeMonitorStoreGetQueryByRecordIDFunc{
-			defaultHook: i.GetQueryByRecordID,
+			defaultHook: i.GetQueryTriggerForJob,
 		},
 		HandleFunc: &CodeMonitorStoreHandleFunc{
 			defaultHook: i.Handle,
