@@ -711,7 +711,7 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	}
 
 	var total int32
-	total, err = m.store.TotalCountRecipients(ctx, m.Id)
+	total, err = m.store.CountRecipients(ctx, m.Id)
 	if err != nil {
 		return nil, err
 	}

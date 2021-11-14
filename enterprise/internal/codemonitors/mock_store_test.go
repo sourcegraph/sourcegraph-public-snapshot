@@ -495,7 +495,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.CountMonitors,
 		},
 		TotalCountRecipientsFunc: &CodeMonitorStoreTotalCountRecipientsFunc{
-			defaultHook: i.TotalCountRecipients,
+			defaultHook: i.CountRecipients,
 		},
 		TransactFunc: &CodeMonitorStoreTransactFunc{
 			defaultHook: i.Transact,

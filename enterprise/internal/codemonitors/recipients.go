@@ -100,7 +100,7 @@ FROM cm_recipients
 WHERE email = %s
 `
 
-func (s *codeMonitorStore) TotalCountRecipients(ctx context.Context, emailID int64) (int32, error) {
+func (s *codeMonitorStore) CountRecipients(ctx context.Context, emailID int64) (int32, error) {
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
 	return count, err
