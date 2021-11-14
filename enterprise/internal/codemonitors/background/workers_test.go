@@ -91,7 +91,7 @@ func TestActionRunner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueActionEmailsForQueryIDInt64(ctx, queryID, triggerEvent)
+			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEvent)
 			if err != nil {
 				t.Fatal(err)
 			}

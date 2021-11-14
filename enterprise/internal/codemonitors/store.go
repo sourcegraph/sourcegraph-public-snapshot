@@ -40,12 +40,12 @@ type CodeMonitorStore interface {
 	CountEmailActions(ctx context.Context, monitorID int64) (int32, error)
 	GetEmailAction(ctx context.Context, emailID int64) (*MonitorEmail, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*MonitorEmail, error)
-	EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) error
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
+	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerEventID int) error
 
 	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) error
 

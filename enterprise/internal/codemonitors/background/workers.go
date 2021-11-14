@@ -170,7 +170,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
+		err := s.EnqueueActionJobsForQuery(ctx, q.Id, record.RecordID())
 		if err != nil {
 			return errors.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
 		}

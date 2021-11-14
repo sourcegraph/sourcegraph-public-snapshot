@@ -357,11 +357,11 @@ func TestQueryMonitor(t *testing.T) {
 	// update the job status.
 	postHookOpt := WithPostHooks([]hook{
 		func() error { return r.store.EnqueueQueryTriggerJobs(ctx) },
-		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error { return r.store.EnqueueActionJobsForQuery(ctx, 1, 1) },
 		func() error {
 			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
-		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error { return r.store.EnqueueActionJobsForQuery(ctx, 1, 1) },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
 		// created another monitor, there is still a second trigger job (id = 2) which
 		// remains in status queued.
