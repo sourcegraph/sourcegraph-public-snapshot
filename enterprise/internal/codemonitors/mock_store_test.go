@@ -420,7 +420,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.DeleteMonitor,
 		},
 		DeleteObsoleteJobLogsFunc: &CodeMonitorStoreDeleteObsoleteJobLogsFunc{
-			defaultHook: i.DeleteObsoleteJobLogs,
+			defaultHook: i.DeleteObsoleteTriggerJobs,
 		},
 		DeleteOldJobLogsFunc: &CodeMonitorStoreDeleteOldJobLogsFunc{
 			defaultHook: i.DeleteOldJobLogs,
@@ -468,7 +468,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.ListEmailActions,
 		},
 		LogSearchFunc: &CodeMonitorStoreLogSearchFunc{
-			defaultHook: i.LogSearch,
+			defaultHook: i.UpdateTriggerJobWithResults,
 		},
 		MonitorsFunc: &CodeMonitorStoreMonitorsFunc{
 			defaultHook: i.Monitors,

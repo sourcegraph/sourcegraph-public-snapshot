@@ -87,7 +87,7 @@ func TestActionRunner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.LogSearch(ctx, testQuery, tt.numResults, triggerEvent)
+			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
 			if err != nil {
 				t.Fatal(err)
 			}

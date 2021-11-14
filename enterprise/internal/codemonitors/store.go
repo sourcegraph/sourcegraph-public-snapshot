@@ -42,7 +42,7 @@ type CodeMonitorStore interface {
 	GetQueryTriggerForJob(ctx context.Context, jobID int) (*QueryTrigger, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error
+	UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error
 	DeleteOldJobLogs(ctx context.Context, retentionInDays int) error
 
 	EnqueueQueryTriggerJobs(ctx context.Context) error

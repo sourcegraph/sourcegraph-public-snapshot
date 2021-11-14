@@ -76,7 +76,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 		wantQuery            = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 		wantMonitorID  int64 = 1
 	)
-	err = s.LogSearch(ctx, wantQuery, wantNumResults, 1)
+	err = s.UpdateTriggerJobWithResults(ctx, wantQuery, wantNumResults, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

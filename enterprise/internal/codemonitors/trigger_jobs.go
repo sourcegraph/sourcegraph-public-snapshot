@@ -46,7 +46,7 @@ SET query_string = %s,
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
+func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
 }
 

@@ -63,7 +63,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store cm.CodeMonitorStore) go
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
 			// Delete logs without search results.
-			err := store.DeleteObsoleteJobLogs(ctx)
+			err := store.DeleteObsoleteTriggerJobs(ctx)
 			if err != nil {
 				return err
 			}
@@ -182,7 +182,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 	// Log the actual query we ran and whether we got any new results.
-	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
+	err = s.UpdateTriggerJobWithResults(ctx, newQuery, numResults, record.RecordID())
 	if err != nil {
 		return errors.Errorf("LogSearch: %w", err)
 	}
