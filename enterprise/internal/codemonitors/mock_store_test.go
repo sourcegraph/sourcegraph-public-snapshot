@@ -411,7 +411,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.CreateRecipients,
 		},
 		CreateTriggerQueryFunc: &CodeMonitorStoreCreateTriggerQueryFunc{
-			defaultHook: i.CreateTriggerQuery,
+			defaultHook: i.CreateQueryTrigger,
 		},
 		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
 			defaultHook: i.DeleteEmailActions,
@@ -510,7 +510,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.UpdateMonitor,
 		},
 		UpdateTriggerQueryFunc: &CodeMonitorStoreUpdateTriggerQueryFunc{
-			defaultHook: i.UpdateTriggerQuery,
+			defaultHook: i.UpdateQueryTrigger,
 		},
 	}
 }

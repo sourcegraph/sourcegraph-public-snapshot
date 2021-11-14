@@ -46,7 +46,7 @@ func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int
 	return s.Exec(ctx, q)
 }
 
-func (s *codeMonitorStore) UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error {
+func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error {
 	q, err := s.updateTriggerQueryQuery(ctx, args)
 	if err != nil {
 		return err

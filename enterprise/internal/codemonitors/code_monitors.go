@@ -21,7 +21,7 @@ func (s *codeMonitorStore) CreateCodeMonitor(ctx context.Context, args *graphqlb
 	}
 
 	// Create trigger.
-	err = txStore.CreateTriggerQuery(ctx, m.ID, args.Trigger)
+	err = txStore.CreateQueryTrigger(ctx, m.ID, args.Trigger)
 	if err != nil {
 		return nil, err
 	}

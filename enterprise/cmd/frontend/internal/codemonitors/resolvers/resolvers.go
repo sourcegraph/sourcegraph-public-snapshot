@@ -309,7 +309,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 	// Update trigger.
-	err = r.store.UpdateTriggerQuery(ctx, args)
+	err = r.store.UpdateQueryTrigger(ctx, args)
 	if err != nil {
 		return nil, err
 	}
