@@ -73,7 +73,7 @@ FROM cm_emails
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
+func (s *codeMonitorStore) GetEmailAction(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
 	q := sqlf.Sprintf(
 		actionEmailByIDFmtStr,
 		sqlf.Join(emailsColumns, ","),
