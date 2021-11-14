@@ -48,7 +48,7 @@ type CodeMonitorStore interface {
 	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
 	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) error
 
-	CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error)
+	CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error)
 	UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error)
 	TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error

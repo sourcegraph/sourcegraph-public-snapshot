@@ -38,7 +38,7 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.changed_at"),
 }
 
-func (s *codeMonitorStore) CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error {
+func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error {
 	q, err := s.createTriggerQueryQuery(ctx, monitorID, args)
 	if err != nil {
 		return err
