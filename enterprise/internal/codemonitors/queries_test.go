@@ -118,7 +118,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		t.Fatalf("diff: %s", diff)
 	}
 
-	err = s.ResetTriggerQueryTimestamps(ctx, 1)
+	err = s.ResetQueryTriggerTimestamps(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

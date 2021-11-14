@@ -93,7 +93,7 @@ SET latest_result = null,
 WHERE id = %s;
 `
 
-func (s *codeMonitorStore) ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error {
+func (s *codeMonitorStore) ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error {
 	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestamps, s.Now(), queryID))
 }
 

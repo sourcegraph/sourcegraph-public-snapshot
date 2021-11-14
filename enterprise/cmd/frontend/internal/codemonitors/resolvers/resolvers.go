@@ -217,7 +217,7 @@ func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphq
 	if err != nil {
 		return nil, err
 	}
-	err = r.store.ResetTriggerQueryTimestamps(ctx, queryIDInt64)
+	err = r.store.ResetQueryTriggerTimestamps(ctx, queryIDInt64)
 	if err != nil {
 		return nil, err
 	}

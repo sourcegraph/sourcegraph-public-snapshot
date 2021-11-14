@@ -46,12 +46,13 @@ type CodeMonitorStore interface {
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
+
 	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) error
 
 	CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error)
 	UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error)
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
-	ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error
+	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetTriggerQueryNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
 	EnqueueTriggerQueries(ctx context.Context) (err error)
 
