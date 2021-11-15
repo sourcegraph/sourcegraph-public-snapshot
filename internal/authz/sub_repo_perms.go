@@ -46,6 +46,7 @@ type SubRepoPermissionsGetter interface {
 }
 
 // SubRepoPermsClient is a concrete implementation of SubRepoPermissionChecker.
+// Always use NewSubRepoPermsClient to instantiate an instance.
 type SubRepoPermsClient struct {
 	permissionsGetter SubRepoPermissionsGetter
 }
