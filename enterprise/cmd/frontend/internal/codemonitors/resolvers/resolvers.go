@@ -334,7 +334,12 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		e, err = r.store.UpdateEmailAction(ctx, mo.ID, action)
+
+		e, err = r.store.UpdateEmailAction(ctx, emailID, &cm.EmailActionArgs{
+			Enabled:  action.Email.Update.Enabled,
+			Priority: action.Email.Update.Priority,
+			Header:   action.Email.Update.Header,
+		})
 		if err != nil {
 			return nil, err
 		}

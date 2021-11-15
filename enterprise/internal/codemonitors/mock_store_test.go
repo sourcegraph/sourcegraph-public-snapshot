@@ -357,7 +357,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
-			defaultHook: func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error) {
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
 				return nil, nil
 			},
 		},
@@ -4821,15 +4821,15 @@ func (c CodeMonitorStoreTransactFuncCall) Results() []interface{} {
 // UpdateEmailAction method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreUpdateEmailActionFunc struct {
-	defaultHook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error)
-	hooks       []func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error)
+	defaultHook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)
+	hooks       []func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)
 	history     []CodeMonitorStoreUpdateEmailActionFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateEmailAction delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) UpdateEmailAction(v0 context.Context, v1 int64, v2 *graphqlbackend.EditActionArgs) (*EmailAction, error) {
+func (m *MockCodeMonitorStore) UpdateEmailAction(v0 context.Context, v1 int64, v2 *EmailActionArgs) (*EmailAction, error) {
 	r0, r1 := m.UpdateEmailActionFunc.nextHook()(v0, v1, v2)
 	m.UpdateEmailActionFunc.appendCall(CodeMonitorStoreUpdateEmailActionFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -4838,7 +4838,7 @@ func (m *MockCodeMonitorStore) UpdateEmailAction(v0 context.Context, v1 int64, v
 // SetDefaultHook sets function that is called when the UpdateEmailAction
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error)) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultHook(hook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)) {
 	f.defaultHook = hook
 }
 
@@ -4847,7 +4847,7 @@ func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreUpdateEmailActionFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error)) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) PushHook(hook func(context.Context, int64, *EmailActionArgs) (*EmailAction, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4856,7 +4856,7 @@ func (f *CodeMonitorStoreUpdateEmailActionFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultReturn(r0 *EmailAction, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error) {
+	f.SetDefaultHook(func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
 		return r0, r1
 	})
 }
@@ -4864,12 +4864,12 @@ func (f *CodeMonitorStoreUpdateEmailActionFunc) SetDefaultReturn(r0 *EmailAction
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreUpdateEmailActionFunc) PushReturn(r0 *EmailAction, r1 error) {
-	f.PushHook(func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error) {
+	f.PushHook(func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreUpdateEmailActionFunc) nextHook() func(context.Context, int64, *graphqlbackend.EditActionArgs) (*EmailAction, error) {
+func (f *CodeMonitorStoreUpdateEmailActionFunc) nextHook() func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4911,7 +4911,7 @@ type CodeMonitorStoreUpdateEmailActionFuncCall struct {
 	Arg1 int64
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *graphqlbackend.EditActionArgs
+	Arg2 *EmailActionArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *EmailAction

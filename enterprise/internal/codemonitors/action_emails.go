@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/cockroachdb/errors"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -34,31 +32,25 @@ SET enabled = %s,
 	changed_by = %s,
 	changed_at = %s
 WHERE id = %s
-AND monitor = %s
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*EmailAction, error) {
-	if action.Email.Id == nil {
-		return nil, errors.Errorf("nil is not a valid action ID")
-	}
+type EmailActionArgs struct {
+	Enabled  bool
+	Priority string
+	Header   string
+}
 
-	var actionID int64
-	err := relay.UnmarshalSpec(*action.Email.Id, &actionID)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args *EmailActionArgs) (*EmailAction, error) {
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		updateActionEmailFmtStr,
-		action.Email.Update.Enabled,
-		action.Email.Update.Priority,
-		action.Email.Update.Header,
+		args.Enabled,
+		args.Priority,
+		args.Header,
 		a.UID,
 		s.Now(),
-		actionID,
-		monitorID,
+		id,
 		sqlf.Join(emailsColumns, ", "),
 	)
 
