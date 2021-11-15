@@ -36,6 +36,8 @@ var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
+//
+// Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
 	db     database.DB
 	commit *GitCommitResolver
@@ -50,10 +52,15 @@ type GitTreeEntryResolver struct {
 
 	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
+
+	// Responsible for filtering out sub-repository content.
+	//
+	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
+	subRepoPerms authz.SubRepoPermissionChecker
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db database.DB, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
+func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, subRepoPerms: subRepoPermsClient(db)}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -77,13 +84,13 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		perms, err := authz.CurrentUserPermissions(ctx, subRepoPermsClient(r.db), authz.RepoContent{
+		perms, err := authz.CurrentUserPermissions(ctx, r.subRepoPerms, authz.RepoContent{
 			Repo: r.commit.repoResolver.RepoName(),
 			Path: r.Path(),
 		})
 		if err != nil {
 			log15.Error("checking sub-repo permissions", "error", err)
-			r.content, r.contentErr = nil, errors.New("checking sub-repo permissions")
+			r.content, r.contentErr = nil, err
 		}
 		// No access
 		if !perms.Include(authz.Read) {
@@ -229,7 +236,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	}
 	entries, err := gitReadDir(
 		ctx,
-		subRepoPermsClient(r.db),
+		r.subRepoPerms,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),

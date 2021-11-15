@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -1462,48 +1461,6 @@ func TestService(t *testing.T) {
 			}
 		})
 
-		t.Run("success with importChangesets", func(t *testing.T) {
-			spec := createBatchSpecWithWorkspaces(t)
-
-			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
-				BatchSpecRandID: spec.RandID,
-				RawSpec: ct.BuildRawBatchSpecWithImportChangesets(t, []batcheslib.ImportChangeset{
-					{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
-					{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
-				}),
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
-				BatchSpecID: newSpec.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
-				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
-			}
-
-			changesetSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: newSpec.ID})
-			if err != nil {
-				t.Fatal(err)
-			}
-			// Assert that the number of changeset specs is correct. More
-			// extensive assertions are in the tests for
-			// CreateBatchSpecFromRaw.
-			if len(changesetSpecs) != 3 {
-				t.Fatalf("wrong number of changeset specs: %d", len(changesetSpecs))
-			}
-
-			// Assert that old batch spec is deleted
-			_, err = s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: spec.ID})
-			if err != store.ErrNoResults {
-				t.Fatalf("unexpected error: %s", err)
-			}
-		})
-
 		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
 			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
 				t.Helper()
@@ -1555,59 +1512,6 @@ func TestService(t *testing.T) {
 			}
 			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
 				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
-			}
-		})
-
-		t.Run("success with importChangesets", func(t *testing.T) {
-			rawSpec := ct.BuildRawBatchSpecWithImportChangesets(t, []batcheslib.ImportChangeset{
-				{Repository: string(rs[0].Name), ExternalIDs: []interface{}{"#123", 456}},
-				{Repository: string(rs[1].Name), ExternalIDs: []interface{}{"789"}},
-			})
-
-			newSpec, err := svc.CreateBatchSpecFromRaw(ctx, CreateBatchSpecFromRawOpts{
-				RawSpec:         rawSpec,
-				NamespaceUserID: admin.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if !newSpec.CreatedFromRaw {
-				t.Fatalf("batchSpec not createdFromRaw: %t", newSpec.CreatedFromRaw)
-			}
-
-			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
-				BatchSpecID: newSpec.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
-				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
-			}
-
-			changesetSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{BatchSpecID: newSpec.ID})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			var wantExternalIDs = []string{"#123", "456", "789"}
-			var haveExternalIDs []string
-			for _, cs := range changesetSpecs {
-				if cs.BatchSpecID != newSpec.ID {
-					t.Fatal("changeset spec doesn't have batch spec ID")
-				}
-
-				if cs.RepoID != rs[0].ID && cs.RepoID != rs[1].ID {
-					t.Fatal("changeset spec has wrong repo id")
-				}
-
-				haveExternalIDs = append(haveExternalIDs, cs.Spec.ExternalID)
-			}
-
-			sort.Strings(haveExternalIDs)
-			if diff := cmp.Diff(wantExternalIDs, haveExternalIDs); diff != "" {
-				t.Fatalf("wrong external IDs. diff=%s", diff)
 			}
 		})
 

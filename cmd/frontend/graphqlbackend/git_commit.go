@@ -35,6 +35,7 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 	return repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
 }
 
+// Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
 	db           database.DB
 	repoResolver *RepositoryResolver
@@ -56,11 +57,16 @@ type GitCommitResolver struct {
 	commit     *gitapi.Commit
 	commitOnce sync.Once
 	commitErr  error
+
+	// Responsible for filtering out sub-repository content.
+	//
+	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
+	subRepoPerms authz.SubRepoPermissionChecker
 }
 
-// When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
+// When commit is set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
 // a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, db database.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
+func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -68,6 +74,7 @@ func toGitCommitResolver(repo *RepositoryResolver, db database.DB, id api.Commit
 		gitRepo:         repo.RepoName(),
 		oid:             GitObjectID(id),
 		commit:          commit,
+		subRepoPerms:    subRepoPermsClient(db),
 	}
 }
 
@@ -204,7 +211,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := gitStat(ctx, subRepoPermsClient(r.db), r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := gitStat(ctx, r.subRepoPerms, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -214,18 +221,16 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	if !stat.Mode().IsDir() {
 		return nil, errors.Errorf("not a directory: %q", args.Path)
 	}
-	return &GitTreeEntryResolver{
-		db:          r.db,
-		commit:      r,
-		stat:        stat,
-		isRecursive: args.Recursive,
-	}, nil
+
+	treeEntry := NewGitTreeEntryResolver(r.db, r, stat)
+	treeEntry.isRecursive = args.Recursive
+	return treeEntry, nil
 }
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := gitStat(ctx, subRepoPermsClient(r.db), r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := gitStat(ctx, r.subRepoPerms, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -235,11 +240,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	if !stat.Mode().IsRegular() {
 		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
-	return &GitTreeEntryResolver{
-		db:     r.db,
-		commit: r,
-		stat:   stat,
-	}, nil
+	return NewGitTreeEntryResolver(r.db, r, stat), nil
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
@@ -368,7 +369,7 @@ func gitStat(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.R
 	})
 	if err != nil {
 		log15.Error("checking sub-repo permissions in gitStat", "error", err)
-		return nil, errors.New("checking sub-repo permissions")
+		return nil, err
 	}
 	// No access
 	if !perms.Include(authz.Read) {

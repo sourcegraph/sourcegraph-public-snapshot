@@ -38,6 +38,7 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	Executors() ExecutorStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -166,6 +167,10 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
+}
+
+func (d *db) Executors() ExecutorStore {
+	return ExecutorsWith(d.Store)
 }
 
 func (d *db) Unwrap() dbutil.DB {

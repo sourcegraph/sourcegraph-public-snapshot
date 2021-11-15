@@ -15,6 +15,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
@@ -397,6 +398,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 
+	srp := authz.NewMockSubRepoPermissionChecker()
+	srp.EnabledFunc.SetDefaultReturn(false)
+
 	b.ResetTimer()
 	b.ReportAllocs()
 
@@ -412,9 +416,10 @@ func BenchmarkSearchResults(b *testing.B) {
 				Query:        plan.ToParseTree(),
 				UserSettings: &schema.Settings{},
 			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			zoekt:        z,
+			reposMu:      &sync.Mutex{},
+			resolved:     &searchrepos.Resolved{},
+			subRepoPerms: srp,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {

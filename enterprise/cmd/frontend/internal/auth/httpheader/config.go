@@ -2,6 +2,7 @@ package httpheader
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -24,9 +25,9 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems conf.Problems) {
+func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 	var httpHeaderAuthProviders int
-	for _, p := range c.AuthProviders {
+	for _, p := range c.SiteConfig().AuthProviders {
 		if p.HttpHeader != nil {
 			httpHeaderAuthProviders++
 		}

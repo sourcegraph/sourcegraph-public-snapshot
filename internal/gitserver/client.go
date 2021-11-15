@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-rendezvous"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -40,8 +41,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var clientFactory = httpcli.NewInternalClientFactory("gitserver")
-var defaultDoer, _ = clientFactory.Doer()
+var (
+	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
+	defaultDoer, _ = clientFactory.Doer()
+)
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = NewClient(defaultDoer)
@@ -61,7 +64,7 @@ func ResetClientMocks() {
 func NewClient(cli httpcli.Doer) *Client {
 	return &Client{
 		Addrs: func() []string {
-			return conf.Get().ServiceConnections.GitServers
+			return conf.Get().ServiceConnections().GitServers
 		},
 		HTTPClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),

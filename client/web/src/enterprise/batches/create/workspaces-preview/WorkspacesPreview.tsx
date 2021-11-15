@@ -1,4 +1,4 @@
-import { ApolloError } from '@apollo/client'
+import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
@@ -89,11 +89,11 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
 
 const POLLING_INTERVAL = 1000
 
-type WorkspaceResolutionStatus = (WorkspaceResolutionStatusResult['node'] & {
+type WorkspaceResolution = (WorkspaceResolutionStatusResult['node'] & {
     __typename: 'BatchSpec'
 })['workspaceResolution']
 
-const getResolution = (queryResult?: WorkspaceResolutionStatusResult): WorkspaceResolutionStatus =>
+const getResolution = (queryResult?: WorkspaceResolutionStatusResult): WorkspaceResolution =>
     queryResult?.node?.__typename === 'BatchSpec' ? queryResult.node.workspaceResolution : null
 
 interface WithBatchSpecProps
@@ -111,47 +111,13 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
      * spec YAML that was last submitted for a preview.
      */
 }) => {
-    const { data, refetch, loading, startPolling, stopPolling } = useQuery<
-        WorkspaceResolutionStatusResult,
-        WorkspaceResolutionStatusVariables
-    >(WORKSPACE_RESOLUTION_STATUS, {
-        variables: { batchSpec: batchSpecID },
-        // This data is intentionally transient, so there's no need to cache it.
-        fetchPolicy: 'no-cache',
-        // Report Apollo client errors back to the parent.
-        onError: error => setResolutionError(error.message),
+    const { resolution, isLoading } = useBatchSpecWorkspaceResolution(batchSpecID, currentPreviewRequestTime, {
+        onError: setResolutionError,
     })
-
-    // Re-query the workspace resolution status when there's a new job requested.
-    useEffect(() => {
-        refetch().catch((error: ApolloError) => setResolutionError(error.message))
-    }, [currentPreviewRequestTime, refetch, setResolutionError])
-
-    useEffect(() => {
-        const resolution = getResolution(data)
-        if (
-            resolution?.state === BatchSpecWorkspaceResolutionState.QUEUED ||
-            resolution?.state === BatchSpecWorkspaceResolutionState.PROCESSING
-        ) {
-            // If the workspace resolution is still queued or processing, start polling.
-            startPolling(POLLING_INTERVAL)
-        } else if (
-            resolution?.state === BatchSpecWorkspaceResolutionState.ERRORED ||
-            resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
-        ) {
-            // Report new workspace resolution worker errors back to the parent.
-            setResolutionError(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
-        } else if (resolution?.state === BatchSpecWorkspaceResolutionState.COMPLETED) {
-            // We can stop polling once the workspace resolution is complete.
-            stopPolling()
-        }
-    }, [data, startPolling, stopPolling, setResolutionError])
-
-    const resolution = getResolution(data)
 
     return (
         <>
-            {loading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
+            {isLoading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
                 // TODO: Show cooler loading indicator
                 <LoadingSpinner className="my-4" />
             ) : null}
@@ -167,4 +133,62 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
             ) : null}
         </>
     )
+}
+
+interface UseBatchSpecWorkspaceResolutionOptions {
+    onError?: (error: string) => void
+    fetchPolicy?: WatchQueryFetchPolicy
+}
+
+interface UseBatchSpecWorkspaceResolutionResult {
+    resolution?: WorkspaceResolution
+    isLoading: boolean
+}
+
+export const useBatchSpecWorkspaceResolution = (
+    batchSpecID?: string,
+    currentPreviewRequestTime?: string,
+    { onError, fetchPolicy = 'network-only' }: UseBatchSpecWorkspaceResolutionOptions = {}
+): UseBatchSpecWorkspaceResolutionResult => {
+    const { data, refetch, loading, startPolling, stopPolling } = useQuery<
+        WorkspaceResolutionStatusResult,
+        WorkspaceResolutionStatusVariables
+    >(WORKSPACE_RESOLUTION_STATUS, {
+        skip: !batchSpecID,
+        variables: { batchSpec: batchSpecID as string },
+        fetchPolicy,
+        onError: error => onError?.(error.message),
+    })
+
+    // Re-query the workspace resolution status when there's a new job requested.
+    useEffect(() => {
+        refetch().catch((error: ApolloError) => onError?.(error.message))
+    }, [currentPreviewRequestTime, refetch, onError])
+
+    useEffect(() => {
+        const resolution = getResolution(data)
+        if (
+            resolution?.state === BatchSpecWorkspaceResolutionState.QUEUED ||
+            resolution?.state === BatchSpecWorkspaceResolutionState.PROCESSING
+        ) {
+            // If the workspace resolution is still queued or processing, start polling.
+            startPolling(POLLING_INTERVAL)
+        } else if (
+            resolution?.state === BatchSpecWorkspaceResolutionState.ERRORED ||
+            resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
+        ) {
+            // Report new workspace resolution worker errors back to the parent.
+            onError?.(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
+        } else if (resolution?.state === BatchSpecWorkspaceResolutionState.COMPLETED) {
+            // We can stop polling once the workspace resolution is complete.
+            stopPolling()
+        }
+    }, [data, startPolling, stopPolling, onError])
+
+    const resolution = getResolution(data)
+
+    return {
+        resolution,
+        isLoading: loading,
+    }
 }

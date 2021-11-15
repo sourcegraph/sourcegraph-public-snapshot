@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -25,6 +26,7 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -447,7 +449,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
 		a := actor.FromContext(ctx)
-		if a.IsAuthenticated() {
+		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
 			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
@@ -1562,7 +1564,15 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		defer cancelOnLimit()
 	}
 
-	agg := run.NewAggregator(r.db, stream)
+	var agg *run.Aggregator
+	if r.subRepoPerms.Enabled() {
+		// If enabled, provide an additional filtering function for aggregator to apply.
+		//
+		// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
+		agg = run.NewAggregator(r.db, stream, subRepoPermsFilter(ctx, r.subRepoPerms))
+	} else {
+		agg = run.NewAggregator(r.db, stream, nil)
+	}
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1896,4 +1906,48 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 			}
 		})
 	return m
+}
+
+// subRepoPermsFilter returns a callback that is used to drop results in the given SearchEvent
+// that the actor in the given context does not have read access to.
+func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) error {
+	actor := actor.FromContext(ctx)
+
+	return func(event *streaming.SearchEvent) error {
+		tr, ctx := trace.New(ctx, "subRepoPermsFilter", "")
+		errs := &multierror.Error{}
+		authorized := event.Results[:0]
+		resultsCount := len(event.Results)
+
+		defer func() {
+			tr.SetError(errs.ErrorOrNil())
+			tr.LazyPrintf("actor=(%s) authorized=%d unauthorized=%d",
+				actor.String(), len(authorized), resultsCount-len(authorized))
+			tr.Finish()
+		}()
+
+		for _, match := range event.Results {
+			key := match.Key()
+			perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
+				Repo: key.Repo,
+				Path: key.Path,
+			})
+			if err != nil {
+				// Log error but don't propagate upwards to ensure data does not leak
+				log15.Error("subRepoPermsFilter check failed",
+					"actor.UID", actor.UID,
+					"match.Key", key,
+					"error", err)
+				errs = multierror.Append(errs, fmt.Errorf("subRepoPermsFilter: failed to check sub-repo permissions"))
+			}
+			if perms.Include(authz.Read) {
+				authorized = append(authorized, match)
+			}
+		}
+
+		// Only keep authorized matches
+		event.Results = authorized
+
+		return errs.ErrorOrNil()
+	}
 }

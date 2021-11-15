@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -36,6 +37,7 @@ func main() {
 		"codehost-version-syncing": versions.NewSyncingJob(),
 		"insights-job":             insights.NewInsightsJob(),
 		"batches-janitor":          batches.NewJanitorJob(),
+		"executors-janitor":        executors.NewJanitorJob(),
 	})
 }
 

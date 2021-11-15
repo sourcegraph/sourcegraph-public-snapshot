@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
@@ -90,7 +91,7 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
-	cursor, err := decodeCursor(args.After)
+	cursor, err := graphqlutil.DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +109,7 @@ func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPaged
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
-	cursor, err := decodeCursor(args.After)
+	cursor, err := graphqlutil.DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
