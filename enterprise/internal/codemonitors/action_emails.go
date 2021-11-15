@@ -94,14 +94,27 @@ func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int6
 	return scanEmail(row)
 }
 
+const deleteActionEmailFmtStr = `
+DELETE FROM cm_emails
+WHERE id in (%s)
+	AND MONITOR = %s
+`
+
 func (s *codeMonitorStore) DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error {
 	if len(actionIDs) == 0 {
 		return nil
 	}
-	q, err := deleteActionsEmailQuery(ctx, actionIDs, monitorID)
-	if err != nil {
-		return err
+
+	deleteIDs := make([]*sqlf.Query, 0, len(actionIDs))
+	for _, ids := range actionIDs {
+		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
 	}
+	q := sqlf.Sprintf(
+		deleteActionEmailFmtStr,
+		sqlf.Join(deleteIDs, ", "),
+		monitorID,
+	)
+
 	return s.Exec(ctx, q)
 }
 
@@ -188,24 +201,6 @@ func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListAction
 	}
 	defer rows.Close()
 	return scanEmails(rows)
-}
-
-const deleteActionEmailFmtStr = `
-DELETE FROM cm_emails
-WHERE id in (%s)
-	AND MONITOR = %s
-`
-
-func deleteActionsEmailQuery(ctx context.Context, actionIDs []int64, monitorID int64) (*sqlf.Query, error) {
-	deleteIDs := make([]*sqlf.Query, 0, len(actionIDs))
-	for _, ids := range actionIDs {
-		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
-	}
-	return sqlf.Sprintf(
-		deleteActionEmailFmtStr,
-		sqlf.Join(deleteIDs, ", "),
-		monitorID,
-	), nil
 }
 
 // emailColumns is the set of columns in the cm_emails table
