@@ -136,6 +136,18 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		reposMap[repo.ID] = repo
 	}
 
+	// If we used MinLastChanged, we should only return information for the
+	// repositories that we found from List.
+	if !minLastChanged.IsZero() {
+		filtered := indexedIDs[:0]
+		for _, id := range indexedIDs {
+			if _, ok := reposMap[id]; ok {
+				filtered = append(filtered, id)
+			}
+		}
+		indexedIDs = filtered
+	}
+
 	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
