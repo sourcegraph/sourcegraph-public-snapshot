@@ -1,1 +1,52 @@
-# init the monorepo issues doc
+# How to address common monorepo performance problems
+
+This document is intended as an explanation of common issues faced by Sourcegraph instances syncing monorepos. Sourcegraph search relies on the retrieval and indexing of git repos, for very large repos more computational resources are required to perform the necessary operations. As such tuning Sourcegraph's services is often the resolution to bugs and performance issues covered in this how-to.
+
+_This document is targeted at docker-compose and kubernetes deployments, where services can be isolated for individual tuning_
+
+The following bullets provide a general guidline to which service may require more resources:
+- `sourcegraph-frontend` CPU/memory resource allocations
+- `searcher` CPU/memory resource allocations (allocate enough memory to hold all non-binary files in your repositories)
+- `indexedSearch` CPU/memory resource allocations (for the `zoekt-indexserver` pod, allocate enough memory to hold all non-binary files in your largest repository; for the `zoekt-webserver` pod, allocate enough memory to hold ~2.7x the size of all non-binary files in your repositories)
+- `symbols` CPU/memory resource allocations
+- `gitserver` CPU/memory resource allocations (allocate enough memory to hold your Git packed bare repositories)
+
+## Symbols sidebar - Processing symbols
+
+![Screen Shot 2021-11-15 at 12 35 07 AM](https://user-images.githubusercontent.com/13024338/141749036-95759cbe-abd5-4d78-91eb-618423d2f66c.png)
+
+<br/>
+
+If you are regularly seeing the `Processing symbols is taking longer than expected. Try again in awhile` warning in your sidebar, its likely that your symbols and/or gitserver are underprovisioned need more CPU/mem resources.
+
+The [symbols sidebar](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/repo/RepoRevisionSidebarSymbols.tsx?L42) is dependent on the symbols and gitserver services. When Sourcegraph displays a page associated with a repo, a symbols search query is made to the graphQL API to retrieve the symbols associated with the current git revision context.  Symbols uses [ctags](https://github.com/universal-ctags/ctags#readme) to process a repo and generate the list of symbols displayed in the symbols sidebar. 
+
+Ctags processing is lazy, and occurs only when the symbols service is first queried. When symbols recieves a query it [fetchs](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/symbols/internal/symbols/fetch%5C.go+fetchRepositoryArchive%28&patternType=literal) a repository archive from gitserver to parse, once the archive is parsed to produce an index, the index is [cached](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%406f4d327+file:%5Ecmd/symbols/internal/symbols/search%5C.go+s.writeAllSymbolsToNewDB%28&patternType=literal) on-disk in an SQLite database for use in subsequent queries. For large monorepos this indexing can take a few minutes resulting in timeouts.
+
+To address this concern allocate more resources to the symbols service (to provide more processing power to the indexing operations) and to allocate more resources to the gitserver (to allow for the extra load associated with responding to fetch requests from symbols)
+
+Below is an example of a diff to improve symbols performance in a k8s deployment.
+```diff
+          name: debug
+        resources:
+          limits:
+-           cpu: "3"
+-           memory: 6G
+          requests:
+-           cpu: 500m
+-           memory: 5G
+
+          name: debug
+        resources:
+          limits:
++           cpu: "4"
++           memory: 16G
+          requests:
++           cpu: "1"
++           memory: 8G
+```
+_Learn more about managing resources in [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations) and [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations)_
+
+## Slow hover tooltip results
+
+## Git history doesn't load
