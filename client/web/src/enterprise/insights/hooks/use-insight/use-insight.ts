@@ -1,17 +1,24 @@
 import { useMemo } from 'react'
 
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    ConfiguredSubjectOrError,
+    SettingsCascadeOrError,
+    SettingsCascadeProps,
+} from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../schema/settings.schema'
 import {
     Insight,
-    InsightExtensionBasedConfiguration,
+    InsightExecutionType,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
+    isInsightSettingKey,
+    parseInsightTypeFromSettingId,
 } from '../../core/types'
-import { getInsightIdsFromSettings } from '../use-dashboards/utils'
+import { LangStatsInsightConfiguration } from '../../core/types/insight/lang-stat-insight'
+import { SearchBasedExtensionInsightSettings } from '../../core/types/insight/search-insight'
 import { useDistinctValue } from '../use-distinct-value'
 
 export interface UseInsightProps extends SettingsCascadeProps<Settings> {
@@ -39,19 +46,6 @@ export function useInsights(props: UseInsightsProps): Insight[] {
     return useMemo(() => ids.map(id => findInsightById(settingsCascade, id)).filter(isDefined), [settingsCascade, ids])
 }
 
-export function useAllInsights(props: SettingsCascadeProps<Settings>): Insight[] {
-    const {
-        settingsCascade: { final },
-    } = props
-    const insightIds = useMemo(() => {
-        const normalizedFinalSettings = !final || isErrorLike(final) ? {} : final
-
-        return getInsightIdsFromSettings(normalizedFinalSettings)
-    }, [final])
-
-    return useInsights({ settingsCascade: props.settingsCascade, insightIds })
-}
-
 export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings>, insightId: string): Insight | null {
     const subjects = settingsCascade.subjects
 
@@ -60,56 +54,70 @@ export function findInsightById(settingsCascade: SettingsCascadeOrError<Settings
             settings &&
             !isErrorLike(settings) &&
             (settings[insightId] ||
-                // Also check insights all repos map as a second place of insights store
+                // Also check insights all repos map as a second place of insights
                 (settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] as Record<string, Insight>)?.[insightId])
     )
 
-    if (!subject?.settings || isErrorLike(subject.settings)) {
+    return subject ? parseInsightFromSubject(insightId, subject) : null
+}
+
+export function parseInsightFromSubject(
+    insightId: string,
+    subject: ConfiguredSubjectOrError<Settings>
+): Insight | null {
+    if (!isInsightSettingKey(insightId) || !subject?.settings || isErrorLike(subject.settings)) {
+        return null
+    }
+
+    const type = parseInsightTypeFromSettingId(insightId)
+
+    // Early return in case if we don't support this type of insight
+    if (type === null) {
         return null
     }
 
     // Top level match means we are dealing with extension based insights
     if (subject.settings[insightId]) {
-        const insightConfiguration = subject.settings[insightId] as InsightExtensionBasedConfiguration
+        if (type === InsightType.LangStats) {
+            const insightConfiguration = subject.settings[insightId] as LangStatsInsightConfiguration
 
-        return {
-            id: insightId,
-            visibility: subject.subject.id,
-            type: InsightType.Extension,
-            ...insightConfiguration,
+            return {
+                id: insightId,
+                visibility: subject.subject.id,
+                type: InsightExecutionType.Runtime,
+                viewType: type,
+                ...insightConfiguration,
+            }
+        }
+
+        if (type === InsightType.SearchBased) {
+            const insightConfiguration = subject.settings[insightId] as SearchBasedExtensionInsightSettings
+
+            return {
+                id: insightId,
+                visibility: subject.subject.id,
+                type: InsightExecutionType.Runtime,
+                viewType: type,
+                ...insightConfiguration,
+            }
         }
     }
 
     const allReposInsights = subject.settings[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
 
     // Match in all repos object means that we are dealing with backend search based insight.
-    if (allReposInsights[insightId]) {
+    // At the moment we support only search based insight in setting BE insight map
+    if (allReposInsights[insightId] && type === InsightType.SearchBased) {
         const insightConfiguration = allReposInsights[insightId]
 
         return {
             id: insightId,
             visibility: subject.subject.id,
-            type: InsightType.Backend,
+            type: InsightExecutionType.Backend,
+            viewType: type,
             ...insightConfiguration,
         }
     }
 
     return null
-}
-
-interface InsightsInputs {
-    insightKey: string
-    insightConfiguration: InsightExtensionBasedConfiguration
-    ownerId: string
-}
-
-export function createExtensionInsightFromSettings(input: InsightsInputs): Insight {
-    const { insightKey, ownerId, insightConfiguration } = input
-
-    return {
-        id: insightKey,
-        type: InsightType.Extension,
-        visibility: ownerId,
-        ...insightConfiguration,
-    }
 }

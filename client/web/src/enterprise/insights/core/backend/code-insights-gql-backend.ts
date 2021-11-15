@@ -9,36 +9,28 @@ import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import {
     AddInsightViewToDashboardResult,
     CreateDashboardResult,
-    CreateInsightResult,
     CreateInsightsDashboardInput,
+    CreateLangStatsInsightResult,
+    CreateSearchBasedInsightResult,
     DeleteDashboardResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     GetInsightViewResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
-    LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
+    PieChartSearchInsightInput,
     RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
+    UpdateLangStatsInsightResult,
+    UpdateLangStatsInsightVariables,
     UpdateLineChartSearchInsightResult,
 } from '@sourcegraph/web/src/graphql-operations'
 
-import {
-    Insight,
-    InsightDashboard,
-    InsightsDashboardScope,
-    InsightsDashboardType,
-    isSearchBasedInsight,
-    SearchBasedInsight,
-} from '../types'
+import { Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType, InsightType } from '../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../types/dashboard/virtual-dashboard'
-import {
-    isSearchBackendBasedInsight,
-    SearchBackendBasedInsight,
-    SearchBasedBackendFilters,
-} from '../types/insight/search-insight'
+import { SearchBackendBasedInsight } from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { InsightStillProcessingError } from './api/get-backend-insight'
@@ -63,14 +55,15 @@ import {
     ReachableInsight,
 } from './code-insights-backend-types'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
-import { GET_INSIGHTS_GQL } from './gql/GetInsights'
+import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
 import { createLineChartContent } from './utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
-import { getInsightView, getStepInterval } from './utils/insight-transformers'
+import { getInsightView } from './utils/insight-transformers'
 import { parseDashboardScope } from './utils/parse-dashboard-scope'
+import { prepareSearchInsightCreateInput, prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
@@ -120,8 +113,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> =>
-        this.getInsights('all').pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
+    // TODO: This method is used only for insight title validation but since we don't have
+    // limitations about title field in gql api remove this method and async validation for
+    // title field as soon as setting-based api will be deprecated
+    public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> => of(null)
 
     public getReachableInsights = (): Observable<ReachableInsight[]> =>
         this.getInsights('all').pipe(
@@ -181,56 +176,109 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public createInsight = (input: InsightCreateInput): Observable<unknown> => {
         const { insight, dashboard } = input
 
-        if (isSearchBasedInsight(insight)) {
-            const input: LineChartSearchInsightInput = this.prepareSearchInsightCreateInput(insight, dashboard)
+        switch (insight.viewType) {
+            case InsightType.SearchBased: {
+                const input: LineChartSearchInsightInput = prepareSearchInsightCreateInput(insight, dashboard)
 
-            return from(
-                this.apolloClient.mutate<CreateInsightResult>({
-                    mutation: gql`
-                        mutation CreateInsight($input: LineChartSearchInsightInput!) {
-                            createLineChartSearchInsight(input: $input) {
-                                view {
-                                    id
+                return from(
+                    this.apolloClient.mutate<CreateSearchBasedInsightResult>({
+                        mutation: gql`
+                            mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
+                                createLineChartSearchInsight(input: $input) {
+                                    view {
+                                        id
+                                    }
                                 }
                             }
-                        }
-                    `,
-                    variables: { input },
-                })
-            )
-        }
+                        `,
+                        variables: { input },
+                    })
+                )
+            }
 
-        // TODO [VK] implement lang stats chart creation
-        return of()
+            case InsightType.LangStats: {
+                return from(
+                    this.apolloClient.mutate<CreateLangStatsInsightResult, { input: PieChartSearchInsightInput }>({
+                        mutation: gql`
+                            mutation CreateLangStatsInsight($input: PieChartSearchInsightInput!) {
+                                createPieChartSearchInsight(input: $input) {
+                                    view {
+                                        id
+                                    }
+                                }
+                            }
+                        `,
+                        variables: {
+                            input: {
+                                query: '',
+                                repositoryScope: { repositories: [insight.repository] },
+                                presentationOptions: {
+                                    title: insight.title,
+                                    otherThreshold: insight.otherThreshold,
+                                },
+                                dashboards: [dashboard?.id ?? ''],
+                            },
+                        },
+                    })
+                )
+            }
+        }
     }
 
     public updateInsight = (input: InsightUpdateInput): Observable<void[]> => {
-        // Extracting mutations here to make it easier to support different types of insights
-        const updateLineChartSearchInsightMutation = gql`
-            mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
-                updateLineChartSearchInsight(input: $input, id: $id) {
-                    view {
-                        id
-                    }
-                }
-            }
-        `
-
         const insight = input.newInsight
         const oldInsight = input.oldInsight
 
-        if (isSearchBasedInsight(insight)) {
-            const input: UpdateLineChartSearchInsightInput = this.prepareSearchInsightUpdateInput(insight)
+        switch (insight.viewType) {
+            case InsightType.SearchBased: {
+                const updateLineChartSearchInsightMutation = gql`
+                    mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
+                        updateLineChartSearchInsight(input: $input, id: $id) {
+                            view {
+                                ...InsightViewNode
+                            }
+                        }
+                    }
+                    ${INSIGHT_VIEW_FRAGMENT}
+                `
 
-            return from(
-                this.apolloClient.mutate<UpdateLineChartSearchInsightResult>({
-                    mutation: updateLineChartSearchInsightMutation,
-                    variables: { input, id: oldInsight.id },
-                })
-            ).pipe(mapTo([]))
+                const input: UpdateLineChartSearchInsightInput = prepareSearchInsightUpdateInput(insight)
+
+                return from(
+                    this.apolloClient.mutate<UpdateLineChartSearchInsightResult>({
+                        mutation: updateLineChartSearchInsightMutation,
+                        variables: { input, id: oldInsight.id },
+                    })
+                ).pipe(mapTo([]))
+            }
+            case InsightType.LangStats: {
+                return from(
+                    this.apolloClient.mutate<UpdateLangStatsInsightResult, UpdateLangStatsInsightVariables>({
+                        mutation: gql`
+                            mutation UpdateLangStatsInsight($id: ID!, $input: UpdatePieChartSearchInsightInput!) {
+                                updatePieChartSearchInsight(id: $id, input: $input) {
+                                    view {
+                                        ...InsightViewNode
+                                    }
+                                }
+                            }
+                            ${INSIGHT_VIEW_FRAGMENT}
+                        `,
+                        variables: {
+                            id: oldInsight.id,
+                            input: {
+                                query: '',
+                                repositoryScope: { repositories: [insight.repository] },
+                                presentationOptions: {
+                                    title: insight.title,
+                                    otherThreshold: insight.otherThreshold,
+                                },
+                            },
+                        },
+                    })
+                ).pipe(mapTo([]))
+            }
         }
-
-        return of()
     }
 
     public deleteInsight = (insightId: string): Observable<unknown> =>
@@ -521,60 +569,5 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 })
             )
         )
-    }
-
-    private prepareSearchInsightCreateInput(
-        insight: SearchBasedInsight,
-        dashboard: InsightDashboard | null
-    ): LineChartSearchInsightInput {
-        const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
-
-        const [unit, value] = getStepInterval(insight)
-        const input: LineChartSearchInsightInput = {
-            dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
-                query: series.query,
-                options: {
-                    label: series.name,
-                    lineColor: series.stroke,
-                },
-                repositoryScope: { repositories },
-                timeScope: { stepInterval: { unit, value } },
-            })),
-            options: { title: insight.title },
-        }
-
-        if (dashboard?.id) {
-            input.dashboards = [dashboard.id]
-        }
-        return input
-    }
-
-    private prepareSearchInsightUpdateInput(
-        insight: SearchBasedInsight & { filters?: SearchBasedBackendFilters }
-    ): UpdateLineChartSearchInsightInput {
-        const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
-
-        const [unit, value] = getStepInterval(insight)
-        const input: UpdateLineChartSearchInsightInput = {
-            dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
-                query: series.query,
-                options: {
-                    label: series.name,
-                    lineColor: series.stroke,
-                },
-                repositoryScope: { repositories },
-                timeScope: { stepInterval: { unit, value } },
-            })),
-            presentationOptions: {
-                title: insight.title,
-            },
-            viewControls: {
-                filters: {
-                    includeRepoRegex: insight.filters?.includeRepoRegexp,
-                    excludeRepoRegex: insight.filters?.excludeRepoRegexp,
-                },
-            },
-        }
-        return input
     }
 }

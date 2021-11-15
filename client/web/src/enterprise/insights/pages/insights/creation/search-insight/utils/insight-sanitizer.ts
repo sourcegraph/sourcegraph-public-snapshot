@@ -1,6 +1,6 @@
 import { camelCase } from 'lodash'
 
-import { InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
+import { InsightExecutionType, InsightType, InsightTypePrefix, SearchBasedInsight } from '../../../../../core/types'
 import { SearchBasedInsightSeries } from '../../../../../core/types/insight/search-insight'
 import { CreateInsightFormFields, EditableDataSeries } from '../types'
 
@@ -35,8 +35,9 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
     // Backend type of insight.
     if (rawInsight.allRepos) {
         return {
-            type: InsightType.Backend,
             id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+            type: InsightExecutionType.Backend,
+            viewType: InsightType.SearchBased,
             title: rawInsight.title,
             series: getSanitizedSeries(rawInsight.series),
             visibility: rawInsight.visibility,
@@ -44,11 +45,11 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
     }
 
     return {
-        type: InsightType.Extension,
-
+        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
         // ID generated according to our naming insight convention
         // <Type of insight>.insight.<name of insight>
-        id: `${InsightTypePrefix.search}.${camelCase(rawInsight.title)}`,
+        type: InsightExecutionType.Runtime,
+        viewType: InsightType.SearchBased,
         visibility: rawInsight.visibility,
         title: rawInsight.title,
         repositories: getSanitizedRepositories(rawInsight.repositories),
