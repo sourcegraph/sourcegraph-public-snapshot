@@ -44,6 +44,11 @@ export const getHTMLPage = ({
         <meta name="referrer" content="origin-when-cross-origin"/>
         <meta name="color-scheme" content="light dark"/>
         ${cssBundle ? `<link rel="stylesheet" href="${cssBundle}">` : ''}
+        ${
+            environmentConfig.SOURCEGRAPHDOTCOM_MODE
+                ? '<script src="https://js.sentry-cdn.com/ae2f74442b154faf90b5ff0f7cd1c618.min.js" crossorigin="anonymous"></script>'
+                : ''
+        }
     </head>
     <body>
         <div id="root"></div>
