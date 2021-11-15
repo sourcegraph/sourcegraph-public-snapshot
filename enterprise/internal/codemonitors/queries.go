@@ -75,8 +75,6 @@ RETURNING %s;
 `
 
 func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error {
-	now := s.Now()
-	a := actor.FromContext(ctx)
 
 	var triggerID int64
 	err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
@@ -90,6 +88,8 @@ func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, args *graphql
 		return err
 	}
 
+	now := s.Now()
+	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		updateTriggerQueryFmtStr,
 		args.Trigger.Update.Query,

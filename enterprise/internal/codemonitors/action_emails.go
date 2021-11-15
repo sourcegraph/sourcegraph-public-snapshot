@@ -49,7 +49,6 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int6
 		return nil, err
 	}
 
-	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		updateActionEmailFmtStr,
@@ -57,7 +56,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int6
 		action.Email.Update.Priority,
 		action.Email.Update.Header,
 		a.UID,
-		now,
+		s.Now(),
 		actionID,
 		monitorID,
 		sqlf.Join(emailsColumns, ", "),

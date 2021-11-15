@@ -86,7 +86,8 @@ func (s *codeMonitorStore) ListAllRecipientsForEmailAction(ctx context.Context, 
 
 const createRecipientFmtStr = `
 INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
-VALUES (%s,%s,%s)`
+VALUES (%s,%s,%s)
+`
 
 func (s *codeMonitorStore) createRecipient(ctx context.Context, recipient graphql.ID, emailID int64) error {
 	var userID, orgID int32
