@@ -11,10 +11,13 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/garyburd/redigo/redis"
+	"github.com/jackc/pgx/v4"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 var (
@@ -56,6 +59,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 		}
 
 	}
+
 	pending.Destroy()
 
 	for i, category := range deps {
@@ -127,6 +131,56 @@ func checkDevPrivateInParentOrInCurrentDirectory() func(context.Context) (bool, 
 			return true, nil
 		}
 		return false, errors.New("could not find dev-private repository either in current directory or one above")
+	}
+}
+
+func checkPostgresConnection() func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		// TODO: Do we need to use the globalconf from `sg` so
+		// that we use the correct `PG*` env vars? But what if
+		// the user doesn't have the repo cloned or is not in
+		// the repo yet?
+		ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
+		if !ok {
+			return false, errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		}
+
+		dns := postgresdsn.New("", "", os.Getenv)
+		conn, err := pgx.Connect(ctx, dns)
+		if err != nil {
+			return false, err
+		}
+		defer conn.Close(ctx)
+
+		var result int
+		row := conn.QueryRow(ctx, "SELECT 1;")
+		if err := row.Scan(&result); err != nil {
+			return false, err
+		}
+		if result != 1 {
+			return false, errors.New("failed to read a test value from database")
+		}
+		return true, nil
+	}
+}
+
+func checkRedisConnection() func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		conn, err := redis.Dial("tcp", "localhost:6379")
+		if err != nil {
+			return false, errors.Wrap(err, "failed to connect to Redis at localhost:6379")
+		}
+
+		if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
+			return false, err
+		}
+
+		retval, err := redis.String(conn.Do("GET", "sg-setup"))
+		if err != nil {
+			return false, err
+		}
+
+		return retval == "was-here", nil
 	}
 }
 
@@ -203,8 +257,14 @@ var macOSDependencies = []dependencyCategory{
 	{
 		name: "Setup PostgreSQL database",
 		dependencies: []*dependency{
-			{name: "Connection to 'sourcegraph' database", check: checkInPath("psql")},
+			{name: "Connection to 'sourcegraph' database", check: checkPostgresConnection()},
 			{name: "psql", check: checkInPath("psql")},
+		},
+	},
+	{
+		name: "Setup Redis database",
+		dependencies: []*dependency{
+			{name: "Connection to Redis", check: checkRedisConnection()},
 		},
 	},
 }
