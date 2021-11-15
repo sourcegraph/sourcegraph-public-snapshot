@@ -38,6 +38,23 @@ const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
     }
 `
 
+export const nullPolicy = {
+    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+    id: '',
+    name: '',
+    repositoryPatterns: null,
+    type: GitObjectType.GIT_UNKNOWN,
+    pattern: '',
+    protected: false,
+    retentionEnabled: false,
+    retentionDurationHours: null,
+    retainIntermediateCommits: false,
+    indexingEnabled: false,
+    indexCommitMaxAgeHours: null,
+    indexIntermediateCommits: false,
+    repository: null,
+}
+
 interface UsePoliciesConfigResult {
     policies: CodeIntelligenceConfigurationPolicyFields[]
     loadingPolicies: boolean
