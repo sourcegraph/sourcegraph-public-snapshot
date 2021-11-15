@@ -57,7 +57,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 	}
 
 	// Initialize sentry hub
-	hub, err := sentry.NewWithDsn("https://120790c4131a47d9a66d7132801c6fe9@o19358.ingest.sentry.io/6059023")
+	hub, err := sentry.NewWithDsn(siteConfig.SiteConfig().Log.Sentry.CodeIntelDSN)
 	if err != nil {
 		log.Fatalf("Failed to initialize sentry hub: %s", err)
 	}
