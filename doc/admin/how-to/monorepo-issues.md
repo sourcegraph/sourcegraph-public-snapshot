@@ -48,5 +48,9 @@ Below is an example of a diff to improve symbols performance in a k8s deployment
 _Learn more about managing resources in [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations) and [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations)_
 
 ## Slow hover tooltip results
+Hovering over a symbol results in queries for definition and refeneces of the symbol in question. If the symbol is defined in a repo that has been indexed via lsif these results should be uneffected by the monorepo. However if no lsif index exists on the repo and the repo is unindexed, hover results rely on the symbols service and face the same challenges as described above in [symbols sidebar](#symbols-sidebar---processing-symbols)
 
-## Git history doesn't load
+## Slow history tab and git blame results
+![Screen Shot 2021-11-15 at 1 10 16 AM](https://user-images.githubusercontent.com/13024338/141754063-2080c7c6-b5be-43c1-b9db-386e916d2968.png)
+
+Selecting the Show History button while viewing a file initiates a request to [fetch commits](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/repo/RepoRevisionSidebarCommits%5C.tsx+function+fetchCommits%28&patternType=literal) for the file. This request is ultimately resolved by gitserver. To improve performance allocate gitserver more CPU. 
