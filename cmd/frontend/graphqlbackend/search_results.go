@@ -1911,42 +1911,43 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 // subRepoPermsFilter returns a callback that is used to drop results in the given SearchEvent
 // that the actor in the given context does not have read access to.
 func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) error {
-	actor := actor.FromContext(ctx)
+	a := actor.FromContext(ctx)
 
 	return func(event *streaming.SearchEvent) error {
+		// Filter in place, keeping results the given actor is authorized to see.
 		tr, ctx := trace.New(ctx, "subRepoPermsFilter", "")
-		errs := &multierror.Error{}
-		authorized := event.Results[:0]
-		resultsCount := len(event.Results)
-
+		var (
+			errs         = &multierror.Error{}
+			authorized   = 0
+			resultsCount = len(event.Results)
+		)
 		defer func() {
 			tr.SetError(errs.ErrorOrNil())
 			tr.LazyPrintf("actor=(%s) authorized=%d unauthorized=%d",
-				actor.String(), len(authorized), resultsCount-len(authorized))
+				a.String(), authorized, resultsCount-authorized)
 			tr.Finish()
 		}()
-
-		for _, match := range event.Results {
-			key := match.Key()
-			perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
+		for _, result := range event.Results {
+			key := result.Key()
+			perms, err := authz.ActorPermissions(ctx, srp, a, authz.RepoContent{
 				Repo: key.Repo,
 				Path: key.Path,
 			})
 			if err != nil {
 				// Log error but don't propagate upwards to ensure data does not leak
 				log15.Error("subRepoPermsFilter check failed",
-					"actor.UID", actor.UID,
-					"match.Key", key,
+					"actor.UID", a.UID,
+					"result.Key", key,
 					"error", err)
 				errs = multierror.Append(errs, fmt.Errorf("subRepoPermsFilter: failed to check sub-repo permissions"))
 			}
 			if perms.Include(authz.Read) {
-				authorized = append(authorized, match)
+				event.Results[authorized] = result
+				authorized++
 			}
 		}
-
 		// Only keep authorized matches
-		event.Results = authorized
+		event.Results = event.Results[:authorized]
 
 		return errs.ErrorOrNil()
 	}
