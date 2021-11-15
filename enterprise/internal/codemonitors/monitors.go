@@ -143,11 +143,22 @@ func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbacke
 	return scanMonitor(row)
 }
 
+const deleteMonitorFmtStr = `
+DELETE FROM cm_monitors
+WHERE id = %s
+`
+
 func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) error {
-	q, err := s.deleteMonitorQuery(ctx, args)
+	var monitorID int64
+	err := relay.UnmarshalSpec(args.Id, &monitorID)
 	if err != nil {
 		return err
 	}
+
+	q := sqlf.Sprintf(
+		deleteMonitorFmtStr,
+		monitorID,
+	)
 	return s.Exec(ctx, q)
 }
 
@@ -212,23 +223,6 @@ func monitorsQuery(userID int32, args *graphqlbackend.ListMonitorsArgs) (*sqlf.Q
 		userID,
 		after,
 		args.First,
-	), nil
-}
-
-const deleteMonitorFmtStr = `
-DELETE FROM cm_monitors
-WHERE id = %s
-`
-
-func (s *codeMonitorStore) deleteMonitorQuery(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*sqlf.Query, error) {
-	var monitorID int64
-	err := relay.UnmarshalSpec(args.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		deleteMonitorFmtStr,
-		monitorID,
 	), nil
 }
 
