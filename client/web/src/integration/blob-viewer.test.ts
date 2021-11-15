@@ -1162,7 +1162,7 @@ describe('Blob viewer', () => {
                 await driver.page.reload()
 
                 // Alert should not show up now that the user has dismissed it once
-                await driver.page.waitForSelector('.repo-header')
+                await driver.page.waitForSelector('[data-testid="repo-header"]')
                 // `browserExtensionInstalled` emits false after 500ms, so
                 // wait 500ms after .repo-header is visible, at which point we know
                 // that `RepoContainer` has subscribed to `browserExtensionInstalled`.
