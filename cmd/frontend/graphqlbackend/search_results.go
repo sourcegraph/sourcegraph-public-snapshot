@@ -1620,7 +1620,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			NoForks:        args.RepoOptions.NoForks,
 			OnlyArchived:   args.RepoOptions.OnlyArchived,
 			NoArchived:     args.RepoOptions.NoArchived,
-			ExcludePattern: args.RepoOptions.ExcludePattern,
+			ExcludePattern: repos.UnionRegExps(args.RepoOptions.MinusRepoFilters),
 		})
 
 		if err != nil {
