@@ -18,7 +18,7 @@ const { add } = storiesOf('web/searchContexts/SearchContextCtaPrompt', module)
         </div>
     ))
 
-export const authUser: AuthenticatedUser = {
+const authUser: AuthenticatedUser = {
     __typename: 'User',
     id: '0',
     email: 'alice@sourcegraph.com',

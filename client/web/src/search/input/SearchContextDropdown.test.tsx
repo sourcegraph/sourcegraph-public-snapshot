@@ -13,6 +13,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
+import { AuthenticatedUser } from '../../auth'
 import { MockTemporarySettings } from '../../settings/temporary/testUtils'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
@@ -123,7 +124,21 @@ describe('SearchContextDropdown', () => {
             window.context = oldContext
         })
 
-        it('should not display CTA if not on Sourcegraph.com', () => {})
+        it('should not display CTA if not on Sourcegraph.com', () => {
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={false}
+                        hasUserAddedRepositories={false}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
+        })
 
         it('should display CTA on Sourcegraph.com if no repos have been added and not permanently dismissed', () => {
             const { getByRole, queryByRole } = render(
@@ -141,7 +156,28 @@ describe('SearchContextDropdown', () => {
             expect(queryByRole('button', { name: /Don't show this again/ })).toBeInTheDocument()
         })
 
-        it('should not display CTA on Sourcegraph.com if user is part of an org', () => {})
+        it('should not display CTA on Sourcegraph.com if user is part of an org', () => {
+            const mockUserWithOrg = {
+                organizations: {
+                    nodes: [{ displayName: 'test org', id: '1', name: 'test' }],
+                },
+            } as AuthenticatedUser
+
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={true}
+                        hasUserAddedRepositories={false}
+                        authenticatedUser={mockUserWithOrg}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
+        })
 
         it('should not display CTA on Sourcegraph.com if repos have been added', () => {
             const { getByRole, queryByRole } = render(
@@ -197,7 +233,7 @@ describe('SearchContextDropdown', () => {
             expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
             expect(getByRole('searchbox')).toBeInTheDocument()
 
-            sinon.assert.notCalled(onSettingsChanged)
+            sinon.assert.calledOnceWithExactly(onSettingsChanged, { 'search.contexts.ctaDismissed': true })
         })
     })
 })
