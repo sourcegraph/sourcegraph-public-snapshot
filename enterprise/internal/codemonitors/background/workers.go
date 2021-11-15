@@ -172,7 +172,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if numResults > 0 {
 		err := s.EnqueueActionJobsForQuery(ctx, q.ID, record.RecordID())
 		if err != nil {
-			return errors.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
+			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
