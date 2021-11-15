@@ -1,0 +1,23 @@
+.light {
+    // The light items just share the background color with the rest of the section.
+    background-color: none;
+}
+
+.dark {
+    background-color: var(--subtle-bg-2);
+}
+
+.link {
+    display: block;
+    font-size: 1rem;
+    padding-bottom: 0.125rem;
+}
+
+.link-disabled {
+    // This color doesn't seem to be part of our codebase yet
+    color: #a6b5d9;
+}
+
+.status-container {
+    width: 1rem;
+}
