@@ -171,7 +171,7 @@ ORDER BY id ASC
 LIMIT %s
 `
 
-func (s *codeMonitorStore) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error) {
+func (s *codeMonitorStore) ListMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err

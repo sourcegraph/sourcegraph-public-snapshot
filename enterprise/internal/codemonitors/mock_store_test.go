@@ -471,7 +471,7 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 			defaultHook: i.UpdateTriggerJobWithResults,
 		},
 		MonitorsFunc: &CodeMonitorStoreMonitorsFunc{
-			defaultHook: i.Monitors,
+			defaultHook: i.ListMonitors,
 		},
 		NowFunc: &CodeMonitorStoreNowFunc{
 			defaultHook: i.Now,

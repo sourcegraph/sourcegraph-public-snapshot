@@ -61,7 +61,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	newArgs := *args
 	newArgs.First += 1
 
-	ms, err := r.store.Monitors(ctx, userID, &newArgs)
+	ms, err := r.store.ListMonitors(ctx, userID, &newArgs)
 	if err != nil {
 		return nil, err
 	}
