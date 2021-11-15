@@ -7,7 +7,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -65,15 +64,15 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*EmailAction, error) {
+func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, args *EmailActionArgs) (*EmailAction, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		createActionEmailFmtStr,
 		monitorID,
-		action.Email.Enabled,
-		action.Email.Priority,
-		action.Email.Header,
+		args.Enabled,
+		args.Priority,
+		args.Header,
 		a.UID,
 		now,
 		a.UID,
