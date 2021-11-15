@@ -170,14 +170,14 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionJobsForQuery(ctx, q.QueryTrigger.ID, record.RecordID())
+		err := s.EnqueueActionJobsForQuery(ctx, q.ID, record.RecordID())
 		if err != nil {
 			return errors.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
-	err = s.SetQueryTriggerNextRun(ctx, q.QueryTrigger.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}

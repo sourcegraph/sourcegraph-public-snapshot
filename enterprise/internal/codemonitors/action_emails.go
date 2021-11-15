@@ -26,11 +26,43 @@ type EmailAction struct {
 	ChangedAt time.Time
 }
 
+const updateActionEmailFmtStr = `
+UPDATE cm_emails
+SET enabled = %s,
+	priority = %s,
+	header = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+AND monitor = %s
+RETURNING %s;
+`
+
 func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*EmailAction, error) {
-	q, err := s.updateActionEmailQuery(ctx, monitorID, action.Email)
+	if action.Email.Id == nil {
+		return nil, errors.Errorf("nil is not a valid action ID")
+	}
+
+	var actionID int64
+	err := relay.UnmarshalSpec(*action.Email.Id, &actionID)
 	if err != nil {
 		return nil, err
 	}
+
+	now := s.Now()
+	a := actor.FromContext(ctx)
+	q := sqlf.Sprintf(
+		updateActionEmailFmtStr,
+		action.Email.Update.Enabled,
+		action.Email.Update.Priority,
+		action.Email.Update.Header,
+		a.UID,
+		now,
+		actionID,
+		monitorID,
+		sqlf.Join(emailsColumns, ", "),
+	)
+
 	row := s.QueryRow(ctx, q)
 	return scanEmail(row)
 }
@@ -81,44 +113,6 @@ func (s *codeMonitorStore) GetEmailAction(ctx context.Context, emailID int64) (m
 	)
 	row := s.QueryRow(ctx, q)
 	return scanEmail(row)
-}
-
-const updateActionEmailFmtStr = `
-UPDATE cm_emails
-SET enabled = %s,
-	priority = %s,
-	header = %s,
-	changed_by = %s,
-	changed_at = %s
-WHERE id = %s
-AND monitor = %s
-RETURNING %s;
-`
-
-func (s *codeMonitorStore) updateActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.EditActionEmailArgs) (*sqlf.Query, error) {
-	if args.Id == nil {
-		return nil, errors.Errorf("nil is not a valid action ID")
-	}
-
-	var actionID int64
-	err := relay.UnmarshalSpec(*args.Id, &actionID)
-	if err != nil {
-		return nil, err
-	}
-
-	now := s.Now()
-	a := actor.FromContext(ctx)
-	return sqlf.Sprintf(
-		updateActionEmailFmtStr,
-		args.Update.Enabled,
-		args.Update.Priority,
-		args.Update.Header,
-		a.UID,
-		now,
-		actionID,
-		monitorID,
-		sqlf.Join(emailsColumns, ", "),
-	), nil
 }
 
 // ListActionsOpts holds list options for listing actions
