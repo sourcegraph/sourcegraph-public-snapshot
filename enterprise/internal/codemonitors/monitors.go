@@ -37,11 +37,35 @@ var monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.namespace_user_id"),
 }
 
+const insertCodeMonitorFmtStr = `
+INSERT INTO cm_monitors
+(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+RETURNING %s;
+`
+
 func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
-	q, err := s.createCodeMonitorQuery(ctx, args)
+	var orgID, userID int32
+	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
 	if err != nil {
 		return nil, err
 	}
+
+	now := s.Now()
+	a := actor.FromContext(ctx)
+	q := sqlf.Sprintf(
+		insertCodeMonitorFmtStr,
+		now,
+		a.UID,
+		now,
+		a.UID,
+		args.Description,
+		args.Enabled,
+		nilOrInt32(userID),
+		nilOrInt32(orgID),
+		sqlf.Join(monitorColumns, ", "),
+	)
+
 	row := s.QueryRow(ctx, q)
 	return scanMonitor(row)
 }
@@ -158,34 +182,6 @@ func (s *codeMonitorStore) toggleCodeMonitorQuery(ctx context.Context, args *gra
 		actorUID,
 		s.Now(),
 		monitorID,
-		sqlf.Join(monitorColumns, ", "),
-	), nil
-}
-
-const insertCodeMonitorFmtStr = `
-INSERT INTO cm_monitors
-(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id)
-VALUES (%s,%s,%s,%s,%s,%s,%s)
-RETURNING %s;
-`
-
-func (s *codeMonitorStore) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*sqlf.Query, error) {
-	var orgID, userID int32
-	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	now := s.Now()
-	a := actor.FromContext(ctx)
-	return sqlf.Sprintf(
-		insertCodeMonitorFmtStr,
-		now,
-		a.UID,
-		now,
-		a.UID,
-		args.Description,
-		args.Enabled,
-		nilOrInt32(userID),
 		sqlf.Join(monitorColumns, ", "),
 	), nil
 }
