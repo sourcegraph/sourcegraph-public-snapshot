@@ -89,7 +89,8 @@ type JSContext struct {
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
 
-	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
@@ -188,7 +189,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), dbconn.Global) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 
-		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
