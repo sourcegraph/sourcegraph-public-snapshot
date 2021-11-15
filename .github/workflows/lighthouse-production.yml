@@ -1,5 +1,6 @@
 name: Lighthouse production audit
-on: [ pull_request ]
+on:
+  - push
 # on:
 #   workflow_dispatch:
 #   schedule:
