@@ -59,7 +59,6 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
-import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme } from './theme'
@@ -192,13 +191,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         setSelectedSearchContextSpec,
         searchContextSpec,
     ])
-
-    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
-    useEffect(() => {
-        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
-            setHasUsedNonGlobalContext(true)
-        }
-    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
