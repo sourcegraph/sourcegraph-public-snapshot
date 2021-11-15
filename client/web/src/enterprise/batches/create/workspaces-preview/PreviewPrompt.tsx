@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
