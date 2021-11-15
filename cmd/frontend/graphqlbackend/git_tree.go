@@ -2,19 +2,20 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"path"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
-	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -48,16 +49,15 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	srp := subRepoPermsClient(r.db)
 	// First check if we are able to view the tree at all, if not we can return early
 	// and don't need to hit gitserver.
-	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
+	perms, err := authz.CurrentUserPermissions(ctx, r.subRepoPerms, authz.RepoContent{
 		Repo: r.commit.repoResolver.RepoName(),
 		Path: r.Path(),
 	})
 	if err != nil {
 		log15.Error("checking sub-repo permissions", "error", err)
-		return nil, errors.New("checking sub-repo permissions")
+		return nil, err
 	}
 	// No access
 	if !perms.Include(authz.Read) {
@@ -66,7 +66,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 
 	entries, err := gitReadDir(
 		ctx,
-		srp,
+		r.subRepoPerms,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),
@@ -90,11 +90,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, &GitTreeEntryResolver{
-				db:     r.db,
-				commit: r.commit,
-				stat:   entry,
-			})
+			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
 		}
 	}
 
@@ -148,26 +144,40 @@ func gitReadDir(ctx context.Context, srp authz.SubRepoPermissionChecker, repo ap
 		return entries, nil
 	}
 
-	// Filter in place
-	n := 0
-	a := actor.FromContext(ctx)
+	// Filter in place, keeping entries the given actor is authorized to see.
+	tr, ctx := trace.New(ctx, "gitReadDir.subRepoPerms", "")
+	var (
+		a            = actor.FromContext(ctx)
+		errs         = &multierror.Error{}
+		authorized   = 0
+		resultsCount = len(entries)
+	)
+	defer func() {
+		tr.SetError(errs.ErrorOrNil())
+		tr.LazyPrintf("actor=(%s) authorized=%d unauthorized=%d",
+			a.String(), authorized, resultsCount-authorized)
+		tr.Finish()
+	}()
 	for _, entry := range entries {
-		// Check whether to filter out this entry due to sub-repo permissions
 		perms, err := authz.ActorPermissions(ctx, srp, a, authz.RepoContent{
 			Repo: repo,
 			Path: entry.Name(),
 		})
 		if err != nil {
-			log15.Error("checking sub-repo permissions", "error", err)
-			continue
+			// Log error but don't propagate upwards to ensure data does not leak
+			log15.Error("gitReadDir.subRepoPerms check failed",
+				"actor.UID", a.UID,
+				"entry.Name", entry.Name(),
+				"error", err)
+			errs = multierror.Append(errs, fmt.Errorf("subRepoPermsFilter: failed to check sub-repo permissions"))
 		}
-		// No access
 		if perms.Include(authz.Read) {
-			entries[n] = entry
-			n++
+			entries[authorized] = entry
+			authorized++
 		}
 	}
-	entries = entries[:n]
+	// Only keep authorized matches
+	entries = entries[:authorized]
 
 	return entries, nil
 }

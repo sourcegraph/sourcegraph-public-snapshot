@@ -72,18 +72,12 @@ func (o *orgStore) Transact(ctx context.Context) (OrgStore, error) {
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	if Mocks.Orgs.GetByUserID != nil {
-		return Mocks.Orgs.GetByUserID(ctx, userID)
-	}
 	return o.getByUserID(ctx, userID, false)
 }
 
 // GetOrgsWithRepositoriesByUserID returns a list of all organizations for the user that have a repository attached.
 // An empty slice is returned if the user is not authenticated or is not a member of any org.
 func (o *orgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	if Mocks.Orgs.GetOrgsWithRepositoriesByUserID != nil {
-		return Mocks.Orgs.GetOrgsWithRepositoriesByUserID(ctx, userID)
-	}
 	return o.getByUserID(ctx, userID, true)
 }
 
@@ -132,9 +126,6 @@ func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRe
 }
 
 func (o *orgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
-	if Mocks.Orgs.GetByID != nil {
-		return Mocks.Orgs.GetByID(ctx, orgID)
-	}
 	orgs, err := o.getBySQL(ctx, "WHERE deleted_at IS NULL AND id=$1 LIMIT 1", orgID)
 	if err != nil {
 		return nil, err
@@ -146,9 +137,6 @@ func (o *orgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 }
 
 func (o *orgStore) GetByName(ctx context.Context, name string) (*types.Org, error) {
-	if Mocks.Orgs.GetByName != nil {
-		return Mocks.Orgs.GetByName(ctx, name)
-	}
 	orgs, err := o.getBySQL(ctx, "WHERE deleted_at IS NULL AND name=$1 LIMIT 1", name)
 	if err != nil {
 		return nil, err
@@ -160,10 +148,6 @@ func (o *orgStore) GetByName(ctx context.Context, name string) (*types.Org, erro
 }
 
 func (o *orgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
-	if Mocks.Orgs.Count != nil {
-		return Mocks.Orgs.Count(ctx, opt)
-	}
-
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", o.listSQL(opt))
 
 	var count int
@@ -182,10 +166,6 @@ type OrgsListOptions struct {
 }
 
 func (o *orgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error) {
-	if Mocks.Orgs.List != nil {
-		return Mocks.Orgs.List(ctx, opt)
-	}
-
 	if opt == nil {
 		opt = &OrgsListOptions{}
 	}

@@ -12,7 +12,6 @@ type MockStores struct {
 	AccessTokens MockAccessTokens
 
 	Repos        MockRepos
-	Orgs         MockOrgs
 	OrgMembers   MockOrgMembers
 	Users        MockUsers
 	UserEmails   MockUserEmails

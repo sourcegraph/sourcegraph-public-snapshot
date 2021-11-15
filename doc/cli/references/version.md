@@ -5,6 +5,7 @@
 
 | Name | Description | Default Value |
 |------|-------------|---------------|
+| `-client-only` | If true, only the client version will be printed. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
@@ -16,6 +17,8 @@
 
 ```
 Usage of 'src version':
+  -client-only
+    	If true, only the client version will be printed.
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -get-curl

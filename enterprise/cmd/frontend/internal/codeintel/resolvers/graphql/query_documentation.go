@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 func (r *QueryResolver) DocumentationPage(ctx context.Context, args *gql.LSIFDocumentationPageArgs) (gql.DocumentationPageResolver, error) {
@@ -120,7 +121,7 @@ func (r *QueryResolver) DocumentationReferences(ctx context.Context, args *gql.L
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
-	cursor, err := decodeCursor(args.After)
+	cursor, err := graphqlutil.DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}

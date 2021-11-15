@@ -85,21 +85,19 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
-		Workspaces: []*batcheslib.Workspace{
-			{
-				Repository: batcheslib.WorkspaceRepo{
-					ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-					Name: string(repo.Name),
-				},
-				Branch: batcheslib.WorkspaceBranch{
-					Name:   workspace.Branch,
-					Target: batcheslib.Commit{OID: workspace.Commit},
-				},
-				Path:               workspace.Path,
-				OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-				Steps:              workspace.Steps,
-				SearchResultPaths:  workspace.FileMatches,
+		Workspace: batcheslib.Workspace{
+			Repository: batcheslib.WorkspaceRepo{
+				ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				Name: string(repo.Name),
 			},
+			Branch: batcheslib.WorkspaceBranch{
+				Name:   workspace.Branch,
+				Target: batcheslib.Commit{OID: workspace.Commit},
+			},
+			Path:               workspace.Path,
+			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+			Steps:              workspace.Steps,
+			SearchResultPaths:  workspace.FileMatches,
 		},
 	}
 

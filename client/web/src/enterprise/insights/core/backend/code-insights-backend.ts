@@ -44,6 +44,8 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
+    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+
     /**
      * Return all accessible for a user insights that are filtered by ids param.
      * If ids is nullable value then returns all insights. Insights in this case

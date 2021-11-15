@@ -32,7 +32,7 @@ import (
 
 func TestSources_ListRepos(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		ServiceConnections: conftypes.ServiceConnections{
+		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{"127.0.0.1:3178"},
 		},
 	})

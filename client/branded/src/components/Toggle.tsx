@@ -23,13 +23,11 @@ interface Props {
     'aria-label'?: string
     'aria-labelledby'?: string
     'aria-describedby'?: string
+    'data-testid'?: string
 
     disabled?: boolean
     tabIndex?: number
     className?: string
-
-    /** Data attribute for testing */
-    dataTest?: string
 }
 
 /** A toggle switch input component. */
@@ -42,10 +40,10 @@ export const Toggle: React.FunctionComponent<Props> = ({
     tabIndex,
     onToggle,
     onClick,
-    dataTest,
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
     'aria-describedby': ariaDescribedby,
+    'data-testid': dataTestId,
 }) => {
     function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
         event.stopPropagation()
@@ -72,7 +70,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
             aria-label={ariaLabel}
             aria-labelledby={ariaLabelledby}
             aria-describedby={ariaDescribedby}
-            data-test={dataTest}
+            data-testid={dataTestId}
         >
             <span
                 className={classNames(styles.bar, {
