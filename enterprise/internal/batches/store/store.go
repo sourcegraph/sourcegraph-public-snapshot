@@ -250,6 +250,7 @@ type operations struct {
 	createBatchSpecWorkspace       *observation.Operation
 	getBatchSpecWorkspace          *observation.Operation
 	listBatchSpecWorkspaces        *observation.Operation
+	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
@@ -382,6 +383,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
 			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
