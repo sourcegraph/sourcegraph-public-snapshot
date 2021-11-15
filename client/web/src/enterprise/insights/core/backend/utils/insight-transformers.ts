@@ -122,7 +122,7 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
 
         case 'PieChartInsightViewPresentation': {
             // At the moment we BE doesn't have special fragment type for Lang Stats repositories.
-            // We use search based definition (first repo of first definition). For lant-stats
+            // We use search based definition (first repo of first definition). For lang-stats
             // it always should be exactly one series with repository scope info.
             const repository = insight.dataSeriesDefinitions[0].repositoryScope.repositories[0] ?? ''
 
