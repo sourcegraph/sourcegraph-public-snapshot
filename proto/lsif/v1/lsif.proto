@@ -68,7 +68,7 @@ message Moniker {
   // example, if this moniker represents a function that implements another
   // function from an interface, then this field would link to the other
   // moniker.
-  repeated string implementation_moninkers = 5;
+  repeated string implementation_monikers = 5;
   // (optional) Links to the original package that defines this moniker to
   // enable navigation across different LSIF indexes (whether they come from
   // different projects or git repositories).

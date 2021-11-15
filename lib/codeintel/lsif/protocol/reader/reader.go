@@ -234,36 +234,63 @@ func ConvertFlatToGraph(vals *proto.LsifValues) []Element {
 		}
 	}
 
+	// Implementations
+	for _, lsifValue := range vals.Values {
+		if moniker, ok := lsifValue.Value.(*proto.LsifValue_Moniker); ok {
+			for _, impl := range moniker.Moniker.ImplementationMonikers {
+				// Local implementations
+				for _, rngeDoc := range g.monikerToDefinition[impl] {
+					g.EmitEdge("item", Edge{
+						OutV:     g.monikerToResults[moniker.Moniker.Id].ImplementationResult,
+						InVs:     []int{rngeDoc.rnge},
+						Document: rngeDoc.doc},
+					)
+				}
+
+				// Remote implementations
+				if _, ok := g.monikerToKindToGID[impl]; ok {
+					if g_ID, ok := g.monikerToKindToGID[impl]["implementation"]; ok {
+						resultSet := g.monikerToResults[moniker.Moniker.Id].ResultSet
+						g.EmitEdge("moniker", Edge{OutV: resultSet, InV: g_ID})
+					}
+				}
+			}
+		}
+	}
+
 	return g.Elements
 }
 
 type ResultIDs struct {
-	ResultSet        int
-	DefinitionResult int
-	ReferenceResult  int
-	HoverResult      int
-}
-
-type MonikerInfo struct {
-	g_ID    int
-	Moniker *proto.Moniker
+	ResultSet            int
+	DefinitionResult     int
+	ReferenceResult      int
+	ImplementationResult int
+	HoverResult          int
 }
 
 type graph struct {
-	ID          int
-	Elements    []Element
-	idCache     map[string]ResultIDs
-	f2g_package map[string]int
-	f2g_moniker map[string]MonikerInfo
+	ID                  int
+	Elements            []Element
+	monikerToResults    map[string]ResultIDs
+	f2g_package         map[string]int
+	monikerToKindToGID  map[string]map[string]int
+	monikerToDefinition map[string][]RangeDoc
+}
+
+type RangeDoc struct {
+	rnge int
+	doc  int
 }
 
 func NewGraph() graph {
 	return graph{
-		ID:          0,
-		Elements:    []Element{},
-		idCache:     map[string]ResultIDs{},
-		f2g_package: map[string]int{},
-		f2g_moniker: map[string]MonikerInfo{},
+		ID:                  0,
+		Elements:            []Element{},
+		monikerToResults:    map[string]ResultIDs{},
+		f2g_package:         map[string]int{},
+		monikerToKindToGID:  map[string]map[string]int{},
+		monikerToDefinition: map[string][]RangeDoc{},
 	}
 }
 
@@ -275,19 +302,24 @@ func (g *graph) EmitPackage(pkg *proto.Package) {
 }
 
 func (g *graph) EmitMoniker(moniker *proto.Moniker) {
+	if moniker.Kind == "" {
+		// It's a moniker for a local symbol (i.e. neither imported nor exported).
+		return
+	}
+
 	if pkgid, ok := g.f2g_package[moniker.PackageId]; ok {
 		g_id := g.EmitVertex("moniker", Moniker{
 			Kind:       moniker.Kind,
 			Scheme:     moniker.Scheme,
 			Identifier: moniker.Id,
 		})
-		g.f2g_moniker[moniker.Id] = MonikerInfo{
-			g_ID:    g_id,
-			Moniker: moniker,
-		}
 		g.EmitEdge("packageInformation", Edge{OutV: g_id, InV: pkgid})
+		if _, ok := g.monikerToKindToGID[moniker.Id]; !ok {
+			g.monikerToKindToGID[moniker.Id] = map[string]int{}
+		}
+		g.monikerToKindToGID[moniker.Id][moniker.Kind] = g_id
 	} else {
-		fmt.Printf("package %s does not exist (from moniker %s, skipping it)", moniker.PackageId, moniker.Id)
+		fmt.Printf("when emitting moniker %s: package %v not found", moniker.PackageId, moniker.Id)
 	}
 }
 
@@ -295,24 +327,17 @@ func (g *graph) EmitDocument(doc *proto.Document) {
 	documentID := g.EmitVertex("document", "file:///"+doc.Uri)
 	rangeIDs := []int{}
 	for _, occ := range doc.Occurrences {
-		rangeID := g.EmitVertex("range", Range{
-			RangeData: protocol.RangeData{
-				Start: protocol.Pos{
-					Line:      int(occ.Range.Start.Line),
-					Character: int(occ.Range.Start.Character),
-				},
-				End: protocol.Pos{
-					Line:      int(occ.Range.End.Line),
-					Character: int(occ.Range.End.Character),
-				},
-			},
-		})
+		rangeID := g.EmitRange(occ.Range)
 		rangeIDs = append(rangeIDs, rangeID)
 		results := g.EmitResults(occ.MonikerId, strings.Join(occ.MarkdownHover, "\n"))
 		g.EmitEdge("next", Edge{OutV: rangeID, InV: results.ResultSet})
 		switch occ.Role {
 		case proto.MonikerOccurrence_ROLE_DEFINITION:
 			g.EmitEdge("item", Edge{OutV: results.DefinitionResult, InVs: []int{rangeID}, Document: documentID})
+			if _, ok := g.monikerToDefinition[occ.MonikerId]; !ok {
+				g.monikerToDefinition[occ.MonikerId] = []RangeDoc{}
+			}
+			g.monikerToDefinition[occ.MonikerId] = append(g.monikerToDefinition[occ.MonikerId], RangeDoc{rnge: rangeID, doc: documentID})
 		case proto.MonikerOccurrence_ROLE_REFERENCE:
 			g.EmitEdge("item", Edge{OutV: results.ReferenceResult, InVs: []int{rangeID}, Document: documentID})
 		default:
@@ -322,23 +347,49 @@ func (g *graph) EmitDocument(doc *proto.Document) {
 }
 
 func (g *graph) EmitResults(moniker string, hover string) ResultIDs {
-	ids, ok := g.idCache[moniker]
-	if !ok {
-		ids = ResultIDs{
-			ResultSet:        g.EmitVertex("resultSet", ResultSet{}),
-			DefinitionResult: g.EmitVertex("definitionResult", nil),
-			ReferenceResult:  g.EmitVertex("referenceResult", nil),
-			HoverResult:      g.EmitVertex("hoverResult", hover),
-		}
-		g.EmitEdge("textDocument/definition", Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
-		g.EmitEdge("textDocument/references", Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
-		g.EmitEdge("textDocument/hover", Edge{OutV: ids.ResultSet, InV: ids.HoverResult})
-		if info := g.f2g_moniker[moniker]; ok {
-			g.EmitEdge("moniker", Edge{OutV: ids.ResultSet, InV: info.g_ID})
-		}
-		g.idCache[moniker] = ids
+	if ids, ok := g.monikerToResults[moniker]; ok {
+		return ids
 	}
+
+	ids := ResultIDs{
+		ResultSet:            g.EmitVertex("resultSet", ResultSet{}),
+		DefinitionResult:     g.EmitVertex("definitionResult", nil),
+		ReferenceResult:      g.EmitVertex("referenceResult", nil),
+		ImplementationResult: g.EmitVertex("implementationResult", nil),
+		HoverResult:          g.EmitVertex("hoverResult", hover),
+	}
+	g.EmitEdge("textDocument/definition", Edge{OutV: ids.ResultSet, InV: ids.DefinitionResult})
+	g.EmitEdge("textDocument/references", Edge{OutV: ids.ResultSet, InV: ids.ReferenceResult})
+	g.EmitEdge("textDocument/implementation", Edge{OutV: ids.ResultSet, InV: ids.ImplementationResult})
+	g.EmitEdge("textDocument/hover", Edge{OutV: ids.ResultSet, InV: ids.HoverResult})
+
+	if _, ok := g.monikerToKindToGID[moniker]; ok {
+		if g_ID, ok := g.monikerToKindToGID[moniker]["import"]; ok {
+			g.EmitEdge("moniker", Edge{OutV: ids.ResultSet, InV: g_ID})
+		}
+		if g_ID, ok := g.monikerToKindToGID[moniker]["export"]; ok {
+			g.EmitEdge("moniker", Edge{OutV: ids.ResultSet, InV: g_ID})
+		}
+	}
+
+	g.monikerToResults[moniker] = ids
+
 	return ids
+}
+
+func (g *graph) EmitRange(rnge *proto.Range) int {
+	return g.Emit("vertex", "range", Range{
+		RangeData: protocol.RangeData{
+			Start: protocol.Pos{
+				Line:      int(rnge.Start.Line),
+				Character: int(rnge.Start.Character),
+			},
+			End: protocol.Pos{
+				Line:      int(rnge.End.Line),
+				Character: int(rnge.End.Character),
+			},
+		},
+	})
 }
 
 func (g *graph) EmitVertex(label string, payload interface{}) int {

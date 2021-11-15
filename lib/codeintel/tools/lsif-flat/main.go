@@ -60,135 +60,162 @@ func ConvertGraphToFlat(r io.Reader) (*proto.LsifValues, error) {
 		return nil, err
 	}
 	conversion.Canonicalize(state)
+	stateMonikers := map[int][]conversion.Moniker{} // range -> []moniker
+	state.Monikers.Each(func(rnge int, ids *datastructures.IDSet) {
+		stateMonikers[rnge] = []conversion.Moniker{}
+		ids.Each(func(id int) {
+			stateMonikers[rnge] = append(stateMonikers[rnge], state.MonikerData[id])
+		})
+	})
+	stateDefs := map[int]map[int][]conversion.Range{} // definitionResult -> doc -> []range
+	for defid, docidToRanges := range state.DefinitionData {
+		stateDefs[defid] = map[int][]conversion.Range{}
+		docidToRanges.Each(func(docid int, ranges *datastructures.IDSet) {
+			stateDefs[defid][docid] = []conversion.Range{}
+			ranges.Each(func(r int) {
+				stateDefs[defid][docid] = append(stateDefs[defid][docid], state.RangeData[r])
+			})
+		})
+	}
 
 	// Helpers
-	vals := []*proto.LsifValue{}
-	emitMoniker := func(v *proto.Moniker) {
-		vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Moniker{Moniker: v}})
-	}
-	emitDocument := func(v *proto.Document) {
-		vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Document{Document: v}})
-	}
-	emitPackage := func(v *proto.Package) {
-		vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Package{Package: v}})
-	}
-	f_mkMonikerIDFromMoniker := func(g_docid int, g_range int) string {
-		if monikers := state.Monikers.Get(g_range); monikers != nil {
-			s := ""
-			monikers.Each(func(g_moniker int) {
-				switch state.MonikerData[g_moniker].Kind {
-				case "import", "export":
-					if s != "" {
-						fmt.Printf("range %d has multiple import/export monikers, picked %s and will ignore the others\n", g_range, s)
-						return
-					}
-					s = state.MonikerData[g_moniker].Identifier
-				}
-			})
-			if s != "" {
-				return s
-			}
-		}
-
-		return ""
-	}
-	f_mkMonikerIDFromDef := func(g_docid int, g_range int) string {
-		if s := f_mkMonikerIDFromMoniker(g_docid, g_range); s != "" {
-			return s
-		}
-
-		return fmt.Sprintf(
-			"%s:%d:%d", // file:line:character
-			state.DocumentData[g_docid],
-			state.RangeData[g_range].Start.Line,
-			state.RangeData[g_range].Start.Character,
-		)
-	}
-	f_mkMonikerIDFromRef := func(g_docid int, g_range int) string {
-		if s := f_mkMonikerIDFromMoniker(g_docid, g_range); s != "" {
-			return s
-		}
-
-		if g_defid := state.RangeData[g_range].DefinitionResultID; g_defid != 0 {
-			s := ""
-			state.DefinitionData[g_defid].Each(func(defdocid int, defrnges *datastructures.IDSet) {
-				defrnges.Each(func(g_defrng int) {
-					if s != "" {
-						fmt.Println("multiple defs for", state.DocumentData[defdocid], "rng", g_defrng)
-					} else {
-						s = f_mkMonikerIDFromDef(defdocid, g_defrng)
-					}
-				})
-			})
-			if s != "" {
-				return s
-			}
-		}
-
-		fmt.Println("floating ref", g_docid, g_range)
-		return "floating ref"
-	}
-	f_mkPackageID := func(pkg conversion.PackageInformation) string {
+	pkgId := func(pkg conversion.PackageInformation) string {
 		return fmt.Sprintf("%s@%s", pkg.Name, pkg.Version)
 	}
-	f_mkRange := func(g_range int) *proto.Range {
-		return &proto.Range{
-			Start: &proto.Position{Line: int32(state.RangeData[g_range].Start.Line), Character: int32(state.RangeData[g_range].Start.Character)},
-			End:   &proto.Position{Line: int32(state.RangeData[g_range].End.Line), Character: int32(state.RangeData[g_range].End.Character)},
+	// Grabs the import/export moniker and implementation monikers.
+	findMoniker := func(docid int, rnge int) (*proto.Moniker, []*proto.Moniker) {
+		hover := []string{state.HoverData[state.RangeData[rnge].HoverResultID]}
+
+		implementations := []*proto.Moniker{}
+		for _, m := range stateMonikers[rnge] {
+			if m.Kind == "implementation" {
+				implementations = append(implementations, &proto.Moniker{
+					Id:        m.Identifier,
+					Scheme:    m.Scheme,
+					PackageId: pkgId(state.PackageInformationData[m.PackageInformationID]),
+					Kind:      "implementation",
+				})
+			}
 		}
+		impls := []string{}
+		for _, impl := range implementations {
+			impls = append(impls, impl.Id)
+		}
+
+		for _, m := range stateMonikers[rnge] {
+			if m.Kind == "import" || m.Kind == "export" {
+				m := &proto.Moniker{
+					Id:                     m.Identifier,
+					Scheme:                 m.Scheme,
+					MarkdownHover:          hover,
+					ImplementationMonikers: impls,
+					PackageId:              pkgId(state.PackageInformationData[m.PackageInformationID]),
+					Kind:                   m.Kind,
+				}
+				return m, implementations
+			}
+		}
+
+		if defid := state.RangeData[rnge].DefinitionResultID; defid != 0 {
+			for defdocid, ranges := range stateDefs[defid] {
+				for _, rnge := range ranges {
+					m := &proto.Moniker{
+						Id:                     fmt.Sprintf("%s:%d:%d", state.DocumentData[defdocid], rnge.Start.Line, rnge.Start.Character),
+						MarkdownHover:          hover,
+						ImplementationMonikers: impls,
+					}
+					return m, implementations
+				}
+			}
+		}
+
+		return nil, []*proto.Moniker{}
 	}
 
-	// Emit proto
-	// Packages
-	for _, g_pkg := range state.PackageInformationData {
-		emitPackage(&proto.Package{
-			Id:      f_mkPackageID(g_pkg),
-			Name:    g_pkg.Name,
-			Version: g_pkg.Version,
-			Manager: "go",
-		})
-	}
-	// Monikers
-	nmonikers := 0
-	for _, g_moniker := range state.MonikerData {
-		nmonikers += 1
-		emitMoniker(&proto.Moniker{
-			Kind:      g_moniker.Kind,
-			Id:        g_moniker.Identifier,
-			Scheme:    g_moniker.Scheme,
-			PackageId: f_mkPackageID(state.PackageInformationData[g_moniker.PackageInformationID]),
-		})
-	}
-	// Occurrences of definitions
-	g_doc_to_f_occs := map[string][]*proto.MonikerOccurrence{}
-	gatherOccs := func(
-		data map[int]*datastructures.DefaultIDSetMap,
-		toMonikerID func(g_docid int, g_range int) string,
-		role proto.MonikerOccurrence_Role,
-	) {
-		for _, g_docToRanges := range data {
-			g_docToRanges.Each(func(g_docid int, g_ranges *datastructures.IDSet) {
-				g_uri := state.DocumentData[g_docid]
-				g_ranges.Each(func(g_range int) {
-					f_occ := &proto.MonikerOccurrence{
-						MonikerId:     toMonikerID(g_docid, g_range),
-						Role:          role,
-						Range:         f_mkRange(g_range),
-						MarkdownHover: []string{state.HoverData[state.RangeData[g_range].HoverResultID]},
+	// Collect all ranges and their monikers.
+	idToKindToMoniker := map[string]map[string]*proto.Moniker{}
+	rangeToMoniker := map[int]*proto.Moniker{}
+	collect := func(data map[int]*datastructures.DefaultIDSetMap) {
+		for _, docToRanges := range data {
+			docToRanges.Each(func(doc int, ranges *datastructures.IDSet) {
+				ranges.Each(func(r int) {
+					if m, implementations := findMoniker(doc, r); m != nil {
+						if _, ok := idToKindToMoniker[m.Id]; !ok {
+							idToKindToMoniker[m.Id] = map[string]*proto.Moniker{}
+						}
+						idToKindToMoniker[m.Id][m.Kind] = m
+						rangeToMoniker[r] = m
+						for _, implementation := range implementations {
+							if _, ok := idToKindToMoniker[implementation.Id]; !ok {
+								idToKindToMoniker[implementation.Id] = map[string]*proto.Moniker{}
+							}
+							idToKindToMoniker[implementation.Id]["implementation"] = implementation
+						}
+					} else {
+						fmt.Printf("could not construct a moniker for range %d, ignoring it\n", r)
 					}
-					if _, ok := g_doc_to_f_occs[g_uri]; !ok {
-						g_doc_to_f_occs[g_uri] = []*proto.MonikerOccurrence{}
-					}
-					g_doc_to_f_occs[g_uri] = append(g_doc_to_f_occs[g_uri], f_occ)
 				})
 			})
 		}
 	}
-	gatherOccs(state.DefinitionData, f_mkMonikerIDFromDef, proto.MonikerOccurrence_ROLE_DEFINITION)
-	gatherOccs(state.ReferenceData, f_mkMonikerIDFromRef, proto.MonikerOccurrence_ROLE_REFERENCE)
-	// Documents
-	for g_uri, f_occs := range g_doc_to_f_occs {
-		emitDocument(&proto.Document{Uri: g_uri, Occurrences: f_occs})
+	collect(state.ReferenceData)
+	collect(state.DefinitionData)
+
+	// Fill in local implementations.
+	for rnge, moniker := range rangeToMoniker {
+		if docToRanges := state.ImplementationData[state.RangeData[rnge].ImplementationResultID]; docToRanges != nil {
+			docToRanges.Each(func(doc int, ranges *datastructures.IDSet) {
+				ranges.Each(func(rnge int) {
+					moniker.ImplementationMonikers = append(moniker.ImplementationMonikers, rangeToMoniker[rnge].Id)
+				})
+			})
+		}
+	}
+
+	// Gather occurrences
+	uriToOccs := map[string][]*proto.MonikerOccurrence{}
+	gatherOccs := func(data map[int]*datastructures.DefaultIDSetMap, role proto.MonikerOccurrence_Role) {
+		for _, docToRanges := range data {
+			docToRanges.Each(func(docid int, ranges *datastructures.IDSet) {
+				uri := state.DocumentData[docid]
+				if _, ok := uriToOccs[uri]; !ok {
+					uriToOccs[uri] = []*proto.MonikerOccurrence{}
+				}
+				ranges.Each(func(rnge int) {
+					r := state.RangeData[rnge]
+					uriToOccs[uri] = append(uriToOccs[uri], &proto.MonikerOccurrence{
+						MonikerId: rangeToMoniker[rnge].Id,
+						Role:      role,
+						Range: &proto.Range{
+							Start: &proto.Position{Line: int32(r.Start.Line), Character: int32(r.Start.Character)},
+							End:   &proto.Position{Line: int32(r.End.Line), Character: int32(r.End.Character)},
+						},
+						MarkdownHover: []string{state.HoverData[state.RangeData[rnge].HoverResultID]},
+					})
+				})
+			})
+		}
+	}
+	gatherOccs(state.DefinitionData, proto.MonikerOccurrence_ROLE_DEFINITION)
+	gatherOccs(state.ReferenceData, proto.MonikerOccurrence_ROLE_REFERENCE)
+
+	// Emit
+	vals := []*proto.LsifValue{}
+	for _, pkg := range state.PackageInformationData {
+		vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Package{Package: &proto.Package{
+			Id:      pkgId(pkg),
+			Name:    pkg.Name,
+			Version: pkg.Version,
+			Manager: "go",
+		}}})
+	}
+	for _, kindToMoniker := range idToKindToMoniker {
+		for _, moniker := range kindToMoniker {
+			vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Moniker{Moniker: moniker}})
+		}
+	}
+	for uri, occs := range uriToOccs {
+		vals = append(vals, &proto.LsifValue{Value: &proto.LsifValue_Document{Document: &proto.Document{Uri: uri, Occurrences: occs}}})
 	}
 
 	// Return
