@@ -63,11 +63,43 @@ func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int
 	return s.Exec(ctx, q)
 }
 
+const updateTriggerQueryFmtStr = `
+UPDATE cm_queries
+SET query = %s,
+	changed_by = %s,
+	changed_at = %s,
+	latest_result = %s
+WHERE id = %s
+AND monitor = %s
+RETURNING %s;
+`
+
 func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error {
-	q, err := s.updateTriggerQueryQuery(ctx, args)
+	now := s.Now()
+	a := actor.FromContext(ctx)
+
+	var triggerID int64
+	err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
 	if err != nil {
 		return err
 	}
+
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf(
+		updateTriggerQueryFmtStr,
+		args.Trigger.Update.Query,
+		a.UID,
+		now,
+		now,
+		triggerID,
+		monitorID,
+		sqlf.Join(queryColumns, ", "),
+	)
 	return s.Exec(ctx, q)
 }
 
@@ -112,45 +144,6 @@ WHERE id = %s;
 
 func (s *codeMonitorStore) ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error {
 	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestamps, s.Now(), queryID))
-}
-
-const updateTriggerQueryFmtStr = `
-UPDATE cm_queries
-SET query = %s,
-	changed_by = %s,
-	changed_at = %s,
-	latest_result = %s
-WHERE id = %s
-AND monitor = %s
-RETURNING %s;
-`
-
-func (s *codeMonitorStore) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*sqlf.Query, error) {
-	now := s.Now()
-	a := actor.FromContext(ctx)
-
-	var triggerID int64
-	err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
-	if err != nil {
-		return nil, err
-	}
-
-	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
-
-	return sqlf.Sprintf(
-		updateTriggerQueryFmtStr,
-		args.Trigger.Update.Query,
-		a.UID,
-		now,
-		now,
-		triggerID,
-		monitorID,
-		sqlf.Join(queryColumns, ", "),
-	), nil
 }
 
 const getQueryByRecordIDFmtStr = `
