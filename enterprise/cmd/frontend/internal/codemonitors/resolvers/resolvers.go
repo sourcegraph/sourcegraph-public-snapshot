@@ -832,7 +832,7 @@ type monitorActionEvent struct {
 }
 
 func (m *monitorActionEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorActionEventKind, m.ID)
+	return relay.MarshalID(monitorActionEventKind, m.ActionJob.ID)
 }
 
 func (m *monitorActionEvent) Status() (string, error) {
