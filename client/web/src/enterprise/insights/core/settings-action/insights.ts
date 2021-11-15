@@ -64,7 +64,7 @@ export const addInsight = (settings: string, insight: Insight, dashboard: Insigh
  */
 export const addInsightToSettings = (settings: string, insight: Insight): string => {
     // remove all synthetic properties from the insight object
-    const { id, visibility, type, ...originalInsight } = insight
+    const { id, visibility, type, viewType, ...originalInsight } = insight
     const insightSettingsKey = getInsightSettingKey(insight)
 
     // Add insight to the user settings
