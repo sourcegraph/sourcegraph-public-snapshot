@@ -12,7 +12,11 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 
-RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0
+RUN apk add --upgrade --no-cache apk-tools=2.10.8-r0 krb5-libs=1.18.4-r0 \
+    # Requires the use of the edge repo for CVE-2021-28831 until a patched version is brought into the 3.12 mirror. 
+    'busybox=1.34.1-r2' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    # Required due to ssl_clent upgrade with busybox
+    'wget=1.21.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main
 
 # Reflects cAdvisor Dockerfile at https://github.com/google/cadvisor/blob/v0.39.2/deploy/Dockerfile
 # alongside additional Sourcegraph defaults.

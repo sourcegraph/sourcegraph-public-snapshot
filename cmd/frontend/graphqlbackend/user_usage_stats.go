@@ -81,6 +81,7 @@ type Event struct {
 	Event          string
 	UserCookieID   string
 	FirstSourceURL *string
+	LastSourceURL  *string
 	URL            string
 	Source         string
 	Argument       *string
@@ -157,6 +158,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			UserID:         actor.FromContext(ctx).UID,
 			UserCookieID:   args.UserCookieID,
 			FirstSourceURL: args.FirstSourceURL,
+			LastSourceURL:  args.LastSourceURL,
 			Source:         args.Source,
 			Argument:       argumentPayload,
 			FeatureFlags:   featureflag.FromContext(ctx),

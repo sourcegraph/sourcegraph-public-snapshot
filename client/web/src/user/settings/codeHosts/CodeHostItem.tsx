@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
@@ -10,6 +11,7 @@ import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql
 import { Owner } from '../cloud-ga'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
+import styles from './CodeHostItem.module.scss'
 import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
@@ -116,7 +118,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
+                    <CircleDashedIcon className={classNames('icon-inline mb-0 mr-2', styles.iconDashed)} />
                 )}
                 <Icon className="mb-0 mr-1" />
             </div>

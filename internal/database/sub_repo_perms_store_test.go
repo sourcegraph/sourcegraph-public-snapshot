@@ -225,6 +225,29 @@ func TestSubRepoPermsRepoSupported(t *testing.T) {
 	}
 }
 
+func TestSubRepoPermsAllSupportedRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	db := dbtest.NewDB(t)
+
+	ctx := context.Background()
+	s := SubRepoPerms(db)
+	prepareSubRepoTestData(ctx, t, db)
+
+	have, err := s.AllSupportedRepos(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []api.RepoName{"perforce1"}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 	t.Helper()
 

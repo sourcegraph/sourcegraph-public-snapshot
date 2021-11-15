@@ -6,10 +6,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func (s *Store) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m *Monitor, err error) {
+func (s *codeMonitorStore) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m *Monitor, err error) {
 	// Start transaction.
-	var txStore *Store
-	txStore, err = s.Transact(ctx)
+	txStore, err := s.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}

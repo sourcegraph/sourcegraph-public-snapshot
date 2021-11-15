@@ -1,7 +1,7 @@
+import { render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { Router } from 'react-router-dom'
-import renderer from 'react-test-renderer'
 
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
@@ -59,19 +59,17 @@ describe('DiffHunk', () => {
 
     it('renders a unified diff view for the given diff hunk', () => {
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <DiffHunk
-                            hunk={hunk}
-                            decorations={{ head: new Map(), base: new Map() }}
-                            lineNumbers={true}
-                            isLightTheme={true}
-                            fileDiffAnchor="anchor_"
-                        />
-                    </Router>
-                )
-                .toJSON()
+            render(
+                <Router history={history}>
+                    <DiffHunk
+                        hunk={hunk}
+                        decorations={{ head: new Map(), base: new Map() }}
+                        lineNumbers={true}
+                        isLightTheme={true}
+                        fileDiffAnchor="anchor_"
+                    />
+                </Router>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -116,37 +114,33 @@ describe('DiffHunk', () => {
 
     it('renders decorations if given', () => {
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <DiffHunk
-                            hunk={hunk}
-                            decorations={decorations}
-                            lineNumbers={true}
-                            isLightTheme={true}
-                            fileDiffAnchor="anchor_"
-                        />
-                    </Router>
-                )
-                .toJSON()
+            render(
+                <Router history={history}>
+                    <DiffHunk
+                        hunk={hunk}
+                        decorations={decorations}
+                        lineNumbers={true}
+                        isLightTheme={true}
+                        fileDiffAnchor="anchor_"
+                    />
+                </Router>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     it('renders dark theme decorations if dark theme is active', () => {
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <DiffHunk
-                            hunk={hunk}
-                            decorations={decorations}
-                            lineNumbers={true}
-                            isLightTheme={false}
-                            fileDiffAnchor="anchor_"
-                        />
-                    </Router>
-                )
-                .toJSON()
+            render(
+                <Router history={history}>
+                    <DiffHunk
+                        hunk={hunk}
+                        decorations={decorations}
+                        lineNumbers={true}
+                        isLightTheme={false}
+                        fileDiffAnchor="anchor_"
+                    />
+                </Router>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })

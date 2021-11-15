@@ -1,7 +1,7 @@
+import { render, act } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer, { act } from 'react-test-renderer'
 import { of } from 'rxjs'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -10,16 +10,12 @@ import { UserSubscriptionsEditProductSubscriptionPage } from './UserSubscription
 
 jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
-jest.mock('./ProductSubscriptionForm', () => ({
-    ProductSubscriptionForm: 'ProductSubscriptionForm',
-}))
-
 const history = H.createMemoryHistory()
 const location = H.createLocation('/')
 
 describe('UserSubscriptionsEditProductSubscriptionPage', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = render(
             <MemoryRouter>
                 <UserSubscriptionsEditProductSubscriptionPage
                     user={{ id: 'u' }}
@@ -44,6 +40,6 @@ describe('UserSubscriptionsEditProductSubscriptionPage', () => {
             </MemoryRouter>
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

@@ -44,6 +44,8 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
+    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+
     /**
      * Return all accessible for a user insights that are filtered by ids param.
      * If ids is nullable value then returns all insights. Insights in this case
@@ -52,7 +54,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (ids?: string[]) => Observable<Insight[]>
+    getInsights: (dashboardId: string) => Observable<Insight[]>
 
     /**
      * Returns all reachable subject's insights from subject with subjectId.
@@ -76,7 +78,7 @@ export interface CodeInsightsBackend {
 
     updateInsight: (event: InsightUpdateInput) => Observable<void[]>
 
-    deleteInsight: (insightId: string) => Observable<void[]>
+    deleteInsight: (insightId: string) => Observable<unknown>
 
     /**
      * Returns all available for users subjects (sharing levels, historically it was introduced

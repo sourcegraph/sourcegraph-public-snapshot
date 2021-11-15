@@ -16,4 +16,5 @@
 
 - [Add LSIF to many repositories](adding_lsif_to_many_repos.md)
 - [Adding LSIF to CI workflows](adding_lsif_to_workflows.md)
-
+- <span class="badge badge-experimental">Experimental</span> [Enable auto-indexing](enable_auto_indexing.md)
+- <span class="badge badge-experimental">Experimental</span> [Configure auto-indexing](configure_auto_indexing.md)

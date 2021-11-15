@@ -30,7 +30,7 @@ type sessionIssuerHelper struct {
 	db       dbutil.DB
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
 	gUser, err := UserFromContext(ctx)
 	if err != nil {
 		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
@@ -73,6 +73,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		go hubspotutil.SyncUser(gUser.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
 			AnonymousUserID: anonymousUserID,
 			FirstSourceURL:  firstSourceURL,
+			LastSourceURL:   lastSourceURL,
 		})
 	}
 	return actor.FromUser(userID), "", nil

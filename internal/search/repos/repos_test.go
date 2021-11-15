@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"reflect"
 	"sort"
@@ -11,12 +12,10 @@ import (
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -119,6 +118,7 @@ func TestRevisionValidation(t *testing.T) {
 					},
 				},
 			}},
+			wantErr: &MissingRepoRevsError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
@@ -172,7 +172,7 @@ func TestRevisionValidation(t *testing.T) {
 			if diff := cmp.Diff(tt.wantMissingRepoRevisions, resolved.MissingRepoRevs); diff != "" {
 				t.Error(diff)
 			}
-			if tt.wantErr != err {
+			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
 			}
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
@@ -303,128 +303,100 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 	})
 }
 
-func TestSearchableRepositories(t *testing.T) {
-	tcs := []struct {
-		name                string
-		defaultsInDb        []string
-		searchableRepoNames map[string]bool
-		want                []string
-		excludePatterns     []string
-	}{
-		{
-			name:                "none in database => none returned",
-			defaultsInDb:        nil,
-			searchableRepoNames: nil,
-			want:                nil,
-		},
-		{
-			name:                "should not return excluded repo",
-			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
-			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
-			excludePatterns:     []string{"indexedrepo3"},
-			want:                []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2"},
-		},
-		{
-			name:                "should not return excluded repo (case insensitive)",
-			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
-			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
-			excludePatterns:     []string{"indexedrepo3"},
-			want:                []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2"},
-		},
-		{
-			name:                "should not return excluded repos ending in `test`",
-			defaultsInDb:        []string{"repo1", "repo2", "repo-test", "repoTEST"},
-			searchableRepoNames: map[string]bool{"repo1": true, "repo2": true, "repo-test": true, "repoTEST": true},
-			excludePatterns:     []string{"test$"},
-			want:                []string{"repo1", "repo2"},
-		},
+func TestResolverPaginate(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	for i := 1; i <= 5; i++ {
+		r := types.MinimalRepo{
+			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
+			Stars: i * 100,
+		}
+
+		if err := db.Repos().Create(ctx, r.ToRepo()); err != nil {
+			t.Fatal(err)
+		}
 	}
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			var drs []types.MinimalRepo
-			for i, name := range tc.defaultsInDb {
-				r := types.MinimalRepo{
-					ID:   api.RepoID(i),
-					Name: api.RepoName(name),
-				}
-				drs = append(drs, r)
-			}
-			getRawSearchableRepos := func(ctx context.Context) ([]types.MinimalRepo, error) {
-				return drs, nil
-			}
 
-			ctx := context.Background()
-			drs, err := searchableRepositories(ctx, getRawSearchableRepos, tc.excludePatterns)
-			if err != nil {
-				t.Fatal(err)
-			}
-			var drNames []string
-			for _, dr := range drs {
-				drNames = append(drNames, string(dr.Name))
-			}
-			if !reflect.DeepEqual(drNames, tc.want) {
-				t.Errorf("names of indexable repos = %v, want %v", drNames, tc.want)
-			}
-		})
-	}
-}
-
-func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
-	queryInfo, err := query.ParseLiteral("foo")
+	all, err := (&Resolver{DB: db}).Resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wantIndexableRepos := []string{
-		"default/one",
-		"default/two",
-		"default/three",
-	}
-	searchableRepos := make([]types.MinimalRepo, len(wantIndexableRepos))
-	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepos))
-	mockSearchableReposFunc := func(_ context.Context) ([]types.MinimalRepo, error) {
-		return searchableRepos, nil
-	}
-
-	for idx, name := range wantIndexableRepos {
-		searchableRepos[idx] = types.MinimalRepo{Name: api.RepoName(name)}
-		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
-			Repository: zoekt.Repository{
-				Name:     name,
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-			},
+	setOf := func(repos []*search.RepositoryRevisions) map[api.RepoID]types.MinimalRepo {
+		m := make(map[api.RepoID]types.MinimalRepo, len(repos))
+		for _, r := range repos {
+			m[r.Repo.ID] = r.Repo
 		}
+		return m
 	}
 
-	tests := []struct {
-		name              string
-		searchContextSpec string
+	for _, tc := range []struct {
+		name  string
+		opts  search.RepoOptions
+		pages []Resolved
+		err   error
 	}{
-		{name: "use indexable repos if missing search context", searchContextSpec: ""},
-		{name: "use indexable repos with global search context", searchContextSpec: "global"},
-	}
+		{
+			name:  "default limit 500, no cursors",
+			opts:  search.RepoOptions{},
+			pages: []Resolved{all},
+		},
+		{
+			name: "with limit 3, no cursors",
+			opts: search.RepoOptions{
+				Limit: 3,
+			},
+			pages: []Resolved{
+				{
+					RepoRevs: all.RepoRevs[:3],
+					RepoSet:  setOf(all.RepoRevs[:3]),
+					Next: types.MultiCursor{
+						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
+						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+					},
+				},
+				{
+					RepoRevs: all.RepoRevs[3:],
+					RepoSet:  setOf(all.RepoRevs[3:]),
+				},
+			},
+		},
+		{
+			name: "with limit 3 and cursor",
+			opts: search.RepoOptions{
+				Limit: 3,
+				Cursors: types.MultiCursor{
+					{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
+					{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+				},
+			},
+			pages: []Resolved{
+				{
+					RepoRevs: all.RepoRevs[3:],
+					RepoSet:  setOf(all.RepoRevs[3:]),
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Resolver{Opts: tc.opts, DB: db}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			op := search.RepoOptions{
-				SearchContextSpec: tt.searchContextSpec,
-				Query:             queryInfo,
-			}
-			repositoryResolver := &Resolver{SearchableReposFunc: mockSearchableReposFunc}
-			resolved, err := repositoryResolver.Resolve(context.Background(), op)
+			var pages []Resolved
+			err := r.Paginate(ctx, nil, func(page *Resolved) error {
+				pages = append(pages, *page)
+				return nil
+			})
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
-			var repoNames []string
-			for _, repoRev := range resolved.RepoRevs {
-				repoNames = append(repoNames, string(repoRev.Repo.Name))
+
+			if !errors.Is(err, tc.err) {
+				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, cmp.Diff(err, tc.err))
 			}
-			if !reflect.DeepEqual(repoNames, wantIndexableRepos) {
-				t.Errorf("names of indexable repos = %v, want %v", repoNames, wantIndexableRepos)
+
+			if diff := cmp.Diff(pages, tc.pages); diff != "" {
+				t.Errorf("%s unexpected pages (-have, +want):\n%s", tc.name, diff)
 			}
 		})
 	}

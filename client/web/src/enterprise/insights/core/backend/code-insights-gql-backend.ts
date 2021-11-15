@@ -1,4 +1,4 @@
-import { ApolloClient, gql } from '@apollo/client'
+import { ApolloCache, ApolloClient, gql } from '@apollo/client'
 import { from, Observable, of, throwError } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
@@ -7,15 +7,18 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import {
+    AddInsightViewToDashboardResult,
     CreateDashboardResult,
     CreateInsightResult,
     CreateInsightsDashboardInput,
     DeleteDashboardResult,
+    GetDashboardInsightsResult,
     GetInsightsResult,
     GetInsightViewResult,
     InsightsDashboardsResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
+    RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
     UpdateLineChartSearchInsightResult,
@@ -48,6 +51,7 @@ import {
     InsightUpdateInput,
     ReachableInsight,
 } from './code-insights-backend-types'
+import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
@@ -56,26 +60,35 @@ import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView, getStepInterval } from './utils/insight-transformers'
 import { parseDashboardType } from './utils/parse-dashboard-type'
 
-const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
-
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
-    public getInsights = (ids?: string[]): Observable<Insight[]> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<GetInsightsResult>({ query: GET_INSIGHTS_GQL })
-        ).pipe(
-            map(({ data }) => {
-                const insightViews = data.insightViews.nodes.map(getInsightView)
+    public getInsights = (dashboardId: string): Observable<Insight[]> => {
+        // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
+        // we need to use here insightViews query to fetch all available insights
+        if (dashboardId === 'all') {
+            return fromObservableQuery(
+                this.apolloClient.watchQuery<GetInsightsResult>({
+                    query: GET_INSIGHTS_GQL,
+                })
+            ).pipe(map(({ data }) => data.insightViews.nodes.map(getInsightView).filter(Boolean) as Insight[]))
+        }
 
-                if (ids) {
-                    return insightViews.filter(insight => ids.includes(insight.id))
-                }
-
-                return insightViews
+        // Get all insights from the user-created dashboard
+        return fromObservableQuery(
+            this.apolloClient.watchQuery<GetDashboardInsightsResult>({
+                query: GET_DASHBOARD_INSIGHTS_GQL,
+                variables: { id: dashboardId },
             })
+        ).pipe(
+            map(
+                ({ data }) =>
+                    (data.insightsDashboards.nodes[0].views?.nodes.map(getInsightView).filter(Boolean) as Insight[]) ??
+                    []
+            )
         )
+    }
 
     public getInsightById = (id: string): Observable<Insight | null> =>
         fromObservableQuery(
@@ -91,15 +104,15 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     return null
                 }
 
-                return getInsightView(insightData)
+                return getInsightView(insightData) || null
             })
         )
 
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> =>
-        this.getInsights().pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
+        this.getInsights('all').pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
 
     public getReachableInsights = (): Observable<ReachableInsight[]> =>
-        this.getInsights().pipe(
+        this.getInsights('all').pipe(
             map(insights =>
                 insights.map(insight => ({
                     ...insight,
@@ -115,10 +128,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
     // fit with both of those shapes.
     public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> =>
-        from(
-            this.apolloClient.query<GetInsightViewResult>({
+        fromObservableQuery(
+            this.apolloClient.watchQuery<GetInsightViewResult>({
                 query: GET_INSIGHT_VIEW_GQL,
                 variables: { id: insight.id },
+                // In order to avoid unnecessary requests and enable caching for BE insights
+                fetchPolicy: 'cache-first',
             })
         ).pipe(
             // Note: this insight is guaranteed to exist since this function
@@ -206,7 +221,25 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return of()
     }
 
-    public deleteInsight = errorMockMethod('deleteInsight')
+    public deleteInsight = (insightId: string): Observable<unknown> =>
+        from(
+            this.apolloClient.mutate({
+                mutation: gql`
+                    mutation DeleteInsightView($id: ID!) {
+                        deleteInsightView(id: $id) {
+                            alwaysNil
+                        }
+                    }
+                `,
+                variables: { id: insightId },
+                update(cache: ApolloCache<DeleteDashboardResult>, result) {
+                    const deletedInsightReference = cache.identify({ __typename: 'InsightView', id: insightId })
+
+                    // Remove deleted insights from the apollo cache
+                    cache.evict({ id: deletedInsightReference })
+                },
+            })
+        )
 
     // Dashboards
     public getDashboards = (): Observable<InsightDashboard[]> =>
@@ -305,6 +338,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         updateInsightsDashboard(id: $id, input: $input) {
                             dashboard {
                                 id
+                                title
+                                grants {
+                                    users
+                                    organizations
+                                    global
+                                }
                             }
                         }
                     }
@@ -329,6 +368,67 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions
     public getResolvedSearchRepositories = getResolvedSearchRepositories
+
+    public assignInsightsToDashboard = ({
+        id,
+        nextDashboardInput,
+        previousDashboard,
+    }: DashboardUpdateInput): Observable<unknown> => {
+        const addInsightViewToDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<AddInsightViewToDashboardResult>({
+                mutation: gql`
+                    mutation AddInsightViewToDashboard($insightViewId: ID!, $dashboardId: ID!) {
+                        addInsightViewToDashboard(input: { insightViewId: $insightViewId, dashboardId: $dashboardId }) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightViewId, dashboardId },
+            })
+
+        const removeInsightViewFromDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
+                mutation: gql`
+                    mutation RemoveInsightViewFromDashboard($insightViewId: ID!, $dashboardId: ID!) {
+                        removeInsightViewFromDashboard(
+                            input: { insightViewId: $insightViewId, dashboardId: $dashboardId }
+                        ) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightViewId, dashboardId },
+            })
+
+        const addedInsightIds =
+            nextDashboardInput.insightIds?.filter(insightId => !previousDashboard.insightIds?.includes(insightId)) || []
+
+        // Get array of removed insight view ids
+        const removedInsightIds =
+            previousDashboard.insightIds?.filter(insightId => !nextDashboardInput.insightIds?.includes(insightId)) || []
+
+        return from(
+            Promise.all([
+                ...addedInsightIds.map(insightId => addInsightViewToDashboard(insightId, id || '')),
+                ...removedInsightIds.map(insightId => removeInsightViewFromDashboard(insightId, id || '')),
+            ])
+        ).pipe(
+            // Next query is needed to update local apollo cache and re-trigger getInsights query.
+            // Usually Apollo does that under the hood by itself based on response from a mutation
+            // but in this case since we don't have one single query to assign/unassign insights
+            // from dashboard we have to call query manually.
+            switchMap(() =>
+                this.apolloClient.query<GetDashboardInsightsResult>({
+                    query: GET_DASHBOARD_INSIGHTS_GQL,
+                    variables: { id: id ?? '' },
+                })
+            )
+        )
+    }
 
     private prepareSearchInsightCreateInput(
         insight: SearchBasedInsight,

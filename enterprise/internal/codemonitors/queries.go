@@ -36,7 +36,7 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.changed_at"),
 }
 
-func (s *Store) CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error) {
+func (s *codeMonitorStore) CreateTriggerQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (err error) {
 	var q *sqlf.Query
 	q, err = s.createTriggerQueryQuery(ctx, monitorID, args)
 	if err != nil {
@@ -45,7 +45,7 @@ func (s *Store) CreateTriggerQuery(ctx context.Context, monitorID int64, args *g
 	return s.Exec(ctx, q)
 }
 
-func (s *Store) UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error) {
+func (s *codeMonitorStore) UpdateTriggerQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (err error) {
 	var q *sqlf.Query
 	q, err = s.updateTriggerQueryQuery(ctx, args)
 	if err != nil {
@@ -60,7 +60,7 @@ FROM cm_queries
 WHERE monitor = %s;
 `
 
-func (s *Store) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*MonitorQuery, error) {
+func (s *codeMonitorStore) TriggerQueryByMonitorIDInt64(ctx context.Context, monitorID int64) (*MonitorQuery, error) {
 	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByMonitorFmtStr, monitorID))
 }
 
@@ -70,7 +70,7 @@ FROM cm_queries
 WHERE id = %s;
 `
 
-func (s *Store) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*MonitorQuery, error) {
+func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*MonitorQuery, error) {
 	return s.runTriggerQuery(ctx, sqlf.Sprintf(triggerQueryByIDFmtStr, queryID))
 }
 
@@ -81,7 +81,7 @@ SET latest_result = null,
 WHERE id = %s;
 `
 
-func (s *Store) ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error {
+func (s *codeMonitorStore) ResetTriggerQueryTimestamps(ctx context.Context, queryID int64) error {
 	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestamps, s.Now(), queryID))
 }
 
@@ -92,7 +92,7 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *Store) createTriggerQueryQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
+func (s *codeMonitorStore) createTriggerQueryQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
@@ -120,7 +120,7 @@ AND monitor = %s
 RETURNING %s;
 `
 
-func (s *Store) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (q *sqlf.Query, err error) {
+func (s *codeMonitorStore) updateTriggerQueryQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (q *sqlf.Query, err error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 
@@ -154,7 +154,7 @@ FROM cm_queries q INNER JOIN cm_trigger_jobs j ON q.id = j.query
 WHERE j.id = %s
 `
 
-func (s *Store) GetQueryByRecordID(ctx context.Context, recordID int) (query *MonitorQuery, err error) {
+func (s *codeMonitorStore) GetQueryByRecordID(ctx context.Context, recordID int) (query *MonitorQuery, err error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
 		recordID,
@@ -182,7 +182,7 @@ latest_result = %s
 WHERE id = %s
 `
 
-func (s *Store) SetTriggerQueryNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error {
+func (s *codeMonitorStore) SetTriggerQueryNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error {
 	q := sqlf.Sprintf(
 		setTriggerQueryNextRunFmtStr,
 		next,
@@ -220,7 +220,7 @@ func scanTriggerQueries(rows *sql.Rows) (ms []*MonitorQuery, err error) {
 	return ms, nil
 }
 
-func (s *Store) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*MonitorQuery, error) {
+func (s *codeMonitorStore) runTriggerQuery(ctx context.Context, q *sqlf.Query) (*MonitorQuery, error) {
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err

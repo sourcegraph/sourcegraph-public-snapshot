@@ -24,11 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
-	db dbutil.DB
+	db database.DB
 	v  *dbSubscription
 }
 
@@ -59,7 +60,7 @@ func productSubscriptionByDBID(ctx context.Context, db dbutil.DB, id string) (*p
 	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), v.UserID); err != nil {
 		return nil, err
 	}
-	return &productSubscription{v: v, db: db}, nil
+	return &productSubscription{v: v, db: database.NewDB(db)}, nil
 }
 
 func (r *productSubscription) ID() graphql.ID {
@@ -86,7 +87,15 @@ func (r *productSubscription) Name() string {
 }
 
 func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.db), r.v.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.v.UserID)
+	if errcode.IsNotFound(err) {
+		// NOTE: It is possible that the user has been deleted, but we do not want to
+		// lose information of the product subscription because of that.
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *productSubscription) Events(ctx context.Context) ([]graphqlbackend.ProductSubscriptionEvent, error) {
@@ -536,7 +545,7 @@ func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbac
 
 	var l []graphqlbackend.ProductSubscription
 	for _, result := range results {
-		l = append(l, &productSubscription{db: r.db, v: result})
+		l = append(l, &productSubscription{db: database.NewDB(r.db), v: result})
 	}
 	return l, nil
 }

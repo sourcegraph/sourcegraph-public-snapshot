@@ -455,7 +455,8 @@ func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, ba
 // DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
 // attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
 // to a BatchSpec that is not applied and is not attached to a Changeset
-// within BatchSpecTTL
+// within BatchSpecTTL.
+// TODO: Fix comment.
 func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -484,10 +485,13 @@ OR
   created_at < %s
   AND
   -- and the batch_spec it is attached to is not applied to a batch_change
-  NOT EXISTS(SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
+  NOT EXISTS (SELECT 1 FROM batch_changes WHERE batch_spec_id = cspecs.batch_spec_id)
   AND
   -- and it is not attached to a changeset
-  NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+  NOT EXISTS (SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
+  AND
+  -- and it is not created by SSBC
+  NOT (SELECT created_from_raw FROM batch_specs WHERE id = cspecs.batch_spec_id)
 );`
 
 type DeleteChangesetSpecsOpts struct {

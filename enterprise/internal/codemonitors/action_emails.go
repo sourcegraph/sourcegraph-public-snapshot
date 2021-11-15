@@ -25,7 +25,7 @@ type MonitorEmail struct {
 	ChangedAt time.Time
 }
 
-func (s *Store) UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error) {
+func (s *codeMonitorStore) UpdateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (e *MonitorEmail, err error) {
 	var q *sqlf.Query
 	q, err = s.updateActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
@@ -38,7 +38,7 @@ func (s *Store) UpdateActionEmail(ctx context.Context, monitorID int64, action *
 	return e, nil
 }
 
-func (s *Store) CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error) {
+func (s *codeMonitorStore) CreateActionEmail(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (e *MonitorEmail, err error) {
 	var q *sqlf.Query
 	q, err = s.createActionEmailQuery(ctx, monitorID, action.Email)
 	if err != nil {
@@ -51,7 +51,7 @@ func (s *Store) CreateActionEmail(ctx context.Context, monitorID int64, action *
 	return e, nil
 }
 
-func (s *Store) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error) {
+func (s *codeMonitorStore) DeleteActionsInt64(ctx context.Context, actionIDs []int64, monitorID int64) (err error) {
 	if len(actionIDs) == 0 {
 		return nil
 	}
@@ -73,7 +73,7 @@ FROM cm_emails
 WHERE monitor = %s;
 `
 
-func (s *Store) TotalCountActionEmails(ctx context.Context, monitorID int64) (count int32, err error) {
+func (s *codeMonitorStore) TotalCountActionEmails(ctx context.Context, monitorID int64) (count int32, err error) {
 	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountActionEmailsFmtStr, monitorID)).Scan(&count)
 	return count, err
 }
@@ -84,17 +84,17 @@ FROM cm_emails
 WHERE id = %s
 `
 
-func (s *Store) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
+func (s *codeMonitorStore) ActionEmailByIDInt64(ctx context.Context, emailID int64) (m *MonitorEmail, err error) {
 	return s.runEmailQuery(ctx, sqlf.Sprintf(actionEmailByIDFmtStr, emailID))
 }
 
-func (s *Store) runEmailQuery(ctx context.Context, q *sqlf.Query) (*MonitorEmail, error) {
+func (s *codeMonitorStore) runEmailQuery(ctx context.Context, q *sqlf.Query) (*MonitorEmail, error) {
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	es, err := ScanEmails(rows)
+	es, err := scanEmails(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ AND monitor = %s
 RETURNING %s;
 `
 
-func (s *Store) updateActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.EditActionEmailArgs) (q *sqlf.Query, err error) {
+func (s *codeMonitorStore) updateActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.EditActionEmailArgs) (q *sqlf.Query, err error) {
 	var actionID int64
 	if args.Id == nil {
 		return nil, errors.Errorf("nil is not a valid action ID")
@@ -140,25 +140,60 @@ func (s *Store) updateActionEmailQuery(ctx context.Context, monitorID int64, arg
 	), nil
 }
 
-const readActionEmailFmtStr = `
+// ListActionsOpts holds list options for listing actions
+type ListActionsOpts struct {
+	// MonitorID, if set, will constrain the listed actions to only
+	// those that are defined as part of the given monitor.
+	// References cm_monitors(id)
+	MonitorID *int
+
+	// First, if set, limits the number of actions returned
+	// to the first n.
+	First *int
+
+	// After, if set, begins listing actions after the given id
+	After *int
+}
+
+func (o ListActionsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o.MonitorID != nil {
+		conds = append(conds, sqlf.Sprintf("monitor = %s", *o.MonitorID))
+	}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+func (o ListActionsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
+}
+
+const listEmailActionsFmtStr = `
 SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
 FROM cm_emails
-WHERE monitor = %s
-AND id > %s
+WHERE %s
+ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) ReadActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-	after, err := unmarshalAfter(args.After)
+// ListEmailActions lists emails from cm_emails with the given opts
+func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*MonitorEmail, error) {
+	q := sqlf.Sprintf(
+		listEmailActionsFmtStr,
+		opts.Conds(),
+		opts.Limit(),
+	)
+	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	return sqlf.Sprintf(
-		readActionEmailFmtStr,
-		monitorID,
-		after,
-		args.First,
-	), nil
+	defer rows.Close()
+	return scanEmails(rows)
 }
 
 const createActionEmailFmtStr = `
@@ -168,7 +203,7 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *Store) createActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateActionEmailArgs) (*sqlf.Query, error) {
+func (s *codeMonitorStore) createActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateActionEmailArgs) (*sqlf.Query, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	return sqlf.Sprintf(
@@ -211,7 +246,7 @@ var EmailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.changed_at"),
 }
 
-func ScanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
+func scanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
 	for rows.Next() {
 		m := &MonitorEmail{}
 		if err = rows.Scan(

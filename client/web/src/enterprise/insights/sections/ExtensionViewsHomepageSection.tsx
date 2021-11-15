@@ -58,7 +58,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
     // Read insights from the setting cascade
-    const insights = useObservable(useMemo(() => getInsights(), [getInsights])) ?? EMPTY_INSIGHT_LIST
+    const insights = useObservable(useMemo(() => getInsights('all'), [getInsights])) ?? EMPTY_INSIGHT_LIST
 
     // Pull extension views by Extension API.
     const extensionViews =
