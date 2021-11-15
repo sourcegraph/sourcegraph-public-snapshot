@@ -1610,7 +1610,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			NoForks:        args.RepoOptions.NoForks,
 			OnlyArchived:   args.RepoOptions.OnlyArchived,
 			NoArchived:     args.RepoOptions.NoArchived,
-			ExcludePattern: repos.UnionRegExps(args.RepoOptions.MinusRepoFilters),
+			ExcludePattern: args.RepoOptions.ExcludePattern,
 		})
 
 		if err != nil {
