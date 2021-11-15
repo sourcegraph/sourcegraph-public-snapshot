@@ -105,9 +105,9 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 		return err
 	}
 
-	// Since we already know which workspaces we want to execute the steps in,
-	// we can convert them to RepoWorkspaces and build tasks only for those.
-	repoWorkspaces := convertWorkspaces(input.Workspaces)
+	// Since we already know which workspace we want to execute the steps in,
+	// we can convert it to a RepoWorkspace and build a task only for that one.
+	repoWorkspace := convertWorkspace(input.Workspace)
 
 	// Parse the raw batch spec contained in the input
 	ui.ParsingBatchSpec()
@@ -162,7 +162,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 	// `src batch exec` uses server-side caching for changeset specs, so we
 	// only need to call `CheckStepResultsCache` to make sure that per-step cache entries
 	// are loaded and set on the tasks.
-	tasks := svc.BuildTasks(ctx, batchSpec, repoWorkspaces)
+	tasks := svc.BuildTasks(ctx, batchSpec, []service.RepoWorkspace{repoWorkspace})
 	if err := coord.CheckStepResultsCache(ctx, tasks); err != nil {
 		return err
 	}
@@ -218,33 +218,26 @@ func loadWorkspaceExecutionInput(file string) (batcheslib.WorkspacesExecutionInp
 	return input, nil
 }
 
-func convertWorkspaces(ws []*batcheslib.Workspace) []service.RepoWorkspace {
-	workspaces := make([]service.RepoWorkspace, 0, len(ws))
-
-	for _, w := range ws {
-		fileMatches := make(map[string]bool)
-		for _, path := range w.SearchResultPaths {
-			fileMatches[path] = true
-		}
-
-		workspaces = append(workspaces, service.RepoWorkspace{
-			Repo: &graphql.Repository{
-				ID:   w.Repository.ID,
-				Name: w.Repository.Name,
-				Branch: graphql.Branch{
-					Name: w.Branch.Name,
-					Target: graphql.Target{
-						OID: w.Branch.Target.OID,
-					},
-				},
-				Commit:      graphql.Target{OID: w.Branch.Target.OID},
-				FileMatches: fileMatches,
-			},
-			Path:               w.Path,
-			Steps:              w.Steps,
-			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-		})
+func convertWorkspace(w batcheslib.Workspace) service.RepoWorkspace {
+	fileMatches := make(map[string]bool)
+	for _, path := range w.SearchResultPaths {
+		fileMatches[path] = true
 	}
-
-	return workspaces
+	return service.RepoWorkspace{
+		Repo: &graphql.Repository{
+			ID:   w.Repository.ID,
+			Name: w.Repository.Name,
+			Branch: graphql.Branch{
+				Name: w.Branch.Name,
+				Target: graphql.Target{
+					OID: w.Branch.Target.OID,
+				},
+			},
+			Commit:      graphql.Target{OID: w.Branch.Target.OID},
+			FileMatches: fileMatches,
+		},
+		Path:               w.Path,
+		Steps:              w.Steps,
+		OnlyFetchWorkspace: w.OnlyFetchWorkspace,
+	}
 }
