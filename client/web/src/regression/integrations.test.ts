@@ -14,6 +14,7 @@ describe('Native integrations regression test suite', () => {
             '/.assets/extension/scripts/phabricator.bundle.js',
             '/.assets/extension/scripts/extensionHostWorker.bundle.js',
             '/.assets/extension/css/style.bundle.css',
+            '/.assets/extension/css/inject.bundle.css',
             '/.assets/extension/extensionHostFrame.html',
         ]
         await merge(

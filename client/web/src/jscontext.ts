@@ -5,6 +5,14 @@ export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
+
+export interface AuthProvider {
+    serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
+    displayName: string
+    isBuiltin: boolean
+    authenticationURL?: string
+}
+
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     csrfToken: string
@@ -86,6 +94,10 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the batch changes feature is enabled on the site. */
     batchChangesEnabled: boolean
 
+    /** Whether the warning about unconfigured webhooks is disabled within Batch
+     * Changes. */
+    batchChangesDisableWebhooksWarning: boolean
+
     /** Whether the code intel auto-indexer feature is enabled on the site. */
     codeIntelAutoIndexingEnabled: boolean
 
@@ -93,12 +105,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
 
     /** Authentication provider instances in site config. */
-    authProviders: {
-        serviceType: 'github' | 'gitlab' | 'http-header' | 'openidconnect' | 'saml' | 'builtin'
-        displayName: string
-        isBuiltin: boolean
-        authenticationURL?: string
-    }[]
+    authProviders: AuthProvider[]
 
     /** Custom branding for the homepage and search icon. */
     branding?: {

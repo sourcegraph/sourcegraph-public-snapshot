@@ -135,7 +135,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestServer_EnqueueRepoUpdate(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 
@@ -240,7 +240,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 }
 
 func TestServer_RepoLookup(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -741,6 +741,47 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 				t.Fatalf("Code: want %v but got %v", test.wantStatusCode, w.Code)
 			} else if diff := cmp.Diff(test.wantBody, w.Body.String()); diff != "" {
 				t.Fatalf("Body mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestServer_handleExternalServiceSync(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		err         error
+		wantErrCode int
+	}{
+		{
+			name:        "unauthorized",
+			err:         &repoupdater.ErrUnauthorized{NoAuthz: true},
+			wantErrCode: 401,
+		},
+		{
+			name:        "forbidden",
+			err:         repos.ErrForbidden{},
+			wantErrCode: 403,
+		},
+		{
+			name:        "other",
+			err:         errors.Errorf("Any error"),
+			wantErrCode: 500,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			src := testSource{
+				fn: func() error {
+					return test.err
+				},
+			}
+			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
+			w := httptest.NewRecorder()
+			s := &Server{Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			s.handleExternalServiceSync(w, r)
+			if w.Code != test.wantErrCode {
+				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)
 			}
 		})
 	}

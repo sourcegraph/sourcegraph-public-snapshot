@@ -12,6 +12,9 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../auth'
 
+import { ActionButtonGroup } from './ActionButtonGroup'
+import { EmptyPanelContainer } from './EmptyPanelContainer'
+import { FooterPanel } from './FooterPanel'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 
@@ -48,7 +51,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     ])
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container text-muted">
+        <EmptyPanelContainer className="text-muted">
             <small>
                 Use saved searches to alert you to uses of a favorite API, or changes to code you need to monitor.
             </small>
@@ -62,7 +65,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     Create a saved search
                 </Link>
             )}
-        </div>
+        </EmptyPanelContainer>
     )
     const loadingDisplay = <LoadingPanelView text="Loading saved searches" />
 
@@ -108,7 +111,7 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
             </dl>
             {authenticatedUser && (
-                <div className="panel-container__footer p-1">
+                <FooterPanel className="p-1">
                     <small>
                         <Link
                             to={`/users/${authenticatedUser.username}/searches`}
@@ -118,18 +121,18 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                             View saved searches
                         </Link>
                     </small>
-                </div>
+                </FooterPanel>
             )}
         </div>
     )
 
     const actionButtons = (
-        <div className="panel-container__action-button-group">
+        <ActionButtonGroup>
             <div className="btn-group btn-group-sm">
                 {authenticatedUser && (
                     <Link
                         to={`/users/${authenticatedUser.username}/searches/add`}
-                        className="btn btn-outline-secondary panel-container__action-button mr-2"
+                        className="btn btn-outline-secondary mr-2"
                         onClick={logEvent('SavedSearchesPanelCreateButtonClicked', { source: 'toolbar' })}
                     >
                         +
@@ -140,29 +143,23 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
                 <button
                     type="button"
                     onClick={() => setShowAllSearches(false)}
-                    className={classNames(
-                        'btn btn-outline-secondary panel-container__action-button test-saved-search-panel-my-searches',
-                        {
-                            active: !showAllSearches,
-                        }
-                    )}
+                    className={classNames('btn btn-outline-secondary test-saved-search-panel-my-searches', {
+                        active: !showAllSearches,
+                    })}
                 >
                     My searches
                 </button>
                 <button
                     type="button"
                     onClick={() => setShowAllSearches(true)}
-                    className={classNames(
-                        'btn btn-outline-secondary panel-container__action-button test-saved-search-panel-all-searches',
-                        {
-                            active: showAllSearches,
-                        }
-                    )}
+                    className={classNames('btn btn-outline-secondary test-saved-search-panel-all-searches', {
+                        active: showAllSearches,
+                    })}
                 >
                     All searches
                 </button>
             </div>
-        </div>
+        </ActionButtonGroup>
     )
     return (
         <PanelContainer

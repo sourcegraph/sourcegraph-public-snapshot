@@ -1,5 +1,7 @@
 import React from 'react'
 
+import styles from './SearchContextMenu.module.scss'
+
 const NAMESPACED_SEARCH_CONTEXT_SPEC_REGEX = /@(.*?)\/(.*)/
 
 interface ParsedSearchContextSpec {
@@ -36,11 +38,7 @@ function highlightText(text: string, highlightPart: string, highlightClass: stri
 }
 
 function highlightSearchContextSpecPart(specPart?: string, highlightPart?: string): JSX.Element | string | undefined {
-    return specPart && highlightPart ? (
-        <>{highlightText(specPart, highlightPart, 'search-context-menu__item--highlighted')}</>
-    ) : (
-        specPart
-    )
+    return specPart && highlightPart ? <>{highlightText(specPart, highlightPart, styles.itemHighlighted)}</> : specPart
 }
 
 export const HighlightedSearchContextSpec: React.FunctionComponent<{ spec: string; searchFilter: string }> = ({

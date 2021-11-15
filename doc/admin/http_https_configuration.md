@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.32.0
+  sourcegraph/server:3.33.0
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
@@ -163,7 +163,7 @@ Sourcegraph's [Docker Compose deployment](../admin/install/docker-compose/index.
 
 Usage instructions are provided via [the `caddy` service's inline comments inside the `docker-compose.yaml` definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.14/docker-compose/docker-compose.yaml#L3:L58). Detailed steps are found below.
 
-**Important:** When setting up caddy's automatic Lets Encypt TLS certification for HTTPS we strongly recommended to test with the staging configuration first, however TLS certs provided by Lets Encrypt staging will not be verifiable, and the production env variable must be uncommented for functional HTTPS.
+**Important:** When setting up caddy's automatic Lets Encrypt TLS certification for HTTPS we strongly recommended to test with the staging configuration first. However, the TLS certs provided by Lets Encrypt staging will not be verifiable, and will display an `unknown certificate` error. Once you are done testing, you will need to comment out the staging env variable and uncomment the production env variable for fully functional HTTPS.
 
 ### HTTPS with Custom Certificates in Docker Compose
 

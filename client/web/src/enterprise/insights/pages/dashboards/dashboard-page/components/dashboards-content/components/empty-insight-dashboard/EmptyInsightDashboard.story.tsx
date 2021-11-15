@@ -2,13 +2,13 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../../../../../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../../../../../../components/WebStory'
 import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
 const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
-    .addDecorator(story => <EnterpriseWebStory>{() => story()}</EnterpriseWebStory>)
+    .addDecorator(story => <WebStory>{() => story()}</WebStory>)
     .addParameters({
         chromatic: {
             viewports: [576, 1440],
@@ -28,6 +28,6 @@ add('EmptyInsightDashboard', () => {
         },
         settingsKey: 'test',
     }
-    const settingsCascade = {} as any
-    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} settingsCascade={settingsCascade} />
+
+    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} />
 })

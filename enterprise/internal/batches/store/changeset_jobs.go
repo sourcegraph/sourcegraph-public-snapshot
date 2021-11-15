@@ -108,6 +108,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 		s.Handle().DB(),
 		"changeset_jobs",
 		changesetJobInsertColumns,
+		"",
 		ChangesetJobColumns,
 		func(rows *sql.Rows) error {
 			i++
@@ -131,7 +132,7 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 
 	q := getChangesetJobQuery(&opts)
 	var c btypes.ChangesetJob
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanChangesetJob(&c, sc)
 	})
 	if err != nil {
@@ -167,7 +168,7 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 	)
 }
 
-func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
+func scanChangesetJob(c *btypes.ChangesetJob, s dbutil.Scanner) error {
 	var raw json.RawMessage
 	if err := s.Scan(
 		&c.ID,
@@ -223,7 +224,7 @@ func scanChangesetJobs(rows *sql.Rows, queryErr error) ([]*btypes.ChangesetJob, 
 
 	var jobs []*btypes.ChangesetJob
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.ChangesetJob
 		if err = scanChangesetJob(&j, sc); err != nil {
 			return err

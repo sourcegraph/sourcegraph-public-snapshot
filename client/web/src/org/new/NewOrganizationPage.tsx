@@ -14,6 +14,8 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
 
+import styles from './NewOrgPage.module.scss'
+
 interface Props {
     history: H.History
 }
@@ -55,7 +57,7 @@ export const NewOrganizationPage: React.FunctionComponent<Props> = ({ history })
     )
 
     return (
-        <Page className="new-org-page">
+        <Page className={styles.newOrgPage}>
             <PageTitle title="New organization" />
             <PageHeader
                 path={[{ text: 'Create a new organization' }]}

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -22,7 +23,7 @@ import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { SearchStreamingProps } from '../../search'
+import { SearchContextProps, SearchStreamingProps } from '../../search'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
 import { toTreeURL } from '../../util/url'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -36,6 +37,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
+import styles from './BlobPage.module.scss'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -53,6 +55,7 @@ interface Props
         HoverThresholdProps,
         BreadcrumbSetters,
         SearchStreamingProps,
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
@@ -60,6 +63,7 @@ interface Props
     authenticatedUser: AuthenticatedUser | null
     globbing: boolean
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
     showSearchNotebook: boolean
     repoUrl: string
 }
@@ -92,10 +96,11 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         filePath={filePath}
                         isDir={false}
                         repoUrl={repoUrl}
+                        telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [filePath, revision, repoName, repoUrl])
+        }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -253,7 +258,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     if (blobInfoOrError === undefined) {
         // Render placeholder for layout before content is fetched.
         return (
-            <div className="blob-page__placeholder">
+            <div className={styles.placeholder}>
                 {alwaysRender}
                 <div className="d-flex mt-3 justify-content-center">
                     <LoadingSpinner />
@@ -265,7 +270,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     // File not found:
     if (blobInfoOrError === null) {
         return (
-            <div className="blob-page__placeholder">
+            <div className={styles.placeholder}>
                 <HeroPage
                     icon={MapSearchIcon}
                     title="Not found"
@@ -301,7 +306,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                 <RenderedFile dangerousInnerHTML={blobInfoOrError.richHTML} location={props.location} />
             )}
             {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
-                <div className="blob-page__aborted">
+                <div>
                     <div className="alert alert-info">
                         Syntax-highlighting this file took too long. &nbsp;
                         <button type="button" onClick={onExtendTimeoutClick} className="btn btn-sm btn-primary">
@@ -313,7 +318,7 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
                 <Blob
-                    className="blob-page__blob test-repo-blob"
+                    className={classNames('test-repo-blob', styles.blob)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
                     platformContext={props.platformContext}

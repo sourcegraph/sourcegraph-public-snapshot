@@ -60,7 +60,7 @@ func (s *Store) GetBulkOperation(ctx context.Context, opts GetBulkOperationOpts)
 	q := getBulkOperationQuery(&opts)
 
 	var c btypes.BulkOperation
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBulkOperation(&c, sc)
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *Store) ListBulkOperations(ctx context.Context, opts ListBulkOperationsO
 	q := listBulkOperationsQuery(&opts)
 
 	bs = make([]*btypes.BulkOperation, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BulkOperation
 		if err := scanBulkOperation(&c, sc); err != nil {
 			return err
@@ -232,7 +232,7 @@ func (s *Store) ListBulkOperationErrors(ctx context.Context, opts ListBulkOperat
 	q := listBulkOperationErrorsQuery(&opts)
 
 	es = make([]*btypes.BulkOperationError, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BulkOperationError
 		if err := scanBulkOperationError(&c, sc); err != nil {
 			return err
@@ -269,7 +269,7 @@ func listBulkOperationErrorsQuery(opts *ListBulkOperationErrorsOpts) *sqlf.Query
 	)
 }
 
-func scanBulkOperation(b *btypes.BulkOperation, s scanner) error {
+func scanBulkOperation(b *btypes.BulkOperation, s dbutil.Scanner) error {
 	return s.Scan(
 		&b.ID,
 		&b.DBID,
@@ -283,7 +283,7 @@ func scanBulkOperation(b *btypes.BulkOperation, s scanner) error {
 	)
 }
 
-func scanBulkOperationError(b *btypes.BulkOperationError, s scanner) error {
+func scanBulkOperationError(b *btypes.BulkOperationError, s dbutil.Scanner) error {
 	return s.Scan(
 		&b.ChangesetID,
 		&b.Error,

@@ -65,8 +65,8 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	if reposDir == "" {
@@ -151,8 +151,9 @@ func main() {
 				}
 
 				return &server.PerforceDepotSyncer{
-					MaxChanges: int(c.MaxChanges),
-					Client:     c.P4Client,
+					MaxChanges:   int(c.MaxChanges),
+					Client:       c.P4Client,
+					FusionConfig: configureFusionClient(c),
 				}, nil
 			case extsvc.TypeJVMPackages:
 				var c schema.JVMPackagesConnection
@@ -246,6 +247,38 @@ func main() {
 	gitserver.Stop()
 }
 
+func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
+	// Set up default settings first
+	fc := server.FusionConfig{
+		Enabled:             conn.UseFusionClient,
+		Client:              conn.P4Client,
+		LookAhead:           2000,
+		NetworkThreads:      12,
+		NetworkThreadsFetch: 12,
+		PrintBatch:          10,
+		Refresh:             100,
+		Retries:             10,
+		MaxChanges:          -1,
+		IncludeBinaries:     false,
+	}
+
+	if conn.FusionClient == nil {
+		return fc
+	}
+
+	fc.Enabled = conn.FusionClient.Enabled || conn.UseFusionClient
+	fc.LookAhead = conn.FusionClient.LookAhead
+	fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
+	fc.PrintBatch = conn.FusionClient.PrintBatch
+	fc.Refresh = conn.FusionClient.Refresh
+	fc.Retries = conn.FusionClient.Retries
+	fc.MaxChanges = conn.FusionClient.MaxChanges
+	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
+
+	return fc
+}
+
 func getPercent(p int) (int, error) {
 	if p < 0 {
 		return 0, errors.Errorf("negative value given for percentage: %d", p)
@@ -259,7 +292,6 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
-
 	//
 	// START FLAILING
 
@@ -272,9 +304,9 @@ func getDB() (dbutil.DB, error) {
 	// END FLAILING
 	//
 
-	dsn := conf.Get().ServiceConnections.PostgresDSN
+	dsn := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		newDSN := conf.Get().ServiceConnections().PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do

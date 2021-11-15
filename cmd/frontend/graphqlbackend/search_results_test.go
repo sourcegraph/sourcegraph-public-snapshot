@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -11,15 +12,19 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -37,28 +42,23 @@ import (
 
 var mockCount = func(_ context.Context, options database.ReposListOptions) (int, error) { return 0, nil }
 
-func assertEqual(t *testing.T, got, want interface{}) {
-	t.Helper()
-
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("(-want +got):\n%s", diff)
-	}
-}
-
 func TestSearchResults(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	if os.Getenv("CI") != "" {
+		// #25936: Some unit tests rely on external services that break
+		// in CI but not locally. They should be removed or improved.
+		t.Skip("TestSearchResults only works in local dev and is not reliable in CI")
+	}
 
-	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
+	ctx := context.Background()
+	db := dbmock.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
-		if err != nil {
-			t.Fatal("Search:", err)
-		}
-		results, err := r.Results(context.Background())
-		if err != nil {
-			t.Fatal("Results:", err)
-		}
+		r, err := newSchemaResolver(db).Search(ctx, &SearchArgs{Query: query, Version: version})
+		require.Nil(t, err)
+
+		results, err := r.Results(ctx)
+		require.NoError(t, err)
+
 		resultDescriptions := make([]string, len(results.Matches))
 		for i, match := range results.Matches {
 			// NOTE: Only supports one match per line. If we need to test other cases,
@@ -69,7 +69,7 @@ func TestSearchResults(t *testing.T) {
 			case *result.FileMatch:
 				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.LineMatches[0].LineNumber)
 			default:
-				t.Fatal("unexpected result type", match)
+				t.Fatal("unexpected result type:", match)
 			}
 		}
 		// dedup results since we expect our clients to do dedupping
@@ -99,21 +99,12 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListRepoNames bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-			calledReposListRepoNames = true
-
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.ListRepoNames, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-			assertEqual(t, op.IncludePatterns, []string{"r", "p"})
-
-			return []types.RepoName{{ID: 1, Name: "repo"}}, nil
-		}
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		database.Mocks.Repos.MockGet(t, 1)
-		database.Mocks.Repos.Count = mockCount
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+			require.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
+			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+		})
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
@@ -122,39 +113,17 @@ func TestSearchResults(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
-			if !calledReposListRepoNames {
-				t.Error("!calledReposListRepoNames")
-			}
+			mockrequire.Called(t, repos.ListMinimalReposFunc)
 		}
-
 	})
 
 	t.Run("multiple terms regexp", func(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListRepoNames bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-			calledReposListRepoNames = true
-
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-
-			return []types.RepoName{{ID: 1, Name: "repo"}}, nil
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		database.Mocks.Repos.MockGet(t, 1)
-		database.Mocks.Repos.Count = mockCount
-
-		calledSearchRepositories := false
-		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
-			calledSearchRepositories = true
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchRepositories = nil }()
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		calledSearchSymbols := false
 		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
@@ -170,19 +139,14 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			repo := types.RepoName{ID: 1, Name: "repo"}
+			repo := types.MinimalRepo{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V1", []string{"dir/file:123"})
-		if !calledReposListRepoNames {
-			t.Error("!calledReposListRepoNames")
-		}
-		if !calledSearchRepositories {
-			t.Error("!calledSearchRepositories")
-		}
+		mockrequire.Called(t, repos.ListMinimalReposFunc)
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
@@ -195,28 +159,9 @@ func TestSearchResults(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		var calledReposListRepoNames bool
-		database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-			calledReposListRepoNames = true
-
-			// Validate that the following options are invariant
-			// when calling the DB through Repos.List, no matter how
-			// many times it is called for a single Search(...) operation.
-			assertEqual(t, op.LimitOffset, limitOffset)
-
-			return []types.RepoName{{ID: 1, Name: "repo"}}, nil
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		database.Mocks.Repos.MockGet(t, 1)
-		database.Mocks.Repos.Count = mockCount
-
-		calledSearchRepositories := false
-		run.MockSearchRepositories = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
-			calledSearchRepositories = true
-			return nil, &streaming.Stats{}, nil
-		}
-		defer func() { run.MockSearchRepositories = nil }()
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		calledSearchSymbols := false
 		symbol.MockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, common *streaming.Stats, err error) {
@@ -232,19 +177,14 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			repo := types.RepoName{ID: 1, Name: "repo"}
+			repo := types.MinimalRepo{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
 		}
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
 
 		testCallResults(t, `foo\d "bar*"`, "V2", []string{"dir/file:123"})
-		if !calledReposListRepoNames {
-			t.Error("!calledReposListRepoNames")
-		}
-		if !calledSearchRepositories {
-			t.Error("!calledSearchRepositories")
-		}
+		mockrequire.Called(t, repos.ListMinimalReposFunc)
 		if !calledSearchFilesInRepos.Load() {
 			t.Error("!calledSearchFilesInRepos")
 		}
@@ -255,9 +195,7 @@ func TestSearchResults(t *testing.T) {
 }
 
 func TestSearchResolver_DynamicFilters(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
-	repo := types.RepoName{Name: "testRepo"}
+	repo := types.MinimalRepo{Name: "testRepo"}
 	repoMatch := &result.RepoMatch{Name: "testRepo"}
 	fileMatch := func(path string) *result.FileMatch {
 		return mkFileMatch(repo, path)
@@ -447,7 +385,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		t.Run(test.descr, func(t *testing.T) {
 			for _, globbing := range []bool{true, false} {
 				mockDecodedViewerFinalSettings.SearchGlobbing = &globbing
-				actualDynamicFilters := (&SearchResultsResolver{db: db, SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
+				actualDynamicFilters := (&SearchResultsResolver{db: dbmock.NewMockDB(), SearchResults: &SearchResults{Matches: test.searchResults}}).DynamicFilters(context.Background())
 				actualDynamicFilterStrs := make(map[string]int)
 
 				for _, filter := range actualDynamicFilters {
@@ -487,24 +425,24 @@ func TestLonger(t *testing.T) {
 }
 
 func TestSearchResultsHydration(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
+	unauthorizedFileName := "cant-see-me.md"
 
 	repoWithIDs := &types.Repo{
-
 		ID:   api.RepoID(id),
 		Name: api.RepoName(repoName),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          repoName,
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
-		}}
+		},
+	}
 
 	hydratedRepo := &types.Repo{
-
 		ID:           repoWithIDs.ID,
 		ExternalRepo: repoWithIDs.ExternalRepo,
 		Name:         repoWithIDs.Name,
@@ -517,11 +455,11 @@ func TestSearchResultsHydration(t *testing.T) {
 		return hydratedRepo, nil
 	}
 
-	database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.OnlyPrivate {
 			return nil, nil
 		}
-		return []types.RepoName{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
+		return []types.MinimalRepo{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
 	}
 	database.Mocks.Repos.Count = mockCount
 
@@ -547,6 +485,18 @@ func TestSearchResultsHydration(t *testing.T) {
 			},
 		},
 		Checksum: []byte{0, 1, 2},
+	}, {
+		Score:        3.0,
+		FileName:     unauthorizedFileName, // Gets filtered out
+		RepositoryID: uint32(repoWithIDs.ID),
+		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
+		Branches:     []string{"master"},
+		LineMatches: []zoekt.LineMatch{
+			{
+				Line: nil,
+			},
+		},
+		Checksum: []byte{0, 1, 3},
 	}}
 
 	z := &searchbackend.FakeSearcher{
@@ -554,22 +504,38 @@ func TestSearchResultsHydration(t *testing.T) {
 		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	}
 
-	ctx := context.Background()
+	// Act in a user context
+	var ctxUser int32 = 1234
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(ctxUser))
 
 	p, err := query.Pipeline(query.InitLiteral(`foobar index:only count:350`))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	srp := authz.NewMockSubRepoPermissionChecker()
+	srp.EnabledFunc.SetDefaultReturn(true)
+	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, i int32, rc authz.RepoContent) (authz.Perms, error) {
+		if i != ctxUser {
+			return authz.Read, nil
+		}
+		if rc.Path != unauthorizedFileName {
+			return authz.Read, nil
+		}
+		return authz.None, nil
+	})
+
 	resolver := &searchResolver{
-		db: db,
+		db: database.NewDB(db),
 		SearchInputs: &run.SearchInputs{
 			Plan:         p,
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
-		zoekt:    z,
-		reposMu:  &sync.Mutex{},
-		resolved: &searchrepos.Resolved{},
+		zoekt:        z,
+		reposMu:      &sync.Mutex{},
+		resolved:     &searchrepos.Resolved{},
+		subRepoPerms: srp,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -592,8 +558,8 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 }
 
-func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
-	db := new(dbtesting.MockDB)
+func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
+	db := &dbtesting.MockDB{T: t}
 	type fields struct {
 		results             []result.Match
 		searchResultsCommon streaming.Stats
@@ -665,7 +631,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db: db,
+				db: database.NewDB(db),
 				SearchResults: &SearchResults{
 					Stats:   tt.fields.searchResultsCommon,
 					Matches: tt.fields.results,
@@ -724,7 +690,7 @@ func TestGetExactFilePatterns(t *testing.T) {
 func TestCompareSearchResults(t *testing.T) {
 	makeResult := func(repo, file string) *result.FileMatch {
 		return &result.FileMatch{File: result.File{
-			Repo: types.RepoName{Name: api.RepoName(repo)},
+			Repo: types.MinimalRepo{Name: api.RepoName(repo)},
 			Path: file,
 		}}
 	}
@@ -852,7 +818,7 @@ func TestCompareSearchResults(t *testing.T) {
 }
 
 func TestEvaluateAnd(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := &dbtesting.MockDB{T: t}
 
 	tests := []struct {
 		name         string
@@ -896,10 +862,13 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
-				repoNames := make([]types.RepoName, len(minimalRepos))
+			database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+				if len(op.IncludePatterns) > 0 || len(op.ExcludePattern) > 0 {
+					return nil, nil
+				}
+				repoNames := make([]types.MinimalRepo, len(minimalRepos))
 				for i := range minimalRepos {
-					repoNames[i] = types.RepoName{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
+					repoNames[i] = types.MinimalRepo{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
 				}
 				return repoNames, nil
 			}
@@ -912,16 +881,21 @@ func TestEvaluateAnd(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			srp := authz.NewMockSubRepoPermissionChecker()
+			srp.EnabledFunc.SetDefaultReturn(false)
+
 			resolver := &searchResolver{
-				db: db,
+				db: database.NewDB(db),
 				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				zoekt:    z,
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
+				zoekt:        z,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
+				subRepoPerms: srp,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -929,7 +903,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 			if tt.wantAlert {
 				if results.SearchResults.Alert == nil {
-					t.Errorf("Expected results")
+					t.Errorf("Expected alert")
 				}
 			} else if int(results.MatchCount()) != len(zoektFileMatches) {
 				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
@@ -942,8 +916,6 @@ func TestSearchContext(t *testing.T) {
 	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
-
-	db := dbtest.NewDB(t, "")
 
 	tts := []struct {
 		name        string
@@ -968,43 +940,42 @@ func TestSearchContext(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			repos := dbmock.NewMockRepoStore()
+			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
+			repos.CountFunc.SetDefaultReturn(0, nil)
+
+			ns := dbmock.NewMockNamespaceStore()
+			ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
+				userID, ok := users[name]
+				if !ok {
+					t.Errorf("User with ID %d not found", userID)
+				}
+				return &database.Namespace{Name: name, User: userID}, nil
+			})
+
+			db := dbmock.NewMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.NamespacesFunc.SetDefaultReturn(ns)
+
+			srp := authz.NewMockSubRepoPermissionChecker()
+			srp.EnabledFunc.SetDefaultReturn(false)
+
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				reposMu:  &sync.Mutex{},
-				resolved: &searchrepos.Resolved{},
-				zoekt:    mockZoekt,
-				db:       db,
+				reposMu:      &sync.Mutex{},
+				resolved:     &searchrepos.Resolved{},
+				zoekt:        mockZoekt,
+				db:           db,
+				subRepoPerms: srp,
 			}
-
-			numGetByNameCalls := 0
-			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
-				return []types.RepoName{}, nil
-			}
-			database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 0, nil }
-			database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-				userID, ok := users[name]
-				if !ok {
-					t.Errorf("User with ID %d not found", userID)
-				}
-				numGetByNameCalls += 1
-				return &database.Namespace{Name: name, User: userID}, nil
-			}
-			defer func() {
-				database.Mocks.Repos.ListRepoNames = nil
-				database.Mocks.Repos.Count = nil
-				database.Mocks.Namespaces.GetByName = nil
-			}()
 
 			_, err = resolver.Results(context.Background())
 			if err != nil {
 				t.Fatal(err)
-			}
-			if numGetByNameCalls != tt.numContexts {
-				t.Fatalf("got %d, want %d", numGetByNameCalls, tt.numContexts)
 			}
 		})
 	}
@@ -1015,20 +986,16 @@ func TestIsGlobalSearch(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	versionContext := "versionCtx"
 	tts := []struct {
-		name           string
-		searchQuery    string
-		versionContext *string
-		patternType    query.SearchType
-		mode           search.GlobalSearchMode
+		name        string
+		searchQuery string
+		patternType query.SearchType
+		mode        search.GlobalSearchMode
 	}{
 		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
 		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
-		{name: "version context", searchQuery: "foo", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", mode: search.DefaultMode},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", mode: search.DefaultMode},
 		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
 		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
 	}
@@ -1042,10 +1009,9 @@ func TestIsGlobalSearch(t *testing.T) {
 
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
-					Query:          qinfo,
-					UserSettings:   &schema.Settings{},
-					PatternType:    tt.patternType,
-					VersionContext: tt.versionContext,
+					Query:        qinfo,
+					UserSettings: &schema.Settings{},
+					PatternType:  tt.patternType,
 				},
 			}
 
@@ -1055,7 +1021,6 @@ func TestIsGlobalSearch(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {
@@ -1092,6 +1057,164 @@ func TestIsContextError(t *testing.T) {
 		t.Run(c.err.Error(), func(t *testing.T) {
 			if got := isContextError(ctx, c.err); got != c.want {
 				t.Fatalf("wanted %t, got %t", c.want, got)
+			}
+		})
+	}
+}
+
+func TestSubRepoPermsFilter(t *testing.T) {
+	unauthorizedFileName := "README.md"
+	errorFileName := "file.go"
+	var userWithSubRepoPerms int32 = 1234
+
+	srp := authz.NewMockSubRepoPermissionChecker()
+	srp.EnabledFunc.SetDefaultReturn(true)
+	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, user int32, rc authz.RepoContent) (authz.Perms, error) {
+		if user == userWithSubRepoPerms {
+			switch rc.Path {
+			case unauthorizedFileName:
+				// This file should be filtered out
+				return authz.None, nil
+			case errorFileName:
+				// Simulate an error case, should be filtered out
+				return authz.None, errors.New(errorFileName)
+			}
+		}
+		return authz.Read, nil
+	})
+
+	type args struct {
+		ctxActor *actor.Actor
+		event    *streaming.SearchEvent
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantEvent *streaming.SearchEvent
+		wantErr   string
+	}{
+		{
+			name: "read from user with no perms",
+			args: args{
+				ctxActor: actor.FromUser(789),
+				event: &streaming.SearchEvent{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: unauthorizedFileName,
+							},
+						},
+					},
+				},
+			},
+			wantEvent: &streaming.SearchEvent{
+				Results: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: unauthorizedFileName,
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "read for user with sub-repo perms",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				event: &streaming.SearchEvent{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: "not-unauthorized.md",
+							},
+						},
+					},
+				},
+			},
+			wantEvent: &streaming.SearchEvent{
+				Results: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "not-unauthorized.md",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "drop match due to auth for user with sub-repo perms",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				event: &streaming.SearchEvent{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: unauthorizedFileName,
+							},
+						},
+						&result.FileMatch{
+							File: result.File{
+								Path: "random-name.md",
+							},
+						},
+					},
+				},
+			},
+			wantEvent: &streaming.SearchEvent{
+				Results: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "random-name.md",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "drop match due to auth for user with sub-repo perms and error",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				event: &streaming.SearchEvent{
+					Results: []result.Match{
+						&result.FileMatch{
+							File: result.File{
+								Path: errorFileName,
+							},
+						},
+						&result.FileMatch{
+							File: result.File{
+								Path: "random-name.md",
+							},
+						},
+					},
+				},
+			},
+			wantEvent: &streaming.SearchEvent{
+				Results: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "random-name.md",
+						},
+					},
+				},
+			},
+			wantErr: "subRepoPermsFilter",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
+			err := subRepoPermsFilter(ctx, srp)(tt.args.event)
+			if diff := cmp.Diff(tt.args.event, tt.wantEvent, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
+				t.Fatal(diff)
+			}
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatal("expected err, got none")
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("expected err %q, got %q", tt.wantErr, err.Error())
+				}
 			}
 		})
 	}

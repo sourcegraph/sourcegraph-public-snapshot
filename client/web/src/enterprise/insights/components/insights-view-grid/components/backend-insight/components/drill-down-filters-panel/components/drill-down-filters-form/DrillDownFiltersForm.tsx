@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React from 'react'
@@ -94,7 +94,7 @@ export const DrillDownFiltersForm: React.FunctionComponent<DrillDownFiltersFormP
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} className={classnames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
+        <form ref={ref} className={classNames(className, 'd-flex flex-column')} onSubmit={handleSubmit}>
             <header className="d-flex align-items-baseline px-3 py-2 mt-1">
                 <h4 className="mb-0">Filter repositories</h4>
 

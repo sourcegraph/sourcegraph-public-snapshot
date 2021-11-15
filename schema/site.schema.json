@@ -50,6 +50,11 @@
       "default": 1.0,
       "additionalProperties": false
     },
+    "cloneProgress.log": {
+      "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
+      "type": "boolean",
+      "default": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -119,6 +124,11 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
+        },
+        "enableSubRepoPermissions": {
+          "description": "Enables sub-repo permission checking",
+          "type": "boolean",
+          "default": false
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
@@ -191,7 +201,7 @@
           ]
         },
         "versionContexts": {
-          "description": "JSON array of version context configuration",
+          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
           "type": "array",
           "items": {
             "title": "VersionContext",
@@ -304,14 +314,14 @@
       "group": "Experimental"
     },
     "campaigns.enabled": {
-      "description": "DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.",
+      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
       "default": true
     },
     "campaigns.restrictToAdmins": {
-      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.",
+      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
@@ -376,8 +386,14 @@
         }
       }
     },
+    "batchChanges.disableWebhooksWarning": {
+      "description": "Hides Batch Changes warnings about webhooks not being configured.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "codeIntelAutoIndexing.enabled": {
-      "description": "Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
+      "description": "Enables/disables the code intel auto-indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -1081,6 +1097,9 @@
         },
         "userExternalAccountKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "webhookLogKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
       }
     },
@@ -1127,6 +1146,22 @@
               }
             }
           }
+        }
+      }
+    },
+    "webhook.logging": {
+      "description": "Configuration for logging incoming webhooks.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether incoming webhooks are logged. If omitted, logging is enabled on sites without encryption. If one or more encryption keys are present, this setting must be enabled manually; as webhooks may contain sensitive data, admins of encrypted sites may want to enable webhook encryption via encryption.keys.webhookLogKey.",
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "retention": {
+          "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is \"72h\", or three days.",
+          "type": "string",
+          "default": "72h"
         }
       }
     }
@@ -1377,7 +1412,13 @@
           "type": "string",
           "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "api",
+          "enum": ["api", "read_api"]
+        }
       }
     },
     "AuthProviderCommon": {

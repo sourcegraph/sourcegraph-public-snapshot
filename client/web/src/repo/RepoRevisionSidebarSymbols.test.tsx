@@ -82,14 +82,28 @@ describe('RepoRevisionSidebarSymbols', () => {
             </MockedTestProvider>,
             { route }
         )
+        // NOTE: (@numbers88s)
+        // See https://github.com/mui-org/material-ui/issues/15726#issuecomment-876323860
+        // Bootstrap's implementation of Tooltip uses PopperJS. The issue is with the underlying
+        // implementation of PopperJS calling the document.createRange function when there is no DOM API for it to call.
+        // The solution is to upgrade to Jest v26.0.0 (breaking changes no backward compatibility), mock PopperJS
+        // or to mock the underlying function that it utilizes. I chose the latter.
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        ;(global as any).document.createRange = () => ({
+            setStart: () => {},
+            setEnd: () => {},
+            commonAncestorContainer: {
+                nodeName: 'BODY',
+                ownerDocument: document,
+            },
+        })
+
         await waitForNextApolloResponse()
     })
 
     it('renders symbol correctly', () => {
         const symbol = renderResult.getByText('firstSymbol')
         expect(symbol).toBeVisible()
-        // Displays full symbol information
-        expect(symbol.parentElement).toHaveTextContent('firstSymbolsrc/index.js')
     })
 
     it('renders summary correctly', () => {

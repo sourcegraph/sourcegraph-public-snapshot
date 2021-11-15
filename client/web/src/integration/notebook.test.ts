@@ -4,7 +4,7 @@ import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operati
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
+import { WebGraphQlOperations } from '../graphql-operations'
 import { BlockType } from '../search/notebook'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
@@ -56,14 +56,6 @@ const viewerSettings: Partial<WebGraphQlOperations> = {
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
     ...highlightFileResult,
-    SearchSuggestions: (): SearchSuggestionsResult => ({
-        search: {
-            suggestions: [],
-        },
-    }),
-    RepoGroups: (): RepoGroupsResult => ({
-        repoGroups: [],
-    }),
 }
 
 describe('Search Notebook', () => {

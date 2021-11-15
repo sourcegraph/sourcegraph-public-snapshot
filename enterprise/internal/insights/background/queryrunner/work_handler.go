@@ -105,6 +105,11 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 
+	recordTime := time.Now()
+	if job.RecordTime != nil {
+		recordTime = *job.RecordTime
+	}
+
 	if len(results.Errors) > 0 {
 		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
@@ -130,7 +135,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		log15.Error("insights query issue", "problem", "limit hit", "query", job.SearchQuery)
 		dq := types.DirtyQuery{
 			Query:   job.SearchQuery,
-			ForTime: *job.RecordTime,
+			ForTime: recordTime,
 			Reason:  "limit hit",
 		}
 		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
@@ -153,10 +158,6 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 	// that a repository exists may just barely be fine, exposing individual results is definitely
 	// not, etc.) OR record only data that we later restrict to only users who have access to those
 	// repositories.
-	recordTime := time.Now()
-	if job.RecordTime != nil {
-		recordTime = *job.RecordTime
-	}
 
 	// Figure out how many matches we got for every unique repository returned in the search
 	// results.

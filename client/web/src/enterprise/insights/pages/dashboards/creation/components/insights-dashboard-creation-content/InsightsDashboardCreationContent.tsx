@@ -1,13 +1,16 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useCallback, useContext } from 'react'
+
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
-import { InsightDashboard } from '../../../../../../../schema/settings.schema'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
+import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
+import { createRequiredValidator } from '../../../../../components/form/validators'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     isGlobalSubject,
     isOrganizationSubject,
@@ -15,8 +18,9 @@ import {
     SupportedInsightSubject,
 } from '../../../../../core/types/subjects'
 
-import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
 import { getGlobalSubjectTooltipText } from './utils/get-global-subject-tooltip-text'
+
+const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -26,22 +30,17 @@ const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
 export interface DashboardCreationFields {
     name: string
     visibility: string
+    type?: string
+    userId?: string
 }
 
 export interface InsightsDashboardCreationContentProps {
-    /**
-     * Initial values for the dashboard creation form.
-     */
     initialValues?: DashboardCreationFields
 
     /**
      * Organizations list used in the creation form for dashboard visibility setting.
      */
     subjects: SupportedInsightSubject[]
-
-    dashboardsSettings: {
-        [k: string]: InsightDashboard
-    }
 
     onSubmit: (values: DashboardCreationFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
@@ -51,36 +50,70 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues, subjects, dashboardsSettings, onSubmit, children } = props
+    const { initialValues, subjects, onSubmit, children } = props
 
-    // Calculate initial value for the visibility settings
+    const { findDashboardByName } = useContext(CodeInsightsBackendContext)
+
+    // We always have user subject in our settings cascade
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
+    const organizationSubjects = subjects.filter(isOrganizationSubject)
+
+    // We always have global subject in our settings cascade
+    const globalSubject = subjects.find(isGlobalSubject)
+    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
-        onSubmit,
+        // Override onSubmit to pass type value
+        // to correctly set the grants property for graphql api
+        onSubmit: async () => {
+            let type = 'organization'
+            if (visibility.input.value === userSubjectID) {
+                type = 'personal'
+            }
+
+            if (visibility.input.value === globalSubject?.id) {
+                type = 'global'
+            }
+
+            await onSubmit({
+                name: name.input.value,
+                visibility: visibility.input.value,
+                type,
+            })
+        },
     })
 
-    const nameValidator = useDashboardNameValidator({ settings: dashboardsSettings })
+    const asyncNameValidator = useCallback<AsyncValidator<string>>(
+        async name => {
+            // Pass empty value and initial value (for edit page original name is acceptable)
+            if (!name || name === '' || name === initialValues?.name) {
+                return
+            }
+
+            try {
+                const possibleDashboard = await findDashboardByName(name).toPromise()
+
+                return possibleDashboard !== null
+                    ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
+                    : undefined
+            } catch (error) {
+                return asError(error).message || 'Unknown Error'
+            }
+        },
+        [findDashboardByName, initialValues?.name]
+    )
 
     const name = useField({
         name: 'name',
         formApi: formAPI,
-        validators: { sync: nameValidator },
+        validators: { sync: dashboardTitleRequired, async: asyncNameValidator },
     })
 
     const visibility = useField({
         name: 'visibility',
         formApi: formAPI,
     })
-
-    // We always have user subject in our settings cascade
-    const userSubject = getUserSubject(subjects)
-    const organizationSubjects = subjects.filter(isOrganizationSubject)
-
-    // We always have global subject in our settings cascade
-    const globalSubject = subjects.find(isGlobalSubject)
-    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
 
     return (
         // eslint-disable-next-line react/forbid-elements
@@ -99,10 +132,10 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
                 <FormRadioInput
                     name="visibility"
-                    value={userSubject.id}
+                    value={userSubjectID}
                     title="Private"
                     description="visible only to you"
-                    checked={visibility.input.value === userSubject.id}
+                    checked={visibility.input.value === userSubjectID}
                     className="mr-3"
                     onChange={visibility.input.onChange}
                 />

@@ -67,7 +67,7 @@ func discoverAndEnqueueInsights(
 
 	log15.Info("enqueuing indexed insight recordings")
 	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now()})
+	recordingSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextRecordingBefore: now(), GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
 	}
@@ -77,7 +77,7 @@ func discoverAndEnqueueInsights(
 	}
 
 	log15.Info("enqueuing indexed insight snapshots")
-	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now()})
+	snapshotSeries, err := insightStore.GetDataSeries(ctx, store.GetDataSeriesArgs{NextSnapshotBefore: now(), GlobalOnly: true})
 	if err != nil {
 		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
 	}

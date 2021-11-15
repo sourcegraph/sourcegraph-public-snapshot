@@ -35,13 +35,55 @@ func queryGraphQL(ctx context.Context, queryName, query string, variables map[st
 	return nil
 }
 
-// percentile returns the pth percentile duration of the given query type.
-func percentile(queryName string, p float64) time.Duration {
+// formatPercentiles returns a string slice describing latency histograms for each query.
+func formatPercentiles() []string {
+	names := queryNames()
+	lines := make([]string, 0, len(names))
+	sort.Strings(names)
+
+	for _, queryName := range names {
+		numRequests, percentileValues := percentiles(queryName, 0.50, 0.95, 0.99)
+
+		lines = append(
+			lines,
+			fmt.Sprintf("queryName=%s\trequests=%d\tp50=%s\tp95=%s\tp99=%s",
+				queryName,
+				numRequests,
+				percentileValues[0.50],
+				percentileValues[0.95],
+				percentileValues[0.99],
+			))
+	}
+
+	return lines
+}
+
+// queryNames returns the keys of the duration map.
+func queryNames() (names []string) {
+	m.Lock()
+	defer m.Unlock()
+
+	names = make([]string, 0, len(durations))
+	for queryName := range durations {
+		names = append(names, queryName)
+	}
+
+	return names
+}
+
+// percentiles returns the number of samples and the ps[i]th percentile durations of the given query type.
+func percentiles(queryName string, ps ...float64) (int, map[float64]time.Duration) {
 	m.Lock()
 	defer m.Unlock()
 
 	queryDurations := durations[queryName]
 	sort.Float64s(queryDurations)
-	index := int(float64(len(queryDurations)) * p)
-	return time.Duration(queryDurations[index]) * time.Millisecond
+
+	percentiles := make(map[float64]time.Duration, len(ps))
+	for _, p := range ps {
+		index := int(float64(len(queryDurations)) * p)
+		percentiles[p] = time.Duration(queryDurations[index]) * time.Millisecond
+	}
+
+	return len(queryDurations), percentiles
 }

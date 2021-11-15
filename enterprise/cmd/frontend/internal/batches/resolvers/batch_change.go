@@ -30,9 +30,6 @@ type batchChangeResolver struct {
 	namespaceOnce sync.Once
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
-
-	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-	shouldActAsCampaign bool
 }
 
 const batchChangeIDKind = "BatchChange"
@@ -44,10 +41,6 @@ func marshalBatchChangeID(id int64) graphql.ID {
 func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
 	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
-}
-
-func (r *batchChangeResolver) ActAsCampaign() bool {
-	return r.shouldActAsCampaign
 }
 
 func (r *batchChangeResolver) ID() graphql.ID {
@@ -66,7 +59,7 @@ func (r *batchChangeResolver) Description() *string {
 }
 
 func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchChange.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.InitialApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -74,7 +67,7 @@ func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbacke
 }
 
 func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchChange.LastApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.LastApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -92,7 +85,7 @@ func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.
 	if err != nil {
 		return nil, err
 	}
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), spec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), spec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -120,13 +113,13 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 		if r.batchChange.NamespaceUserID != 0 {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
 				ctx,
-				r.store.DB(),
+				r.store.DatabaseDB(),
 				r.batchChange.NamespaceUserID,
 			)
 		} else {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
 				ctx,
-				r.store.DB(),
+				r.store.DatabaseDB(),
 				r.batchChange.NamespaceOrgID,
 			)
 		}
@@ -293,7 +286,7 @@ func (r *batchChangeResolver) BatchSpecs(
 	args *graphqlbackend.ListBatchSpecArgs,
 ) (graphqlbackend.BatchSpecConnectionResolver, error) {
 	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 

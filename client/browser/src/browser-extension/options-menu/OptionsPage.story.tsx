@@ -1,6 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useState } from 'react'
 import { Observable, of } from 'rxjs'
@@ -28,87 +28,101 @@ const commonProps = () =>
 
 const requestPermissionsHandler = action('requestPermission')
 
-storiesOf('browser/Options/OptionsPage', module)
-    .addDecorator(story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>)
-    .addParameters({
-        chromatic: { delay: 500 },
-    })
-    .add('Default', () => (
+const decorator: DecoratorFn = story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>
+
+const config: Meta = {
+    title: 'browser/Options/OptionsPage',
+    decorators: [decorator],
+    parameters: { chromatic: { delay: 500 } },
+}
+
+export default config
+
+export const Default: Story = () => (
+    <OptionsPage
+        {...commonProps()}
+        showPrivateRepositoryAlert={boolean('isCurrentRepositoryPrivate', false)}
+        showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
+        validateSourcegraphUrl={validateSourcegraphUrl}
+        onToggleActivated={action('onToggleActivated')}
+        isActivated={true}
+        sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        isFullPage={true}
+    />
+)
+export const Interactive: Story = () => {
+    const [isActivated, setIsActivated] = useState(false)
+    return (
         <OptionsPage
             {...commonProps()}
-            showPrivateRepositoryAlert={boolean('isCurrentRepositoryPrivate', false)}
+            isActivated={isActivated}
+            onToggleActivated={setIsActivated}
+            validateSourcegraphUrl={validateSourcegraphUrl}
+            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+            showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
             showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
-            validateSourcegraphUrl={validateSourcegraphUrl}
-            onToggleActivated={action('onToggleActivated')}
-            isActivated={true}
-            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
             isFullPage={true}
         />
-    ))
-    .add('Interactive', () => {
-        const [isActivated, setIsActivated] = useState(false)
-        return (
-            <OptionsPage
-                {...commonProps()}
-                isActivated={isActivated}
-                onToggleActivated={setIsActivated}
-                validateSourcegraphUrl={validateSourcegraphUrl}
-                sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
-                showPrivateRepositoryAlert={boolean('showPrivateRepositoryAlert', false)}
-                showSourcegraphCloudAlert={boolean('showSourcegraphCloudAlert', false)}
-                isFullPage={true}
-            />
-        )
-    })
-    .add('URL validation error', () => {
-        const [isActivated, setIsActivated] = useState(false)
-        return (
-            <OptionsPage
-                {...commonProps()}
-                isActivated={isActivated}
-                onToggleActivated={setIsActivated}
-                validateSourcegraphUrl={invalidSourcegraphUrl}
-                sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
-                isFullPage={true}
-            />
-        )
-    })
-    .add('Asking for permission', () => (
+    )
+}
+export const UrlValidationError: Story = () => {
+    const [isActivated, setIsActivated] = useState(false)
+    return (
         <OptionsPage
             {...commonProps()}
-            validateSourcegraphUrl={validateSourcegraphUrl}
-            onToggleActivated={action('onToggleActivated')}
-            isActivated={true}
-            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+            isActivated={isActivated}
+            onToggleActivated={setIsActivated}
+            validateSourcegraphUrl={invalidSourcegraphUrl}
+            sourcegraphUrl={text('sourcegraphUrl', 'https://not-sourcegraph.com')}
             isFullPage={true}
-            currentHost="github.com"
-            permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
-            requestPermissionsHandler={requestPermissionsHandler}
         />
-    ))
-    .add('On private repository', () => (
-        <OptionsPage
-            {...commonProps()}
-            validateSourcegraphUrl={validateSourcegraphUrl}
-            onToggleActivated={action('onToggleActivated')}
-            isActivated={true}
-            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
-            isFullPage={true}
-            currentHost="github.com"
-            showPrivateRepositoryAlert={true}
-            requestPermissionsHandler={requestPermissionsHandler}
-        />
-    ))
-    .add('On Sourcegraph Cloud', () => (
-        <OptionsPage
-            {...commonProps()}
-            validateSourcegraphUrl={validateSourcegraphUrl}
-            onToggleActivated={action('onToggleActivated')}
-            isActivated={true}
-            sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
-            isFullPage={true}
-            currentHost="sourcegraph.com"
-            requestPermissionsHandler={requestPermissionsHandler}
-            showSourcegraphCloudAlert={true}
-        />
-    ))
+    )
+}
+
+UrlValidationError.storyName = 'URL validation error'
+
+export const AskingForPermission: Story = () => (
+    <OptionsPage
+        {...commonProps()}
+        validateSourcegraphUrl={validateSourcegraphUrl}
+        onToggleActivated={action('onToggleActivated')}
+        isActivated={true}
+        sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        isFullPage={true}
+        currentHost="github.com"
+        permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
+        requestPermissionsHandler={requestPermissionsHandler}
+    />
+)
+
+AskingForPermission.storyName = 'Asking for permission'
+
+export const OnPrivateRepository: Story = () => (
+    <OptionsPage
+        {...commonProps()}
+        validateSourcegraphUrl={validateSourcegraphUrl}
+        onToggleActivated={action('onToggleActivated')}
+        isActivated={true}
+        sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        isFullPage={true}
+        currentHost="github.com"
+        showPrivateRepositoryAlert={true}
+        requestPermissionsHandler={requestPermissionsHandler}
+    />
+)
+
+OnPrivateRepository.storyName = 'On private repository'
+
+export const OnSourcegraphCloud: Story = () => (
+    <OptionsPage
+        {...commonProps()}
+        validateSourcegraphUrl={validateSourcegraphUrl}
+        onToggleActivated={action('onToggleActivated')}
+        isActivated={true}
+        sourcegraphUrl={text('sourcegraphUrl', 'https://sourcegraph.com')}
+        isFullPage={true}
+        currentHost="sourcegraph.com"
+        requestPermissionsHandler={requestPermissionsHandler}
+        showSourcegraphCloudAlert={true}
+    />
+)

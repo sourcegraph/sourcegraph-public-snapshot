@@ -15,9 +15,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
@@ -258,7 +258,7 @@ func ListTags(ctx context.Context, repo api.RepoName) ([]*Tag, error) {
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if gitdomain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
@@ -320,7 +320,7 @@ func showRef(ctx context.Context, repo api.RepoName, args ...string) ([]Ref, err
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if gitdomain.IsRepoNotExist(err) {
 			return nil, err
 		}
 		// Exit status of 1 and no output means there were no

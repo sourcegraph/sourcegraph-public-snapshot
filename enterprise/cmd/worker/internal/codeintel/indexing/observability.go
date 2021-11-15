@@ -10,7 +10,6 @@ import (
 
 type schedulerOperations struct {
 	HandleIndexScheduler *observation.Operation
-	QueueRepository      *observation.Operation
 }
 
 type dependencyReposOperations struct {
@@ -42,7 +41,6 @@ func newOperations(observationContext *observation.Context) *schedulerOperations
 
 		schedulerOps = &schedulerOperations{
 			HandleIndexScheduler: op("indexing", "HandleIndexSchedule"),
-			QueueRepository:      op("indexing", "QueueRepository"),
 		}
 
 		m = metrics.NewOperationMetrics(

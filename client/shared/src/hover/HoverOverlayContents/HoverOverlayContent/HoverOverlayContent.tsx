@@ -6,6 +6,10 @@ import { HoverMerged } from '../../../api/client/types/hover'
 import { LinkOrSpan } from '../../../components/LinkOrSpan'
 import { asError } from '../../../util/errors'
 import { renderMarkdown } from '../../../util/markdown'
+import hoverOverlayStyle from '../../HoverOverlay.module.scss'
+import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'
+
+import style from './HoverOverlayContent.module.scss'
 
 interface HoverOverlayContentProps {
     content: HoverMerged['contents'][number]
@@ -13,6 +17,7 @@ interface HoverOverlayContentProps {
     index: number
     badgeClassName?: string
     errorAlertClassName?: string
+    contentClassName?: string
 }
 
 function tryMarkdownRender(content: string): string | Error {
@@ -28,7 +33,10 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
 
     if (content.kind !== 'markdown') {
         return (
-            <span className="hover-overlay__content">
+            <span
+                data-testid="hover-overlay-content"
+                className={classNames(style.hoverOverlayContent, hoverOverlayContentsStyle.hoverOverlayContent)}
+            >
                 <p>{content.value}</p>
             </span>
         )
@@ -38,7 +46,7 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
 
     if (markdownOrError instanceof Error) {
         return (
-            <div className={classNames('hover-overlay__hover-error', errorAlertClassName)}>
+            <div className={classNames(hoverOverlayStyle.hoverError, errorAlertClassName)}>
                 {upperFirst(markdownOrError.message)}
             </div>
         )
@@ -48,20 +56,26 @@ export const HoverOverlayContent: React.FunctionComponent<HoverOverlayContentPro
         <>
             {index !== 0 && <hr />}
             {aggregatedBadges.map(({ text, linkURL, hoverMessage }) => (
-                <small key={text} className="hover-overlay__badge">
+                <small key={text} className={classNames(hoverOverlayStyle.badge)}>
                     <LinkOrSpan
                         to={linkURL}
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tooltip={hoverMessage}
-                        className={classNames('test-hover-badge', badgeClassName, 'hover-overlay__badge-label')}
+                        className={classNames('test-hover-badge', badgeClassName, hoverOverlayStyle.badgeLabel)}
                     >
                         {text}
                     </LinkOrSpan>
                 </small>
             ))}
             <span
-                className="hover-overlay__content test-tooltip-content"
+                data-testid="hover-overlay-content"
+                className={classNames(
+                    style.hoverOverlayContent,
+                    hoverOverlayContentsStyle.hoverOverlayContent,
+                    props.contentClassName,
+                    'test-tooltip-content'
+                )}
                 dangerouslySetInnerHTML={{ __html: markdownOrError }}
             />
         </>

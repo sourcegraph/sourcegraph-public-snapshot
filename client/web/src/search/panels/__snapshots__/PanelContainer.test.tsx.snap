@@ -21,19 +21,19 @@ exports[`PanelContainer content state 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container d-flex flex-column"
+    className="panelContainer d-flex flex-column"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="d-flex border-bottom header"
     >
       <h4
-        className="panel-container__header-text"
+        className="headerText"
       >
         Test Panel
       </h4>
     </div>
     <div
-      className="panel-container__content h-100"
+      className="h-100 content"
     >
       <div>
         Content
@@ -64,19 +64,19 @@ exports[`PanelContainer empty state 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container d-flex flex-column"
+    className="panelContainer d-flex flex-column"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="d-flex border-bottom header"
     >
       <h4
-        className="panel-container__header-text"
+        className="headerText"
       >
         Test Panel
       </h4>
     </div>
     <div
-      className="panel-container__content h-100"
+      className="h-100 content"
     >
       <div>
         Empty
@@ -107,19 +107,19 @@ exports[`PanelContainer loading state 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container d-flex flex-column"
+    className="panelContainer d-flex flex-column"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="d-flex border-bottom header"
     >
       <h4
-        className="panel-container__header-text"
+        className="headerText"
       >
         Test Panel
       </h4>
     </div>
     <div
-      className="panel-container__content h-100"
+      className="h-100 content"
     >
       <div>
         Loading
@@ -157,13 +157,13 @@ exports[`PanelContainer with action buttons 1`] = `
   title="Test Panel"
 >
   <div
-    className="panel-container d-flex flex-column"
+    className="panelContainer d-flex flex-column"
   >
     <div
-      className="panel-container__header d-flex border-bottom"
+      className="d-flex border-bottom header"
     >
       <h4
-        className="panel-container__header-text"
+        className="headerText"
       >
         Test Panel
       </h4>
@@ -174,7 +174,7 @@ exports[`PanelContainer with action buttons 1`] = `
       </button>
     </div>
     <div
-      className="panel-container__content h-100"
+      className="h-100 content"
     >
       <div>
         Content

@@ -7,7 +7,8 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -20,7 +21,7 @@ import (
 
 const syncInterval = 24 * time.Hour
 
-func NewSyncingJob() shared.Job {
+func NewSyncingJob() job.Job {
 	return &syncingJob{}
 }
 
@@ -36,7 +37,7 @@ func (j *syncingJob) Routines(_ context.Context) ([]goroutine.BackgroundRoutine,
 		return nil, nil
 	}
 
-	db, err := shared.InitDatabase()
+	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}

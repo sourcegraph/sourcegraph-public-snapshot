@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useMemo, useState } from 'react'
 import { Omit } from 'utility-types'
 
@@ -10,6 +11,8 @@ import { AuthenticatedUser } from '../auth'
 import { ErrorAlert } from '../components/alerts'
 import { Badge } from '../components/Badge'
 import { NamespaceProps } from '../namespaces'
+
+import styles from './SavedSearchForm.module.scss'
 
 export interface SavedQueryFields {
     id: Scalars['ID']
@@ -87,7 +90,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
             <Form onSubmit={handleSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
-                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-description">
+                        <label className={styles.label} htmlFor="saved-search-form-input-description">
                             Description
                         </label>
                         <input
@@ -102,7 +105,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         />
                     </div>
                     <div className="form-group">
-                        <label className="saved-search-form__label" htmlFor="saved-search-form-input-query">
+                        <label className={styles.label} htmlFor="saved-search-form-input-query">
                             Query
                         </label>
                         <input
@@ -121,7 +124,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
                             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                            <label className="saved-search-form__label" id="saved-search-form-email-notifications">
+                            <label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
                             </label>
                             <div aria-labelledby="saved-search-form-email-notifications">
@@ -129,7 +132,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                     <input
                                         type="checkbox"
                                         name="Notify owner"
-                                        className="saved-search-form__checkbox"
+                                        className={styles.checkbox}
                                         defaultChecked={notify}
                                         onChange={createInputChangeHandler('notify')}
                                     />{' '}
@@ -143,7 +146,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                                 </label>
                             </div>
 
-                            <div className="alert alert-primary p-3 mb-0 saved-search-form__code-monitoring-alert">
+                            <div className={classNames(styles.codeMonitoringAlert, 'alert alert-primary p-3 mb-0')}>
                                 <div className="mb-2">
                                     <strong>New:</strong> Watch your code for changes with code monitoring to get
                                     notifications.
@@ -157,7 +160,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
 
                     {notifySlack && slackWebhookURL && (
                         <div className="form-group mt-3 mb-0">
-                            <label className="saved-search-form__label" htmlFor="saved-search-form-input-slack">
+                            <label className={styles.label} htmlFor="saved-search-form-input-slack">
                                 Slack notifications
                             </label>
                             <input
@@ -193,7 +196,7 @@ export const SavedSearchForm: React.FunctionComponent<SavedSearchFormProps> = pr
                 <button
                     type="submit"
                     disabled={props.loading}
-                    className="btn btn-primary saved-search-form__submit-button test-saved-search-form-submit-button"
+                    className={classNames(styles.submitButton, 'btn btn-primary test-saved-search-form-submit-button')}
                 >
                     {props.submitLabel}
                 </button>

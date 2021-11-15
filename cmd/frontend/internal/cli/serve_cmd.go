@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -107,7 +108,7 @@ func InitDB() (*sql.DB, error) {
 		// which would be added by running the migrations. Once we detect that
 		// it's missing, we run the migrations and try to update the version again.
 
-		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		err := backend.UpdateServiceVersion(ctx, database.NewDB(dbconn.Global), "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return nil, err
 		}
@@ -125,7 +126,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -138,10 +139,11 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	db, err := InitDB()
+	sqlDB, err := InitDB()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+	db := database.NewDB(sqlDB)
 
 	// override site config first
 	if err := overrideSiteConfig(ctx); err != nil {
@@ -169,8 +171,8 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Create an out-of-band migration runner onto which each enterprise init function
@@ -179,20 +181,27 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
+	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
 	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run external service encryption job: %v", err)
 	}
 	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := database.NewExternalAccountsMigratorWithDB(db)
+	extAccMigrator := oobmigration.NewExternalAccountsMigratorWithDB(db)
 	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run user external account encryption job: %v", err)
 	}
 
+	// Run a background job to calculate the has_webhooks field on external
+	// service records.
+	webhookMigrator := oobmigration.NewExternalServiceWebhookMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run external service webhook job: %v", err)
+	}
+
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient(), outOfBandMigrationRunner)
 
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
@@ -300,7 +309,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	return nil
 }
 
-func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	// Create the external HTTP handler.
 	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler, rateLimiter)
 	if err != nil {
@@ -322,7 +331,7 @@ func makeExternalAPI(db dbutil.DB, schema *graphql.Schema, enterprise enterprise
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}

@@ -2,7 +2,9 @@
 
 ## Local development
 
-Use `sg` CLI tool to configure and start local development server. For more information checkout `sg` [README](../../dev/sg/README.md).
+Use `sg` CLI tool to configure and start local development server. For more information check out [the `sg` documentation](https://docs.sourcegraph.com/dev/background-information/sg).
+
+Our local development server runs by starting both a [Caddy](https://caddyserver.com/) HTTPS server and a Node HTTP server. We then can reverse proxy requests to the Node server to serve client assets under HTTPS.
 
 ### Configuration
 
@@ -16,28 +18,44 @@ It's possible to overwrite these variables by creating `sg.config.overwrite.yaml
 ### Development server
 
 ```sh
-sg run web-standalone
+sg start web-standalone
 ```
 
-For enterprise version:
+For open-source version:
 
 ```sh
-sg run enterprise-web-standalone
+sg start oss-web-standalone
+```
+
+#### Public API
+
+To use a public API that doesn't require authentication for most of the functionality:
+
+```sh
+SOURCEGRAPH_API_URL=https://sourcegraph.com sg start web-standalone
+```
+
+For open-source version:
+
+```sh
+SOURCEGRAPH_API_URL=https://sourcegraph.com sg start oss-web-standalone
 ```
 
 ### Production server
 
 ```sh
-sg run web-standalone-prod
+sg start web-standalone-prod
 ```
 
-For enterprise version:
+For open-source version:
 
 ```sh
-sg run enterprise-web-standalone-prod
+sg start oss-web-standalone-prod
 ```
 
-Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}` (note the `http` not `https`). Build artifacts will be served from `<rootRepoPath>/ui/assets`.
+Web app should be available at `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`. Build artifacts will be served from `<rootRepoPath>/ui/assets`.
+
+Note: If you are unable to use the above commands (e.g. you can't install Caddy), you can use `sg run web-standalone-http` instead. This will start a development server using only Node, and will be available at `http://localhost:${CLIENT_PROXY_DEVELOPMENT_PORT}`.
 
 ### API proxy
 

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
@@ -24,6 +25,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
+import styles from './RegistryExtensionManagePage.module.scss'
 
 function updateExtension(
     args: Pick<
@@ -154,13 +156,13 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                     <h2>Manage extension</h2>
                     <Form onSubmit={this.onSubmit}>
                         <RegistryPublisherFormGroup
-                            className="registry-extension-manage-page__input"
+                            className={styles.input}
                             value={publisher.id}
                             publishersOrError={[publisher]}
                             disabled={true}
                         />
                         <RegistryExtensionNameFormGroup
-                            className="registry-extension-manage-page__input"
+                            className={styles.input}
                             value={extensionName}
                             onChange={this.onNameChange}
                             disabled={this.state.updateOrError === 'loading'}
@@ -188,7 +190,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                         </button>
                     </Form>
                     {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
-                    <div className="card mt-5 registry-extension-manage-page__other-actions">
+                    <div className={classNames('card mt-5', styles.otherActions)}>
                         <div className="card-header">Other actions</div>
                         <div className="card-body">
                             <Link

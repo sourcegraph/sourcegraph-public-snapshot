@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -25,7 +24,7 @@ const (
 )
 
 func createAndAttachInternalAccessToken(ctx context.Context, s batchesStore, jobID int64, userID int32) (string, error) {
-	tokenID, token, err := database.AccessTokens(s.DB()).CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+	tokenID, token, err := s.DatabaseDB().AccessTokens().CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +49,7 @@ type batchesStore interface {
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
 	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
 
-	DB() dbutil.DB
+	DatabaseDB() database.DB
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
@@ -72,7 +71,7 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 	// when loading the repository.
 	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
 
-	repo, err := database.Repos(s.DB()).Get(ctx, workspace.RepoID)
+	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
 	if err != nil {
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
@@ -86,21 +85,19 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
-		Workspaces: []*batcheslib.Workspace{
-			{
-				Repository: batcheslib.WorkspaceRepo{
-					ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-					Name: string(repo.Name),
-				},
-				Branch: batcheslib.WorkspaceBranch{
-					Name:   workspace.Branch,
-					Target: batcheslib.Commit{OID: workspace.Commit},
-				},
-				Path:               workspace.Path,
-				OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-				Steps:              workspace.Steps,
-				SearchResultPaths:  workspace.FileMatches,
+		Workspace: batcheslib.Workspace{
+			Repository: batcheslib.WorkspaceRepo{
+				ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				Name: string(repo.Name),
 			},
+			Branch: batcheslib.WorkspaceBranch{
+				Name:   workspace.Branch,
+				Target: batcheslib.Commit{OID: workspace.Commit},
+			},
+			Path:               workspace.Path,
+			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+			Steps:              workspace.Steps,
+			SearchResultPaths:  workspace.FileMatches,
 		},
 	}
 
@@ -131,14 +128,9 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{
-					"batch",
-					"exec",
-					"-f", "input.json",
-					"-skip-errors",
-				},
-				Dir: ".",
-				Env: cliEnv,
+				Commands: []string{"batch", "exec", "-f", "input.json"},
+				Dir:      ".",
+				Env:      cliEnv,
 			},
 		},
 		RedactedValues: map[string]string{

@@ -27,8 +27,6 @@ describe('Layout', () => {
         setPatternType: () => {},
         caseSensitive: false,
         setCaseSensitivity: () => {},
-        versionContext: undefined,
-        setVersionContext: () => Promise.resolve(),
 
         // Other minimum props required to render
         routes: [],
@@ -266,128 +264,6 @@ describe('Layout', () => {
         )
 
         sinon.assert.notCalled(setCaseSensitivitySpy)
-
-        element.unmount()
-    })
-
-    it('should update versionContext if different between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
-            Promise.resolve()
-        )
-
-        const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="other"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
-        )
-
-        sinon.assert.called(setVersionContextSpy)
-        sinon.assert.calledWith(setVersionContextSpy, 'test')
-
-        element.unmount()
-    })
-
-    it('should not update versionContext if same between URL and context', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
-            Promise.resolve()
-        )
-
-        const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="test"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
-        )
-
-        sinon.assert.notCalled(setVersionContextSpy)
-
-        element.unmount()
-    })
-
-    it('should clear versionContext if updating to clear', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
-
-        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
-            Promise.resolve()
-        )
-
-        const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="test"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
-        )
-
-        sinon.assert.called(setVersionContextSpy)
-        sinon.assert.calledWith(setVersionContextSpy, undefined)
-
-        element.unmount()
-    })
-
-    it('should not update versionContext if query is empty', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=&c=test' })
-
-        const setVersionContextSpy = sinon.spy<(versionContext: string | undefined) => Promise<void>>(() =>
-            Promise.resolve()
-        )
-
-        const element = mount(
-            <BrowserRouter>
-                <Layout
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    versionContext="other"
-                    setVersionContext={setVersionContextSpy}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
-        )
-
-        sinon.assert.notCalled(setVersionContextSpy)
 
         element.unmount()
     })

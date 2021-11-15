@@ -22,7 +22,7 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	SELECT
 		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       AS weekly_insights_page_views,
 		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        AS weekly_insights_unique_page_views,
-		COUNT(distinct anonymous_user_id)
+		COUNT(distinct user_id)
 			FILTER (WHERE name = 'InsightAddition')							AS weekly_insight_creators,
 		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 				AS weekly_insight_configure_click,
 		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 				AS weekly_insight_add_more_click
@@ -89,15 +89,15 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	const weeklyFirstTimeCreatorsQuery = `
 	WITH first_times AS (
 		SELECT
-			anonymous_user_id,
+			user_id,
 			MIN(timestamp) as first_time
 		FROM event_logs
 		WHERE name = 'InsightAddition'
-		GROUP BY anonymous_user_id
+		GROUP BY user_id
 		)
 	SELECT
 		DATE_TRUNC('week', $1::timestamp) AS week_start,
-		COUNT(distinct anonymous_user_id) as weekly_first_time_insight_creators
+		COUNT(distinct user_id) as weekly_first_time_insight_creators
 	FROM first_times
 	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
 	`
@@ -288,7 +288,7 @@ const (
 
 const templatePingQueryStr = `
 -- source:internal/usagestats/code_insights.go:Sample
-SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT anonymous_user_id) AS unique_count
+SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT user_id) AS unique_count
 FROM event_logs
 WHERE name = ANY($2)
 AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)

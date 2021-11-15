@@ -6,6 +6,7 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
+const chalk = require('chalk')
 const compression = require('compression')
 const log = require('fancy-log')
 const gulp = require('gulp')
@@ -137,7 +138,45 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const server = new WebpackDevServer(options, createWebpackCompiler(webpackConfig))
+  const compiler = createWebpackCompiler(webpackConfig)
+  let compilationDoneOnce = false
+  compiler.hooks.done.tap('Print external URL', stats => {
+    stats = stats.toJson()
+    if (stats.errors !== undefined && stats.errors.length > 0) {
+      // show errors
+      return
+    }
+    if (compilationDoneOnce) {
+      return
+    }
+    compilationDoneOnce = true
+
+    const url = `https://${sockHost}:${sockPort}`
+    const banner = '==============================================='
+    const emptyLine = ' '.repeat(banner.length)
+    const lineLength = banner.length
+    /**
+     * @param {string} content
+     */
+    const paddedLine = content => {
+      const spaceRequired = lineLength - content.length
+      const half = spaceRequired / 2
+      let line = `${' '.repeat(half)}${content}${' '.repeat(half)}`
+      if (line.length < lineLength) {
+        line += ' '
+      }
+      return line
+    }
+    console.log(chalk.bgYellowBright.black(banner))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(paddedLine('✱ Sourcegraph is really ready now!')))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(paddedLine(`Click here: ${url}`)))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(banner))
+  })
+
+  const server = new WebpackDevServer(options, compiler)
   signale.await('Waiting for Webpack to compile assets')
   await server.start()
 }

@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { range, isEqual } from 'lodash'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -10,6 +10,8 @@ import * as GQL from '../graphql/schema'
 import { highlightNode } from '../util/dom'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { Repo } from '../util/url'
+
+import styles from './CodeExcerpt.module.scss'
 
 export interface FetchFileParameters {
     repoName: string
@@ -125,10 +127,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                 offset={this.visibilitySensorOffset}
             >
                 <code
+                    data-testid="code-excerpt"
                     className={classNames(
-                        'code-excerpt',
+                        styles.codeExcerpt,
                         this.props.className,
-                        isErrorLike(this.state.blobLinesOrError) && 'code-excerpt-error'
+                        isErrorLike(this.state.blobLinesOrError) && styles.codeExcerptError
                     )}
                 >
                     {this.state.blobLinesOrError && !isErrorLike(this.state.blobLinesOrError) && (
@@ -138,8 +141,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                         />
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
-                        <div className="code-excerpt-alert">
-                            <ErrorIcon className="icon-inline mr-2" />
+                        <div className={styles.codeExcerptAlert}>
+                            <AlertCircleIcon className="icon-inline mr-2" />
                             {this.state.blobLinesOrError.message}
                         </div>
                     )}

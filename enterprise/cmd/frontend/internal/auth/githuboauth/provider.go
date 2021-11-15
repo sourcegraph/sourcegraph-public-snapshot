@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -60,9 +61,9 @@ func parseProvider(p *schema.GitHubAuthProvider, db dbutil.DB, sourceCfg schema.
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return github.CallbackHandler(
 				&oauth2Cfg,
-				oauth.SessionIssuer(&sessionIssuerHelper{
+				oauth.SessionIssuer(db, &sessionIssuerHelper{
 					CodeHost:    codeHost,
-					db:          db,
+					db:          database.NewDB(db),
 					clientID:    p.ClientID,
 					allowSignup: p.AllowSignup,
 					allowOrgs:   p.AllowOrgs,

@@ -1,5 +1,5 @@
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import React, { FunctionComponent, useMemo } from 'react'
@@ -94,7 +94,7 @@ const terminalStages = (upload: LsifUploadFields): TimelineStage[] =>
         : upload.state === LSIFUploadState.ERRORED
         ? [
               {
-                  icon: <ErrorIcon />,
+                  icon: <AlertCircleIcon />,
                   text: 'Failed',
                   date: upload.finishedAt,
                   className: 'bg-danger',

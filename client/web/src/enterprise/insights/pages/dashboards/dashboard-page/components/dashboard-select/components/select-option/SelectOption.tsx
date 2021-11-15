@@ -1,5 +1,5 @@
 import { ListboxOption } from '@reach/listbox'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import { RealInsightDashboard } from '../../../../../../../core/types'
@@ -29,7 +29,7 @@ export const SelectOption: React.FunctionComponent<SelectOptionProps> = props =>
     const { value, label, badge, className } = props
 
     return (
-        <ListboxOption className={classnames(styles.option, className)} value={value}>
+        <ListboxOption className={classNames(styles.option, className)} value={value}>
             <TruncatedText title={label} className={styles.text}>
                 {label}
             </TruncatedText>

@@ -8,6 +8,9 @@ import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 export interface SelfHostedCtaProps extends TelemetryProps {
     className?: string
     contentClassName?: string
+    // the name of the page the CTA will be posted. DO NOT include full URLs
+    // here, because this will be logged to our analytics systems. We do not
+    // want to expose private repo names or search queries to our analytics.
     page: string
 }
 
@@ -21,15 +24,15 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
     const linkProps = { rel: 'noopener noreferrer' }
 
     const gettingStartedCTAOnClick = (): void => {
-        telemetryService.log('InstallSourcegraphCTAClicked', { page })
+        telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
     }
 
     const selfVsCloudDocumentsLinkOnClick = (): void => {
-        telemetryService.log('SelfVsCloudDocsLink', { page })
+        telemetryService.log('SelfVsCloudDocsLink', { page }, { page })
     }
 
     const helpGettingStartedCTAOnClick = (): void => {
-        telemetryService.log('HelpGettingStartedCTA', { page })
+        telemetryService.log('HelpGettingStartedCTA', { page }, { page })
     }
 
     return (
@@ -70,7 +73,7 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                 <div>
                     <a
                         onClick={helpGettingStartedCTAOnClick}
-                        href="https://info.sourcegraph.com/talk-to-a-developer?_ga=2.257481099.1451692402.1630329056-789994471.1629391417"
+                        href=" https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=inproduct-talktoadev&utm_term=null&utm_content=talktoadevform"
                         {...linkProps}
                     >
                         Speak to an engineer

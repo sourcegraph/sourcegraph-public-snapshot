@@ -43,7 +43,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     Run any number of actions in response to an event
   </span>
   <div
-    className="code-monitor-form__card card p-3"
+    className="card p-3"
   >
     <div
       className="font-weight-bold"
@@ -90,7 +90,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         Send test email
       </button>
       <div
-        className="action-area__test-action-error mt-2"
+        className="mt-2 testActionError"
       >
         Please provide a name for the code monitor before sending a test
       </div>
@@ -100,7 +100,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     >
       <div>
         <Toggle
-          aria-labelledby="action-area__enable-toggle"
+          aria-labelledby="code-monitoring-form-actions-enable-toggle"
           className="mr-2"
           onToggle={[Function]}
           title="Enabled"
@@ -108,7 +108,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         >
           <button
             aria-checked={true}
-            aria-labelledby="action-area__enable-toggle"
+            aria-labelledby="code-monitoring-form-actions-enable-toggle"
             className="toggle mr-2"
             onClick={[Function]}
             role="switch"
@@ -126,7 +126,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
         </Toggle>
       </div>
       <span
-        id="action-area__enable-toggle"
+        id="code-monitoring-form-actions-enable-toggle"
       >
         Enabled
       </span>

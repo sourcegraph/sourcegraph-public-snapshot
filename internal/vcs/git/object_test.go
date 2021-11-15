@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestGetObject(t *testing.T) {
@@ -19,27 +21,28 @@ func TestGetObject(t *testing.T) {
 		repo           api.RepoName
 		objectName     string
 		wantOID        string
-		wantObjectType ObjectType
+		wantObjectType gitdomain.ObjectType
 	}{
 		"basic": {
 			repo:           MakeGitRepository(t, gitCommands...),
 			objectName:     "e86b31b62399cfc86199e8b6e21a35e76d0e8b5e^{tree}",
 			wantOID:        "a1dffc7a64c0b2d395484bf452e9aeb1da3a18f2",
-			wantObjectType: ObjectTypeTree,
+			wantObjectType: gitdomain.ObjectTypeTree,
 		},
 	}
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			oid, objectType, err := GetObject(context.Background(), test.repo, test.objectName)
+			obj, err := gitserver.DefaultClient.GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}
+			oid := obj.ID
 			if oid.String() != test.wantOID {
 				t.Errorf("got OID %q, want %q", oid, test.wantOID)
 			}
-			if objectType != test.wantObjectType {
-				t.Errorf("got object type %q, want %q", objectType, test.wantObjectType)
+			if obj.Type != test.wantObjectType {
+				t.Errorf("got object type %q, want %q", obj.Type, test.wantObjectType)
 			}
 		})
 	}

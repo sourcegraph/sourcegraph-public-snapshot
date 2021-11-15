@@ -25,20 +25,21 @@ type DocumentData struct {
 // that was reachable via a result set has been collapsed into this object during
 // conversion.
 type RangeData struct {
-	StartLine             int  // 0-indexed, inclusive
-	StartCharacter        int  // 0-indexed, inclusive
-	EndLine               int  // 0-indexed, inclusive
-	EndCharacter          int  // 0-indexed, inclusive
-	DefinitionResultID    ID   // possibly empty
-	ReferenceResultID     ID   // possibly empty
-	HoverResultID         ID   // possibly empty
-	DocumentationResultID ID   // possibly empty
-	MonikerIDs            []ID // possibly empty
+	StartLine              int  // 0-indexed, inclusive
+	StartCharacter         int  // 0-indexed, inclusive
+	EndLine                int  // 0-indexed, inclusive
+	EndCharacter           int  // 0-indexed, inclusive
+	DefinitionResultID     ID   // possibly empty
+	ReferenceResultID      ID   // possibly empty
+	ImplementationResultID ID   // possibly empty
+	HoverResultID          ID   // possibly empty
+	DocumentationResultID  ID   // possibly empty
+	MonikerIDs             []ID // possibly empty
 }
 
 // MonikerData represent a unique name (eventually) attached to a range.
 type MonikerData struct {
-	Kind                 string // local, import, export
+	Kind                 string // local, import, export, implementation
 	Scheme               string // name of the package manager type
 	Identifier           string // unique identifier
 	PackageInformationID ID     // possibly empty
@@ -117,6 +118,7 @@ type LocationData struct {
 // MonikerLocations pairs a moniker scheme and identifier with the set of locations
 // with that within a particular bundle.
 type MonikerLocations struct {
+	Kind       string
 	Scheme     string
 	Identifier string
 	Locations  []LocationData
@@ -186,6 +188,22 @@ type DocumentationMapping struct {
 	FilePath *string `json:"filePath"`
 }
 
+// DocumentationSearchResult describes a single documentation search result, from the
+// lsif_data_docs_search_public or lsif_data_docs_search_private table.
+type DocumentationSearchResult struct {
+	ID        int64
+	RepoID    int32
+	DumpID    int32
+	DumpRoot  string
+	PathID    string
+	Detail    string
+	Lang      string
+	RepoName  string
+	Tags      []string
+	SearchKey string
+	Label     string
+}
+
 // Package pairs a package name and the dump that provides it.
 type Package struct {
 	Scheme  string
@@ -210,6 +228,7 @@ type GroupedBundleDataChans struct {
 	ResultChunks          chan IndexedResultChunkData
 	Definitions           chan MonikerLocations
 	References            chan MonikerLocations
+	Implementations       chan MonikerLocations
 	Packages              []Package
 	PackageReferences     []PackageReference
 	DocumentationPages    chan *DocumentationPageData
@@ -221,8 +240,8 @@ type GroupedBundleDataMaps struct {
 	Meta              MetaData
 	Documents         map[string]DocumentData
 	ResultChunks      map[int]ResultChunkData
-	Definitions       map[string]map[string][]LocationData
-	References        map[string]map[string][]LocationData
+	Definitions       map[string]map[string]map[string][]LocationData
+	References        map[string]map[string]map[string][]LocationData
 	Packages          []Package
 	PackageReferences []PackageReference
 }

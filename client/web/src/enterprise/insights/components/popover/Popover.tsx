@@ -1,5 +1,5 @@
 import ReachPopover, { Position, positionDefault } from '@reach/popover'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import FocusLock from 'react-focus-lock'
 
@@ -97,7 +97,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
             targetRef={positionTarget}
             // hidden={true}
             position={position}
-            className={classnames('d-block dropdown-menu', className)}
+            className={classNames('d-block dropdown-menu', className)}
             role="dialog"
             {...otherProps}
         >

@@ -421,6 +421,23 @@ func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (srr *SearchSuggestionsResult) String() string {
+	switch v := srr.inner.(type) {
+	case FileSuggestionResult:
+		return "file:" + v.Path
+	case RepositorySuggestionResult:
+		return "repo:" + v.Name
+	case SymbolSuggestionResult:
+		return "sym:" + v.Name
+	case LanguageSuggestionResult:
+		return "lang:" + v.Name
+	case SearchContextSuggestionResult:
+		return "context:" + v.Spec
+	default:
+		return fmt.Sprintf("UNKNOWN(%T)", srr.inner)
+	}
+}
+
 type RepositorySuggestionResult struct {
 	Name string
 }
@@ -665,8 +682,25 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 func (s *SearchStreamClient) OverwriteSettings(subjectID, contents string) error {
 	return s.Client.OverwriteSettings(subjectID, contents)
 }
+
 func (s *SearchStreamClient) AuthenticatedUserID() string {
 	return s.Client.AuthenticatedUserID()
+}
+
+func (s *SearchStreamClient) Repository(name string) (*Repository, error) {
+	return s.Client.Repository(name)
+}
+
+func (s *SearchStreamClient) CreateSearchContext(input CreateSearchContextInput, repositories []SearchContextRepositoryRevisionsInput) (string, error) {
+	return s.Client.CreateSearchContext(input, repositories)
+}
+
+func (s *SearchStreamClient) GetSearchContext(id string) (*GetSearchContextResult, error) {
+	return s.Client.GetSearchContext(id)
+}
+
+func (s *SearchStreamClient) DeleteSearchContext(id string) error {
+	return s.Client.DeleteSearchContext(id)
 }
 
 func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {

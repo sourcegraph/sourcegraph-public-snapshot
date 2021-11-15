@@ -34,9 +34,9 @@ func TestResolver_InsightSeries(t *testing.T) {
 		resolver := newWithClock(timescale, postgres, clock)
 
 		// Create a mock store, delegating any un-mocked methods to the DB store.
-		dbStore := resolver.insightsStore
+		dbStore := resolver.timeSeriesStore
 		mockStore := store.NewMockInterfaceFrom(dbStore)
-		resolver.insightsStore = mockStore
+		resolver.timeSeriesStore = mockStore
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
 		insightMetadataStore.GetMappedFunc.SetDefaultReturn([]types.Insight{
@@ -46,18 +46,17 @@ func TestResolver_InsightSeries(t *testing.T) {
 				Description: "desc1",
 				Series: []types.InsightViewSeries{
 					{
-						UniqueID:              "unique1",
-						SeriesID:              "1234567",
-						Title:                 "title1",
-						Description:           "desc1",
-						Query:                 "query1",
-						CreatedAt:             now,
-						OldestHistoricalAt:    now,
-						LastRecordedAt:        now,
-						NextRecordingAfter:    now,
-						RecordingIntervalDays: 1,
-						Label:                 "label1",
-						Stroke:                "color1",
+						UniqueID:           "unique1",
+						SeriesID:           "1234567",
+						Title:              "title1",
+						Description:        "desc1",
+						Query:              "query1",
+						CreatedAt:          now,
+						OldestHistoricalAt: now,
+						LastRecordedAt:     now,
+						NextRecordingAfter: now,
+						Label:              "label1",
+						LineColor:          "color1",
 					},
 				},
 			},

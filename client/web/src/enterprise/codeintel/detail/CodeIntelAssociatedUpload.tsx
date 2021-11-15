@@ -49,7 +49,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<CodeIntelAssociatedUpl
                     </span>
                     <span>
                         <Link
-                            to={`/${node.projectRoot.repository.name}/-/settings/code-intelligence/uploads/${node.associatedUpload.id}`}
+                            to={`/${node.projectRoot.repository.name}/-/code-intelligence/uploads/${node.associatedUpload.id}`}
                         >
                             <ChevronRightIcon />
                         </Link>

@@ -39,6 +39,7 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        grantedScopes
         namespace {
             id
             namespaceName
@@ -149,8 +150,8 @@ export function listAffiliatedRepositories(
 ): Observable<NonNullable<AffiliatedRepositoriesResult>> {
     return requestGraphQL<AffiliatedRepositoriesResult, AffiliatedRepositoriesVariables>(
         gql`
-            query AffiliatedRepositories($user: ID!, $codeHost: ID, $query: String) {
-                affiliatedRepositories(user: $user, codeHost: $codeHost, query: $query) {
+            query AffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
+                affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
                     nodes {
                         name
                         codeHost {
@@ -164,7 +165,7 @@ export function listAffiliatedRepositories(
             }
         `,
         {
-            user: args.user,
+            namespace: args.namespace,
             codeHost: args.codeHost ?? null,
             query: args.query ?? null,
         }

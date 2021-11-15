@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -17,6 +18,12 @@ import (
 func NewAuthzStore(db dbutil.DB, clock func() time.Time) database.AuthzStore {
 	return &authzStore{
 		store: Perms(db, clock),
+	}
+}
+
+func NewAuthzStoreWith(other basestore.ShareableStore, clock func() time.Time) database.AuthzStore {
+	return &authzStore{
+		store: PermsWith(other, clock),
 	}
 }
 
@@ -60,7 +67,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 	switch cfg.BindID {
 	case "email":
 		// 🚨 SECURITY: It is critical to ensure only grant emails that are verified.
-		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := database.UserEmailsWith(s.store).ListByUser(ctx, database.UserEmailsListOptions{
 			UserID:       args.UserID,
 			OnlyVerified: true,
 		})
@@ -78,7 +85,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 		}
 
 	case "username":
-		user, err := database.GlobalUsers.GetByID(ctx, args.UserID)
+		user, err := database.UsersWith(s.store).GetByID(ctx, args.UserID)
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}

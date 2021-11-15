@@ -1,7 +1,0 @@
-BEGIN;
-
-DROP INDEX IF EXISTS lsif_data_documents_schema_versions_dump_id_schema_version_bounds;
-DROP INDEX IF EXISTS lsif_data_definitions_schema_versions_dump_id_schema_version_bounds;
-DROP INDEX IF EXISTS lsif_data_references_schema_versions_dump_id_schema_version_bounds;
-
-COMMIT;

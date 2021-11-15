@@ -1,9 +1,8 @@
 import { render, fireEvent } from '@testing-library/react'
 import { mount } from 'enzyme'
-import * as H from 'history'
 import React from 'react'
 import { act } from 'react-dom/test-utils'
-import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownToggle } from 'reactstrap'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,10 +13,14 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
+<<<<<<< HEAD
 import { SearchPatternType } from '../../graphql-operations'
 import { MockTemporarySettings } from '../../settings/temporary/testUtils'
 
+=======
+>>>>>>> main
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { SearchContextMenuItem } from './SearchContextMenu'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
@@ -30,11 +33,6 @@ describe('SearchContextDropdown', () => {
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        history: H.createMemoryHistory(),
-        caseSensitive: true,
-        patternType: SearchPatternType.literal,
-        versionContext: undefined,
-        submitSearch: () => {},
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         isSourcegraphDotCom: false,
@@ -89,16 +87,14 @@ describe('SearchContextDropdown', () => {
     })
 
     it('should be enabled if query does not contain context filter', () => {
-        const element = mount(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repogroup:python)" />)
+        const element = mount(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repo:python)" />)
         const dropdown = element.find(DropdownToggle)
         expect(dropdown.prop('disabled')).toBe(false)
         expect(dropdown.prop('data-tooltip')).toBe('')
     })
 
     it('should be disabled if query contains context filter', () => {
-        const element = mount(
-            <SearchContextDropdown {...defaultProps} query="test (context:foo or repogroup:python)" />
-        )
+        const element = mount(<SearchContextDropdown {...defaultProps} query="test (context:foo or repo:python)" />)
         const dropdown = element.find(DropdownToggle)
         expect(dropdown.prop('disabled')).toBe(true)
         expect(dropdown.prop('data-tooltip')).toBe('Overridden by query')
@@ -114,11 +110,12 @@ describe('SearchContextDropdown', () => {
         })
         element.update()
 
-        const item = element.find(DropdownItem).at(0)
+        const item = element.find(SearchContextMenuItem).at(0)
         item.simulate('click')
 
         sinon.assert.calledOnce(submitSearch)
     })
+<<<<<<< HEAD
 
     it('should not submit search if submitSearchOnSearchContextChange is false', () => {
         const submitSearch = sinon.spy()
@@ -253,4 +250,6 @@ describe('SearchContextDropdown', () => {
             sinon.assert.calledWithExactly(onSettingsChanged, { 'search.contexts.ctaPermanentlyDismissed': true })
         })
     })
+=======
+>>>>>>> main
 })

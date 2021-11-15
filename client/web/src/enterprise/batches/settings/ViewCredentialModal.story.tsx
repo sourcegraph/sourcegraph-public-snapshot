@@ -2,8 +2,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { WebStory } from '../../../components/WebStory'
 import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { ViewCredentialModal } from './ViewCredentialModal'
 
@@ -24,7 +24,7 @@ const credential: BatchChangesCredentialFields = {
 }
 
 add('View', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <ViewCredentialModal
                 {...props}
@@ -38,5 +38,5 @@ add('View', () => (
                 onClose={noop}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

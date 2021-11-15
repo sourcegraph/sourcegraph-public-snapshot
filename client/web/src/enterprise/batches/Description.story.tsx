@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { Description } from './Description'
 
@@ -10,12 +10,12 @@ const { add } = storiesOf('web/batches/Description', module).addDecorator(story 
 ))
 
 add('Overview', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <Description
                 {...props}
                 description="This is an awesome batch change. It will do great things to your codebase."
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

@@ -6,9 +6,15 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../../../core/backend/create-insights-api'
-import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsSettingsCascadeBackend } from '../../../../core/backend/code-insights-setting-cascade-backend'
+import { SupportedInsightSubject } from '../../../../core/types/subjects'
+import {
+    createGlobalSubject,
+    createOrgSubject,
+    createUserSubject,
+    SETTINGS_CASCADE_MOCK,
+} from '../../../../mocks/settings-cascade'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage } from './LangStatsInsightCreationPage'
@@ -31,13 +37,14 @@ const fakeAPIRequest = async () => {
     throw new Error('Network error')
 }
 
-const mockAPI = createMockInsightAPI({
-    getLangStatsInsightContent: async () => {
+class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
+    public getLangStatsInsightContent = async () => {
         await sleep(2000)
 
         return getRandomLangStatsMock()
-    },
-    getRepositorySuggestions: async () => {
+    }
+
+    public getRepositorySuggestions = async () => {
         await sleep(2000)
 
         return [
@@ -46,18 +53,27 @@ const mockAPI = createMockInsightAPI({
             { id: '3', name: 'github.com/another-example/sub-repo-1' },
             { id: '4', name: 'github.com/another-example/sub-repo-2' },
         ]
-    },
-})
+    }
+}
+
+const codeInsightsBackend = new CodeInsightsStoryBackend(SETTINGS_CASCADE_MOCK, {} as any)
+
+const SUBJECTS = [
+    createUserSubject('Emir Kusturica'),
+    createOrgSubject('Warner Brothers'),
+    createOrgSubject('Jim Jarmusch Org'),
+    createGlobalSubject('Global'),
+] as SupportedInsightSubject[]
 
 add('Page', () => (
-    <InsightsApiContext.Provider value={mockAPI}>
+    <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
         <LangStatsInsightCreationPage
+            subjects={SUBJECTS}
             visibility="user_test_id"
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            settingsCascade={SETTINGS_CASCADE_MOCK}
             onInsightCreateRequest={fakeAPIRequest}
             onSuccessfulCreation={noop}
             onCancel={noop}
         />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))

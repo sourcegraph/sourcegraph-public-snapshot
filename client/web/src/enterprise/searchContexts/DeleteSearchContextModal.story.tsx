@@ -5,7 +5,7 @@ import sinon from 'sinon'
 
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
 
@@ -23,7 +23,7 @@ const searchContext = {
 add(
     'delete modal',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => (
                 <DeleteSearchContextModal
                     {...webProps}
@@ -33,7 +33,7 @@ add(
                     deleteSearchContext={sinon.fake(() => NEVER)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )

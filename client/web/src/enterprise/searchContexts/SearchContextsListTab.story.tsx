@@ -9,8 +9,8 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
+import { WebStory } from '../../components/WebStory'
 import { ListSearchContextsResult } from '../../graphql-operations'
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
 import { SearchContextsListTab, SearchContextsListTabProps } from './SearchContextsListTab'
 
@@ -89,35 +89,31 @@ const propsWithContexts: SearchContextsListTabProps = {
         }),
 }
 
-add('default', () => <EnterpriseWebStory>{() => <SearchContextsListTab {...defaultProps} />}</EnterpriseWebStory>, {})
+add('default', () => <WebStory>{() => <SearchContextsListTab {...defaultProps} />}</WebStory>, {})
 
 add(
     'with SourcegraphDotCom disabled',
-    () => (
-        <EnterpriseWebStory>
-            {() => <SearchContextsListTab {...propsWithContexts} isSourcegraphDotCom={false} />}
-        </EnterpriseWebStory>
-    ),
+    () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} isSourcegraphDotCom={false} />}</WebStory>,
     {}
 )
 
 add(
     'with 1 auto-defined context',
-    () => <EnterpriseWebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</EnterpriseWebStory>,
+    () => <WebStory>{() => <SearchContextsListTab {...propsWithContexts} />}</WebStory>,
     {}
 )
 
 add(
     'with 2 auto-defined contexts',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {() => (
                 <SearchContextsListTab
                     {...propsWithContexts}
                     fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(2)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )
@@ -125,14 +121,14 @@ add(
 add(
     'with 3 auto-defined contexts',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {() => (
                 <SearchContextsListTab
                     {...propsWithContexts}
                     fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(3)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )
@@ -140,14 +136,14 @@ add(
 add(
     'with 4 auto-defined contexts',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {() => (
                 <SearchContextsListTab
                     {...propsWithContexts}
                     fetchAutoDefinedSearchContexts={mockFetchAutoDefinedSearchContexts(4)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )

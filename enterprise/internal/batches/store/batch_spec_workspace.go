@@ -13,6 +13,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -30,6 +31,10 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"file_matches",
 	"only_fetch_workspace",
 	"steps",
+	"unsupported",
+	"ignored",
+	"skipped",
+	"cached_result_found",
 
 	"created_at",
 	"updated_at",
@@ -50,6 +55,10 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.file_matches",
 	"batch_spec_workspaces.only_fetch_workspace",
 	"batch_spec_workspaces.steps",
+	"batch_spec_workspaces.unsupported",
+	"batch_spec_workspaces.ignored",
+	"batch_spec_workspaces.skipped",
+	"batch_spec_workspaces.cached_result_found",
 
 	"batch_spec_workspaces.created_at",
 	"batch_spec_workspaces.updated_at",
@@ -106,6 +115,10 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
 				marshaledSteps,
+				wj.Unsupported,
+				wj.Ignored,
+				wj.Skipped,
+				wj.CachedResultFound,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
@@ -121,6 +134,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 		s.Handle().DB(),
 		"batch_spec_workspaces",
 		batchSpecWorkspaceInsertColumns,
+		"",
 		BatchSpecWorkspaceColums,
 		func(rows *sql.Rows) error {
 			i++
@@ -144,7 +158,7 @@ func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWork
 
 	q := getBatchSpecWorkspaceQuery(&opts)
 	var c btypes.BatchSpecWorkspace
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpecWorkspace(&c, sc)
 	})
 	if err != nil {
@@ -185,6 +199,7 @@ type ListBatchSpecWorkspacesOpts struct {
 	LimitOpts
 	Cursor      int64
 	BatchSpecID int64
+	IDs         []int64
 }
 
 // ListBatchSpecWorkspaces lists batch changes with the given filters.
@@ -195,7 +210,7 @@ func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecW
 	q := listBatchSpecWorkspacesQuery(opts)
 
 	cs = make([]*btypes.BatchSpecWorkspace, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpecWorkspace
 		if err := scanBatchSpecWorkspace(&c, sc); err != nil {
 			return err
@@ -225,6 +240,10 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
+	if len(opts.IDs) != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY(%s)", pq.Array(opts.IDs)))
+	}
+
 	if opts.BatchSpecID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
 	}
@@ -240,7 +259,36 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 	)
 }
 
-func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
+const markSkippedBatchSpecWorkspacesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspaces.go:MarkSkippedBatchSpecWorkspaces
+UPDATE
+	batch_spec_workspaces
+SET skipped = TRUE
+FROM batch_specs
+WHERE
+	batch_spec_workspaces.batch_spec_id = %s
+AND
+    batch_specs.id = batch_spec_workspaces.batch_spec_id
+AND NOT %s
+`
+
+// MarkSkippedBatchSpecWorkspaces marks the workspace that were skipped in
+// CreateBatchSpecWorkspaceExecutionJobs as skipped.
+func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(batchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(
+		markSkippedBatchSpecWorkspacesQueryFmtstr,
+		batchSpecID,
+		sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr),
+	)
+	return s.Exec(ctx, q)
+}
+
+func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
 	var steps json.RawMessage
 
 	if err := s.Scan(
@@ -254,6 +302,10 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 		pq.Array(&wj.FileMatches),
 		&wj.OnlyFetchWorkspace,
 		&steps,
+		&wj.Unsupported,
+		&wj.Ignored,
+		&wj.Skipped,
+		&wj.CachedResultFound,
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {
@@ -282,7 +334,7 @@ func scanBatchSpecWorkspaces(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpe
 
 	var jobs []*btypes.BatchSpecWorkspace
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.BatchSpecWorkspace
 		if err = scanBatchSpecWorkspace(&j, sc); err != nil {
 			return err

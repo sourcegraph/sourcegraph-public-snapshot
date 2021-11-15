@@ -14,8 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,15 +23,18 @@ import (
 func TestTransformRecord(t *testing.T) {
 	accessToken := "thisissecret-dont-tell-anyone"
 	var accessTokenID int64 = 1234
-	database.Mocks.AccessTokens.CreateInternal = func(subjectUserID int32, scopes []string, note string, creatorID int32) (int64, string, error) {
-		return accessTokenID, accessToken, nil
-	}
-	t.Cleanup(func() { database.Mocks.AccessTokens.CreateInternal = nil })
 
-	database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
+	accessTokens := dbmock.NewMockAccessTokenStore()
+	accessTokens.CreateInternalFunc.SetDefaultReturn(accessTokenID, accessToken, nil)
+
+	repos := dbmock.NewMockRepoStore()
+	repos.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, Name: "github.com/sourcegraph/sourcegraph"}, nil
-	}
-	t.Cleanup(func() { database.Mocks.Repos.Get = nil })
+	})
+
+	db := dbmock.NewMockDB()
+	db.AccessTokensFunc.SetDefaultReturn(accessTokens)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
 	t.Cleanup(func() {
@@ -58,25 +60,23 @@ func TestTransformRecord(t *testing.T) {
 		BatchSpecWorkspaceID: workspace.ID,
 	}
 
-	store := &dummyBatchesStore{dbHandle: &dbtesting.MockDB{}, batchSpec: batchSpec, batchSpecWorkspace: workspace}
+	store := &dummyBatchesStore{mockDB: db, batchSpec: batchSpec, batchSpecWorkspace: workspace}
 
 	wantInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
-		Workspaces: []*batcheslib.Workspace{
-			{
-				Repository: batcheslib.WorkspaceRepo{
-					ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
-					Name: "github.com/sourcegraph/sourcegraph",
-				},
-				Branch: batcheslib.WorkspaceBranch{
-					Name:   workspace.Branch,
-					Target: batcheslib.Commit{OID: workspace.Commit},
-				},
-				Path:               workspace.Path,
-				OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-				Steps:              workspace.Steps,
-				SearchResultPaths:  workspace.FileMatches,
+		Workspace: batcheslib.Workspace{
+			Repository: batcheslib.WorkspaceRepo{
+				ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
+				Name: "github.com/sourcegraph/sourcegraph",
 			},
+			Branch: batcheslib.WorkspaceBranch{
+				Name:   workspace.Branch,
+				Target: batcheslib.Commit{OID: workspace.Commit},
+			},
+			Path:               workspace.Path,
+			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+			Steps:              workspace.Steps,
+			SearchResultPaths:  workspace.FileMatches,
 		},
 	}
 
@@ -95,12 +95,8 @@ func TestTransformRecord(t *testing.T) {
 		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{
-					"batch", "exec",
-					"-f", "input.json",
-					"-skip-errors",
-				},
-				Dir: ".",
+				Commands: []string{"batch", "exec", "-f", "input.json"},
+				Dir:      ".",
 				Env: []string{
 					"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
 					"SRC_ACCESS_TOKEN=" + accessToken,
@@ -123,7 +119,7 @@ func TestTransformRecord(t *testing.T) {
 }
 
 type dummyBatchesStore struct {
-	dbHandle           dbutil.DB
+	mockDB             database.DB
 	batchSpec          *btypes.BatchSpec
 	batchSpecWorkspace *btypes.BatchSpecWorkspace
 
@@ -136,7 +132,7 @@ func (db *dummyBatchesStore) GetBatchSpecWorkspace(context.Context, store.GetBat
 func (db *dummyBatchesStore) GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error) {
 	return db.batchSpec, nil
 }
-func (db *dummyBatchesStore) DB() dbutil.DB { return db.dbHandle }
+func (db *dummyBatchesStore) DatabaseDB() database.DB { return db.mockDB }
 func (db *dummyBatchesStore) SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
 	db.accessTokenID = tokenID
 	return nil

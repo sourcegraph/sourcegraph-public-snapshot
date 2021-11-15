@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import MessageTextOutlineIcon from 'mdi-react/MessageTextOutlineIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
@@ -19,6 +20,8 @@ import { NamespaceProps } from '../namespaces'
 import { PatternTypeProps } from '../search'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
+
+import styles from './SavedSearchListPage.module.scss'
 
 interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
     savedSearch: GQL.ISavedSearch
@@ -61,9 +64,9 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
     public render(): JSX.Element | null {
         return (
-            <div className="saved-search-list-page__row list-group-item test-saved-search-list-page-row">
+            <div className={classNames(styles.row, 'list-group-item test-saved-search-list-page-row')}>
                 <div className="d-flex">
-                    <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
+                    <MessageTextOutlineIcon className={classNames(styles.rowIcon, 'icon-inline')} />
                     <Link
                         to={
                             '/search?' +
@@ -133,7 +136,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="saved-search-list-page">
+            <div className={styles.savedSearchListPage}>
                 <PageHeader
                     path={[{ text: 'Saved searches' }]}
                     headingElement="h2"

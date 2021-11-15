@@ -21,6 +21,7 @@ interface NavGroupProps {
 
 interface NavItemProps {
     icon?: React.ComponentType<{ className?: string }>
+    className?: string
     children: React.ReactNode
 }
 
@@ -30,6 +31,7 @@ interface NavActionsProps {
 
 interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
     external?: boolean
+    className?: string
 }
 
 const useOutsideClickDetector = (
@@ -96,7 +98,7 @@ export const NavAction: React.FunctionComponent<NavActionsProps> = ({ children }
     </>
 )
 
-export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, icon }) => {
+export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, className, icon }) => {
     if (!children) {
         throw new Error('NavItem must be include at least one child')
     }
@@ -104,15 +106,17 @@ export const NavItem: React.FunctionComponent<NavItemProps> = ({ children, icon 
     return (
         <>
             {React.Children.map(children, child => (
-                <li className={navItemStyles.item}>{React.cloneElement(child as React.ReactElement, { icon })}</li>
+                <li className={classNames(navItemStyles.item, className)}>
+                    {React.cloneElement(child as React.ReactElement, { icon })}
+                </li>
             ))}
         </>
     )
 }
 
-export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, children, to, external }) => {
+export const NavLink: React.FunctionComponent<NavLinkProps> = ({ icon: Icon, children, to, external, className }) => {
     const content = (
-        <span className={navItemStyles.linkContent}>
+        <span className={classNames(navItemStyles.linkContent, className)}>
             {Icon ? <Icon className={classNames('icon-inline', navItemStyles.icon)} /> : null}
             <span
                 className={classNames(navItemStyles.text, {

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
@@ -27,7 +27,7 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
     const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage, description } = props
 
     return (
-        <section className={classnames(styles.livePreview, className)}>
+        <section className={classNames(styles.livePreview, className)}>
             <div className="d-flex align-items-center mb-1">
                 Live preview
                 <button type="button" disabled={disabled} className="btn btn-icon ml-1" onClick={onUpdateClick}>
@@ -37,7 +37,7 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
 
             {loading && (
                 <div
-                    className={classnames(
+                    className={classNames(
                         styles.livePreviewLoader,
                         'flex-grow-1 d-flex flex-column align-items-center justify-content-center'
                     )}
@@ -49,9 +49,9 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
             {isErrorLike(dataOrError) && <ErrorAlert className="m-0" error={dataOrError} />}
 
             {!loading && !isErrorLike(dataOrError) && (
-                <div className={classnames(styles.livePreviewChartContainer, 'card')}>
+                <div className={classNames(styles.livePreviewChartContainer, 'card')}>
                     <ChartViewContent
-                        className={classnames(styles.livePreviewChart, 'card-body', {
+                        className={classNames(styles.livePreviewChart, 'card-body', {
                             [styles.livePreviewChartWithMock]: !dataOrError,
                         })}
                         viewID="search-insight-live-preview"

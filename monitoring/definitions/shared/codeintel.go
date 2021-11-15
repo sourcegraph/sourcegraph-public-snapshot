@@ -1,6 +1,10 @@
 package shared
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 // CodeIntelligence exports available shared observable and group constructors related to
 // the code intelligence team. Some of these panels are useful from multiple container
@@ -282,6 +286,32 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 		},
 		Handlers: NoAlertsOption("none"),
 	})
+}
+
+// src_executor_run_lock_wait_total
+// src_executor_run_lock_held_total
+func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  "Run lock contention",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				Standard.Count("wait")(ObservableConstructorOptions{
+					MetricNameRoot:        "executor_run_lock_wait",
+					MetricDescriptionRoot: "milliseconds",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of milliseconds spent waiting for the run lock every 5m
+				`).Observable(),
+
+				Standard.Count("held")(ObservableConstructorOptions{
+					MetricNameRoot:        "executor_run_lock_held",
+					MetricDescriptionRoot: "milliseconds",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of milliseconds spent holding for the run lock every 5m
+				`).Observable(),
+			},
+		},
+	}
 }
 
 // src_apiworker_command_total
@@ -657,7 +687,7 @@ func (codeIntelligence) NewAutoIndexEnqueuerGroup(containerName string) monitori
 // src_codeintel_background_errors_total
 func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "[codeintel] Janitor stats",
+		Title:  fmt.Sprintf("%s: %s", titlecase("codeintel"), "Janitor stats"),
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
@@ -672,7 +702,14 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 					MetricNameRoot:        "codeintel_background_upload_records_scanned",
 					MetricDescriptionRoot: "lsif upload",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of upload recrods considered for data retention scanning every 5m
+					Number of upload records considered for data retention scanning every 5m
+				`).Observable(),
+
+				Standard.Count("commits scanned")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_commits_scanned",
+					MetricDescriptionRoot: "lsif upload",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of commits considered for data retention scanning every 5m
 				`).Observable(),
 
 				Standard.Count("records expired")(ObservableConstructorOptions{
@@ -703,6 +740,15 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
 				`).Observable(),
+
+				Standard.Count("records deleted")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_documentation_search_records_removed",
+					MetricDescriptionRoot: "documentation search record",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of documentation search records removed from the codeintel-db database every 5m
+				`).Observable(),
+			},
+			{
 
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background",

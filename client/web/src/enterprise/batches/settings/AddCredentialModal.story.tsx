@@ -4,8 +4,8 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { WebStory } from '../../../components/WebStory'
 import { BatchChangesCredentialFields, ExternalServiceKind } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { AddCredentialModal } from './AddCredentialModal'
 
@@ -30,7 +30,7 @@ add('Requires SSH - step 1', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <AddCredentialModal
                     {...props}
@@ -47,11 +47,11 @@ add('Requires SSH - step 1', () => {
                     createBatchChangesCredential={createBatchChangesCredential}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 add('Requires SSH - step 2', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <AddCredentialModal
                 {...props}
@@ -68,11 +68,11 @@ add('Requires SSH - step 2', () => (
                 initialStep="get-ssh-key"
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('GitHub', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <AddCredentialModal
                 {...props}
@@ -84,11 +84,11 @@ add('GitHub', () => (
                 onCancel={noop}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('GitLab', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <AddCredentialModal
                 {...props}
@@ -100,11 +100,11 @@ add('GitLab', () => (
                 onCancel={noop}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Bitbucket Server', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <AddCredentialModal
                 {...props}
@@ -116,5 +116,5 @@ add('Bitbucket Server', () => (
                 onCancel={noop}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

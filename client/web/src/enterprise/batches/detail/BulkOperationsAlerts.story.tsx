@@ -4,7 +4,7 @@ import React from 'react'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BulkOperationsAlerts } from './BulkOperationsAlerts'
 
@@ -21,11 +21,7 @@ add('Processing', () => {
         }),
         []
     )
-    return (
-        <EnterpriseWebStory>
-            {props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}
-        </EnterpriseWebStory>
-    )
+    return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
 })
 add('Failed', () => {
     const bulkOperations = useMemo(
@@ -36,11 +32,7 @@ add('Failed', () => {
         }),
         []
     )
-    return (
-        <EnterpriseWebStory>
-            {props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}
-        </EnterpriseWebStory>
-    )
+    return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
 })
 add('Completed', () => {
     const bulkOperations = useMemo(
@@ -51,9 +43,5 @@ add('Completed', () => {
         }),
         []
     )
-    return (
-        <EnterpriseWebStory>
-            {props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}
-        </EnterpriseWebStory>
-    )
+    return <WebStory>{props => <BulkOperationsAlerts {...props} bulkOperations={bulkOperations} />}</WebStory>
 })

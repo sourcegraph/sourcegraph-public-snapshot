@@ -84,7 +84,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 		store: r.store,
 		desc:  r.changesetSpec.Spec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
-		repoResolver: graphqlbackend.NewRepositoryResolver(r.store.DB(), r.repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
 	}
 
@@ -174,7 +174,7 @@ func (r *changesetDescriptionResolver) Diff(ctx context.Context) (graphqlbackend
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repoResolver, r.desc.BaseRev, diff)
+	return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), r.repoResolver, r.desc.BaseRev, diff)
 }
 
 func (r *changesetDescriptionResolver) Commits() []graphqlbackend.GitCommitDescriptionResolver {
@@ -203,7 +203,7 @@ type gitCommitDescriptionResolver struct {
 
 func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 	return graphqlbackend.NewPersonResolver(
-		r.store.DB(),
+		r.store.DatabaseDB(),
 		r.authorName,
 		r.authorEmail,
 		// Try to find the corresponding Sourcegraph user.

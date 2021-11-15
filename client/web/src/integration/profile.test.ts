@@ -3,7 +3,7 @@ import assert from 'assert'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { UserAreaUserFields } from '../graphql-operations'
+import { UserSettingsAreaUserFields } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -26,7 +26,7 @@ describe('User profile page', () => {
     afterEach(() => testContext?.dispose())
 
     it('updates display name', async () => {
-        const USER: UserAreaUserFields = {
+        const USER: UserSettingsAreaUserFields = {
             __typename: 'User',
             id: 'VXNlcjoxODkyNw==',
             username: 'test',
@@ -47,6 +47,9 @@ describe('User profile page', () => {
             ...commonWebGraphQlResults,
             UserAreaUserProfile: () => ({
                 user: USER,
+            }),
+            UserSettingsAreaUserProfile: () => ({
+                node: USER,
             }),
             UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),
         })

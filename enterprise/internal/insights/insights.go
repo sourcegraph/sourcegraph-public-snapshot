@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -37,7 +38,7 @@ func IsEnabled() bool {
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, postgres dbutil.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if !IsEnabled() {
 		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
@@ -59,9 +60,9 @@ func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oob
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
-	timescaleDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN
+	timescaleDSN := conf.Get().ServiceConnections().CodeInsightsTimescaleDSN
 	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.CodeInsightsTimescaleDSN; timescaleDSN != newDSN {
+		if newDSN := conf.Get().ServiceConnections().CodeInsightsTimescaleDSN; timescaleDSN != newDSN {
 			log.Fatalf("Detected codeinsights database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+root_dir=$(pwd)
 set -ex
 
 if [ -z "$IMAGE" ]; then
@@ -26,8 +27,8 @@ function cleanup() {
   fi
 
   jobs -p -r | xargs kill
-  echo "--- server logs"
-  docker logs --timestamps "$CONTAINER"
+  echo "--- dump server logs"
+  docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
   echo "--- docker cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"
@@ -56,7 +57,7 @@ done"
 # shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
   echo "^^^ +++"
-  echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
+  echo "$URL was not accessible within 60s. Here's the output of docker inspect:"
   docker inspect "$CONTAINER"
   exit 1
 fi

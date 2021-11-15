@@ -9,9 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -27,13 +30,14 @@ func main() {
 
 	go setAuthzProviders()
 
-	shared.Start(map[string]shared.Job{
+	shared.Start(map[string]job.Job{
 		"codeintel-commitgraph":    codeintel.NewCommitGraphJob(),
 		"codeintel-janitor":        codeintel.NewJanitorJob(),
 		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
 		"codehost-version-syncing": versions.NewSyncingJob(),
 		"insights-job":             insights.NewInsightsJob(),
 		"batches-janitor":          batches.NewJanitorJob(),
+		"executors-janitor":        executors.NewJanitorJob(),
 	})
 }
 
@@ -43,7 +47,7 @@ func main() {
 // the jobs configured in this service. This also enables repository update operations to fetch
 // permissions from code hosts.
 func setAuthzProviders() {
-	db, err := shared.InitDatabase()
+	db, err := workerdb.Init()
 	if err != nil {
 		return
 	}

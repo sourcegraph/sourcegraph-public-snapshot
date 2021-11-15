@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/dineshappavoo/basex"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,6 +36,16 @@ func (s SQLColumns) ToSqlf() []*sqlf.Query {
 		columns = append(columns, sqlf.Sprintf(col))
 	}
 	return columns
+}
+
+// FmtStr returns a sqlf format string that can be concatenated to a query and
+// contains as many `%s` as columns.
+func (s SQLColumns) FmtStr() string {
+	elems := make([]string, len(s))
+	for i := range s {
+		elems[i] = "%s"
+	}
+	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
 // seededRand is used in RandomID() to generate a "random" number.
@@ -82,6 +94,10 @@ func (s *Store) ObservationContext() *observation.Context {
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
 
+// DatabaseDB returns a database.DB with the same handle that this Store was
+// instantiated with.
+func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+
 // DB returns the underlying dbutil.DB that this Store was
 // instantiated with.
 // It's here for legacy reason to pass the dbutil.DB to a repos.Store while
@@ -125,17 +141,17 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
-func (s *Store) Repos() *database.RepoStore {
+func (s *Store) Repos() database.RepoStore {
 	return database.ReposWith(s)
 }
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
-func (s *Store) ExternalServices() *database.ExternalServiceStore {
+func (s *Store) ExternalServices() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
-func (s *Store) UserCredentials() *database.UserCredentialsStore {
+func (s *Store) UserCredentials() database.UserCredentialsStore {
 	return database.UserCredentialsWith(s, s.key)
 }
 
@@ -201,6 +217,7 @@ type operations struct {
 	deleteExpiredChangesetSpecs              *observation.Operation
 	getRewirerMappings                       *observation.Operation
 	listChangesetSpecsWithConflictingHeadRef *observation.Operation
+	deleteChangesetSpecs                     *observation.Operation
 
 	createChangeset                   *observation.Operation
 	deleteChangeset                   *observation.Operation
@@ -230,15 +247,18 @@ type operations struct {
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
 
-	createBatchSpecWorkspace *observation.Operation
-	getBatchSpecWorkspace    *observation.Operation
-	listBatchSpecWorkspaces  *observation.Operation
+	createBatchSpecWorkspace       *observation.Operation
+	getBatchSpecWorkspace          *observation.Operation
+	listBatchSpecWorkspaces        *observation.Operation
+	markSkippedBatchSpecWorkspaces *observation.Operation
 
-	createBatchSpecWorkspaceExecutionJob  *observation.Operation
-	createBatchSpecWorkspaceExecutionJobs *observation.Operation
-	getBatchSpecWorkspaceExecutionJob     *observation.Operation
-	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
+	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
+	getBatchSpecWorkspaceExecutionJob                  *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs                *observation.Operation
+	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -246,6 +266,11 @@ type operations struct {
 
 	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
 	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
+
+	getBatchSpecExecutionCacheEntry      *observation.Operation
+	markUsedBatchSpecExecutionCacheEntry *observation.Operation
+	createBatchSpecExecutionCacheEntry   *observation.Operation
+	cleanBatchSpecExecutionCacheEntries  *observation.Operation
 }
 
 var (
@@ -322,6 +347,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetSpec:                         op("GetChangesetSpec"),
 			listChangesetSpecs:                       op("ListChangesetSpecs"),
 			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			deleteChangesetSpecs:                     op("DeleteChangesetSpecs"),
 			getRewirerMappings:                       op("GetRewirerMappings"),
 			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
 
@@ -353,15 +379,18 @@ func newOperations(observationContext *observation.Context) *operations {
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
 
-			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
-			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
-			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
-			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
-			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
+			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
+			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
+			getBatchSpecWorkspaceExecutionJob:                  op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:                op("ListBatchSpecWorkspaceExecutionJobs"),
+			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
+			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
+			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
@@ -369,20 +398,21 @@ func newOperations(observationContext *observation.Context) *operations {
 
 			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
 			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
+
+			getBatchSpecExecutionCacheEntry:      op("GetBatchSpecExecutionCacheEntry"),
+			markUsedBatchSpecExecutionCacheEntry: op("MarkUsedBatchSpecExecutionCacheEntry"),
+			createBatchSpecExecutionCacheEntry:   op("CreateBatchSpecExecutionCacheEntry"),
+
+			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
 		}
 	})
 
 	return singletonOperations
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...interface{}) error
-}
-
-// a scanFunc scans one or more rows from a scanner, returning
+// a scanFunc scans one or more rows from a dbutil.Scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+type scanFunc func(dbutil.Scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()
@@ -459,4 +489,9 @@ func (o LimitOpts) ToDB() string {
 		limitClause = fmt.Sprintf("LIMIT %d", o.DBLimit())
 	}
 	return limitClause
+}
+
+func isUniqueConstraintViolation(err error, constraintName string) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
 }

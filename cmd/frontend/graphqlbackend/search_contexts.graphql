@@ -1,9 +1,5 @@
 extend type Mutation {
     """
-    Converts a version context to an equivalent instance-level search context. Only available to site admins.
-    """
-    convertVersionContextToSearchContext(name: String!): SearchContext!
-    """
     Create search context.
     """
     createSearchContext(

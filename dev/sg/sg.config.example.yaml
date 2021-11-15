@@ -58,7 +58,7 @@ commands:
       - cmd/repo-updater
 
   caddy:
-    cmd: .bin/caddy run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION}_$([[ "$(go env GOOS)" = "darwin" ]] && echo "mac" || echo "$(go env GOOS)")_$(go env GOARCH) run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
         linux)
@@ -68,8 +68,8 @@ commands:
           os="mac"
           ;;
       esac
-      name="caddy_${CADDY_VERSION}_${os}_amd64"
-      target="$PWD/.bin/caddy"
+      name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
+      target="$PWD/.bin/$name"
       url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
 
       if [ ! -f "${target}" ]; then
@@ -79,7 +79,7 @@ commands:
         chmod +x ${target}
       fi
     env:
-      CADDY_VERSION: 2.3.0
+      CADDY_VERSION: 2.4.5
       SOURCEGRAPH_HTTPS_DOMAIN: sourcegraph.test
       SOURCEGRAPH_HTTPS_PORT: 3443
 
@@ -89,7 +89,7 @@ commands:
     env:
       WEBPACK_DEV_SERVER: 1
       NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=4096"
+      NODE_OPTIONS: "--max_old_space_size=8192"
 
 checks:
   docker:

@@ -23,10 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "codemonitorsdb"
-}
-
 func TestCreateCodeMonitor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -371,7 +367,7 @@ func TestQueryMonitor(t *testing.T) {
 		func() error { return r.store.EnqueueTriggerQueries(ctx) },
 		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
 		func() error {
-			return (&storetest.TestStore{Store: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
+			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
 		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
@@ -383,7 +379,7 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		func() error {
-			return (&storetest.TestStore{Store: r.store}).SetJobStatus(ctx, storetest.TriggerJobs, storetest.Completed, 1)
+			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.TriggerJobs, storetest.Completed, 1)
 		},
 		// This will create a second trigger job (id = 3) for the first monitor. Since
 		// the job with id = 2 is still queued, no new job will be enqueued for query 2.
@@ -403,7 +399,7 @@ func TestQueryMonitor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -639,7 +635,7 @@ func TestEditCodeMonitor(t *testing.T) {
 
 	// Update the code monitor.
 	// We update all fields, delete one action, and add a new action.
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, r, nil, nil, nil)
+	schema, err := graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, nil, r, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,12 +4,12 @@ import { Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
+import { WebStory } from '../../../components/WebStory'
 import { TemporarySettingsContext } from '../../../settings/temporary/TemporarySettingsProvider'
 import {
     InMemoryMockSettingsBackend,
     TemporarySettingsStorage,
 } from '../../../settings/temporary/TemporarySettingsStorage'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { BetaConfirmationModal, BetaConfirmationModalContent } from './BetaConfirmationModal'
 
@@ -26,11 +26,7 @@ const mockClient = createMockClient(
 
 const Story: Meta = {
     title: 'web/insights/BetaConfirmationModal',
-    decorators: [
-        story => (
-            <EnterpriseWebStory>{() => <div className="p-3 container web-content">{story()}</div>}</EnterpriseWebStory>
-        ),
-    ],
+    decorators: [story => <WebStory>{() => <div className="p-3 container web-content">{story()}</div>}</WebStory>],
 }
 
 export default Story

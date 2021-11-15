@@ -17,9 +17,10 @@ func TestUser_UsageStatistics(t *testing.T) {
 		}, nil
 	}
 	defer func() { usagestatsdeprecated.MockGetByUserID = nil }()
+	db := database.NewDB(nil)
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					node(id: "VXNlcjox") {

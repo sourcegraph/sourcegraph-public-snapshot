@@ -5,13 +5,14 @@ import (
 
 	dbmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/migration"
 	lsifmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/migration"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // registerMigrations registers all out-of-band migration instances that should run for
 // the current version of Sourcegraph.
-func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, services *Services) error {
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DiagnosticsCountMigrationID, // 1
 		lsifmigrations.NewDiagnosticsCountMigrator(services.lsifStore, config.DiagnosticsCountMigrationBatchSize),
@@ -44,18 +45,20 @@ func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRun
 		return err
 	}
 
-	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.APIDocsSearchMigrationID, // 12
-		lsifmigrations.NewAPIDocsSearchMigrator(
-			services.lsifStore,
-			services.dbStore,
-			services.repoStore,
-			services.gitserverClient,
-			config.APIDocsSearchMigrationBatchSize,
-		),
-		oobmigration.MigratorOptions{Interval: config.APIDocsSearchMigrationBatchInterval},
-	); err != nil {
-		return err
+	if conf.APIDocsSearchIndexingEnabled() {
+		if err := outOfBandMigrationRunner.Register(
+			lsifmigrations.APIDocsSearchMigrationID, // 12
+			lsifmigrations.NewAPIDocsSearchMigrator(
+				services.lsifStore,
+				services.dbStore,
+				services.repoStore,
+				services.gitserverClient,
+				config.APIDocsSearchMigrationBatchSize,
+			),
+			oobmigration.MigratorOptions{Interval: config.APIDocsSearchMigrationBatchInterval},
+		); err != nil {
+			return err
+		}
 	}
 
 	if err := outOfBandMigrationRunner.Register(

@@ -1,5 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
-import { useMemo, useCallback } from '@storybook/addons'
+import { useMemo } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
@@ -9,28 +9,24 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import {
-    BatchChangeByNamespaceResult,
-    BatchChangeFields,
-    BulkOperationState,
-    BulkOperationType,
-    ChangesetCheckState,
-    ChangesetReviewState,
-    ChangesetSpecType,
-    ChangesetState,
-} from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
+import { BatchChangeByNamespaceResult, BatchChangeFields } from '../../../graphql-operations'
 
 import {
-    queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
+    BULK_OPERATIONS,
+    CHANGESETS,
 } from './backend'
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
-import { MOCK_BATCH_CHANGE } from './BatchChangeDetailsPage.mock'
+import {
+    MOCK_BATCH_CHANGE,
+    MOCK_BULK_OPERATIONS,
+    BATCH_CHANGE_CHANGESETS_RESULT,
+    EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
+} from './BatchChangeDetailsPage.mock'
 
 const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -41,131 +37,6 @@ const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     })
 
 const now = new Date()
-
-const queryChangesets: typeof _queryChangesets = () =>
-    of({
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
-        },
-        totalCount: 6,
-        nodes: [
-            {
-                __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.UNPUBLISHED,
-                id: 'someh1',
-                nextSyncAt: null,
-                updatedAt: subDays(now, 5).toISOString(),
-            },
-            {
-                __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.PROCESSING,
-                id: 'someh2',
-                nextSyncAt: null,
-                updatedAt: subDays(now, 5).toISOString(),
-            },
-            {
-                __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.RETRYING,
-                id: 'someh3',
-                nextSyncAt: null,
-                updatedAt: subDays(now, 5).toISOString(),
-            },
-            {
-                __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.FAILED,
-                id: 'someh5',
-                nextSyncAt: null,
-                updatedAt: subDays(now, 5).toISOString(),
-            },
-            {
-                __typename: 'HiddenExternalChangeset',
-                createdAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.OPEN,
-                id: 'someh4',
-                nextSyncAt: null,
-                updatedAt: subDays(now, 5).toISOString(),
-            },
-            {
-                __typename: 'ExternalChangeset',
-                body: 'body',
-                checkState: ChangesetCheckState.PASSED,
-                diffStat: {
-                    __typename: 'DiffStat',
-                    added: 10,
-                    changed: 9,
-                    deleted: 1,
-                },
-                externalID: '123',
-                externalURL: {
-                    url: 'http://test.test/123',
-                },
-                labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
-                repository: {
-                    id: 'repoid',
-                    name: 'github.com/sourcegraph/awesome',
-                    url: 'http://test.test/awesome',
-                },
-                reviewState: ChangesetReviewState.COMMENTED,
-                title: 'Add prettier to all projects',
-                createdAt: subDays(now, 5).toISOString(),
-                updatedAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.OPEN,
-                nextSyncAt: null,
-                id: 'somev1',
-                error: null,
-                syncerError: null,
-                currentSpec: {
-                    id: 'spec-rand-id-1',
-                    type: ChangesetSpecType.BRANCH,
-                    description: {
-                        __typename: 'GitBranchChangesetDescription',
-                        headRef: 'my-branch',
-                    },
-                },
-            },
-            {
-                __typename: 'ExternalChangeset',
-                body: 'body',
-                checkState: null,
-                diffStat: {
-                    __typename: 'DiffStat',
-                    added: 10,
-                    changed: 9,
-                    deleted: 1,
-                },
-                externalID: null,
-                externalURL: null,
-                labels: [],
-                repository: {
-                    id: 'repoid',
-                    name: 'github.com/sourcegraph/awesome',
-                    url: 'http://test.test/awesome',
-                },
-                reviewState: null,
-                title: 'Add prettier to all projects',
-                createdAt: subDays(now, 5).toISOString(),
-                updatedAt: subDays(now, 5).toISOString(),
-                state: ChangesetState.RETRYING,
-                nextSyncAt: null,
-                id: 'somev2',
-                error: 'Cannot create PR, insufficient token scope.',
-                syncerError: null,
-                currentSpec: {
-                    id: 'spec-rand-id-2',
-                    type: ChangesetSpecType.BRANCH,
-                    description: {
-                        __typename: 'GitBranchChangesetDescription',
-                        headRef: 'my-branch',
-                    },
-                },
-            },
-        ],
-    })
 
 const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(['somev1', 'somev2'])
 
@@ -182,92 +53,6 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
                 },
             },
         },
-    })
-
-const queryBulkOperations: typeof _queryBulkOperations = () =>
-    of({
-        totalCount: 3,
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
-        },
-        nodes: [
-            {
-                __typename: 'BulkOperation',
-                id: 'id1',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.PROCESSING,
-                errors: [],
-                progress: 0.25,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: null,
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                __typename: 'BulkOperation',
-                id: 'id2',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.COMPLETED,
-                errors: [],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                __typename: 'BulkOperation',
-                id: 'id3',
-                type: BulkOperationType.DETACH,
-                state: BulkOperationState.COMPLETED,
-                errors: [],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 25,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                __typename: 'BulkOperation',
-                id: 'id4',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.FAILED,
-                errors: [
-                    {
-                        changeset: {
-                            __typename: 'ExternalChangeset',
-                            externalURL: {
-                                url: 'https://test.test/my/pr',
-                            },
-                            repository: {
-                                name: 'sourcegraph/sourcegraph',
-                                url: '/github.com/sourcegraph/sourcegraph',
-                            },
-                            title: 'Changeset title on code host',
-                        },
-                        error: 'Failed to create comment, cannot comment on a PR that is awesome.',
-                    },
-                ],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-        ],
     })
 
 const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
@@ -379,28 +164,42 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                 result: { data },
                 nMatches: Number.POSITIVE_INFINITY,
             },
+            {
+                request: {
+                    query: getDocumentNode(BULK_OPERATIONS),
+                    variables: MATCH_ANY_PARAMETERS,
+                },
+                result: { data: MOCK_BULK_OPERATIONS },
+                nMatches: Number.POSITIVE_INFINITY,
+            },
+            {
+                request: {
+                    query: getDocumentNode(CHANGESETS),
+                    variables: MATCH_ANY_PARAMETERS,
+                },
+                result: { data: { node: BATCH_CHANGE_CHANGESETS_RESULT } },
+                nMatches: Number.POSITIVE_INFINITY,
+            },
         ])
 
         return (
-            <EnterpriseWebStory initialEntries={[url]}>
+            <WebStory initialEntries={[url]}>
                 {props => (
                     <MockedTestProvider link={mocks}>
                         <BatchChangeDetailsPage
                             {...props}
                             namespaceID="namespace123"
                             batchChangeName="awesome-batch-change"
-                            queryChangesets={queryChangesets}
                             queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                             queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                             deleteBatchChange={deleteBatchChange}
-                            queryBulkOperations={queryBulkOperations}
                             queryAllChangesetIDs={queryAllChangesetIDs}
                             extensionsController={{} as any}
                             platformContext={{} as any}
                         />
                     </MockedTestProvider>
                 )}
-            </EnterpriseWebStory>
+            </WebStory>
         )
     })
 }
@@ -415,29 +214,24 @@ add('Empty changesets', () => {
             result: { data: { batchChange: MOCK_BATCH_CHANGE } },
             nMatches: Number.POSITIVE_INFINITY,
         },
+        {
+            request: {
+                query: getDocumentNode(CHANGESETS),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: { node: EMPTY_BATCH_CHANGE_CHANGESETS_RESULT } },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
     ])
 
-    const queryEmptyChangesets = useCallback(
-        () =>
-            of({
-                pageInfo: {
-                    endCursor: null,
-                    hasNextPage: false,
-                },
-                totalCount: 0,
-                nodes: [],
-            }),
-        []
-    )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
                         {...props}
                         namespaceID="namespace123"
                         batchChangeName="awesome-batch-change"
-                        queryChangesets={queryEmptyChangesets}
                         queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
@@ -446,6 +240,6 @@ add('Empty changesets', () => {
                     />
                 </MockedTestProvider>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

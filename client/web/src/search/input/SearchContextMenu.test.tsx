@@ -1,7 +1,7 @@
 import { mount } from 'enzyme'
 import React, { ChangeEvent } from 'react'
 import { act } from 'react-dom/test-utils'
-import { DropdownItem, DropdownMenu, UncontrolledDropdown } from 'reactstrap'
+import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
@@ -11,7 +11,7 @@ import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockInter
 
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
 
-import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
+import { SearchContextMenu, SearchContextMenuItem, SearchContextMenuProps } from './SearchContextMenu'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -139,7 +139,7 @@ describe('SearchContextMenu', () => {
         })
         root.update()
 
-        const item = root.find(DropdownItem).at(1)
+        const item = root.find(SearchContextMenuItem).at(1)
         item.simulate('click')
 
         sinon.assert.calledOnce(selectSearchContextSpec)
@@ -162,7 +162,8 @@ describe('SearchContextMenu', () => {
                 </DropdownMenu>
             </UncontrolledDropdown>
         )
-        const button = root.find('.search-context-menu__header-input').at(0)
+
+        const button = root.find('[data-testid="search-context-menu-header-input"]').at(0)
         button.simulate('keydown', { key: 'Escape' })
         sinon.assert.calledOnce(closeMenu)
     })
@@ -188,7 +189,7 @@ describe('SearchContextMenu', () => {
 
         root.update()
 
-        const items = root.find(DropdownItem)
+        const items = root.find(SearchContextMenuItem)
         expect(items.length).toBe(2)
         expect(items.at(0).text()).toBe('@username Your repositories on Sourcegraph')
         expect(items.at(1).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
@@ -219,8 +220,7 @@ describe('SearchContextMenu', () => {
 
         root.update()
 
-        const items = root.find(DropdownItem)
-        expect(items.length).toBe(1)
+        const items = root.find('[data-testid="search-context-menu-item"]')
         expect(items.at(0).text()).toBe('No contexts found')
     })
 
@@ -245,8 +245,7 @@ describe('SearchContextMenu', () => {
 
         root.update()
 
-        const items = root.find(DropdownItem)
-        expect(items.length).toBe(1)
+        const items = root.find('[data-testid="search-context-menu-item"]')
         expect(items.at(0).text()).toBe('No contexts found')
     })
 
@@ -268,7 +267,7 @@ describe('SearchContextMenu', () => {
         })
         root.update()
 
-        const items = root.find(DropdownItem)
+        const items = root.find('[data-testid="search-context-menu-item"]')
         expect(items.at(items.length - 1).text()).toBe('Error occured while loading search contexts')
     })
 
@@ -293,7 +292,7 @@ describe('SearchContextMenu', () => {
         })
         root.update()
 
-        const items = root.find(DropdownItem)
+        const items = root.find(SearchContextMenuItem)
         // With no auto-defined contexts, the first context should be a user-defined context
         expect(items.at(0).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
     })

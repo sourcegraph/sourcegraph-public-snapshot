@@ -257,7 +257,7 @@ func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *Changeset, b
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+func (s *FakeChangesetSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
 	return gitserverPushConfig(ctx, store, repo, s.CurrentAuthenticator)
 }
 

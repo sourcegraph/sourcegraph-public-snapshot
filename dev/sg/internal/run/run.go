@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -51,14 +51,15 @@ func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command)
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch); err != nil {
-					if err != ctx.Err() {
-						if cmd.ContinueWatchOnExit {
-							printCmdError(stdout.Out, cmd.Name, err)
-							time.Sleep(time.Second * 10) // backoff
-						} else {
-							failures <- failedRun{cmdName: cmd.Name, err: err}
-						}
+				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose); err != nil {
+					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
+						return
+					}
+					if cmd.ContinueWatchOnExit {
+						printCmdError(stdout.Out, cmd.Name, err)
+						time.Sleep(time.Second * 10) // backoff
+					} else {
+						failures <- failedRun{cmdName: cmd.Name, err: err}
 					}
 				}
 			}
@@ -93,6 +94,8 @@ func (e failedRun) Error() string {
 type installErr struct {
 	cmdName string
 	output  string
+
+	originalErr error
 }
 
 func (e installErr) Error() string {
@@ -129,6 +132,9 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	switch e := errors.Cause(err).(type) {
 	case installErr:
 		message = "Failed to build " + cmdName
+		if e.originalErr != nil {
+			message += ": " + e.originalErr.Error()
+		}
 		cmdOut = e.output
 	case reinstallErr:
 		message = "Failed to rebuild " + cmdName
@@ -171,7 +177,15 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}) error {
+func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}, verbose bool) error {
+	printDebug := func(f string, args ...interface{}) {
+		if !verbose {
+			return
+		}
+		message := fmt.Sprintf(f, args...)
+		stdout.Out.WriteLine(output.Linef("", output.StylePending, "%s[DEBUG] %s: %s %s", output.StyleBold, cmd.Name, output.StyleReset, message))
+	}
+
 	startedOnce := false
 
 	var (
@@ -196,7 +210,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
-					return installErr{cmdName: cmd.Name, output: cmdOut}
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
 					// Now we wait for a reload signal before we start to build it again
@@ -216,7 +230,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			if cmd.CheckBinary != "" {
 				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
 				if err != nil {
-					return installErr{cmdName: cmd.Name, output: cmdOut}
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				}
 
 				md5changed = md5hash != newHash
@@ -226,8 +240,10 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 
 		if cmd.CheckBinary == "" || md5changed {
 			for _, cancel := range cancelFuncs {
+				printDebug("Canceling previous process and waiting for it to exit...")
 				cancel() // Stop command
 				<-errs   // Wait for exit
+				printDebug("Previous command exited")
 			}
 			cancelFuncs = nil
 

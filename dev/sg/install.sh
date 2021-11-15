@@ -7,7 +7,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null
 # contains the latest commit in the `dev/sg` folder. If the directory is
 # "dirty", though, we mark the build as a dev build.
 commit=$(git rev-list -1 HEAD .)
-if [[ $(git diff --stat .) != '' ]]; then
+if [[ -n $(git status --porcelain 2>/dev/null | tail -n1) ]]; then
   BUILD_COMMIT="dev-$commit"
 else
   BUILD_COMMIT="$commit"

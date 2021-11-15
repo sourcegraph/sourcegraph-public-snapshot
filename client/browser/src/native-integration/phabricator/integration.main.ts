@@ -16,6 +16,20 @@ const IS_EXTENSION = false
 
 setLinkComponent(AnchorLink)
 
+interface AppendHeadStylesOptions {
+    id: string
+    cssURL: string
+}
+
+async function appendHeadStyles({ id, cssURL }: AppendHeadStylesOptions): Promise<void> {
+    const css = await getPhabricatorCSS(cssURL)
+    const style = document.createElement('style')
+    style.setAttribute('type', 'text/css')
+    style.id = id
+    style.textContent = css
+    document.head.append(style)
+}
+
 async function init(): Promise<void> {
     /**
      * This is the main entry point for the phabricator in-page JavaScript plugin.
@@ -47,12 +61,19 @@ async function init(): Promise<void> {
     }
 
     window.SOURCEGRAPH_URL = sourcegraphURL
-    const css = await getPhabricatorCSS(sourcegraphURL)
-    const style = document.createElement('style')
-    style.setAttribute('type', 'text/css')
-    style.id = 'sourcegraph-styles'
-    style.textContent = css
-    document.head.append(style)
+
+    const styleSheets = [
+        {
+            id: 'sourcegraph-styles',
+            cssURL: sourcegraphURL + '/.assets/extension/css/style.bundle.css',
+        },
+        {
+            id: 'sourcegraph-styles-css-modules',
+            cssURL: sourcegraphURL + '/.assets/extension/css/style.bundle.css',
+        },
+    ]
+    await Promise.all(styleSheets.map(appendHeadStyles))
+
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     metaClickOverride()
     injectExtensionMarker()

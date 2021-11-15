@@ -1,6 +1,7 @@
 package batches
 
 import (
+	"encoding/json"
 	"reflect"
 	"strconv"
 
@@ -50,11 +51,14 @@ func ParseChangesetSpecExternalID(id interface{}) (string, error) {
 	case float64:
 		sid = strconv.FormatFloat(tid, 'f', -1, 64)
 	default:
-		return "", errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
+		return "", NewValidationError(errors.Newf("cannot convert value of type %T into a valid external ID: expected string or int", id))
 	}
 
 	return sid, nil
 }
+
+// Note: When modifying this struct, make sure to reflect the new fields below in
+// the customized MarshalJSON method.
 
 type ChangesetSpec struct {
 	// BaseRepository is the GraphQL ID of the base repository.
@@ -77,6 +81,43 @@ type ChangesetSpec struct {
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
 	Published PublishedValue `json:"published,omitempty"`
+}
+
+// MarshalJSON overwrites the default behavior of the json lib while unmarshalling
+// a *ChangesetSpec. We explicitly only set Published, when it's non-nil. Due to
+// it not being a pointer, omitempty does nothing. That causes it to fail schema
+// validation.
+// TODO: This is the easiest workaround for now, without risking breaking anything
+// right before the release. Ideally, we split up this type into two separate ones
+// in the future.
+// See https://github.com/sourcegraph/sourcegraph/issues/25968.
+func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
+	v := struct {
+		BaseRepository string                 `json:"baseRepository,omitempty"`
+		ExternalID     string                 `json:"externalID,omitempty"`
+		BaseRev        string                 `json:"baseRev,omitempty"`
+		BaseRef        string                 `json:"baseRef,omitempty"`
+		HeadRepository string                 `json:"headRepository,omitempty"`
+		HeadRef        string                 `json:"headRef,omitempty"`
+		Title          string                 `json:"title,omitempty"`
+		Body           string                 `json:"body,omitempty"`
+		Commits        []GitCommitDescription `json:"commits,omitempty"`
+		Published      *PublishedValue        `json:"published,omitempty"`
+	}{
+		BaseRepository: c.BaseRepository,
+		ExternalID:     c.ExternalID,
+		BaseRev:        c.BaseRev,
+		BaseRef:        c.BaseRef,
+		HeadRepository: c.HeadRepository,
+		HeadRef:        c.HeadRef,
+		Title:          c.Title,
+		Body:           c.Body,
+		Commits:        c.Commits,
+	}
+	if !c.Published.Nil() {
+		v.Published = &c.Published
+	}
+	return json.Marshal(&v)
 }
 
 type GitCommitDescription struct {

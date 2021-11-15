@@ -22,7 +22,7 @@ const BatchSpecJSON = `{
       "description": "The description of the batch change."
     },
     "on": {
-      "type": "array",
+      "type": ["array", "null"],
       "description": "The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.",
       "items": {
         "title": "OnQueryOrRepository",
@@ -63,7 +63,7 @@ const BatchSpecJSON = `{
       }
     },
     "workspaces": {
-      "type": "array",
+      "type": ["array", "null"],
       "description": "Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.",
       "items": {
         "title": "WorkspaceConfiguration",
@@ -91,7 +91,7 @@ const BatchSpecJSON = `{
       }
     },
     "steps": {
-      "type": "array",
+      "type": ["array", "null"],
       "description": "The sequence of commands to run (for each repository branch matched in the ` + "`" + `on` + "`" + ` property) to produce the workspace changes that will be included in the batch change.",
       "items": {
         "title": "Step",
@@ -110,9 +110,10 @@ const BatchSpecJSON = `{
             "examples": ["alpine:3"]
           },
           "outputs": {
-            "type": "object",
+            "type": ["object", "null"],
             "description": "Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>",
             "additionalProperties": {
+              "title": "OutputVariable",
               "type": "object",
               "required": ["value"],
               "properties": {
@@ -132,6 +133,9 @@ const BatchSpecJSON = `{
           "env": {
             "description": "Environment variables to set in the step environment.",
             "oneOf": [
+              {
+                "type": "null"
+              },
               {
                 "type": "object",
                 "description": "Environment variables to set in the step environment.",
@@ -162,14 +166,14 @@ const BatchSpecJSON = `{
             ]
           },
           "files": {
-            "type": "object",
+            "type": ["object", "null"],
             "description": "Files that should be mounted into or be created inside the Docker container.",
             "additionalProperties": {
               "type": "string"
             }
           },
           "if": {
-            "oneOf": [{ "type": "boolean" }, { "type": "string" }],
+            "oneOf": [{ "type": "boolean" }, { "type": "string" }, { "type": "null" }],
             "description": "A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.",
             "examples": [
               "true",
@@ -182,37 +186,41 @@ const BatchSpecJSON = `{
       }
     },
     "transformChanges": {
-      "type": "object",
+      "type": ["object", "null"],
       "description": "Optional transformations to apply to the changes produced in each repository.",
       "additionalProperties": false,
       "properties": {
         "group": {
-          "type": "array",
+          "type": ["array", "null"],
           "description": "A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.",
-          "additionalProperties": false,
-          "required": ["directory", "branchSuffix"],
-          "properties": {
-            "directory": {
-              "type": "string",
-              "description": "The directory path (relative to the repository root) of the changes to include in this group.",
-              "minLength": 1
-            },
-            "branch": {
-              "type": "string",
-              "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used.",
-              "minLength": 1
-            },
-            "repository": {
-              "type": "string",
-              "description": "Only apply this transformation in the repository with this name (as it is known to Sourcegraph).",
-              "examples": ["github.com/foo/bar"]
+          "items": {
+            "title": "TransformChangesGroup",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["directory", "branch"],
+            "properties": {
+              "directory": {
+                "type": "string",
+                "description": "The directory path (relative to the repository root) of the changes to include in this group.",
+                "minLength": 1
+              },
+              "branch": {
+                "type": "string",
+                "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used.",
+                "minLength": 1
+              },
+              "repository": {
+                "type": "string",
+                "description": "Only apply this transformation in the repository with this name (as it is known to Sourcegraph).",
+                "examples": ["github.com/foo/bar"]
+              }
             }
           }
         }
       }
     },
     "importChangesets": {
-      "type": "array",
+      "type": ["array", "null"],
       "description": "Import existing changesets on code hosts.",
       "items": {
         "type": "object",
@@ -224,7 +232,7 @@ const BatchSpecJSON = `{
             "description": "The repository name as configured on your Sourcegraph instance."
           },
           "externalIDs": {
-            "type": "array",
+            "type": ["array", "null"],
             "description": "The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.",
             "uniqueItems": true,
             "items": {
@@ -294,6 +302,9 @@ const BatchSpecJSON = `{
         "published": {
           "description": "Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.",
           "oneOf": [
+            {
+              "type": "null"
+            },
             {
               "oneOf": [
                 {

@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -59,12 +58,8 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 			return nil, errors.Wrap(err, "lsifStore.Definitions")
 		}
 		if len(locations) > 0 {
-			uploadsByID := map[int]dbstore.Dump{
-				adjustedUploads[i].Upload.ID: adjustedUploads[i].Upload,
-			}
-
 			// If we have a local definition, we won't find a better one and can exit early
-			return r.adjustLocations(ctx, uploadsByID, locations)
+			return r.adjustLocations(ctx, locations)
 		}
 	}
 
@@ -101,12 +96,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 	// locations within the repository the user is browsing so that it appears all definitions
 	// are occurring at the same commit they are looking at.
 
-	uploadsByID := make(map[int]dbstore.Dump, len(uploads))
-	for i := range uploads {
-		uploadsByID[uploads[i].ID] = uploads[i]
-	}
-
-	adjustedLocations, err := r.adjustLocations(ctx, uploadsByID, locations)
+	adjustedLocations, err := r.adjustLocations(ctx, locations)
 	if err != nil {
 		return nil, err
 	}

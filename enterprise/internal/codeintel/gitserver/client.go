@@ -15,9 +15,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 )
@@ -64,7 +64,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 
 	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			err = nil
 		}
 
@@ -74,20 +74,40 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	return revision, true, nil
 }
 
-// CommitDate returns the time that the given commit was committed.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+// CommitDate returns the time that the given commit was committed. If the given revision does not exist,
+// a false-valued flag is returned along with a nil error and zero-valued time.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ string, _ time.Time, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%H:%cI", commit)
 	if err != nil {
-		return time.Time{}, err
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			err = nil
+		}
+
+		return "", time.Time{}, false, err
 	}
 
-	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+	line := strings.TrimSpace(out)
+	if line == "" {
+		return "", time.Time{}, false, nil
+	}
+
+	parts := strings.SplitN(line, ":", 2)
+	if len(parts) != 2 {
+		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
+	}
+
+	duration, err := time.Parse(time.RFC3339, parts[1])
+	if err != nil {
+		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
+	}
+
+	return parts[0], duration, true, nil
 }
 
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
@@ -296,6 +316,60 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 	return refDescriptions, nil
 }
 
+// CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
+// their committer date. This set of commits is determined by listing `{branchName} ^HEAD`, which is interpreted
+// as: all commits on {branchName} not also on the tip of the default branch. If the supplied branch name is the
+// default branch, then this method instead returns all commits reachable from HEAD.
+func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	ctx, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("branchName", branchName),
+		log.Bool("isDefaultBranch", isDefaultBranch),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	args := []string{"log", "--pretty=format:%H:%cI"}
+	if maxAge != nil {
+		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
+	}
+	if isDefaultBranch {
+		args = append(args, "HEAD")
+	} else {
+		args = append(args, branchName, "^HEAD")
+	}
+
+	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseCommitsUniqueToBranch(strings.Split(out, "\n"))
+}
+
+func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
+	commitDates := make(map[string]time.Time, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
+		}
+
+		duration, err := time.Parse(time.RFC3339, parts[1])
+		if err != nil {
+			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
+		}
+
+		commitDates[parts[0]] = duration
+	}
+
+	return commitDates, nil
+}
+
 // BranchesContaining returns a map from branch names to branch tip hashes for each brach
 // containing the given commit.
 func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
@@ -466,8 +540,8 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	if err != nil {
 		return "", err
 	}
-	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
 
+	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "git.ResolveRevision")
 	}
@@ -491,7 +565,7 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 
-	out, err := cmd.CombinedOutput(ctx)
+	out, err := cmd.Output(ctx)
 	if err == nil {
 		return string(bytes.TrimSpace(out)), nil
 	}
@@ -500,7 +574,7 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 	// if we're returning an error, try to resolve revision that was the target of the
 	// command (if any). If the revision fails to resolve, we return an instance of a
 	// RevisionNotFoundError error instead of an "exit 128".
-	if revision != "" && !vcs.IsRepoNotExist(err) {
+	if revision != "" && !gitdomain.IsRepoNotExist(err) {
 		if _, err := git.ResolveRevision(ctx, repo, revision, git.ResolveRevisionOptions{}); err != nil {
 			return "", errors.Wrap(err, "git.ResolveRevision")
 		}

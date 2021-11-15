@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -15,20 +14,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-var (
-	parseSchemaOnce sync.Once
-	parseSchemaErr  error
-	parsedSchema    *graphql.Schema
-)
-
-func mustParseGraphQLSchema(t *testing.T) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = NewSchema(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-	})
+	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}
@@ -52,6 +45,8 @@ type Test struct {
 
 // RunTests runs the given GraphQL test cases as subtests.
 func RunTests(t *testing.T, tests []*Test) {
+	t.Helper()
+
 	if len(tests) == 1 {
 		RunTest(t, tests[0])
 		return
@@ -59,6 +54,7 @@ func RunTests(t *testing.T, tests []*Test) {
 
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
+			t.Helper()
 			RunTest(t, test)
 		})
 	}
@@ -119,7 +115,7 @@ func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
 	sortErrors(got)
 
 	// Compare without caring about the concrete type of the error returned
-	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError")); diff != "" {
+	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError", "Err")); diff != "" {
 		t.Fatal(diff)
 	}
 }

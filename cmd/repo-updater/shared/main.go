@@ -68,8 +68,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Signals health of startup
@@ -108,9 +108,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	dsn := conf.Get().ServiceConnections.PostgresDSN
+	dsn := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		newDSN := conf.Get().ServiceConnections().PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do
@@ -124,10 +124,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
 
-	db, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
+	sqlDB, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "repo-updater"})
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}
+	db := database.NewDB(sqlDB)
 	// Generally we'll mark the service as ready sometime after the database
 	// has been connected; migrations may take a while and we don't want to
 	// start accepting traffic until we've fully constructed the server we'll
@@ -173,7 +174,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// All dependencies ready
 	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
+		debugDumpers = enterpriseInit(sqlDB, store, keyring.Default(), cf, server)
 	}
 
 	syncer := &repos.Syncer{
@@ -208,7 +209,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	if !envvar.SourcegraphDotComMode() {
 		// git-server repos purging thread
-		go repos.RunRepositoryPurgeWorker(ctx)
+		go repos.RunRepositoryPurgeWorker(ctx, db)
 	}
 
 	// Git fetches scheduler
@@ -354,7 +355,7 @@ type scheduler interface {
 	ListRepos() []string
 
 	// EnsureScheduled ensures that all the repos provided are known to the scheduler.
-	EnsureScheduled([]types.RepoName)
+	EnsureScheduled([]types.MinimalRepo)
 }
 
 type permsSyncer interface {
@@ -445,7 +446,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 		// of the queue
 		managed := sched.ListRepos()
 
-		uncloned, err := baseRepoStore.ListRepoNames(ctx, database.ReposListOptions{Names: managed, NoCloned: true})
+		uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{Names: managed, NoCloned: true})
 		if err != nil {
 			log15.Warn("failed to fetch list of uncloned repositories", "error", err)
 			return

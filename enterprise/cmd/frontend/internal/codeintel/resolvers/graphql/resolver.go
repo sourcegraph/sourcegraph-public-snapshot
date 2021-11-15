@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -10,9 +11,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -22,9 +26,9 @@ const (
 	DefaultIndexPageSize  = 50
 )
 
-var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto indexing is not enabled")
+var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
 
-// Resolver is the main interface to code intel-related operations exposted to the GraphQL API. This
+// Resolver is the main interface to code intel-related operations exposed to the GraphQL API. This
 // resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
 // All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
 // in the parent package.
@@ -55,12 +59,8 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	}
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetUploadByID
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (gql.LSIFUploadResolver, error) {
-	// 🚨 SECURITY: Only site admins may see LSIF upload data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	uploadID, err := unmarshalLSIFUploadGQLID(id)
 	if err != nil {
 		return nil, err
@@ -78,17 +78,14 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (gql.LSIFU
 	return NewUploadResolver(r.resolver, upload, prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetUploads
 func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (gql.LSIFUploadConnectionResolver, error) {
 	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
 	return r.LSIFUploadsByRepo(ctx, &gql.LSIFRepositoryUploadsQueryArgs{LSIFUploadsQueryArgs: args})
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetUploads
 func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (gql.LSIFUploadConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may see LSIF upload data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	opts, err := makeGetUploadsOptions(ctx, args)
 	if err != nil {
 		return nil, err
@@ -101,9 +98,9 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	return NewUploadConnectionResolver(r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may modify LSIF data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -121,14 +118,10 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
+// 🚨 SECURITY: dbstore layer handles authz for GetIndexByID
 func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIndexResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may see LSIF index data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	indexID, err := unmarshalLSIFIndexGQLID(id)
@@ -148,6 +141,7 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIn
 	return NewIndexResolver(r.resolver, index, prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetIndexes
 func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
@@ -157,14 +151,10 @@ func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryAr
 	return r.LSIFIndexesByRepo(ctx, &gql.LSIFRepositoryIndexesQueryArgs{LSIFIndexesQueryArgs: args})
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetIndexes
 func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may see LSIF index data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	opts, err := makeGetIndexesOptions(ctx, args)
@@ -179,14 +169,13 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	return NewIndexConnectionResolver(r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence index data
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may modify LSIF data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
@@ -201,6 +190,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 	return &gql.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceCommitGraphResolver, error) {
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
@@ -210,14 +200,13 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeInte
 	return r.resolver.CommitGraph(ctx, int(repositoryID))
 }
 
+// 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.QueueAutoIndexJobsForRepoArgs) ([]gql.LSIFIndexResolver, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may queue indexing jobs
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	repositoryID, err := gql.UnmarshalRepositoryID(args.Repository)
@@ -251,6 +240,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 	return resolvers, nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {
 	resolver, err := r.resolver.QueryResolver(ctx, args)
 	if err != nil || resolver == nil {
@@ -260,12 +250,8 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	return NewQueryResolver(resolver, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicyByID
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	configurationPolicyID, err := unmarshalConfigurationPolicyGQLID(id)
 	if err != nil {
 		return nil, err
@@ -279,20 +265,17 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
 func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) ([]gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	opts := store.GetConfigurationPoliciesOptions{}
 	if args.Repository != nil {
 		id64, err := unmarshalRepositoryID(*args.Repository)
 		if err != nil {
 			return nil, err
 		}
-
 		opts.RepositoryID = int(id64)
+	} else {
+		opts.ConsiderPatterns = true
 	}
 
 	policies, err := r.resolver.GetConfigurationPolicies(ctx, opts)
@@ -308,14 +291,14 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 	return resolvers, nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.CreateCodeIntelligenceConfigurationPolicyArgs) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	if args.Type != gql.GitObjectTypeCommit && args.Type != gql.GitObjectTypeTag && args.Type != gql.GitObjectTypeTree {
-		return nil, errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", args.Type)
+	if err := validateConfigurationPolicy(args.CodeIntelConfigurationPolicy); err != nil {
+		return nil, err
 	}
 
 	var repositoryID *int
@@ -332,6 +315,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	configurationPolicy, err := r.resolver.CreateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
+		RepositoryPatterns:        args.RepositoryPatterns,
 		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
@@ -348,23 +332,14 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
-func toDuration(hours *int32) *time.Duration {
-	if hours == nil {
-		return nil
-	}
-
-	v := time.Duration(*hours) * time.Hour
-	return &v
-}
-
+// 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	if args.Type != gql.GitObjectTypeCommit && args.Type != gql.GitObjectTypeTag && args.Type != gql.GitObjectTypeTree {
-		return nil, errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", args.Type)
+	if err := validateConfigurationPolicy(args.CodeIntelConfigurationPolicy); err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalConfigurationPolicyGQLID(args.ID)
@@ -375,6 +350,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	if err := r.resolver.UpdateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
+		RepositoryPatterns:        args.RepositoryPatterns,
 		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
@@ -390,9 +366,9 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return &gql.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.DeleteCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -408,14 +384,10 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return &gql.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.IndexConfigurationResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
@@ -426,14 +398,13 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.I
 	return NewIndexConfigurationResolver(r.resolver, int(repositoryID)), nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
@@ -446,6 +417,53 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) ([]*gql.RepositoryResolver, error) {
+	ids, err := r.resolver.PreviewRepositoryFilter(ctx, args.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
+	for _, id := range ids {
+		repo, err := backend.Repos.Get(ctx, api.RepoID(id))
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers = append(resolvers, gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo))
+	}
+
+	return resolvers, nil
+}
+
+func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {
+	repositoryID, err := unmarshalLSIFIndexGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	namesByRev, err := r.resolver.PreviewGitObjectFilter(ctx, int(repositoryID), store.GitObjectType(args.Type), args.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	var previews []gql.GitObjectFilterPreviewResolver
+	for rev, names := range namesByRev {
+		for _, name := range names {
+			previews = append(previews, &gitObjectFilterPreviewResolver{
+				name: name,
+				rev:  rev,
+			})
+		}
+	}
+
+	sort.Slice(previews, func(i, j int) bool {
+		return previews[i].Name() < previews[j].Name() || (previews[i].Name() == previews[j].Name() && previews[i].Rev() < previews[j].Rev())
+	})
+
+	return previews, nil
 }
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
@@ -472,7 +490,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		}
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -498,7 +516,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 		return store.GetIndexesOptions{}, err
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}
@@ -524,4 +542,46 @@ func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
 	}
 
 	return int(repoID), nil
+}
+
+// checkCurrentUserIsSiteAdmin returns true if the current user is a site-admin.
+func checkCurrentUserIsSiteAdmin(ctx context.Context) error {
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(dbconn.Global))
+}
+
+func validateConfigurationPolicy(policy gql.CodeIntelConfigurationPolicy) error {
+	switch policy.Type {
+	case gql.GitObjectTypeCommit:
+	case gql.GitObjectTypeTag:
+	case gql.GitObjectTypeTree:
+	default:
+		return errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", policy.Type)
+	}
+
+	if policy.Name == "" {
+		return errors.Errorf("no name supplied")
+	}
+	if policy.Pattern == "" {
+		return errors.Errorf("no pattern supplied")
+	}
+	if policy.Type == gql.GitObjectTypeCommit && policy.Pattern != "HEAD" {
+		return errors.Errorf("pattern must be HEAD for policy type 'GIT_COMMIT'")
+	}
+	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
+		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
+	}
+	if policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
+		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
+	}
+
+	return nil
+}
+
+func toDuration(hours *int32) *time.Duration {
+	if hours == nil {
+		return nil
+	}
+
+	v := time.Duration(*hours) * time.Hour
+	return &v
 }

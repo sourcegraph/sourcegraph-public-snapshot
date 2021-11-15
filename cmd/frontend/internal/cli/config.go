@@ -98,8 +98,11 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 	}
 
 	merged.WriteString("}\n")
-
-	return merged.Bytes(), nil
+	formatted, err := jsonc.Format(merged.String(), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to format JSONC")
+	}
+	return []byte(formatted), nil
 }
 
 func overrideSiteConfig(ctx context.Context) error {

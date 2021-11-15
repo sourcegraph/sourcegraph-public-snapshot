@@ -104,10 +104,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri)))
             state.rootChanges.next()
         },
-        setVersionContext: context => {
-            state.versionContext = context
-            state.versionContextChanges.next(context)
-        },
         setSearchContext: context => {
             state.searchContext = context
             state.searchContextChanges.next(context)
@@ -309,6 +305,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
                 state.activeLanguages.next(new Set<string>(state.languageReferences.keys()))
             }
         },
+
+        // For filtering visible panels by DocumentSelector
+        getActiveViewComponentChanges: () => proxySubscribable(state.activeViewComponentChanges),
 
         // For panel view location provider arguments
         getActiveCodeEditorPosition: () =>

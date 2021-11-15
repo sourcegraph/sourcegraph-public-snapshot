@@ -7,6 +7,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../../auth'
 import { SignUpArguments, SignUpForm } from '../../auth/SignUpForm'
 import { BrandLogo } from '../../components/branding/BrandLogo'
+import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { SourcegraphContext } from '../../jscontext'
 import { submitTrialRequest } from '../../marketing/backend'
 
@@ -43,7 +44,7 @@ const initSite = async (args: SignUpArguments): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, FeatureFlagProps {
     authenticatedUser: Pick<AuthenticatedUser, 'username'> | null
 
     /**
@@ -63,6 +64,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
     isLightTheme,
     needsSiteInit = window.context.needsSiteInit,
     context,
+    featureFlags,
 }) => {
     if (!needsSiteInit) {
         return <Redirect to="/search" />
@@ -90,6 +92,7 @@ export const SiteInitPage: React.FunctionComponent<Props> = ({
                                 buttonLabel="Create admin account & continue"
                                 onSignUp={initSite}
                                 context={context}
+                                featureFlags={featureFlags}
                             />
                         </>
                     )}

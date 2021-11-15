@@ -1,10 +1,6 @@
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-
-import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightDashboard, InsightsDashboardType, isRealDashboard, isVirtualDashboard } from '../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../core/types/dashboard/real-dashboard'
-import { isGlobalSubject } from '../../../../core/types/subjects'
-import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
+import { isGlobalSubject, SupportedInsightSubject } from '../../../../core/types/subjects'
 
 enum DashboardReasonDenied {
     AllVirtualDashboard,
@@ -29,9 +25,16 @@ const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
 
 export function useDashboardPermissions(
     dashboard: InsightDashboard | undefined,
-    settingsCascade: SettingsCascadeOrError<Settings>
+    supportedSubjects?: SupportedInsightSubject[]
 ): DashboardPermissions {
-    const supportedSubject = useInsightSubjects({ settingsCascade })
+    if (dashboard && 'grants' in dashboard) {
+        // This means we're using the graphql api.
+        // Since the api only returns info the user can see
+        // We can safely assume the user has permission to edit the dashboard
+        return {
+            isConfigurable: true,
+        }
+    }
 
     if (isVirtualDashboard(dashboard)) {
         return {
@@ -40,7 +43,11 @@ export function useDashboardPermissions(
         }
     }
 
-    const dashboardOwner = supportedSubject.find(subject => subject.id === dashboard?.owner?.id)
+    if (!supportedSubjects) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
+    const dashboardOwner = supportedSubjects.find(subject => subject.id === dashboard?.owner?.id)
 
     // No dashboard can't be modified
     if (!dashboard || !dashboardOwner) {
@@ -102,6 +109,9 @@ export function getTooltipMessage(
                     return "This is an automatically created dashboard that lists all your private insights. You can't edit this dashboard."
                 case InsightsDashboardType.Organization:
                 case InsightsDashboardType.Global:
+                    if (!dashboard.owner) {
+                        throw new Error('TODO: support GraphQL API')
+                    }
                     return `This is an automatically created dashboard that lists all ${dashboard.owner.name} insights. You can't edit this dashboard.`
             }
         case DashboardReasonDenied.AllVirtualDashboard:

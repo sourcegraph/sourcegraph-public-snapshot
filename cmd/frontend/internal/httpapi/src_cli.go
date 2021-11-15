@@ -15,8 +15,11 @@ var srcCliDownloadsURL = "https://github.com/sourcegraph/src-cli/releases/downlo
 
 var allowedFilenames = []string{
 	"src_darwin_amd64",
+	"src_darwin_arm64",
 	"src_linux_amd64",
+	"src_linux_arm64",
 	"src_windows_amd64.exe",
+	"src_windows_arm64.exe",
 }
 
 func srcCliVersionServe(w http.ResponseWriter, r *http.Request) error {

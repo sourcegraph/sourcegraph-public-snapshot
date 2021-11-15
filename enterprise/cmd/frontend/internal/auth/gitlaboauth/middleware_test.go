@@ -32,7 +32,7 @@ func TestMiddleware(t *testing.T) {
 
 	const mockUserID = 123
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, err := w.Write([]byte("got through"))

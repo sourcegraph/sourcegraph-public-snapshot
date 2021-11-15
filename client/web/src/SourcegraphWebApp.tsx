@@ -7,7 +7,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -44,12 +44,9 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
-import { ExternalServicesResult, UserRepositoriesResult } from './graphql-operations'
-import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
-import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
@@ -60,9 +57,7 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
-import { VersionContext } from './schema/site.schema'
 import {
-    resolveVersionContext,
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
@@ -74,7 +69,6 @@ import {
     fetchRecentFileViews,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
-    convertVersionContextToSearchContext,
     fetchSearchContext,
     createSearchContext,
     updateSearchContext,
@@ -84,6 +78,7 @@ import {
 } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -94,6 +89,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
@@ -145,11 +141,13 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: GraphQLClient
 
+    temporarySettingsStorage?: TemporarySettingsStorage
+
     viewerSubject: LayoutProps['viewerSubject']
 
     /**
      * The current parsed search query, with all UI-configurable parameters
-     * (eg. pattern type, case sensitivity, version context) removed
+     * (eg. pattern type, case sensitivity) removed
      */
     parsedSearchQuery: string
 
@@ -162,21 +160,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the current search is case sensitive.
      */
     searchCaseSensitivity: boolean
-
-    /*
-     * The version context the instance is in. If undefined, it means no version context is selected.
-     */
-    versionContext?: string
-
-    /**
-     * Available version contexts defined in the site configuration.
-     */
-    availableVersionContexts?: VersionContext[]
-
-    /**
-     * The previously used version context, as specified in localStorage.
-     */
-    previousVersionContext: string | null
 
     showOnboardingTour: boolean
 
@@ -206,11 +189,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showSearchNotebook: boolean
 
     /**
-     * Whether we show the multiline editor at /search/query-builder
-     */
-    showQueryBuilder: boolean
-
-    /**
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
@@ -234,7 +212,6 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
 
 setLinkComponent(RouterLinkOrAnchor)
@@ -278,13 +255,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         // This will be updated with the default in settings when the web app mounts.
         const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
         const urlCase = parsedSearchURL.caseSensitive
-        const availableVersionContexts = window.context.experimentalFeatures.versionContexts
-        const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-        const resolvedVersionContext = availableVersionContexts
-            ? resolveVersionContext(parsedSearchURL.versionContext || undefined, availableVersionContexts) ||
-              resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
-              undefined
-            : undefined
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
@@ -292,9 +262,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
-            versionContext: resolvedVersionContext,
-            availableVersionContexts,
-            previousVersionContext,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -306,7 +273,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             globbing: false,
             showMultilineSearchConsole: false,
             showSearchNotebook: false,
-            showQueryBuilder: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -317,12 +283,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidMount(): void {
-        updateUserSessionStores()
-
         document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
-            .then(graphqlClient => this.setState({ graphqlClient }))
+            .then(graphqlClient => {
+                this.setState({
+                    graphqlClient,
+                    temporarySettingsStorage: new TemporarySettingsStorage(
+                        graphqlClient,
+                        window.context.isAuthenticatedUser
+                    ),
+                })
+            })
             .catch(error => {
                 console.error('Error initalizing GraphQL client', error)
             })
@@ -349,19 +321,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             )
         )
 
-        // Track static metrics fo code insights.
-        // Insight count, insights settings, observe settings mutations for analytics
-        // Track add delete and update events of code insights via
-        this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser])
-                .pipe(bufferCount(2, 1))
-                .subscribe(([[oldSettings], [newSettings, authUser]]) => {
-                    if (authUser) {
-                        logInsightMetrics(oldSettings, newSettings, eventLogger)
-                    }
-                })
-        )
-
         this.subscriptions.add(
             combineLatest([this.userRepositoriesUpdates, authenticatedUser])
                 .pipe(
@@ -377,13 +336,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                               ])
                             : of(null)
                     ),
-                    tap(result => {
-                        if (!isErrorLike(result) && result !== null && window.context.sourcegraphDotComMode) {
-                            // Set user properties for Cloud analytics.
-                            const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
-                            this.setUserProperties(userRepositoriesResult, externalServicesResult, authenticatedUser)
-                        }
-                    }),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
@@ -440,11 +392,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
         }
 
-        // Send initial versionContext to extensions
-        this.setVersionContext(this.state.versionContext).catch(error => {
-            console.error('Error sending initial version context to extensions', error)
-        })
-
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             console.error('Error sending search context to extensions', error)
         })
@@ -481,8 +428,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient } = this.state
-        if (authenticatedUser === undefined || graphqlClient === undefined) {
+        const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
+        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
 
@@ -492,7 +439,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={graphqlClient}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
+                        <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                             <SearchResultsCacheProvider>
                                 <Router history={history} key={0}>
                                     <Route
@@ -517,10 +464,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     setPatternType={this.setPatternType}
                                                     caseSensitive={this.state.searchCaseSensitivity}
                                                     setCaseSensitivity={this.setCaseSensitivity}
-                                                    versionContext={this.state.versionContext}
-                                                    setVersionContext={this.setVersionContext}
-                                                    availableVersionContexts={this.state.availableVersionContexts}
-                                                    previousVersionContext={this.state.previousVersionContext}
                                                     // Extensions
                                                     platformContext={this.platformContext}
                                                     extensionsController={this.extensionsController}
@@ -544,16 +487,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     createSearchContext={createSearchContext}
                                                     updateSearchContext={updateSearchContext}
                                                     deleteSearchContext={deleteSearchContext}
-                                                    convertVersionContextToSearchContext={
-                                                        convertVersionContextToSearchContext
-                                                    }
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                                     globbing={this.state.globbing}
                                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                                     showSearchNotebook={this.state.showSearchNotebook}
-                                                    showQueryBuilder={this.state.showQueryBuilder}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
@@ -577,6 +516,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     extensionsController={this.extensionsController}
                                     notificationClassNames={notificationClassNames}
                                 />
+                                <UserSessionStores />
                             </SearchResultsCacheProvider>
                         </TemporarySettingsProvider>
                     </ShortcutProvider>
@@ -599,23 +539,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({
             searchCaseSensitivity: caseSensitive,
         })
-    }
-
-    private setVersionContext = async (versionContext: string | undefined): Promise<void> => {
-        const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
-        if (!resolvedVersionContext) {
-            localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
-            this.setState({ versionContext: undefined, previousVersionContext: null })
-        } else {
-            localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
-            this.setState({ versionContext: resolvedVersionContext, previousVersionContext: resolvedVersionContext })
-        }
-
-        const extensionHostAPI = await this.extensionsController.extHostAPI
-        // Note: `setVersionContext` is now asynchronous since the version context
-        // is sent directly to extensions in the worker thread. This means that when the Promise
-        // is in a fulfilled state, we know that extensions have received the latest version context
-        await extensionHostAPI.setVersionContext(resolvedVersionContext)
     }
 
     private onUserExternalServicesOrRepositoriesUpdate = (
@@ -660,33 +583,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
-    private setUserProperties = (
-        reposResult: NonNullable<UserRepositoriesResult['node'] & { __typename: 'User' }>['repositories'],
-        extensionSvcResult: ExternalServicesResult['externalServices'],
-        authenticatedUser: AuthenticatedUser | null
-    ): void => {
-        const userProps: userProperties = {
-            hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
-            numberOfRepositoriesAdded: reposResult.totalCount ? reposResult.totalCount : 0,
-            numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
-            numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
-            hasActiveCodeHost: extensionSvcResult.totalCount > 0,
-            isSourcegraphTeammate: authenticatedUser?.email.endsWith('@sourcegraph.com') || false,
-        }
-        localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
-    }
-
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
-}
-
-interface userProperties {
-    hasAddedRepositories: boolean
-    numberOfRepositoriesAdded: number
-    numberOfPublicRepos: number
-    numberOfPrivateRepos: number
-    hasActiveCodeHost: boolean
-    isSourcegraphTeammate: boolean
 }

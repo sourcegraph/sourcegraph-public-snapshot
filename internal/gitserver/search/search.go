@@ -10,6 +10,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -121,7 +122,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	return g.Wait()
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) error {
+func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
 	revArgs := revsToGitArgs(cs.Revisions)
 	cmd := exec.CommandContext(ctx, "git", append(logArgs, revArgs...)...)
 	cmd.Dir = cs.RepoDir
@@ -129,10 +130,19 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	if err != nil {
 		return err
 	}
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+
+	defer func() {
+		// Always call cmd.Wait to avoid leaving zombie processes around.
+		if e := cmd.Wait(); e != nil {
+			err = multierror.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String())).ErrorOrNil()
+		}
+	}()
 
 	batch := make([]*RawCommit, 0, batchSize)
 	sendBatch := func() {
@@ -148,7 +158,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	scanner := NewCommitScanner(stdoutReader)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return nil
 		}
 		cv := scanner.NextRawCommit()
 		batch = append(batch, cv)
@@ -161,16 +171,25 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		sendBatch()
 	}
 
-	if scanner.Err() != nil {
-		return scanner.Err()
-	}
+	return scanner.Err()
+}
 
-	return cmd.Wait()
+func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) error {
+	if ctx.Err() != nil {
+		// Ignore errors when context is cancelled
+		return nil
+	}
+	if strings.Contains(stderr, "does not have any commits yet") {
+		// Ignore no commits error error
+		return nil
+	}
+	log15.Warn("git search command exited with non-zero status code", "stderr", stderr)
+	return err
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	// Create a new diff fetcher subprocess for each worker
-	diffFetcher, err := StartDiffFetcher(cs.RepoDir)
+	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
 	if err != nil {
 		return err
 	}
@@ -192,11 +211,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 				diffFetcher: diffFetcher,
 				LowerBuf:    startBuf,
 			}
-			commitMatches, highlights, err := cs.Query.Match(lc)
+			mergedResult, highlights, err := cs.Query.Match(lc)
 			if err != nil {
 				return err
 			}
-			if commitMatches {
+			if mergedResult.Satisfies() {
 				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
 				if err != nil {
 					return err
@@ -207,11 +226,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		return nil
 	}
 
-	var errors error
+	var errors *multierror.Error
 	for j := range jobs {
-		multierror.Append(errors, runJob(j))
+		errors = multierror.Append(errors, runJob(j))
 	}
-	return errors
+	return errors.ErrorOrNil()
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {

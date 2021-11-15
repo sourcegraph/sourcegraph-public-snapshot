@@ -41,7 +41,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 
-		postgres := dbtest.NewDB(t, "")
+		postgres := dbtest.NewDB(t)
 		resolver := newWithClock(timescale, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
@@ -52,18 +52,17 @@ func TestResolver_InsightConnection(t *testing.T) {
 				Description: "desc1",
 				Series: []types.InsightViewSeries{
 					{
-						UniqueID:              "unique1",
-						SeriesID:              "1234567",
-						Title:                 "title1",
-						Description:           "desc1",
-						Query:                 "query1",
-						CreatedAt:             now,
-						OldestHistoricalAt:    now,
-						LastRecordedAt:        now,
-						NextRecordingAfter:    now,
-						RecordingIntervalDays: 1,
-						Label:                 "label1",
-						Stroke:                "color1",
+						UniqueID:           "unique1",
+						SeriesID:           "1234567",
+						Title:              "title1",
+						Description:        "desc1",
+						Query:              "query1",
+						CreatedAt:          now,
+						OldestHistoricalAt: now,
+						LastRecordedAt:     now,
+						NextRecordingAfter: now,
+						Label:              "label1",
+						LineColor:          "color1",
 					},
 				},
 			},
@@ -126,7 +125,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	}
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
@@ -157,14 +156,14 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 			(2, 'test-repo2', 'description', false, current_timestamp, current_timestamp, 2, 'github', 1, false, 'github.com/test-repo/test-repo2', null, '{}', false, 1),
 			(3, 'test-repo3', 'description', false, current_timestamp, current_timestamp, 3, 'github', 1, false, 'github.com/test-repo/test-repo3', null, '{}', false, 1);
 
-		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at, object_ids_ints)
+		INSERT INTO user_permissions (user_id, permission, object_type, updated_at, synced_at, object_ids_ints)
 		VALUES
-		       (1, 'read', 'repos', '', current_timestamp, current_timestamp, ARRAY[1]);
+		       (1, 'read', 'repos', current_timestamp, current_timestamp, ARRAY[1]);
 
-		INSERT INTO user_permissions (user_id, permission, object_type, object_ids, updated_at, synced_at)
+		INSERT INTO user_permissions (user_id, permission, object_type, updated_at, synced_at)
 		VALUES
-		       (2, 'read', 'repos', '', current_timestamp, current_timestamp),
-		       (3, 'read', 'repos', '', current_timestamp, current_timestamp);
+		       (2, 'read', 'repos', current_timestamp, current_timestamp),
+		       (3, 'read', 'repos', current_timestamp, current_timestamp);
 
 		INSERT INTO users (id, username, display_name, avatar_url, created_at, updated_at, deleted_at, invite_quota, passwd,
 						   site_admin)
@@ -217,18 +216,17 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 				Description: "desc1",
 				Series: []types.InsightViewSeries{
 					{
-						UniqueID:              "unique1",
-						SeriesID:              "s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E",
-						Title:                 "title1",
-						Description:           "desc1",
-						Query:                 "query1",
-						CreatedAt:             now,
-						OldestHistoricalAt:    now,
-						LastRecordedAt:        now,
-						NextRecordingAfter:    now,
-						RecordingIntervalDays: 1,
-						Label:                 "label1",
-						Stroke:                "color1",
+						UniqueID:           "unique1",
+						SeriesID:           "s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E",
+						Title:              "title1",
+						Description:        "desc1",
+						Query:              "query1",
+						CreatedAt:          now,
+						OldestHistoricalAt: now,
+						LastRecordedAt:     now,
+						NextRecordingAfter: now,
+						Label:              "label1",
+						LineColor:          "color1",
 					},
 				},
 			},

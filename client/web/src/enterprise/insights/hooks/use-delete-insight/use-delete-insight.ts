@@ -1,18 +1,17 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useContext, useState } from 'react'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Insight, InsightTypePrefix } from '../../core/types'
-import { usePersistEditOperations } from '../use-persist-edit-operations'
-
-import { getDeleteInsightEditOperations } from './delete-helpers'
+import { eventLogger } from '../../../../tracking/eventLogger'
+import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
+import { Insight } from '../../core/types'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
 export interface UseDeleteInsightAPI {
-    delete: (insight: Pick<Insight, 'id' | 'title'>) => Promise<void>
+    delete: (insight: Pick<Insight, 'id' | 'title' | 'type'>) => Promise<void>
     loading: boolean
     error: ErrorLike | undefined
 }
@@ -21,15 +20,14 @@ export interface UseDeleteInsightAPI {
  * Returns delete handler that deletes insight from all subject settings and from all dashboards
  * that include this insight.
  */
-export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsightAPI {
-    const { settingsCascade, platformContext } = props
-    const { persist } = usePersistEditOperations({ platformContext })
+export function useDeleteInsight(): UseDeleteInsightAPI {
+    const { deleteInsight } = useContext(CodeInsightsBackendContext)
 
     const [loading, setLoading] = useState<boolean>(false)
     const [error, setError] = useState<ErrorLike | undefined>()
 
     const handleDelete = useCallback(
-        async (insight: Pick<Insight, 'id' | 'title'>) => {
+        async (insight: Pick<Insight, 'id' | 'title' | 'type'>) => {
             const shouldDelete = window.confirm(`Are you sure you want to delete the insight "${insight.title}"?`)
 
             // Prevent double call if we already have ongoing request
@@ -40,23 +38,9 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
             setLoading(true)
             setError(undefined)
 
-            // For backward compatibility with old code stats insight api we have to delete
-            // this insight in a special way. See link below for more information.
-            // https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts#L33
-            const isOldCodeStatsInsight = insight.id === `${InsightTypePrefix.langStats}.language`
-
-            const keyForSearchInSettings = isOldCodeStatsInsight
-                ? // Hardcoded value of id from old version of stats insight extension API
-                  'codeStatsInsights.query'
-                : insight.id
-
             try {
-                const deleteInsightOperations = getDeleteInsightEditOperations({
-                    insightId: keyForSearchInSettings,
-                    settingsCascade,
-                })
-
-                await persist(deleteInsightOperations)
+                await deleteInsight(insight.id).toPromise()
+                eventLogger.log('Insight Removal', { insightType: insight.type }, { insightType: insight.type })
             } catch (error) {
                 // TODO [VK] Improve error UI for deleting
                 console.error(error)
@@ -65,7 +49,7 @@ export function useDeleteInsight(props: UseDeleteInsightProps): UseDeleteInsight
 
             setLoading(false)
         },
-        [persist, settingsCascade, loading]
+        [loading, deleteInsight]
     )
 
     return { delete: handleDelete, loading, error }

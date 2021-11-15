@@ -1,6 +1,6 @@
 package shared
 
-// Package pairs a package name and the dump that provides it.
+// Package pairs a package schem+name+version with the dump that provides it.
 type Package struct {
 	DumpID  int
 	Scheme  string
@@ -8,8 +8,8 @@ type Package struct {
 	Version string
 }
 
-// PackageReferences pairs a package name/version with a dump that depends on it.
+// PackageReference pairs a package scheme+name+version with a dump that depends on it.
 type PackageReference struct {
 	Package
-	Filter []byte // a bloom filter of identifiers imported by this dependent
+	Filter []byte // a bloom filter of identifiers imported by the dependent dump
 }

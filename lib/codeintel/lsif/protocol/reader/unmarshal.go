@@ -59,6 +59,7 @@ func unmarshalEdge(interner *Interner, line []byte) (interface{}, error) {
 		InV      json.RawMessage   `json:"inV"`
 		InVs     []json.RawMessage `json:"inVs"`
 		Document json.RawMessage   `json:"document"`
+		Shard    json.RawMessage   `json:"shard"` // replaced `document` in 0.5.x
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return Edge{}, err
@@ -75,6 +76,13 @@ func unmarshalEdge(interner *Interner, line []byte) (interface{}, error) {
 	document, err := internRaw(interner, payload.Document)
 	if err != nil {
 		return nil, err
+	}
+
+	if document == 0 {
+		document, err = internRaw(interner, payload.Shard)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var inVs []int
@@ -108,17 +116,24 @@ func unmarshalEdgeFast(line []byte) (Edge, bool) {
 		OutV     int   `json:"outV"`
 		InV      int   `json:"inV"`
 		Document int   `json:"document"`
+		Shard    int   `json:"shard"` // replaced `document` in 0.5.x
 	}
 	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
 		return Edge{}, false
 	}
 
-	return Edge{
+	edge := Edge{
 		OutV:     payload.OutV,
 		InV:      payload.InV,
 		InVs:     payload.InVs,
 		Document: payload.Document,
-	}, true
+	}
+
+	if payload.Document == 0 {
+		edge.Document = payload.Shard
+	}
+
+	return edge, true
 }
 
 var edgeUnmarshalers = map[string]func(line []byte) (interface{}, error){}

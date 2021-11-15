@@ -2,7 +2,7 @@ package searchcontexts
 
 import (
 	"context"
-	"regexp"
+	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -48,7 +47,7 @@ func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
 	return ParsedSearchContextSpec{SearchContextName: searchContextSpec}
 }
 
-func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSpec string) (*types.SearchContext, error) {
+func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (*types.SearchContext, error) {
 	parsedSearchContextSpec := ParseSearchContextSpec(searchContextSpec)
 	hasNamespaceName := parsedSearchContextSpec.NamespaceName != ""
 	hasSearchContextName := parsedSearchContextSpec.SearchContextName != ""
@@ -56,30 +55,33 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
 	} else if hasNamespaceName && hasSearchContextName {
-		namespace, err := database.Namespaces(db).GetByName(ctx, parsedSearchContextSpec.NamespaceName)
+		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
 			return nil, err
 		}
-		return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{
+		return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
 			Name:            parsedSearchContextSpec.SearchContextName,
 			NamespaceUserID: namespace.User,
 			NamespaceOrgID:  namespace.Organization,
 		})
 	} else if hasNamespaceName && !hasSearchContextName {
-		namespace, err := database.Namespaces(db).GetByName(ctx, parsedSearchContextSpec.NamespaceName)
+		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
 			return nil, err
 		}
-		if namespace.User == 0 {
+		if namespace.User == 0 && namespace.Organization == 0 {
 			return nil, errors.Errorf("search context %q not found", searchContextSpec)
 		}
-		return GetUserSearchContext(parsedSearchContextSpec.NamespaceName, namespace.User), nil
+		if namespace.User > 0 {
+			return GetUserSearchContext(namespace.User, parsedSearchContextSpec.NamespaceName), nil
+		}
+		return GetOrganizationSearchContext(namespace.Organization, parsedSearchContextSpec.NamespaceName, parsedSearchContextSpec.NamespaceName), nil
 	}
 	// Check if instance-level context
-	return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
+	return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
 }
 
-func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
+func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
 	if namespaceUserID != 0 && namespaceOrgID != 0 {
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
@@ -105,7 +107,7 @@ func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbut
 		return errors.New("search context user does not match current user")
 	} else if namespaceOrgID != 0 {
 		// Only members of the org have write access to org search contexts
-		membership, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, namespaceOrgID, user.ID)
+		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, namespaceOrgID, user.ID)
 		if err != nil {
 			return err
 		}
@@ -163,7 +165,7 @@ func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, search
 	return err
 }
 
-func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot override global search context")
 	}
@@ -193,14 +195,14 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, err
 	}
 
-	searchContext, err = database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	searchContext, err = db.SearchContexts().CreateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
 	return searchContext, nil
 }
 
-func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot update global search context")
 	}
@@ -225,14 +227,14 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, err
 	}
 
-	searchContext, err = database.SearchContexts(db).UpdateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	searchContext, err = db.SearchContexts().UpdateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
 	return searchContext, nil
 }
 
-func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {
+func DeleteSearchContext(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
 	if IsAutoDefinedSearchContext(searchContext) {
 		return errors.New("cannot delete auto-defined search context")
 	}
@@ -242,24 +244,35 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 		return err
 	}
 
-	return database.SearchContexts(db).DeleteSearchContext(ctx, searchContext.ID)
+	return db.SearchContexts().DeleteSearchContext(ctx, searchContext.ID)
 }
 
-func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
+func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
 	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && envvar.SourcegraphDotComMode() {
-		user, err := database.Users(db).GetByID(ctx, a.UID)
-		if err != nil {
-			return nil, err
-		}
-		searchContexts = append(searchContexts, GetUserSearchContext(user.Username, a.UID))
+	if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
+		return searchContexts, nil
+	}
+
+	user, err := db.Users().GetByID(ctx, a.UID)
+	if err != nil {
+		return nil, err
+	}
+	searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
+
+	organizations, err := db.Orgs().GetOrgsWithRepositoriesByUserID(ctx, a.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, org := range organizations {
+		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
 	}
 	return searchContexts, nil
 }
 
-func GetRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {
-	searchContextRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, searchContextID)
+func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {
+	searchContextRepositoryRevisions, err := db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	if err != nil {
 		return nil, err
 	}
@@ -292,8 +305,12 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 	return searchContext != nil && searchContext.Name == GlobalSearchContextName
 }
 
-func GetUserSearchContext(name string, userID int32) *types.SearchContext {
+func GetUserSearchContext(userID int32, name string) *types.SearchContext {
 	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID}
+}
+
+func GetOrganizationSearchContext(orgID int32, name string, displayName string) *types.SearchContext {
+	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
@@ -314,53 +331,4 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 		}
 		return searchContextSpecPrefix + namespaceName + "/" + searchContext.Name
 	}
-}
-
-func getVersionContextRepositoryRevisions(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) ([]*types.SearchContextRepositoryRevisions, error) {
-	repositoriesToRevisions := map[string][]string{}
-	for _, revision := range versionContext.Revisions {
-		repositoriesToRevisions[revision.Repo] = append(repositoriesToRevisions[revision.Repo], revision.Rev)
-	}
-
-	repositories := make([]string, 0, len(repositoriesToRevisions))
-	for repo := range repositoriesToRevisions {
-		repositories = append(repositories, repo)
-	}
-
-	repositoryNames, err := database.Repos(db).ListRepoNames(ctx, database.ReposListOptions{Names: repositories})
-	if err != nil {
-		return nil, err
-	}
-
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, len(repositoryNames))
-	for idx, repositoryName := range repositoryNames {
-		revisions := repositoriesToRevisions[string(repositoryName.Name)]
-		repositoryRevisions[idx] = &types.SearchContextRepositoryRevisions{Repo: repositoryName, Revisions: revisions}
-	}
-
-	return repositoryRevisions, nil
-}
-
-func getSearchContextFromVersionContext(versionContext *schema.VersionContext) *types.SearchContext {
-	searchContextName := regexp.MustCompile(`\s+`).ReplaceAllString(versionContext.Name, "_")
-	return &types.SearchContext{Name: searchContextName, Description: versionContext.Description, Public: true}
-}
-
-func ConvertVersionContextToSearchContext(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) (*types.SearchContext, error) {
-	repositoryRevisions, err := getVersionContextRepositoryRevisions(ctx, db, versionContext)
-	if err != nil {
-		return nil, err
-	}
-
-	searchContext, err := CreateSearchContextWithRepositoryRevisions(
-		ctx,
-		db,
-		getSearchContextFromVersionContext(versionContext),
-		repositoryRevisions,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return searchContext, nil
 }

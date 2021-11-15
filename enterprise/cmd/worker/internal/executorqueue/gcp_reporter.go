@@ -5,12 +5,12 @@ import (
 	"fmt"
 
 	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/inconshreveable/log15"
 	"google.golang.org/api/option"
 	metricpb "google.golang.org/genproto/googleapis/api/metric"
 	"google.golang.org/genproto/googleapis/api/monitoredres"
 	monitoringpb "google.golang.org/genproto/googleapis/monitoring/v3"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -89,8 +89,8 @@ func makeCreateTimeSeriesRequest(config gcpConfig, queueName, environmentLabel s
 				Points: []*monitoringpb.Point{
 					{
 						Interval: &monitoringpb.TimeInterval{
-							StartTime: &timestamp.Timestamp{Seconds: now},
-							EndTime:   &timestamp.Timestamp{Seconds: now},
+							StartTime: &timestamppb.Timestamp{Seconds: now},
+							EndTime:   &timestamppb.Timestamp{Seconds: now},
 						},
 						Value: &monitoringpb.TypedValue{
 							Value: &monitoringpb.TypedValue_Int64Value{Int64Value: int64(count)},

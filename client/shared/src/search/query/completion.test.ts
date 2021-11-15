@@ -1,8 +1,8 @@
-/* eslint-disable no-template-curly-in-string */
 import * as Monaco from 'monaco-editor'
 import { NEVER, of } from 'rxjs'
 
-import { SearchSuggestion } from '../../graphql/schema'
+import { SymbolKind } from '../../graphql-operations'
+import { SearchMatch } from '../stream'
 
 import { getCompletionItems, repositoryCompletionItemKind } from './completion'
 import { POPULAR_LANGUAGES } from './languageFilter'
@@ -16,31 +16,31 @@ expect.addSnapshotSerializer({
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
+const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
+
 describe('getCompletionItems()', () => {
     test('returns only static filter type completions when the token matches a known filter', async () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('re')),
+                    getToken('re', 0),
                     { column: 3 },
                     of([
                         {
-                            __typename: 'Repository',
-                            name: 'github.com/sourcegraph/jsonrpc2',
+                            type: 'repo',
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
                         {
-                            __typename: 'Symbol',
-                            name: 'RepoRoutes',
-                            kind: 'VARIABLE',
-                            location: {
-                                resource: {
-                                    repository: {
-                                        name: 'github.com/sourcegraph/jsonrpc2',
-                                    },
+                            type: 'symbol',
+                            repository: 'github.com/sourcegraph/jsonrpc2',
+                            symbols: [
+                                {
+                                    kind: SymbolKind.VARIABLE,
+                                    name: 'RepoRoutes',
                                 },
-                            },
+                            ],
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ label }) => label)
@@ -83,26 +83,24 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('reposi')),
+                    getToken('reposi', 0),
                     { column: 7 },
                     of([
                         {
-                            __typename: 'Repository',
-                            name: 'github.com/sourcegraph/jsonrpc2',
+                            type: 'repo',
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
                         {
-                            __typename: 'Symbol',
-                            name: 'RepoRoutes',
-                            kind: 'VARIABLE',
-                            location: {
-                                resource: {
-                                    repository: {
-                                        name: 'github.com/sourcegraph/jsonrpc2',
-                                    },
+                            type: 'symbol',
+                            repository: 'github.com/sourcegraph/jsonrpc2',
+                            symbols: [
+                                {
+                                    kind: SymbolKind.VARIABLE,
+                                    name: 'RepoRoutes',
                                 },
-                            },
+                            ],
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ label }) => label)
@@ -145,7 +143,7 @@ describe('getCompletionItems()', () => {
 
     test('returns suggestions for an empty query', async () => {
         expect(
-            (await getCompletionItems(toSuccess(scanSearchQuery('')), { column: 1 }, NEVER, false))?.suggestions.map(
+            (await getCompletionItems(getToken('', 0), { column: 1 }, NEVER, false))?.suggestions.map(
                 ({ label }) => label
             )
         ).toStrictEqual([
@@ -187,14 +185,14 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('a ')),
+                    getToken('a ', 1),
                     { column: 3 },
                     of([
                         {
-                            __typename: 'Repository',
-                            name: 'github.com/sourcegraph/jsonrpc2',
+                            type: 'repo',
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ label }) => label)
@@ -236,7 +234,7 @@ describe('getCompletionItems()', () => {
 
     test('returns static filter type completions for case-insensitive query', async () => {
         expect(
-            (await getCompletionItems(toSuccess(scanSearchQuery('rE')), { column: 3 }, of([]), false))?.suggestions.map(
+            (await getCompletionItems(getToken('rE', 0), { column: 3 }, of([]), false))?.suggestions.map(
                 ({ label }) => label
             )
         ).toStrictEqual([
@@ -276,9 +274,9 @@ describe('getCompletionItems()', () => {
 
     test('returns completions for filters with discrete values', async () => {
         expect(
-            (
-                await getCompletionItems(toSuccess(scanSearchQuery('case:y')), { column: 7 }, NEVER, false)
-            )?.suggestions.map(({ label }) => label)
+            (await getCompletionItems(getToken('case:y', 0), { column: 7 }, NEVER, false))?.suggestions.map(
+                ({ label }) => label
+            )
         ).toStrictEqual(['yes', 'no'])
     })
 
@@ -286,7 +284,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('lang:')),
+                    getToken('lang:', 0),
                     {
                         column: 6,
                     },
@@ -301,7 +299,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('select:')),
+                    getToken('select:', 0),
                     {
                         column: 8,
                     },
@@ -316,18 +314,15 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('file:c')),
+                    getToken('file:c', 0),
                     { column: 7 },
                     of([
                         {
-                            __typename: 'File',
+                            type: 'path',
                             path: 'connect.go',
-                            name: 'connect.go',
-                            repository: {
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ label, insertText }) => ({ label, insertText }))
@@ -338,22 +333,19 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('jsonrpc')),
+                    getToken('jsonrpc', 0),
                     { column: 8 },
                     of([
                         {
-                            __typename: 'File',
+                            type: 'path',
                             path: 'jsonrpc2.go',
-                            name: 'jsonrpc2.go',
-                            repository: {
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
                         {
-                            __typename: 'Repository',
-                            name: 'github.com/sourcegraph/jsonrpc2.go',
+                            type: 'repo',
+                            repository: 'github.com/sourcegraph/jsonrpc2.go',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions
@@ -369,18 +361,15 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('f:^jsonrpc')),
+                    getToken('f:^jsonrpc', 0),
                     { column: 11 },
                     of([
                         {
-                            __typename: 'File',
+                            type: 'path',
                             path: 'jsonrpc2.go',
-                            name: 'jsonrpc2.go',
-                            repository: {
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ filterText }) => filterText)
@@ -391,18 +380,15 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('main.go')),
+                    getToken('main.go', 0),
                     { column: 7 },
                     of([
                         {
-                            __typename: 'File',
+                            type: 'path',
                             path: 'some/path/main.go',
-                            name: 'main.go',
-                            repository: {
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions
@@ -415,18 +401,15 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('f:')),
+                    getToken('f:', 0),
                     { column: 2 },
                     of([
                         {
-                            __typename: 'File',
+                            type: 'path',
                             path: 'some/path/main.go',
-                            name: 'main.go',
-                            repository: {
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
+                            repository: 'github.com/sourcegraph/jsonrpc2',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ insertText }) => insertText)
@@ -437,14 +420,14 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('repo:')),
+                    getToken('repo:', 0),
                     { column: 5 },
                     of([
                         {
-                            __typename: 'Repository',
-                            name: 'repo/with a space',
+                            type: 'repo',
+                            repository: 'repo/with a space',
                         },
-                    ] as SearchSuggestion[]),
+                    ] as SearchMatch[]),
                     false
                 )
             )?.suggestions.map(({ insertText }) => insertText)
@@ -461,9 +444,9 @@ describe('getCompletionItems()', () => {
 
     test('Sourcegraph.com GH repo completions', async () => {
         expect(
-            (
-                await getCompletionItems(toSuccess(scanSearchQuery('repo:')), { column: 5 }, of([]), false, true)
-            )?.suggestions.map(({ insertText }) => insertText)
+            (await getCompletionItems(getToken('repo:', 0), { column: 5 }, of([]), false, true))?.suggestions.map(
+                ({ insertText }) => insertText
+            )
         ).toMatchInlineSnapshot(`
             [
               "^github\\\\.com/\${1:ORGANIZATION}/.* ",

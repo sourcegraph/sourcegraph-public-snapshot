@@ -1,71 +1,54 @@
-import classnames from 'classnames'
-import React, { useMemo } from 'react'
+import classNames from 'classnames'
+import React from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
-import { InsightTypePrefix } from '../../../../../../../../core/types'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
-import { useField, Validator } from '../../../../../../../form/hooks/useField'
+import { useAsyncInsightTitleValidator } from '../../../../../../../form/hooks/use-async-insight-title-validator'
+import { useField } from '../../../../../../../form/hooks/useField'
 import { FORM_ERROR, SubmissionResult, useForm } from '../../../../../../../form/hooks/useForm'
-import {
-    useInsightTitleDuplicationCheck,
-    useTitleValidatorProps,
-} from '../../../../../../../form/hooks/useInsightTitleValidator'
-import { composeValidators, createRequiredValidator } from '../../../../../../../form/validators'
+import { createRequiredValidator } from '../../../../../../../form/validators'
 
 export interface DrillDownInsightCreationFormValues {
     insightName: string
 }
 
+const insightRequiredValidator = createRequiredValidator('Insight name is a required field.')
+
 const DEFAULT_FORM_VALUES: DrillDownInsightCreationFormValues = {
     insightName: '',
 }
 
-function useInsightNameValidator(props: useTitleValidatorProps): Validator<string> {
-    const hasInsightTitleDuplication = useInsightTitleDuplicationCheck(props)
-
-    return useMemo(
-        () =>
-            composeValidators<string>(
-                createRequiredValidator('Insight name is a required field.'),
-                hasInsightTitleDuplication
-            ),
-        [hasInsightTitleDuplication]
-    )
-}
-
 interface DrillDownInsightCreationFormProps {
     className?: string
-    settings: Settings
     onCreateInsight: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onCancel: () => void
 }
 
 export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsightCreationFormProps> = props => {
-    const { settings, className, onCreateInsight, onCancel } = props
+    const { className, onCreateInsight, onCancel } = props
 
     const { formAPI, ref, handleSubmit } = useForm({
         initialValues: DEFAULT_FORM_VALUES,
         onSubmit: onCreateInsight,
     })
 
-    const nameValidator = useInsightNameValidator({
-        insightType: InsightTypePrefix.search,
-        settings,
+    const titleDuplicationValidator = useAsyncInsightTitleValidator({
+        initialTitle: '',
+        mode: 'creation',
     })
 
     const insightName = useField({
         name: 'insightName',
         formApi: formAPI,
-        validators: { sync: nameValidator },
+        validators: { sync: insightRequiredValidator, async: titleDuplicationValidator },
     })
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classnames(className, 'p-3')}>
+        <form ref={ref} onSubmit={handleSubmit} noValidate={true} className={classNames(className, 'p-3')}>
             <h3 className="mb-3">Save as new view</h3>
 
             <FormInput

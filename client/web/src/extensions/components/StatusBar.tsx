@@ -17,6 +17,8 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
 
+import styles from './StatusBar.module.scss'
+
 interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
@@ -85,7 +87,8 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     return (
         <div
             className={classNames(
-                'status-bar border-top',
+                styles.statusBar,
+                'border-top',
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
@@ -96,7 +99,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
-                    <div className="status-bar__item ml-2">
+                    <div className={classNames('ml-2', styles.item)}>
                         <small className="text-muted">Status bar component error: {error.message}</small>
                     </div>
                 )}
@@ -104,13 +107,13 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 {canScrollNegative && (
                     <button
                         type="button"
-                        className="btn btn-link status-bar__scroll border-0"
+                        className={classNames('btn btn-link border-0', styles.scroll)}
                         onClick={onNegativeClicked}
                     >
                         <ChevronLeftIcon className="icon-inline" />
                     </button>
                 )}
-                <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
+                <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
                     {badgeText && <p className="badge badge-secondary m-0">{badgeText}</p>}
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
@@ -123,7 +126,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                               />
                           ))
                         : hasEnoughTimePassed && (
-                              <div className="status-bar__item ml-2">
+                              <div className={classNames('ml-2', styles.item)}>
                                   <small className="text-muted">
                                       No information from extensions available.{' '}
                                       <Link to="/extensions">
@@ -136,7 +139,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 {canScrollPositive && (
                     <button
                         type="button"
-                        className="btn btn-link status-bar__scroll border-0"
+                        className={classNames('btn btn-link border-0', styles.scroll)}
                         onClick={onPositiveClicked}
                     >
                         <ChevronRightIcon className="icon-inline" />
@@ -186,8 +189,9 @@ const StatusBarItem: React.FunctionComponent<
     return (
         <ButtonLink
             className={classNames(
-                'status-bar__item h-100 d-flex align-items-center px-1',
-                noop && 'status-bar__item--noop text-decoration-none',
+                'h-100 d-flex align-items-center px-1',
+                styles.item,
+                noop && classNames('text-decoration-none', styles.itemNoop),
                 className
             )}
             data-tooltip={statusBarItem.tooltip}
@@ -197,7 +201,7 @@ const StatusBarItem: React.FunctionComponent<
             disabled={commandState === 'loading'}
         >
             {component || (
-                <small className={classNames('status-bar__text', commandState === 'loading' && 'text-muted')}>
+                <small className={classNames(styles.text, commandState === 'loading' && 'text-muted')}>
                     {statusBarItem.text}
                 </small>
             )}

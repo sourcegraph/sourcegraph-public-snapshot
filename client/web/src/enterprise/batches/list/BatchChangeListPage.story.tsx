@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
@@ -31,29 +31,31 @@ const batchChangesNotLicensed = () => of(false)
 const batchChangesLicensed = () => of(true)
 
 add('List of batch changes', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeListPage
                 {...props}
                 headingElement="h1"
+                canCreate={true}
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesLicensed}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Licensing not enforced', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeListPage
                 {...props}
                 headingElement="h1"
+                canCreate={true}
                 queryBatchChanges={queryBatchChanges}
                 areBatchChangesLicensed={batchChangesNotLicensed}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('No batch changes', () => {
@@ -73,46 +75,59 @@ add('No batch changes', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeListPage
                     {...props}
                     headingElement="h1"
+                    canCreate={true}
                     queryBatchChanges={queryBatchChanges}
                     areBatchChangesLicensed={batchChangesLicensed}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
-add('All batch changes tab empty', () => {
-    const queryBatchChanges = useCallback(
-        () =>
-            of({
-                batchChanges: {
-                    totalCount: 0,
-                    nodes: [],
-                    pageInfo: {
-                        endCursor: null,
-                        hasNextPage: false,
-                    },
-                },
-                totalCount: 0,
-            }),
-        []
-    )
-    return (
-        <EnterpriseWebStory>
-            {props => (
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    queryBatchChanges={queryBatchChanges}
-                    areBatchChangesLicensed={batchChangesLicensed}
-                    openTab="batchChanges"
-                />
-            )}
-        </EnterpriseWebStory>
-    )
-})
+const QUERY_NO_BATCH_CHANGES = () =>
+    of({
+        batchChanges: {
+            totalCount: 0,
+            nodes: [],
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+        },
+        totalCount: 0,
+    })
+
+add('All batch changes tab empty', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeListPage
+                {...props}
+                headingElement="h1"
+                canCreate={true}
+                queryBatchChanges={QUERY_NO_BATCH_CHANGES}
+                areBatchChangesLicensed={batchChangesLicensed}
+                openTab="batchChanges"
+            />
+        )}
+    </WebStory>
+))
+
+add('All batch changes tab empty, cannot create', () => (
+    <WebStory>
+        {props => (
+            <BatchChangeListPage
+                {...props}
+                headingElement="h1"
+                canCreate={false}
+                queryBatchChanges={QUERY_NO_BATCH_CHANGES}
+                areBatchChangesLicensed={batchChangesLicensed}
+                openTab="batchChanges"
+            />
+        )}
+    </WebStory>
+))

@@ -175,13 +175,31 @@ class ServersideSettingsBackend implements SettingsBackend {
         )
     }
 
-    public edit(settings: TemporarySettings): Observable<void> {
+    public edit(newSettings: TemporarySettings): Observable<void> {
         try {
-            const settingsString = JSON.stringify(settings)
+            const settingsString = JSON.stringify(newSettings)
+
             return from(
                 this.apolloClient.mutate({
                     mutation: this.EditTemporarySettingsMutation,
                     variables: { contents: settingsString },
+                    update: cache => {
+                        const encodedCurrentSettings =
+                            cache.readQuery<GetTemporarySettingsResult>({
+                                query: this.GetTemporarySettingsQuery,
+                            })?.temporarySettings.contents || '{}'
+                        const currentSettings = JSON.parse(encodedCurrentSettings) as TemporarySettings
+
+                        return cache.writeQuery<GetTemporarySettingsResult>({
+                            query: this.GetTemporarySettingsQuery,
+                            data: {
+                                temporarySettings: {
+                                    __typename: 'TemporarySettings',
+                                    contents: JSON.stringify({ ...currentSettings, ...newSettings }),
+                                },
+                            },
+                        })
+                    },
                 })
             ).pipe(
                 map(() => {}) // Ignore return value, always empty

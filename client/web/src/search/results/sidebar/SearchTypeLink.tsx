@@ -5,7 +5,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '../..'
@@ -18,7 +17,6 @@ import styles from './SearchSidebarSection.module.scss'
 export interface SearchTypeLinksProps
     extends Omit<PatternTypeProps, 'setPatternType'>,
         Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
-        VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     onNavbarQueryChange: (queryState: QueryState) => void
@@ -38,7 +36,6 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     query,
     patternType,
     caseSensitive,
-    versionContext,
     selectedSearchContextSpec,
     children,
 }) => {
@@ -46,7 +43,6 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
         updateFilter(query, FilterType.type, type as string),
         patternType,
         caseSensitive,
-        versionContext,
         selectedSearchContextSpec
     )
 

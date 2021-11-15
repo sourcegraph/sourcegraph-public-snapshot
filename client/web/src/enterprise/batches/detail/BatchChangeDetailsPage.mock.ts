@@ -1,6 +1,16 @@
 import { subDays } from 'date-fns'
 
-import { BatchChangeFields, BulkOperationState } from '../../../graphql-operations'
+import {
+    BatchChangeFields,
+    BulkOperationState,
+    BulkOperationType,
+    BatchChangeBulkOperationsResult,
+    ChangesetReviewState,
+    ChangesetSpecType,
+    ChangesetState,
+    BatchChangeChangesetsResult,
+    ChangesetCheckState,
+} from '../../../graphql-operations'
 
 const now = new Date()
 
@@ -41,6 +51,11 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
     currentSpec: {
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
+        codeHostsWithoutWebhooks: {
+            nodes: [],
+            pageInfo: { hasNextPage: false },
+            totalCount: 0,
+        },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',
@@ -58,4 +73,237 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         ],
     },
     diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+}
+
+export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
+    node: {
+        __typename: 'BatchChange',
+        bulkOperations: {
+            __typename: 'BulkOperationConnection',
+            totalCount: 3,
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+            },
+            nodes: [
+                {
+                    __typename: 'BulkOperation',
+                    id: 'id1',
+                    type: BulkOperationType.COMMENT,
+                    state: BulkOperationState.PROCESSING,
+                    errors: [],
+                    progress: 0.25,
+                    createdAt: subDays(now, 5).toISOString(),
+                    finishedAt: null,
+                    changesetCount: 100,
+                    initiator: {
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+                {
+                    __typename: 'BulkOperation',
+                    id: 'id2',
+                    type: BulkOperationType.COMMENT,
+                    state: BulkOperationState.COMPLETED,
+                    errors: [],
+                    progress: 1,
+                    createdAt: subDays(now, 5).toISOString(),
+                    finishedAt: subDays(now, 4).toISOString(),
+                    changesetCount: 100,
+                    initiator: {
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+                {
+                    __typename: 'BulkOperation',
+                    id: 'id3',
+                    type: BulkOperationType.DETACH,
+                    state: BulkOperationState.COMPLETED,
+                    errors: [],
+                    progress: 1,
+                    createdAt: subDays(now, 5).toISOString(),
+                    finishedAt: subDays(now, 4).toISOString(),
+                    changesetCount: 25,
+                    initiator: {
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+                {
+                    __typename: 'BulkOperation',
+                    id: 'id4',
+                    type: BulkOperationType.COMMENT,
+                    state: BulkOperationState.FAILED,
+                    errors: [
+                        {
+                            changeset: {
+                                __typename: 'ExternalChangeset',
+                                externalURL: {
+                                    url: 'https://test.test/my/pr',
+                                },
+                                repository: {
+                                    name: 'sourcegraph/sourcegraph',
+                                    url: '/github.com/sourcegraph/sourcegraph',
+                                },
+                                title: 'Changeset title on code host',
+                            },
+                            error: 'Failed to create comment, cannot comment on a PR that is awesome.',
+                        },
+                    ],
+                    progress: 1,
+                    createdAt: subDays(now, 5).toISOString(),
+                    finishedAt: subDays(now, 4).toISOString(),
+                    changesetCount: 100,
+                    initiator: {
+                        url: '/users/alice',
+                        username: 'alice',
+                    },
+                },
+            ],
+        },
+    },
+}
+
+export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node'] = {
+    ...MOCK_BATCH_CHANGE,
+    changesets: {
+        __typename: 'ChangesetConnection',
+        totalCount: 7,
+        nodes: [
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.UNPUBLISHED,
+                id: 'someh1',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.PROCESSING,
+                id: 'someh2',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.RETRYING,
+                id: 'someh3',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.FAILED,
+                id: 'someh4',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.OPEN,
+                id: 'someh5',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'ExternalChangeset',
+                body: 'body',
+                checkState: ChangesetCheckState.PASSED,
+                diffStat: {
+                    __typename: 'DiffStat',
+                    added: 10,
+                    changed: 9,
+                    deleted: 1,
+                },
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
+                labels: [
+                    {
+                        __typename: 'ChangesetLabel',
+                        color: '93ba13',
+                        description: 'Very awesome description',
+                        text: 'Some label',
+                    },
+                ],
+                repository: {
+                    id: 'repoid',
+                    name: 'github.com/sourcegraph/awesome',
+                    url: 'http://test.test/awesome',
+                },
+                reviewState: ChangesetReviewState.COMMENTED,
+                title: 'Add prettier to all projects',
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.OPEN,
+                nextSyncAt: null,
+                id: 'somev1',
+                error: null,
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-1',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
+            },
+            {
+                __typename: 'ExternalChangeset',
+                body: 'body',
+                checkState: null,
+                diffStat: {
+                    __typename: 'DiffStat',
+                    added: 10,
+                    changed: 9,
+                    deleted: 1,
+                },
+                externalID: null,
+                externalURL: null,
+                labels: [],
+                repository: {
+                    id: 'repoid',
+                    name: 'github.com/sourcegraph/awesome',
+                    url: 'http://test.test/awesome',
+                },
+                reviewState: null,
+                title: 'Add prettier to all projects',
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.RETRYING,
+                nextSyncAt: null,
+                id: 'somev2',
+                error: 'Cannot create PR, insufficient token scope.',
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-2',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
+            },
+        ],
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
+
+export const EMPTY_BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node'] = {
+    ...MOCK_BATCH_CHANGE,
+    changesets: {
+        __typename: 'ChangesetConnection',
+        totalCount: 0,
+        nodes: [],
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
 }

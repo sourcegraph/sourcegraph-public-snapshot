@@ -1,11 +1,9 @@
 import * as H from 'history'
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Form } from 'reactstrap'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -21,12 +19,13 @@ import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
-import { VersionContext } from '../../schema/site.schema'
 import { ThemePreferenceProps } from '../../theme'
-import { submitSearch, SubmitSearchParameters } from '../helpers'
+import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
+
+import styles from './SearchPageInput.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -40,25 +39,18 @@ interface Props
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         Pick<SubmitSearchParameters, 'source'>,
-        VersionContextProps,
         SearchContextInputProps,
         OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => Promise<void>
-    availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** Show the query builder link. */
-    showQueryBuilder: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
     hiddenQueryPrefix?: string
-    /** Don't show the version contexts dropdown. */
-    hideVersionContexts?: boolean
     autoFocus?: boolean
 }
 
@@ -83,49 +75,72 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     ])
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
+    const tourContainer = useRef<HTMLDivElement>(null)
+
     const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
         showOnboardingTour,
         queryState: userQueryState,
         setQueryState: setUserQueryState,
+        stepsContainer: tourContainer.current ?? undefined,
     })
-    const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            event?.preventDefault()
-            submitSearch({
-                ...props,
-                query: props.hiddenQueryPrefix
-                    ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
-                    : userQueryState.query,
-                source: 'home',
-            })
+
+    const submitSearchOnChange = useCallback(
+        (parameters: Partial<SubmitSearchParameters> = {}) => {
+            const query = props.hiddenQueryPrefix
+                ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
+                : userQueryState.query
+
+            if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
+                submitSearch({
+                    source: 'home',
+                    query,
+                    history: props.history,
+                    patternType: props.patternType,
+                    caseSensitive: props.caseSensitive,
+                    activation: props.activation,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    ...parameters,
+                })
+            }
         },
-        [props, userQueryState.query]
+        [
+            props.history,
+            props.patternType,
+            props.caseSensitive,
+            props.activation,
+            props.selectedSearchContextSpec,
+            props.hiddenQueryPrefix,
+            userQueryState.query,
+        ]
+    )
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            submitSearchOnChange()
+        },
+        [submitSearchOnChange]
     )
 
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                <div className="search-page__input-container">
+                <div data-search-page-input-container={true} className={styles.inputContainer}>
+                    {/* Search onboarding tour must be rendered before the SearchBox so
+                    the Monaco autocomplete suggestions are not blocked by the tour. */}
+                    <div ref={tourContainer} />
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
-                        submitSearchOnSearchContextChange={false}
-                        hasGlobalQueryBehavior={true}
+                        submitSearchOnToggle={submitSearchOnChange}
                         queryState={userQueryState}
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                     />
                 </div>
-                {props.showQueryBuilder && (
-                    <div className="search-page__input-sub-container">
-                        <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
-                            Query builder
-                        </Link>
-                    </div>
-                )}
-                <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

@@ -11,6 +11,8 @@ import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitorFields, MonitorEmailPriority } from '../../../graphql-operations'
 import { triggerTestEmailAction } from '../backend'
 
+import styles from './FormActionArea.module.scss'
+
 interface ActionAreaProps {
     actions: CodeMonitorFields['actions']
     actionsCompleted: boolean
@@ -19,6 +21,9 @@ interface ActionAreaProps {
     authenticatedUser: AuthenticatedUser
     onActionsChange: (action: CodeMonitorFields['actions']) => void
     description: string
+    cardClassName?: string
+    cardBtnClassName?: string
+    cardLinkClassName?: string
 }
 
 const LOADING = 'LOADING' as const
@@ -35,6 +40,9 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
     authenticatedUser,
     onActionsChange,
     description,
+    cardClassName,
+    cardBtnClassName,
+    cardLinkClassName,
 }) => {
     const [showEmailNotificationForm, setShowEmailNotificationForm] = useState(false)
     const toggleEmailNotificationForm: React.FormEventHandler = useCallback(event => {
@@ -131,7 +139,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             <span className="text-muted">Run any number of actions in response to an event</span>
             {/* This should be its own component when you can add multiple email actions */}
             {showEmailNotificationForm && (
-                <div className="code-monitor-form__card card p-3">
+                <div className={classNames(cardClassName, 'card p-3')}>
                     <div className="font-weight-bold">Send email notifications</div>
                     <span className="text-muted">Deliver email notifications to specified recipients.</span>
                     <div className="form-group mt-4 test-action-form">
@@ -171,12 +179,14 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             </button>
                         )}
                         {!description && (
-                            <div className="action-area__test-action-error mt-2">
+                            <div className={classNames('mt-2', styles.testActionError)}>
                                 Please provide a name for the code monitor before sending a test
                             </div>
                         )}
                         {isErrorLike(triggerTestEmailResult) && (
-                            <div className="action-area__test-action-error mt-2">{triggerTestEmailResult.message}</div>
+                            <div className={classNames('mt-2', styles.testActionError)}>
+                                {triggerTestEmailResult.message}
+                            </div>
                         )}
                     </div>
                     <div className="d-flex align-items-center my-4">
@@ -186,10 +196,12 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                 value={emailNotificationEnabled}
                                 onToggle={toggleEmailNotificationEnabled}
                                 className="mr-2"
-                                aria-labelledby="action-area__enable-toggle"
+                                aria-labelledby="code-monitoring-form-actions-enable-toggle"
                             />
                         </div>
-                        <span id="action-area__enable-toggle">{emailNotificationEnabled ? 'Enabled' : 'Disabled'}</span>
+                        <span id="code-monitoring-form-actions-enable-toggle">
+                            {emailNotificationEnabled ? 'Enabled' : 'Disabled'}
+                        </span>
                     </div>
                     <div>
                         <button
@@ -209,7 +221,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
             {!showEmailNotificationForm && (
                 <button
                     type="button"
-                    className="btn code-monitor-form__card--button card test-action-button"
+                    className={classNames('btn card test-action-button', cardBtnClassName)}
                     aria-label="Edit action: Send email notifications"
                     disabled={disabled}
                     onClick={toggleEmailNotificationForm}
@@ -219,7 +231,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                             <div
                                 className={classNames(
                                     'font-weight-bold',
-                                    !actionsCompleted && 'code-monitor-form__card-link btn-link'
+                                    !actionsCompleted && classNames(cardLinkClassName, 'btn-link')
                                 )}
                             >
                                 Send email notifications

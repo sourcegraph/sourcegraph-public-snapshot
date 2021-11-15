@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useRef, forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 import { useMergeRefs } from 'use-callback-ref'
 
@@ -57,13 +57,13 @@ const FormInput = forwardRef((props, reference) => {
     useAutoFocus({ autoFocus, reference: localReference })
 
     return (
-        <label className={classnames('w-100', className)}>
+        <label className={classNames('w-100', className)}>
             {title && <div className="mb-2">{title}</div>}
 
             <LoaderInput className="d-flex" loading={loading}>
                 <Component
                     type={type}
-                    className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
+                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': valid,
                         'is-invalid': !!error || errorInputState,
                     })}
@@ -81,7 +81,7 @@ const FormInput = forwardRef((props, reference) => {
                 </small>
             )}
             {!error && description && (
-                <small className={classnames('text-muted', 'form-text', styles.description)}>{description}</small>
+                <small className={classNames('text-muted', 'form-text', styles.description)}>{description}</small>
             )}
         </label>
     )

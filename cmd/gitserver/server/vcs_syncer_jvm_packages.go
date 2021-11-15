@@ -174,7 +174,10 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 		return nil, err
 	}
 
-	var totalConfigMatched int
+	var (
+		totalConfigMatched int
+		timedout           []reposource.MavenDependency
+	)
 	for _, dependency := range s.MavenDependencies() {
 		if module.MatchesDependencyString(dependency) {
 			dependency, err := reposource.ParseMavenDependency(dependency)
@@ -182,14 +185,21 @@ func (s *JVMPackagesSyncer) packageDependencies(ctx context.Context, repoUrlPath
 				return nil, err
 			}
 
-			if coursier.Exists(ctx, s.Config, dependency) {
+			exists, err := coursier.Exists(ctx, s.Config, dependency)
+			if exists {
 				totalConfigMatched++
 				dependencies = append(dependencies, dependency)
+			} else if errors.Is(err, context.DeadlineExceeded) {
+				timedout = append(timedout, dependency)
 			}
 			// Silently ignore non-existent dependencies because
 			// they are already logged out in the `GetRepo` method
 			// in internal/repos/jvm_packages.go.
 		}
+	}
+
+	if len(timedout) > 0 {
+		log15.Warn("non-zero number of timed-out coursier invocations", "count", len(timedout), "dependencies", timedout)
 	}
 
 	dbDeps, err := s.DBStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{

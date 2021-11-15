@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { startCase } from 'lodash'
 import openColor from 'open-color'
 import React, { ChangeEventHandler, memo } from 'react'
@@ -32,8 +32,8 @@ export const FormColorInput: React.FunctionComponent<FormColorInputProps> = memo
     const { className, value = null, title, name, colours = DEFAULT_COLOURS, onChange = noop } = props
 
     return (
-        <fieldset className={classnames('d-flex flex-column', className)}>
-            <legend className={classnames('mb-3', styles.formColorPickerTitle)}>{title}</legend>
+        <fieldset className={classNames('d-flex flex-column', className)}>
+            <legend className={classNames('mb-3', styles.formColorPickerTitle)}>{title}</legend>
 
             <div>
                 {colours.map(colorInfo => (

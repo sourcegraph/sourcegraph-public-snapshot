@@ -410,6 +410,10 @@ type Mutation {
         """
         firstSourceURL: String
         """
+        The last sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        lastSourceURL: String
+        """
         The URL when the event was logged.
         """
         url: String!
@@ -438,10 +442,6 @@ type Mutation {
         """
         publicArgument: String
         """
-        User properties for Amplitude analytics. Used on Sourcegraph Cloud only. Avoid including any PII.
-        """
-        userProperties: String
-        """
         Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
         """
         deviceID: String
@@ -457,6 +457,10 @@ type Mutation {
         """
         insertID: String
     ): EmptyResponse
+    """
+    Logs a batch of events.
+    """
+    logEvents(events: [Event!]): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
@@ -730,6 +734,71 @@ type Mutation {
         """
         settingsToEdit: String!
     ): EmptyResponse!
+}
+
+"""
+A description of a user event.
+"""
+input Event {
+    """
+    The name of the event.
+    """
+    event: String!
+    """
+    The randomly generated unique user ID stored in a browser cookie.
+    """
+    userCookieID: String!
+    """
+    The first sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    firstSourceURL: String
+    """
+    The last sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    lastSourceURL: String
+    """
+    The URL when the event was logged.
+    """
+    url: String!
+    """
+    The source of the event.
+    """
+    source: EventSource!
+    """
+    An optional cohort ID to identify the user as part of a specific A/B test.
+    The cohort ID is expected to be a date in the form YYYY-MM-DD
+    """
+    cohortID: String
+    """
+    An optional referrer parameter for the user's current session.
+    Only captured and stored on Sourcegraph Cloud.
+    """
+    referrer: String
+    """
+    The additional argument information.
+    """
+    argument: String
+    """
+    Public argument information. PRIVACY: Do NOT include any potentially private information in this field.
+    These properties get sent to our analytics tools for Cloud, so must not include private information,
+    such as search queries or repository names.
+    """
+    publicArgument: String
+    """
+    Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+    """
+    deviceID: String
+    """
+    Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+    See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+    """
+    eventID: Int
+    """
+    Insert ID used to deduplicate events that re-occur in the event of retries or
+    backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+    Used on Sourcegraph Cloud only.
+    """
+    insertID: String
 }
 
 """
@@ -1249,25 +1318,11 @@ type Query {
         The search query (such as "foo" or "repo:myrepo foo").
         """
         query: String = ""
-
-        """
-        (experimental) Optionally specify the versionContext. If not specified the
-        default version context is used (all repositories on the default branch).
-        """
-        versionContext: String
     ): Search
     """
     All saved searches configured for the current user, merged from all configurations.
     """
     savedSearches: [SavedSearch!]!
-    """
-    All repository groups for the current user, merged from all configurations.
-    """
-    repoGroups: [RepoGroup!]!
-    """
-    (experimental) All version contexts.
-    """
-    versionContexts: [VersionContext!]!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -1323,10 +1378,10 @@ type Query {
     ): Namespace
 
     """
-    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
-    the configured code hosts are able to see.
+    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
+    but ones that the configured code hosts are able to see.
     """
-    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
@@ -1349,9 +1404,169 @@ type Query {
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
+    Retrieve the value of a feature flag for the organization
+    """
+    organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
+
+    """
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!
+
+    """
+    Returns recently received webhooks across all external services, optionally
+    limiting the returned values to only those that didn't match any external
+    service.
+
+    Only site admins can access this field.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs that were not matched to an external service.
+        """
+        onlyUnmatched: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
+
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String!
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architure running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
 }
 
 """
@@ -1595,6 +1810,10 @@ type Search {
     The suggestions.
     """
     suggestions(first: Int): [SearchSuggestion!]!
+        @deprecated(
+            reason: "Suggestions now done with streaming search. This field is deprecated and will be removed in a future release."
+        )
+
     """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
@@ -1607,10 +1826,6 @@ type Search {
 Predefined suggestions for search filters when backfill.
 """
 type SearchFilterSuggestions {
-    """
-    The suggestions for search filter "repogroup:".
-    """
-    repogroup: [String!]!
     """
     The suggestions for search filter "repo:".
     """
@@ -1900,20 +2115,6 @@ type SearchQueryDescription {
 }
 
 """
-A group of repositories.
-"""
-type RepoGroup {
-    """
-    The name.
-    """
-    name: String!
-    """
-    The repositories.
-    """
-    repositories: [String!]!
-}
-
-"""
 A diff between two diffable Git objects.
 """
 type Diff {
@@ -2107,6 +2308,38 @@ type ExternalService implements Node {
     so it should be used sparingly.
     """
     grantedScopes: [String!]
+
+    """
+    Returns recently received webhooks on this external service.
+
+    Only site admins may access this field.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
 }
 
 """
@@ -2526,22 +2759,6 @@ type ExternalRepository {
     Example: For GitHub.com, this is "https://github.com/".
     """
     serviceID: String!
-}
-
-"""
-(experimental) A version context. Used to change the set of default repository and revisions searched.
-Note: We do not expose the list of repositories and revisions in the version context. This is intentional. However, if a need arises we can add it in.
-"""
-type VersionContext {
-    """
-    The name of the version context.
-    """
-    name: String!
-
-    """
-    The description of the version context.
-    """
-    description: String!
 }
 
 """
@@ -4799,6 +5016,44 @@ type Org implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For organizations, this is the organization's name.
     """
     namespaceName: String!
+
+    """
+    Repositories from external services owned by this organization.
+    """
+    repositories(
+        """
+        Returns the first n repositories from the list.
+        """
+        first: Int
+        """
+        Return repositories whose names match the query.
+        """
+        query: String
+        """
+        An opaque cursor that is used for pagination.
+        """
+        after: String
+        """
+        Include cloned repositories.
+        """
+        cloned: Boolean = true
+        """
+        Include repositories that are not yet cloned and for which cloning is not in progress.
+        """
+        notCloned: Boolean = true
+        """
+        Include repositories that have a text search index.
+        """
+        indexed: Boolean = true
+        """
+        Include repositories that do not have a text search index.
+        """
+        notIndexed: Boolean = true
+        """
+        Only include repositories from these external services.
+        """
+        externalServiceIDs: [ID]
+    ): RepositoryConnection!
 }
 
 """
@@ -5954,6 +6209,11 @@ type CodeIntelligenceRange {
     references: LocationConnection!
 
     """
+    A list of implementations of the symbol occurring within the range.
+    """
+    implementations: LocationConnection!
+
+    """
     The hover result of the symbol occurring within the range.
     """
     hover: Hover
@@ -6222,4 +6482,134 @@ type TemporarySettings {
     A JSON string representing the temporary settings.
     """
     contents: String!
+}
+
+"""
+A list of logged webhook deliveries.
+"""
+type WebhookLogConnection {
+    """
+    A list of webhook logs.
+    """
+    nodes: [WebhookLog!]!
+
+    """
+    The total number of webhook logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single logged webhook delivery.
+"""
+type WebhookLog implements Node {
+    """
+    The webhook log ID.
+    """
+    id: ID!
+
+    """
+    The time the webhook was received at.
+    """
+    receivedAt: DateTime!
+
+    """
+    The external service the webhook was matched to, if any.
+    """
+    externalService: ExternalService
+
+    """
+    The HTTP status code returned from the webhook handler.
+    """
+    statusCode: Int!
+
+    """
+    The received webhook request.
+    """
+    request: WebhookLogRequest!
+
+    """
+    The response sent by the webhook handler.
+    """
+    response: WebhookLogResponse!
+}
+
+"""
+A HTTP message (request or response) within a webhook log.
+"""
+interface WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A HTTP request within a webhook log.
+"""
+type WebhookLogRequest implements WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+
+    """
+    The method used in the HTTP request.
+    """
+    method: String!
+
+    """
+    The requested URL.
+    """
+    url: String!
+
+    """
+    The HTTP version in use.
+    """
+    version: String!
+}
+
+"""
+A HTTP response within a webhook log.
+"""
+type WebhookLogResponse implements WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A single HTTP header within a webhook log.
+"""
+type WebhookLogHeader {
+    """
+    The header name.
+    """
+    name: String!
+
+    """
+    The header values.
+    """
+    values: [String!]!
 }

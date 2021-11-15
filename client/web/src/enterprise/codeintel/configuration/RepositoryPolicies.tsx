@@ -5,6 +5,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Container } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
+
 import { PoliciesList } from './PoliciesList'
 import { ConfigTypes, CONFIG_TEXT } from './RepositoryPolicies.config'
 import { usePoliciesConfig, useDeletePolicies, updateDeletePolicyCache } from './usePoliciesConfigurations'
@@ -14,6 +16,7 @@ interface RepositoryPoliciesProps {
     indexingEnabled: boolean
     history: H.History
     isGlobal: boolean
+    authenticatedUser: AuthenticatedUser | null
     onHandleDisplayAction: React.Dispatch<React.SetStateAction<boolean>>
     onHandleIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
     onHandleIsLoading: React.Dispatch<React.SetStateAction<boolean>>
@@ -24,6 +27,7 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
     indexingEnabled,
     history,
     isGlobal,
+    authenticatedUser,
     onHandleDisplayAction,
     onHandleIsDeleting,
     onHandleIsLoading,
@@ -66,15 +70,15 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
     return (
         <Container>
             <h3>{CONFIG_TEXT[configType].title}</h3>
-
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
-
             {loadingPolicies ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <PoliciesList
                     policies={policies}
-                    onDeletePolicy={repo.id === null || !isGlobal ? handleDelete : undefined}
+                    onDeletePolicy={
+                        (repo.id === null || !isGlobal) && authenticatedUser?.siteAdmin ? handleDelete : undefined
+                    }
                     disabled={loadingPolicies}
                     indexingEnabled={indexingEnabled}
                     history={history}

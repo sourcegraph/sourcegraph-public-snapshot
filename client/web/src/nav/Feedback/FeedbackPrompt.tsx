@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import TickIcon from 'mdi-react/TickIcon'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -17,6 +18,7 @@ import { LayoutRouteProps } from '../../routes'
 import { IconRadioButtons } from '../IconRadioButtons'
 
 import { Happy, Sad, VeryHappy, VerySad } from './FeedbackIcons'
+import styles from './FeedbackPrompt.module.scss'
 
 export const HAPPINESS_FEEDBACK_OPTIONS = [
     {
@@ -107,12 +109,12 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
 
     return (
         <>
-            <Button className="feedback-prompt__close" onClick={closePrompt}>
-                <CloseIcon className="feedback-prompt__icon" />
+            <Button className={styles.close} onClick={closePrompt}>
+                <CloseIcon className={styles.icon} />
             </Button>
             {data?.submitHappinessFeedback ? (
-                <div className="feedback-prompt__success">
-                    <TickIcon className="feedback-prompt__success--tick" />
+                <div className={styles.success}>
+                    <TickIcon className={styles.successTick} />
                     <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
                         Thank you for your help.
@@ -138,7 +140,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         minRows={3}
                         maxRows={6}
                         placeholder="What’s going well? What could be better?"
-                        className="form-control feedback-prompt__textarea"
+                        className={classNames('form-control', styles.textarea)}
                         autoFocus={true}
                         ref={textAreaReference}
                     />
@@ -158,7 +160,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                         role="menuitem"
                         type="submit"
                         variant="secondary"
-                        className="btn-block feedback-prompt__button"
+                        className={classNames('btn-block', styles.button)}
                     >
                         {loading ? <LoadingSpinner inline={true} /> : 'Send'}
                     </Button>
@@ -180,16 +182,22 @@ export const FeedbackPrompt: React.FunctionComponent<Props> = ({ open, routes })
     const match = useRoutesMatch(routes)
 
     return (
-        <ButtonDropdown a11y={false} isOpen={isOpen} toggle={handleToggle} className="feedback-prompt" group={false}>
+        <ButtonDropdown
+            a11y={false}
+            isOpen={isOpen}
+            toggle={handleToggle}
+            className={styles.feedbackPrompt}
+            group={false}
+        >
             <DropdownToggle
                 tag="button"
                 caret={false}
-                className="btn btn-sm btn-outline-secondary text-decoration-none feedback-prompt__toggle"
+                className={classNames('btn btn-sm btn-outline-secondary text-decoration-none', styles.toggle)}
                 aria-label="Feedback"
             >
                 <span>Feedback</span>
             </DropdownToggle>
-            <DropdownMenu right={true} className="feedback-prompt__menu">
+            <DropdownMenu right={true} className={styles.menu}>
                 <FeedbackPromptContent closePrompt={forceClose} routeMatch={match} />
             </DropdownMenu>
         </ButtonDropdown>

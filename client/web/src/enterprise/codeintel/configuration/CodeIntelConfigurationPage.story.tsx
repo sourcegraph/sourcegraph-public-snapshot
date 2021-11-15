@@ -6,12 +6,12 @@ import React from 'react'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     CodeIntelligenceConfigurationPoliciesResult,
     IndexConfigurationResult,
     InferredIndexConfigurationResult,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelConfigurationPage, CodeIntelConfigurationPageProps } from './CodeIntelConfigurationPage'
 import { POLICIES_CONFIGURATION, REPOSITORY_CONFIGURATION, INFERRED_CONFIGURATION } from './usePoliciesConfigurations'
@@ -53,6 +53,8 @@ const localMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResu
                     indexingEnabled: true,
                     indexCommitMaxAgeHours: 40320,
                     indexIntermediateCommits: true,
+                    repository: null,
+                    repositoryPatterns: [],
                 },
                 {
                     __typename: 'CodeIntelligenceConfigurationPolicy' as const,
@@ -67,6 +69,8 @@ const localMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResu
                     indexingEnabled: true,
                     indexCommitMaxAgeHours: 40320,
                     indexIntermediateCommits: true,
+                    repository: null,
+                    repositoryPatterns: [],
                 },
             ],
         },
@@ -93,6 +97,8 @@ const globalMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesRes
                     indexingEnabled: false,
                     indexCommitMaxAgeHours: 672,
                     indexIntermediateCommits: false,
+                    repository: null,
+                    repositoryPatterns: [],
                 },
                 {
                     __typename: 'CodeIntelligenceConfigurationPolicy' as const,
@@ -107,6 +113,8 @@ const globalMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesRes
                     indexingEnabled: false,
                     indexCommitMaxAgeHours: 4032,
                     indexIntermediateCommits: false,
+                    repository: null,
+                    repositoryPatterns: [],
                 },
             ],
         },
@@ -223,7 +231,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelConfigurationPageProps> = args => (
-    <EnterpriseWebStory
+    <WebStory
         mocks={[
             localMockRequest,
             globalMockRequest,
@@ -235,19 +243,157 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
         {props => (
             <CodeIntelConfigurationPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 )
 
 export const EmptyGlobalPage = Template.bind({})
+EmptyGlobalPage.args = {
+    authenticatedUser: {
+        __typename: 'User',
+        id: 'string',
+        databaseID: 1,
+        username: 'string',
+        avatarURL: 'string',
+        email: 'string',
+        displayName: 'string',
+        siteAdmin: true,
+        tags: [],
+        url: 'string',
+        settingsURL: 'string',
+        viewerCanAdminister: true,
+        organizations: {
+            __typename: 'OrgConnection',
+            nodes: [
+                {
+                    __typename: 'Org',
+                    id: 'string',
+                    name: 'string',
+                    displayName: 'string',
+                    url: 'string',
+                    settingsURL: 'string',
+                },
+            ],
+        },
+        session: {
+            __typename: 'Session',
+            canSignOut: true,
+        },
+    },
+}
 
 export const GlobalPage = Template.bind({})
+GlobalPage.args = {
+    authenticatedUser: {
+        __typename: 'User',
+        id: 'string',
+        databaseID: 1,
+        username: 'string',
+        avatarURL: 'string',
+        email: 'string',
+        displayName: 'string',
+        siteAdmin: true,
+        tags: [],
+        url: 'string',
+        settingsURL: 'string',
+        viewerCanAdminister: true,
+        organizations: {
+            __typename: 'OrgConnection',
+            nodes: [
+                {
+                    __typename: 'Org',
+                    id: 'string',
+                    name: 'string',
+                    displayName: 'string',
+                    url: 'string',
+                    settingsURL: 'string',
+                },
+            ],
+        },
+        session: {
+            __typename: 'Session',
+            canSignOut: true,
+        },
+    },
+}
 
 export const EmptyRepositoryPage = Template.bind({})
 EmptyRepositoryPage.args = {
     repo: { id: 'sourcegraph' },
 }
 
+export const EmptyRepositoryPageWithSiteAdmin = Template.bind({})
+EmptyRepositoryPageWithSiteAdmin.args = {
+    repo: { id: 'sourcegraph' },
+    authenticatedUser: {
+        __typename: 'User',
+        id: 'string',
+        databaseID: 1,
+        username: 'string',
+        avatarURL: 'string',
+        email: 'string',
+        displayName: 'string',
+        siteAdmin: true,
+        tags: [],
+        url: 'string',
+        settingsURL: 'string',
+        viewerCanAdminister: true,
+        organizations: {
+            __typename: 'OrgConnection',
+            nodes: [
+                {
+                    __typename: 'Org',
+                    id: 'string',
+                    name: 'string',
+                    displayName: 'string',
+                    url: 'string',
+                    settingsURL: 'string',
+                },
+            ],
+        },
+        session: {
+            __typename: 'Session',
+            canSignOut: true,
+        },
+    },
+}
+
 export const RepositoryPage = Template.bind({})
 RepositoryPage.args = {
     repo: { id: 'sourcegraph' },
+}
+
+export const RepositoryPageWithSiteAdmin = Template.bind({})
+RepositoryPageWithSiteAdmin.args = {
+    repo: { id: 'sourcegraph' },
+    authenticatedUser: {
+        __typename: 'User',
+        id: 'string',
+        databaseID: 1,
+        username: 'string',
+        avatarURL: 'string',
+        email: 'string',
+        displayName: 'string',
+        siteAdmin: true,
+        tags: [],
+        url: 'string',
+        settingsURL: 'string',
+        viewerCanAdminister: true,
+        organizations: {
+            __typename: 'OrgConnection',
+            nodes: [
+                {
+                    __typename: 'Org',
+                    id: 'string',
+                    name: 'string',
+                    displayName: 'string',
+                    url: 'string',
+                    settingsURL: 'string',
+                },
+            ],
+        },
+        session: {
+            __typename: 'Session',
+            canSignOut: true,
+        },
+    },
 }

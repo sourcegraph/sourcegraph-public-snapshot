@@ -3,8 +3,8 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
+import { WebStory } from '../../../components/WebStory'
 import { CodeMonitorFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import { mockCodeMonitor } from '../testing/util'
 
 import { DeleteMonitorModal } from './DeleteMonitorModal'
@@ -14,7 +14,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/DeleteMonitorModal', m
 add(
     'Example',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <DeleteMonitorModal
                     {...props}
@@ -24,7 +24,7 @@ add(
                     deleteCodeMonitor={sinon.fake(() => NEVER)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {

@@ -21,9 +21,7 @@ import {
     CaseSensitivityProps,
     PatternTypeProps,
     SearchStreamingProps,
-    resolveVersionContext,
     ParsedSearchQueryProps,
-    MutableVersionContextProps,
     SearchContextProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -36,6 +34,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
+import { DidYouMean } from './DidYouMean'
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
@@ -43,16 +42,14 @@ import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
 import { StreamingSearchResultsList } from './StreamingSearchResultsList'
-import { VersionContextWarning } from './VersionContextWarning'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
         Pick<ActivationProps, 'activation'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
@@ -82,12 +79,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         parsedSearchQuery: query,
         patternType,
         caseSensitive,
-        versionContext,
         streamSearch,
         location,
-        history,
-        availableVersionContexts,
-        previousVersionContext,
         authenticatedUser,
         telemetryService,
         codeInsightsEnabled,
@@ -145,18 +138,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const options: StreamSearchOptions = useMemo(
         () => ({
-            query,
             version: LATEST_VERSION,
             patternType: patternType ?? SearchPatternType.literal,
             caseSensitive,
-            versionContext: resolveVersionContext(versionContext, availableVersionContexts),
             trace,
-            extensionHostAPI,
         }),
-        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext, extensionHostAPI]
+        [caseSensitive, patternType, trace]
     )
 
-    const results = useCachedSearchResults(streamSearch, options, telemetryService)
+    const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -191,36 +181,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         setShowSavedSearchModal(false)
         telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
     }, [telemetryService])
-
-    const [showVersionContextWarning, setShowVersionContextWarning] = useState(false)
-    useEffect(
-        () => {
-            const searchParameters = new URLSearchParams(location.search)
-            const versionFromURL = searchParameters.get('c')
-
-            if (searchParameters.has('from-context-toggle')) {
-                // The query param `from-context-toggle` indicates that the version context
-                // changed from the version context toggle. In this case, we don't warn
-                // users that the version context has changed.
-                searchParameters.delete('from-context-toggle')
-                history.replace({
-                    search: searchParameters.toString(),
-                    hash: history.location.hash,
-                })
-                setShowVersionContextWarning(false)
-            } else {
-                setShowVersionContextWarning(
-                    (availableVersionContexts && versionFromURL !== previousVersionContext) || false
-                )
-            }
-        },
-        // Only show warning when URL changes
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [location.search]
-    )
-    const onDismissVersionContextWarning = useCallback(() => setShowVersionContextWarning(false), [
-        setShowVersionContextWarning,
-    ])
 
     // Reset expanded state when new search is started
     useEffect(() => {
@@ -267,7 +227,6 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 patternType={props.patternType}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
-                versionContext={props.versionContext}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
                 className={classNames(
                     styles.streamingSearchResultsSidebar,
@@ -296,14 +255,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 }
             />
 
-            <div className={styles.streamingSearchResultsContainer}>
-                {showVersionContextWarning && (
-                    <VersionContextWarning
-                        versionContext={versionContext}
-                        onDismissWarning={onDismissVersionContextWarning}
-                    />
-                )}
+            <DidYouMean
+                telemetryService={props.telemetryService}
+                parsedSearchQuery={props.parsedSearchQuery}
+                patternType={props.patternType}
+                caseSensitive={props.caseSensitive}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
+            />
 
+            <div className={styles.streamingSearchResultsContainer}>
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
@@ -314,12 +274,9 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {results?.alert && (
-                    <SearchAlert
-                        alert={results.alert}
-                        caseSensitive={caseSensitive}
-                        patternType={patternType}
-                        versionContext={versionContext}
-                    />
+                    <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
+                        <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
+                    </div>
                 )}
 
                 {showSignUpCta && (

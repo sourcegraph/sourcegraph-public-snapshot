@@ -3,7 +3,7 @@ import React from 'react'
 import sinon from 'sinon'
 
 import { AuthenticatedUser } from '../../auth'
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
 
@@ -12,7 +12,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/CreateCodeMonitorPage'
 add(
     'Example',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <CreateCodeMonitorPage
                     {...props}
@@ -22,7 +22,7 @@ add(
                     createCodeMonitor={sinon.fake()}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {

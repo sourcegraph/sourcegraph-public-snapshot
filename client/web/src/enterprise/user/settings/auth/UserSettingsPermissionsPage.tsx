@@ -7,7 +7,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { UserAreaUserFields } from '../../../../graphql-operations'
+import { UserSettingsAreaUserFields } from '../../../../graphql-operations'
 import { ActionContainer } from '../../../../repo/settings/components/ActionContainer'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
@@ -17,10 +17,10 @@ import styles from './UserSettingsPermissionsPage.module.scss'
 /**
  * The user settings permissions page.
  */
-export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAreaUserFields; history: H.History }> = ({
-    user,
-    history,
-}) => {
+export const UserSettingsPermissionsPage: React.FunctionComponent<{
+    user: UserSettingsAreaUserFields
+    history: H.History
+}> = ({ user, history }) => {
     useEffect(() => eventLogger.logViewEvent('UserSettingsPermissions'))
     const permissionsInfo = useObservable(useMemo(() => userPermissionsInfo(user.id), [user.id]))
 
@@ -88,7 +88,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<{ user: UserAr
 }
 
 interface ScheduleUserPermissionsSyncActionContainerProps {
-    user: UserAreaUserFields
+    user: UserSettingsAreaUserFields
     history: H.History
 }
 

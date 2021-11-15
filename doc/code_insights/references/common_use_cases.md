@@ -150,8 +150,8 @@ nvm install 14 archived:no fork:no
 ```
 
 ## Codebase Topline Metrics
-> Note that some of these may be very large result sets and perform slower than an average insight. 
-
+<!-- > Note that some of these may be very large result sets and perform slower than an average insight.  -->
+<!-- 
 **Codebase size in LOC (and is it growing/shrinking)** 
 ```sgquery 
 .\n patternType:regex archived:no fork:no
@@ -160,7 +160,7 @@ nvm install 14 archived:no fork:no
 **Codebase size for a specific language**
 ```sgquery 
 .\n lang:TypeScript patternType:regex archived:no fork:no
-```
+``` -->
 
 **Are there more Typescript or more Go files** 
 ```sgquery 

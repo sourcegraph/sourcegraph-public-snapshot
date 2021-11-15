@@ -5,13 +5,13 @@ import { addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
@@ -23,7 +23,7 @@ const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecora
 add('All states', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <>
                     {Object.values(ChangesetState)
@@ -56,6 +56,7 @@ add('All states', () => {
                                     },
                                     labels: [
                                         {
+                                            __typename: 'ChangesetLabel',
                                             color: '93ba13',
                                             description: 'Very awesome description',
                                             text: 'Some label',
@@ -96,14 +97,14 @@ add('All states', () => {
                         ))}
                 </>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Unpublished', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -127,7 +128,14 @@ add('Unpublished', () => {
                             changed: 20,
                             deleted: 8,
                         },
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -161,14 +169,14 @@ add('Unpublished', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Importing', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -188,7 +196,14 @@ add('Importing', () => {
                         externalID: '12345',
                         externalURL: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -215,14 +230,14 @@ add('Importing', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Importing failed', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -242,7 +257,14 @@ add('Importing failed', () => {
                         externalID: '99999',
                         externalURL: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -259,14 +281,14 @@ add('Importing failed', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Sync failed', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -286,7 +308,14 @@ add('Sync failed', () => {
                         externalID: '99999',
                         externalURL: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -303,6 +332,6 @@ add('Sync failed', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

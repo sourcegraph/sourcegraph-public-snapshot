@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -22,7 +23,7 @@ func TestTemporarySettingsStore(t *testing.T) {
 
 func testGetEmpty(t *testing.T) {
 	t.Parallel()
-	temporarySettingsStore := TemporarySettings(dbtest.NewDB(t, ""))
+	temporarySettingsStore := NewDB(dbtest.NewDB(t)).TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -36,9 +37,9 @@ func testGetEmpty(t *testing.T) {
 
 func testInsertAndGet(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 	usersStore := Users(db)
-	temporarySettingsStore := TemporarySettings(db)
+	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -59,9 +60,9 @@ func testInsertAndGet(t *testing.T) {
 
 func testUpdateAndGet(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 	usersStore := Users(db)
-	temporarySettingsStore := TemporarySettings(db)
+	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -87,9 +88,9 @@ func testUpdateAndGet(t *testing.T) {
 
 func testInsertWithInvalidData(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 	usersStore := Users(db)
-	temporarySettingsStore := TemporarySettings(db)
+	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -99,14 +100,14 @@ func testInsertWithInvalidData(t *testing.T) {
 	require.NoError(t, err)
 
 	err = temporarySettingsStore.OverwriteTemporarySettings(ctx, user.ID, contents)
-	require.EqualError(t, err, "ERROR: invalid input syntax for type json (SQLSTATE 22P02)")
+	require.EqualError(t, errors.Unwrap(errors.Unwrap(err)), "ERROR: invalid input syntax for type json (SQLSTATE 22P02)")
 }
 
 func testEdit(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := NewDB(dbtest.NewDB(t))
 	usersStore := Users(db)
-	temporarySettingsStore := TemporarySettings(db)
+	temporarySettingsStore := db.TemporarySettings()
 
 	ctx := actor.WithInternalActor(context.Background())
 

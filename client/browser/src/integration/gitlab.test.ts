@@ -152,7 +152,7 @@ describe('GitLab', () => {
         const [token] = await line.$x('//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
-            selector: '.hover-overlay__content > p',
+            selector: '[data-testid="hover-overlay-content"] > p',
             fuzziness: 'contains',
             wait: {
                 timeout: 6000,

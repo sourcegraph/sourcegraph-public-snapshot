@@ -219,7 +219,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) error { return scanChangeset(c, sc) })
+	return s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(c, sc) })
 }
 
 var createChangesetQueryFmtstr = `
@@ -371,7 +371,7 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 	q := getChangesetQuery(&opts)
 
 	var c btypes.Changeset
-	err = s.query(ctx, q, func(sc scanner) error { return scanChangeset(&c, sc) })
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangeset(&c, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -441,7 +441,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 
 	q := listChangesetSyncDataQuery(opts)
 	results := make([]*btypes.ChangesetSyncData, 0)
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var h btypes.ChangesetSyncData
 		if err := scanChangesetSyncData(&h, sc); err != nil {
 			return err
@@ -455,7 +455,7 @@ func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyn
 	return results, nil
 }
 
-func scanChangesetSyncData(h *btypes.ChangesetSyncData, s scanner) error {
+func scanChangesetSyncData(h *btypes.ChangesetSyncData, s dbutil.Scanner) error {
 	return s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
@@ -533,7 +533,7 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 	q := listChangesetsQuery(&opts, authzConds)
 
 	cs = make([]*btypes.Changeset, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var c btypes.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return err
@@ -705,7 +705,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanChangeset(cs, sc)
 	})
 }
@@ -762,7 +762,7 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 
 	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
 
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanChangeset(cs, sc)
 	})
 }
@@ -792,7 +792,7 @@ func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Cha
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanChangeset(cs, sc)
 	})
 }
@@ -1047,7 +1047,7 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*btypes.Changeset, error)
 
 	var cs []*btypes.Changeset
 
-	return cs, scanAll(rows, func(sc scanner) (err error) {
+	return cs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var c btypes.Changeset
 		if err = scanChangeset(&c, sc); err != nil {
 			return err
@@ -1105,7 +1105,7 @@ func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
 	return *n.Assocs, nil
 }
 
-func scanChangeset(t *btypes.Changeset, s scanner) error {
+func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	var metadata, syncState json.RawMessage
 
 	var (
@@ -1195,7 +1195,7 @@ func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (st
 	defer endObservation(1, observation.Args{})
 
 	q := getChangesetsStatsQuery(batchChangeID)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
 			&stats.Retrying,
@@ -1255,7 +1255,7 @@ func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (
 	q := getRepoChangesetsStatsQuery(int64(repoID), authzConds)
 
 	stats = &btypes.RepoChangesetsStats{}
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		if err := sc.Scan(
 			&stats.Total,
 			&stats.Unpublished,
@@ -1286,7 +1286,7 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 	)
 
 	var c btypes.Changeset
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanChangeset(&c, sc)
 	})
 	if err != nil {

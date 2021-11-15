@@ -31,7 +31,7 @@ const config = {
   // https://github.com/facebook/create-react-app/issues/5241#issuecomment-426269242 for more information on why
   // this is necessary.
   transformIgnorePatterns: [
-    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify|@sourcegraph/comlink|monaco-editor)',
+    '/node_modules/(?!abortable-rx|@sourcegraph/react-loading-spinner|@sourcegraph/codeintellify|@sourcegraph/comlink|monaco-editor|marked)',
   ],
 
   moduleNameMapper: {
@@ -59,6 +59,7 @@ const config = {
     path.join(__dirname, 'client/shared/dev/setLinkComponentForTest.ts'),
     path.join(__dirname, 'client/shared/dev/mockResizeObserver.ts'),
     path.join(__dirname, 'client/shared/dev/mockUniqueId.ts'),
+    path.join(__dirname, 'client/shared/dev/mockSentryBrowser.ts'),
     // Enzyme setup file
     path.join(__dirname, 'client/shared/dev/enzymeSetup.js'),
   ],

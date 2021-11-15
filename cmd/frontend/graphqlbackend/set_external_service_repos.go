@@ -30,8 +30,8 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	// 🚨 SECURITY: make sure the user is either site admin or the same user being requested
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, es.NamespaceUserID); err != nil {
+	// 🚨 SECURITY: make sure the user has access to external service
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
 
@@ -51,7 +51,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		// If we know the number of repos up front we can ensure that they don't exceed
 		// their limit before hitting the code host
 		maxAllowed := conf.UserReposMaxPerUser()
-		if es.NamespaceUserID != 0 && len(repos) > maxAllowed {
+		if (es.NamespaceUserID != 0 || es.NamespaceOrgID != 0) && len(repos) > maxAllowed {
 			return nil, errors.Errorf("Too many repositories, %d. Sourcegraph supports adding a maximum of %d repositories.", len(repos), maxAllowed)
 		}
 	}

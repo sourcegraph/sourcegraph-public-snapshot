@@ -1,5 +1,5 @@
-import classnames from 'classnames'
-import React, { FormEventHandler, RefObject } from 'react'
+import classNames from 'classnames'
+import React, { FormEventHandler, RefObject, useContext } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
 
@@ -12,6 +12,8 @@ import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
 import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsGqlBackend } from '../../../../../../core/backend/code-insights-gql-backend'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -94,6 +96,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
 
     const isEditMode = mode === 'edit'
 
+    const api = useContext(CodeInsightsBackendContext)
+
+    // We have to know about what exactly api we use to be able switch our UI properly.
+    // In the creation UI case we should hide visibility section since we don't use that
+    // concept anymore with new GQL backend.
+    // TODO [VK]: Remove this condition rendering when we deprecate setting-based api
+    const isGqlBackend = api instanceof CodeInsightsGqlBackend
+
     return (
         // eslint-disable-next-line react/forbid-elements
         <form
@@ -101,7 +111,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             ref={innerRef}
             onSubmit={handleSubmit}
             onReset={onFormReset}
-            className={classnames(className, 'd-flex flex-column')}
+            className={classNames(className, 'd-flex flex-column')}
         >
             <FormGroup
                 name="insight repositories"
@@ -182,12 +192,14 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     className="d-flex flex-column"
                 />
 
-                <VisibilityPicker
-                    subjects={subjects}
-                    value={visibility.input.value}
-                    labelClassName={styles.creationInsightFormGroupLabel}
-                    onChange={visibility.input.onChange}
-                />
+                {!isGqlBackend && (
+                    <VisibilityPicker
+                        subjects={subjects}
+                        value={visibility.input.value}
+                        labelClassName={styles.creationInsightFormGroupLabel}
+                        onChange={visibility.input.onChange}
+                    />
+                )}
 
                 <FormGroup
                     name="insight step group"
@@ -206,7 +218,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         {...stepValue.input}
                         valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
                         errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
-                        className={classnames(styles.creationInsightFormStepInput)}
+                        className={classNames(styles.creationInsightFormStepInput)}
                     />
 
                     <FormRadioInput

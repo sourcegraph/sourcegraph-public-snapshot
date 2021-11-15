@@ -39,9 +39,7 @@ func (s BatchSpecResolutionJobState) ToGraphQL() string { return strings.ToUpper
 type BatchSpecResolutionJob struct {
 	ID int64
 
-	BatchSpecID      int64
-	AllowUnsupported bool
-	AllowIgnored     bool
+	BatchSpecID int64
 
 	// workerutil fields
 	State           BatchSpecResolutionJobState

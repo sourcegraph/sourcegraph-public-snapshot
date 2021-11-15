@@ -1,3 +1,4 @@
+import { ApolloError } from '@apollo/client'
 import Dialog from '@reach/dialog'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -37,7 +38,9 @@ export interface FuzzyModalProps {
     commitID: string
     initialMaxResults: number
     initialQuery: string
-    downloadFilenames: () => Promise<string[]>
+    downloadFilenames: string[]
+    isLoading: boolean
+    isError: ApolloError | undefined
     onClose: () => void
     fsm: FuzzyFSM
     setFsm: (fsm: FuzzyFSM) => void
@@ -71,18 +74,8 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     const [fuzzyResultElement, setFuzzyResultElement] = useState<JSX.Element>()
 
     useEffect(() => {
-        async function handleEmpty(props: FuzzyModalProps): Promise<void> {
-            props.setFsm({ key: 'downloading' })
-
-            try {
-                const filenames = await props.downloadFilenames()
-                props.setFsm(handleFilenames(filenames))
-            } catch (error) {
-                props.setFsm({
-                    key: 'failed',
-                    errorMessage: JSON.stringify(error),
-                })
-            }
+        function handleEmpty(props: FuzzyModalProps): void {
+            props.setFsm(handleFilenames(props.downloadFilenames))
             cleanLegacyCacheStorage()
         }
 
@@ -162,9 +155,17 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
             return setIsComplete(fuzzyResult.isComplete)
         }
 
+        if (props.isLoading) {
+            return empty(<p>Downloading...</p>)
+        }
+
+        if (props.isError) {
+            return empty(<p>Error: {JSON.stringify(props.isError)}</p>)
+        }
+
         switch (props.fsm.key) {
             case 'empty':
-                handleEmpty(props).then(() => {}, onError('onEmpty'))
+                handleEmpty(props)
                 return empty(<></>)
             case 'downloading':
                 return empty(<p>Downloading...</p>)
@@ -197,25 +198,25 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
     }
 
     function onInputKeyDown(event: React.KeyboardEvent): void {
-        switch (event.key) {
-            case 'Escape':
+        switch (true) {
+            case event.key === 'Escape':
                 props.onClose()
                 break
-            case 'ArrowDown':
+            case event.key === 'ArrowDown':
                 event.preventDefault() // Don't move the cursor to the end of the input.
                 setRoundedFocusIndex(1)
                 break
-            case 'PageDown':
+            case event.key === 'PageDown':
                 setRoundedFocusIndex(PAGE_DOWN_INCREMENT)
                 break
-            case 'ArrowUp':
+            case event.key === 'ArrowUp':
                 event.preventDefault() // Don't move the cursor to the start of input.
                 setRoundedFocusIndex(-1)
                 break
-            case 'PageUp':
+            case event.key === 'PageUp':
                 setRoundedFocusIndex(-PAGE_DOWN_INCREMENT)
                 break
-            case 'Enter':
+            case event.key === 'Enter':
                 if (focusIndex < resultsCount) {
                     const fileAnchor = document.querySelector<HTMLAnchorElement>(`#fuzzy-modal-result-${focusIndex} a`)
                     fileAnchor?.click()
@@ -223,6 +224,8 @@ export const FuzzyModal: React.FunctionComponent<FuzzyModalProps> = props => {
                     props.onClose()
                 }
                 break
+            case event.key === 'p' && (event.metaKey || event.ctrlKey):
+                event.preventDefault()
             default:
         }
     }

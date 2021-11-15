@@ -10,11 +10,6 @@
         + .bulk-operation-node__container {
             border-top: 1px solid var(--border-color-2);
         }
-        &:first-of-type {
-            .bulk-operation-node__changeset-counts {
-                padding-top: 0;
-            }
-        }
     }
     &__changeset-counts {
         padding: 1rem;

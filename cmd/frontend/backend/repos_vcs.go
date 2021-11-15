@@ -15,7 +15,7 @@ import (
 // ResolveRev will return the absolute commit for a commit-ish spec in a repo.
 // If no rev is specified, HEAD is used.
 // Error cases:
-// * Repo does not exist: vcs.RepoNotExistError
+// * Repo does not exist: gitdomain.RepoNotExistError
 // * Commit does not exist: git.RevisionNotFoundError
 // * Empty repository: git.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound

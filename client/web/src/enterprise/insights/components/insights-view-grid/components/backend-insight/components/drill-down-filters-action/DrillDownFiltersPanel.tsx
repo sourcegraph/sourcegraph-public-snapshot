@@ -1,8 +1,6 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useRef } from 'react'
-
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
@@ -16,7 +14,6 @@ import styles from './DrillDownFiltersPanel.module.scss'
 
 interface DrillDownFiltersProps {
     isOpen: boolean
-    settings: Settings
     initialFiltersValue: SearchBasedBackendFilters
     originalFiltersValue: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
@@ -29,7 +26,6 @@ interface DrillDownFiltersProps {
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
     const {
         isOpen,
-        settings,
         popoverTargetRef,
         initialFiltersValue,
         originalFiltersValue,
@@ -47,7 +43,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
             <button
                 ref={targetButtonReference}
                 type="button"
-                className={classnames('btn btn-icon p-1', styles.filterButton, {
+                className={classNames('btn btn-icon p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
@@ -71,7 +67,6 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 onMouseDown={event => event.stopPropagation()}
             >
                 <DrillDownFiltersPanel
-                    settings={settings}
                     initialFiltersValue={initialFiltersValue}
                     originalFiltersValue={originalFiltersValue}
                     onFiltersChange={onFilterChange}

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -21,7 +22,7 @@ import (
 
 // handleGithubRepoAuthzEvent handles any github event containing a repository field, and enqueues the contained
 // repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+func handleGitHubRepoAuthzEvent(db dbutil.DB, opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 	return func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
 		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
 			return nil
@@ -36,7 +37,7 @@ func handleGitHubRepoAuthzEvent(opts authz.FetchPermsOptions) func(ctx context.C
 		if !ok {
 			return errors.Errorf("incorrect event type sent to github event handler: %T", payload)
 		}
-		return scheduleRepoUpdate(ctx, e.GetRepo(), opts)
+		return scheduleRepoUpdate(ctx, db, e.GetRepo(), opts)
 	}
 }
 
@@ -47,14 +48,14 @@ type repoGetter interface {
 // scheduleRepoUpdate finds an internal repo from a github repo, and posts it to repo-updater to
 // schedule a permissions update
 // 🚨 SECURITY: we want to be able to find any private repo here, so the DB call uses internal actor
-func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository, opts authz.FetchPermsOptions) error {
+func scheduleRepoUpdate(ctx context.Context, db dbutil.DB, repo *gh.Repository, opts authz.FetchPermsOptions) error {
 	if repo == nil {
 		return nil
 	}
 
 	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
 	ctx = actor.WithInternalActor(ctx)
-	r, err := database.GlobalRepos.GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
+	r, err := database.Repos(db).GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
 	if err != nil {
 		return err
 	}

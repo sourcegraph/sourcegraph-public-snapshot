@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, PropsWithChildren, Ref } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
@@ -17,8 +17,8 @@ export const DrillDownRegExpInput = forwardRef((props: DrillDownRegExpInputProps
 
     return (
         <span className="d-flex w-100">
-            <span className={classnames(styles.prefixText, 'text-monospace')}>{prefix}</span>
-            <FlexTextArea {...inputProps} className={classnames(inputProps.className, styles.input)} ref={reference} />
+            <span className={classNames(styles.prefixText, 'text-monospace')}>{prefix}</span>
+            <FlexTextArea {...inputProps} className={classNames(inputProps.className, styles.input)} ref={reference} />
         </span>
     )
 })

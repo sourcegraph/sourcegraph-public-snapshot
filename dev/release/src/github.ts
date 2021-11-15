@@ -98,22 +98,22 @@ interface IssueTemplateArguments {
 const getTemplates = () => {
     const releaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/release_issue_template.md',
+        repo: 'handbook',
+        path: 'content/engineering/releases/release_issue_template.md',
         titleSuffix: IssueTitleSuffix.RELEASE_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE],
     }
     const patchReleaseIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/patch_release_issue_template.md',
+        repo: 'handbook',
+        path: 'content/engineering/releases/patch_release_issue_template.md',
         titleSuffix: IssueTitleSuffix.PATCH_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.PATCH],
     }
     const upgradeManagedInstanceIssue: IssueTemplate = {
         owner: 'sourcegraph',
-        repo: 'about',
-        path: 'handbook/engineering/releases/upgrade_managed_issue_template.md',
+        repo: 'handbook',
+        path: 'content/engineering/releases/upgrade_managed_issue_template.md',
         titleSuffix: IssueTitleSuffix.MANAGED_TRACKING,
         labels: [IssueLabel.RELEASE_TRACKING, IssueLabel.MANAGED],
     }

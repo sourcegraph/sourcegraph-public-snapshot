@@ -17,7 +17,7 @@ import { ApiService } from './types'
 export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiService => ({
     // Insights loading
     getBackendInsight,
-    getBuiltInInsight,
+    getBuiltInInsight: (insight, options) => getBuiltInInsight({ insight, options }),
 
     // Subject operations
     getSubjectSettings,

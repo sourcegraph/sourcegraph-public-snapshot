@@ -15,17 +15,20 @@ import (
 )
 
 type operations struct {
-	queryResolver             *observation.Operation
 	definitions               *observation.Operation
 	diagnostics               *observation.Operation
-	hover                     *observation.Operation
-	ranges                    *observation.Operation
-	references                *observation.Operation
+	documentation             *observation.Operation
+	documentationIDsToPathIDs *observation.Operation
 	documentationPage         *observation.Operation
 	documentationPathInfo     *observation.Operation
-	documentationIDsToPathIDs *observation.Operation
 	documentationReferences   *observation.Operation
-	documentation             *observation.Operation
+	documentationSearch       *observation.Operation
+	hover                     *observation.Operation
+	queryResolver             *observation.Operation
+	ranges                    *observation.Operation
+	references                *observation.Operation
+	implementations           *observation.Operation
+	stencil                   *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -56,17 +59,20 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		queryResolver:             op("QueryResolver"),
 		definitions:               op("Definitions"),
 		diagnostics:               op("Diagnostics"),
-		hover:                     op("Hover"),
-		ranges:                    op("Ranges"),
-		references:                op("References"),
+		documentation:             op("Documentation"),
+		documentationIDsToPathIDs: op("DocumentationIDsToPathIDs"),
 		documentationPage:         op("DocumentationPage"),
 		documentationPathInfo:     op("DocumentationPathInfo"),
-		documentationIDsToPathIDs: op("DocumentationIDsToPathIDs"),
 		documentationReferences:   op("DocumentationReferences"),
-		documentation:             op("Documentation"),
+		documentationSearch:       op("DocumentationSearch"),
+		hover:                     op("Hover"),
+		queryResolver:             op("QueryResolver"),
+		ranges:                    op("Ranges"),
+		references:                op("References"),
+		implementations:           op("Implementations"),
+		stencil:                   op("Stencil"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}

@@ -50,6 +50,9 @@ add('default', () => (
                 isReadOnly={false}
                 isOtherBlockSelected={false}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -72,6 +75,9 @@ add('selected', () => (
                 isOtherBlockSelected={false}
                 isReadOnly={false}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}
@@ -94,6 +100,9 @@ add('read-only selected', () => (
                 isReadOnly={true}
                 isOtherBlockSelected={false}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 sourcegraphSearchLanguageId="sourcegraphSearch"
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 fetchHighlightedFileLineRanges={() => of(HIGHLIGHTED_FILE_LINES_LONG)}

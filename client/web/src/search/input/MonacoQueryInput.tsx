@@ -6,27 +6,24 @@ import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { fetchSuggestions } from '../backend'
 import { QueryChangeSource, QueryState } from '../helpers'
 import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
+
+import styles from './MonacoQueryInput.module.scss'
 
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        SettingsCascadeProps,
-        VersionContextProps {
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -34,6 +31,7 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
+    onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
@@ -108,20 +106,24 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onCompletionItemSelected,
     autoFocus,
     selectedSearchContextSpec,
-    versionContext,
     patternType,
     globbing,
     interpretComments,
     isSourcegraphDotCom,
     isLightTheme,
     className,
-    settingsCascade,
     onHandleFuzzyFinder,
+    onEditorCreated: onEditorCreatedCallback,
 }) => {
-    const acceptSearchSuggestionOnEnter: boolean | undefined =
-        !isErrorLike(settingsCascade.final) &&
-        settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+
+    const onEditorCreated = useCallback(
+        (editor: Monaco.editor.IStandaloneCodeEditor) => {
+            setEditor(editor)
+            onEditorCreatedCallback?.(editor)
+        },
+        [setEditor, onEditorCreatedCallback]
+    )
 
     // Trigger a layout of the Monaco editor when its container gets resized.
     // The Monaco editor doesn't auto-resize with its container:
@@ -138,8 +140,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
-        [selectedSearchContextSpec, versionContext]
+        (query: string) => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
+        [selectedSearchContextSpec]
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestionsWithContext, {
@@ -161,12 +163,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
 
     // Register onCompletionSelected handler
     useEffect(() => {
-        if (!editor || !onCompletionItemSelected) {
-            return
-        }
-
-        Monaco.editor.registerCommand('completionItemSelected', onCompletionItemSelected)
-    }, [editor, onCompletionItemSelected])
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', onCompletionItemSelected ?? noop)
+        return () => disposable.dispose()
+    }, [onCompletionItemSelected])
 
     // Disable default Monaco keybindings
     useEffect(() => {
@@ -278,68 +277,37 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
 
-        if (!acceptSearchSuggestionOnEnter) {
-            // Unconditionally trigger the search when pressing `Enter`,
-            // including when there are visible completion suggestions.
-            const disposables = [
-                editor.addAction({
-                    id: 'submitOnEnter',
-                    label: 'submitOnEnter',
-                    keybindings: [Monaco.KeyCode.Enter],
-                    run: () => {
-                        onSubmit()
-                        editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-                    },
-                }),
-            ]
-
-            if (onHandleFuzzyFinder) {
-                disposables.push(
-                    editor.addAction({
-                        id: 'triggerFuzzyFinder',
-                        label: 'triggerFuzzyFinder',
-                        keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
-                        run: () => onHandleFuzzyFinder(true),
-                    })
-                )
-            }
-
-            return () => {
-                for (const disposable of disposables) {
-                    disposable.dispose()
-                }
-            }
-        }
-
-        const run = (): void => {
-            onSubmit()
-            editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-        }
+        // Unconditionally trigger the search when pressing `Enter`,
+        // including when there are visible completion suggestions.
         const disposables = [
-            // Trigger the search with "Enter" on the condition that there are
-            // no visible completion suggestions.
             editor.addAction({
                 id: 'submitOnEnter',
                 label: 'submitOnEnter',
                 keybindings: [Monaco.KeyCode.Enter],
-                precondition: '!suggestWidgetVisible',
-                run,
-            }),
-            // Unconditionally trigger the search with "Command/Ctrl + Enter",
-            // ignoring the visibility of completion suggestions.
-            editor.addAction({
-                id: 'submitOnCommandEnter',
-                label: 'submitOnCommandEnter',
-                keybindings: [Monaco.KeyCode.Enter | Monaco.KeyMod.CtrlCmd],
-                run,
+                run: () => {
+                    onSubmit()
+                    editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+                },
             }),
         ]
+
+        if (onHandleFuzzyFinder) {
+            disposables.push(
+                editor.addAction({
+                    id: 'triggerFuzzyFinder',
+                    label: 'triggerFuzzyFinder',
+                    keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
+                    run: () => onHandleFuzzyFinder(true),
+                })
+            )
+        }
+
         return () => {
             for (const disposable of disposables) {
                 disposable.dispose()
             }
         }
-    }, [editor, onSubmit, onHandleFuzzyFinder, acceptSearchSuggestionOnEnter])
+    }, [editor, onSubmit, onHandleFuzzyFinder])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,
@@ -386,11 +354,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 height={17}
                 isLightTheme={isLightTheme}
                 editorWillMount={noop}
-                onEditorCreated={setEditor}
+                onEditorCreated={onEditorCreated}
                 options={options}
                 border={false}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                className="test-query-input monaco-query-input"
+                className={classNames('test-query-input', styles.monacoQueryInput)}
             />
         </div>
     )

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -55,26 +57,25 @@ type AuthzStore interface {
 	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
 }
 
+// Authz instantiates and returns a new AuthzStore. In the OSS version, this is a no-op AuthzStore, but
+// this constructor is overridden in enterprise versions.
+var Authz = func(db dbutil.DB) AuthzStore {
+	return &authzStore{}
+}
+
+var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
+	return &authzStore{}
+}
+
 // authzStore is a no-op placeholder for the OSS version.
 type authzStore struct{}
 
-func (*authzStore) GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error {
-	if Mocks.Authz.GrantPendingPermissions != nil {
-		return Mocks.Authz.GrantPendingPermissions(ctx, args)
-	}
+func (*authzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
 	return nil
 }
-
-func (*authzStore) AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
-	if Mocks.Authz.AuthorizedRepos != nil {
-		return Mocks.Authz.AuthorizedRepos(ctx, args)
-	}
+func (*authzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
 	return []*types.Repo{}, nil
 }
-
-func (*authzStore) RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error {
-	if Mocks.Authz.RevokeUserPermissions != nil {
-		return Mocks.Authz.RevokeUserPermissions(ctx, args)
-	}
+func (*authzStore) RevokeUserPermissions(_ context.Context, _ *RevokeUserPermissionsArgs) error {
 	return nil
 }

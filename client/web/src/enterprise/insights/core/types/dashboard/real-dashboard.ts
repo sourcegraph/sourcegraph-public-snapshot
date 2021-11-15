@@ -15,7 +15,7 @@ export interface BuiltInInsightDashboard extends ExtendedInsightDashboard {
      *
      * "Global level" - all insights from site (global) setting subject.
      */
-    builtIn: true
+    builtIn?: true
 }
 
 /**
@@ -27,7 +27,7 @@ export interface SettingsBasedInsightDashboard extends ExtendedInsightDashboard 
      * Dashboard already has an id property but this id is UUID and will be used for further
      * BE migration.
      */
-    settingsKey: string
+    settingsKey?: string
 }
 
 /**

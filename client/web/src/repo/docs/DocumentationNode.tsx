@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import React, { RefObject, useEffect, useMemo, useRef } from 'react'
@@ -10,7 +10,6 @@ import { Observable } from 'rxjs'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -22,15 +21,11 @@ import { toDocumentationSingleSymbolURL, toDocumentationURL } from '../../util/u
 
 import { DocumentationExamples } from './DocumentationExamples'
 import { DocumentationIcons } from './DocumentationIcons'
+import styles from './DocumentationNode.module.scss'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 import { hasDescendent } from './RepositoryDocumentationSidebar'
 
-interface Props
-    extends Partial<RevisionSpec>,
-        ResolvedRevisionSpec,
-        BreadcrumbSetters,
-        SettingsCascadeProps,
-        VersionContextProps {
+interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters, SettingsCascadeProps {
     repo: RepositoryFields
 
     history: H.History
@@ -136,11 +131,14 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
         }
         const renderContent = !onlyPathID || node.pathID === onlyPathID || depth === 0
         return (
-            <div className={classNames('documentation-node mb-5', topMargin)}>
+            <div className={classNames('mb-5', styles.documentationNode, topMargin)}>
                 {renderContent && (
                     <div ref={reference}>
-                        <Heading level={headingLevel} className="d-flex align-items-center documentation-node__heading">
-                            <AnchorLink className="documentation-node__heading-anchor-link" to={thisPage}>
+                        <Heading
+                            level={headingLevel}
+                            className={classNames('d-flex align-items-center', styles.heading)}
+                        >
+                            <AnchorLink className={styles.headingAnchorLink} to={thisPage}>
                                 <LinkVariantIcon className="icon-inline" />
                             </AnchorLink>
                             {depth !== 0 && <DocumentationIcons className="mr-1" tags={node.documentation.tags} />}
@@ -151,10 +149,15 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                         {depth === 0 && (
                             <>
                                 <div className="d-flex align-items-center mb-3">
-                                    <span className="documentation-node__pill d-flex justify-content-center align-items-center px-2">
-                                        <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API
-                                        docs
-                                        <span className="documentation-node__pill-divider mx-2" />
+                                    <span
+                                        className={classNames(
+                                            'd-flex justify-content-center align-items-center px-2',
+                                            styles.pill
+                                        )}
+                                    >
+                                        <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
+                                        API docs
+                                        <span className={classNames('mx-2', styles.pillDivider)} />
                                         <a
                                             // eslint-disable-next-line react/jsx-no-target-blank
                                             target="_blank"
@@ -168,7 +171,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                             TODO(apidocs): add support for indicating time the API docs were updated
                             <span className="ml-2">Last updated 2 days ago</span>
                         */}
-                                    <Badge status="experimental" className="text-uppercase ml-2" />
+                                    <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
                                 </div>
                                 <hr />
                                 {onlyPathID && depth === 0 && (

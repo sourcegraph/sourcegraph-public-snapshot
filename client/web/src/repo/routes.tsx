@@ -16,6 +16,7 @@ import { Settings } from '../schema/settings.schema'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
+import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
@@ -129,7 +130,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setPatternType,
             caseSensitive,
             setCaseSensitivity,
-            versionContext,
             globbing,
             ...context
         }: RepoRevisionContainerContext &
@@ -186,7 +186,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setPatternType,
                 caseSensitive,
                 setCaseSensitivity,
-                versionContext,
                 globbing,
             }
 
@@ -204,7 +203,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     {!hideRepoRevisionContent && (
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                        <div className="repo-revision-container__content blob-status-bar__container">
+                        <BlobStatusBarContainer className="repo-revision-container__content">
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage
@@ -222,7 +221,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                                     <TreePage {...context} {...repoRevisionProps} repo={repo} />
                                 )}
                             </ErrorBoundary>
-                        </div>
+                        </BlobStatusBarContainer>
                     )}
                     <ActionItemsBar
                         useActionItemsBar={context.useActionItemsBar}
@@ -267,7 +266,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             useBreadcrumb,
             setBreadcrumb,
             settingsCascade,
-            versionContext,
             repo,
             history,
             location,
@@ -291,7 +289,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     useBreadcrumb={useBreadcrumb}
                     setBreadcrumb={setBreadcrumb}
                     settingsCascade={settingsCascade}
-                    versionContext={versionContext}
                     repo={repo}
                     history={history}
                     location={location}

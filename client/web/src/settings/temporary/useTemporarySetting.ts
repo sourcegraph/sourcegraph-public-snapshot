@@ -20,7 +20,7 @@ export const useTemporarySetting = <K extends keyof TemporarySettings>(
     key: K,
     defaultValue?: TemporarySettings[K]
 ): [
-    TemporarySettings[K] | null,
+    TemporarySettings[K],
     (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])) => void
 ] => {
     const temporarySettings = useContext(TemporarySettingsContext)

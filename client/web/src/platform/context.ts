@@ -2,7 +2,6 @@ import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { createExtensionHost } from '@sourcegraph/shared/src/api/extension/worker'
 import { fromObservableQueryPromise, getDocumentNode, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -71,12 +70,13 @@ export function createPlatformContext(): PlatformContext {
             }
 
             // The error will be emitted to consumers from the `context.settings` observable.
-            settingsQueryWatcher.refetch().catch(error => console.error(error))
+            await settingsQueryWatcher.refetch().catch(error => console.error(error))
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => Promise.resolve(createExtensionHost()),
+        createExtensionHost: async () =>
+            (await import('@sourcegraph/shared/src/api/extension/worker')).createExtensionHost(),
         urlToFile: toPrettyWebBlobURL,
         getScriptURLForExtension: () => undefined,
         sourcegraphURL: window.context.externalURL,

@@ -9,11 +9,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func createSearchContexts(ctx context.Context, store *SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
+func createSearchContexts(ctx context.Context, store SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
 	emptyRepositoryRevisions := []*types.SearchContextRepositoryRevisions{}
 	createdSearchContexts := make([]*types.SearchContext, len(searchContexts))
 	for idx, searchContext := range searchContexts {
@@ -27,7 +28,7 @@ func createSearchContexts(ctx context.Context, store *SearchContextsStore, searc
 }
 
 func TestSearchContexts_Get(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -79,7 +80,7 @@ func TestSearchContexts_Get(t *testing.T) {
 }
 
 func TestSearchContexts_Update(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -151,7 +152,7 @@ func TestSearchContexts_Update(t *testing.T) {
 }
 
 func TestSearchContexts_List(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -198,7 +199,7 @@ func TestSearchContexts_List(t *testing.T) {
 }
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -296,7 +297,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 }
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -357,7 +358,7 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 }
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := SearchContexts(db)
@@ -376,8 +377,8 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	repoAName := types.RepoName{ID: repoA.ID, Name: repoA.Name}
-	repoBName := types.RepoName{ID: repoB.ID, Name: repoB.Name}
+	repoAName := types.MinimalRepo{ID: repoA.ID, Name: repoA.Name}
+	repoBName := types.MinimalRepo{ID: repoB.ID, Name: repoB.Name}
 
 	// Create a search context with initial repository revisions
 	initialRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
@@ -419,7 +420,7 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 }
 
 func TestSearchContexts_Permissions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -622,7 +623,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 }
 
 func TestSearchContexts_Delete(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := context.Background()
 	sc := SearchContexts(db)
@@ -672,7 +673,7 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 }
 
 func TestSearchContexts_OrderBy(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -784,7 +785,7 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 }
 
 func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	// Required for this DB query.
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -811,7 +812,7 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 		searchContexts[idx], err = sc.CreateSearchContextWithRepositoryRevisions(
 			internalCtx,
 			searchContext,
-			[]*types.SearchContextRepositoryRevisions{{Repo: types.RepoName{ID: repos[idx].ID, Name: repos[idx].Name}, Revisions: []string{testRevision}}},
+			[]*types.SearchContextRepositoryRevisions{{Repo: types.MinimalRepo{ID: repos[idx].ID, Name: repos[idx].Name}, Revisions: []string{testRevision}}},
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %s", err)
@@ -824,22 +825,22 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 
 	listSearchContextsTests := []struct {
 		name    string
-		repoIDs []int32
-		want    map[int32][]string
+		repoIDs []api.RepoID
+		want    map[api.RepoID][]string
 	}{
 		{
 			name:    "all contexts, deleted ones excluded",
-			repoIDs: []int32{int32(repos[0].ID), int32(repos[1].ID), int32(repos[2].ID)},
-			want: map[int32][]string{
-				int32(repos[0].ID): {testRevision},
-				int32(repos[1].ID): {testRevision},
+			repoIDs: []api.RepoID{repos[0].ID, repos[1].ID, repos[2].ID},
+			want: map[api.RepoID][]string{
+				repos[0].ID: {testRevision},
+				repos[1].ID: {testRevision},
 			},
 		},
 		{
 			name:    "subset of repos",
-			repoIDs: []int32{int32(repos[0].ID)},
-			want: map[int32][]string{
-				int32(repos[0].ID): {testRevision},
+			repoIDs: []api.RepoID{repos[0].ID},
+			want: map[api.RepoID][]string{
+				repos[0].ID: {testRevision},
 			},
 		},
 	}

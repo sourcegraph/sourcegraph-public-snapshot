@@ -1,32 +1,19 @@
+import { render, act } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer, { act } from 'react-test-renderer'
 import { of } from 'rxjs'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 
-jest.mock('./BackToAllSubscriptionsLink', () => ({
-    BackToAllSubscriptionsLink: 'BackToAllSubscriptionsLink',
-}))
-
-jest.mock('./UserProductSubscriptionStatus', () => ({
-    UserProductSubscriptionStatus: 'UserProductSubscriptionStatus',
-}))
-
-jest.mock('./ProductSubscriptionBilling', () => ({
-    ProductSubscriptionBilling: 'ProductSubscriptionBilling',
-}))
-
 jest.mock('./ProductSubscriptionHistory', () => ({
     ProductSubscriptionHistory: 'ProductSubscriptionHistory',
 }))
-
 describe('UserSubscriptionsProductSubscriptionPage', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = render(
             <MemoryRouter>
                 <UserSubscriptionsProductSubscriptionPage
                     user={{ settingsURL: '/u' }}
@@ -41,6 +28,6 @@ describe('UserSubscriptionsProductSubscriptionPage', () => {
             </MemoryRouter>
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

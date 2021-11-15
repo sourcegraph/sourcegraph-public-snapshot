@@ -1,4 +1,4 @@
-import classname from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import styles from './MediaCharts.module.scss'
@@ -11,7 +11,7 @@ export const ThreeLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElemen
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         {...props}
-        className={classname(styles.chart, props.className)}
+        className={classNames(styles.chart, props.className)}
     >
         <circle cx="60.5" cy="74" r="1.5" fill="var(--red)" />
         <rect x="16" y="45" width="137" height="1" />
@@ -71,7 +71,7 @@ export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         {...props}
-        className={classname(styles.chart, props.className)}
+        className={classNames(styles.chart, props.className)}
     >
         <rect x="16" y="45" width="137" height="1" />
         <rect x="16" y="22" width="137" height="1" />
@@ -140,7 +140,7 @@ export const PieChart: React.FunctionComponent<React.SVGProps<SVGSVGElement>> = 
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         {...props}
-        className={classname(styles.chart, props.className)}
+        className={classNames(styles.chart, props.className)}
     >
         <rect x="16" y="45" width="137" height="1" />
         <rect x="16" y="22" width="137" height="1" />

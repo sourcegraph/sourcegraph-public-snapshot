@@ -186,5 +186,5 @@ following:
   structural searches.
 
 - **Matching blocks in indentation-sensitive languages.** It's not currently
-  possible to match blocks of code that are identation-sensitive. This is a
+  possible to match blocks of code that are indentation-sensitive. This is a
   feature planned for future work.

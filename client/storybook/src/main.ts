@@ -17,10 +17,11 @@ import webpack, {
 } from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
+import { ROOT_PATH } from '@sourcegraph/build-config'
+
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { environment } from './environment-config'
 import {
-    rootPath,
     monacoEditorPath,
     dllPluginConfig,
     dllBundleManifestPath,
@@ -35,18 +36,18 @@ import {
 
 const getStoriesGlob = (): string[] => {
     if (process.env.STORIES_GLOB) {
-        return [path.resolve(rootPath, process.env.STORIES_GLOB)]
+        return [path.resolve(ROOT_PATH, process.env.STORIES_GLOB)]
     }
 
     // Stories in `Chromatic.story.tsx` are guarded by the `isChromatic()` check. It will result in noop in all other environments.
-    const chromaticStoriesGlob = path.resolve(rootPath, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
+    const chromaticStoriesGlob = path.resolve(ROOT_PATH, 'client/storybook/src/chromatic-story/Chromatic.story.tsx')
 
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
     const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
-        path.resolve(rootPath, `client/${packageDirectory}/src/**/*.story.tsx`)
+        path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
 
     return [...storiesGlobs, chromaticStoriesGlob]
@@ -59,7 +60,7 @@ const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
         loader: 'sass-loader',
         options: {
             sassOptions: {
-                includePaths: [path.resolve(rootPath, 'node_modules'), path.resolve(rootPath, 'client')],
+                includePaths: [path.resolve(ROOT_PATH, 'node_modules'), path.resolve(ROOT_PATH, 'client')],
             },
         },
     },
@@ -157,8 +158,8 @@ const config = {
                     config: [
                         __filename,
                         path.resolve(storybookWorkspacePath, 'babel.config.js'),
-                        path.resolve(rootPath, 'babel.config.js'),
-                        path.resolve(rootPath, 'postcss.config.js'),
+                        path.resolve(ROOT_PATH, 'babel.config.js'),
+                        path.resolve(ROOT_PATH, 'postcss.config.js'),
                         path.resolve(__dirname, './webpack.config.dll.ts'),
                     ],
                 },
@@ -172,7 +173,7 @@ const config = {
             loader: require.resolve('babel-loader'),
             options: {
                 cacheDirectory: true,
-                configFile: path.resolve(rootPath, 'babel.config.js'),
+                configFile: path.resolve(ROOT_PATH, 'babel.config.js'),
             },
         })
 
@@ -246,11 +247,6 @@ const config = {
         } else {
             config.plugins.push(getMonacoWebpackPlugin())
             config.module.rules.push(getMonacoCSSRule(), getMonacoTTFRule())
-
-            Object.assign(config.entry, {
-                'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-                'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
-            })
         }
 
         if (environment.isBundleAnalyzerEnabled) {

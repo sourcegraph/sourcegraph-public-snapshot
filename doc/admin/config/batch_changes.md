@@ -21,8 +21,14 @@ Or, to put it another way:
 | `batchChanges.rolloutWindows` configuration | Behavior |
 |---------------------------------------------|-----------|
 | Omitted, or set to `null`                   | Changesets will be reconciled as fast as the code host allows; essentially the same as setting a single `{"rate": "unlimited"}` window. |
-| Set to an array (even if empty)             | Changesets will be reconciled using the rate limit in the current window. If no window covers the current period, then no changesets will be reconciled until a window with a non-zero [`rate`](#rate) opens. |
+| Set to an array (even if empty)             | Changesets will be reconciled using the rate limit in the current window using [the leaky bucket behavior described below](#leaky-bucket-rate-limiting). If no window covers the current period, then no changesets will be reconciled until a window with a non-zero [`rate`](#rate) opens. |
 | Any other value                             | The configuration is invalid, and an error will appear. |
+
+#### Leaky bucket rate limiting
+
+Rate limiting uses the [leaky bucket algorithm](https://en.wikipedia.org/wiki/Leaky_bucket) to smooth bursts in reconciliations.
+
+Practically speaking, this means that the given rate can be thought of more as an average than as a simple resource allocation. If there are always changesets in the queue, a rate of `10/hour` means that a changeset will be reconciled approximately every six minutes, rather than ten changesets being simultaneously reconciled at the start of each hour.
 
 ### Rollout window object
 

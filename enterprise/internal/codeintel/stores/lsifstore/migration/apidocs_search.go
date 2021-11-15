@@ -20,18 +20,18 @@ import (
 )
 
 // APIDocsSearchMigrationID is the primary key of the migration record handled by an instance of
-// apiDocsSearchMigrator. This populates the new lsif_data_documentation_search_* tables using data
+// apiDocsSearchMigrator. This populates the new lsif_data_docs_search_* tables using data
 // decoded from other tables. This is associated with the out-of-band migration record inserted in
 // migrations/frontend/1528395874_oob_lsif_data_documentation_search.up.sql.
 const APIDocsSearchMigrationID = 12
 
 // NewAPIDocsSearchMigrator creates a new Migrator instance that reads records from the lsif_data_documentation_pages
-// table, decodes the GOB payloads, and populates the new lsif_data_documentation_search_* tables with
+// table, decodes the GOB payloads, and populates the new lsif_data_docs_search_* tables with
 // the information needed to search API docs.
 func NewAPIDocsSearchMigrator(
 	store *lsifstore.Store,
 	dbStore *dbstore.Store,
-	repoStore *database.RepoStore,
+	repoStore database.RepoStore,
 	gitserverClient GitserverClient,
 	batchSize int,
 ) oobmigration.Migrator {
@@ -49,7 +49,7 @@ func NewAPIDocsSearchMigrator(
 type apiDocsSearchMigrator struct {
 	store           *lsifstore.Store
 	dbStore         *dbstore.Store
-	repoStore       *database.RepoStore
+	repoStore       database.RepoStore
 	gitserverClient GitserverClient
 	serializer      *lsifstore.Serializer
 	batchSize       int
@@ -69,9 +69,10 @@ func (m *apiDocsSearchMigrator) Progress(ctx context.Context) (float64, error) {
 
 const apiDocsSearchMigratorProgressQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration/apidocs_search.go:Progress
-SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
-	(SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages WHERE search_indexed='true') c1,
-	(SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages) c2
+SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END
+FROM
+	(SELECT * FROM lsif_data_apidocs_num_dumps_indexed) c1,
+	(SELECT * FROM lsif_data_apidocs_num_dumps) c2
 `
 
 // Up runs a batch of the migration. This method is called repeatedly until the Progress
@@ -119,7 +120,7 @@ LIMIT %s
 `
 
 // processUpload indexes all of the API documentation for the given dump ID by decoding the information
-// in lsif_data_documentation_pages and inserting into the new lsif_data_documentation_search_* tables.
+// in lsif_data_documentation_pages and inserting into the new lsif_data_docs_search_* tables.
 func (m *apiDocsSearchMigrator) processUpload(ctx context.Context, uploadID int) error {
 	upload, exists, err := m.dbStore.GetUploadByID(ctx, uploadID)
 	if err != nil {
@@ -178,7 +179,12 @@ func (m *apiDocsSearchMigrator) processUpload(ctx context.Context, uploadID int)
 		}
 		pages = append(pages, page)
 	}
-	if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages); err != nil {
+
+	repositoryNameID, languageNameID, err := tx.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)
+	if err != nil {
+		return errors.Wrap(err, "WriteDocumentationSearchPrework")
+	}
+	if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages, repositoryNameID, languageNameID); err != nil {
 		return errors.Wrap(err, "WriteDocumentationSearch")
 	}
 	if err := m.store.Exec(ctx, sqlf.Sprintf(apiDocsSearchMigratorProcessedDumpQuery, uploadID)); err != nil {

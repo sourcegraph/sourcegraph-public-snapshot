@@ -22,6 +22,8 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { Scalars, SettingsAreaRepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import styles from './RepoSettingsIndexPage.module.scss'
+
 /**
  * Fetches a repository's text search index information.
  */
@@ -81,15 +83,8 @@ const TextSearchIndexedReference: React.FunctionComponent<{
     const Icon = isCurrent ? CheckCircleIcon : LoadingSpinner
 
     return (
-        <li className="repo-settings-index-page__ref">
-            <Icon
-                className={classNames(
-                    'icon-inline repo-settings-index-page__ref-icon',
-                    isCurrent
-                        ? 'repo-settings-index-page__ref-icon--current'
-                        : 'repo-settings-index-page__ref-icon--stale'
-                )}
-            />
+        <li className={styles.ref}>
+            <Icon className={classNames('icon-inline', styles.refIcon, isCurrent && styles.refIconCurrent)} />
             <LinkOrSpan to={indexedRef.ref.url}>
                 <strong>
                     <code>{indexedRef.ref.displayName}</code>
@@ -168,7 +163,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         ) : undefined
                     }
                 />
-                <Container className="repo-settings-index-page">
+                <Container>
                     {this.state.loading && <LoadingSpinner className="icon-inline" />}
                     {this.state.error && (
                         <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
@@ -178,7 +173,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         (this.state.textSearchIndex ? (
                             <>
                                 {this.state.textSearchIndex.refs && (
-                                    <ul className="repo-settings-index-page__refs">
+                                    <ul className={styles.refs}>
                                         {this.state.textSearchIndex.refs.map((reference, index) => (
                                             <TextSearchIndexedReference
                                                 key={index}
@@ -191,7 +186,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                                 {this.state.textSearchIndex.status && (
                                     <>
                                         <h3>Statistics</h3>
-                                        <table className="table repo-settings-index-page__stats mb-0">
+                                        <table className={classNames('table mb-0', styles.stats)}>
                                             <tbody>
                                                 <tr>
                                                     <th>Last updated</th>

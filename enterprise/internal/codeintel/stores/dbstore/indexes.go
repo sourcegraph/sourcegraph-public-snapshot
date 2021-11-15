@@ -261,7 +261,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 		conds = append(conds, makeIndexSearchCondition(opts.Term))
 	}
 	if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
+		conds = append(conds, makeStateCondition(opts.State))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())

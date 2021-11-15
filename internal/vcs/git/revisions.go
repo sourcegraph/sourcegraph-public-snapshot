@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -12,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.
@@ -58,7 +59,7 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // used.
 //
 // Error cases:
-// * Repo does not exist: vcs.RepoNotExistError
+// * Repo does not exist: gitdomain.RepoNotExistError
 // * Commit does not exist: RevisionNotFoundError
 // * Empty repository: RevisionNotFoundError
 // * Other unexpected errors.
@@ -106,26 +107,16 @@ func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt Re
 	return runRevParse(ctx, cmd, spec)
 }
 
-type BadCommitError struct {
-	Spec   string
-	Commit api.CommitID
-	Repo   api.RepoName
-}
-
-func (e BadCommitError) Error() string {
-	return fmt.Sprintf("ResolveRevision: got bad commit %q for repo %q at revision %q", e.Commit, e.Repo, e.Spec)
-}
-
 // runRevParse sends the git rev-parse command to gitserver. It interprets
 // missing revision responses and converts them into RevisionNotFoundError.
 func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if gitdomain.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args, stderr))
 	}
@@ -136,9 +127,9 @@ func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.Comm
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &gitserver.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
+			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo, Spec: spec}
 		}
-		return "", BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
+		return "", gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo}
 	}
 	return commit, nil
 }

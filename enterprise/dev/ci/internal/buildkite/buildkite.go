@@ -7,7 +7,11 @@
 package buildkite
 
 import (
+	"encoding/json"
 	"io"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/ghodss/yaml"
 )
@@ -23,6 +27,34 @@ type BuildOptions struct {
 	Branch   string                 `json:"branch,omitempty"`
 	MetaData map[string]interface{} `json:"meta_data,omitempty"`
 	Env      map[string]string      `json:"env,omitempty"`
+}
+
+func (bo BuildOptions) MarshalJSON() ([]byte, error) {
+	type buildOptions BuildOptions
+	boCopy := buildOptions(bo)
+	// Buildkite pipeline upload command will interpolate if it sees a $var
+	// which can cause the pipeline generation to fail because that
+	// variable do not exists.
+	// By replacing $ into $$ in the commit messages we can prevent those
+	// failures to happen.
+	//
+	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
+	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
+	return json.Marshal(boCopy)
+}
+
+func (bo BuildOptions) MarshalYAML() ([]byte, error) {
+	type buildOptions BuildOptions
+	boCopy := buildOptions(bo)
+	// Buildkite pipeline upload command will interpolate if it sees a $var
+	// which can cause the pipeline generation to fail because that
+	// variable do not exists.
+	// By replacing $ into $$ in the commit messages we can prevent those
+	// failures to happen.
+	//
+	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
+	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
+	return yaml.Marshal(boCopy)
 }
 
 // Matches Buildkite pipeline JSON schema:
@@ -42,10 +74,20 @@ type Step struct {
 	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
 	Concurrency            int                    `json:"concurrency,omitempty"`
+	Parallelism            int                    `json:"parallelism,omitempty"`
 	Skip                   string                 `json:"skip,omitempty"`
-	SoftFail               bool                   `json:"soft_fail,omitempty"`
+	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
 	Retry                  *RetryOptions          `json:"retry,omitempty"`
 	Agents                 map[string]string      `json:"agents,omitempty"`
+}
+
+var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+
+// GenerateKey will automatically generate a key based on the
+// step label, and return it.
+func (s *Step) GenerateKey() string {
+	s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
+	return s.Key
 }
 
 type RetryOptions struct {
@@ -86,7 +128,34 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	for _, opt := range AfterEveryStepOpts {
 		opt(step)
 	}
+
+	if step.Key == "" {
+		step.GenerateKey()
+	}
+
 	p.Steps = append(p.Steps, step)
+}
+
+// AddEnsureStep adds a step that has a dependency on all other steps prior to this step,
+// up until a wait step.
+//
+// We do not go past the closest "wait" because it won't work anyway - a failure before a
+// "wait" will not allow this step to run.
+func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
+	// Collect all keys to make this step depends on all others, traversing in reverse
+	// until we reach a "wait", if there is one.
+	keys := []string{}
+	for i := len(p.Steps) - 1; i >= 0; i-- {
+		step := p.Steps[i]
+		if s, ok := step.(*Step); ok {
+			keys = append(keys, s.Key)
+		} else if wait, ok := step.(string); ok {
+			if wait == "wait" {
+				break // we are done
+			}
+		}
+	}
+	p.AddStep(label, append(opts, DependsOn(keys...))...)
 }
 
 func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
@@ -96,16 +165,27 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 	for _, opt := range opts {
 		opt(step)
 	}
+	if step.Key == "" {
+		step.GenerateKey()
+	}
 	p.Steps = append(p.Steps, step)
 }
 
-func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
+func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
+	output, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return 0, err
+	}
+	n, err := w.Write([]byte(output))
+	return int64(n), err
+}
+
+func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 	output, err := yaml.Marshal(p)
 	if err != nil {
 		return 0, err
 	}
-
-	n, err := w.Write(output)
+	n, err := w.Write([]byte(output))
 	return int64(n), err
 }
 
@@ -147,6 +227,14 @@ func Concurrency(limit int) StepOpt {
 	}
 }
 
+// Parallelism tells Buildkite to run this job multiple time in parallel,
+// which is very useful to QA a flake fix.
+func Parallelism(count int) StepOpt {
+	return func(step *Step) {
+		step.Parallelism = count
+	}
+}
+
 func Env(name, value string) StepOpt {
 	return func(step *Step) {
 		step.Env[name] = value
@@ -159,9 +247,26 @@ func Skip(reason string) StepOpt {
 	}
 }
 
-func SoftFail(softFail bool) StepOpt {
+type softFailExitStatus struct {
+	ExitStatus int `json:"exit_status"`
+}
+
+// SoftFail indicates the specified exit codes should trigger a soft fail.
+// https://buildkite.com/docs/pipelines/command-step#command-step-attributes
+// This function also adds a specific env var named SOFT_FAIL_EXIT_CODES, enabling
+// to get exit codes from the scripts until https://github.com/sourcegraph/sourcegraph/issues/27264
+// is fixed.
+func SoftFail(exitCodes ...int) StepOpt {
 	return func(step *Step) {
-		step.SoftFail = softFail
+		var codes []string
+		for _, code := range exitCodes {
+			codes = append(codes, strconv.Itoa(code))
+			step.SoftFail = append(step.SoftFail, softFailExitStatus{
+				ExitStatus: code,
+			})
+		}
+		// https://github.com/sourcegraph/sourcegraph/issues/27264
+		step.Env["SOFT_FAIL_EXIT_CODES"] = strings.Join(codes, " ")
 	}
 }
 
@@ -192,9 +297,9 @@ func DisableManualRetry(reason string) StepOpt {
 	}
 }
 
-func ArtifactPaths(paths string) StepOpt {
+func ArtifactPaths(paths ...string) StepOpt {
 	return func(step *Step) {
-		step.ArtifactPaths = paths
+		step.ArtifactPaths = strings.Join(paths, ";")
 	}
 }
 
@@ -220,9 +325,9 @@ func Plugin(name string, plugin interface{}) StepOpt {
 	}
 }
 
-func DependsOn(dependency string) StepOpt {
+func DependsOn(dependency ...string) StepOpt {
 	return func(step *Step) {
-		step.DependsOn = append(step.DependsOn, dependency)
+		step.DependsOn = append(step.DependsOn, dependency...)
 	}
 }
 

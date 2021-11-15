@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
@@ -9,7 +10,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -18,9 +18,10 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { RepositoryFields } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 
+import styles from './DocumentationExamplesListItem.module.scss'
 import { fetchDocumentationBlame } from './graphql'
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -86,7 +87,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
         ) || LOADING
 
     return (
-        <div className="documentation-examples-list-item mt-2">
+        <div className={classNames('mt-2', styles.documentationExamplesListItem)}>
             <div className="p-2">
                 <RepoIcon
                     repoName={item.resource.repository.name}
@@ -99,7 +100,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                     // Hack because the backend incorrectly returns /-/tree, and linking to that does
                     // redirect to /-/blob, but doesn't redirect to the right line range on the page.
                     fileURL={item.url.replace('/-/tree/', '/-/blob/')}
-                    className="documentation-examples-list-item__repo-file-link"
+                    className={styles.repoFileLink}
                 />
                 {blameHunks !== LOADING && !isErrorLike(blameHunks) && blameHunks.length > 0 && (
                     <span className="float-right text-muted">
@@ -124,7 +125,7 @@ export const DocumentationExamplesListItem: React.FunctionComponent<Props> = ({
                         highlightLength: (item.range?.end.character || 0) - (item.range?.start.character || 0),
                     },
                 ]}
-                className="documentation-examples-list-item__code-excerpt"
+                className={styles.codeExcerpt}
                 fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                 isFirst={false}
                 {...props}

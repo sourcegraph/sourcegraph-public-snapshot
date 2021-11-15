@@ -103,22 +103,6 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		_ = os.RemoveAll(workingDirectory)
 	}()
 
-	// Copy the file contents from the job record into the working directory
-	for relativePath, content := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
-		if err != nil {
-			return err
-		}
-
-		if !strings.HasPrefix(path, workingDirectory) {
-			return errors.Errorf("refusing to write outside of working directory")
-		}
-
-		if err := os.WriteFile(path, []byte(content), os.ModePerm); err != nil {
-			return err
-		}
-	}
-
 	vmNameSuffix, err := uuid.NewRandom()
 	if err != nil {
 		return err
@@ -143,16 +127,34 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 	runner := h.runnerFactory(workingDirectory, logger, options, h.operations)
 
+	// Construct a map from filenames to file content that should be accessible to jobs
+	// within the workspace. This consists of files supplied within the job record itself,
+	// as well as file-version of each script step.
+	workspaceFileContentsByPath := map[string][]byte{}
+
+	for relativePath, content := range job.VirtualMachineFiles {
+		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(path, workingDirectory) {
+			return errors.Errorf("refusing to write outside of working directory")
+		}
+
+		workspaceFileContentsByPath[path] = []byte(content)
+	}
+
 	scriptNames := make([]string, 0, len(job.DockerSteps))
 	for i, dockerStep := range job.DockerSteps {
 		scriptName := scriptNameFromJobStep(job, i)
-		scriptPath := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
-
-		if err := os.WriteFile(scriptPath, buildScript(dockerStep), os.ModePerm); err != nil {
-			return err
-		}
-
 		scriptNames = append(scriptNames, scriptName)
+
+		path := filepath.Join(workingDirectory, command.ScriptsPath, scriptName)
+		workspaceFileContentsByPath[path] = buildScript(dockerStep)
+	}
+
+	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
+		return err
 	}
 
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
@@ -231,6 +233,28 @@ func union(a, b map[string]string) map[string]string {
 
 func scriptNameFromJobStep(job executor.Job, i int) string {
 	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
+}
+
+// writeFiles writes to the filesystem the content in the given map.
+func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.Logger) (err error) {
+	handle := logger.Log("setup.fs", nil)
+	defer func() {
+		if err == nil {
+			handle.Finalize(0)
+		} else {
+			handle.Finalize(1)
+		}
+
+		handle.Close()
+	}()
+
+	for path, content := range workspaceFileContentsByPath {
+		if err := os.WriteFile(path, content, os.ModePerm); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) *libhoney.Event {

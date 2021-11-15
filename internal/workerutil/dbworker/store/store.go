@@ -233,6 +233,10 @@ type Options struct {
 	// cycle of the same input.
 	MaxNumResets int
 
+	// ResetFailureMessage overrides the default failure message written to job records that have been
+	// reset the maximum number of times.
+	ResetFailureMessage string
+
 	// RetryAfter determines whether the store dequeues jobs that have errored more than RetryAfter ago.
 	// Setting this value to zero will disable retries entirely.
 	//
@@ -293,7 +297,7 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
 	}
 
-	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions)
+	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions, alternateColumnNames)
 
 	for i, expression := range options.ColumnExpressions {
 		for _, match := range modifiedColumnExpressionMatches[i] {
@@ -744,7 +748,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END,
+SET {state} = CASE WHEN {num_failures} + 1 >= %d THEN 'failed' ELSE 'errored' END,
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
@@ -783,6 +787,8 @@ WHERE %s
 RETURNING {id}
 `
 
+const defaultResetFailureMessage = "job processor died while handling this message too many times"
+
 // ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 // queued state. In order to prevent input that continually crashes worker instances, records that have been reset
 // more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
@@ -792,13 +798,42 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	resetLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledQuery)
+	now := s.now()
+	scan := scanLastHeartbeatTimestampsFrom(now)
+
+	resetLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
 	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
-	failedLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
+	resetFailureMessage := s.options.ResetFailureMessage
+	if resetFailureMessage == "" {
+		resetFailureMessage = defaultResetFailureMessage
+	}
+
+	failedLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledMaxResetsQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+			resetFailureMessage,
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
@@ -827,22 +862,6 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 
 		return m, nil
 	}
-}
-
-func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Duration, error) {
-	now := s.now()
-
-	return scanLastHeartbeatTimestampsFrom(now)(s.Query(
-		ctx,
-		s.formatQuery(
-			query,
-			quote(s.options.TableName),
-			now,
-			int(s.options.StalledMaxAge/time.Second),
-			s.options.MaxNumResets,
-			quote(s.options.TableName),
-		),
-	))
 }
 
 const resetStalledQuery = `
@@ -878,7 +897,7 @@ UPDATE %s
 SET
 	{state} = 'failed',
 	{finished_at} = clock_timestamp(),
-	{failure_message} = 'failed to process'
+	{failure_message} = %s
 WHERE {id} IN (SELECT {id} FROM stalled)
 RETURNING {id}, {last_heartbeat_at}
 `
@@ -927,7 +946,7 @@ type MatchingColumnExpressions struct {
 //
 // The output slice has the same number of elements as the input column expressions
 // and the results are ordered in parallel with the given column expressions.
-func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query) [][]MatchingColumnExpressions {
+func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query, alternateColumnNames map[string]string) [][]MatchingColumnExpressions {
 	matches := make([][]MatchingColumnExpressions, len(columnExpressions))
 	columnPrefixes := makeColumnPrefixes(viewName)
 
@@ -937,6 +956,10 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 		for _, columnName := range columnsUpdatedByDequeue {
 			match := false
 			exact := false
+
+			if name, ok := alternateColumnNames[columnName]; ok {
+				columnName = name
+			}
 
 			for _, columnPrefix := range columnPrefixes {
 				if regexp.MustCompile(fmt.Sprintf(`^%s%s$`, columnPrefix, columnName)).MatchString(columnExpressionText) {

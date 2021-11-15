@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
@@ -8,7 +9,6 @@ import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { VersionContext } from '../../schema/site.schema'
 import { SearchContextProps } from '../../search'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
@@ -22,7 +22,6 @@ export interface SearchContextsListPageProps
     history: H.History
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    availableVersionContexts: VersionContext[] | undefined
 }
 
 type SelectedTab = 'list'
@@ -69,11 +68,15 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                 <PageHeader
                     path={[
                         {
-                            text: 'Search contexts',
+                            icon: MagnifyIcon,
+                            to: '/search',
+                        },
+                        {
+                            text: 'Contexts',
                         },
                     ]}
                     actions={
-                        <Link to="/contexts/new" className="btn btn-secondary">
+                        <Link to="/contexts/new" className="btn btn-primary">
                             <PlusIcon className="icon-inline" />
                             Create search context
                         </Link>
@@ -107,13 +110,6 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 </span>
                             </a>
                         </div>
-                        {props.authenticatedUser?.siteAdmin && (
-                            <div className="nav-item d-flex align-items-center ml-auto">
-                                <Link className="nav-link" to="/contexts/convert-version-contexts">
-                                    Convert version contexts
-                                </Link>
-                            </div>
-                        )}
                     </div>
                 </div>
                 {selectedTab === 'list' && <SearchContextsListTab {...props} />}

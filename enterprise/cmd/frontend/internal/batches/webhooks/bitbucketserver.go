@@ -11,7 +11,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
+	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -36,6 +38,12 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
+
+	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
+	// internal actor on the context.
+	ctx := actor.WithInternalActor(r.Context())
+
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -51,7 +59,7 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			continue
 		}
 
-		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
+		err := h.upsertChangesetEvent(ctx, externalServiceID, pr, ev)
 		if err != nil {
 			m = multierror.Append(m, err)
 		}

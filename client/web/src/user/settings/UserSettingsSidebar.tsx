@@ -6,15 +6,16 @@ import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { UserAreaUserFields } from '../../graphql-operations'
+import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { NavItemDescriptor } from '../../util/contributions'
-import { UserAreaRouteContext } from '../area/UserArea'
+
+import { UserSettingsAreaRouteContext } from './UserSettingsArea'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
-    user: UserAreaUserFields
+    user: UserSettingsAreaUserFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
     isSourcegraphDotCom: boolean
 }
@@ -26,7 +27,7 @@ type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditio
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 
 export interface UserSettingsSidebarProps
-    extends UserAreaRouteContext,
+    extends UserSettingsAreaRouteContext,
         BatchChangesProps,
         OnboardingTourProps,
         RouteComponentProps<{}> {
@@ -60,7 +61,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     return (
         <div className={props.className}>
             <SidebarGroup>
-                <SidebarGroupHeader label="User account" />
+                <SidebarGroupHeader label="Account" />
                 {props.items.map(
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
@@ -72,7 +73,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             </SidebarGroup>
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
-                    <SidebarGroupHeader label="Organizations" />
+                    <SidebarGroupHeader label="Your organizations" />
                     {props.user.organizations.nodes.map(org => (
                         <SidebarNavItem
                             key={org.id}
@@ -83,7 +84,8 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         </SidebarNavItem>
                     ))}
                     {!siteAdminViewingOtherUser &&
-                        (window.context.sourcegraphDotComMode ? (
+                        (window.context.sourcegraphDotComMode &&
+                        !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
                             <SidebarNavItem to={`${props.match.path}/about-organizations`}>
                                 About organizations
                             </SidebarNavItem>

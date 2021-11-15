@@ -765,6 +765,11 @@ declare module 'sourcegraph' {
          * @internal
          */
         component: { locationProvider: string } | null
+
+        /**
+         * A selector that defines the documents this panel is applicable to.
+         */
+        selector: DocumentSelector | null
     }
 
     export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>
@@ -1241,11 +1246,15 @@ declare module 'sourcegraph' {
          * When set, extensions use it to scope search queries, code intelligence actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
+         *
+         * @deprecated
          */
         export const versionContext: string | undefined
 
         /**
          * An event that is fired when a workspace's version context changes.
+         *
+         * @deprecated
          */
         export const versionContextChanges: Subscribable<string | undefined>
 

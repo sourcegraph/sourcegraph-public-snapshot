@@ -43,11 +43,17 @@ export interface ExtendedInsightDashboard extends InsightDashboardConfiguration 
      * All dashboards that were created in users or org settings explicitly are
      * custom dashboards.
      */
-    type: InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global
+    type?: InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global
 
     /**
      * Subject that has a particular dashboard, it can be personal setting
      * or organization setting subject.
      */
-    owner: InsightDashboardOwner
+    owner?: InsightDashboardOwner
+
+    grants?: {
+        users?: string[]
+        organizations?: string[]
+        global?: boolean
+    }
 }

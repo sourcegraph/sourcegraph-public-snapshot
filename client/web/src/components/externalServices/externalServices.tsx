@@ -1,6 +1,6 @@
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import AmazonIcon from 'mdi-react/AmazonIcon'
+import AwsIcon from 'mdi-react/AwsIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubIcon from 'mdi-react/GithubIcon'
 import GitIcon from 'mdi-react/GitIcon'
@@ -531,7 +531,7 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
 const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.AWSCODECOMMIT,
     title: 'AWS CodeCommit repositories',
-    icon: AmazonIcon,
+    icon: AwsIcon,
     jsonSchema: awsCodeCommitSchemaJSON,
     defaultDisplayName: 'AWS CodeCommit',
     defaultConfig: `{

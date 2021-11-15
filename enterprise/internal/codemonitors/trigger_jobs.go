@@ -34,7 +34,7 @@ INSERT INTO cm_trigger_jobs (query)
 SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
-func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
+func (s *codeMonitorStore) EnqueueTriggerQueries(ctx context.Context) (err error) {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
 }
 
@@ -46,7 +46,7 @@ SET query_string = %s,
 WHERE id = %s
 `
 
-func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
+func (s *codeMonitorStore) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
 }
 
@@ -58,7 +58,7 @@ AND state = 'completed'
 
 // DeleteObsoleteJobLogs deletes all runs which are marked as completed and did
 // not return results.
-func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
+func (s *codeMonitorStore) DeleteObsoleteJobLogs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
 }
 
@@ -69,7 +69,7 @@ WHERE finished_at < (NOW() - (%s * '1 day'::interval));
 
 // DeleteOldJobLogs deletes trigger jobs which have finished and are older than
 // 'retention' days. Due to cascading, action jobs will be deleted as well.
-func (s *Store) DeleteOldJobLogs(ctx context.Context, retentionInDays int) error {
+func (s *codeMonitorStore) DeleteOldJobLogs(ctx context.Context, retentionInDays int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOldJobLogsFmtStr, retentionInDays))
 }
 
@@ -83,7 +83,7 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (s *codeMonitorStore) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
 `
 
-func (s *Store) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (totalCount int32, err error) {
+func (s *codeMonitorStore) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (totalCount int32, err error) {
 	q := sqlf.Sprintf(
 		totalCountEventsForQueryIDInt64FmtStr,
 		queryID,
@@ -201,15 +201,12 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
-func unmarshalAfter(after *string) (int64, error) {
-	var a int64
+func unmarshalAfter(after *string) (int, error) {
 	if after == nil {
-		a = 0
-	} else {
-		err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-		if err != nil {
-			return -1, err
-		}
+		return 0, nil
 	}
-	return a, nil
+
+	var a int
+	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
+	return a, err
 }

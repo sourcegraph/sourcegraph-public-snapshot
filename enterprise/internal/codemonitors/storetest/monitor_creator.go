@@ -17,17 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "codemonitorsstoredb"
-}
-
 const (
 	testQuery       = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
 	testDescription = "test description"
 )
 
 type TestStore struct {
-	*codemonitors.Store
+	codemonitors.CodeMonitorStore
 }
 
 func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codemonitors.Monitor, error) {
@@ -63,7 +59,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 	return s.CreateCodeMonitor(ctx, args)
 }
 
-func NewTestStoreWithStore(t *testing.T, store *codemonitors.Store) (context.Context, *TestStore) {
+func NewTestStore(t *testing.T) (context.Context, *TestStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	now := time.Now().Truncate(time.Microsecond)

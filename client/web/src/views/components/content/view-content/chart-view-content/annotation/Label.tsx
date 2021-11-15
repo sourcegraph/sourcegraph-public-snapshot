@@ -5,7 +5,7 @@ import { AnnotationContext } from '@visx/annotation'
 import Group from '@visx/group/lib/Group'
 import { useText } from '@visx/text'
 import { TextProps as OriginTextProps } from '@visx/text/lib/Text'
-import classname from 'classnames'
+import classNames from 'classnames'
 import React, { ReactElement, useContext, useMemo } from 'react'
 import useMeasure, { Options as UseMeasureOptions } from 'react-use-measure'
 
@@ -206,7 +206,7 @@ export function Label({
             top={containerCoords.y}
             left={containerCoords.x}
             pointerEvents="none"
-            className={classname('visx-annotationlabel', className)}
+            className={classNames('visx-annotationlabel', className)}
             opacity={titleBounds.height === 0 && subtitleBounds.height === 0 ? 0 : 1}
         >
             {showBackground && (

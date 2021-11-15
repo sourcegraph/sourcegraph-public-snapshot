@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
@@ -116,7 +116,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
     })
 
     return (
-        <div data-testid="series-form" ref={ref} className={classnames('d-flex flex-column', className)}>
+        <div data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
             <FormInput
                 title="Name"
                 required={true}

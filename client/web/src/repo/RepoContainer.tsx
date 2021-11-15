@@ -21,7 +21,6 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -51,8 +50,8 @@ import {
     searchQueryForRepoRevision,
     SearchStreamingProps,
 } from '../search'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { useGlobalStore } from '../stores/global'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -84,8 +83,7 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
@@ -108,6 +106,8 @@ export interface RepoContainerContext
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -128,8 +128,7 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -147,6 +146,7 @@ interface RepoContainerProps
     globbing: boolean
     showSearchNotebook: boolean
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
@@ -313,7 +313,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
-    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {
@@ -412,7 +412,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column action-items">
+        <div className="repo-container test-repo-container w-100 d-flex flex-column">
             {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

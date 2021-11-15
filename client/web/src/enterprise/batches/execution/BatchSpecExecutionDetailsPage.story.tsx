@@ -3,8 +3,8 @@ import { subDays, addMinutes, addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { BatchSpecExecutionFields, BatchSpecState } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { BatchSpecExecutionDetailsPage } from './BatchSpecExecutionDetailsPage'
 
@@ -43,16 +43,25 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
+    __typename: 'BatchSpec',
 })
 
-const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
+const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
     id: '1234',
     originalInput,
     createdAt: createdAt.toISOString(),
     startedAt: addMinutes(createdAt, 1).toISOString(),
     finishedAt: addMinutes(createdAt, 2).toISOString(),
     failureMessage: 'failed to perform src-cli step: command failed',
-    state: BatchSpecState.ERRORED,
+    state: BatchSpecState.FAILED,
     creator: {
         id: 'VXNlcjox',
         url: '/users/mrnugget',
@@ -64,30 +73,38 @@ const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
 })
 
 add('Completed', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
                 expandStage="srcPreview"
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
-add('Errored', () => (
-    <EnterpriseWebStory>
+add('Failed', () => (
+    <WebStory>
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
-                fetchBatchSpecExecution={() => of(batchSpecExecutionErrored())}
+                batchSpecID="123123"
+                fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
                 expandStage="srcPreview"
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

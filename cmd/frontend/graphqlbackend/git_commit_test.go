@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
@@ -19,7 +19,7 @@ import (
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := dbmock.NewMockDB()
 
 	commit := &gitapi.Commit{
 		ID:      "c1",
@@ -97,7 +97,7 @@ func TestGitCommitResolver(t *testing.T) {
 				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
-				r := toGitCommitResolver(repo, db, "c1", nil)
+				r := NewGitCommitResolver(db, repo, "c1", nil)
 
 				have, err := tc.have(r)
 				if err != nil {
@@ -113,6 +113,7 @@ func TestGitCommitResolver(t *testing.T) {
 }
 
 func TestGitCommitFileNames(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return nil, nil
@@ -133,7 +134,7 @@ func TestGitCommitFileNames(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

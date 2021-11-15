@@ -68,6 +68,7 @@ Code insights docs are actively in progress during the beta.
 
 - [Creating a dashboard of code insights](how-tos/creating_a_custom_dashboard_of_code_insights.md)
 - [Filtering an insight](how-tos/filtering_an_insight.md)
+- [Troubleshooting](how-tos/Troubleshooting.md)
 
 ## [References](references/index.md)
 

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useCallback, useMemo } from 'react'
 import { Observable, concat, of } from 'rxjs'
@@ -12,6 +13,7 @@ import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
 import { sendTestEmail, toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
+import styles from './CodeMonitoringNode.module.scss'
 
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
@@ -81,7 +83,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
     const hasEnabledAction = useMemo(() => node.actions.nodes.filter(node => node.enabled).length > 0, [node.actions])
 
     return (
-        <div className="code-monitoring-node">
+        <div className={styles.codeMonitoringNode}>
             <div className="d-flex justify-content-between align-items-center">
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">
@@ -105,7 +107,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                 </div>
                 <div className="d-flex">
                     {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
-                    <div className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled">
+                    <div className={classNames('test-toggle-monitor-enabled', styles.toggleWrapper)}>
                         <Toggle
                             onClick={toggleMonitor}
                             value={enabled}
@@ -115,7 +117,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                     </div>
                     <Link
                         to={`${location.pathname}/${node.id}`}
-                        className="btn btn-link code-monitoring-node__edit-button"
+                        className={classNames('btn btn-link', styles.editButton)}
                     >
                         Edit
                     </Link>

@@ -1,10 +1,16 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
+import styles from './LoadingPanelView.module.scss'
+
 export const LoadingPanelView: React.FunctionComponent<{ text: string }> = ({ text }) => (
-    <div className="d-flex justify-content-center align-items-center panel-container__empty-container panel-container__loading-container">
+    <EmptyPanelContainer
+        className={classNames('d-flex justify-content-center align-items-center', styles.loadingContainer)}
+    >
         <LoadingSpinner className="icon-inline" />
         <span className="text-muted">{text}</span>
-    </div>
+    </EmptyPanelContainer>
 )

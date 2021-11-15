@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
@@ -51,7 +50,7 @@ func (r *schemaResolver) Site() *siteResolver {
 }
 
 type siteResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	gqlID string // == singletonSiteGQLID, not the site ID
 }
 
@@ -123,7 +122,7 @@ func (r *siteResolver) AllowSiteSettingsEdits() bool {
 }
 
 type siteConfigurationResolver struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {

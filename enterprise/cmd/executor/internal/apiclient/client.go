@@ -38,6 +38,9 @@ type Options struct {
 
 	// BaseClientOptions are the underlying HTTP client options.
 	BaseClientOptions BaseClientOptions
+
+	// TelemetryOptions captures additional parameters sent in heartbeat requests.
+	TelemetryOptions TelemetryOptions
 }
 
 type EndpointOptions struct {
@@ -206,6 +209,14 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/heartbeat", queueName), executor.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
+
+		OS:              c.options.TelemetryOptions.OS,
+		Architecture:    c.options.TelemetryOptions.Architecture,
+		DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+		ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+		GitVersion:      c.options.TelemetryOptions.GitVersion,
+		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
 	})
 	if err != nil {
 		return nil, err

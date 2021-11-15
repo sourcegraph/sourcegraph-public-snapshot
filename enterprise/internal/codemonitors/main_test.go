@@ -16,16 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "codemonitorsstoredb"
-}
-
 const (
 	testQuery       = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
 	testDescription = "test description"
 )
 
-func (s *Store) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
+func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
 	t.Helper()
 
 	owner := relay.MarshalID("User", actor.FromContext(ctx).UID)
@@ -58,7 +54,7 @@ func (s *Store) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, 
 	return s.CreateCodeMonitor(ctx, args)
 }
 
-func newTestStore(t *testing.T) (context.Context, *Store) {
+func newTestStore(t *testing.T) (context.Context, *codeMonitorStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	now := time.Now().Truncate(time.Microsecond)

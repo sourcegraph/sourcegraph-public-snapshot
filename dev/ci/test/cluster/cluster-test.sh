@@ -12,19 +12,15 @@ export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER-$BUILDKITE_JOB_ID"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {
+  echo "--- dump diagnostics"
   # Get overview of all pods
   kubectl get pods
 
-  pushd "$root_dir"
   # Get specifics of pods
-  kubectl describe pods >'describe_pods.log'
-  chmod 744 'describe_pods.log'
+  kubectl describe pods >"$root_dir/describe_pods.log" 2>&1
 
   # Get logs for some deployments
-  FRONTEND_LOGS="frontend_logs.log"
-  kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
-  chmod 744 $FRONTEND_LOGS
-  popd
+  kubectl logs deployment/sourcegraph-frontend --all-containers >"$root_dir/frontend_logs.log" 2>&1
 }
 
 # Cleanup the cluster
@@ -61,9 +57,11 @@ function cluster_setup() {
     grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
   popd
+  echo "--- create cluster"
   ./create-new-cluster.sh
   popd
 
+  echo "--- wait for ready"
   kubectl get pods
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
   set -e
@@ -94,18 +92,18 @@ function test_setup() {
   source /root/.profile
   set -x -u
 
-  echo "TEST: Checking Sourcegraph instance is accessible"
+  echo "--- TEST: Checking Sourcegraph instance is accessible"
 
   curl --fail "$SOURCEGRAPH_BASE_URL"
   curl --fail "$SOURCEGRAPH_BASE_URL/healthz"
 }
 
 function e2e() {
-  echo "TEST: Running tests"
   pushd client/web
-  echo "TEST: Downloading Puppeteer"
+  echo "--- TEST: Downloading Puppeteer"
   yarn --cwd client/shared run download-puppeteer-browser
   echo "$SOURCEGRAPH_BASE_URL"
+  echo "--- TEST: Running tests"
   yarn run test:regression:core
   yarn run test:regression:config-settings
   # yarn run test:regression:integrations

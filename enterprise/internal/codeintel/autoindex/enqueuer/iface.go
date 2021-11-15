@@ -21,7 +21,6 @@ type DBStore interface {
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
 	IsQueued(ctx context.Context, repositoryID int, commit string) (bool, error)
 	InsertIndexes(ctx context.Context, index []dbstore.Index) ([]dbstore.Index, error)
-	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (dbstore.IndexConfiguration, bool, error)
 }
 

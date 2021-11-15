@@ -6,7 +6,7 @@ import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
     configurationGroup as ossConfigurationGroup,
-    maintenanceGroup,
+    maintenanceGroup as ossMaintenanceGroup,
     overviewGroup,
     repositoriesGroup,
     usersGroup,
@@ -21,6 +21,24 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
+        },
+    ],
+}
+
+const maintenanceGroup: SiteAdminSideBarGroup = {
+    ...ossMaintenanceGroup,
+    items: [
+        ...ossMaintenanceGroup.items,
+        {
+            to: '/site-admin/executors',
+            label: 'Executors',
+            // TODO - expand this to executors enabled when SSBC need this page
+            // as well. Right now we don't have an easy way to check if the
+            // executor accessToken is set in site-config, but that should be
+            // the condition of showing this.
+            condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
+                Boolean(window.context?.codeIntelAutoIndexingEnabled) ||
+                (batchChangesEnabled && batchChangesExecutionEnabled),
         },
     ],
 }
@@ -49,8 +67,8 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes',
         },
         {
-            label: 'Batch spec executions',
-            to: '/site-admin/batch-changes/executions',
+            label: 'Batch specs',
+            to: '/site-admin/batch-changes/specs',
             condition: props => props.batchChangesExecutionEnabled,
         },
     ],
@@ -88,7 +106,7 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
         },
         {
             to: '/site-admin/code-intelligence/indexes',
-            label: 'Auto indexing',
+            label: 'Auto-indexing',
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
         {

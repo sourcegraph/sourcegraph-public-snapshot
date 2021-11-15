@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.32.0"
+  export SOURCEGRAPH_VERSION="v3.33.0"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
@@ -758,6 +758,34 @@ If you want to specify a custom Redis server, you'll need specify the correspond
 
 - `sourcegraph-frontend`
 - `repo-updater`
+
+## Connect to an external Jaeger instance
+
+If you have an existing Jaeger instance you would like to connect Sourcegraph to (instead of running the Jaeger instance inside the Sourcegraph cluster), do:
+
+1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
+1. Update the Jaeger agent containers to point to your Jaeger collector.
+   1. Find all instances of Jaeger agent (`grep -R 'jaegertracing/jaeger-agent'`).
+   1. Update the `args` field of the Jaeger agent container configuration to point to the external
+      collector. E.g.,
+      ```
+      args:
+        - --reporter.grpc.host-port=external-jaeger-collector-host:14250
+        - --reporter.type=grpc
+      ```
+1. Apply these changes to the cluster.
+
+### Disable Jaeger entirely
+
+To disable Jaeger entirely, do:
+
+1. Update the Sourcegraph [site
+   configuration](https://docs.sourcegraph.com/admin/config/site_config) to remove the
+   `observability.tracing` field.
+1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
+1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.yaml` file.
+1. Apply these changes to the cluster.
+
 ## Install without cluster-wide RBAC
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.

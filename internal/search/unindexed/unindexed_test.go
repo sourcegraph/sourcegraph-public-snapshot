@@ -20,21 +20,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -62,9 +62,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/empty":
 			return false, nil
 		case "foo/cloning":
-			return false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
+			return false, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: true}
 		case "foo/missing":
-			return false, &vcs.RepoNotExistError{Repo: repoName}
+			return false, &gitdomain.RepoNotExistError{Repo: repoName}
 		case "foo/missing-database":
 			return false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
 		case "foo/timedout":
@@ -73,7 +73,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			// TODO we do not specify a rev when searching "foo/no-rev", so it
 			// is treated as an empty repository. We need to test the fatal
 			// case of trying to search a revision which doesn't exist.
-			return false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
+			return false, &gitdomain.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
 			return false, errors.New("Unexpected repo")
 		}
@@ -97,7 +97,18 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	matches, common, err := SearchFilesInReposBatch(context.Background(), args)
+
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	matches, common, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,14 +139,24 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = SearchFilesInReposBatch(context.Background(), args)
-	if !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+	globalSearch = args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs = &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	_, _, err = SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
+	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
@@ -194,7 +215,17 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +251,7 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
@@ -265,7 +296,18 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	args.Repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
+
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +350,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		FilePatternsReposMustInclude: []string{"main"},
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, types.RepoName{Name: "foo/one", ID: 1}, "1a2b3c", time.Minute)
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, types.MinimalRepo{Name: "foo/one", ID: 1}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -316,7 +358,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		t.Errorf("expected repo to be searched, got shouldn't be searched")
 	}
 
-	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, types.RepoName{Name: "foo/no-filematch", ID: 2}, "1a2b3c", time.Minute)
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, types.MinimalRepo{Name: "foo/no-filematch", ID: 2}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -338,8 +380,8 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func mkRepos(names ...string) []types.RepoName {
-	var repos []types.RepoName
+func mkRepos(names ...string) []types.MinimalRepo {
+	var repos []types.MinimalRepo
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -349,7 +391,7 @@ func mkRepos(names ...string) []types.RepoName {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, types.MinimalRepo{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }

@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { AuthenticatedUser } from '../../auth'
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 
+import styles from './CommunitySearchContextPanel.module.scss'
 import { PanelContainer } from './PanelContainer'
 
 interface Props extends TelemetryProps {
@@ -27,11 +28,7 @@ export const CommunitySearchContextsPanel: React.FunctionComponent<Props> = ({ c
                     className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
                     key={communitySearchContext.spec}
                 >
-                    <img
-                        className="community-search-context-panel__icon mr-4"
-                        src={communitySearchContext.homepageIcon}
-                        alt=""
-                    />
+                    <img className={classNames('mr-4', styles.icon)} src={communitySearchContext.homepageIcon} alt="" />
                     <div className="d-flex flex-column">
                         <Link to={communitySearchContext.url} onClick={logContextClicked} className="mb-1">
                             {communitySearchContext.title}

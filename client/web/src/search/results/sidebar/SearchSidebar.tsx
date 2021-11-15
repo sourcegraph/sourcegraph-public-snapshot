@@ -11,8 +11,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { TemporarySettings } from '../../../settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
+import { useGlobalStore } from '../../../stores/global'
+import { NavbarQueryState, QueryUpdate } from '../../../stores/navbarSearchQueryState'
 import { SubmitSearchParameters } from '../../helpers'
-import { NavbarQueryState, QueryUpdate, useNavbarQueryState } from '../../navbarSearchQueryState'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -58,11 +59,11 @@ const selectFromQueryState = ({
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
-    const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
+    const { query, setQueryState, submitSearch } = useGlobalStore(selectFromQueryState, shallow)
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(
-        (updates: QueryUpdate[]) => submitSearch(updates, { ...props, source: 'filter', history }),
+        (updates: QueryUpdate[]) => submitSearch({ ...props, source: 'filter', history }, updates),
         [history, props, submitSearch]
     )
 
@@ -137,7 +138,6 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         onNavbarQueryChange: setQueryState,
                         patternType: props.patternType,
                         query,
-                        versionContext: props.versionContext,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                     })}
                 </SearchSidebarSection>

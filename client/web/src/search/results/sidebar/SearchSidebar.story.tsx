@@ -22,7 +22,6 @@ const { add } = storiesOf('web/search/results/sidebar/SearchSidebar', module).ad
 const defaultProps: SearchSidebarProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
-    versionContext: undefined,
     selectedSearchContextSpec: 'global',
     settingsCascade: EMPTY_SETTINGS_CASCADE,
     telemetryService: NOOP_TELEMETRY_SERVICE,

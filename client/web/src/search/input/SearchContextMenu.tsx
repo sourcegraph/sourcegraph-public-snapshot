@@ -24,6 +24,7 @@ import { SearchContextFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
+import styles from './SearchContextMenu.module.scss'
 
 export const SearchContextMenuItem: React.FunctionComponent<{
     spec: string
@@ -32,24 +33,33 @@ export const SearchContextMenuItem: React.FunctionComponent<{
     isDefault: boolean
     selectSearchContextSpec: (spec: string) => void
     searchFilter: string
-}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter }) => {
+    onKeyDown: (key: string) => void
+}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter, onKeyDown }) => {
     const setContext = useCallback(() => {
         eventLogger.log('SearchContextSelected')
         selectSearchContextSpec(spec)
     }, [selectSearchContextSpec, spec])
     return (
         <DropdownItem
-            className={classNames('search-context-menu__item', { 'search-context-menu__item--selected': selected })}
+            data-testid="search-context-menu-item"
+            className={classNames(styles.item, selected && styles.itemSelected)}
             onClick={setContext}
+            role="menuitem"
+            data-search-context-spec={spec}
+            onKeyDown={event => onKeyDown(event.key)}
         >
-            <small className="search-context-menu__item-name font-weight-medium" title={spec}>
+            <small
+                data-testid="search-context-menu-item-name"
+                className={classNames('font-weight-medium', styles.itemName)}
+                title={spec}
+            >
                 <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
             </small>{' '}
-            <small className="search-context-menu__item-description" title={description}>
+            <small className={styles.itemDescription} title={description}>
                 {description}
             </small>
             {isDefault && (
-                <span className="badge badge-secondary text-uppercase search-context-menu__item-default">Default</span>
+                <span className={classNames('badge badge-secondary text-uppercase', styles.itemDefault)}>Default</span>
             )}
         </DropdownItem>
     )
@@ -64,7 +74,7 @@ export interface SearchContextMenuProps
         | 'hasUserAddedExternalServices'
     > {
     authenticatedUser: AuthenticatedUser | null
-    closeMenu: () => void
+    closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void
 }
 
@@ -82,8 +92,8 @@ type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
 
 const searchContextsPerPageToLoad = 15
 
-const getFirstMenuItem = (): HTMLButtonElement | null =>
-    document.querySelector('.search-context-menu__item:first-child')
+const getSearchContextMenuItem = (spec: string): HTMLButtonElement | null =>
+    document.querySelector(`[data-search-context-spec="${spec}"]`)
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
     authenticatedUser,
@@ -118,35 +128,10 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         }
     }, [])
 
-    useEffect(() => {
-        focusInputElement()
-        const onInputKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'ArrowDown') {
-                getFirstMenuItem()?.focus()
-                event.stopPropagation()
-            }
-        }
-        const currentInput = inputElement.current
-        currentInput?.addEventListener('keydown', onInputKeyDown)
-        return () => currentInput?.removeEventListener('keydown', onInputKeyDown)
-    }, [])
-
-    useEffect(() => {
-        const firstMenuItem = getFirstMenuItem()
-        const onFirstMenuItemKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'ArrowUp') {
-                focusInputElement()
-                event.stopPropagation()
-            }
-        }
-        firstMenuItem?.addEventListener('keydown', onFirstMenuItemKeyDown)
-        return () => firstMenuItem?.removeEventListener('keydown', onFirstMenuItemKeyDown)
-    }, [])
-
     const onMenuKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLDivElement>): void => {
             if (event.key === 'Escape') {
-                closeMenu()
+                closeMenu(true)
                 event.stopPropagation()
             }
         },
@@ -259,33 +244,48 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         return () => intersectionObserver.disconnect()
     }, [infiniteScrollTrigger, infiniteScrollList, loadNextPage])
 
+    useEffect(focusInputElement, [])
+
+    const onInputKeyDown = useCallback(
+        (event: React.KeyboardEvent) => {
+            if (filteredList.length > 0 && event.key === 'ArrowDown') {
+                getSearchContextMenuItem(filteredList[0].spec)?.focus()
+                event.stopPropagation()
+                event.preventDefault()
+            }
+        },
+        [filteredList]
+    )
+
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-        <div className="search-context-menu" onKeyDown={onMenuKeyDown}>
-            <div className="search-context-menu__title">
+        <div onKeyDown={onMenuKeyDown}>
+            <div className={styles.title}>
                 <small>Choose search context</small>
                 <button
-                    onClick={closeMenu}
+                    onClick={() => closeMenu()}
                     type="button"
-                    className="btn btn-icon search-context-menu__title-close"
+                    className={classNames('btn btn-icon', styles.titleClose)}
                     aria-label="Close"
                 >
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>
-            <div className="search-context-menu__header d-flex">
+            <div className={classNames('d-flex', styles.header)}>
                 <input
                     ref={inputElement}
                     onInput={onSearchFilterChanged}
+                    onKeyDown={onInputKeyDown}
                     type="search"
                     placeholder="Find..."
                     aria-label="Find a context"
-                    className="form-control form-control-sm search-context-menu__header-input"
+                    data-testid="search-context-menu-header-input"
+                    className={classNames('form-control form-control-sm', styles.headerInput)}
                 />
             </div>
-            <div className="search-context-menu__list" ref={infiniteScrollList} role="menu">
+            <div data-testid="search-context-menu-list" className={styles.list} ref={infiniteScrollList} role="menu">
                 {loadingState !== 'LOADING' &&
-                    filteredList.map(context => (
+                    filteredList.map((context, index) => (
                         <SearchContextMenuItem
                             key={context.id}
                             spec={context.spec}
@@ -294,34 +294,38 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             selected={context.spec === selectedSearchContextSpec}
                             selectSearchContextSpec={selectSearchContextSpec}
                             searchFilter={searchFilter}
+                            onKeyDown={key => index === 0 && key === 'ArrowUp' && focusInputElement()}
                         />
                     ))}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
-                    <DropdownItem className="search-context-menu__item" disabled={true}>
+                    <DropdownItem data-testid="search-context-menu-item" className={styles.item} disabled={true}>
                         <small>Loading search contexts...</small>
                     </DropdownItem>
                 )}
                 {loadingState === 'ERROR' && (
                     <DropdownItem
-                        className="search-context-menu__item search-context-menu__item--error"
+                        data-testid="search-context-menu-item"
+                        className={classNames(styles.item, styles.itemError)}
                         disabled={true}
                     >
                         <small>Error occured while loading search contexts</small>
                     </DropdownItem>
                 )}
                 {loadingState === 'DONE' && filteredList.length === 0 && (
-                    <DropdownItem className="search-context-menu__item" disabled={true}>
+                    <DropdownItem data-testid="search-context-menu-item" className={styles.item} disabled={true}>
                         <small>No contexts found</small>
                     </DropdownItem>
                 )}
-                <div ref={infiniteScrollTrigger} className="search-context-menu__infinite-scroll-trigger" />
+                {/* Dummy element to prevent a focus error when using the keyboard to open the dropdown */}
+                <DropdownItem className="d-none" />
+                <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </div>
-            <div className="search-context-menu__footer">
+            <div className={styles.footer}>
                 <button
                     type="button"
                     onClick={reset}
                     onKeyDown={onResetButtonKeyDown}
-                    className="btn btn-link btn-sm search-context-menu__footer-button"
+                    className={classNames('btn btn-link btn-sm', styles.footerButton)}
                 >
                     Reset
                 </button>
@@ -329,8 +333,8 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 {showSearchContextManagement && (
                     <Link
                         to="/contexts"
-                        className="btn btn-link btn-sm search-context-menu__footer-button"
-                        onClick={closeMenu}
+                        className={classNames('btn btn-link btn-sm', styles.footerButton)}
+                        onClick={() => closeMenu()}
                     >
                         Manage contexts
                     </Link>

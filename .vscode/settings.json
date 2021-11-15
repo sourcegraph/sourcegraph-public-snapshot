@@ -59,6 +59,7 @@
     "./dev/release",
     "./client/web",
     "./client/browser",
+    "./client/build-config",
     "./client/shared",
     "./client/branded",
     "./client/wildcard",

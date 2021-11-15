@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { forwardRef, ForwardRefExoticComponent, ReactNode, RefAttributes, TextareaHTMLAttributes } from 'react'
 
 import styles from './TextArea.module.scss'
@@ -26,12 +26,12 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
         const { label, message, className, disabled, isError, size, ...otherProps } = props
 
         return (
-            <label className={classnames('w-100', className)}>
+            <label className={classNames('w-100', className)}>
                 {label && <div className="mb-2">{size === 'regular' ? label : <small>{label}</small>}</div>}
 
                 <textarea
                     disabled={disabled}
-                    className={classnames(styles.textarea, 'form-control', {
+                    className={classNames(styles.textarea, 'form-control', {
                         'is-invalid': isError,
                         'form-control-sm': size === 'small',
                     })}
@@ -40,7 +40,7 @@ export const TextArea: ForwardRefExoticComponent<TextAreaProps & RefAttributes<H
                 />
 
                 {message && (
-                    <small className={classnames(isError ? 'text-danger' : 'text-muted', 'form-text')}>{message}</small>
+                    <small className={classNames(isError ? 'text-danger' : 'text-muted', 'form-text')}>{message}</small>
                 )}
             </label>
         )

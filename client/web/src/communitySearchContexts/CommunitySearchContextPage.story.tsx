@@ -110,14 +110,8 @@ const commonProps = () =>
         platformContext: PLATFORM_CONTEXT,
         keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
-        versionContext: undefined,
         activation: undefined,
         isSourcegraphDotCom: true,
-        setVersionContext: () => {
-            action('setVersionContext')
-            return Promise.resolve()
-        },
-        availableVersionContexts: [],
         showSearchContext: true,
         searchContextsEnabled: true,
         showSearchContextManagement: false,
@@ -130,7 +124,6 @@ const commonProps = () =>
         communitySearchContextMetadata: temporal,
         globbing: false,
         showOnboardingTour: false,
-        showQueryBuilder: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,

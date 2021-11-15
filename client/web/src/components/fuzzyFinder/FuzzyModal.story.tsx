@@ -33,12 +33,14 @@ const defaultProps = {
     repoName: 'repoName',
     initialQuery: 'clientb',
     initialMaxResults: 10,
-    downloadFilenames: () => Promise.resolve(filenames),
+    downloadFilenames: filenames,
     fsm,
     setFsm: () => {},
     isVisible: true,
     onClose: () => {},
     caseInsensitiveFileCountThreshold: 100,
+    isLoading: false,
+    isError: undefined,
 }
 const { add } = storiesOf('web/FuzzyFinder', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 

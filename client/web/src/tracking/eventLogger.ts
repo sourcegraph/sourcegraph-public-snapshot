@@ -10,6 +10,7 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const LAST_SOURCE_URL_KEY = 'sourcegraphRecentSourceUrl'
 export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
@@ -18,6 +19,7 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private lastSourceURL?: string
     private deviceID = ''
     private eventID = 0
 
@@ -71,6 +73,13 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     *
+     * @param eventLabel: the event name.
+     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * sent to our analytics systems. This may contain private info such as repository names or search queries.
+     * @param publicArgument: event properties that include only public information. Do NOT
+     * include any private information, such as full URLs that may contain private repo names or
+     * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (window.context?.userAgentIsBot || !eventLabel) {
@@ -78,7 +87,6 @@ export class EventLogger implements TelemetryService {
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
-        this.eventID++
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -117,6 +125,21 @@ export class EventLogger implements TelemetryService {
         return firstSourceURL
     }
 
+    public getLastSourceURL(): string {
+        // The cookie value gets overwritten each time a user visits a *.sourcegraph.com property. This code
+        // lives in Google Tag Manager.
+        const lastSourceURL = this.lastSourceURL || cookies.get(LAST_SOURCE_URL_KEY) || location.href
+
+        const redactedURL = redactSensitiveInfoFromAppURL(lastSourceURL)
+
+        // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
+        // Always set to renew expiry and migrate from localStorage
+        cookies.set(LAST_SOURCE_URL_KEY, redactedURL, this.cookieSettings)
+
+        this.lastSourceURL = lastSourceURL
+        return lastSourceURL
+    }
+
     // Device ID is a require field for Amplitude events.
     // https://developers.amplitude.com/docs/http-api-v2
     public getDeviceID(): string {
@@ -125,16 +148,15 @@ export class EventLogger implements TelemetryService {
 
     // Insert ID is used to deduplicate events in Amplitude.
     // https://developers.amplitude.com/docs/http-api-v2#optional-keys
-    public getInsertID(eventName: string): string {
-        const insertID = [this.getDeviceID(), Date.now().toString(), eventName].join('-')
-
-        return insertID
+    public getInsertID(): string {
+        return uuid.v4()
     }
 
     // Event ID is used to deduplicate events in Amplitude.
     // This is used in the case that multiple events with the same userID and timestamp
     // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getEventID(): number {
+        this.eventID++
         return this.eventID
     }
 
@@ -154,14 +176,6 @@ export class EventLogger implements TelemetryService {
         }
     }
 
-    public getUserProperties(): string {
-        const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
-        if (userProps) {
-            return userProps
-        }
-
-        return JSON.stringify({})
-    }
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with
@@ -190,8 +204,9 @@ export class EventLogger implements TelemetryService {
 
         let deviceID = cookies.get(DEVICE_ID_KEY)
         if (!deviceID) {
-            deviceID = uuid.v4()
-            cookies.set(DEVICE_ID_KEY, deviceID)
+            // If device ID does not exist, use the anonymous user ID value so these are consolidated.
+            deviceID = anonymousUserID
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
         this.anonymousUserID = anonymousUserID

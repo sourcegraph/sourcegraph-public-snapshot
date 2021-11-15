@@ -5,6 +5,8 @@ import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/s
 
 import { WebStory } from '../../../../../../../components/WebStory'
 import { Settings } from '../../../../../../../schema/settings.schema'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
+import { CodeInsightsSettingsCascadeBackend } from '../../../../../core/backend/code-insights-setting-cascade-backend'
 import { InsightsDashboardType, SettingsBasedInsightDashboard } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
@@ -109,19 +111,13 @@ const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
     },
 }
 
+const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE, {} as any)
 add('AddInsightModal', () => {
     const [open, setOpen] = useState<boolean>(true)
 
     return (
-        <>
-            {open && (
-                <AddInsightModal
-                    platformContext={{} as any}
-                    settingsCascade={SETTINGS_CASCADE}
-                    dashboard={dashboard}
-                    onClose={() => setOpen(false)}
-                />
-            )}
-        </>
+        <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
+            {open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}
+        </CodeInsightsBackendContext.Provider>
     )
 })

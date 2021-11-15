@@ -26,14 +26,17 @@ interface BatchChangeStatsCardProps {
     className?: string
 }
 
+// Rounds percent down to the nearest integer (you don't say 1/50/100% complete until at
+// least 1/50/100% is actually completed).
+const formatDisplayPercent = (percent: number): string => `${Math.floor(percent)}%`
+
 export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardProps> = ({
     stats,
     diff,
     closedAt,
     className,
 }) => {
-    const percentComplete =
-        stats.total === 0 ? 0 : (((stats.closed + stats.merged + stats.deleted) / stats.total) * 100).toFixed(0)
+    const percentComplete = stats.total === 0 ? 0 : ((stats.closed + stats.merged + stats.deleted) / stats.total) * 100
     const isCompleted = stats.closed + stats.merged + stats.deleted === stats.total
     let BatchChangeStatusIcon = ProgressCheckIcon
     if (isCompleted) {
@@ -57,7 +60,7 @@ export const BatchChangeStatsCard: React.FunctionComponent<BatchChangeStatsCardP
                         />
                     </h1>{' '}
                     <span className={classNames(styles.batchChangeStatsCardCompleteness, 'lead text-nowrap')}>
-                        {percentComplete}% complete
+                        {formatDisplayPercent(percentComplete)} complete
                     </span>
                 </div>
                 <div className={classNames(styles.batchChangeStatsCardDivider, 'd-none d-md-block mx-3')} />

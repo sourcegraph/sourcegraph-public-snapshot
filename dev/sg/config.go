@@ -85,6 +85,30 @@ func (c *Commandset) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+func (c *Commandset) Merge(other *Commandset) *Commandset {
+	merged := c
+
+	if other.Name != merged.Name && other.Name != "" {
+		merged.Name = other.Name
+	}
+
+	if !equal(merged.Commands, other.Commands) && len(other.Commands) != 0 {
+		merged.Commands = other.Commands
+	}
+
+	if !equal(merged.Checks, other.Checks) && len(other.Checks) != 0 {
+		merged.Checks = other.Checks
+	}
+
+	for k, v := range other.Env {
+		merged.Env[k] = v
+	}
+
+	merged.RequiresDevPrivate = other.RequiresDevPrivate
+
+	return merged
+}
+
 type Config struct {
 	Env               map[string]string      `yaml:"env"`
 	Commands          map[string]run.Command `yaml:"commands"`
@@ -110,7 +134,11 @@ func (c *Config) Merge(other *Config) {
 	}
 
 	for k, v := range other.Commandsets {
-		c.Commandsets[k] = v
+		if original, ok := c.Commandsets[k]; ok {
+			c.Commandsets[k] = original.Merge(v)
+		} else {
+			c.Commandsets[k] = v
+		}
 	}
 
 	if other.DefaultCommandset != "" {
@@ -124,4 +152,18 @@ func (c *Config) Merge(other *Config) {
 			c.Tests[k] = v
 		}
 	}
+}
+
+func equal(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
 }

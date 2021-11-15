@@ -13,6 +13,7 @@ import { AuthenticatedUser } from '../../auth'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -41,7 +42,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading recently searched repositories" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container text-muted">
+        <EmptyPanelContainer className="text-muted">
             <small className="mb-2">
                 <p className="mb-1">Recently searched repositories will be displayed here.</p>
                 <p className="mb-1">
@@ -55,7 +56,7 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
                     <SyntaxHighlightedSearchQuery query="repo:^git\.local/my/repo$" />
                 </p>
             </small>
-        </div>
+        </EmptyPanelContainer>
     )
 
     const [repoFilterValues, setRepoFilterValues] = useState<string[] | null>(null)

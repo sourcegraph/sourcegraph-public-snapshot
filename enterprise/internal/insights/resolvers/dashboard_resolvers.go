@@ -2,7 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sync"
+
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -12,8 +17,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -21,14 +24,16 @@ import (
 )
 
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
-var _ graphqlbackend.InsightDashboardResolver = &insightDashboardResolver{}
-var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
-var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
+var _ graphqlbackend.InsightsDashboardResolver = &insightsDashboardResolver{}
+var _ graphqlbackend.InsightViewConnectionResolver = &DashboardInsightViewConnectionResolver{}
+var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
+var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	insightsDatabase dbutil.DB
-	dashboardStore   store.DashboardStore
-	args             *graphqlbackend.InsightDashboardsArgs
+	orgStore database.OrgStore
+	args     *graphqlbackend.InsightsDashboardsArgs
+
+	baseInsightResolver
 
 	// Cache results because they are used by multiple fields
 	once       sync.Once
@@ -41,7 +46,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	d.once.Do(func() {
 		args := store.DashboardQueryArgs{}
 		if d.args.After != nil {
-			afterID, err := unmarshal(graphql.ID(*d.args.After))
+			afterID, err := unmarshalDashboardID(graphql.ID(*d.args.After))
 			if err != nil {
 				d.err = errors.Wrap(err, "unmarshalID")
 				return
@@ -51,6 +56,23 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 		if d.args.First != nil {
 			args.Limit = int(*d.args.First)
 		}
+		var err error
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, d.orgStore)
+		if err != nil {
+			d.err = errors.Wrap(err, "getUserPermissions")
+			return
+		}
+
+		if d.args.ID != nil {
+			id, err := unmarshalDashboardID(*d.args.ID)
+			if err != nil {
+				d.err = errors.Wrap(err, "unmarshalDashboardID")
+			}
+			if !id.isVirtualized() {
+				args.ID = int(id.Arg)
+			}
+		}
+
 		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)
 		if err != nil {
 			d.err = err
@@ -66,15 +88,15 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	return d.dashboards, d.next, d.err
 }
 
-func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightDashboardResolver, error) {
+func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
 	dashboards, _, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.InsightDashboardResolver, 0, len(dashboards))
+	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
 	for _, dashboard := range dashboards {
 		id := newRealDashboardID(int64(dashboard.ID))
-		resolvers = append(resolvers, &insightDashboardResolver{dashboard: dashboard, id: &id})
+		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id, baseInsightResolver: d.baseInsightResolver})
 	}
 	return resolvers, nil
 }
@@ -90,48 +112,226 @@ func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(false), nil
 }
 
-type insightDashboardResolver struct {
+type insightsDashboardResolver struct {
 	dashboard *types.Dashboard
 	id        *dashboardID
+
+	baseInsightResolver
 }
 
-func (i *insightDashboardResolver) Title() string {
+func (i *insightsDashboardResolver) Title() string {
 	return i.dashboard.Title
 }
 
-func (i *insightDashboardResolver) ID() graphql.ID {
+func (i *insightsDashboardResolver) ID() graphql.ID {
 	return i.id.marshal()
 }
 
-func (i *insightDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
-	return &stubDashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs}
+func (i *insightsDashboardResolver) Views(ctx context.Context, args graphqlbackend.DashboardInsightViewConnectionArgs) graphqlbackend.InsightViewConnectionResolver {
+	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, dashboard: i.dashboard, baseInsightResolver: i.baseInsightResolver, args: args}
 }
 
-type stubDashboardInsightViewConnectionResolver struct {
-	ids []string
+func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
+	return &insightsPermissionGrantsResolver{
+		UserIdGrants: i.dashboard.UserIdGrants,
+		OrgIdGrants:  i.dashboard.OrgIdGrants,
+		GlobalGrant:  i.dashboard.GlobalGrant,
+	}
 }
 
-func (d *stubDashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
+type insightsPermissionGrantsResolver struct {
+	UserIdGrants []int64
+	OrgIdGrants  []int64
+	GlobalGrant  bool
+}
+
+func (i *insightsPermissionGrantsResolver) Users() []graphql.ID {
+	var marshalledUserIds []graphql.ID
+	for _, userIdGrant := range i.UserIdGrants {
+		marshalledUserIds = append(marshalledUserIds, graphqlbackend.MarshalUserID(int32(userIdGrant)))
+	}
+	return marshalledUserIds
+}
+
+func (i *insightsPermissionGrantsResolver) Organizations() []graphql.ID {
+	var marshalledOrgIds []graphql.ID
+	for _, orgIdGrant := range i.OrgIdGrants {
+		marshalledOrgIds = append(marshalledOrgIds, graphqlbackend.MarshalOrgID(int32(orgIdGrant)))
+	}
+	return marshalledOrgIds
+}
+
+func (i *insightsPermissionGrantsResolver) Global() bool {
+	return i.GlobalGrant
+}
+
+type DashboardInsightViewConnectionResolver struct {
+	baseInsightResolver
+
+	args graphqlbackend.DashboardInsightViewConnectionArgs
+
+	ids       []string
+	dashboard *types.Dashboard
+
+	once  sync.Once
+	views []types.Insight
+	next  string
+	err   error
+}
+
+func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
-	for _, id := range d.ids {
-		resolvers = append(resolvers, &stubInsightViewResolver{id: id})
+	views, _, err := d.computeConnectedViews(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range views {
+		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
 	}
 	return resolvers, nil
 }
 
-func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
+}
+
+func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
+	d.once.Do(func() {
+		// 🚨 SECURITY: This disabled authorization because we want to resolve all direct connections to the dashboard, regardless
+		// of insight view permissions.
+		// In this case, we are making the **VERY IMPORTANT** assumption that we have already pre-validated the
+		// dashboard is visible to the user context.
+		args := store.InsightQueryArgs{DashboardID: d.dashboard.ID, WithoutAuthorization: true}
+		if d.args.After != nil {
+			var afterID string
+			err := relay.UnmarshalSpec(graphql.ID(*d.args.After), &afterID)
+			if err != nil {
+				d.err = errors.Wrap(err, "unmarshalID")
+				return
+			}
+			args.After = afterID
+		}
+		if d.args.First != nil {
+			args.Limit = int(*d.args.First)
+		}
+		var err error
+
+		viewSeries, err := d.insightStore.Get(ctx, args)
+		if err != nil {
+			d.err = err
+			return
+		}
+
+		d.views = d.insightStore.GroupByView(ctx, viewSeries)
+
+		if len(d.views) > 0 {
+			d.next = d.views[len(d.views)-1].UniqueID
+		}
+	})
+	return d.views, d.next, d.err
+}
+
+func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	dashboardGrants, err := parseDashboardGrants(args.Input.Grants)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to parse dashboard grants")
+	}
+
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+
+	dashboard, err := r.dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: args.Input.Title, Save: true},
+		Grants:    dashboardGrants,
+		UserID:    userIds,
+		OrgID:     orgIds})
+	if err != nil {
+		return nil, err
+	}
+	if dashboard == nil {
+		return nil, nil
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
+}
+
+func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	var dashboardGrants []store.DashboardGrant
+	if args.Input.Grants != nil {
+		parsedGrants, err := parseDashboardGrants(*args.Input.Grants)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to parse dashboard grants")
+		}
+		dashboardGrants = parsedGrants
+	}
+	dashboardID, err := unmarshalDashboardID(args.Id)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+	}
+	if dashboardID.isVirtualized() {
+		return nil, errors.New("unable to update a virtualized dashboard")
+	}
+
+	err = r.permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
+
+	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{
+		ID:     int(dashboardID.Arg),
+		Title:  args.Input.Title,
+		Grants: dashboardGrants,
+		UserID: r.permissionsValidator.userIds,
+		OrgID:  r.permissionsValidator.orgIds})
+	if err != nil {
+		return nil, err
+	}
+	if dashboard == nil {
+		return nil, nil
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
+}
+
+func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {
+	dashboardGrants := []store.DashboardGrant{}
+	if inputGrants.Users != nil {
+		for _, userGrant := range *inputGrants.Users {
+			userID, err := graphqlbackend.UnmarshalUserID(userGrant)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal user id: %s", userGrant))
+			}
+			dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
+		}
+	}
+	if inputGrants.Organizations != nil {
+		for _, orgGrant := range *inputGrants.Organizations {
+			orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal org id: %s", orgGrant))
+			}
+			dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
+		}
+	}
+	if inputGrants.Global != nil && *inputGrants.Global {
+		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
+	}
+	return dashboardGrants, nil
 }
 
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
-	dashboardID, err := unmarshal(args.Id)
+	dashboardID, err := unmarshalDashboardID(args.Id)
 	if err != nil {
 		return emptyResponse, err
 	}
 	if dashboardID.isVirtualized() {
 		return emptyResponse, nil
+	}
+	err = r.permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
 	}
 
 	err = r.dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
@@ -141,14 +341,100 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 	return emptyResponse, nil
 }
 
-type stubInsightViewResolver struct {
-	id string
+func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (_ graphqlbackend.InsightsDashboardPayloadResolver, err error) {
+	var viewID string
+	err = relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+	}
+	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+	}
+
+	tx, err := r.dashboardStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	txValidator := r.permissionsValidator.WithBaseStore(tx.Store)
+	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
+	err = txValidator.validateUserAccessForView(ctx, viewID)
+	if err != nil {
+		return nil, err
+	}
+
+	exists, err := tx.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsViewOnDashboard")
+	}
+	if !exists {
+		log15.Debug("attempting to add insight view to dashboard", "dashboardId", dashboardID.Arg, "insightId", viewID)
+		err = tx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+		if err != nil {
+			return nil, errors.Wrap(err, "AddInsightViewToDashboard")
+		}
+	}
+
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetDashboards")
+	} else if len(dashboards) < 1 {
+		return nil, errors.New("dashboard not found")
+	}
+
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
-func (s *stubInsightViewResolver) ID() graphql.ID {
-	return relay.MarshalID("insight_view", s.id)
+func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	var viewID string
+	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+	}
+	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+	}
+
+	tx, err := r.dashboardStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	txValidator := r.permissionsValidator.WithBaseStore(tx.Store)
+	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+	if err != nil {
+		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
+	}
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetDashboards")
+	} else if len(dashboards) < 1 {
+		return nil, errors.New("dashboard not found")
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
-func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
-	return true
+type insightsDashboardPayloadResolver struct {
+	dashboard *types.Dashboard
+
+	baseInsightResolver
+}
+
+func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
+	id := newRealDashboardID(int64(i.dashboard.ID))
+	return &insightsDashboardResolver{dashboard: i.dashboard, id: &id, baseInsightResolver: i.baseInsightResolver}, nil
 }

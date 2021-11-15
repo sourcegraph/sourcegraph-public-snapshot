@@ -7,29 +7,28 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "backendtestdb"
-}
-
 func TestGetFirstServiceVersion(t *testing.T) {
-	dbtesting.SetupGlobalTestDB(t)
+	t.Parallel()
+
+	db := database.NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 
-	if err := UpdateServiceVersion(ctx, "service", "1.2.3"); err != nil {
+	if err := UpdateServiceVersion(ctx, db, "service", "1.2.3"); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	if err := UpdateServiceVersion(ctx, "service", "1.2.4"); err != nil {
+	if err := UpdateServiceVersion(ctx, db, "service", "1.2.4"); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	if err := UpdateServiceVersion(ctx, "service", "1.3.0"); err != nil {
+	if err := UpdateServiceVersion(ctx, db, "service", "1.3.0"); err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
 
-	firstVersion, err := GetFirstServiceVersion(ctx, "service")
+	firstVersion, err := GetFirstServiceVersion(ctx, db, "service")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -39,7 +38,9 @@ func TestGetFirstServiceVersion(t *testing.T) {
 }
 
 func TestUpdateServiceVersion(t *testing.T) {
-	dbtesting.SetupGlobalTestDB(t)
+	t.Parallel()
+
+	db := database.NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 	for _, tc := range []struct {
@@ -70,7 +71,7 @@ func TestUpdateServiceVersion(t *testing.T) {
 			Latest:   semver.MustParse("2.1.0"),
 		}}, // upgrade policy violation returns
 	} {
-		have := UpdateServiceVersion(ctx, "service", tc.version)
+		have := UpdateServiceVersion(ctx, db, "service", tc.version)
 		want := tc.err
 
 		if diff := cmp.Diff(have, want); diff != "" {

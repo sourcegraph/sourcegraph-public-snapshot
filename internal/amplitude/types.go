@@ -29,28 +29,6 @@ type AmplitudeEvent struct {
 
 // UserProperties contains the list of user properties we collect and send to Amplitude.
 type UserProperties struct {
-	AnonymousUserID         string              `json:"anonymous_user_id"`
-	FirstSourceURL          string              `json:"first_source_url"`
-	FeatureFlags            featureflag.FlagSet `json:"feature_flags"`
-	CohortID                *string             `json:"cohort_id,omitempty"`
-	Referrer                string              `json:"referrer,omitempty"`
-	HasCloudAccount         bool                `json:"has_cloud_account"`
-	HasAddedRepos           bool                `json:"has_added_repos"`
-	NumberOfReposAdded      int                 `json:"number_repos_added"`
-	NumberPublicReposAdded  int                 `json:"number_public_repos_added"`
-	NumberPrivateReposAdded int                 `json:"number_private_repos_added"`
-	HasActiveCodeHost       bool                `json:"has_active_code_host"`
-	IsSourcegraphTeammate   bool                `json:"is_sourcegraph_teammate"`
-}
-
-// FrontendUserProperties contains the subset of user properties that are stored
-// in localStorage in the web app, and passed in the userProperties field of
-// Events in the EventLogger.
-type FrontendUserProperties struct {
-	HasAddedRepos           bool `json:"hasAddedRepositories"`
-	NumberOfReposAdded      int  `json:"numberOfRepositoriesAdded"`
-	NumberPublicReposAdded  int  `json:"numberOfPublicRepos"`
-	NumberPrivateReposAdded int  `json:"numberOfPrivateRepos"`
-	HasActiveCodeHost       bool `json:"hasActiveCodeHost"`
-	IsSourcegraphTeammate   bool `json:"isSourcegraphTeammate"`
+	AnonymousUserID string              `json:"anonymous_user_id"`
+	FeatureFlags    featureflag.FlagSet `json:"feature_flags"`
 }

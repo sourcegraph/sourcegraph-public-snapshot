@@ -110,6 +110,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     const bylineElement = (
         <GitCommitNodeByline
             className="d-flex text-muted git-commit-node__byline"
+            avatarClassName={compact ? undefined : 'git-commit-node__signature--user-avatar'}
             author={node.author}
             committer={node.committer}
             // TODO compact needs to be always a boolean
@@ -183,7 +184,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 data-tooltip="View files at this commit"
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
-                'View files in commit'
+                View files in commit
             </Link>
             {diffModeSelector()}
         </div>

@@ -45,13 +45,16 @@ type DBStore interface {
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+	RepoIDsByGlobPattern(ctx context.Context, pattern string) ([]int, error)
 }
 
 type LSIFStore interface {
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
+	Stencil(ctx context.Context, bundelID int, path string) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
 	Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
 	References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
+	Implementations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
 	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
 	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]precise.MonikerData, error)
@@ -61,6 +64,7 @@ type LSIFStore interface {
 	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPathInfoData, error)
 	DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
 	DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) ([]string, error)
+	DocumentationSearch(ctx context.Context, table, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type IndexEnqueuer interface {

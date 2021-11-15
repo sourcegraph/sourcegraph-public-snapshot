@@ -193,7 +193,25 @@ kubectl scale --replicas=0 deployment/sourcegraph-frontend
 kubectl delete deployment sourcegraph-frontend
 ```
 
-C. Generate the database dumps
+C. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
+
+```sql
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
+```
+
+D. Generate the database dumps
 
 ```bash
 kubectl exec -it $pgsql_POD_NAME -- bash -c 'pg_dump -C --username sg sg' > sourcegraph_db.out
@@ -233,7 +251,25 @@ kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username 
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-E. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
+E. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
+
+```sql
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
+```
+
+F. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
 
 #### Restoring Sourcegraph databases into an existing environment
 
@@ -277,7 +313,25 @@ kubectl exec -it $pgsql_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username 
 kubectl exec -it $codeintel-db_POD_NAME -- bash -c 'psql -v ERROR_ON_STOP=1 --username sg -f /tmp/condeintel_db.out sg'
 ```
 
-G. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
+G. Check for corrupt database indexes.  If amcheck returns errors, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com)
+
+```sql
+create extension amcheck;
+
+select bt_index_parent_check(c.oid, true), c.relname, c.relpages
+from pg_index i
+join pg_opclass op ON i.indclass[0] = op.oid
+join pg_am am ON op.opcmethod = am.oid
+join pg_class c ON i.indexrelid = c.oid
+join pg_namespace n ON c.relnamespace = n.oid
+where am.amname = 'btree'
+-- Don't check temp tables, which may be from another session:
+and c.relpersistence != 't'
+-- Function may throw an error when this is omitted:
+and i.indisready AND i.indisvalid;
+```
+
+H. Start the remaining Sourcegraph services by following the steps in [applying manifests](#applying-manifests).
 
 ## Troubleshoot
 

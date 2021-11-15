@@ -1,34 +1,29 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
+import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
-import { SubmitSearchParameters } from '../helpers'
+import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
+import styles from './SearchContextDropdown.module.scss'
 import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps,
-        TelemetryProps {
+        TelemetryProps,
+        Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    submitSearch: (args: SubmitSearchParameters) => void
-    submitSearchOnSearchContextChange?: boolean
     query: string
-    history: H.History
     className?: string
+    onEscapeMenuClose?: () => void
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -37,19 +32,15 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         authenticatedUser,
         hasUserAddedRepositories,
         hasUserAddedExternalServices,
-        history,
-        patternType,
-        caseSensitive,
-        versionContext,
         query,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        submitSearchOnSearchContextChange = true,
         className,
         telemetryService,
+        onEscapeMenuClose,
     } = props
 
     const [contextsCtaPermanentlyDismissed, setContextsCtaPermanentlyDismissed] = useTemporarySetting(
@@ -71,38 +62,20 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
-    // Disable the dropdown if the query contains a context filter or if a version context is active
-    const isDisabled = isContextFilterInQuery || !!versionContext
-    const disabledTooltipText = isContextFilterInQuery
-        ? 'Overridden by query'
-        : versionContext
-        ? 'Overriden by version context'
-        : ''
-
-    const submitOnToggle = useCallback(
-        (selectedSearchContextSpec: string): void => {
-            submitSearch({
-                history,
-                query,
-                source: 'filter',
-                patternType,
-                caseSensitive,
-                selectedSearchContextSpec,
-                versionContext,
-            })
-        },
-        [submitSearch, caseSensitive, history, query, patternType, versionContext]
-    )
+    const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : ''
 
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
-            if (submitSearchOnSearchContextChange) {
-                submitOnToggle(spec)
+            if (submitSearch) {
+                submitSearch({
+                    source: 'filter',
+                    selectedSearchContextSpec: spec,
+                })
             } else {
                 setSelectedSearchContextSpec(spec)
             }
         },
-        [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
+        [submitSearch, setSelectedSearchContextSpec]
     )
 
     useEffect(() => {
@@ -124,28 +97,37 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             setContextsCtaPermanentlyDismissed(true)
         }
     }
+    const isUserAnOrgMember = authenticatedUser?.organizations.nodes.length !== 0
+
+    const onCloseMenu = useCallback(
+        (isEscapeKey?: boolean) => {
+            if (isEscapeKey) {
+                onEscapeMenuClose?.()
+            }
+            toggleOpen()
+        },
+        [toggleOpen, onEscapeMenuClose]
+    )
 
     return (
         <Dropdown
             isOpen={isOpen}
             toggle={toggleOpen}
             a11y={false} /* Override default keyboard events in reactstrap */
-            className={classNames('search-context-dropdown ', className)}
+            className={className}
         >
             <DropdownToggle
                 className={classNames(
-                    'search-context-dropdown__button',
+                    styles.button,
                     'dropdown-toggle',
                     'test-search-context-dropdown',
-                    {
-                        'search-context-dropdown__button--open': isOpen,
-                    }
+                    isOpen && styles.buttonOpen
                 )}
                 color="link"
-                disabled={isDisabled}
+                disabled={isContextFilterInQuery}
                 data-tooltip={disabledTooltipText}
             >
-                <code className="search-context-dropdown__button-content test-selected-search-context-spec">
+                <code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
                     <span className="search-filter-keyword">context:</span>
                     {selectedSearchContextSpec?.startsWith('@') ? (
                         <>
@@ -157,8 +139,12 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     )}
                 </code>
             </DropdownToggle>
-            <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories && !contextCtaDismissed ? (
+            <DropdownMenu positionFixed={true} className={styles.menu}>
+                {isSourcegraphDotCom &&
+                !isUserAnOrgMember &&
+                !hasUserAddedRepositories &&
+                !hasUsedNonGlobalContext &&
+                !contextCtaDismissed ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
@@ -171,7 +157,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                         selectSearchContextSpec={selectSearchContextSpec}
                         fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
                         fetchSearchContexts={fetchSearchContexts}
-                        closeMenu={toggleOpen}
+                        closeMenu={onCloseMenu}
                     />
                 )}
             </DropdownMenu>

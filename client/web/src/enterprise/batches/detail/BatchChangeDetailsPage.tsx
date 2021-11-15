@@ -19,11 +19,9 @@ import {
 import { Description } from '../Description'
 
 import {
-    queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
 } from './backend'
@@ -36,6 +34,7 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     /** The namespace ID. */
@@ -59,10 +58,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     // Query bulk operations created after this time.
     const createdAfter = useMemo(() => subDays(startOfDay(new Date()), 3).toISOString(), [])
 
-    const { data, error, loading } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
+    const { data, error, loading, refetch } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
         BATCH_CHANGE_BY_NAMESPACE,
         {
             variables: { namespaceID, batchChange: batchChangeName, createdAfter },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
             fetchPolicy: 'cache-and-network',
             // We continuously poll for changes to the batch change, in case the bulk
             // operations, diff stats, or changeset stats are updated, or in case someone
@@ -71,6 +72,10 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
             // the time there will be no changes at all, but it's also the easiest way to
             // keep this in sync for now at the cost of a bit of excess network resources.
             pollInterval: 5000,
+            // For subsequent requests while this page is open, make additional network
+            // requests; this is necessary for `refetch` to actually use the network. (see
+            // https://github.com/apollographql/apollo-client/issues/5515)
+            nextFetchPolicy: 'network-only',
         }
     )
 
@@ -140,6 +145,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <ChangesetsArchivedNotice history={history} location={location} />
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}
@@ -147,7 +153,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description description={batchChange.description} />
-            <BatchChangeDetailsTabs batchChange={batchChange} {...props} />
+            <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>
     )
 }

@@ -85,29 +85,25 @@ func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, e
 	return config, nil
 }
 
-type AccessTokAllow string
+type AccessTokenAllow string
 
 const (
-	AccessTokensNone  AccessTokAllow = "none"
-	AccessTokensAll   AccessTokAllow = "all-users-create"
-	AccessTokensAdmin AccessTokAllow = "site-admin-create"
+	AccessTokensNone  AccessTokenAllow = "none"
+	AccessTokensAll   AccessTokenAllow = "all-users-create"
+	AccessTokensAdmin AccessTokenAllow = "site-admin-create"
 )
 
-// AccessTokensAllow returns whether access tokens are enabled, disabled, or restricted to creation by admin users.
-func AccessTokensAllow() AccessTokAllow {
+// AccessTokensAllow returns whether access tokens are enabled, disabled, or
+// restricted creation to only site admins.
+func AccessTokensAllow() AccessTokenAllow {
 	cfg := Get().AuthAccessTokens
-	if cfg == nil {
+	if cfg == nil || cfg.Allow == "" {
 		return AccessTokensAll
 	}
-	switch cfg.Allow {
-	case "":
-		return AccessTokensAll
-	case string(AccessTokensAll):
-		return AccessTokensAll
-	case string(AccessTokensNone):
-		return AccessTokensNone
-	case string(AccessTokensAdmin):
-		return AccessTokensAdmin
+	v := AccessTokenAllow(cfg.Allow)
+	switch v {
+	case AccessTokensAll, AccessTokensAdmin:
+		return v
 	default:
 		return AccessTokensNone
 	}
@@ -213,12 +209,6 @@ func SearchIndexEnabled() bool {
 }
 
 func BatchChangesEnabled() bool {
-	// TODO(campaigns-deprecation): This check can be removed once we remove
-	// the deprecated site-config settings.
-	if deprecated := Get().CampaignsEnabled; deprecated != nil {
-		return *deprecated
-	}
-
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
@@ -226,12 +216,6 @@ func BatchChangesEnabled() bool {
 }
 
 func BatchChangesRestrictedToAdmins() bool {
-	// TODO(campaigns-deprecation): This check can be removed once we remove
-	// the deprecated site-config settings.
-	if deprecated := Get().CampaignsRestrictToAdmins; deprecated != nil {
-		return *deprecated
-	}
-
 	if restricted := Get().BatchChangesRestrictToAdmins; restricted != nil {
 		return *restricted
 	}
@@ -301,7 +285,7 @@ func EventLoggingEnabled() bool {
 func APIDocsSearchIndexingEnabled() bool {
 	val := ExperimentalFeatures().ApidocsSearchIndexing
 	if val == "" {
-		return true
+		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
 	}
 	return val == "enabled"
 }

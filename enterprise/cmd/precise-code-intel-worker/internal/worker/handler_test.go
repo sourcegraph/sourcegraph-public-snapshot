@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -55,7 +55,7 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
-	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, nil)
+	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
 
 	handler := &handler{
 		dbStore:         mockDBStore,
@@ -120,18 +120,12 @@ func TestHandle(t *testing.T) {
 	}
 
 	expectedIDsForRefcountUpdate := []int{42}
-	if len(mockDBStore.UpdateNumReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateNumReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdateNumReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateNumReferencesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdateNumReferences args (-want +got):\n%s", diff)
-	}
-
-	if len(mockDBStore.UpdateDependencyNumReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdateDependencyNumReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdateDependencyNumReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateDependencyNumReferencesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(false, mockDBStore.UpdateDependencyNumReferencesFunc.History()[0].Arg2); diff != "" {
-		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
+	if len(mockDBStore.UpdateReferenceCountsFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdateReferenceCounts calls. want=%d have=%d", 1, len(mockDBStore.UpdateReferenceCountsFunc.History()))
+	} else if diff := cmp.Diff(expectedIDsForRefcountUpdate, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
+	} else if diff := cmp.Diff(dbstore.DependencyReferenceCountUpdateTypeAdd, mockDBStore.UpdateReferenceCountsFunc.History()[0].Arg2); diff != "" {
+		t.Errorf("unexpected UpdateReferenceCounts args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDBStore.InsertDependencySyncingJobFunc.History()) != 1 {
@@ -191,6 +185,9 @@ func TestHandleError(t *testing.T) {
 	// Give correlation package a valid input dump
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
+	// Supply non-nil commit date
+	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
+
 	// Set a different tip commit
 	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
@@ -234,7 +231,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return api.CommitID(""), &vcs.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
+		return "", &gitdomain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	}
 
 	upload := dbstore.Upload{

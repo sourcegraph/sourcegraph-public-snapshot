@@ -20,7 +20,7 @@ import {
     ExternalAccountFields,
     MinExternalAccountsVariables,
 } from '../../../graphql-operations'
-import { SourcegraphContext } from '../../../jscontext'
+import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword, createPassword } from '../backend'
 
@@ -31,7 +31,6 @@ type MinExternalAccount = Pick<ExternalAccountFields, 'id' | 'serviceID' | 'serv
 type UserExternalAccount = UserExternalAccountsResult['user']['externalAccounts']['nodes'][0]
 type ServiceType = AuthProvider['serviceType']
 
-export type AuthProvider = SourcegraphContext['authProviders'][0]
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
 export type AuthProvidersByType = Partial<Record<ServiceType, AuthProvider>>
 

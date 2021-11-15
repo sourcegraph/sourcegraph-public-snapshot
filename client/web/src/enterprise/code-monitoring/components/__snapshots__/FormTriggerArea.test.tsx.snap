@@ -12,7 +12,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
     Trigger
   </h3>
   <div
-    className="code-monitor-form__card card p-3"
+    className="card p-3"
   >
     <div
       className="font-weight-bold"
@@ -31,14 +31,14 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
     </span>
     <div>
       <div
-        className="trigger-area__query-input mb-4"
+        className="mb-4 queryInput"
       >
         <div
           className="d-flex flex-column flex-grow-1"
         >
           <input
             autoFocus={true}
-            className="trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace test-is-invalid"
+            className="form-control mt-2 mb-3 test-trigger-input text-monospace queryInputField test-is-invalid"
             data-testid="trigger-query-edit"
             onChange={[Function]}
             spellCheck={false}
@@ -46,7 +46,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
             value="test repo:test"
           />
           <ul
-            className="trigger-area__checklist"
+            className="checklist"
           >
             <li>
               <ValidQueryChecklistItem
@@ -69,10 +69,10 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   />
                   <Memo(CheckIcon)
                     aria-hidden={true}
-                    className="trigger-area__checklist-checkbox icon-inline text-success"
+                    className="icon-inline text-success checklistCheckbox"
                   />
                   <small
-                    className="trigger-area__checklist-children--faded"
+                    className="checklistChildrenFaded"
                   >
                     Is 
                     <code>
@@ -94,12 +94,12 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   >
                     <Memo(HelpCircleIcon)
                       aria-hidden={true}
-                      className="trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                      className="checklistHint icon-inline checklistHintFaded"
                     />
                   </span>
                   <Tooltip
                     autohide={true}
-                    innerClassName="trigger-area__checklist-tooltip"
+                    innerClassName="checklistTooltip"
                     isOpen={false}
                     placement="bottom"
                     placementPrefix="bs-tooltip"
@@ -110,7 +110,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                         >
                           <svg
                             aria-hidden="true"
-                            class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                            class="mdi-icon checklistHint icon-inline checklistHintFaded"
                             fill="currentColor"
                             height="24"
                             viewBox="0 0 24 24"
@@ -136,7 +136,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                       }
                       fade={true}
                       hideArrow={false}
-                      innerClassName="tooltip-inner trigger-area__checklist-tooltip"
+                      innerClassName="tooltip-inner checklistTooltip"
                       isOpen={false}
                       placement="bottom"
                       placementPrefix="bs-tooltip"
@@ -148,7 +148,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                           >
                             <svg
                               aria-hidden="true"
-                              class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                              class="mdi-icon checklistHint icon-inline checklistHintFaded"
                               fill="currentColor"
                               height="24"
                               viewBox="0 0 24 24"
@@ -184,7 +184,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                           >
                             <svg
                               aria-hidden="true"
-                              class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                              class="mdi-icon checklistHint icon-inline checklistHintFaded"
                               fill="currentColor"
                               height="24"
                               viewBox="0 0 24 24"
@@ -243,7 +243,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   />
                   <Memo(RadioboxBlankIcon)
                     aria-hidden={true}
-                    className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked icon-inline"
+                    className="icon-inline checklistCheckbox checklistCheckboxUnchecked"
                   />
                   <small
                     className=""
@@ -269,12 +269,12 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   >
                     <Memo(HelpCircleIcon)
                       aria-hidden={true}
-                      className="trigger-area__checklist-hint icon-inline"
+                      className="checklistHint icon-inline"
                     />
                   </span>
                   <Tooltip
                     autohide={true}
-                    innerClassName="trigger-area__checklist-tooltip"
+                    innerClassName="checklistTooltip"
                     isOpen={false}
                     placement="bottom"
                     placementPrefix="bs-tooltip"
@@ -285,7 +285,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                         >
                           <svg
                             aria-hidden="true"
-                            class="mdi-icon trigger-area__checklist-hint icon-inline"
+                            class="mdi-icon checklistHint icon-inline"
                             fill="currentColor"
                             height="24"
                             viewBox="0 0 24 24"
@@ -311,7 +311,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                       }
                       fade={true}
                       hideArrow={false}
-                      innerClassName="tooltip-inner trigger-area__checklist-tooltip"
+                      innerClassName="tooltip-inner checklistTooltip"
                       isOpen={false}
                       placement="bottom"
                       placementPrefix="bs-tooltip"
@@ -323,7 +323,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                           >
                             <svg
                               aria-hidden="true"
-                              class="mdi-icon trigger-area__checklist-hint icon-inline"
+                              class="mdi-icon checklistHint icon-inline"
                               fill="currentColor"
                               height="24"
                               viewBox="0 0 24 24"
@@ -359,7 +359,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                           >
                             <svg
                               aria-hidden="true"
-                              class="mdi-icon trigger-area__checklist-hint icon-inline"
+                              class="mdi-icon checklistHint icon-inline"
                               fill="currentColor"
                               height="24"
                               viewBox="0 0 24 24"
@@ -418,10 +418,10 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   />
                   <Memo(CheckIcon)
                     aria-hidden={true}
-                    className="trigger-area__checklist-checkbox icon-inline text-success"
+                    className="icon-inline text-success checklistCheckbox"
                   />
                   <small
-                    className="trigger-area__checklist-children--faded"
+                    className="checklistChildrenFaded"
                   >
                     Contains a 
                     <code>
@@ -440,12 +440,12 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   >
                     <Memo(HelpCircleIcon)
                       aria-hidden={true}
-                      className="trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                      className="checklistHint icon-inline checklistHintFaded"
                     />
                   </span>
                   <Tooltip
                     autohide={true}
-                    innerClassName="trigger-area__checklist-tooltip"
+                    innerClassName="checklistTooltip"
                     isOpen={false}
                     placement="bottom"
                     placementPrefix="bs-tooltip"
@@ -456,7 +456,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                         >
                           <svg
                             aria-hidden="true"
-                            class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                            class="mdi-icon checklistHint icon-inline checklistHintFaded"
                             fill="currentColor"
                             height="24"
                             viewBox="0 0 24 24"
@@ -482,7 +482,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                       }
                       fade={true}
                       hideArrow={false}
-                      innerClassName="tooltip-inner trigger-area__checklist-tooltip"
+                      innerClassName="tooltip-inner checklistTooltip"
                       isOpen={false}
                       placement="bottom"
                       placementPrefix="bs-tooltip"
@@ -494,7 +494,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                           >
                             <svg
                               aria-hidden="true"
-                              class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                              class="mdi-icon checklistHint icon-inline checklistHintFaded"
                               fill="currentColor"
                               height="24"
                               viewBox="0 0 24 24"
@@ -530,7 +530,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                           >
                             <svg
                               aria-hidden="true"
-                              class="mdi-icon trigger-area__checklist-hint icon-inline trigger-area__checklist-hint--faded"
+                              class="mdi-icon checklistHint icon-inline checklistHintFaded"
                               fill="currentColor"
                               height="24"
                               viewBox="0 0 24 24"
@@ -588,10 +588,10 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
                   />
                   <Memo(CheckIcon)
                     aria-hidden={true}
-                    className="trigger-area__checklist-checkbox icon-inline text-success"
+                    className="icon-inline text-success checklistCheckbox"
                   />
                   <small
-                    className="trigger-area__checklist-children--faded"
+                    className="checklistChildrenFaded"
                   >
                     Is a valid search query
                   </small>
@@ -601,16 +601,16 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
           </ul>
         </div>
         <div
-          className="trigger-area__query-input-preview-link p-2 my-2"
+          className="p-2 my-2 queryInputPreviewLink"
         >
           <AnchorLink
-            className="trigger-area__query-input-preview-link-text test-preview-link"
+            className="test-preview-link queryInputPreviewLinkText"
             rel="noopener noreferrer"
             target="_blank"
             to="/search?q=test+repo:test&patternType=literal"
           >
             <a
-              className="trigger-area__query-input-preview-link-text test-preview-link"
+              className="test-preview-link queryInputPreviewLinkText"
               href="/search?q=test+repo:test&patternType=literal"
               rel="noopener noreferrer"
               target="_blank"
@@ -618,7 +618,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
               Preview results
                
               <Memo(OpenInNewIcon)
-                className="trigger-area__query-input-preview-link-icon ml-1 icon-inline"
+                className="ml-1 icon-inline queryInputPreviewLinkIcon"
               />
             </a>
           </AnchorLink>

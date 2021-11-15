@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import delay from 'delay'
 import { Key } from 'ts-key-enum'
 
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
@@ -148,6 +149,9 @@ describe('Backend insight drill down filters', () => {
         )
 
         await driver.page.type('[name="insightName"]', 'Insight with filters')
+
+        // Wait until async validation of the insight name field will pass
+        await delay(500)
 
         const variables = await testContext.waitForGraphQLRequest(async () => {
             await driver.page.click('[role="dialog"][aria-label="Drill-down filters panel"] button[type="submit"]')

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -50,17 +49,19 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorColumn = string(toDBRepoListColumn(args.OrderBy))
-		opt.CursorValue = ""
-		if args.Descending {
-			opt.CursorDirection = "prev"
-		} else {
-			opt.CursorDirection = "next"
+		cursor := types.Cursor{
+			Column: string(toDBRepoListColumn(args.OrderBy)),
 		}
+
+		if args.Descending {
+			cursor.Direction = "prev"
+		} else {
+			cursor.Direction = "next"
+		}
+
+		opt.Cursors = append(opt.Cursors, &cursor)
 	}
 
 	opt.FailedFetch = args.FailedFetch
@@ -90,7 +91,7 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db          dbutil.DB
+	db          database.DB
 	opt         database.ReposListOptions
 	cloned      bool
 	notCloned   bool
@@ -185,9 +186,8 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset == nil {
 				break
 			} else {
-				// check if we filtered some repos and if
-				// we need to get more from the DB
-				if len(repos) >= r.opt.Limit || reposFromDB < r.opt.Limit {
+				// check if we filtered some repos and if we need to get more from the DB
+				if len(repos) >= opt2.Limit || reposFromDB < opt2.Limit {
 					break
 				}
 				opt2.Offset += opt2.Limit
@@ -218,6 +218,10 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	if r.opt.UserID != 0 {
 		// 🚨 SECURITY: If filtering by user, restrict to that user
 		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
+			return nil, err
+		}
+	} else if r.opt.OrgID != 0 {
+		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -258,7 +262,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	count, err := database.Repos(r.db).Count(ctx, r.opt)
+	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
 
@@ -267,32 +271,26 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
-	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit {
+	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit || len(r.opt.Cursors) == 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
+	cursor := r.opt.Cursors[0]
+
 	var value string
-	switch r.opt.CursorColumn {
+	switch cursor.Column {
 	case string(database.RepoListName):
 		value = string(repos[len(repos)-1].Name)
 	case string(database.RepoListCreatedAt):
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
 	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
-		&repositoryCursor{
-			Column:    r.opt.CursorColumn,
+		&types.Cursor{
+			Column:    cursor.Column,
 			Value:     value,
-			Direction: r.opt.CursorDirection,
+			Direction: cursor.Direction,
 		},
 	)), nil
-}
-
-func repoNamesToStrings(repoNames []api.RepoName) []string {
-	strings := make([]string, len(repoNames))
-	for i, repoName := range repoNames {
-		strings[i] = string(repoName)
-	}
-	return strings
 }
 
 func toDBRepoListColumn(ob string) database.RepoListColumn {

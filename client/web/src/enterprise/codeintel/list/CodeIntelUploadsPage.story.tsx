@@ -3,8 +3,8 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { LsifUploadConnectionFields, LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelUploadsPage, CodeIntelUploadsPageProps } from './CodeIntelUploadsPage'
 
@@ -115,9 +115,9 @@ const Template: Story<CodeIntelUploadsPageProps> = args => {
         })
 
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => <CodeIntelUploadsPage {...props} queryCommitGraphMetadata={queryCommitGraphMetadata} {...args} />}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 }
 

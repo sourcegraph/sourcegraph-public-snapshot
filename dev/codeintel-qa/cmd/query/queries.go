@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
@@ -57,7 +58,36 @@ func makeTestFunc(name string, f testFunc, source Location, expectedLocations []
 			sortLocations(locations)
 
 			if diff := cmp.Diff(expectedLocations, locations); diff != "" {
-				return errors.Errorf("%s: starting at location\n\n    %+v\n\ngot unexpected locations (-want +got):\n%s", name, source, diff)
+				collectRepositoryToResults := func(locations []Location) map[string]int {
+					repositoryToResults := map[string]int{}
+					for _, location := range locations {
+						if _, ok := repositoryToResults[location.Repo]; !ok {
+							repositoryToResults[location.Repo] = 0
+						}
+						repositoryToResults[location.Repo] += 1
+					}
+					return repositoryToResults
+				}
+
+				e := ""
+				e += fmt.Sprintf("%s: unexpected results\n\n", name)
+				e += fmt.Sprintf("started at location:\n\n    %+v\n\n", source)
+				e += "results by repository:\n\n"
+
+				allRepos := map[string]struct{}{}
+				for _, location := range append(locations, expectedLocations...) {
+					allRepos[location.Repo] = struct{}{}
+				}
+				repositoryToGottenResults := collectRepositoryToResults(locations)
+				repositoryToWantedResults := collectRepositoryToResults(expectedLocations)
+				for repo := range allRepos {
+					e += fmt.Sprintf("    - %s: want %d got %d locations\n", repo, repositoryToWantedResults[repo], repositoryToGottenResults[repo])
+				}
+				e += "\n"
+
+				e += "raw diff (-want +got):\n\n" + diff
+
+				return errors.Errorf(e)
 			}
 		}
 

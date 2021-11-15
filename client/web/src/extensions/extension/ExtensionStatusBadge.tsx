@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import { Badge } from '../../components/Badge'
@@ -17,6 +17,6 @@ export const ExtensionStatusBadge: React.FunctionComponent<{ viewerCanAdminister
                 ? 'Remove "WIP" from the manifest when this extension is ready for use.'
                 : 'Work in progress (not ready for use)'
         }
-        className={classnames('text-uppercase', className)}
+        className={classNames('text-uppercase', className)}
     />
 )

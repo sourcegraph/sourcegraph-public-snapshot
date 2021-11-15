@@ -18,34 +18,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type SettingStore struct {
+type SettingsStore interface {
+	CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (*api.Settings, error)
+	Done(error) error
+	GetLastestSchemaSettings(context.Context, api.SettingsSubject) (*schema.Settings, error)
+	GetLatest(context.Context, api.SettingsSubject) (*api.Settings, error)
+	ListAll(ctx context.Context, impreciseSubstring string) ([]*api.Settings, error)
+	Transact(context.Context) (SettingsStore, error)
+	With(basestore.ShareableStore) SettingsStore
+	basestore.ShareableStore
+}
+
+type settingsStore struct {
 	*basestore.Store
 }
 
 // Settings instantiates and returns a new SettingStore with prepared statements.
-func Settings(db dbutil.DB) *SettingStore {
-	return &SettingStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Settings(db dbutil.DB) SettingsStore {
+	return &settingsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewSettingStoreWithDB instantiates and returns a new SettingStore using the other store handle.
-func SettingsWith(other basestore.ShareableStore) *SettingStore {
-	return &SettingStore{Store: basestore.NewWithHandle(other.Handle())}
+func SettingsWith(other basestore.ShareableStore) SettingsStore {
+	return &settingsStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *SettingStore) With(other basestore.ShareableStore) *SettingStore {
-	return &SettingStore{Store: s.Store.With(other)}
+func (s *settingsStore) With(other basestore.ShareableStore) SettingsStore {
+	return &settingsStore{Store: s.Store.With(other)}
 }
 
-func (s *SettingStore) Transact(ctx context.Context) (*SettingStore, error) {
+func (s *settingsStore) Transact(ctx context.Context) (SettingsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &SettingStore{Store: txBase}, err
+	return &settingsStore{Store: txBase}, err
 }
 
-func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
-	if Mocks.Settings.CreateIfUpToDate != nil {
-		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
-	}
-
+func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 	if strings.TrimSpace(contents) == "" {
 		return nil, errors.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
 	}
@@ -78,7 +85,7 @@ func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.Setting
 		err = tx.Done(err)
 	}()
 
-	latestSetting, err = tx.getLatest(ctx, subject)
+	latestSetting, err = tx.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err
 	}
@@ -98,15 +105,48 @@ func (o *SettingStore) CreateIfUpToDate(ctx context.Context, subject api.Setting
 	return latestSetting, nil
 }
 
-func (o *SettingStore) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
-	if Mocks.Settings.GetLatest != nil {
-		return Mocks.Settings.GetLatest(ctx, subject)
+func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
+	var cond *sqlf.Query
+	switch {
+	case subject.Org != nil:
+		cond = sqlf.Sprintf("org_id=%d", *subject.Org)
+	case subject.User != nil:
+		cond = sqlf.Sprintf("user_id=%d AND EXISTS (SELECT NULL FROM users WHERE id=%d AND deleted_at IS NULL)", *subject.User, *subject.User)
+	default:
+		// No org and no user represents global site settings.
+		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
 	}
 
-	return o.getLatest(ctx, subject)
+	q := sqlf.Sprintf(`
+		SELECT s.id, s.org_id, s.user_id, CASE WHEN users.deleted_at IS NULL THEN s.author_user_id ELSE NULL END, s.contents, s.created_at FROM settings s
+		LEFT JOIN users ON users.id=s.author_user_id
+		WHERE %s
+		ORDER BY id DESC LIMIT 1`, cond)
+	rows, err := o.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	settings, err := parseQueryRows(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(settings) != 1 {
+		// No configuration has been set for this subject yet.
+		return nil, nil
+	}
+	if settings[0].Contents == "" {
+		// On some instances user, org, and global settings are an invalid
+		// empty string / null.
+		//
+		// This happens particularly on instances that ran old versions of
+		// Sourcegraph where we didn't enforce that settings contents had to be
+		// non-empty for correctness.
+		settings[0].Contents = "{}"
+	}
+	return settings[0], nil
 }
 
-func (o *SettingStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
+func (o *settingsStore) GetLastestSchemaSettings(ctx context.Context, subject api.SettingsSubject) (*schema.Settings, error) {
 	apiSettings, err := o.GetLatest(ctx, subject)
 	if err != nil {
 		return nil, err
@@ -137,7 +177,7 @@ func (o *SettingStore) GetLastestSchemaSettings(ctx context.Context, subject api
 //
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
-func (o *SettingStore) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
+func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
 	tr, ctx := trace.New(ctx, "database.Settings.ListAll", "")
 	defer func() {
 		tr.SetError(err)
@@ -162,51 +202,10 @@ func (o *SettingStore) ListAll(ctx context.Context, impreciseSubstring string) (
 	if err != nil {
 		return nil, err
 	}
-	return o.parseQueryRows(ctx, rows)
+	return parseQueryRows(ctx, rows)
 }
 
-func (o *SettingStore) getLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
-	var cond *sqlf.Query
-	switch {
-	case subject.Org != nil:
-		cond = sqlf.Sprintf("org_id=%d", *subject.Org)
-	case subject.User != nil:
-		cond = sqlf.Sprintf("user_id=%d AND EXISTS (SELECT NULL FROM users WHERE id=%d AND deleted_at IS NULL)", *subject.User, *subject.User)
-	default:
-		// No org and no user represents global site settings.
-		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
-	}
-
-	q := sqlf.Sprintf(`
-		SELECT s.id, s.org_id, s.user_id, CASE WHEN users.deleted_at IS NULL THEN s.author_user_id ELSE NULL END, s.contents, s.created_at FROM settings s
-		LEFT JOIN users ON users.id=s.author_user_id
-		WHERE %s
-		ORDER BY id DESC LIMIT 1`, cond)
-	rows, err := o.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	settings, err := o.parseQueryRows(ctx, rows)
-	if err != nil {
-		return nil, err
-	}
-	if len(settings) != 1 {
-		// No configuration has been set for this subject yet.
-		return nil, nil
-	}
-	if settings[0].Contents == "" {
-		// On some instances user, org, and global settings are an invalid
-		// empty string / null.
-		//
-		// This happens particularly on instances that ran old versions of
-		// Sourcegraph where we didn't enforce that settings contents had to be
-		// non-empty for correctness.
-		settings[0].Contents = "{}"
-	}
-	return settings[0], nil
-}
-
-func (o *SettingStore) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
+func parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.Settings, error) {
 	settings := []*api.Settings{}
 	defer rows.Close()
 	for rows.Next() {

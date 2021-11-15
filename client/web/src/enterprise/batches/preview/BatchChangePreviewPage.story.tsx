@@ -4,6 +4,7 @@ import { addDays, subDays } from 'date-fns'
 import React from 'react'
 import { of, Observable } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     ApplyPreviewStatsFields,
     BatchSpecApplyPreviewConnectionFields,
@@ -11,7 +12,6 @@ import {
     ChangesetApplyPreviewFields,
     ExternalServiceKind,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { fetchBatchSpecById } from './backend'
 import { BatchChangePreviewPage } from './BatchChangePreviewPage'
@@ -144,7 +144,7 @@ const queryEmptyChangesetApplyPreview = (): Observable<BatchSpecApplyPreviewConn
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
 add('Create', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangePreviewPage
                 {...props}
@@ -162,11 +162,11 @@ add('Create', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Update', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangePreviewPage
                 {...props}
@@ -184,11 +184,11 @@ add('Update', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Missing credentials', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangePreviewPage
                 {...props}
@@ -206,11 +206,11 @@ add('Missing credentials', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Spec file', () => (
-    <EnterpriseWebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
+    <WebStory initialEntries={['/users/alice/batch-changes/awesome-batch-change?tab=spec']}>
         {props => (
             <BatchChangePreviewPage
                 {...props}
@@ -228,11 +228,11 @@ add('Spec file', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('No changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangePreviewPage
                 {...props}
@@ -250,5 +250,5 @@ add('No changesets', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

@@ -2,8 +2,8 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { ExecutionLogEntryFields, LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelIndexesPage, CodeIntelIndexesPageProps } from './CodeIntelIndexesPage'
 
@@ -114,7 +114,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelIndexesPageProps> = args => (
-    <EnterpriseWebStory>{props => <CodeIntelIndexesPage {...props} {...args} />}</EnterpriseWebStory>
+    <WebStory>{props => <CodeIntelIndexesPage {...props} {...args} />}</WebStory>
 )
 
 const defaults: Partial<CodeIntelIndexesPageProps> = {

@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React, { useCallback, useEffect, useRef, useMemo } from 'react'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
@@ -7,10 +6,9 @@ import { Key } from 'ts-key-enum'
 
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 
+import styles from './Toggles.module.scss'
+
 export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
-    history: H.History
-    /** Search query in the main query input. */
-    navbarSearchQuery: string
     /** Title of the toggle.  */
     title: string
     /** Icon to display.  */
@@ -24,15 +22,20 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
      * For multiple true conditions, use the first rule that evalutes to true.
      */
     disableOn?: { condition: boolean; reason: string }[]
-    hasGlobalQueryBehavior?: boolean
     className?: string
     activeClassName?: string
+    /**
+     * If set to false makes the button non-actionable. The main use case for
+     * this prop is showing the toggles in examples. This is different from
+     * being disabled, because the buttons still render normally.
+     */
+    interactive?: boolean
 }
 
 /**
  * A toggle displayed in the QueryInput.
  */
-export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, ...props }) => {
+export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggle, interactive = true, ...props }) => {
     const toggleCheckbox = useRef<HTMLDivElement | null>(null)
 
     const disabledRule = useMemo(() => props.disableOn?.find(({ condition }) => condition), [props.disableOn])
@@ -65,25 +68,29 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
     const Icon = props.icon
     const isActive = props.isActive && !disabledRule
 
+    const interactiveProps = interactive
+        ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
+        : {}
+
     return (
         // Click events here are defined in useEffect
         // eslint-disable-next-line jsx-a11y/click-events-have-key-events
         <div
             ref={toggleCheckbox}
-            onClick={onCheckboxToggled}
             className={classNames(
-                'btn btn-icon toggle-container__toggle',
+                'btn btn-icon',
+                styles.toggle,
                 props.className,
-                { disabled: !!disabledRule },
-                { 'toggle-container__toggle--active': isActive },
+                !!disabledRule && styles.disabled,
+                isActive && styles.toggleActive,
+                !interactive && styles.toggleNonInteractive,
                 props.activeClassName
             )}
             role="checkbox"
             aria-disabled={!!disabledRule}
             aria-checked={isActive}
             aria-label={`${props.title} toggle`}
-            tabIndex={0}
-            data-tooltip={tooltipValue}
+            {...interactiveProps}
         >
             <Icon className="icon-inline" />
         </div>

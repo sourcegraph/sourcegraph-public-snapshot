@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -34,7 +34,7 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db dbutil.DB) http.Handler {
+func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		newSearchResolver:   defaultNewSearchResolver,
@@ -44,8 +44,8 @@ func StreamHandler(db dbutil.DB) http.Handler {
 }
 
 type streamHandler struct {
-	db                  dbutil.DB
-	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                  database.DB
+	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -63,7 +63,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
 		trace.Tag{Key: "version", Value: args.Version},
 		trace.Tag{Key: "pattern_type", Value: args.PatternType},
-		trace.Tag{Key: "version_context", Value: args.VersionContext},
 	)
 	defer func() {
 		tr.SetError(err)
@@ -158,13 +157,25 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Error("failed to get repo metadata", "error", err)
 			return
 		}
+
+		if progress.Stats.Repos == nil {
+			progress.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+		}
+
 		for i, match := range event.Results {
+			repo := match.RepoName()
+
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
 			// searched repos that user shouldn't have access to.
-			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
 			}
+
+			if _, ok := progress.Stats.Repos[repo.ID]; !ok {
+				progress.Stats.Repos[repo.ID] = repo
+			}
+
 			eventMatch := fromMatch(match, repoMetadata)
 			if args.DecorationLimit == -1 || args.DecorationLimit > i {
 				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
@@ -182,7 +193,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
 		}
-
 	}
 
 LOOP:
@@ -283,10 +293,9 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 	eventsC := make(chan streaming.SearchEvent)
 
 	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
-		Query:          a.Query,
-		Version:        a.Version,
-		PatternType:    strPtr(a.PatternType),
-		VersionContext: strPtr(a.VersionContext),
+		Query:       a.Query,
+		Version:     a.Version,
+		PatternType: strPtr(a.PatternType),
 
 		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
 			eventsC <- event
@@ -323,16 +332,15 @@ type searchResolver interface {
 	Inputs() run.SearchInputs
 }
 
-func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+func defaultNewSearchResolver(ctx context.Context, db database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
 	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 
 type args struct {
-	Query          string
-	Version        string
-	PatternType    string
-	VersionContext string
-	Display        int
+	Query       string
+	Version     string
+	PatternType string
+	Display     int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -355,7 +363,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Query:          get("q", ""),
 		Version:        get("v", "V2"),
 		PatternType:    get("t", ""),
-		VersionContext: get("vc", ""),
 		DecorationKind: get("dk", "html"),
 	}
 
@@ -672,7 +679,6 @@ func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-cha
 				}
 			}
 		}
-
 	}()
 	return results
 }

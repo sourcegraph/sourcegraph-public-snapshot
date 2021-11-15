@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import styles from './PanelContainer.module.scss'
+
 interface Props {
     title: string
     state: 'loading' | 'populated' | 'empty'
@@ -23,13 +25,13 @@ export const PanelContainer: React.FunctionComponent<Props> = ({
     actionButtons,
     className,
 }) => (
-    <div className={classNames(className, 'panel-container', 'd-flex', 'flex-column')}>
-        <div className="panel-container__header d-flex border-bottom">
-            <h4 className="panel-container__header-text">{title}</h4>
+    <div className={classNames(className, styles.panelContainer, 'd-flex', 'flex-column')}>
+        <div className={classNames('d-flex border-bottom', styles.header)}>
+            <h4 className={styles.headerText}>{title}</h4>
             {actionButtons}
         </div>
 
-        <div className="panel-container__content h-100">
+        <div className={classNames('h-100', styles.content)}>
             {state === 'loading' && loadingContent}
             {state === 'populated' && populatedContent}
             {state === 'empty' && emptyContent}

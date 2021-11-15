@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { PropsWithChildren } from 'react'
 
 import styles from './TruncatedText.module.scss'
@@ -8,5 +8,5 @@ export const TruncatedText: React.FunctionComponent<
 > = props => {
     const { className, ...otherProps } = props
 
-    return <span className={classnames(className, styles.truncatedText)} {...otherProps} />
+    return <span className={classNames(className, styles.truncatedText)} {...otherProps} />
 }

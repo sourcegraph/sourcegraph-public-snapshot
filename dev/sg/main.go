@@ -28,15 +28,16 @@ const (
 var secretsStore *secrets.Store
 
 var (
-	BuildCommit string = "dev"
+	BuildCommit = "dev"
 
-	out *output.Output = stdout.Out
+	out = stdout.Out
 
 	// globalConf is the global config. If a command needs to access it, it *must* call
 	// `parseConf` before.
 	globalConf *Config
 
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
+	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
 	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 
@@ -58,6 +59,10 @@ var (
 			funkyLogoCommand,
 			teammateCommand,
 			ciCommand,
+			installCommand,
+			versionCommand,
+			secretCommand,
+			setupCommand,
 		},
 	}
 )

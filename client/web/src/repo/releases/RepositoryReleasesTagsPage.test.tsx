@@ -1,6 +1,6 @@
+import { render } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
-import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 
 import { IRepository, IGitRef } from '@sourcegraph/shared/src/graphql/schema'
@@ -11,7 +11,7 @@ describe('RepositoryReleasesTagsPage', () => {
     const history = H.createMemoryHistory()
     test('renders', () =>
         expect(
-            createRenderer().render(
+            render(
                 <RepositoryReleasesTagsPage
                     history={history}
                     location={history.location}
@@ -25,6 +25,6 @@ describe('RepositoryReleasesTagsPage', () => {
                         })
                     }
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot())
 })

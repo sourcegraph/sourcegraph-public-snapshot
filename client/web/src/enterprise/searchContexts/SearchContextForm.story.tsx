@@ -7,7 +7,7 @@ import sinon from 'sinon'
 import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 
 import { AuthenticatedUser } from '../../auth'
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -79,7 +79,7 @@ const deleteSearchContext = sinon.fake(() => NEVER)
 add(
     'empty create',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => (
                 <SearchContextForm
                     {...webProps}
@@ -88,7 +88,7 @@ add(
                     deleteSearchContext={deleteSearchContext}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )
@@ -96,7 +96,7 @@ add(
 add(
     'edit existing',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => (
                 <SearchContextForm
                     {...webProps}
@@ -106,7 +106,7 @@ add(
                     deleteSearchContext={deleteSearchContext}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )

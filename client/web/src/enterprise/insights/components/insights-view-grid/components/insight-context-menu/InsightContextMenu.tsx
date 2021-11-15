@@ -1,5 +1,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@reach/menu-button'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useContext } from 'react'
@@ -39,18 +39,18 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                 <>
                     <MenuButton
                         data-testid="InsightContextMenuButton"
-                        className={classnames(menuButtonClassName, 'btn btn-outline p-1', styles.button)}
+                        className={classNames(menuButtonClassName, 'btn btn-outline p-1', styles.button)}
                         aria-label="Insight options"
                     >
                         <DotsVerticalIcon
-                            className={classnames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
+                            className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
                             size={16}
                         />
                     </MenuButton>
                     <MenuPopover portal={false}>
                         <MenuItems
                             data-testid={`context-menu.${insightID}`}
-                            className={classnames(styles.panel, 'dropdown-menu')}
+                            className={classNames(styles.panel, 'dropdown-menu')}
                         >
                             <MenuLink
                                 as={Link}
@@ -65,7 +65,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 <MenuItem
                                     role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
-                                    className={classnames(
+                                    className={classNames(
                                         'd-flex align-items-center justify-content-between',
                                         styles.item
                                     )}

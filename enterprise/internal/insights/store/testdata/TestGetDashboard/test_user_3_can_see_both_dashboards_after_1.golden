@@ -1,4 +1,6 @@
 []*types.Dashboard{&types.Dashboard{
-	ID:    2,
-	Title: "private dashboard for user 3",
+	ID:           2,
+	Title:        "private dashboard for user 3",
+	UserIdGrants: []int64{3},
+	OrgIdGrants:  []int64{},
 }}

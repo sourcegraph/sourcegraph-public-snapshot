@@ -103,7 +103,9 @@ export const renderGlobalDebug = ({
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''
-    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${String(part)}]`)
+    const previousAttachments = codeElement.querySelectorAll(
+        `[data-line-decoration-attachment][data-part=${String(part)}]`
+    )
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
@@ -213,7 +215,8 @@ export const applyDecorations = (
 
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
                 annotation.dataset.part = String(part)
-                annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
+                annotation.className = 'sourcegraph-extension-element'
+                annotation.dataset.lineDecorationAttachment = 'true'
                 codeElement.append(annotation)
             }
         }

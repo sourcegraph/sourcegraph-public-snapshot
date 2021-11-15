@@ -14,12 +14,17 @@ import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/sr
 
 import { SearchPatternType } from '../../../graphql-operations'
 
+import styles from './FormTriggerArea.module.scss'
+
 interface TriggerAreaProps {
     query: string
     onQueryChange: (query: string) => void
     triggerCompleted: boolean
     setTriggerCompleted: (complete: boolean) => void
     startExpanded: boolean
+    cardClassName?: string
+    cardBtnClassName?: string
+    cardLinkClassName?: string
 }
 
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
@@ -48,15 +53,18 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
             <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
 
             {checked ? (
-                <CheckIcon className="trigger-area__checklist-checkbox icon-inline text-success" aria-hidden={true} />
+                <CheckIcon
+                    className={classNames('icon-inline text-success', styles.checklistCheckbox)}
+                    aria-hidden={true}
+                />
             ) : (
                 <RadioboxBlankIcon
-                    className="trigger-area__checklist-checkbox trigger-area__checklist-checkbox--unchecked icon-inline"
+                    className={classNames('icon-inline', styles.checklistCheckbox, styles.checklistCheckboxUnchecked)}
                     aria-hidden={true}
                 />
             )}
 
-            <small className={checked ? 'trigger-area__checklist-children--faded' : ''}>{children}</small>
+            <small className={checked ? styles.checklistChildrenFaded : ''}>{children}</small>
 
             {hint && (
                 <>
@@ -64,9 +72,11 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
 
                     <span ref={tooltipTarget} className="d-flex">
                         <HelpCircleIcon
-                            className={classNames('trigger-area__checklist-hint', 'icon-inline', {
-                                'trigger-area__checklist-hint--faded': checked,
-                            })}
+                            className={classNames(
+                                styles.checklistHint,
+                                'icon-inline',
+                                checked && styles.checklistHintFaded
+                            )}
                             aria-hidden={true}
                         />
                     </span>
@@ -76,7 +86,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
                         toggle={toggleTooltip}
                         isOpen={tooltipOpen}
                         placement="bottom"
-                        innerClassName="trigger-area__checklist-tooltip"
+                        innerClassName={styles.checklistTooltip}
                     >
                         {hint}
                     </Tooltip>
@@ -92,6 +102,9 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
     triggerCompleted,
     setTriggerCompleted,
     startExpanded,
+    cardClassName,
+    cardBtnClassName,
+    cardLinkClassName,
 }) => {
     const [showQueryForm, setShowQueryForm] = useState(startExpanded)
     const toggleQueryForm: React.FormEventHandler = useCallback(event => {
@@ -207,19 +220,20 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
         <>
             <h3>Trigger</h3>
             {showQueryForm && (
-                <div className="code-monitor-form__card card p-3">
+                <div className={classNames(cardClassName, 'card p-3')}>
                     <div className="font-weight-bold">When there are new search results</div>
                     <span className="text-muted">
                         This trigger will fire when new search results are found for a given search query.
                     </span>
                     <span className="mt-4">Search query</span>
                     <div>
-                        <div className="trigger-area__query-input mb-4">
+                        <div className={classNames('mb-4', styles.queryInput)}>
                             <div className="d-flex flex-column flex-grow-1">
                                 <input
                                     type="text"
                                     className={classNames(
-                                        'trigger-area__query-input-field form-control mt-2 mb-3 test-trigger-input text-monospace',
+                                        'form-control mt-2 mb-3 test-trigger-input text-monospace',
+                                        styles.queryInputField,
                                         `test-${deriveInputClassName(queryState)}`
                                     )}
                                     onChange={nextQueryFieldChange}
@@ -230,7 +244,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     data-testid="trigger-query-edit"
                                 />
 
-                                <ul className="trigger-area__checklist">
+                                <ul className={styles.checklist}>
                                     <li>
                                         <ValidQueryChecklistItem
                                             className="test-patterntype-checkbox"
@@ -265,7 +279,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     </li>
                                 </ul>
                             </div>
-                            <div className="trigger-area__query-input-preview-link p-2 my-2">
+                            <div className={classNames('p-2 my-2', styles.queryInputPreviewLink)}>
                                 <Link
                                     to={`/search?${buildSearchURLQuery(
                                         queryState.value,
@@ -274,10 +288,12 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                     )}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="trigger-area__query-input-preview-link-text test-preview-link"
+                                    className={classNames('test-preview-link', styles.queryInputPreviewLinkText)}
                                 >
                                     Preview results{' '}
-                                    <OpenInNewIcon className="trigger-area__query-input-preview-link-icon ml-1 icon-inline" />
+                                    <OpenInNewIcon
+                                        className={classNames('ml-1 icon-inline', styles.queryInputPreviewLinkIcon)}
+                                    />
                                 </Link>
                             </div>
                         </div>
@@ -300,7 +316,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             {!showQueryForm && (
                 <button
                     type="button"
-                    className="btn code-monitor-form__card--button card test-trigger-button"
+                    className={classNames('btn card test-trigger-button', cardBtnClassName)}
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}
                 >
@@ -309,14 +325,17 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             <div
                                 className={classNames(
                                     'font-weight-bold',
-                                    !triggerCompleted && 'code-monitor-form__card-link btn-link'
+                                    !triggerCompleted && classNames(cardLinkClassName, 'btn-link')
                                 )}
                             >
                                 When there are new search results
                             </div>
                             {triggerCompleted ? (
                                 <code
-                                    className="trigger-area__query-label text-break text-muted test-existing-query"
+                                    className={classNames(
+                                        'text-break text-muted test-existing-query',
+                                        styles.queryLabel
+                                    )}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}

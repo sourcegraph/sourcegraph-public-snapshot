@@ -6,8 +6,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,7 +30,6 @@ import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
-import { VersionContextWarning } from './VersionContextWarning'
 
 describe('StreamingSearchResults', () => {
     const history = createBrowserHistory()
@@ -43,9 +40,6 @@ describe('StreamingSearchResults', () => {
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         caseSensitive: false,
         patternType: SearchPatternType.literal,
-        versionContext: undefined,
-        availableVersionContexts: [],
-        previousVersionContext: null,
 
         extensionsController,
         telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -68,6 +62,8 @@ describe('StreamingSearchResults', () => {
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
         isSourcegraphDotCom: false,
+        showSearchContext: true,
+        searchContextsEnabled: true,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -80,7 +76,7 @@ describe('StreamingSearchResults', () => {
         )
     }
 
-    it('should call streaming search API with the right parameters from URL', () => {
+    it('should call streaming search API with the right parameters from URL', async () => {
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
         const element = render(
@@ -89,53 +85,22 @@ describe('StreamingSearchResults', () => {
                 parsedSearchQuery="r:golang/oauth2 test f:travis"
                 patternType={SearchPatternType.regexp}
                 caseSensitive={true}
-                versionContext="test"
                 streamSearch={searchSpy}
-                availableVersionContexts={[{ name: 'test', revisions: [] }]}
             />
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
+        const call = searchSpy.getCall(0)
+        // We have to extract the query from the observable since we can't directly compare observables
+        const receivedQuery = await call.args[0].toPromise()
+        const receivedOptions = call.args[1]
+
+        expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
+        expect(receivedOptions).toEqual({
             version: 'V2',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
-            versionContext: 'test',
             trace: undefined,
-            extensionHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
-        })
-
-        element.unmount()
-    })
-
-    it('should call streaming search API with no version context if parameter is invalid', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes&patternType=regexp&c=test' })
-
-        const searchSpy = sinon.spy(defaultProps.streamSearch)
-
-        const element = render(
-            <StreamingSearchResults
-                {...defaultProps}
-                parsedSearchQuery="r:golang/oauth2 test f:travis"
-                patternType={SearchPatternType.regexp}
-                caseSensitive={false}
-                versionContext="test"
-                streamSearch={searchSpy}
-                availableVersionContexts={[{ name: 'something', revisions: [] }]}
-            />
-        )
-
-        sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
-            version: 'V2',
-            patternType: SearchPatternType.regexp,
-            caseSensitive: false,
-            versionContext: undefined,
-            trace: undefined,
-            extensionHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
         })
 
         element.unmount()
@@ -173,52 +138,6 @@ describe('StreamingSearchResults', () => {
         expect(infobar.prop('allExpanded')).toBe(false)
         results = element.find(FileMatch)
         expect(results.map(result => result.prop('allExpanded'))).not.toContain(true)
-
-        element.unmount()
-    })
-
-    it('should show version context warning if version context has changed from URL', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-        const element = render(
-            <StreamingSearchResults
-                {...defaultProps}
-                history={history}
-                location={history.location}
-                previousVersionContext={null}
-                availableVersionContexts={[
-                    { name: 'test', revisions: [] },
-                    { name: 'other', revisions: [] },
-                ]}
-            />
-        )
-
-        const warning = element.find(VersionContextWarning)
-        expect(warning.length).toBe(1)
-
-        element.unmount()
-    })
-
-    it('should not show version context warning if version context has changed from dropdown', () => {
-        const history = createBrowserHistory()
-        history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test&from-context-toggle=true' })
-
-        const element = render(
-            <StreamingSearchResults
-                {...defaultProps}
-                history={history}
-                location={history.location}
-                previousVersionContext={null}
-                availableVersionContexts={[
-                    { name: 'test', revisions: [] },
-                    { name: 'other', revisions: [] },
-                ]}
-            />
-        )
-
-        const warning = element.find(VersionContextWarning)
-        expect(warning.length).toBe(0)
 
         element.unmount()
     })

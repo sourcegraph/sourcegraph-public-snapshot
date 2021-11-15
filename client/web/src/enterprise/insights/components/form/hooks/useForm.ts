@@ -32,7 +32,7 @@ interface UseFormProps<FormValues extends object> {
     /**
      * Initial values for form fields.
      */
-    initialValues: FormValues
+    initialValues: Readonly<FormValues>
 
     /**
      * Mark all fields within the form as touched.
@@ -203,6 +203,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
     const [submitErrors, setSubmitErrors] = useState<SubmissionErrors>()
     const [fields, setFields] = useState<FieldsState<FormValues>>(() => generateInitialFieldsState(initialValues))
 
+    const initialValuesReferences = useRef<Readonly<FormValues>>(initialValues)
     const formElementReference = useRef<HTMLFormElement>(null)
     const onSubmitReference = useRef<UseFormProps<FormValues>['onSubmit']>()
 
@@ -266,7 +267,7 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
             touched,
             submitting,
             submitErrors,
-            initialValues,
+            initialValues: initialValuesReferences.current,
             fields,
             setFieldState,
             valid: Object.values<FieldState<unknown>>(fields).every(state => state.validState === 'VALID'),

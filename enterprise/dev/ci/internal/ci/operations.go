@@ -43,7 +43,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		addCheck,
 	})
 
-	if runAll || changedFiles.AffectsClient() {
+	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
+		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Append(
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
@@ -55,7 +56,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		)
 	}
 
-	if runAll || changedFiles.AffectsGo() {
+	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
+		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Append(
 			addGoTests,
 		)
@@ -80,8 +82,6 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		ops.Append(addDocs)
 	}
 
-	// wait for all steps to pass
-	ops.Append(wait)
 	return &ops
 }
 
@@ -93,7 +93,7 @@ func addDocs(pipeline *bk.Pipeline) {
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark: Misc Linters",
+	pipeline.AddStep(":clipboard: Misc Linters",
 		bk.Cmd("./dev/check/all.sh"))
 }
 
@@ -133,7 +133,10 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"))
+		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CHECK_BUNDLESIZE", "1"),
+		// To ensure the Bundlesize output can be diffed to the baseline on main
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
@@ -260,10 +263,29 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
+	// This is a bandage solution to speed up the go tests by running the slowest ones
+	// concurrently. As a results, the PR time affecting only Go code is divided by two.
+	slowPackages := []string{
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
+		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
+		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
+		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+	}
+
 	pipeline.AddStep(":go: Test",
-		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowPackages, " ")),
+		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+
+	for _, slowPkg := range slowPackages {
+		// Trim the package name for readability
+		name := strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")
+		pipeline.AddStep(":go: Test ("+name+")",
+			bk.Cmd("./dev/ci/go-test.sh only "+slowPkg),
+			bk.Cmd("dev/ci/codecov.sh -c -F go"))
+	}
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -282,7 +304,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateImageTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":chains: Backend integration tests",
 			// Run tests against the candidate server image
@@ -290,7 +312,7 @@ func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
 			bk.Env("IMAGE",
 				images.DevRegistryImage("server", candidateImageTag)),
 			bk.Cmd("./dev/ci/backend-integration.sh"),
-			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+			bk.ArtifactPaths("./*.log"))
 	}
 }
 
@@ -331,7 +353,7 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":rocket::firefox: Extension release",
 		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("pushd client/browser"),
-		bk.Cmd("yarn release:ff"),
+		bk.Cmd("yarn release:firefox"),
 		bk.Cmd("popd"))
 
 	// Release to npm
@@ -352,6 +374,7 @@ func wait(pipeline *bk.Pipeline) {
 func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
+			bk.Key("trigger:async"),
 			bk.Trigger("sourcegraph-async"),
 			bk.Async(true),
 			bk.Build(buildOptions),
@@ -367,70 +390,119 @@ func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
 	)
 }
 
-// images used by cluster-qa test
-func clusterDockerImages(images []string) string {
-	var clusterImages []string
-	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
-	for _, image := range images {
-		if _, exists := imagesToRemove[image]; !exists {
-			clusterImages = append(clusterImages, image)
-		}
-	}
-	return strings.Join(clusterImages, "\n")
-}
+func codeIntelQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::brain: Code Intel QA",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
 
-type e2eAndQAOptions struct {
-	candidateImage string
-	buildOptions   bk.BuildOptions
-	async          bool
-}
-
-// copyEnv copies a subset of env variables from the given BuildOptions
-func (opts *e2eAndQAOptions) copyEnv(keys ...string) map[string]string {
-	m := map[string]string{}
-	for _, k := range keys {
-		if v, ok := opts.buildOptions.Env[k]; ok {
-			m[k] = v
-		}
-	}
-	return m
-}
-
-func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
-	customOptions := bk.BuildOptions{
-		Message: opts.buildOptions.Message,
-		Branch:  opts.buildOptions.Branch,
-		Commit:  opts.buildOptions.Commit,
-		Env: opts.copyEnv(
-			"BUILDKITE_PULL_REQUEST",
-			"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-			"BUILDKITE_PULL_REQUEST_REPO",
-			"COMMIT_SHA",
-			"DATE",
-			"VERSION",
-			"CI_DEBUG_PROFILE",
-		),
-	}
-
-	// Set variables that indicate the tag for 'us.gcr.io/sourcegraph-dev' images built
-	// from this CI run's commit, and credentials to access them.
-	customOptions.Env["CANDIDATE_VERSION"] = opts.candidateImage
-	customOptions.Env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
-
-	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	customOptions.Env["MINIMUM_UPGRADEABLE_VERSION"] = "3.32.0"
-
-	// Docker images used in cluster tests
-	customOptions.Env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
-
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":chromium: Trigger QA pipeline",
-			bk.Trigger("qa"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Cmd("dev/ci/test/code-intel/test.sh"),
+			bk.ArtifactPaths("./*.log"))
 	}
 }
+
+const vagrantServiceAccount = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
+
+func serverE2E(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":chromium: Sourcegraph E2E",
+			bk.Agent("queue", "baremetal"),
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+
+			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
+
+			// TODO need doc
+			bk.Env("JEST_CIRCUS", "0"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-e2e"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
+func serverQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::chromium: Sourcegraph QA",
+			bk.Agent("queue", "baremetal"),
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+
+			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
+
+			// TODO need doc
+			bk.Env("JEST_CIRCUS", "0"),
+			bk.Env("LOG_STATUS_MESSAGES", "true"),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
+func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
+			bk.Agent("queue", "baremetal"),
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
+
+			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
+
+			bk.Env("LOG_STATUS_MESSAGES", "true"),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-upgrade"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
+// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
+// func clusterQA(candidateTag string) operations.Operation {
+// 	return func(p *bk.Pipeline) {
+// 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
+// 			bk.Agent("queue", "baremetal"),
+// 			bk.Env("CANDIDATE_VERSION", candidateTag),
+// 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+//
+// 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+// 			bk.Env("VAGRANT_RUN_ENV", "CI"),
+//
+// 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+// 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+// 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+// 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+// 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+// 			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+// 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+// 	}
+// }
 
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.
@@ -440,6 +512,8 @@ func candidateImageStepKey(app string) string {
 
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
+//
+// Version is the actual version of the code, and
 func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
@@ -451,7 +525,6 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
-			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
@@ -482,6 +555,37 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
+	}
+}
+
+// Ask trivy, a security scanning tool, to scan the candidate image
+// specified by "app" and "tag".
+func trivyScanCandidateImage(app, tag string) operations.Operation {
+	image := images.DevRegistryImage(app, tag)
+
+	// This is the special exit code that we tell trivy to use
+	// if it finds a vulnerability. This is also used to soft-fail
+	// this step.
+	vulnerabilityExitCode := 27
+
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.DependsOn(candidateImageStepKey(app)),
+
+			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+
+			// have trivy use a shorter name in its output
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
+
+			bk.Env("IMAGE", app),
+			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
+			bk.ArtifactPaths("./*-security-report.html"),
+			bk.SoftFail(vulnerabilityExitCode),
+
+			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
+		}
+
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
 	}
 }
 
@@ -527,7 +631,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
-		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app),
+		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", app),
 			// This step just pulls a prebuild image and pushes it to some registries. The
 			// only possible failure here is a registry flake, so we retry a few times.
 			bk.AutomaticRetry(3),
@@ -535,29 +639,73 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 	}
 }
 
-// ~6m (building executor base VM)
-// func buildExecutor(timestamp time.Time, version string) operations.Operation {
-// 	return func(pipeline *bk.Pipeline) {
-// 		cmds := []bk.StepOpt{
-// 			bk.Cmd(`echo "Building executor cloud image..."`),
-// 			bk.Env("VERSION", version),
-// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-// 			bk.Cmd("./enterprise/cmd/executor/build.sh"),
-// 		}
+// ~15m (building executor base VM)
+func buildExecutor(version string, skipHashCompare bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor")),
+			bk.Env("VERSION", version),
+		}
+		if !skipHashCompare {
+			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
+			stepOpts = append(stepOpts,
+				// Soft-fail with code 222 if nothing has changed
+				bk.SoftFail(222),
+				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/build.sh"))
 
-// 		pipeline.AddStep(":packer: :construction: executor image", cmds...)
-// 	}
-// }
+		pipeline.AddStep(":packer: :construction: executor image", stepOpts...)
+	}
+}
 
-// func publishExecutor(timestamp time.Time, version string) operations.Operation {
-// 	return func(pipeline *bk.Pipeline) {
-// 		cmds := []bk.StepOpt{
-// 			bk.Cmd(`echo "Releasing executor cloud image..."`),
-// 			bk.Env("VERSION", version),
-// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-// 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
-// 		}
+func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", version),
+		}
+		if !skipHashCompare {
+			// Publish iff not soft-failed on previous step
+			checkDependencySoftFailScript := "./enterprise/dev/ci/scripts/check-dependency-soft-fail.sh"
+			stepOpts = append(stepOpts,
+				// Soft-fail with code 222 if nothing has changed
+				bk.SoftFail(222),
+				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/release.sh"))
 
-// 		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
-// 	}
-// }
+		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
+	}
+}
+
+// ~15m (building executor docker mirror base VM)
+func buildExecutorDockerMirror(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor-docker-mirror")),
+			bk.Env("VERSION", version),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
+
+		pipeline.AddStep(":packer: :construction: docker registry mirror image", stepOpts...)
+	}
+}
+
+func publishExecutorDockerMirror(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor-docker-mirror")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", version),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
+
+		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+	}
+}

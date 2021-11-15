@@ -21,7 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -480,8 +480,10 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	)
 
 	// Set them up in the DB
-	ctx := context.Background()
-	db := dbtesting.GetDB(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	db := dbtest.NewDB(t)
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 
@@ -511,6 +513,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	s := &Server{
 		ReposDir: root,
 		DB:       db,
+		ctx:      ctx,
 	}
 
 	// Remove everything but github.com/foo/survivor

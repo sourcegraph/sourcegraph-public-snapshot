@@ -8,9 +8,12 @@ import { deleteExternalService } from '../../../components/externalServices/back
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind } from '../../../graphql-operations'
 
-const getWarningMessage = (codeHostName: string, repoCount: number | undefined): string => {
+const getWarningMessage = (serviceName: string, orgName: string, repoCount: number | undefined): string => {
+    const membersWillNoLongerSearchAcross = `will no longer be synced and members of ${orgName} will no longer be able to search across`
+    const willNotBeSynced = `${membersWillNoLongerSearchAcross} these repositories on Sourcegraph.`
+
     if (!repoCount) {
-        return `If the connection with ${codeHostName}.com is removed, all associated repositories  will no longer be synced with Sourcegraph.`
+        return `If the connection with ${serviceName} is removed, all associated repositories ${willNotBeSynced}`
     }
 
     const config = {
@@ -28,19 +31,22 @@ const getWarningMessage = (codeHostName: string, repoCount: number | undefined):
 
     const { verb, adjective, repoNoun } = repoCount > 1 ? config.multiple : config.single
 
-    return `There ${verb} ${repoCount} ${repoNoun} synced to Sourcegraph from ${codeHostName}.com. If the connection with ${codeHostName}.com is removed, ${adjective} will no longer be synced with Sourcegraph.`
+    return `There ${verb} ${repoCount} ${repoNoun} synced to Sourcegraph by ${orgName} from ${serviceName}. If the connection with ${serviceName} is removed, ${
+        repoCount > 1 ? adjective + ' repositories' : adjective
+    } ${membersWillNoLongerSearchAcross} ${repoCount === 1 ? 'this' : adjective} ${repoNoun} on Sourcegraph.`
 }
 
 export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
-    id: Scalars['ID']
-    name: string
-    kind: ExternalServiceKind
+    serviceID: Scalars['ID']
+    serviceName: string
+    orgName: string
+    serviceKind: ExternalServiceKind
     repoCount: number | undefined
 
     onDidRemove: () => void
     onDidCancel: () => void
     onDidError: (error: ErrorLike) => void
-}> = ({ id, name, repoCount, onDidRemove, onDidCancel, onDidError }) => {
+}> = ({ serviceID, serviceName, orgName, repoCount, onDidRemove, onDidCancel, onDidError }) => {
     const [isLoading, setIsLoading] = useState(false)
 
     const onConnectionRemove = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -49,7 +55,7 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
             setIsLoading(true)
 
             try {
-                await deleteExternalService(id)
+                await deleteExternalService(serviceID)
                 onDidRemove()
             } catch (error) {
                 setIsLoading(false)
@@ -57,22 +63,22 @@ export const RemoveCodeHostConnectionModal: React.FunctionComponent<{
                 onDidCancel()
             }
         },
-        [id, onDidRemove, onDidError, onDidCancel]
+        [serviceID, onDidRemove, onDidError, onDidCancel]
     )
 
     return (
         <Dialog
             className="modal-body modal-body--top-third p-4 rounded border"
-            aria-labelledby={`heading--remove-${name}-code-host`}
-            aria-describedby={`description--remove-${name}-code-host`}
+            aria-labelledby={`heading--remove-${serviceName}-code-host`}
+            aria-describedby={`description--remove-${serviceName}-code-host`}
             onDismiss={onDidCancel}
         >
-            <h3 id={`heading--remove-${name}-code-host`} className="text-danger mb-4">
-                Remove connection with {name}.com?
+            <h3 id={`heading--remove-${serviceName}-code-host`} className="text-danger mb-4">
+                Remove connection with {serviceName}?
             </h3>
             <Form onSubmit={onConnectionRemove}>
-                <div id={`description--remove-${name}-code-host`} className="form-group mb-4">
-                    {getWarningMessage(name, repoCount)}
+                <div id={`description--remove-${serviceName}-code-host`} className="form-group mb-4">
+                    {getWarningMessage(serviceName, orgName, repoCount)}
                 </div>
                 <div className="d-flex justify-content-end">
                     <button

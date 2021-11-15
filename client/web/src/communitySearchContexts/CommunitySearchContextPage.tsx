@@ -13,7 +13,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps, Settings } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -25,12 +24,10 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/web/src/components/Sy
 import { AuthenticatedUser } from '../auth'
 import { SearchPatternType } from '../graphql-operations'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { VersionContext } from '../schema/site.schema'
 import {
     PatternTypeProps,
     CaseSensitivityProps,
     OnboardingTourProps,
-    ShowQueryBuilderProps,
     ParsedSearchQueryProps,
     SearchContextInputProps,
     SearchContextProps,
@@ -55,17 +52,13 @@ export interface CommunitySearchContextPageProps
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
-        VersionContextProps,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
-        OnboardingTourProps,
-        ShowQueryBuilderProps {
+        OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    setVersionContext: (versionContext: string | undefined) => Promise<void>
-    availableVersionContexts: VersionContext[] | undefined
 
     // CommunitySearchContext page metadata
     communitySearchContextMetadata: CommunitySearchContextMetadata
@@ -131,8 +124,6 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                         {...props}
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
-                        hideVersionContexts={true}
-                        showQueryBuilder={false}
                     />
                 ) : (
                     <SearchPageInput

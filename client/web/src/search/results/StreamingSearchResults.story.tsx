@@ -38,9 +38,6 @@ const defaultProps: StreamingSearchResultsProps = {
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     caseSensitive: false,
     patternType: SearchPatternType.literal,
-    versionContext: undefined,
-    availableVersionContexts: [],
-    previousVersionContext: null,
 
     extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
@@ -68,6 +65,8 @@ const defaultProps: StreamingSearchResultsProps = {
     featureFlags: EMPTY_FEATURE_FLAGS,
     extensionViews: () => null,
     isSourcegraphDotCom: false,
+    showSearchContext: true,
+    searchContextsEnabled: true,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({
@@ -125,6 +124,10 @@ add('search with quotes', () => (
     </WebStory>
 ))
 
+add('did you mean', () => (
+    <WebStory>{() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="javascript test" />}</WebStory>
+))
+
 add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
@@ -169,28 +172,6 @@ add('progress with warnings', () => {
     }
 
     return <WebStory>{() => <StreamingSearchResults {...defaultProps} streamSearch={() => of(result)} />}</WebStory>
-})
-
-add('show version context warning', () => {
-    const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis&c=test' })
-
-    return (
-        <WebStory>
-            {() => (
-                <StreamingSearchResults
-                    {...defaultProps}
-                    history={history}
-                    location={history.location}
-                    previousVersionContext={null}
-                    availableVersionContexts={[
-                        { name: 'test', revisions: [] },
-                        { name: 'other', revisions: [] },
-                    ]}
-                />
-            )}
-        </WebStory>
-    )
 })
 
 add('loading with no results', () => (

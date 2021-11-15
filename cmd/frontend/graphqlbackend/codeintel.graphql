@@ -9,6 +9,12 @@ extend type Mutation {
         """
         repository: ID
 
+        """
+        If supplied, the name patterns matching repositories to which this configuration policy
+        applies. This option is mutually exclusive with an explicit repository.
+        """
+        repositoryPatterns: [String!]
+
         name: String!
         type: GitObjectType!
         pattern: String!
@@ -25,6 +31,7 @@ extend type Mutation {
     """
     updateCodeIntelligenceConfigurationPolicy(
         id: ID!
+        repositoryPatterns: [String!]
         name: String!
         type: GitObjectType!
         pattern: String!
@@ -155,6 +162,32 @@ extend type Query {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    The set of repositories that match the given glob pattern. This resolver is used by the UI to
+    preview what repositories match a code intelligence policy in a given repository.
+    """
+    previewRepositoryFilter(
+        """
+        A pattern matching the name of the matching repository.
+        """
+        pattern: String!
+    ): [Repository!]!
+
+    """
+    Search over documentation
+    """
+    documentationSearch(
+        """
+        The search query.
+        """
+        query: String!
+
+        """
+        A list of names of repositories to limit the search to (all by default)
+        """
+        repos: [String!]
+    ): DocumentationSearchResults!
 }
 
 """
@@ -172,6 +205,16 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     A description of the configuration policy.
     """
     name: String!
+
+    """
+    The repository to which this configuration policy applies.
+    """
+    repository: Repository
+
+    """
+    The set of name patterns matching repositories to which this configuration policy applies.
+    """
+    repositoryPatterns: [String!]
 
     """
     The type of Git object described by the configuration policy.
@@ -305,6 +348,23 @@ extend type Repository {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    The set of git objects that match the given git object type and glob pattern.
+    This resolver is used by the UI to preview what names match a code intelligence
+    policy in a given repository.
+    """
+    previewGitObjectFilter(
+        """
+        The type of Git object described by the configuration policy.
+        """
+        type: GitObjectType!
+
+        """
+        A pattern matching the name of the matching Git object.
+        """
+        pattern: String!
+    ): [GitObjectFilterPreview!]!
 }
 
 extend interface TreeEntry {
@@ -342,6 +402,22 @@ extend type GitBlob {
         """
         toolName: String
     ): GitBlobLSIFData
+}
+
+"""
+A git object that matches a git object type and glob pattern. This type is used by
+the UI to preview what names match a code intelligence policy in a given repository.
+"""
+type GitObjectFilterPreview {
+    """
+    The relevant branch or tag name.
+    """
+    name: String!
+
+    """
+    The full 40-char revhash.
+    """
+    rev: String!
 }
 
 """
@@ -530,6 +606,11 @@ null, no LSIF data is available for the git blob in question.
 """
 type GitBlobLSIFData implements TreeEntryLSIFData {
     """
+    Return a flat list of all ranges in the document that have code intelligence.
+    """
+    stencil: [Range!]!
+
+    """
     Get aggregated local code intelligence for all ranges that fall in the window
     indicated by the given zero-based start (inclusive) and end (exclusive) lines.
     The associated data for each range is "local", in that the locations and hover
@@ -558,6 +639,36 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     A list of references of the symbol under the given document position.
     """
     references(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+    ): LocationConnection!
+
+    """
+    A list of implementations of the symbol under the given document position.
+    """
+    implementations(
         """
         The line on which the symbol occurs (zero-based, inclusive).
         """
@@ -711,6 +822,58 @@ type DocumentationPage {
     https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+DocumentationNode+struct&patternType=literal&case=yes
     """
     tree: JSONValue!
+}
+
+"""
+Search results over documentation.
+"""
+type DocumentationSearchResults {
+    """
+    The results.
+    """
+    results: [DocumentationSearchResult!]!
+}
+
+"""
+A documentation search result.
+"""
+type DocumentationSearchResult {
+    """
+    The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
+    """
+    language: String!
+
+    """
+    RepoName is the name of the repository containing this search key.
+    """
+    repoName: String!
+
+    """
+    The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific,
+    and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
+    """
+    searchKey: String!
+
+    """
+    The fully qualified documentation page path ID, e.g. including "#section". See the documentationPage
+    type for what this is.
+    """
+    pathID: String!
+
+    """
+    Markdown label string, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+    """
+    label: String!
+
+    """
+    Markdown detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+    """
+    detail: String!
+
+    """
+    Tags for the documentation node. See protocol/documentation.go:Documentation
+    """
+    tags: [String!]!
 }
 
 """

@@ -3,13 +3,13 @@ import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { timer, Observable } from 'rxjs'
-import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { takeWhile } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import {
     FilteredConnection,
@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../graphql-operations'
@@ -37,12 +38,11 @@ import {
 } from './useLsifUpload'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
+    authenticatedUser: AuthenticatedUser | null
     queryLisfUploadFields?: typeof defaultQueryLisfUploadFields
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
     now?: () => Date
 }
-
-const REFRESH_INTERVAL_MS = 5000
 
 const classNamesByState = new Map([
     [LSIFUploadState.COMPLETED, 'alert-success'],
@@ -58,6 +58,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     match: {
         params: { id },
     },
+    authenticatedUser,
     queryLisfUploadFields = defaultQueryLisfUploadFields,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
     telemetryService,
@@ -79,19 +80,11 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     }, [deleteError])
 
     const uploadOrError = useObservable(
-        useMemo(
-            () =>
-                timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
-                    concatMap(() =>
-                        queryLisfUploadFields(id, apolloClient).pipe(
-                            catchError((error): [ErrorLike] => [asError(error)]),
-                            repeatWhen(observable => observable.pipe(delay(REFRESH_INTERVAL_MS)))
-                        )
-                    ),
-                    takeWhile(shouldReload, true)
-                ),
-            [id, queryLisfUploadFields, apolloClient]
-        )
+        useMemo(() => queryLisfUploadFields(id, apolloClient).pipe(takeWhile(shouldReload, true)), [
+            id,
+            queryLisfUploadFields,
+            apolloClient,
+        ])
     )
 
     const deleteUpload = useCallback(async (): Promise<void> => {
@@ -203,13 +196,15 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         )}
                     </Container>
 
-                    <Container className="mt-2">
-                        <CodeIntelDeleteUpload
-                            state={uploadOrError.state}
-                            deleteUpload={deleteUpload}
-                            deletionOrError={deletionOrError}
-                        />
-                    </Container>
+                    {authenticatedUser?.siteAdmin && (
+                        <Container className="mt-2">
+                            <CodeIntelDeleteUpload
+                                state={uploadOrError.state}
+                                deleteUpload={deleteUpload}
+                                deletionOrError={deletionOrError}
+                            />
+                        </Container>
+                    )}
 
                     <Container className="mt-2">
                         <CodeIntelAssociatedIndex node={uploadOrError} now={now} />

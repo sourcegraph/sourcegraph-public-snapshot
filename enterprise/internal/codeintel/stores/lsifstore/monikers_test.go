@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -16,9 +14,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := populateTestStore(t)
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
@@ -32,7 +28,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 					Kind:                 "export",
 					Scheme:               "gomod",
 					Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-					PackageInformationID: "251",
+					PackageInformationID: "114",
 				},
 			},
 		}
@@ -47,21 +43,17 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := populateTestStore(t)
 
 	edgeDefinitionLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(411, 1, 411, 8)},
 	}
 
 	edgeReferenceLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(411, 1, 411, 8)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(440, 1, 440, 5)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(448, 8, 448, 12)},
-		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(449, 3, 449, 10)},
+		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(462, 1, 462, 5)},
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(470, 8, 470, 12)},
 	}
 
@@ -87,18 +79,18 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 		{"definitions", []int{testBundleID}, []precise.MonikerData{}, 5, 0, nil, 0},
 
 		// single definitions
-		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 0, edgeDefinitionLocations, 2},
-		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 1, 0, edgeDefinitionLocations[:1], 2},
-		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 1, edgeDefinitionLocations[1:], 2},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 0, edgeDefinitionLocations, 1},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 1, 0, edgeDefinitionLocations[:1], 1},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 1, edgeDefinitionLocations[1:], 1},
 
 		// single references
-		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 0, edgeReferenceLocations[:5], 29},
-		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 2, 2, edgeReferenceLocations[2:4], 29},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 0, edgeReferenceLocations[:5], 19},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 2, 2, edgeReferenceLocations[2:4], 19},
 		{"references", []int{testBundleID}, []precise.MonikerData{markdownMoniker}, 5, 0, markdownReferenceLocations, 1},
 
 		// multiple monikers
-		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker, markdownMoniker}, 5, 0, combinedReferences[:5], 30},
-		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker, markdownMoniker}, 5, 1, combinedReferences[1:6], 30},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker, markdownMoniker}, 5, 0, combinedReferences[:5], 20},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker, markdownMoniker}, 5, 1, combinedReferences[1:6], 20},
 	}
 
 	for i, testCase := range testCases {

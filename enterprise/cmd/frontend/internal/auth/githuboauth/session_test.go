@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -230,7 +229,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					allowOrgs:   ci.allowOrgs,
 				}
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -296,7 +295,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -313,7 +312,7 @@ func TestSessionIssuerHelper_CreateCodeHostConnectionHandlesExistingService(t *t
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
-	db := dbtest.NewDB(t, "")
+	db := database.NewDB(nil)
 
 	ctx := context.Background()
 	s := &sessionIssuerHelper{db: db}
@@ -342,7 +341,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	ctx = githublogin.WithUser(ctx, ghUser)
 
 	var got *types.ExternalService
-	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (*database.ExternalServiceStore, error) {
+	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (database.ExternalServiceStore, error) {
 		return database.ExternalServices(db), nil
 	}
 	database.Mocks.ExternalServices.Done = func(err error) error {

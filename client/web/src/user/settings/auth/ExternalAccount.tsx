@@ -4,10 +4,10 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { LoaderButton } from '../../../components/LoaderButton'
+import { AuthProvider } from '../../../jscontext'
 
 import type { NormalizedMinAccount } from './ExternalAccountsSignIn'
 import { RemoveExternalAccountModal } from './RemoveExternalAccountModal'
-import type { AuthProvider } from './UserSettingsSecurityPage'
 
 interface Props {
     account: NormalizedMinAccount

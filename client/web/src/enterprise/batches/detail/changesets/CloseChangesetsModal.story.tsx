@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 
@@ -17,7 +17,7 @@ const closeChangesets = () => {
 }
 
 add('Confirmation', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <CloseChangesetsModal
                 {...props}
@@ -28,5 +28,5 @@ add('Confirmation', () => (
                 closeChangesets={closeChangesets}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

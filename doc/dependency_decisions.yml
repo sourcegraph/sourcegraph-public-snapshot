@@ -347,3 +347,9 @@
     :why: Inference broken, LICENSE file lives at https://github.com/aws/smithy-go/blob/main/LICENSE
     :versions: []
     :when: 2021-04-14 12:51:19.503802000 Z
+- - :permit
+  - Python-2.0
+  - :who:
+    :why: Used by argparse
+    :versions: []
+    :when: 2021-10-12 11:17:37.706276000 Z

@@ -170,6 +170,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
     node: {
         __typename: 'BatchChange',
         changesets: {
+            __typename: 'ChangesetConnection',
             totalCount: 1,
             pageInfo: {
                 endCursor: null,
@@ -198,6 +199,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     id: 'changeset123',
                     labels: [
                         {
+                            __typename: 'ChangesetLabel',
                             color: '93ba13',
                             description: null,
                             text: 'Abc label',
@@ -255,6 +257,20 @@ function mockCommonGraphQLResponses(
                 settingsURL: `${namespaceURL}/settings`,
                 avatarURL: '',
                 viewerCanAdminister: true,
+                builtinAuth: true,
+                tags: [],
+            },
+        }),
+        UserSettingsAreaUserProfile: () => ({
+            node: {
+                __typename: 'User',
+                id: 'user123',
+                username: 'alice',
+                displayName: 'alice',
+                url: namespaceURL,
+                settingsURL: `${namespaceURL}/settings`,
+                avatarURL: '',
+                viewerCanAdminister: true,
                 viewerCanChangeUsername: true,
                 siteAdmin: true,
                 builtinAuth: true,
@@ -304,6 +320,11 @@ function mockCommonGraphQLResponses(
                 currentSpec: {
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
+                    codeHostsWithoutWebhooks: {
+                        nodes: [],
+                        pageInfo: { hasNextPage: false },
+                        totalCount: 0,
+                    },
                 },
                 bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
                 activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
@@ -516,7 +537,8 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
                 )
 
                 // Delete the closed batch change.

@@ -212,6 +212,9 @@
 .btn {
     // Use placeholder-selector to extend only styles defined for `label`.
     @extend %label-base;
+    &:disabled {
+        cursor: not-allowed;
+    }
 }
 
 .btn.btn-sm {

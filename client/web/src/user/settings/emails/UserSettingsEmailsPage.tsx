@@ -9,7 +9,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars, UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
+import { Scalars, UserEmailsResult, UserEmailsVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { siteFlags } from '../../../site/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -18,7 +18,7 @@ import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
 import { UserEmail } from './UserEmail'
 
 interface Props {
-    user: UserAreaUserFields
+    user: UserSettingsAreaUserFields
 }
 
 type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]

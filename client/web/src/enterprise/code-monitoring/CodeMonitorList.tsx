@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
@@ -78,7 +78,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                     <h3>Filters</h3>
                     <button
                         type="button"
-                        className={classnames('btn text-left', {
+                        className={classNames('btn text-left', {
                             'btn-primary': monitorListFilter === 'all',
                         })}
                         onClick={() => setMonitorListFilter('all')}
@@ -87,7 +87,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                     </button>
                     <button
                         type="button"
-                        className={classnames('btn text-left', {
+                        className={classNames('btn text-left', {
                             'btn-primary': monitorListFilter === 'user',
                         })}
                         onClick={() => setMonitorListFilter('user')}

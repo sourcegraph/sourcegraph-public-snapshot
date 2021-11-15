@@ -34,7 +34,7 @@ func newBatchSpecResolutionWorker(
 	options := workerutil.WorkerOptions{
 		Name:              "batch_changes_batch_spec_resolution_worker",
 		NumHandlers:       5,
-		Interval:          5 * time.Second,
+		Interval:          1 * time.Second,
 		HeartbeatInterval: 15 * time.Second,
 		Metrics:           metrics.batchSpecResolutionWorkerMetrics,
 	}

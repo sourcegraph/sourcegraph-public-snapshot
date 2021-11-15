@@ -28,7 +28,10 @@ type CodeIntelResolver interface {
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) ([]*RepositoryResolver, error)
+	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
+	DocumentationSearch(ctx context.Context, args *DocumentationSearchArgs) (DocumentationSearchResultsResolver, error)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -147,9 +150,11 @@ type GitBlobLSIFDataResolver interface {
 	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
 	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
 
+	Stencil(ctx context.Context) ([]RangeResolver, error)
 	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
 }
@@ -200,6 +205,7 @@ type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context) (LocationConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
 	Documentation(ctx context.Context) (DocumentationResolver, error)
 }
@@ -234,6 +240,8 @@ type DiagnosticResolver interface {
 
 type CodeIntelConfigurationPolicy struct {
 	Name                      string
+	RepositoryID              *int32
+	RepositoryPatterns        *[]string
 	Type                      GitObjectType
 	Pattern                   string
 	RetentionEnabled          bool
@@ -254,7 +262,8 @@ type CreateCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
-	ID graphql.ID
+	ID         graphql.ID
+	Repository *graphql.ID
 	CodeIntelConfigurationPolicy
 }
 
@@ -272,8 +281,24 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 	Configuration string
 }
 
+type PreviewRepositoryFilterArgs struct {
+	Pattern string
+}
+
+type PreviewGitObjectFilterArgs struct {
+	Type    GitObjectType
+	Pattern string
+}
+
+type GitObjectFilterPreviewResolver interface {
+	Name() string
+	Rev() string
+}
+
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	RepositoryPatterns() *[]string
 	Name() string
 	Type() (GitObjectType, error)
 	Pattern() string

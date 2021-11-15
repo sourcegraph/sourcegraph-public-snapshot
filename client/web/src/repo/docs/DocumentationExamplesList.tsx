@@ -1,5 +1,5 @@
 import * as H from 'history'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
@@ -8,7 +8,6 @@ import { catchError, startWith } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -18,7 +17,7 @@ import { RepositoryFields } from '../../graphql-operations'
 import { DocumentationExamplesListItem } from './DocumentationExamplesListItem'
 import { fetchDocumentationReferences } from './graphql'
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
@@ -74,7 +73,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
             )}
             {referencesLocations !== LOADING && isErrorLike(referencesLocations) && (
                 <span className="ml-2">
-                    <ErrorIcon className="icon-inline" /> Error: {referencesLocations}
+                    <AlertCircleIcon className="icon-inline" /> Error: {referencesLocations}
                 </span>
             )}
             {referencesLocations !== LOADING &&

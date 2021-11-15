@@ -57,7 +57,7 @@ func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.createBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchChange(c, sc)
 	})
 }
@@ -105,7 +105,7 @@ func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (e
 
 	q := s.updateBatchChangeQuery(c)
 
-	return s.query(ctx, q, func(sc scanner) (err error) { return scanBatchChange(c, sc) })
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) { return scanBatchChange(c, sc) })
 }
 
 var updateBatchChangeQueryFmtstr = `
@@ -262,7 +262,7 @@ func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc
 	q := getBatchChangeQuery(&opts)
 
 	var c btypes.BatchChange
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanBatchChange(&c, sc)
 	})
 	if err != nil {
@@ -338,7 +338,7 @@ func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeD
 	q := getBatchChangeDiffStatQuery(opts, authzConds)
 
 	var diffStat diff.Stat
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -381,7 +381,7 @@ func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *d
 	q := getRepoDiffStatQuery(int64(repoID), authzConds)
 
 	var diffStat diff.Stat
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
 	})
 	if err != nil {
@@ -438,7 +438,7 @@ func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts)
 	q := listBatchChangesQuery(&opts, repoAuthzConds)
 
 	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchChange
 		if err := scanBatchChange(&c, sc); err != nil {
 			return err
@@ -526,7 +526,7 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 	)
 }
 
-func scanBatchChange(c *btypes.BatchChange, s scanner) error {
+func scanBatchChange(c *btypes.BatchChange, s dbutil.Scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,

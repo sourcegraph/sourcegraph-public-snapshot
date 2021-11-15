@@ -33,8 +33,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     themePreference: ThemePreference.Light,
     onThemePreferenceChange: () => undefined,
     authenticatedUser: authUser,
-    setVersionContext: () => Promise.resolve(undefined),
-    availableVersionContexts: [],
     globbing: false,
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
@@ -43,7 +41,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     keyboardShortcuts: [],
-    versionContext: undefined,
     searchContextsEnabled: true,
     showSearchContext: false,
     showSearchContextManagement: false,
@@ -52,7 +49,6 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     defaultSearchContextSpec: '',
     showEnterpriseHomePanels: false,
     showOnboardingTour: false,
-    showQueryBuilder: false,
     isLightTheme: props.isLightTheme,
     fetchSavedSearches: _fetchSavedSearches,
     fetchRecentSearches: _fetchRecentSearches,
@@ -104,16 +100,6 @@ add('Cloud with notebook onboarding', () => (
 
 add('Server without panels', () => <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} />}</WebStory>)
 
-add('Server without panels, with query builder', () => (
-    <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showQueryBuilder={true} />}</WebStory>
-))
-
 add('Server with panels', () => (
     <WebStory>{webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} />}</WebStory>
-))
-
-add('Server with panels and query builder', () => (
-    <WebStory>
-        {webProps => <SearchPage {...defaultProps(webProps)} showEnterpriseHomePanels={true} showQueryBuilder={true} />}
-    </WebStory>
 ))

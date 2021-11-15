@@ -6,11 +6,15 @@ import (
 	"github.com/cockroachdb/errors"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 )
 
 // DefaultReferencesPageSize is the reference result page size when no limit is supplied.
 const DefaultReferencesPageSize = 100
+
+// DefaultReferencesPageSize is the implementation result page size when no limit is supplied.
+const DefaultImplementationsPageSize = 100
 
 // DefaultDiagnosticsPageSize is the diagnostic result page size when no limit is supplied.
 const DefaultDiagnosticsPageSize = 100
@@ -43,6 +47,20 @@ func NewQueryResolver(resolver resolvers.QueryResolver, locationResolver *Cached
 func (r *QueryResolver) ToGitTreeLSIFData() (gql.GitTreeLSIFDataResolver, bool) { return r, true }
 func (r *QueryResolver) ToGitBlobLSIFData() (gql.GitBlobLSIFDataResolver, bool) { return r, true }
 
+func (r *QueryResolver) Stencil(ctx context.Context) ([]gql.RangeResolver, error) {
+	ranges, err := r.resolver.Stencil(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]gql.RangeResolver, 0, len(ranges))
+	for _, r := range ranges {
+		resolvers = append(resolvers, gql.NewRangeResolver(convertRange(r)))
+	}
+
+	return resolvers, nil
+}
+
 func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (gql.CodeIntelligenceRangeConnectionResolver, error) {
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
 		return nil, ErrIllegalBounds
@@ -73,12 +91,30 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 	if limit <= 0 {
 		return nil, ErrIllegalLimit
 	}
-	cursor, err := decodeCursor(args.After)
+	cursor, err := graphqlutil.DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
 
 	locations, cursor, err := r.resolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+}
+
+func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (gql.LocationConnectionResolver, error) {
+	limit := derefInt32(args.First, DefaultImplementationsPageSize)
+	if limit <= 0 {
+		return nil, ErrIllegalLimit
+	}
+	cursor, err := graphqlutil.DecodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	locations, cursor, err := r.resolver.Implementations(ctx, int(args.Line), int(args.Character), limit, cursor)
 	if err != nil {
 		return nil, err
 	}

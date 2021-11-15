@@ -59,6 +59,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	handler := &handler{
+		store:      NewMockStore(),
 		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),

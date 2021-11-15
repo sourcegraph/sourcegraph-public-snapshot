@@ -11,9 +11,9 @@ import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSetti
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
-const UserSettingsRepositoriesPage = lazyComponent(
-    () => import('./repositories/UserSettingsRepositoriesPage'),
-    'UserSettingsRepositoriesPage'
+const SettingsRepositoriesPage = lazyComponent(
+    () => import('./repositories/SettingsRepositoriesPage'),
+    'SettingsRepositoriesPage'
 )
 const UserSettingsManageRepositoriesPage = lazyComponent(
     () => import('./repositories/UserSettingsManageRepositoriesPage'),
@@ -97,9 +97,9 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '/repositories',
         render: props => (
-            <UserSettingsRepositoriesPage
+            <SettingsRepositoriesPage
                 {...props}
-                userID={props.user.id}
+                owner={{ id: props.user.id, type: 'user', tags: props.authenticatedUser.tags }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),
@@ -111,11 +111,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => (
             <UserSettingsManageRepositoriesPage
                 {...props}
-                authenticatedUser={{
-                    id: props.authenticatedUser.id,
-                    siteAdmin: props.authenticatedUser.siteAdmin,
-                    tags: props.authenticatedUser.tags,
-                }}
+                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),
@@ -126,7 +122,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/code-hosts',
         render: props => (
             <UserAddCodeHostsPageContainer
-                user={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags }}
+                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}

@@ -20,6 +20,9 @@
 *.a
 *.so
 
+# C
+*.dylib
+
 # Mac OS X
 .DS_Store
 
@@ -64,6 +67,10 @@ yarn-error.log
 /ui/assets/extension
 /ui/.tmp
 /ui/assets/scripts/
+/ui/assets/styles/
+/ui/assets/*.br
+/ui/assets/*.gz
+
 *.json.actual
 
 eb-bundle.zip
@@ -144,3 +151,9 @@ sg.config.overwrite.yaml
 # Generated sitemaps are not committed, they're hosted in a GCS bucket.
 sitemap/
 sitemap_query.db
+
+# Lighthouse CI reports
+.lighthouseci/
+
+# Trivy security vulnerability reports
+*-security-report.html
