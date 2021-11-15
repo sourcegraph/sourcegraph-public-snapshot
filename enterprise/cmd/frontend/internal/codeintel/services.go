@@ -24,6 +24,7 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -40,6 +41,7 @@ type Services struct {
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
+	hub             *sentry.Hub
 }
 
 func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db database.DB) (*Services, error) {
@@ -52,6 +54,12 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
+	}
+
+	// Initialize sentry hub
+	hub, err := sentry.NewWithDsn("https://120790c4131a47d9a66d7132801c6fe9@o19358.ingest.sentry.io/6059023")
+	if err != nil {
+		panic("ahhhh")
 	}
 
 	// Connect to database
@@ -76,6 +84,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 			internal,
 			httpapi.DefaultValidatorByCodeHost,
 			operations,
+			hub,
 		)
 	}
 	internalUploadHandler := newUploadHandler(true)
@@ -100,6 +109,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		locker:          locker,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
+		hub:             hub,
 	}, nil
 }
 
