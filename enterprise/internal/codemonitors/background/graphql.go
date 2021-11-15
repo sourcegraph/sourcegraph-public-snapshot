@@ -130,7 +130,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "Encode")
 	}
 
-	url, err := gqlURL("Search")
+	url, err := gqlURL("CodeMonitorSearch")
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}

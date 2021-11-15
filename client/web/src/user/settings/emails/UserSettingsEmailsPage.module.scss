@@ -1,0 +1,19 @@
+.user-settings-emails-page {
+    :global(.form-inline) input:not(:global(.is-invalid)),
+    :global(.form-inline) input:not(:global(.is-valid)) {
+        padding-right: 2rem;
+    }
+}
+
+.list-item {
+    border: 0;
+    padding: 1rem 0;
+
+    + .list-item {
+        border-top: 1px solid var(--border-color);
+    }
+}
+
+.email-form {
+    padding-top: 0.5rem;
+}

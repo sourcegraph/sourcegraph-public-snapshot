@@ -2,6 +2,7 @@
 <html lang="en" class="base">
 
 <head>
+
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -53,6 +54,26 @@
 	<!-- Google Tag Manager (noscript) -->
 	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 	<!-- End Google Tag Manager (noscript) -->
+
+	<!-- Google Search Result SearchBox -->
+	<!-- See https://developers.google.com/search/docs/advanced/structured-data/sitelinks-searchbox -->
+	<script ignore-csp type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "WebSite",
+			"url": "https://sourcegraph.com",
+			"potentialAction": {
+				"@type": "SearchAction",
+				"target": {
+					"@type": "EntryPoint",
+					"urlTemplate": "https://sourcegraph.com/search?q={search_term_string}&utm_source=google-search-result&utm_campaign=google-search-result-searchbox"
+				},
+				"query-input": "required name=search_term_string"
+			}
+		}
+	</script>
+	<!-- End Google Search Result SearchBox -->
+
 	{{ end }}
 	{{.Injected.BodyTop}}
 	<div id="root"></div>

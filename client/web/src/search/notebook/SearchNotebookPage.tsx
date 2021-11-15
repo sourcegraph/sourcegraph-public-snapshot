@@ -15,8 +15,9 @@ import { StreamingSearchResultsListProps } from '../results/StreamingSearchResul
 
 import { SearchNotebook } from './SearchNotebook'
 import styles from './SearchNotebookPage.module.scss'
+import { deserializeBlockInput, serializeBlockInput } from './serialize'
 
-import { Block, BlockInitializer } from '.'
+import { Block, BlockInput } from '.'
 
 interface SearchNotebookPageProps
     extends SearchStreamingProps,
@@ -37,14 +38,19 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
     const onSerializeBlocks = useCallback(
         (blocks: Block[]) => {
             const serializedBlocks = blocks
-                .map(block => `${encodeURIComponent(block.type)}:${encodeURIComponent(block.input)}`)
+                .map(
+                    block =>
+                        `${encodeURIComponent(block.type)}:${encodeURIComponent(
+                            serializeBlockInput(block, window.location.origin)
+                        )}`
+                )
                 .join(',')
             history.replace({ hash: serializedBlocks })
         },
         [history]
     )
 
-    const blocks: BlockInitializer[] = useMemo(() => {
+    const blocks: BlockInput[] = useMemo(() => {
         const serializedBlocks = location.hash.slice(1)
         if (serializedBlocks.length === 0) {
             return [
@@ -55,8 +61,8 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
 
         return serializedBlocks.split(',').map(serializedBlock => {
             const [type, encodedInput] = serializedBlock.split(':')
-            if (type === 'md' || type === 'query') {
-                return { type, input: decodeURIComponent(encodedInput) }
+            if (type === 'md' || type === 'query' || type === 'file') {
+                return deserializeBlockInput(type, decodeURIComponent(encodedInput))
             }
             throw new Error(`Unknown block type: ${type}`)
         })

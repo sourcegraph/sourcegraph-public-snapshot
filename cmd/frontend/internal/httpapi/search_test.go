@@ -67,6 +67,31 @@ func TestServeConfiguration(t *testing.T) {
 	if d := cmp.Diff(want, string(body)); d != "" {
 		t.Fatalf("mismatch (-want, +got):\n%s", d)
 	}
+
+	// when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
+	srv.RepoStore = &fakeRepoStore{Repos: repos[:1]}
+	req = httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("X-Sourcegraph-Config-Fingerprint", resp.Header.Get("X-Sourcegraph-Config-Fingerprint"))
+
+	w = httptest.NewRecorder()
+	if err := srv.serveConfiguration(w, req); err != nil {
+		t.Fatal(err)
+	}
+
+	resp = w.Result()
+	body, _ = io.ReadAll(resp.Body)
+
+	// We want the same as before, except we only want to get back 5.
+	//
+	// This is a very fragile test since it will depend on changes to
+	// searchbackend.GetIndexOptions. If this becomes a problem we can make it
+	// more robust by shifting around responsibilities.
+	want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}`
+
+	if d := cmp.Diff(want, string(body)); d != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", d)
+	}
 }
 
 func TestReposIndex(t *testing.T) {

@@ -4,6 +4,7 @@ export const GET_DASHBOARD_INSIGHTS_GQL = gql`
     query GetDashboardInsights($id: ID) {
         insightsDashboards(id: $id) {
             nodes {
+                id
                 views {
                     nodes {
                         id
