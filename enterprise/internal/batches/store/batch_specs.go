@@ -28,6 +28,7 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.created_from_raw"),
 	sqlf.Sprintf("batch_specs.allow_unsupported"),
 	sqlf.Sprintf("batch_specs.allow_ignored"),
+	sqlf.Sprintf("batch_specs.no_cache"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -44,11 +45,12 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_from_raw"),
 	sqlf.Sprintf("allow_unsupported"),
 	sqlf.Sprintf("allow_ignored"),
+	sqlf.Sprintf("no_cache"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -100,6 +102,7 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.CreatedFromRaw,
 		c.AllowUnsupported,
 		c.AllowIgnored,
+		c.NoCache,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -150,6 +153,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.CreatedFromRaw,
 		c.AllowUnsupported,
 		c.AllowIgnored,
+		c.NoCache,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -419,6 +423,9 @@ ON
 
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
+// TODO: A more sophisticated cleanup process for SSBC-created batch specs.
+// - We could: Add execution_started_at to the batch_specs table and delete
+// all that are older than TIME_PERIOD and never started executing.
 func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -505,6 +512,8 @@ WHERE
 AND NOT EXISTS (
   SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
 )
+-- Only delete expired batch specs that have been created by src-cli
+AND NOT created_from_raw
 AND NOT EXISTS (
   SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
 )
@@ -524,6 +533,7 @@ func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 		&c.CreatedFromRaw,
 		&c.AllowUnsupported,
 		&c.AllowIgnored,
+		&c.NoCache,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

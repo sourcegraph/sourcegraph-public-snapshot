@@ -179,10 +179,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         repoUrl={repo.url}
+                        telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [repo.name, repo.url, revision, filePath])
+        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
     )
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)

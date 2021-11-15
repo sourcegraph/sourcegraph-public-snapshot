@@ -51,19 +51,26 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     ) {}
 
     // Insights
-    public getInsights = (ids?: string[]): Observable<Insight[]> => {
-        if (ids) {
-            // Return filtered by ids list of insights
-            return of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
-        }
+    public getInsights = (dashboardId?: string): Observable<Insight[]> =>
+        this.getDashboardById(dashboardId).pipe(
+            switchMap(dashboard => {
+                if (dashboard) {
+                    const ids = dashboard.insightIds
 
-        // Return all insights
-        const { final } = this.settingCascade
-        const normalizedFinalSettings = !final || isErrorLike(final) ? {} : final
-        const insightIds = getInsightIdsFromSettings(normalizedFinalSettings)
+                    if (ids) {
+                        // Return filtered by ids list of insights
+                        return of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
+                    }
+                }
 
-        return of(insightIds.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
-    }
+                // Return all insights
+                const { final } = this.settingCascade
+                const normalizedFinalSettings = !final || isErrorLike(final) ? {} : final
+                const insightIds = getInsightIdsFromSettings(normalizedFinalSettings)
+
+                return of(insightIds.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
+            })
+        )
 
     public getInsightById = (id: string): Observable<Insight | null> => of(findInsightById(this.settingCascade, id))
 
@@ -236,6 +243,8 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
             })
         )
     }
+
+    public assignInsightsToDashboard = (input: DashboardUpdateInput): Observable<void> => this.updateDashboard(input)
 
     // Live preview fetchers
     public getSearchInsightContent = <D extends keyof ViewContexts>(

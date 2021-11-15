@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -254,29 +254,49 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 	})
 
-	t.Run("disable sudo token for dotcom", func(t *testing.T) {
+	t.Run("disable sudo access token creation on Sourcegraph.com", func(t *testing.T) {
 		users := dbmock.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		db := dbmock.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		_, err := newSchemaResolver(db).CreateAccessToken(ctx,
+			&createAccessTokenInput{
+				User:   MarshalUserID(1),
+				Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := `creation of access tokens with scope "site-admin:sudo" is disabled on Sourcegraph.com`
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("disable create access token for any user on Sourcegraph.com", func(t *testing.T) {
+		db := dbmock.NewMockDB()
+
 		conf.Get().AuthAccessTokens = &schema.AuthAccessTokens{Allow: string(conf.AccessTokensAdmin)}
 		defer func() { conf.Get().AuthAccessTokens = nil }()
 
+		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+		defer envvar.MockSourcegraphDotComMode(orig)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{
-			User:   uid1GQLID,
-			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
-		})
+		_, err := newSchemaResolver(db).CreateAccessToken(ctx,
+			&createAccessTokenInput{
+				User:   MarshalUserID(1),
+				Scopes: []string{authz.ScopeUserAll},
+			},
+		)
 		got := fmt.Sprintf("%v", err)
-		want := "creation of access tokens with sudo scope is disabled"
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
-		}
+		want := `access token configuration value "site-admin-create" is disabled on Sourcegraph.com`
+		assert.Equal(t, want, got)
 	})
 }
 

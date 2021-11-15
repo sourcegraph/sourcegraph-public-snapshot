@@ -19,6 +19,7 @@ func QueueOptions(db dbutil.DB, accessToken func() string, observationContext *o
 	}
 
 	return handler.QueueOptions{
+		Name:              "codeintel",
 		Store:             store.WorkerutilIndexStore(basestore.NewWithDB(db, sql.TxOptions{}), observationContext),
 		RecordTransformer: recordTransformer,
 	}

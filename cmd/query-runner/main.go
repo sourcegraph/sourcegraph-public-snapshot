@@ -40,8 +40,8 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	go func() {

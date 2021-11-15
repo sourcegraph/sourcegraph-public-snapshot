@@ -2,9 +2,9 @@ jest.mock('../../settings/DynamicallyImportedMonacoSettingsEditor', () => ({
     DynamicallyImportedMonacoSettingsEditor: () => 'DynamicallyImportedMonacoSettingsEditor',
 }))
 
+import { render } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
@@ -23,7 +23,7 @@ describe('ExternalServiceForm', () => {
     }
 
     test('create GitHub', () => {
-        const component = renderer.create(
+        const component = render(
             <ExternalServiceForm
                 {...baseProps}
                 input={{
@@ -36,10 +36,10 @@ describe('ExternalServiceForm', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
     test('edit GitHub', () => {
-        const component = renderer.create(
+        const component = render(
             <ExternalServiceForm
                 {...baseProps}
                 input={{
@@ -52,10 +52,10 @@ describe('ExternalServiceForm', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
     test('edit GitHub, loading', () => {
-        const component = renderer.create(
+        const component = render(
             <ExternalServiceForm
                 {...baseProps}
                 input={{
@@ -68,6 +68,6 @@ describe('ExternalServiceForm', () => {
                 telemetryService={NOOP_TELEMETRY_SERVICE}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

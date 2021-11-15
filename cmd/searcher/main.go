@@ -30,8 +30,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
-var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+var (
+	cacheDir    = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
+	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+)
 
 const port = "3181"
 
@@ -41,8 +43,8 @@ func main() {
 	log.SetFlags(0)
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Ready immediately

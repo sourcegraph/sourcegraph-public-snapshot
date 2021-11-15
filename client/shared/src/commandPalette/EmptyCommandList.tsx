@@ -3,6 +3,9 @@ import React from 'react'
 import { onlyDefaultExtensionsAdded } from '../extensions/extensions'
 import { SettingsCascadeOrError } from '../settings/settings'
 
+import styles from './EmptyCommandList.module.scss'
+import { EmptyCommandListContainer } from './EmptyCommandListContainer'
+
 interface Props {
     settingsCascade?: SettingsCascadeOrError
     sourcegraphURL: string
@@ -13,11 +16,11 @@ export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCasca
     const onlyDefault = settingsCascade ? onlyDefaultExtensionsAdded(settingsCascade) : false
 
     return (
-        <div className="empty-command-list">
-            <p className="empty-command-list__title">
+        <EmptyCommandListContainer>
+            <p className={styles.title}>
                 {onlyDefault ? "You don't have any extensions enabled" : "You don't have any active actions"}
             </p>
-            <p className="empty-command-list__text">
+            <p className={styles.text}>
                 {onlyDefault
                     ? 'Enable Sourcegraph extensions to get additional functionality, integrations, and make special actions available from this menu.'
                     : 'Commands from your installed extensions will be shown when you navigate to certain pages.'}
@@ -27,8 +30,8 @@ export const EmptyCommandList: React.FunctionComponent<Props> = ({ settingsCasca
                 Explore extensions
             </a>
 
-            <PuzzleIllustration className="empty-command-list__illustration" />
-        </div>
+            <PuzzleIllustration className={styles.illustration} />
+        </EmptyCommandListContainer>
     )
 }
 

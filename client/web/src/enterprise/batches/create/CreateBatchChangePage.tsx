@@ -10,28 +10,20 @@ import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
 import { Settings } from '../../../schema/settings.schema'
 
-import { createBatchSpecFromRaw as _createBatchSpecFromRaw } from './backend'
 import { NewCreateBatchChangePage } from './NewCreateBatchChangePage'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
 
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     headingElement: 'h1' | 'h2'
-    /* For testing only. */
-    createBatchSpecFromRaw?: typeof _createBatchSpecFromRaw
 }
 
 export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     settingsCascade,
     isLightTheme,
     headingElement,
-    createBatchSpecFromRaw,
 }) =>
     isBatchChangesExecutionEnabled(settingsCascade) ? (
-        <NewCreateBatchChangePage
-            createBatchSpecFromRaw={createBatchSpecFromRaw}
-            isLightTheme={isLightTheme}
-            settingsCascade={settingsCascade}
-        />
+        <NewCreateBatchChangePage isLightTheme={isLightTheme} settingsCascade={settingsCascade} />
     ) : (
         <Page>
             <PageTitle title="Create batch change" />
