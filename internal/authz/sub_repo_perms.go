@@ -35,7 +35,7 @@ type SubRepoPermissionChecker interface {
 	Enabled() bool
 }
 
-var _ SubRepoPermissionChecker = &subRepoPermsClient{}
+var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
 //
@@ -43,18 +43,16 @@ var _ SubRepoPermissionChecker = &subRepoPermsClient{}
 type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
-
-	// RepoSupported should be used to quickly check whether sub-repo permissions are
-	// supported for the given repo.
-	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
-// subRepoPermsClient is a concrete implementation of SubRepoPermissionChecker.
-type subRepoPermsClient struct {
+// SubRepoPermsClient is a concrete implementation of SubRepoPermissionChecker.
+// Always use NewSubRepoPermsClient to instantiate an instance.
+type SubRepoPermsClient struct {
 	permissionsGetter SubRepoPermissionsGetter
 }
 
-// NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermissionChecker.
+// NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
+// which implements SubRepoPermissionChecker.
 //
 // SubRepoPermissionChecker is responsible for checking whether a user has access to
 // data within a repo. Sub-repository permissions enforcement is on top of existing
@@ -64,13 +62,16 @@ type subRepoPermsClient struct {
 //
 // Note that sub-repo permissions are currently opt-in via the
 // experimentalFeatures.enableSubRepoPermissions option.
-func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *subRepoPermsClient {
-	return &subRepoPermsClient{
+func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *SubRepoPermsClient {
+	return &SubRepoPermsClient{
 		permissionsGetter: permissionsGetter,
 	}
 }
 
-func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+// Permissions return the current permissions granted to the given user on the
+// given content. If sub-repo permissions are disabled, it is a no-op that return
+// Read.
+func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	// Are sub-repo permissions enabled at the site level
 	if !s.Enabled() {
 		return Read, nil
@@ -90,13 +91,6 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
-	if supported, err := s.permissionsGetter.RepoSupported(ctx, content.Repo); err != nil {
-		return None, errors.Wrap(err, "checking for sub-repo permissions support")
-	} else if !supported {
-		// We assume that repo level access has already been granted
-		return Read, nil
-	}
-
 	srp, err := s.permissionsGetter.GetByUser(ctx, userID)
 	if err != nil {
 		return None, errors.Wrap(err, "getting permissions")
@@ -105,10 +99,11 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	// Check repo
 	repoRules, ok := srp[content.Repo]
 	if !ok {
-		// All repos that support sub-repo permissions should at the very least have an
-		// "allow all" rule. If no rules exist it implies that we haven't performed a
-		// permissions sync yet and it is safer to assume no access is allowed.
-		return None, nil
+		// If we make it this far it implies that we have access at the repo level.
+		// Having any empty set of rules here implies that we can access the whole repo.
+		// Repos that support sub-repo permissions will only have an entry in our
+		// repo_permissions table if after all sub-repo permissions have been processed.
+		return Read, nil
 	}
 
 	// TODO: This will be very slow until we can cache compiled rules
@@ -149,7 +144,7 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	return None, nil
 }
 
-func (s *subRepoPermsClient) Enabled() bool {
+func (s *SubRepoPermsClient) Enabled() bool {
 	c := conf.Get()
 	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableSubRepoPermissions
 }
