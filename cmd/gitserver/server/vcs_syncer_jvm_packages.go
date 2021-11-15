@@ -372,14 +372,14 @@ func unzipJarFile(jarPath, destination string) (err error) {
 			// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
 			continue
 		}
-		outputPath := path.Join(destination, file.Name)
-		if !strings.HasPrefix(outputPath, destinationDirectory) {
+		cleanedOutputPath := path.Join(destination, file.Name)
+		if !strings.HasPrefix(cleanedOutputPath, destinationDirectory) {
 			// For security reasons, skip file if it's not a child
 			// of the target directory. See "Zip Slip Vulnerability".
 			continue
 		}
 
-		err := copyZipFileEntry(file, outputPath)
+		err := copyZipFileEntry(file, cleanedOutputPath)
 		if err != nil {
 			return err
 		}
