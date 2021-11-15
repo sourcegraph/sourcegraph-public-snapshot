@@ -41,11 +41,26 @@ func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) 
 	return s.Exec(ctx, q)
 }
 
+const readRecipientQueryFmtStr = `
+SELECT id, email, namespace_user_id, namespace_org_id
+FROM cm_recipients
+WHERE email = %s
+AND id > %s
+ORDER BY id ASC
+LIMIT %s;
+`
+
 func (s *codeMonitorStore) ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
-	q, err := readRecipientQuery(ctx, emailID, args)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
+	q := sqlf.Sprintf(
+		readRecipientQueryFmtStr,
+		emailID,
+		after,
+		args.First,
+	)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -109,28 +124,6 @@ func (s *codeMonitorStore) CountRecipients(ctx context.Context, emailID int64) (
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
 	return count, err
-}
-
-const readRecipientQueryFmtStr = `
-SELECT id, email, namespace_user_id, namespace_org_id
-FROM cm_recipients
-WHERE email = %s
-AND id > %s
-ORDER BY id ASC
-LIMIT %s;
-`
-
-func readRecipientQuery(ctx context.Context, emailId int64, args *graphqlbackend.ListRecipientsArgs) (*sqlf.Query, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		readRecipientQueryFmtStr,
-		emailId,
-		after,
-		args.First,
-	), nil
 }
 
 func nilOrInt32(n int32) *int32 {
