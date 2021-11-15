@@ -39,7 +39,10 @@ func installExec(ctx context.Context, args []string) error {
 	case "linux":
 		location = filepath.Join(homeDir, ".local", "bin", "sg")
 	case "darwin":
-		location = "/usr/local/bin/sg"
+		// We're using something in the home directory because on a fresh macOS
+		// installation the user doesn't have permission to create/open/write
+		// to /usr/local/bin. We're safe with ~/.sg/sg.
+		location = filepath.Join(homeDir, ".sg", "sg")
 	default:
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
@@ -95,22 +98,15 @@ func installExec(ctx context.Context, args []string) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
-	paths := []struct {
-		path              string
-		createIfNotExists bool
-		install           bool
-	}{
-		{path: filepath.Join(homeDir, ".zshenv"), createIfNotExists: false},
-		{path: filepath.Join(homeDir, ".bashrc"), createIfNotExists: false},
-		{path: filepath.Join(homeDir, ".profile"), createIfNotExists: true},
-	}
-
-	for i, p := range paths {
-		// If the file is not .profile and doesn't exist we don't want to append/create
-		if _, err := os.Stat(p.path); !p.createIfNotExists && os.IsNotExist(err) {
-			continue
-		}
-		paths[i].install = true
+	// We add this to all three files, creating them if necessary, because on
+	// completely new machines it's hard to detect what gets sourced when.
+	// (On a fresh macOS installation .zshenv doesn't exist, but zsh is the
+	// default shell, but adding something to ~/.profile will only get read by
+	// logging out and back in)
+	paths := []string{
+		filepath.Join(homeDir, ".zshenv"),
+		filepath.Join(homeDir, ".bashrc"),
+		filepath.Join(homeDir, ".profile"),
 	}
 
 	stdout.Out.Write("")
@@ -118,10 +114,7 @@ func installExec(ctx context.Context, args []string) error {
 	stdout.Out.Writef("modifying the profile files located at:")
 	stdout.Out.Write("")
 	for _, p := range paths {
-		if !p.install {
-			continue
-		}
-		stdout.Out.Writef("  %s%s", output.StyleBold, p.path)
+		stdout.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 
 	addToShellOkay := getBool()
@@ -135,21 +128,17 @@ func installExec(ctx context.Context, args []string) error {
 	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
 	lineWrittenTo := []string{}
 	for _, p := range paths {
-		if !p.install {
-			continue
-		}
-
-		f, err := os.OpenFile(p.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			return errors.Wrapf(err, "failed to open %s", p.path)
+			return errors.Wrapf(err, "failed to open %s", p)
 		}
 		defer f.Close()
 
 		if _, err := f.WriteString(exportLine); err != nil {
-			return errors.Wrapf(err, "failed to write to %s", p.path)
+			return errors.Wrapf(err, "failed to write to %s", p)
 		}
 
-		lineWrittenTo = append(lineWrittenTo, p.path)
+		lineWrittenTo = append(lineWrittenTo, p)
 	}
 
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))

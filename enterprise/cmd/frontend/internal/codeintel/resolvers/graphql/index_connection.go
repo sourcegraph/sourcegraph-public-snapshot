@@ -47,5 +47,5 @@ func (r *IndexConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pa
 	if err := r.indexesResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
-	return encodeIntCursor(toInt32(r.indexesResolver.NextOffset)), nil
+	return graphqlutil.EncodeIntCursor(toInt32(r.indexesResolver.NextOffset)), nil
 }

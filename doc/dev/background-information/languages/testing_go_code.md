@@ -139,3 +139,65 @@ If you have code that requires use of the `"time"` package, your first action sh
 If all else fails, you can make use of [derision-test/glock](https://github.com/derision-test/glock) to mock the behavior of the time package. This requires that the code under test uses a `glock.Clock` value rather than the time package directly (see the [section above](#organizing-code-and-refactoring-for-testability) for tips on refactoring your code). This package provides a _real_ clock implementation, which is a light wrapper over the time package, and a _mock_ clock implementation that allows the clock (and underlying tickers) to be advanced arbitrarily during the test.
 
 For an example usage of a mock clock, see the [TestRetry](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@0cb60598806d68e4c4edace9ed2a801e3f8495bf/-/blob/enterprise/internal/codeintel/bundles/client/retry_test.go#L13) test, which tests a retry loop with a sleeping backoff. This test decouples wall time from the clock by advancing the clock in a goroutine as far as necessary to unstick the execution of the retry loop.
+
+## Testing with a database
+
+When testing code that depends on a database connection, you may want to test how your code interacts with a real database, or you may want to mock out the database calls to speed up tests and isolate the logic being tested.
+
+#### Testing with a mocked database
+
+Helpers for mocking out a database can be found in the `internal/database/dbmock` package. For each store in `internal/database`, as well as for the `database.DB` type, there is an associated mock in the `dbmock` package that can be used in place of the store or db interface. The mocks are generated with `go-mockgen` (see "Mocks" above for details).
+
+```go
+func getRepo(db database.DB, id int) *types.Repo {
+	return db.Repos().Get(id)
+}
+
+func TestGetRepos(t *testing.T) {
+	t.Parallel()
+	repoStore := dbmock.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultReturn(&types.Repo{Name: "my cool repo", ID: 123})
+
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repoStore)
+
+	got := getRepos(db, 0)
+	if got.ID != 123 {
+		t.Fatalf("wrong ID: %d", got.ID)
+	}
+}
+```
+
+Note that, in order for the mock repo store to be used in the tested function, we need to use the `db.Repos()` method rather than the function constructors like `database.Repos(db)`. In time, these function constructors will be removed, but if you're running into nil panics when trying to use the injected mocks, this is probably the issue.
+
+Additionally, you might see instances of global database mocks around the codebase, like `database.Mocks.Repos.Get = func() []*types.Repo { ... }`. These global mocks are deprecated, and will be removed in time. Prefer the injected database mocks to the global mocks.
+
+#### Testing with a real database
+
+If you would like to run your test against a real database instance, look no further than the `internal/database/dbtest` package. To get a handle to a freshly migrated database, just call `dbtest.NewDB(t)`. This will return a new `*sql.DB` handle that points to a clean database instance that will only be used for the current test, so you don't have to worry about conflicts with other tests, and your tests can run in parallel.
+
+Note that getting a new, clean database instance is somewhat expensive, so if you can reuse a handle between sub-tests, it's likely worth it. It costs ~3s for the first call to `dbtest.NewDB()` in a package, then ~0.4s for each additional call after that. We only migrate the database once per package, but copying a migrated database still isn't free.
+
+```go
+func createRepo(db database.DB, name string, id int) {
+	db.Repos().Create(name, id)
+}
+
+func getRepo(db database.DB, id int) *types.Repo {
+	return db.Repos().Get(id)
+}
+
+func TestGetRepos(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+
+	createRepo(db, "my cool repo", 123)
+	got := getRepo(db, 123)
+
+	if got.Name != "my cool repo" {
+		t.Fatalf("wrong name: %s", got.Name)
+	}
+}
+```
+
+You will also see references to the `internal/database/dbtesting` package in the codebase, but use of that package is waning because it relies on a global database connection, which is not isolated between tests, and cannot be safely parallelized.

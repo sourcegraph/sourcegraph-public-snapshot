@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
@@ -14,30 +16,108 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
-		return &types.Org{ID: 1, Name: "acme"}, nil
-	}
+	envvar.MockSourcegraphDotComMode(false)
+	t.Cleanup(func() {
+		envvar.MockSourcegraphDotComMode(false)
+	})
 
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+	orgMembers := dbmock.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+	t.Run("Default behavior", func(t *testing.T) {
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					organization(name: "acme") {
 						name
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"organization": {
 						"name": "acme"
 					}
 				}
 			`,
-		},
+			},
+		})
+	})
+
+	t.Run("Fails on Cloud if user is not org member", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+				{
+					organization(name: "acme") {
+						name
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"organization": null
+				}
+				`,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Message: "org not found: acme",
+						Path:    []interface{}{string("organization")},
+					},
+				},
+			},
+		})
+	})
+
+	t.Run("Succeeds on Cloud if user is org member", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+		orgMembers := dbmock.NewMockOrgMemberStore()
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
+
+		db := dbmock.NewMockDBFrom(db)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				{
+					organization(name: "acme") {
+						name
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"organization": {
+						"name": "acme"
+					}
+				}
+				`,
+			},
+		})
 	})
 }
 
@@ -103,9 +183,11 @@ func TestOrganizationRepositories(t *testing.T) {
 }
 
 func TestNode_Org(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.Orgs.MockGetByID_Return(t, &types.Org{ID: 1, Name: "acme"}, nil)
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByIDFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{

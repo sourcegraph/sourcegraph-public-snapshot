@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client struct {
@@ -22,12 +23,14 @@ type client struct {
 	watchers    []chan struct{}
 }
 
+var _ conftypes.UnifiedQuerier = &client{}
+
 var (
 	defaultClientOnce sync.Once
 	defaultClientVal  *client
 )
 
-func defaultClient() *client {
+func DefaultClient() *client {
 	defaultClientOnce.Do(func() {
 		defaultClientVal = initDefaultClient()
 	})
@@ -36,7 +39,7 @@ func defaultClient() *client {
 
 // Raw returns a copy of the raw configuration.
 func Raw() conftypes.RawUnified {
-	return defaultClient().Raw()
+	return DefaultClient().Raw()
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -55,7 +58,15 @@ func Raw() conftypes.RawUnified {
 //
 // Get is a wrapper around client.Get.
 func Get() *Unified {
-	return defaultClient().Get()
+	return DefaultClient().Get()
+}
+
+func SiteConfig() schema.SiteConfiguration {
+	return Get().SiteConfiguration
+}
+
+func ServiceConnections() conftypes.ServiceConnections {
+	return Get().ServiceConnections()
 }
 
 // Raw returns a copy of the raw configuration.
@@ -80,11 +91,19 @@ func (c *client) Get() *Unified {
 	return c.store.LastValid()
 }
 
+func (c *client) SiteConfig() schema.SiteConfiguration {
+	return c.Get().SiteConfiguration
+}
+
+func (c *client) ServiceConnections() conftypes.ServiceConnections {
+	return c.Get().ServiceConnections()
+}
+
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
 func Mock(mockery *Unified) {
-	defaultClient().Mock(mockery)
+	DefaultClient().Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
@@ -102,7 +121,7 @@ func (c *client) Mock(mockery *Unified) {
 // IMPORTANT: Watch will block on config initialization. It therefore should *never* be called
 // synchronously in `init` functions.
 func Watch(f func()) {
-	defaultClient().Watch(f)
+	DefaultClient().Watch(f)
 }
 
 // Cached will return a wrapper around f which caches the response. The value
@@ -110,7 +129,7 @@ func Watch(f func()) {
 //
 // IMPORTANT: The first call to wrapped will block on config initialization.
 func Cached(f func() interface{}) (wrapped func() interface{}) {
-	return defaultClient().Cached(f)
+	return DefaultClient().Cached(f)
 }
 
 // Watch calls the given function in a separate goroutine whenever the

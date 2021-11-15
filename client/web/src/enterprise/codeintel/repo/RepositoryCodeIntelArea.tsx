@@ -126,7 +126,7 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             },
             {
                 to: '/indexes',
-                label: 'Auto indexing',
+                label: 'Auto-indexing',
                 condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
             {

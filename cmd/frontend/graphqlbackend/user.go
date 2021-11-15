@@ -32,7 +32,7 @@ func (r *schemaResolver) User(
 	var user *types.User
 	switch {
 	case args.Username != nil:
-		user, err = database.Users(r.db).GetByUsername(ctx, *args.Username)
+		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
@@ -42,7 +42,7 @@ func (r *schemaResolver) User(
 				return nil, err
 			}
 		}
-		user, err = database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
+		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
 
 	default:
 		return nil, errors.New("must specify either username or email to look up a user")
@@ -102,9 +102,17 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Email returns the user's oldest email, if one exists.
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return "", err
+	// 🚨 SECURITY: Only the authenticated user can view their email on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return "", err
+		}
+	} else {
+		// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return "", err
+		}
 	}
 
 	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)
@@ -260,7 +268,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.user.ID)
+	orgs, err := r.db.Orgs().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +335,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: A user can only change their own password.
+	// 🚨 SECURITY: Only the authenticated user can change their password.
 	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -351,7 +359,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: A user can only create their own password.
+	// 🚨 SECURITY: Only the authenticated user can create their password.
 	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -359,6 +367,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	if user == nil {
 		return nil, errors.New("no authenticated user")
 	}
+
 	if err := database.Users(r.db).CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
@@ -410,7 +419,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
+		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{

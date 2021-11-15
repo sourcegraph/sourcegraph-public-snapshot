@@ -36,18 +36,28 @@ func setupExec(ctx context.Context, args []string) error {
 	out.Write("")
 	out.Write("")
 
-	var instructions []instruction
-	instructions = append(instructions, cloneInstructions...)
-
 	currentOS := runtime.GOOS
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
 		currentOS = overridesOS
 	}
+
+	var instructions []instruction
 	if currentOS == "darwin" {
-		instructions = append(instructions, macOSInstructions...)
+		instructions = append(instructions, macOSInstructionsBeforeClone...)
 	} else {
-		instructions = append(instructions, linuxInstructions...)
+		instructions = append(instructions, linuxInstructionsBeforeClone...)
 	}
+
+	// clone instructions come after dependency instructions because we need
+	// `git` installed to `git` clone.
+	instructions = append(instructions, cloneInstructions...)
+
+	if currentOS == "darwin" {
+		instructions = append(instructions, macOSInstructionsAfterClone...)
+	} else {
+		instructions = append(instructions, linuxInstructionsAfterClone...)
+	}
+
 	instructions = append(instructions, httpReverseProxyInstructions...)
 
 	conditions := map[string]bool{}
@@ -111,22 +121,34 @@ type instruction struct {
 	ifNotBool string
 }
 
-var macOSInstructions = []instruction{
+var macOSInstructionsBeforeClone = []instruction{
 	{
 		comment: `Homewbrew is a tool to install programs on your machine that is very common on OSX.`,
 		prompt:  "Install homebrew",
 		command: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
 	},
 	{
-		prompt:  `Install Docker`,
+		prompt: `Install Docker`,
+		comment: `The following command installs Docker as a macOS application.
+
+Make sure to start /Applications/Docker.app after the installation finished`,
 		command: `brew install --cask docker`,
 	},
 	{
-		prompt:  `Install Go, Yarn, Git, Comby, SQLite tools, and jq`,
-		command: `brew install go yarn git gnu-sed comby pcre sqlite jq`,
+		prompt:  `Install Git, Comby, SQLite tools, and jq`,
+		command: `brew install git gnu-sed comby pcre sqlite jq`,
+	},
+}
+
+var macOSInstructionsAfterClone = []instruction{
+	{
+		prompt:  `Install Go, Yarn, Node`,
+		comment: `Instead of homebrew you can also use asdf to install Go, Yarn, Node.js. See the install instructions for asdf here: https://asdf-vm.com/guide/getting-started.html See the .tool-versions file in the sourcegraph/sourcegraph repository later.`,
+		command: `brew install go yarn node`,
 	},
 	{
 		prompt:    `Do you want to use Docker to run PostgreSQL and Redis?`,
+		comment:   `If you don't know, we recommend that you answer with 'No'`,
 		readsBool: `docker`,
 	},
 	{
@@ -155,7 +177,7 @@ brew services start redis`,
 	{
 		ifNotBool: "docker",
 		prompt:    `Ensure psql, the PostgreSQL command line client, is available`,
-		comment:   `So if the previous command show "NOT OK", you can run the command below to fix that`,
+		comment:   `If the previous command printed "NOT OK", you can run the command below to fix that`,
 		command: `hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
 source ~/.bash_profile`,
 	},
@@ -171,14 +193,16 @@ curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -
 sh /tmp/install-nvm.sh`,
 	},
 	{
-		prompt:  `After the install script is finished, restart your terminal session to pick up the nvm definitions.`,
-		command: `# Restart the other terminal you have been using to enter commands`,
+		prompt: `After the NVM installation finished, run the following command to activate it in the current terminal without restarting:`,
+		command: `export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"`,
 	},
 	{
 		prompt: `Install the current recommended version of Node JS by running the following in the sourcegraph/sourcegraph repository clone`,
 		comment: `After doing this, node -v should show the same version mentioned in .nvmrc at the root of the sourcegraph repository.
 NOTE: Although there is a Homebrew package for Node, we advise using nvm instead, to ensure you get a Node version compatible with the current state of the sourcegraph repository.`,
-		command: `nvm install
+		command: `# Run the following two commands in the 'sourcegraph' repository:
+nvm install
 nvm use --delete-prefix`,
 	},
 	// step 4
@@ -210,7 +234,18 @@ psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 	},
 }
 
-var linuxInstructions = []instruction{
+var linuxInstructionsBeforeClone = []instruction{
+	{
+		prompt:  `Update repositories`,
+		command: `sudo apt-get update`,
+	},
+	{
+		prompt:  `Install dependencies`,
+		command: `sudo apt install -y make git-all libpcre3-dev libsqlite3-dev pkg-config jq libnss3-tools`,
+	},
+}
+
+var linuxInstructionsAfterClone = []instruction{
 	{
 		prompt:  `Add package repositories`,
 		comment: "In order to install dependencies, we need to add some repositories to apt.",
@@ -319,7 +354,7 @@ psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 var cloneInstructions = []instruction{
 	{
 		prompt:  `Cloning the code`,
-		comment: `We're going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
+		comment: `We're now going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
 		command: `git clone https://github.com/sourcegraph/sourcegraph.git`,
 	},
 	{
@@ -345,14 +380,18 @@ var httpReverseProxyInstructions = []instruction{
 		prompt: `Making sourcegraph.test accessible`,
 		comment: `In order to make Sourcegraph's development environment accessible under https://sourcegraph.test:3443 we need to add an entry to /etc/hosts.
 
-The following command will add this entry. It may prompt you for your password.`,
+The following command will add this entry. It may prompt you for your password.
+
+Execute it in the 'sourcegraph' repository you cloned.`,
 		command: `./dev/add_https_domain_to_hosts.sh`,
 	},
 	{
 		prompt: `Initialize Caddy 2`,
 		comment: `Caddy 2 automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them.
 
-The following command adds Caddy's keys to the system certificate store.`,
+The following command adds Caddy's keys to the system certificate store.
+
+Execute it in the 'sourcegraph' repository you cloned.`,
 		command: `./dev/caddy.sh trust`,
 	},
 }

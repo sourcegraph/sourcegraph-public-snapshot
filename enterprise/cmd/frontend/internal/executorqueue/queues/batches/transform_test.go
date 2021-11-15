@@ -64,21 +64,19 @@ func TestTransformRecord(t *testing.T) {
 
 	wantInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
-		Workspaces: []*batcheslib.Workspace{
-			{
-				Repository: batcheslib.WorkspaceRepo{
-					ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
-					Name: "github.com/sourcegraph/sourcegraph",
-				},
-				Branch: batcheslib.WorkspaceBranch{
-					Name:   workspace.Branch,
-					Target: batcheslib.Commit{OID: workspace.Commit},
-				},
-				Path:               workspace.Path,
-				OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-				Steps:              workspace.Steps,
-				SearchResultPaths:  workspace.FileMatches,
+		Workspace: batcheslib.Workspace{
+			Repository: batcheslib.WorkspaceRepo{
+				ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
+				Name: "github.com/sourcegraph/sourcegraph",
 			},
+			Branch: batcheslib.WorkspaceBranch{
+				Name:   workspace.Branch,
+				Target: batcheslib.Commit{OID: workspace.Commit},
+			},
+			Path:               workspace.Path,
+			OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
+			Steps:              workspace.Steps,
+			SearchResultPaths:  workspace.FileMatches,
 		},
 	}
 
@@ -97,12 +95,8 @@ func TestTransformRecord(t *testing.T) {
 		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
 		CliSteps: []apiclient.CliStep{
 			{
-				Commands: []string{
-					"batch", "exec",
-					"-f", "input.json",
-					"-clear-cache",
-				},
-				Dir: ".",
+				Commands: []string{"batch", "exec", "-f", "input.json"},
+				Dir:      ".",
 				Env: []string{
 					"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
 					"SRC_ACCESS_TOKEN=" + accessToken,

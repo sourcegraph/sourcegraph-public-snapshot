@@ -32,9 +32,8 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 	workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
 	for i := 0; i < cap(workspaces); i++ {
 		job := &btypes.BatchSpecWorkspace{
-			BatchSpecID:                    int64(i + 567),
-			ChangesetSpecIDs:               []int64{int64(i + 456), int64(i + 678)},
-			BatchSpecExecutionCacheEntryID: int64(i + 999),
+			BatchSpecID:      int64(i + 567),
+			ChangesetSpecIDs: []int64{int64(i + 456), int64(i + 678)},
 
 			RepoID: repo.ID,
 			Branch: "master",
@@ -62,6 +61,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			Unsupported:        true,
 			Ignored:            true,
 			Skipped:            true,
+			CachedResultFound:  true,
 		}
 
 		if i == cap(workspaces)-1 {
@@ -187,6 +187,62 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 
 				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{ws}); diff != "" {
 					t.Fatalf("invalid jobs returned: %s", diff)
+				}
+			}
+		})
+	})
+
+	t.Run("Count", func(t *testing.T) {
+		t.Run("All", func(t *testing.T) {
+			have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := int64(2); have != want {
+				t.Fatalf("invalid count returned: want=%d have=%d", want, have)
+			}
+		})
+
+		t.Run("ByBatchSpecID", func(t *testing.T) {
+			for _, ws := range workspaces {
+				have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					BatchSpecID: ws.BatchSpecID,
+				})
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if ws.RepoID == deletedRepo.ID {
+					if have != 0 {
+						t.Fatalf("expected zero results, but got: %d", have)
+					}
+					return
+				}
+				if have != 1 {
+					t.Fatalf("wrong number of results. have=%d", have)
+				}
+			}
+		})
+
+		t.Run("ByID", func(t *testing.T) {
+			for _, ws := range workspaces {
+				have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					IDs: []int64{ws.ID},
+				})
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if ws.RepoID == deletedRepo.ID {
+					if have != 0 {
+						t.Fatalf("expected zero results, but got: %d", have)
+					}
+					return
+				}
+				if have != 1 {
+					t.Fatalf("wrong number of results. have=%d", have)
 				}
 			}
 		})

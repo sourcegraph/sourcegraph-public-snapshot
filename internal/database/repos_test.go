@@ -105,7 +105,7 @@ func TestParseIncludePattern(t *testing.T) {
 		if regexp != want.regexp {
 			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
 		}
-		if qs, err := parsePattern(pattern); err != nil {
+		if qs, err := parsePattern(pattern, false); err != nil {
 			t.Fatal(pattern, err)
 		} else {
 			if testing.Verbose() {

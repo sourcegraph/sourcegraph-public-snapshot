@@ -19,7 +19,7 @@ import { MONACO_BLOCK_INPUT_OPTIONS, useMonacoBlockInput } from './useMonacoBloc
 
 import { BlockProps, MarkdownBlock } from '.'
 
-interface SearchNotebookMarkdownBlockProps extends BlockProps, Omit<MarkdownBlock, 'type'>, ThemeProps {
+interface SearchNotebookMarkdownBlockProps extends BlockProps, MarkdownBlock, ThemeProps {
     isMacPlatform: boolean
 }
 
@@ -47,7 +47,13 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         [onRunBlock, setIsEditing]
     )
 
-    const { isInputFocused } = useMonacoBlockInput({ editor, id, ...props, onSelectBlock, onRunBlock: runBlock })
+    const { isInputFocused } = useMonacoBlockInput({
+        editor,
+        id,
+        ...props,
+        onSelectBlock,
+        onRunBlock: runBlock,
+    })
 
     const onDoubleClick = useCallback(() => {
         if (isReadOnly) {

@@ -1,4 +1,4 @@
-import { InsightsDashboardType } from '../../core/types'
+import { InsightsDashboardScope, InsightsDashboardType } from '../../core/types'
 
 import { ALL_INSIGHTS_DASHBOARD, getInsightsDashboards } from './use-dashboards'
 
@@ -83,8 +83,8 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
-                    type: InsightsDashboardType.Organization,
-                    builtIn: true,
+                    type: InsightsDashboardType.BuiltIn,
+                    scope: InsightsDashboardScope.Organization,
                     id: '102',
                     title: 'Sourcegraph',
                     insightIds: [],
@@ -94,8 +94,8 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: InsightsDashboardType.Personal,
-                    builtIn: true,
+                    type: InsightsDashboardType.BuiltIn,
+                    scope: InsightsDashboardScope.Personal,
                     title: 'Emir Kusturica',
                     id: '101',
                     insightIds: [],
@@ -141,9 +141,9 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
-                    type: InsightsDashboardType.Personal,
+                    scope: InsightsDashboardScope.Personal,
+                    type: InsightsDashboardType.BuiltIn,
                     title: 'Emir Kusturica',
-                    builtIn: true,
                     id: '101',
                     insightIds: [],
                     owner: {
@@ -152,7 +152,8 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: InsightsDashboardType.Personal,
+                    scope: InsightsDashboardScope.Personal,
+                    type: InsightsDashboardType.Custom,
                     id: '001',
                     title: 'Test Dashboard',
                     settingsKey: 'insights.dashboard.testDashboard',
@@ -163,7 +164,8 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: InsightsDashboardType.Personal,
+                    scope: InsightsDashboardScope.Personal,
+                    type: InsightsDashboardType.Custom,
                     id: '002',
                     title: 'Another Test Dashboard',
                     settingsKey: 'insights.dashboard.anotherTestDashboard',
@@ -224,8 +226,8 @@ describe('getInsightsDashboards', () => {
             ).toStrictEqual([
                 ALL_INSIGHTS_DASHBOARD,
                 {
-                    type: InsightsDashboardType.Organization,
-                    builtIn: true,
+                    scope: InsightsDashboardScope.Organization,
+                    type: InsightsDashboardType.BuiltIn,
                     id: '102',
                     title: 'Sourcegraph',
                     insightIds: [],
@@ -235,7 +237,8 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: InsightsDashboardType.Organization,
+                    scope: InsightsDashboardScope.Organization,
+                    type: InsightsDashboardType.Custom,
                     id: '001',
                     title: 'Test Dashboard',
                     settingsKey: 'insights.dashboard.testDashboard',
@@ -246,10 +249,10 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: InsightsDashboardType.Personal,
+                    scope: InsightsDashboardScope.Personal,
+                    type: InsightsDashboardType.BuiltIn,
                     id: '101',
                     title: 'Emir Kusturica',
-                    builtIn: true,
                     insightIds: [],
                     owner: {
                         id: '101',
@@ -257,7 +260,8 @@ describe('getInsightsDashboards', () => {
                     },
                 },
                 {
-                    type: InsightsDashboardType.Personal,
+                    scope: InsightsDashboardScope.Personal,
+                    type: InsightsDashboardType.Custom,
                     id: '002',
                     title: 'Another Test Dashboard',
                     settingsKey: 'insights.dashboard.anotherTestDashboard',

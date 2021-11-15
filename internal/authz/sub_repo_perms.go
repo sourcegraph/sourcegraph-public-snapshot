@@ -23,7 +23,7 @@ type RepoContent struct {
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
 //
-//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms.go
+//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms_checker.go
 type SubRepoPermissionChecker interface {
 	// Permissions returns the level of access the provided user has for the requested
 	// content.
@@ -38,6 +38,8 @@ type SubRepoPermissionChecker interface {
 var _ SubRepoPermissionChecker = &subRepoPermsClient{}
 
 // SubRepoPermissionsGetter allows getting sub repository permissions.
+//
+//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionsGetter -o mock_sub_repo_perms_getter.go
 type SubRepoPermissionsGetter interface {
 	// GetByUser returns the known sub repository permissions rules known for a user.
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
@@ -74,12 +76,18 @@ func (s *subRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
+	if s.permissionsGetter == nil {
+		return None, errors.New("PermissionsGetter is nil")
+	}
+
 	if userID == 0 {
 		return None, &ErrUnauthenticated{}
 	}
 
-	if s.permissionsGetter == nil {
-		return None, errors.New("PermissionsGetter is nil")
+	// An empty path is equivalent to repo permissions so we can assume it has
+	// already been checked at that level.
+	if content.Path == "" {
+		return Read, nil
 	}
 
 	if supported, err := s.permissionsGetter.RepoSupported(ctx, content.Repo); err != nil {
@@ -171,5 +179,9 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return None, &ErrUnauthenticated{}
 	}
 
-	return s.Permissions(ctx, a.UID, content)
+	perms, err := s.Permissions(ctx, a.UID, content)
+	if err != nil {
+		return None, errors.Wrapf(err, "getting actor permissions for actor", a.UID)
+	}
+	return perms, nil
 }

@@ -3,10 +3,10 @@ import { uniq } from 'lodash'
 
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { GetInsightsResult, InsightViewsFields, TimeIntervalStepUnit } from '../../../../../graphql-operations'
+import { GetInsightsResult, TimeIntervalStepUnit, TimeIntervalStepInput } from '../../../../../graphql-operations'
 import { Insight, InsightType, SearchBasedInsight } from '../../types'
 
-function getDurationFromStep(step: InsightViewsFields['dataSeriesDefinitions'][number]['timeScope']): Duration {
+function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     switch (step.unit) {
         case TimeIntervalStepUnit.HOUR:
             return { hours: step.value }
@@ -65,22 +65,25 @@ export function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepU
  *
  * @param insight - gql insight model
  */
-export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => {
+export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight | undefined => {
     // TODO [VK] Support lang stats insight
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(
-                series => series.repositoryScope.repositories.length > 0
+                series => series.repositoryScope.repositories.length === 0
             )
 
-            const series = insight.dataSeries.map(series => ({
+            const series = insight.presentation.seriesPresentation.map(series => ({
                 name: series.label,
                 query:
                     insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
                     'QUERY NOT FOUND',
-                stroke: insight.presentation.seriesPresentation.find(
-                    presentation => presentation.seriesId === series.seriesId
-                )?.color,
+                stroke:
+                    'seriesPresentation' in insight.presentation
+                        ? insight.presentation.seriesPresentation.find(
+                              presentation => presentation.seriesId === series.seriesId
+                          )?.color
+                        : '',
             }))
 
             if (isBackendInsight) {
@@ -109,6 +112,17 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
                 step,
                 repositories,
                 series,
+            }
+        }
+        // TODO: Just adding this to remove an error. This will need to cover pie charts instad.
+        default: {
+            return {
+                type: InsightType.Backend,
+                presentationType: 'LineChartInsightViewPresentation',
+                id: insight.id,
+                visibility: '',
+                title: '',
+                series: [],
             }
         }
     }

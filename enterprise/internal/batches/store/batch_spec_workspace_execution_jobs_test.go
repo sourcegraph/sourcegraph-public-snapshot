@@ -490,7 +490,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			ignoredWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Ignored: true}
 			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Unsupported: true}
 			noStepsWorkspace := &btypes.BatchSpecWorkspace{Steps: []batches.Step{}}
-			cachedResultWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, BatchSpecExecutionCacheEntryID: cacheEntry.ID}
+			cachedResultWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, CachedResultFound: true}
 
 			batchSpec := &btypes.BatchSpec{}
 

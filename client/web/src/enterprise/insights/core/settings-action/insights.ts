@@ -12,7 +12,7 @@ import {
     isLangStatsInsight,
     isVirtualDashboard,
 } from '../types'
-import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../types/dashboard/real-dashboard'
 
 import { addInsightToDashboard } from './dashboards'
 
@@ -42,7 +42,7 @@ const getInsightSettingKey = (insight: Insight): string[] => {
 
 export const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
     const dashboardSettingKey =
-        !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
+        dashboard && !isVirtualDashboard(dashboard) && isCustomInsightDashboard(dashboard)
             ? dashboard.settingsKey
             : undefined
 

@@ -27,6 +27,7 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 		newReconcilerWorkerResetter(reconcilerWorkerStore, metrics),
 
 		newSpecExpireJob(ctx, batchesStore),
+		newCacheEntryCleanerJob(ctx, batchesStore),
 
 		scheduler.NewScheduler(ctx, batchesStore),
 

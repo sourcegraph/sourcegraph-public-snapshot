@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -23,7 +24,6 @@ import (
 var batchSpecWorkspaceInsertColumns = []string{
 	"batch_spec_id",
 	"changeset_spec_ids",
-	"batch_spec_execution_cache_entry_id",
 
 	"repo_id",
 	"branch",
@@ -35,6 +35,7 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"unsupported",
 	"ignored",
 	"skipped",
+	"cached_result_found",
 
 	"created_at",
 	"updated_at",
@@ -47,7 +48,6 @@ var BatchSpecWorkspaceColums = SQLColumns{
 
 	"batch_spec_workspaces.batch_spec_id",
 	"batch_spec_workspaces.changeset_spec_ids",
-	"batch_spec_workspaces.batch_spec_execution_cache_entry_id",
 
 	"batch_spec_workspaces.repo_id",
 	"batch_spec_workspaces.branch",
@@ -59,6 +59,7 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.unsupported",
 	"batch_spec_workspaces.ignored",
 	"batch_spec_workspaces.skipped",
+	"batch_spec_workspaces.cached_result_found",
 
 	"batch_spec_workspaces.created_at",
 	"batch_spec_workspaces.updated_at",
@@ -108,7 +109,6 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				ctx,
 				wj.BatchSpecID,
 				marshaledIDs,
-				dbutil.NewNullInt64(wj.BatchSpecExecutionCacheEntryID),
 				wj.RepoID,
 				wj.Branch,
 				wj.Commit,
@@ -119,6 +119,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				wj.Unsupported,
 				wj.Ignored,
 				wj.Skipped,
+				wj.CachedResultFound,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
@@ -202,7 +203,27 @@ type ListBatchSpecWorkspacesOpts struct {
 	IDs         []int64
 }
 
-// ListBatchSpecWorkspaces lists batch changes with the given filters.
+func (opts ListBatchSpecWorkspacesOpts) SQLConds(forCount bool) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+
+	if len(opts.IDs) != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY(%s)", pq.Array(opts.IDs)))
+	}
+
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
+	}
+
+	if !forCount && opts.Cursor > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id >= %s", opts.Cursor))
+	}
+
+	return sqlf.Join(preds, "\n AND ")
+}
+
+// ListBatchSpecWorkspaces lists batch spec workspaces with the given filters.
 func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
 	ctx, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -236,26 +257,38 @@ ORDER BY id ASC
 `
 
 func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
-	}
-
-	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY(%s)", pq.Array(opts.IDs)))
-	}
-
-	if opts.BatchSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
-	}
-
-	if opts.Cursor > 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id >= %s", opts.Cursor))
-	}
-
 	return sqlf.Sprintf(
 		listBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
 		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
-		sqlf.Join(preds, "\n AND "),
+		opts.SQLConds(false),
+	)
+}
+
+// CountBatchSpecWorkspaces counts batch spec workspaces with the given filters.
+func (s *Store) CountBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (count int64, err error) {
+	ctx, endObservation := s.operations.countBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := countBatchSpecWorkspacesQuery(opts)
+
+	count, _, err = basestore.ScanFirstInt64(s.Query(ctx, q))
+	return count, err
+}
+
+var countBatchSpecWorkspacesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_job.go:CountBatchSpecWorkspaces
+SELECT
+	COUNT(1)
+FROM
+	batch_spec_workspaces
+INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+WHERE %s
+`
+
+func countBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
+	return sqlf.Sprintf(
+		countBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
+		opts.SQLConds(true),
 	)
 }
 
@@ -295,7 +328,6 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) err
 		&wj.ID,
 		&wj.BatchSpecID,
 		&jsonIDsSet{Assocs: &wj.ChangesetSpecIDs},
-		&dbutil.NullInt64{N: &wj.BatchSpecExecutionCacheEntryID},
 		&wj.RepoID,
 		&wj.Branch,
 		&wj.Commit,
@@ -306,6 +338,7 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) err
 		&wj.Unsupported,
 		&wj.Ignored,
 		&wj.Skipped,
+		&wj.CachedResultFound,
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {

@@ -142,7 +142,21 @@ func TestUser(t *testing.T) {
 	})
 }
 
-func TestUser_SettingsCascade(t *testing.T) {
+func TestUser_Email(t *testing.T) {
+	db := dbmock.NewMockDB()
+	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		_, err := NewUserResolver(db, &types.User{ID: 1}).Email(context.Background())
+		got := fmt.Sprintf("%v", err)
+		want := "must be authenticated as user with id 1"
+		assert.Equal(t, want, got)
+	})
+}
+
+func TestUser_LatestSettings(t *testing.T) {
 	db := dbmock.NewMockDB()
 	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := dbmock.NewMockUserStore()
@@ -187,7 +201,7 @@ func TestUser_SettingsCascade(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(context.Background())
+				_, err := NewUserResolver(db, &types.User{ID: 1}).LatestSettings(test.ctx)
 				got := fmt.Sprintf("%v", err)
 				want := "must be authenticated as user with id 1"
 				assert.Equal(t, want, got)
@@ -241,7 +255,7 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(context.Background())
+				ok, _ := NewUserResolver(db, &types.User{ID: 1}).ViewerCanAdminister(test.ctx)
 				assert.False(t, ok, "ViewerCanAdminister")
 			})
 		}
@@ -449,7 +463,8 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db).UpdateUser(context.Background(),
+				_, err := newSchemaResolver(db).UpdateUser(
+					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
 					},
@@ -501,11 +516,9 @@ func TestUpdateUser(t *testing.T) {
 }
 
 func TestUser_Organizations(t *testing.T) {
-	resetMocks()
-
-	// Set up a mock set of users, consisting of two regular users and one site
-	// admin.
-	getUserByID := func(_ context.Context, id int32) (*types.User, error) {
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		// Set up a mock set of users, consisting of two regular users and one site admin.
 		knownUsers := map[int32]*types.User{
 			1: {ID: 1, Username: "alice"},
 			2: {ID: 2, Username: "bob"},
@@ -518,22 +531,19 @@ func TestUser_Organizations(t *testing.T) {
 
 		t.Errorf("unknown mock user: got ID %q", id)
 		return nil, errors.New("unreachable")
-	}
-
-	database.Mocks.Users.GetByID = getUserByID
-
-	database.Mocks.Users.GetByUsername = func(_ context.Context, username string) (*types.User, error) {
+	})
+	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
 		}
 		return &types.User{ID: 1, Username: "alice"}, nil
-	}
+	})
+	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+		return users.GetByID(ctx, actor.FromContext(ctx).UID)
+	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return getUserByID(ctx, actor.FromContext(ctx).UID)
-	}
-
-	database.Mocks.Orgs.GetByUserID = func(_ context.Context, userID int32) ([]*types.Org, error) {
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByUserIDFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]*types.Org, error) {
 		if want := int32(1); userID != want {
 			t.Errorf("got %q, want %q", userID, want)
 		}
@@ -543,8 +553,11 @@ func TestUser_Organizations(t *testing.T) {
 				Name: "org",
 			},
 		}, nil
-	}
-	db := database.NewDB(nil)
+	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgsFunc.SetDefaultReturn(orgs)
 
 	expectOrgFailure := func(t *testing.T, actorUID int32) {
 		t.Helper()

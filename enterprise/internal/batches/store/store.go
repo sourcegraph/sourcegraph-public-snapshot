@@ -250,6 +250,7 @@ type operations struct {
 	createBatchSpecWorkspace       *observation.Operation
 	getBatchSpecWorkspace          *observation.Operation
 	listBatchSpecWorkspaces        *observation.Operation
+	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
@@ -270,6 +271,7 @@ type operations struct {
 	getBatchSpecExecutionCacheEntry      *observation.Operation
 	markUsedBatchSpecExecutionCacheEntry *observation.Operation
 	createBatchSpecExecutionCacheEntry   *observation.Operation
+	cleanBatchSpecExecutionCacheEntries  *observation.Operation
 }
 
 var (
@@ -381,6 +383,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
 			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
@@ -401,6 +404,8 @@ func newOperations(observationContext *observation.Context) *operations {
 			getBatchSpecExecutionCacheEntry:      op("GetBatchSpecExecutionCacheEntry"),
 			markUsedBatchSpecExecutionCacheEntry: op("MarkUsedBatchSpecExecutionCacheEntry"),
 			createBatchSpecExecutionCacheEntry:   op("CreateBatchSpecExecutionCacheEntry"),
+
+			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
 		}
 	})
 

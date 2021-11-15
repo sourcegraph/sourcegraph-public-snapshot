@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { cloneDeep } from 'lodash'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-yaml'
 import * as React from 'react'
@@ -143,6 +144,12 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
 }
 
 function setDiagnosticsOptions(editor: typeof monaco): void {
+    const schemaWithoutEnvironmentForwarding = cloneDeep(batchSpecSchemaJSON)
+    // We don't allow env forwarding in src-cli so we remove it from the schema
+    // so that monaco can show the error inline.
+    schemaWithoutEnvironmentForwarding.properties.steps.items.properties.env.oneOf[2].items!.oneOf = schemaWithoutEnvironmentForwarding.properties.steps.items.properties.env.oneOf[2].items!.oneOf.filter(
+        type => type.type !== 'string'
+    )
     editor.languages.yaml.yamlDefaults.setDiagnosticsOptions({
         validate: true,
         isKubernetes: false,
@@ -152,7 +159,7 @@ function setDiagnosticsOptions(editor: typeof monaco): void {
         schemas: [
             {
                 uri: 'file:///root',
-                schema: batchSpecSchemaJSON as JSONSchema,
+                schema: schemaWithoutEnvironmentForwarding as JSONSchema,
                 fileMatch: ['*'],
             },
         ],
