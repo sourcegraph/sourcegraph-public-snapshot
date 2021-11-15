@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -14,6 +15,13 @@ import (
 // uploaded over multiple requests. The identifier of the upload is returned after a
 // successful upload.
 func UploadIndex(filename string, httpClient Client, opts UploadOptions) (int, error) {
+	opts.ContentType = "application/x-ndjson+lsif"
+	if strings.HasSuffix(filename, ".lsif-flat") {
+		opts.ContentType = "application/x-ndjson+lsif-flat"
+	} else if strings.HasSuffix(filename, ".lsif-flat.pb") {
+		opts.ContentType = "application/x-protobuf+lsif-flat"
+	}
+
 	originalReader, originalSize, err := openFileAndGetSize(filename)
 	if err != nil {
 		return 0, err

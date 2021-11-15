@@ -1305,19 +1305,6 @@ func nilTimeToString(t *time.Time) string {
 	return t.String()
 }
 
-func FormatToString(format reader.LsifFormat) string {
-	switch format {
-	case reader.GraphFormat:
-		return ".lsif"
-	case reader.FlatFormat:
-		return ".lsif-flat"
-	case reader.FlatProtobufFormat:
-		return ".lsif-flat.pb"
-	default:
-		return "gohno"
-	}
-}
-
 func StringToFormat(s string) reader.LsifFormat {
 	if s == ".lsif" {
 		return reader.GraphFormat

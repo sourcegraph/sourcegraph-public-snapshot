@@ -58,7 +58,7 @@ func makeUploadRequest(opts uploadRequestOptions) (*http.Request, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/x-ndjson+lsif")
+	req.Header.Set("Content-Type", opts.ContentType)
 	if opts.SourcegraphInstanceOptions.AccessToken != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("token %s", opts.SourcegraphInstanceOptions.AccessToken))
 	}

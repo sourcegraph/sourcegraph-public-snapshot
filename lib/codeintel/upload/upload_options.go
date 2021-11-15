@@ -41,4 +41,5 @@ type UploadRecordOptions struct {
 	Root              string
 	Indexer           string
 	AssociatedIndexID *int
+	ContentType       string
 }

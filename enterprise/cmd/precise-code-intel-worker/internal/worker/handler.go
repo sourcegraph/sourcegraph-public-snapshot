@@ -15,6 +15,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -116,7 +117,11 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 	}
 
 	return false, withUploadData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
-		groupedBundleData, err := conversion.Correlate(ctx, reader.Dump{Reader: r, Format: reader.FlatProtobufFormat}, upload.Root, getChildren)
+		format := reader.GraphFormat
+		if upload.Format != nil {
+			format = dbstore.StringToFormat(*upload.Format)
+		}
+		groupedBundleData, err := conversion.Correlate(ctx, reader.Dump{Reader: r, Format: format}, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}
