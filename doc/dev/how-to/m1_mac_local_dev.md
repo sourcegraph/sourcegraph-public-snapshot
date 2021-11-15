@@ -20,14 +20,15 @@ If you hit a Puppeteer error stating "The chromium binary is not available for a
 
 (Based on https://linguinecode.com/post/how-to-fix-m1-mac-puppeteer-chromium-arm64-bug)
 
-## Rosetta
-Run `softwareupdate --install-rosetta`.
-
 ## Jaeger
-Get the Mac version of Jaeger https://www.jaegertracing.io/download/, extract it, then 
+[https://github.com/jhchabran/jaeger/releases/download/v1.28.1/jaeger-1.28.1-darwin-arm64.tar.gz](Get the Mac version of Jaeger), extract it, then 
 
 ```
-cp ~/Downloads/jaeger-1.28.0-darwin-amd64/jaeger-all-in-one ~/sourcegraph/.bin/jaeger-all-in-one-1.18.1-darwin-arm64
+# Set PROJECTS to where you're storing the sourcegraph repository.
+export PROJECTS=~/work/
+cd ~/Downloads
+curl https://github.com/jhchabran/jaeger/releases/download/v1.28.1/jaeger-1.28.1-darwin-arm64.tar.gz -L | tar -xz
+cp ~/Downloads/jaeger-1.28.1-darwin-arm64/jaeger-all-in-one $PROJECTS/sourcegraph/.bin/jaeger-all-in-one-1.18.1-darwin-arm64
 ``` 
 
 (adjust `~/sourcegraph` to point to you local clone of `github.com/sourcegraph/sourcegraph`).
