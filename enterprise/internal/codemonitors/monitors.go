@@ -113,11 +113,32 @@ func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbacke
 	return scanMonitor(row)
 }
 
+const toggleCodeMonitorFmtStr = `
+UPDATE cm_monitors
+SET enabled = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+RETURNING %s
+`
+
 func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*Monitor, error) {
-	q, err := s.toggleCodeMonitorQuery(ctx, args)
+	var monitorID int64
+	err := relay.UnmarshalSpec(args.Id, &monitorID)
 	if err != nil {
 		return nil, err
 	}
+
+	actorUID := actor.FromContext(ctx).UID
+	q := sqlf.Sprintf(
+		toggleCodeMonitorFmtStr,
+		args.Enabled,
+		actorUID,
+		s.Now(),
+		monitorID,
+		sqlf.Join(monitorColumns, ", "),
+	)
+
 	row := s.QueryRow(ctx, q)
 	return scanMonitor(row)
 }
@@ -191,32 +212,6 @@ func monitorsQuery(userID int32, args *graphqlbackend.ListMonitorsArgs) (*sqlf.Q
 		userID,
 		after,
 		args.First,
-	), nil
-}
-
-const toggleCodeMonitorFmtStr = `
-UPDATE cm_monitors
-SET enabled = %s,
-	changed_by = %s,
-	changed_at = %s
-WHERE id = %s
-RETURNING %s
-`
-
-func (s *codeMonitorStore) toggleCodeMonitorQuery(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*sqlf.Query, error) {
-	var monitorID int64
-	err := relay.UnmarshalSpec(args.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
-	actorUID := actor.FromContext(ctx).UID
-	return sqlf.Sprintf(
-		toggleCodeMonitorFmtStr,
-		args.Enabled,
-		actorUID,
-		s.Now(),
-		monitorID,
-		sqlf.Join(monitorColumns, ", "),
 	), nil
 }
 
