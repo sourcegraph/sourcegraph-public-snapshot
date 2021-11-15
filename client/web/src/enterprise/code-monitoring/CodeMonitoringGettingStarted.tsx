@@ -5,6 +5,7 @@ import React from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { CodeMonitorInfo } from './CodeMonitorInfo'
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
@@ -46,10 +47,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                         />
                     )}
                 </div>
-                <p className={classNames('alert alert-info mt-3 mt-lg-0 ml-lg-3 mb-0', styles.alert)}>
-                    We are currently working on increasing the performance and fidelity of Code Monitors to work with
-                    more sensitive workloads like a large number of repositories or auditing published code for secrets.
-                </p>
+                <CodeMonitorInfo className={classNames('mt-3 mt-lg-0 ml-lg-3 mb-0', styles.alert)} />
             </div>
             <div className={classNames('container', styles.startingPointsContainer)}>
                 <h3 className="mb-3">Starting points for your first monitor</h3>
