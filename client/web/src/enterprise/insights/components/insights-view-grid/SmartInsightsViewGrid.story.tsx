@@ -8,7 +8,7 @@ import { WebStory } from '../../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK } from '../../../../views/mocks/charts-content'
 import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/code-insights-setting-cascade-backend'
-import { Insight, InsightType } from '../../core/types'
+import { Insight, InsightExecutionType, InsightType } from '../../core/types'
 import { SearchBackendBasedInsight } from '../../core/types/insight/search-insight'
 import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
@@ -21,14 +21,16 @@ const { add } = storiesOf('web/insights/SmartInsightsViewGrid', module).addDecor
 const insights: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
-        type: InsightType.Backend,
+        type: InsightExecutionType.Backend,
+        viewType: InsightType.SearchBased,
         title: 'Backend insight #1',
         series: [],
         visibility: 'personal',
     },
     {
         id: 'searchInsights.insight.Backend_2',
-        type: InsightType.Backend,
+        type: InsightExecutionType.Backend,
+        viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [],
         visibility: 'personal',
@@ -44,14 +46,16 @@ class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
         of([
             {
                 id: 'searchInsights.insight.Backend_1',
-                type: InsightType.Backend,
+                type: InsightExecutionType.Backend,
+                viewType: InsightType.SearchBased,
                 title: 'Backend insight #1',
                 series: [],
                 visibility: 'personal',
             },
             {
                 id: 'searchInsights.insight.Backend_2',
-                type: InsightType.Backend,
+                type: InsightExecutionType.Backend,
+                viewType: InsightType.SearchBased,
                 title: 'Backend insight #2',
                 series: [],
                 visibility: 'personal',
