@@ -7,7 +7,7 @@ import {
     Insight,
     InsightDashboard,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
-    InsightType,
+    InsightExecutionType,
     InsightTypePrefix,
     isLangStatsInsight,
     isVirtualDashboard,
@@ -29,12 +29,12 @@ const getInsightSettingKey = (insight: Insight): string[] => {
     // Search based insight may live in two main places
     switch (insight.type) {
         // Extension based lives on top level of settings file by its id
-        case InsightType.Extension: {
+        case InsightExecutionType.Runtime: {
             return [insight.id]
         }
 
         // Backend based insight lives in insights.allrepos map
-        case InsightType.Backend: {
+        case InsightExecutionType.Backend: {
             return [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insight.id]
         }
     }
