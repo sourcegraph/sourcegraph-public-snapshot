@@ -11,8 +11,12 @@ import { DashboardCreateInput } from '../code-insights-backend-types'
  * @returns - A properly formatted grants object
  */
 export const createDashboardGrants = (input: DashboardCreateInput): InsightsPermissionGrantsInput => {
-    const grants: InsightsPermissionGrantsInput = {}
     const { type, visibility } = input
+    const grants: InsightsPermissionGrantsInput = {
+        users: [],
+        organizations: [],
+        global: false,
+    }
 
     if (type === 'personal') {
         grants.users = [visibility]

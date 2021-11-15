@@ -254,45 +254,50 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
 
     // Dashboards
-    public getDashboards = (): Observable<InsightDashboard[]> =>
+    public getDashboards = (id?: string): Observable<InsightDashboard[]> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<InsightsDashboardsResult>({
                 query: GET_INSIGHTS_DASHBOARDS_GQL,
+                variables: { id },
             })
         ).pipe(
-            map(({ data }) => [
-                {
-                    id: 'all',
-                    type: InsightsDashboardType.Virtual,
-                    scope: InsightsDashboardScope.Personal,
-                    title: 'All Insights',
-                },
-                ...data.insightsDashboards.nodes.map(
-                    (dashboard): InsightDashboard => ({
-                        id: dashboard.id,
-                        type: InsightsDashboardType.Custom,
-                        scope: parseDashboardScope(dashboard.grants),
-                        title: dashboard.title,
-                        insightIds: dashboard.views?.nodes.map(view => view.id),
-                        grants: dashboard.grants,
+            map(result => {
+                const { data } = result
 
-                        // BE gql dashboards don't have setting key (it's setting cascade conception only)
-                        settingsKey: null,
-                    })
-                ),
-            ])
+                return [
+                    {
+                        id: 'all',
+                        type: InsightsDashboardType.Virtual,
+                        scope: InsightsDashboardScope.Personal,
+                        title: 'All Insights',
+                    },
+                    ...data.insightsDashboards.nodes.map(
+                        (dashboard): InsightDashboard => ({
+                            id: dashboard.id,
+                            type: InsightsDashboardType.Custom,
+                            scope: parseDashboardScope(dashboard.grants),
+                            title: dashboard.title,
+                            insightIds: dashboard.views?.nodes.map(view => view.id),
+                            grants: dashboard.grants,
+
+                            // BE gql dashboards don't have setting key (it's setting cascade conception only)
+                            settingsKey: null,
+                        })
+                    ),
+                ]
+            })
         )
 
     public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
-        this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null))
+        this.getDashboards(dashboardId).pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null))
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
     public getDashboardSubjects = (): Observable<SupportedInsightSubject[]> =>
-        from(
-            this.apolloClient.query<InsightSubjectsResult>({ query: GET_INSIGHTS_SUBJECTS_GQL })
+        fromObservableQuery(
+            this.apolloClient.watchQuery<InsightSubjectsResult>({ query: GET_INSIGHTS_SUBJECTS_GQL })
         ).pipe(
             map(({ data }) => {
                 const { currentUser, site } = data
@@ -328,6 +333,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                                         id
                                     }
                                 }
+                                grants {
+                                    users
+                                    organizations
+                                    global
+                                }
                             }
                         }
                     }
@@ -353,6 +363,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                                                 nodes {
                                                     id
                                                 }
+                                            }
+                                            grants {
+                                                users
+                                                organizations
+                                                global
                                             }
                                         }
                                     `,

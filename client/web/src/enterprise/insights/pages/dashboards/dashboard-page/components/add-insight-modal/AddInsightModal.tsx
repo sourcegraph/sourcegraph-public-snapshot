@@ -13,6 +13,7 @@ import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hoo
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { parseDashboardScope } from '../../../../../core/backend/utils/parse-dashboard-scope'
 import { CustomInsightDashboard } from '../../../../../core/types'
+import { isGlobalSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
 
 import styles from './AddInsightModal.module.scss'
 import {
@@ -27,8 +28,11 @@ export interface AddInsightModalProps {
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
     const { dashboard, onClose } = props
-    const { getReachableInsights, assignInsightsToDashboard } = useContext(CodeInsightsBackendContext)
+    const { getReachableInsights, getDashboardSubjects, assignInsightsToDashboard } = useContext(
+        CodeInsightsBackendContext
+    )
 
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const insights = useObservable(
         useMemo(() => getReachableInsights(dashboard.owner?.id || '') || of([]), [
             dashboard.owner,
@@ -54,11 +58,12 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
                 previousDashboard: dashboard,
                 nextDashboardInput: {
                     name: dashboard.title,
-                    visibility: dashboard.owner?.id || '',
+                    visibility: getDashboardVisibilityId(dashboard, subjects ?? []),
                     insightIds,
                     type,
                 },
             }).toPromise()
+
             onClose()
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -96,4 +101,23 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
             )}
         </Dialog>
     )
+}
+
+function getDashboardVisibilityId(dashboard: CustomInsightDashboard, subjects: SupportedInsightSubject[]): string {
+    if (dashboard.owner) {
+        return dashboard.owner.id
+    }
+
+    if (dashboard.grants) {
+        const { users, organizations, global } = dashboard.grants
+        const globalSubject = subjects.find(isGlobalSubject)
+
+        if (global && globalSubject) {
+            return globalSubject.id
+        }
+
+        return users[0] ?? organizations[0] ?? 'unkown'
+    }
+
+    return 'unknown subject id'
 }
