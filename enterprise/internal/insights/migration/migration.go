@@ -14,7 +14,7 @@ import (
 type migrator struct {
 	insightsDB dbutil.DB
 	postgresDB dbutil.DB
-	// Maybe want to initialize more stores here? Well, only maybe.
+	settingsMigrationJobsStore store.SettingsMigrationJobsStore
 }
 
 func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
@@ -38,6 +38,9 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 func (m *migrator) Up(ctx context.Context) (err error) {
 	fmt.Println("CALLING UP!!")
 
+	// Initialize stores
+	m.settingsMigrationJobsStore = store.NewSettingsMigrationJobsStore(m.insightsDB)
+
 	// tx, err := m.db.Transact(ctx)
 	// if err != nil {
 	// 	return err
@@ -60,13 +63,16 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	// If we make it here, it's because all the jobs are queued. We can now safely begin picking up
 	// work and doing the migrations.
 
-	// migrationComplete, workCompleted, err := performGlobalMigration(tx)
-	// if !migrationComplete || workCompleted {
-	// 	// Again, if it's incomplete we'll keep trying again next time.
-	// 	// And if some were completed we exit as to lock them in.
-	// 	// Same logic for the next two.
-	// 	return nil
-	// }
+	migrationComplete, workCompleted, err := m.performGlobalMigration(ctx)
+	if err != nil {
+		return err
+	}
+	if !migrationComplete || workCompleted {
+		// Again, if it's incomplete we'll keep trying again next time.
+		// And if some were completed we exit as to lock them in.
+		// Same logic for the next two.
+		return nil
+	}
 
 	// migrationComplete, workCompleted, err = performOrgMigration(tx)
 	// if !migrationComplete || workCompleted {
@@ -87,16 +93,13 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 }
 
 func (m *migrator) EnsureAllJobsAreQueued(ctx context.Context) (bool, error) {
-	// TODO: We should probably create all of these stores once at the beginning of Up?
-	settingsMigrationJobsStore := store.NewSettingsMigrationJobsStore(m.insightsDB)
-
 	allSettings, err := insights.GetSettings(ctx, m.postgresDB, insights.All, "insight")
 	if err != nil {
 		return false, err
 	}
 
 	distinctSettings := getDistinctSettings(allSettings)
-	jobsCount, err := settingsMigrationJobsStore.CountSettingsMigrationJobs(ctx)
+	jobsCount, err := m.settingsMigrationJobsStore.CountSettingsMigrationJobs(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -112,7 +115,7 @@ func (m *migrator) EnsureAllJobsAreQueued(ctx context.Context) (bool, error) {
 		// Let's skip this for now. Definitely do-able, maybe tedious.
 		totalItems := 10
 
-		settingsMigrationJobsStore.CreateSettingsMigrationJob(ctx, store.CreateSettingsMigrationJobArgs{
+		m.settingsMigrationJobsStore.CreateSettingsMigrationJob(ctx, store.CreateSettingsMigrationJobArgs{
 			UserId:     userId,
 			OrgId:      orgId,
 			TotalItems: totalItems,
@@ -160,28 +163,34 @@ func getDistinctSettings(allSettings []*api.Settings) []*api.Settings {
 	return distinctSettings
 }
 
-// // Instead of 3 different functions, maybe one that takes an argument? We'll see how much they have in common. Probably a lot.
-// func performGlobalMigration(tx *basestore.Store) (bool, bool, error) {
-// 	// If there is no global row
-// 	// return true, 0, nil
+// Instead of 3 different functions, maybe one that takes an argument? We'll see how much they have in common. Probably a lot.
+func (m *migrator) performGlobalMigration(ctx context.Context) (bool, bool, error) {
+	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, store.GlobalJob)
+	if err != nil {
+		return false, false, err
+	}
+	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, store.GlobalJob)
+	if err != nil {
+		return false, false, err
+	}
+	if allComplete {
+		return true, false, nil
+	}
+	// This would mean the job was locked, but not complete
+	if len(jobs) == 0 {
+		return false, false, nil
+	}
 
-// 	// Check if the global row is marked completed. (total_items == items_completed, dashboard_created == true)
-// 	// If so, return true, 0, nil
+	migrationComplete, workCompleted, err := m.performMigrationForRow(ctx, *jobs[0])
+	if err != nil {
+		return false, false, err
+	}
+	if !migrationComplete || workCompleted {
+		return false, workCompleted, nil
+	}
 
-// 	// Attempt to pick up the global row, setting the lock for update.
-// 	// If we can't pick it up because it's locked,
-// 	// return false, false, nil
-
-// 	migrationComplete, workCompleted, err := performMigrationForRow(tx, globalSettingsRow)
-// 	if err != nil {
-// 		return false, false, err
-// 	}
-// 	if !migrationComplete || workCompleted {
-// 		return false, workCompleted, nil
-// 	}
-
-// 	return true, false, nil
-// }
+	return true, false, nil
+}
 
 // func performOrgMigration(tx *basestore.Store) (bool, bool, error) {
 // 	// If there are no org rows
@@ -214,24 +223,26 @@ func getDistinctSettings(allSettings []*api.Settings) []*api.Settings {
 // 	// This will probably follow the same logic as orgs
 // }
 
-// func performMigrationForRow(tx *basestore.Store, settingsRow someType) (bool, bool, error) {
-// 	// At this point we've picked up the row and are responsible for doing the migration for everything in that settings object.
-// 	// Here I think we can use a good deal of the code that already exists
+func (m *migrator) performMigrationForRow(ctx context.Context, settingsRow store.SettingsMigrationJob) (bool, bool, error) {
+	// At this point we've picked up the row and are responsible for doing the migration for everything in that settings object.
+	// Here I think we can use a good deal of the code that already exists
 
-// 	// Caveats: we can't wipe everything out that already exists. We'll need to match on ids and check if something exists
-// 	// before creating it. This will also make it less of an all-or-nothing transaction. If we get errors on a few of these
-// 	// insights we can ignore them for now.
+	// Caveats: we can't wipe everything out that already exists. We'll need to match on ids and check if something exists
+	// before creating it. This will also make it less of an all-or-nothing transaction. If we get errors on a few of these
+	// insights we can ignore them for now.
 
-// 	// Side note: maybe we want like, "total items" and "items migrated" rows on each job? Maybe that would be better than
-// 	// "completed_at", especially since we don't care when it was completed as much. We could have that too though if it helps at all.
+	// Side note: maybe we want like, "total items" and "items migrated" rows on each job? Maybe that would be better than
+	// "completed_at", especially since we don't care when it was completed as much. We could have that too though if it helps at all.
 
-// 	// Error handling: If we're keeping track of total vs completed insights/dashboards, maybe we just need a state for retries. We can do like
-// 	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
-// 	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
+	// Error handling: If we're keeping track of total vs completed insights/dashboards, maybe we just need a state for retries. We can do like
+	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
+	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
 
-// 	// Create virtual dashboard. Some function here that, once all the items are done, it does the dashboard. Hmm the state of this needs
-// 	// to exist too; it's not part of items_completed. Another row maybe? virtual_dashboard_completed?
-// }
+	// Create virtual dashboard. Some function here that, once all the items are done, it does the dashboard. Hmm the state of this needs
+	// to exist too; it's not part of items_completed. Another row maybe? virtual_dashboard_completed?
+
+	return false, false, nil
+}
 
 // // Something like this? Maybe this doesn't need to be a helper function. We'll see.
 // func createVirtualDashboard(tx *basestore.Store, settingsRow someType) error {

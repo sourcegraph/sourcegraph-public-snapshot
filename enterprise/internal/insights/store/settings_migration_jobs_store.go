@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -43,7 +42,36 @@ func (s *DBSettingsMigrationJobsStore) Transact(ctx context.Context) (*DBSetting
 	return &DBSettingsMigrationJobsStore{Store: txBase, Now: s.Now}, err
 }
 
-func scanSettingsMigrationJob(rows *sql.Rows, queryErr error) (_ []*SettingsMigrationJob, err error) {
+type SettingsMigrationJobType string
+
+const (
+	UserJob   SettingsMigrationJobType = "USER"
+	OrgJob    SettingsMigrationJobType = "ORG"
+	GlobalJob SettingsMigrationJobType = "GLOBAL"
+)
+
+func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error) {
+	var q *sqlf.Query
+	if jobType == UserJob {
+		q = sqlf.Sprintf("WHERE user_id > 0 AND org_id == 0 AND global IS FALSE")
+	} else if jobType == OrgJob {
+		q = sqlf.Sprintf("WHERE user_id == 0 AND org_id > 0 AND global IS FALSE")
+	} else {
+		q = sqlf.Sprintf("WHERE org_id == 0 AND user_id == 0 AND global IS TRUE")
+	}
+
+	return scanSettingsMigrationJobs(s.Query(ctx, sqlf.Sprintf(getSettingsMigrationJobsSql, q)))
+}
+
+const getSettingsMigrationJobsSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:GetSettingsMigrationJob
+SELECT * FROM settings_migration_jobs
+WHERE %s AND (total_items > migrated_items OR dashboard_created_at IS NULL)
+LIMIT 100
+FOR UPDATE SKIP LOCKED;
+`
+
+func scanSettingsMigrationJobs(rows *sql.Rows, queryErr error) (_ []*SettingsMigrationJob, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
@@ -77,13 +105,10 @@ func (s *DBSettingsMigrationJobsStore) CreateSettingsMigrationJob(ctx context.Co
 	var q *sqlf.Query
 	if args.UserId != nil {
 		q = sqlf.Sprintf(insertUserSettingsMigrationJobsSql, *args.UserId, args.TotalItems)
-		fmt.Println("Adding job for user", *args.UserId)
 	} else if args.OrgId != nil {
 		q = sqlf.Sprintf(insertOrgSettingsMigrationJobsSql, *args.OrgId, args.TotalItems)
-		fmt.Println("Adding job for org", *args.OrgId)
 	} else {
 		q = sqlf.Sprintf(insertGlobalSettingsMigrationJobsSql, args.TotalItems)
-		fmt.Println("Adding job for global")
 	}
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
@@ -121,7 +146,29 @@ const countSettingsMigrationJobsSql = `
 SELECT COUNT(*) from settings_migration_jobs;
 `
 
+func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
+	var q *sqlf.Query
+	if jobType == UserJob {
+		q = sqlf.Sprintf("WHERE user_id > 0 AND org_id == 0 AND global IS FALSE")
+	} else if jobType == OrgJob {
+		q = sqlf.Sprintf("WHERE user_id == 0 AND org_id > 0 AND global IS FALSE")
+	} else {
+		q = sqlf.Sprintf("WHERE org_id == 0 AND user_id == 0 AND global IS TRUE")
+	}
+
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(countIncompleteJobsSql, q)))
+	return count == 0, err
+}
+
+const countIncompleteJobsSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:IsJobTypeComplete
+SELECT COUNT(*) FROM settings_migration_jobs
+WHERE %s AND (total_items > migrated_items OR dashboard_created_at IS NULL);
+`
+
 type SettingsMigrationJobsStore interface {
 	CreateSettingsMigrationJob(ctx context.Context, args CreateSettingsMigrationJobArgs) error
 	CountSettingsMigrationJobs(ctx context.Context) (int, error)
+	GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error)
+	IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error)
 }
