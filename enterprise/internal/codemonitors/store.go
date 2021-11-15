@@ -23,8 +23,6 @@ type CodeMonitorStore interface {
 	Clock() func() time.Time
 	Exec(ctx context.Context, query *sqlf.Query) error
 
-	CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (*Monitor, error)
-
 	CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*Monitor, error)
 	UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)
 	ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*Monitor, error)
@@ -57,8 +55,7 @@ type CodeMonitorStore interface {
 
 	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error
 	DeleteRecipients(ctx context.Context, emailID int64) error
-	ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error)
-	ListAllRecipientsForEmailAction(ctx context.Context, emailID int64) ([]*Recipient, error)
+	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)
 	CountRecipients(ctx context.Context, emailID int64) (int32, error)
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)

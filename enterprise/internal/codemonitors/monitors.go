@@ -70,6 +70,13 @@ func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbacke
 	return scanMonitor(row)
 }
 
+func nilOrInt32(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
+}
+
 const updateCodeMonitorFmtStr = `
 UPDATE cm_monitors
 SET description = %s,

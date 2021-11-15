@@ -56,7 +56,52 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 			},
 		},
 	}
-	return s.CreateCodeMonitor(ctx, args)
+
+	// Create monitor.
+	m, err := s.CreateMonitor(ctx, args.Monitor)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create trigger.
+	err = s.CreateQueryTrigger(ctx, m.ID, args.Trigger)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range args.Actions {
+		if a.Email != nil {
+			e, err := s.CreateEmailAction(ctx, m.ID, &codemonitors.EmailActionArgs{
+				Enabled:  a.Email.Enabled,
+				Priority: a.Email.Priority,
+				Header:   a.Email.Header,
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			for _, recipient := range a.Email.Recipients {
+				var userID, orgID int32
+				if err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID); err != nil {
+					return nil, err
+				}
+
+				err := s.CreateRecipient(ctx, e.ID, nilOrInt32(userID), nilOrInt32(orgID))
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return m, nil
+}
+
+func nilOrInt32(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
 
 func NewTestStore(t *testing.T) (context.Context, *TestStore) {

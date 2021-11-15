@@ -4,10 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
 type Recipient struct {
@@ -23,7 +20,7 @@ VALUES (%s,%s,%s)
 `
 
 func (s *codeMonitorStore) CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error {
-	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, args.NamespaceUserID, args.NamespaceOrgID))
+	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, userID, orgID))
 }
 
 const deleteRecipientFmtStr = `
@@ -39,44 +36,47 @@ func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) 
 	return s.Exec(ctx, q)
 }
 
+type ListRecipientsOpts struct {
+	EmailID *int64
+	First   *int
+	After   *int64
+}
+
+func (l ListRecipientsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if l.EmailID != nil {
+		conds = append(conds, sqlf.Sprintf("email = %s", *l.EmailID))
+	}
+	if l.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *l.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+func (l ListRecipientsOpts) Limit() *sqlf.Query {
+	if l.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *l.First)
+}
+
 const readRecipientQueryFmtStr = `
 SELECT id, email, namespace_user_id, namespace_org_id
 FROM cm_recipients
-WHERE email = %s
-AND id > %s
+WHERE %s
 ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *codeMonitorStore) ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
+func (s *codeMonitorStore) ListRecipients(ctx context.Context, args ListRecipientsOpts) ([]*Recipient, error) {
 	q := sqlf.Sprintf(
 		readRecipientQueryFmtStr,
-		emailID,
-		after,
-		args.First,
+		args.Conds(),
+		args.Limit(),
 	)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
-	}
-	defer rows.Close()
-	return scanRecipients(rows)
-}
-
-const allRecipientsForEmailIDInt64FmtStr = `
-SELECT id, email, namespace_user_id, namespace_org_id
-FROM cm_recipients
-WHERE email = %s
-`
-
-func (s *codeMonitorStore) ListAllRecipientsForEmailAction(ctx context.Context, emailID int64) ([]*Recipient, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(allRecipientsForEmailIDInt64FmtStr, emailID))
-	if err != nil {
-		return nil, errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 	}
 	defer rows.Close()
 	return scanRecipients(rows)

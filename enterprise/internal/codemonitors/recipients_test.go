@@ -21,7 +21,7 @@ func TestAllRecipientsForEmailIDInt64(t *testing.T) {
 		wantEmailID     int64 = 1
 		wantRecipientID int64 = 1
 	)
-	rs, err := s.ListAllRecipientsForEmailAction(ctx, wantEmailID)
+	rs, err := s.ListRecipients(ctx, ListRecipientsOpts{EmailID: &wantEmailID})
 	if err != nil {
 		t.Fatal(err)
 	}

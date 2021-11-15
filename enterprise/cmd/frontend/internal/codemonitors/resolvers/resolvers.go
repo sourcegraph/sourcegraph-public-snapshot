@@ -109,19 +109,38 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (m graphqlbac
 	}, nil
 }
 
-func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
-	err = r.isAllowedToCreate(ctx, args.Monitor.Namespace)
+func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
+		return nil, err
+	}
+
+	// Start transaction.
+	tx, err := r.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var mo *cm.Monitor
-	mo, err = r.store.CreateCodeMonitor(ctx, args)
+	defer func() { err = tx.store.Done(err) }()
+
+	// Create monitor.
+	m, err := tx.store.CreateMonitor(ctx, args.Monitor)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create trigger.
+	err = tx.store.CreateQueryTrigger(ctx, m.ID, args.Trigger)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create actions.
+	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
 		return nil, err
 	}
 	return &monitor{
 		Resolver: r,
-		Monitor:  mo,
+		Monitor:  m,
 	}, nil
 }
 
@@ -190,7 +209,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	err = tx.store.CreateActions(ctx, toCreate, monitorID)
+	err = tx.createActions(ctx, monitorID, toCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -203,10 +222,10 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	return m, nil
 }
 
-func (r *Resolver) createActions(ctx context.Context, monitorID int64, []*graphqlbackend.CreateActionArgs) error {
+func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*graphqlbackend.CreateActionArgs) error {
 	for _, a := range args {
 		if a.Email != nil {
-			e, err := r.store.CreateEmailAction(ctx, monitorID, &EmailActionArgs{
+			e, err := r.store.CreateEmailAction(ctx, monitorID, &cm.EmailActionArgs{
 				Enabled:  a.Email.Enabled,
 				Priority: a.Email.Priority,
 				Header:   a.Email.Header,
@@ -215,20 +234,26 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, []*graphq
 				return err
 			}
 
-			for _, recipient := range a.Email.Recipients {
-				var userID, orgID int32
-				if err := graphqlbackend.UnmarshalNamespaceID(userID, orgID); err != nil {
-					return errors.Wrap(err, "UnmarshalNamespaceID")
-				}
-
-				err = r.store.CreateRecipient(ctx, e.ID, nilOrInt32(userID), nilOrInt32(orgID))
-				if err != nil {
-					return err
-				}
+			if err := r.createRecipients(ctx, e.ID, a.Email.Recipients); err != nil {
+				return err
 			}
-
 		}
 		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return nil
+}
+
+func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipients []graphql.ID) error {
+	for _, recipient := range recipients {
+		var userID, orgID int32
+		if err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID); err != nil {
+			return errors.Wrap(err, "UnmarshalNamespaceID")
+		}
+
+		err := r.store.CreateRecipient(ctx, emailID, nilOrInt32(userID), nilOrInt32(orgID))
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -380,7 +405,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		err = r.store.CreateRecipients(ctx, action.Email.Update.Recipients, e.ID)
+		err = r.createRecipients(ctx, e.ID, action.Email.Update.Recipients)
 		if err != nil {
 			return nil, err
 		}
@@ -725,8 +750,16 @@ type monitorEmail struct {
 }
 
 func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
 	var ms []*cm.Recipient
-	ms, err = m.store.ListRecipientsForEmailAction(ctx, m.EmailAction.ID, args)
+	ms, err = m.store.ListRecipients(ctx, cm.ListRecipientsOpts{
+		EmailID: &m.EmailAction.ID,
+		First:   intPtr(int(args.First)),
+		After:   intPtrToInt64Ptr(after),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -807,6 +840,13 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 }
 
 func intPtr(i int) *int { return &i }
+func intPtrToInt64Ptr(i *int) *int64 {
+	if i == nil {
+		return nil
+	}
+	j := int64(*i)
+	return &j
+}
 
 func unmarshalAfter(after *string) (*int, error) {
 	if after == nil {
