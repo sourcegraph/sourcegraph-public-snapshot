@@ -11,6 +11,7 @@ brew install sqlite
 brew install jq
 
 ## clone repositories
+
 git clone https://github.com/sourcegraph/sourcegraph.git
 git clone https://github.com/sourcegraph/dev-private.git
 

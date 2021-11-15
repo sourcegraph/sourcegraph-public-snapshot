@@ -94,6 +94,12 @@ func checkCommandOutputContains(cmd, contains string) func(context.Context) (boo
 	}
 }
 
+func checkFileContains(file, content string) func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		return false, errors.New("todo: not implemented")
+	}
+}
+
 func checkInPath(cmd string) func(context.Context) (bool, error) {
 	return func(ctx context.Context) (bool, error) {
 		p, err := exec.LookPath(cmd)
@@ -265,6 +271,13 @@ var macOSDependencies = []dependencyCategory{
 		name: "Setup Redis database",
 		dependencies: []*dependency{
 			{name: "Connection to Redis", check: checkRedisConnection()},
+		},
+	},
+	{
+		name: "Setup proxy for local develoopment",
+		dependencies: []*dependency{
+			{name: "/etc/hosts contains sourcegraph.test", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
+			{name: "is there a way to check whether root certificate is trusted?", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
 		},
 	},
 }
