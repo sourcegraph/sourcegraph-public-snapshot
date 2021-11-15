@@ -14,8 +14,7 @@
 }
 
 .link-disabled {
-    // This color doesn't seem to be part of our codebase yet
-    color: #a6b5d9;
+    color: var(--text-disabled);
 }
 
 .status-container {
