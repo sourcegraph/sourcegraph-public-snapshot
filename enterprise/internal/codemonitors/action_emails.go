@@ -67,11 +67,29 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, monitorID int6
 	return scanEmail(row)
 }
 
+const createActionEmailFmtStr = `
+INSERT INTO cm_emails
+(monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+RETURNING %s;
+`
+
 func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*EmailAction, error) {
-	q, err := s.createActionEmailQuery(ctx, monitorID, action.Email)
-	if err != nil {
-		return nil, err
-	}
+	now := s.Now()
+	a := actor.FromContext(ctx)
+	q := sqlf.Sprintf(
+		createActionEmailFmtStr,
+		monitorID,
+		action.Email.Enabled,
+		action.Email.Priority,
+		action.Email.Header,
+		a.UID,
+		now,
+		a.UID,
+		now,
+		sqlf.Join(emailsColumns, ", "),
+	)
+
 	row := s.QueryRow(ctx, q)
 	return scanEmail(row)
 }
@@ -170,30 +188,6 @@ func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListAction
 	}
 	defer rows.Close()
 	return scanEmails(rows)
-}
-
-const createActionEmailFmtStr = `
-INSERT INTO cm_emails
-(monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-RETURNING %s;
-`
-
-func (s *codeMonitorStore) createActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateActionEmailArgs) (*sqlf.Query, error) {
-	now := s.Now()
-	a := actor.FromContext(ctx)
-	return sqlf.Sprintf(
-		createActionEmailFmtStr,
-		monitorID,
-		args.Enabled,
-		args.Priority,
-		args.Header,
-		a.UID,
-		now,
-		a.UID,
-		now,
-		sqlf.Join(emailsColumns, ", "),
-	), nil
 }
 
 const deleteActionEmailFmtStr = `
