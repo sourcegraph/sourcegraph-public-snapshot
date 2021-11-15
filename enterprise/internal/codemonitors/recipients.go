@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/cockroachdb/errors"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -18,14 +17,13 @@ type Recipient struct {
 	NamespaceOrgID  *int32
 }
 
-func (s *codeMonitorStore) CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) error {
-	for _, r := range recipients {
-		err := s.createRecipient(ctx, r, emailID)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+const createRecipientFmtStr = `
+INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
+VALUES (%s,%s,%s)
+`
+
+func (s *codeMonitorStore) CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error {
+	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, args.NamespaceUserID, args.NamespaceOrgID))
 }
 
 const deleteRecipientFmtStr = `
@@ -84,20 +82,6 @@ func (s *codeMonitorStore) ListAllRecipientsForEmailAction(ctx context.Context, 
 	return scanRecipients(rows)
 }
 
-const createRecipientFmtStr = `
-INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
-VALUES (%s,%s,%s)
-`
-
-func (s *codeMonitorStore) createRecipient(ctx context.Context, recipient graphql.ID, emailID int64) error {
-	var userID, orgID int32
-	err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID)
-	if err != nil {
-		return err
-	}
-	return s.Exec(ctx, sqlf.Sprintf(createRecipientFmtStr, emailID, nilOrInt32(userID), nilOrInt32(orgID)))
-}
-
 const totalCountRecipientsFmtStr = `
 SELECT COUNT(*)
 FROM cm_recipients
@@ -108,13 +92,6 @@ func (s *codeMonitorStore) CountRecipients(ctx context.Context, emailID int64) (
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
 	return count, err
-}
-
-func nilOrInt32(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
 }
 
 func scanRecipients(rows *sql.Rows) ([]*Recipient, error) {

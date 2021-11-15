@@ -203,6 +203,43 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	return m, nil
 }
 
+func (r *Resolver) createActions(ctx context.Context, monitorID int64, []*graphqlbackend.CreateActionArgs) error {
+	for _, a := range args {
+		if a.Email != nil {
+			e, err := r.store.CreateEmailAction(ctx, monitorID, &EmailActionArgs{
+				Enabled:  a.Email.Enabled,
+				Priority: a.Email.Priority,
+				Header:   a.Email.Header,
+			})
+			if err != nil {
+				return err
+			}
+
+			for _, recipient := range a.Email.Recipients {
+				var userID, orgID int32
+				if err := graphqlbackend.UnmarshalNamespaceID(userID, orgID); err != nil {
+					return errors.Wrap(err, "UnmarshalNamespaceID")
+				}
+
+				err = r.store.CreateRecipient(ctx, e.ID, nilOrInt32(userID), nilOrInt32(orgID))
+				if err != nil {
+					return err
+				}
+			}
+
+		}
+		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return nil
+}
+
+func nilOrInt32(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
+}
+
 // ResetTriggerQueryTimestamps is a convenience function which resets the
 // timestamps `next_run` and `last_result` with the purpose to trigger associated
 // actions (emails, webhooks) immediately. This is useful during development and

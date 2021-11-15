@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -49,8 +48,6 @@ type CodeMonitorStore interface {
 	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
-	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) error
-
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
 	CreateEmailAction(ctx context.Context, monitorID int64, _ *EmailActionArgs) (*EmailAction, error)
 	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error
@@ -58,7 +55,7 @@ type CodeMonitorStore interface {
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) error
+	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error)
 	ListAllRecipientsForEmailAction(ctx context.Context, emailID int64) ([]*Recipient, error)
