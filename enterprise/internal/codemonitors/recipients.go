@@ -69,23 +69,6 @@ func (s *codeMonitorStore) ListRecipientsForEmailAction(ctx context.Context, ema
 	return scanRecipients(rows)
 }
 
-func scanRecipients(rows *sql.Rows) ([]*Recipient, error) {
-	var ms []*Recipient
-	for rows.Next() {
-		m := &Recipient{}
-		if err := rows.Scan(
-			&m.ID,
-			&m.Email,
-			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
-		); err != nil {
-			return nil, err
-		}
-		ms = append(ms, m)
-	}
-	return ms, rows.Err()
-}
-
 const allRecipientsForEmailIDInt64FmtStr = `
 SELECT id, email, namespace_user_id, namespace_org_id
 FROM cm_recipients
@@ -131,4 +114,21 @@ func nilOrInt32(n int32) *int32 {
 		return nil
 	}
 	return &n
+}
+
+func scanRecipients(rows *sql.Rows) ([]*Recipient, error) {
+	var ms []*Recipient
+	for rows.Next() {
+		m := &Recipient{}
+		if err := rows.Scan(
+			&m.ID,
+			&m.Email,
+			&m.NamespaceUserID,
+			&m.NamespaceOrgID,
+		); err != nil {
+			return nil, err
+		}
+		ms = append(ms, m)
+	}
+	return ms, rows.Err()
 }
