@@ -70,11 +70,45 @@ func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbacke
 	return scanMonitor(row)
 }
 
+const updateCodeMonitorFmtStr = `
+UPDATE cm_monitors
+SET description = %s,
+	enabled = %s,
+	namespace_user_id = %s,
+	namespace_org_id = %s,
+	changed_by = %s,
+	changed_at = %s
+WHERE id = %s
+RETURNING %s;
+`
+
 func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
-	q, err := s.updateCodeMonitorQuery(ctx, args)
+	var userID, orgID int32
+	err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID)
 	if err != nil {
 		return nil, err
 	}
+
+	a := actor.FromContext(ctx)
+	var monitorID int64
+	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := s.Now()
+	q := sqlf.Sprintf(
+		updateCodeMonitorFmtStr,
+		args.Monitor.Update.Description,
+		args.Monitor.Update.Enabled,
+		nilOrInt32(userID),
+		nilOrInt32(orgID),
+		a.UID,
+		now,
+		monitorID,
+		sqlf.Join(monitorColumns, ", "),
+	)
+
 	row := s.QueryRow(ctx, q)
 	return scanMonitor(row)
 }
@@ -181,42 +215,6 @@ func (s *codeMonitorStore) toggleCodeMonitorQuery(ctx context.Context, args *gra
 		args.Enabled,
 		actorUID,
 		s.Now(),
-		monitorID,
-		sqlf.Join(monitorColumns, ", "),
-	), nil
-}
-
-const updateCodeMonitorFmtStr = `
-UPDATE cm_monitors
-SET description = %s,
-	enabled = %s,
-	namespace_user_id = %s,
-	changed_by = %s,
-	changed_at = %s
-WHERE id = %s
-RETURNING %s;
-`
-
-func (s *codeMonitorStore) updateCodeMonitorQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*sqlf.Query, error) {
-	var userID, orgID int32
-	err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	now := s.Now()
-	a := actor.FromContext(ctx)
-	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		updateCodeMonitorFmtStr,
-		args.Monitor.Update.Description,
-		args.Monitor.Update.Enabled,
-		nilOrInt32(userID),
-		a.UID,
-		now,
 		monitorID,
 		sqlf.Join(monitorColumns, ", "),
 	), nil
