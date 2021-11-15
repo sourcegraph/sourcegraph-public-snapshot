@@ -8,10 +8,12 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -259,7 +261,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.ctx, true), w.options.Name)
-	jobCtx, cancel := context.WithCancel(workerCtxWithSpan)
+	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {
@@ -269,10 +271,10 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	w.options.Metrics.numJobs.Inc()
-	log15.Debug("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID())
+	log15.Info("Dequeued record for processing", "name", w.options.Name, "id", record.RecordID(), "traceID", trace.IDFromSpan(workerSpan))
 
 	if hook, ok := w.handler.(WithHooks); ok {
-		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(jobCtx, nil, observation.Args{})
+		preCtx, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, observation.Args{})
 		hook.PreHandle(preCtx, record)
 		endObservation(1, observation.Args{})
 	}
@@ -282,9 +284,11 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	go func() {
 		defer func() {
 			if hook, ok := w.handler.(WithHooks); ok {
-				// Don't use workerCtxWithSpan here, the record is already not owned by
-				// this worker anymore at this point.
-				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(jobCtx, nil, observation.Args{})
+				// Don't use handleCtx here, the record is already not owned by
+				// this worker anymore at this point. Tracing hierarchy is still correct,
+				// as handleCtx used in preHandle/handle is at the same level as
+				// workerCtxWithSpan
+				postCtx, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, observation.Args{})
 				defer endObservation(1, observation.Args{})
 				hook.PostHandle(postCtx, record)
 			}
@@ -298,7 +302,8 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 			workerSpan.Finish()
 		}()
 
-		if err := w.handle(jobCtx, workerCtxWithSpan, record); err != nil {
+		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
+			log15.Error("Failed to finalize record", "name", w.options.Name, "err", err)
 		}
 	}()
 
