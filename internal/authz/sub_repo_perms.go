@@ -81,26 +81,29 @@ var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.Histog
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
 // Read.
-func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (perms Perms, err error) {
 	// Are sub-repo permissions enabled at the site level
 	if !s.Enabled() {
 		return Read, nil
 	}
 
 	began := time.Now()
-	hardError := false // indicates an unexpected error
 	defer func() {
 		took := time.Since(began).Seconds()
-		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(hardError)).Observe(took)
+		subRepoPermsPermissionsDuration.WithLabelValues(strconv.FormatBool(err != nil)).Observe(took)
 	}()
 
+	// Always default to not providing any permissions
+	perms = None
+
 	if s.permissionsGetter == nil {
-		hardError = true
-		return None, errors.New("PermissionsGetter is nil")
+		err = errors.New("PermissionsGetter is nil")
+		return
 	}
 
 	if userID == 0 {
-		return None, &ErrUnauthenticated{}
+		err = &ErrUnauthenticated{}
+		return
 	}
 
 	// An empty path is equivalent to repo permissions so we can assume it has
@@ -111,8 +114,8 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 
 	srp, err := s.permissionsGetter.GetByUser(ctx, userID)
 	if err != nil {
-		hardError = true
-		return None, errors.Wrap(err, "getting permissions")
+		err = errors.Wrap(err, "getting permissions")
+		return
 	}
 
 	// Check repo
@@ -128,19 +131,19 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	// TODO: This will be very slow until we can cache compiled rules
 	includeMatchers := make([]glob.Glob, 0, len(repoRules.PathIncludes))
 	for _, rule := range repoRules.PathIncludes {
-		g, err := glob.Compile(rule, '/')
-		if err != nil {
-			hardError = true
-			return None, errors.Wrap(err, "building include matcher")
+		var g glob.Glob
+		if g, err = glob.Compile(rule, '/'); err != nil {
+			err = errors.Wrap(err, "building include matcher")
+			return
 		}
 		includeMatchers = append(includeMatchers, g)
 	}
 	excludeMatchers := make([]glob.Glob, 0, len(repoRules.PathExcludes))
 	for _, rule := range repoRules.PathExcludes {
-		g, err := glob.Compile(rule, '/')
-		if err != nil {
-			hardError = true
-			return None, errors.Wrap(err, "building exclude matcher")
+		var g glob.Glob
+		if g, err = glob.Compile(rule, '/'); err != nil {
+			err = errors.Wrap(err, "building exclude matcher")
+			return
 		}
 		excludeMatchers = append(excludeMatchers, g)
 	}
@@ -152,7 +155,7 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	// preference to exclusion.
 	for _, rule := range excludeMatchers {
 		if rule.Match(toMatch) {
-			return None, nil
+			return
 		}
 	}
 	for _, rule := range includeMatchers {
