@@ -41,7 +41,7 @@ const insertCodeMonitorFmtStr = `
 INSERT INTO cm_monitors
 (created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-RETURNING %s;
+RETURNING %s; -- monitorColumns
 `
 
 func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
@@ -79,7 +79,7 @@ SET description = %s,
 	changed_by = %s,
 	changed_at = %s
 WHERE id = %s
-RETURNING %s;
+RETURNING %s; -- monitorColumns
 `
 
 func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
@@ -119,7 +119,7 @@ SET enabled = %s,
 	changed_by = %s,
 	changed_at = %s
 WHERE id = %s
-RETURNING %s
+RETURNING %s -- monitorColumns
 `
 
 func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*Monitor, error) {
@@ -163,7 +163,7 @@ func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, args *graphqlbacke
 }
 
 const monitorsFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+SELECT %s -- monitorColumns
 FROM cm_monitors
 WHERE namespace_user_id = %s
 AND id > %s
@@ -178,6 +178,7 @@ func (s *codeMonitorStore) ListMonitors(ctx context.Context, userID int32, args 
 	}
 	q := sqlf.Sprintf(
 		monitorsFmtStr,
+		sqlf.Join(monitorColumns, ","),
 		userID,
 		after,
 		args.First,
