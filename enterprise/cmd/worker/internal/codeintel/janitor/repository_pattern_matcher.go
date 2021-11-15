@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -44,10 +45,15 @@ func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
 			patterns = *policy.RepositoryPatterns
 		}
 
+		var repositoryMatchLimit *int
+		if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
+			repositoryMatchLimit = &val
+		}
+
 		// Always call this even if patterns are not supplied. Otherwise we run into the
 		// situation where we have deleted all of the patterns associated with a policy
 		// but it still has entries in the lookup table.
-		if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID); err != nil {
+		if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
 			return err
 		}
 
