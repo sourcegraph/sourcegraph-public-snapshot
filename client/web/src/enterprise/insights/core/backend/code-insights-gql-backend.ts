@@ -16,6 +16,7 @@ import {
     GetInsightsResult,
     GetInsightViewResult,
     InsightsDashboardsResult,
+    InsightSubjectsResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     RemoveInsightViewFromDashboardResult,
@@ -24,7 +25,15 @@ import {
     UpdateLineChartSearchInsightResult,
 } from '@sourcegraph/web/src/graphql-operations'
 
-import { Insight, InsightDashboard, InsightsDashboardType, isSearchBasedInsight, SearchBasedInsight } from '../types'
+import {
+    Insight,
+    InsightDashboard,
+    InsightsDashboardScope,
+    InsightsDashboardType,
+    isSearchBasedInsight,
+    SearchBasedInsight,
+} from '../types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../types/dashboard/virtual-dashboard'
 import {
     isSearchBackendBasedInsight,
     SearchBackendBasedInsight,
@@ -42,8 +51,10 @@ import { CodeInsightsBackend } from './code-insights-backend'
 import {
     BackendInsightData,
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
@@ -54,11 +65,12 @@ import {
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
+import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
 import { createLineChartContent } from './utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView, getStepInterval } from './utils/insight-transformers'
-import { parseDashboardType } from './utils/parse-dashboard-type'
+import { parseDashboardScope } from './utils/parse-dashboard-scope'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
@@ -67,7 +79,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getInsights = (dashboardId: string): Observable<Insight[]> => {
         // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
         // we need to use here insightViews query to fetch all available insights
-        if (dashboardId === 'all') {
+        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return fromObservableQuery(
                 this.apolloClient.watchQuery<GetInsightsResult>({
                     query: GET_INSIGHTS_GQL,
@@ -232,7 +244,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: { id: insightId },
-                update(cache: ApolloCache<DeleteDashboardResult>, result) {
+                update(cache: ApolloCache<DeleteDashboardResult>) {
                     const deletedInsightReference = cache.identify({ __typename: 'InsightView', id: insightId })
 
                     // Remove deleted insights from the apollo cache
@@ -242,37 +254,63 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         )
 
     // Dashboards
-    public getDashboards = (): Observable<InsightDashboard[]> =>
+    public getDashboards = (id?: string): Observable<InsightDashboard[]> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<InsightsDashboardsResult>({
                 query: GET_INSIGHTS_DASHBOARDS_GQL,
+                variables: { id },
             })
         ).pipe(
-            map(({ data }) => [
-                {
-                    id: 'all',
-                    type: InsightsDashboardType.All,
-                },
-                ...data.insightsDashboards.nodes.map(
-                    (dashboard): InsightDashboard => ({
-                        id: dashboard.id,
-                        type: parseDashboardType(dashboard.grants),
-                        title: dashboard.title,
-                        insightIds: dashboard.views?.nodes.map(view => view.id),
-                        grants: dashboard.grants,
-                    })
-                ),
-            ])
+            map(result => {
+                const { data } = result
+
+                return [
+                    {
+                        id: 'all',
+                        type: InsightsDashboardType.Virtual,
+                        scope: InsightsDashboardScope.Personal,
+                        title: 'All Insights',
+                    },
+                    ...data.insightsDashboards.nodes.map(
+                        (dashboard): InsightDashboard => ({
+                            id: dashboard.id,
+                            type: InsightsDashboardType.Custom,
+                            scope: parseDashboardScope(dashboard.grants),
+                            title: dashboard.title,
+                            insightIds: dashboard.views?.nodes.map(view => view.id),
+                            grants: dashboard.grants,
+
+                            // BE gql dashboards don't have setting key (it's setting cascade conception only)
+                            settingsKey: null,
+                        })
+                    ),
+                ]
+            })
         )
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
-        this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId)))
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
+        this.getDashboards(dashboardId).pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null))
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> => of(null)
 
-    public createDashboard = (input: DashboardCreateInput): Observable<void> => {
+    public getDashboardSubjects = (): Observable<SupportedInsightSubject[]> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<InsightSubjectsResult>({ query: GET_INSIGHTS_SUBJECTS_GQL })
+        ).pipe(
+            map(({ data }) => {
+                const { currentUser, site } = data
+
+                if (!currentUser) {
+                    return []
+                }
+
+                return [{ ...currentUser }, ...currentUser.organizations.nodes, site]
+            })
+        )
+
+    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> => {
         if (!input.type) {
             throw new Error('`grants` are required to create a new dashboard')
         }
@@ -289,13 +327,59 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         createInsightsDashboard(input: $input) {
                             dashboard {
                                 id
+                                title
+                                views {
+                                    nodes {
+                                        id
+                                    }
+                                }
+                                grants {
+                                    users
+                                    organizations
+                                    global
+                                }
                             }
                         }
                     }
                 `,
                 variables: { input: mappedInput },
+                update(cache, result) {
+                    const { data } = result
+
+                    if (!data) {
+                        return
+                    }
+
+                    cache.modify({
+                        fields: {
+                            insightsDashboards(dashboards) {
+                                const newDashboardsReference = cache.writeFragment({
+                                    data: data.createInsightsDashboard.dashboard,
+                                    fragment: gql`
+                                        fragment NewTodo on InsightsDashboard {
+                                            id
+                                            title
+                                            views {
+                                                nodes {
+                                                    id
+                                                }
+                                            }
+                                            grants {
+                                                users
+                                                organizations
+                                                global
+                                            }
+                                        }
+                                    `,
+                                })
+
+                                return { nodes: [...(dashboards.nodes ?? []), newDashboardsReference] }
+                            },
+                        },
+                    })
+                },
             })
-        ).pipe(mapTo(undefined))
+        ).pipe(map(result => ({ id: result.data?.createInsightsDashboard.dashboard.id ?? 'unknown' })))
     }
 
     public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {
@@ -317,11 +401,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<void> => {
-        if (!id) {
-            throw new Error('`id` is required to update a dashboard')
-        }
-
+    public updateDashboard = ({
+        previousDashboard,
+        nextDashboardInput,
+    }: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
         if (!nextDashboardInput.type) {
             throw new Error('`grants` are required to update a dashboard')
         }
@@ -349,11 +432,21 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 `,
                 variables: {
-                    id,
+                    id: previousDashboard.id,
                     input,
                 },
             })
-        ).pipe(mapTo(undefined))
+        ).pipe(
+            map(result => {
+                const { data } = result
+
+                if (!data?.updateInsightsDashboard) {
+                    throw new Error('The dashboard update was not successful')
+                }
+
+                return data.updateInsightsDashboard.dashboard
+            })
+        )
     }
 
     // Live preview fetchers

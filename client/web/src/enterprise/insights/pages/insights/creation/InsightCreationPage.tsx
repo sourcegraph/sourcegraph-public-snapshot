@@ -6,7 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { parseDashboardType } from '../../../core/backend/utils/parse-dashboard-type'
+import { parseDashboardScope } from '../../../core/backend/utils/parse-dashboard-scope'
 import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
@@ -26,7 +26,7 @@ const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string 
 
     // If no owner, this is using the graphql api
     if (!dashboard.owner) {
-        return parseDashboardType(dashboard.grants)
+        return parseDashboardScope(dashboard.grants)
     }
 
     return dashboard.owner.id
