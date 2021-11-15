@@ -162,11 +162,27 @@ func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, args *graphqlbacke
 	return s.Exec(ctx, q)
 }
 
+const monitorsFmtStr = `
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+FROM cm_monitors
+WHERE namespace_user_id = %s
+AND id > %s
+ORDER BY id ASC
+LIMIT %s
+`
+
 func (s *codeMonitorStore) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error) {
-	q, err := monitorsQuery(userID, args)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
+	q := sqlf.Sprintf(
+		monitorsFmtStr,
+		userID,
+		after,
+		args.First,
+	)
+
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -202,28 +218,6 @@ func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID int32) (int
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountMonitorsFmtStr, userID)).Scan(&count)
 	return count, err
-}
-
-const monitorsFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id
-FROM cm_monitors
-WHERE namespace_user_id = %s
-AND id > %s
-ORDER BY id ASC
-LIMIT %s
-`
-
-func monitorsQuery(userID int32, args *graphqlbackend.ListMonitorsArgs) (*sqlf.Query, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		monitorsFmtStr,
-		userID,
-		after,
-		args.First,
-	), nil
 }
 
 func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
