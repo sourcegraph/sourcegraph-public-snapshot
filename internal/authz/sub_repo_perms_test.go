@@ -10,13 +10,6 @@ import (
 )
 
 func TestSubRepoPermsPermissions(t *testing.T) {
-	baseGetter := func() *MockSubRepoPermissionsGetter {
-		getter := NewMockSubRepoPermissionsGetter()
-		getter.RepoSupportedFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-			return true, nil
-		})
-		return getter
-	}
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -30,25 +23,9 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		name     string
 		userID   int32
 		content  RepoContent
-		clientFn func() *subRepoPermsClient
+		clientFn func() *SubRepoPermsClient
 		want     Perms
 	}{
-		{
-			name:   "Not supported",
-			userID: 1,
-			content: RepoContent{
-				Repo: "sample",
-				Path: "",
-			},
-			clientFn: func() *subRepoPermsClient {
-				getter := NewMockSubRepoPermissionsGetter()
-				getter.RepoSupportedFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-					return false, nil
-				})
-				return NewSubRepoPermsClient(getter)
-			},
-			want: Read,
-		},
 		{
 			name:   "Empty path",
 			userID: 1,
@@ -56,9 +33,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
-				return NewSubRepoPermsClient(getter)
+			clientFn: func() *SubRepoPermsClient {
+				return NewSubRepoPermsClient(NewMockSubRepoPermissionsGetter())
 			},
 			want: Read,
 		},
@@ -69,8 +45,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() *SubRepoPermsClient {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -90,8 +66,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() *SubRepoPermsClient {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -111,8 +87,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() *SubRepoPermsClient {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -131,8 +107,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() *SubRepoPermsClient {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {

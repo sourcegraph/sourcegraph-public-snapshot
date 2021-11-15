@@ -88,7 +88,6 @@ func TestGitTree_SubRepo_Deny(t *testing.T) {
 	mockDB := dbmock.NewMockDBFrom(database.NewDB(nil))
 	mockDB.SubRepoPermsFunc.SetDefaultHook(func() database.SubRepoPermsStore {
 		srp := dbmock.NewMockSubRepoPermsStore()
-		srp.RepoSupportedFunc.SetDefaultReturn(true, nil)
 		srp.GetByUserFunc.SetDefaultReturn(map[api.RepoName]authz.SubRepoPermissions{
 			"github.com/gorilla/mux": {
 				PathIncludes: []string{"**"},
