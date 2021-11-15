@@ -50,4 +50,7 @@ echo "--- :file_cabinet: Uploading logs"
 # Because we are running this script in the buildkite post-exit hook, the state of the job is still "running".
 # Passing --state="" just overrides the default. It's not set to any specific state because this script caller
 # is responsible of making sure the job has failed.
+(
+set -x
 ./ci_sg ci logs --out="$BUILD_LOGS_LOKI_URL" --state="" --overwrite-state="failed" --build="$BUILDKITE_BUILD_NUMBER" --job="$BUILDKITE_JOB_ID"
+)
