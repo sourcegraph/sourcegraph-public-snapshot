@@ -50,7 +50,7 @@ RUN apk update && apk add --no-cache \
     git-p4 \
     python2 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' \
-    postgresql=12.8-r0 \
+    postgresql=12.9-r0 \
     postgresql-contrib
 
 # This is installed separately due to the upstream edge repo requirement
