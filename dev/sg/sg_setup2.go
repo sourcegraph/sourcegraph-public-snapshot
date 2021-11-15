@@ -66,11 +66,11 @@ func setup2Exec(ctx context.Context, args []string) error {
 			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%d %s", idx, category.name))
 			for _, dep := range category.dependencies {
 				if dep.err != nil {
-					out.WriteLine(output.Linef("\t"+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
+					out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
 				} else if !dep.state {
-					out.WriteLine(output.Linef("\t"+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
+					out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
 				} else {
-					out.WriteLine(output.Linef("\t"+output.EmojiSuccess, output.StyleWarning, "%s", dep.name))
+					out.WriteLine(output.Linef("  "+output.EmojiSuccess, output.StyleSuccess, "%s", dep.name))
 				}
 			}
 		}
@@ -92,9 +92,9 @@ func checkCommandOutputContains(cmd, contains string) func(context.Context) (boo
 
 func checkInPath(cmd string) func(context.Context) (bool, error) {
 	return func(ctx context.Context) (bool, error) {
-		p, err := os.Executable()
+		p, err := exec.LookPath(cmd)
 		if err != nil {
-			return false, err
+			return false, errors.Newf("executable %q not found in $PATH", cmd)
 		}
 		return p != "", nil
 	}
@@ -198,6 +198,13 @@ var macOSDependencies = []dependencyCategory{
 			{name: "go", check: checkInPath("go")},
 			{name: "yarn", check: checkInPath("yarn")},
 			{name: "node", check: checkInPath("node")},
+		},
+	},
+	{
+		name: "Setup PostgreSQL database",
+		dependencies: []*dependency{
+			{name: "Connection to 'sourcegraph' database", check: checkInPath("psql")},
+			{name: "psql", check: checkInPath("psql")},
 		},
 	},
 }
