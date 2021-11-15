@@ -2,10 +2,14 @@ package migration
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+
+	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -14,11 +18,18 @@ import (
 type migrator struct {
 	insightsDB dbutil.DB
 	postgresDB dbutil.DB
+
 	settingsMigrationJobsStore store.SettingsMigrationJobsStore
+	settingsStore              database.SettingsStore
 }
 
 func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
-	return &migrator{insightsDB: insightsDB, postgresDB: postgresDB}
+	return &migrator{
+		insightsDB:                 insightsDB,
+		postgresDB:                 postgresDB,
+		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(insightsDB),
+		settingsStore:              database.Settings(postgresDB),
+	}
 }
 
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
@@ -37,9 +48,6 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 
 func (m *migrator) Up(ctx context.Context) (err error) {
 	fmt.Println("CALLING UP!!")
-
-	// Initialize stores
-	m.settingsMigrationJobsStore = store.NewSettingsMigrationJobsStore(m.insightsDB)
 
 	// tx, err := m.db.Transact(ctx)
 	// if err != nil {
@@ -63,7 +71,7 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	// If we make it here, it's because all the jobs are queued. We can now safely begin picking up
 	// work and doing the migrations.
 
-	migrationComplete, workCompleted, err := m.performGlobalMigration(ctx)
+	migrationComplete, workCompleted, err := m.PerformGlobalMigration(ctx)
 	if err != nil {
 		return err
 	}
@@ -111,14 +119,9 @@ func (m *migrator) EnsureAllJobsAreQueued(ctx context.Context) (bool, error) {
 		userId := settings.Subject.User
 		orgId := settings.Subject.Org
 
-		// TODO: Calculate total items from the json object
-		// Let's skip this for now. Definitely do-able, maybe tedious.
-		totalItems := 10
-
 		m.settingsMigrationJobsStore.CreateSettingsMigrationJob(ctx, store.CreateSettingsMigrationJobArgs{
 			UserId:     userId,
 			OrgId:      orgId,
-			TotalItems: totalItems,
 		})
 	}
 
@@ -164,20 +167,24 @@ func getDistinctSettings(allSettings []*api.Settings) []*api.Settings {
 }
 
 // Instead of 3 different functions, maybe one that takes an argument? We'll see how much they have in common. Probably a lot.
-func (m *migrator) performGlobalMigration(ctx context.Context) (bool, bool, error) {
+func (m *migrator) PerformGlobalMigration(ctx context.Context) (bool, bool, error) {
 	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, store.GlobalJob)
 	if err != nil {
+		fmt.Println(err)
 		return false, false, err
 	}
 	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, store.GlobalJob)
 	if err != nil {
+		fmt.Println(err)
 		return false, false, err
 	}
 	if allComplete {
+		fmt.Println("global jobs all complete!")
 		return true, false, nil
 	}
 	// This would mean the job was locked, but not complete
 	if len(jobs) == 0 {
+		fmt.Println("global jobs locked, but not complete")
 		return false, false, nil
 	}
 
@@ -223,9 +230,69 @@ func (m *migrator) performGlobalMigration(ctx context.Context) (bool, bool, erro
 // 	// This will probably follow the same logic as orgs
 // }
 
-func (m *migrator) performMigrationForRow(ctx context.Context, settingsRow store.SettingsMigrationJob) (bool, bool, error) {
-	// At this point we've picked up the row and are responsible for doing the migration for everything in that settings object.
-	// Here I think we can use a good deal of the code that already exists
+func (m *migrator) performMigrationForRow(ctx context.Context, job store.SettingsMigrationJob) (bool, bool, error) {
+	var subject api.SettingsSubject
+	if job.UserId != nil {
+		userId := int32(*job.UserId)
+		subject = api.SettingsSubject{User: &userId}
+	} else if job.OrgId != nil {
+		orgId := int32(*job.OrgId)
+		subject = api.SettingsSubject{User: &orgId}
+	} else {
+		subject = api.SettingsSubject{Site: true}
+	}
+	settings, err := m.settingsStore.GetLatest(ctx, subject)
+	if err != nil {
+		fmt.Println(err)
+		return false, false, err
+	}
+	if settings == nil {
+		// This would mean what, the org or user was deleted before we could process it?
+		// I think in that case, we just skip it.
+		fmt.Println("shouldn't happen while testing")
+		return true, false, nil
+	}
+
+	// Okay so now we have 4 different things to do BEFORE creating the virtual dashboard.
+	// Let's worry about errors later.
+
+	fmt.Println(settings)
+
+	langStatsInsights, err := getLangStatsInsights(ctx, *settings)
+	frontendInsights, err := getFrontendInsights(ctx, *settings)
+	backendInsights, err := getBackendInsights(ctx, *settings)
+
+	fmt.Println("lang stats:", langStatsInsights)
+	fmt.Println("frontend:", frontendInsights)
+	fmt.Println("backend:", backendInsights)
+
+	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
+	fmt.Println("total insights:", totalInsights)
+
+	// Update row with total_insights. Then compare with migrated_insights. If they're equal, continue. If not,
+	// Try migrating all of these insights.
+
+	// TODO: I don't like this. I think it might be easier to have separate store methods for the one field I'm actually updating.
+	// It seems like we will only be updating one field at a time.
+	err = m.settingsMigrationJobsStore.UpdateSettingsMigrationJob(ctx, store.UpdateSettingsMigrationJobArgs{
+		UserId: job.UserId, OrgId: job.OrgId, TotalInsights: totalInsights, MigratedInsights: job.MigratedInsights,
+		TotalDashboards: job.TotalDashboards, MigratedDashboards: job.MigratedDashboards, Runs: job.Runs})
+
+	dashboards, err := getDashboards(ctx, *settings)
+	fmt.Println("dashboards:", dashboards)
+	totalDashboards := len(dashboards)
+	fmt.Println("total dashboards:", totalDashboards)
+
+	// Update row with total_dashboards. Then compare with migrated_dashboards. If they're equal, continue. If not,
+	// Try migrating all of these insights.
+
+	// Okay so yeah we can't wipe everything out. Let's migrate 4 groups these one at a time. Dashboards last.
+	// Hmm, dashboards can only succeed once all the insights have worked. Maybe we actually need to keep track
+	// of both insights and dashboards seprately.. like if all except 1 insight migrates we can't do the dashboards yet.
+	// Right?
+
+
+
 
 	// Caveats: we can't wipe everything out that already exists. We'll need to match on ids and check if something exists
 	// before creating it. This will also make it less of an all-or-nothing transaction. If we get errors on a few of these
@@ -256,3 +323,117 @@ func (m *migrator) performMigrationForRow(ctx context.Context, settingsRow store
 // 	// If there were no errors
 // 	// return nil
 // }
+
+// Okay so we're going to scan through each JSON blob 4 times. One for each of the 3 insight types, and once for dashboards.
+
+func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) ([]insights.LangStatsInsight, error) {
+	prefix := "codeStatsInsights."
+	var raw map[string]json.RawMessage
+	results := make([]insights.LangStatsInsight, 0)
+
+	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	for id, body := range raw {
+		var temp insights.LangStatsInsight
+		temp.ID = id
+		if err := json.Unmarshal(body, &temp); err != nil {
+			// a deprecated schema collides with this field name, so skip any deserialization errors
+			continue
+		}
+		results = append(results, temp)
+	}
+
+	return results, nil
+}
+
+func getFrontendInsights(ctx context.Context, settingsRow api.Settings) ([]insights.SearchInsight, error) {
+	prefix := "searchInsights."
+	var raw map[string]json.RawMessage
+	results := make([]insights.SearchInsight, 0)
+
+	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	for id, body := range raw {
+		var temp insights.SearchInsight
+		temp.ID = id
+		if err := json.Unmarshal(body, &temp); err != nil {
+			// a deprecated schema collides with this field name, so skip any deserialization errors
+			continue
+		}
+		results = append(results, temp)
+	}
+
+	return results, nil
+}
+
+func getBackendInsights(ctx context.Context, settingsRow api.Settings) ([]insights.SearchInsight, error) {
+	prefix := "insights.allrepos"
+	var raw map[string]json.RawMessage
+	results := make([]insights.SearchInsight, 0)
+
+	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	for id, body := range raw {
+		var temp insights.SearchInsight
+		temp.ID = id
+		if err := json.Unmarshal(body, &temp); err != nil {
+			// a deprecated schema collides with this field name, so skip any deserialization errors
+			continue
+		}
+		results = append(results, temp)
+	}
+
+	return results, nil
+}
+
+func getDashboards(ctx context.Context, settingsRow api.Settings) ([]insights.SettingDashboard, error) {
+	prefix := "insights.dashboards"
+
+	results := make([]insights.SettingDashboard, 0)
+	var raw map[string]json.RawMessage
+	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
+	if err != nil {
+		return nil, err
+	}
+	for _, val := range raw {
+		// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
+		temp, err := unmarshalDashboard(val)
+		if err != nil {
+			continue
+		}
+		results = append(results, temp...)
+	}
+
+	return results, nil
+}
+
+func unmarshalDashboard(raw json.RawMessage) ([]insights.SettingDashboard, error) {
+	var dict map[string]json.RawMessage
+	var multi error
+	result := []insights.SettingDashboard{}
+
+	if err := json.Unmarshal(raw, &dict); err != nil {
+		return result, err
+	}
+
+	for id, body := range dict {
+		var temp insights.SettingDashboard
+		if err := json.Unmarshal(body, &temp); err != nil {
+			multi = multierror.Append(multi, err)
+			continue
+		}
+		temp.ID = id
+		result = append(result, temp)
+	}
+
+	return result, multi
+}
