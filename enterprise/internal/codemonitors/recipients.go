@@ -28,11 +28,16 @@ func (s *codeMonitorStore) CreateRecipients(ctx context.Context, recipients []gr
 	return nil
 }
 
+const deleteRecipientFmtStr = `
+DELETE FROM cm_recipients
+WHERE email = %s
+`
+
 func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) error {
-	q, err := deleteRecipientsQuery(ctx, emailID)
-	if err != nil {
-		return err
-	}
+	q := sqlf.Sprintf(
+		deleteRecipientFmtStr,
+		emailID,
+	)
 	return s.Exec(ctx, q)
 }
 
@@ -104,15 +109,6 @@ func (s *codeMonitorStore) CountRecipients(ctx context.Context, emailID int64) (
 	var count int32
 	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
 	return count, err
-}
-
-const deleteRecipientFmtStr = `DELETE FROM cm_recipients WHERE email = %s`
-
-func deleteRecipientsQuery(ctx context.Context, emailId int64) (*sqlf.Query, error) {
-	return sqlf.Sprintf(
-		deleteRecipientFmtStr,
-		emailId,
-	), nil
 }
 
 const readRecipientQueryFmtStr = `
