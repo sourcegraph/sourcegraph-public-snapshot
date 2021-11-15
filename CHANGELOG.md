@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.33.8
+
+### Fixed
+
+- For internal use only: Switch to single workspaces only in payload.
+
 ## 3.33.7
 
 ### Added
