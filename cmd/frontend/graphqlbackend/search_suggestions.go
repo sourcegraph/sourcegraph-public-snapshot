@@ -408,9 +408,9 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 			suggestions = append(suggestions, symbolSuggestionResolver{
 				symbol: symbolResolver{
 					db: r.db,
-					commit: toGitCommitResolver(
-						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+					commit: NewGitCommitResolver(
 						r.db,
+						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
 						fileMatch.CommitID,
 						nil,
 					),
@@ -465,6 +465,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 				for i, res := range results.Matches {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
+							db:           r.db,
 							FileMatch:    *fm,
 							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}

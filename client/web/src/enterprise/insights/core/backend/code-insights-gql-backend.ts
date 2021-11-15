@@ -7,6 +7,7 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import {
+    AddInsightViewToDashboardResult,
     CreateDashboardResult,
     CreateInsightResult,
     CreateInsightsDashboardInput,
@@ -17,6 +18,7 @@ import {
     InsightsDashboardsResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
+    RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
     UpdateLineChartSearchInsightResult,
@@ -336,6 +338,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         updateInsightsDashboard(id: $id, input: $input) {
                             dashboard {
                                 id
+                                title
+                                grants {
+                                    users
+                                    organizations
+                                    global
+                                }
                             }
                         }
                     }
@@ -360,6 +368,67 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions
     public getResolvedSearchRepositories = getResolvedSearchRepositories
+
+    public assignInsightsToDashboard = ({
+        id,
+        nextDashboardInput,
+        previousDashboard,
+    }: DashboardUpdateInput): Observable<unknown> => {
+        const addInsightViewToDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<AddInsightViewToDashboardResult>({
+                mutation: gql`
+                    mutation AddInsightViewToDashboard($insightViewId: ID!, $dashboardId: ID!) {
+                        addInsightViewToDashboard(input: { insightViewId: $insightViewId, dashboardId: $dashboardId }) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightViewId, dashboardId },
+            })
+
+        const removeInsightViewFromDashboard = (insightViewId: string, dashboardId: string): Promise<any> =>
+            this.apolloClient.mutate<RemoveInsightViewFromDashboardResult>({
+                mutation: gql`
+                    mutation RemoveInsightViewFromDashboard($insightViewId: ID!, $dashboardId: ID!) {
+                        removeInsightViewFromDashboard(
+                            input: { insightViewId: $insightViewId, dashboardId: $dashboardId }
+                        ) {
+                            dashboard {
+                                id
+                            }
+                        }
+                    }
+                `,
+                variables: { insightViewId, dashboardId },
+            })
+
+        const addedInsightIds =
+            nextDashboardInput.insightIds?.filter(insightId => !previousDashboard.insightIds?.includes(insightId)) || []
+
+        // Get array of removed insight view ids
+        const removedInsightIds =
+            previousDashboard.insightIds?.filter(insightId => !nextDashboardInput.insightIds?.includes(insightId)) || []
+
+        return from(
+            Promise.all([
+                ...addedInsightIds.map(insightId => addInsightViewToDashboard(insightId, id || '')),
+                ...removedInsightIds.map(insightId => removeInsightViewFromDashboard(insightId, id || '')),
+            ])
+        ).pipe(
+            // Next query is needed to update local apollo cache and re-trigger getInsights query.
+            // Usually Apollo does that under the hood by itself based on response from a mutation
+            // but in this case since we don't have one single query to assign/unassign insights
+            // from dashboard we have to call query manually.
+            switchMap(() =>
+                this.apolloClient.query<GetDashboardInsightsResult>({
+                    query: GET_DASHBOARD_INSIGHTS_GQL,
+                    variables: { id: id ?? '' },
+                })
+            )
+        )
+    }
 
     private prepareSearchInsightCreateInput(
         insight: SearchBasedInsight,

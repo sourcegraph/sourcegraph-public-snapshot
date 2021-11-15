@@ -9,7 +9,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 
-import { excludeRepo as excludeRepoFromYaml } from './yaml-util'
+import { excludeRepo as excludeRepoFromYaml, hasOnOrImportChangesetsStatement } from './yaml-util'
 
 const ajv = new AJV()
 addFormats(ajv)
@@ -71,12 +71,17 @@ export const useBatchSpecCode = (initialCode: string): UseBatchSpecCodeResult =>
         try {
             const parsed = loadYAML(newCode)
             const valid = VALIDATE_SPEC(parsed)
-            setIsValid(valid)
+            const hasOnOrImport = hasOnOrImportChangesetsStatement(newCode)
+            setIsValid(valid && hasOnOrImport)
             if (!valid && VALIDATE_SPEC.errors?.length) {
                 setValidationErrors(
                     `The entered spec is invalid:\n  * ${VALIDATE_SPEC.errors
                         .map(error => error.message || '')
                         .join('\n  * ')}`
+                )
+            } else if (!hasOnOrImport) {
+                setValidationErrors(
+                    'The entered spec must contain either an "on:" or "importingChangesets:" statement.'
                 )
             }
         } catch (error: unknown) {

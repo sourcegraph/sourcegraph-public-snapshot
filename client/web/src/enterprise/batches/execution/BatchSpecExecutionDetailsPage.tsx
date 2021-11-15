@@ -388,7 +388,7 @@ const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedVal
     if (published === 'draft') {
         return <>draft</>
     }
-    return <>String(published)</>
+    return <>{String(published)}</>
 }
 
 const WorkspaceStep: React.FunctionComponent<

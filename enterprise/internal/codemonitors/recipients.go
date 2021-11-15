@@ -18,7 +18,7 @@ type Recipient struct {
 	NamespaceOrgID  *int32
 }
 
-func (s *Store) CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) (err error) {
+func (s *codeMonitorStore) CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) (err error) {
 	for _, r := range recipients {
 		err = s.createRecipient(ctx, r, emailID)
 		if err != nil {
@@ -28,7 +28,7 @@ func (s *Store) CreateRecipients(ctx context.Context, recipients []graphql.ID, e
 	return nil
 }
 
-func (s *Store) DeleteRecipients(ctx context.Context, emailID int64) (err error) {
+func (s *codeMonitorStore) DeleteRecipients(ctx context.Context, emailID int64) (err error) {
 	var q *sqlf.Query
 	q, err = deleteRecipientsQuery(ctx, emailID)
 	if err != nil {
@@ -41,7 +41,7 @@ func (s *Store) DeleteRecipients(ctx context.Context, emailID int64) (err error)
 	return nil
 }
 
-func (s *Store) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
+func (s *codeMonitorStore) RecipientsForEmailIDInt64(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
 	q, err := readRecipientQuery(ctx, emailID, args)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ FROM cm_recipients
 WHERE email = %s
 `
 
-func (s *Store) AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) (rs []*Recipient, err error) {
+func (s *codeMonitorStore) AllRecipientsForEmailIDInt64(ctx context.Context, emailID int64) (rs []*Recipient, err error) {
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, sqlf.Sprintf(allRecipientsForEmailIDInt64FmtStr, emailID))
 	if err != nil {
@@ -101,7 +101,7 @@ const createRecipientFmtStr = `
 INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
 VALUES (%s,%s,%s)`
 
-func (s *Store) createRecipient(ctx context.Context, recipient graphql.ID, emailID int64) (err error) {
+func (s *codeMonitorStore) createRecipient(ctx context.Context, recipient graphql.ID, emailID int64) (err error) {
 	var (
 		userID int32
 		orgID  int32
@@ -119,7 +119,7 @@ FROM cm_recipients
 WHERE email = %s
 `
 
-func (s *Store) TotalCountRecipients(ctx context.Context, emailID int64) (count int32, err error) {
+func (s *codeMonitorStore) TotalCountRecipients(ctx context.Context, emailID int64) (count int32, err error) {
 	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountRecipientsFmtStr, emailID)).Scan(&count)
 	return count, err
 }
