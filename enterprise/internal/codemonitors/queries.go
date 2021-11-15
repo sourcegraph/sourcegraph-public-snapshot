@@ -38,11 +38,28 @@ var queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.changed_at"),
 }
 
+const createTriggerQueryFmtStr = `
+INSERT INTO cm_queries
+(monitor, query, created_by, created_at, changed_by, changed_at, next_run, latest_result)
+VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+RETURNING %s;
+`
+
 func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error {
-	q, err := s.createTriggerQueryQuery(ctx, monitorID, args)
-	if err != nil {
-		return err
-	}
+	now := s.Now()
+	a := actor.FromContext(ctx)
+	q := sqlf.Sprintf(
+		createTriggerQueryFmtStr,
+		monitorID,
+		args.Query,
+		a.UID,
+		now,
+		a.UID,
+		now,
+		now,
+		now,
+		sqlf.Join(queryColumns, ", "),
+	)
 	return s.Exec(ctx, q)
 }
 
@@ -95,30 +112,6 @@ WHERE id = %s;
 
 func (s *codeMonitorStore) ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error {
 	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestamps, s.Now(), queryID))
-}
-
-const createTriggerQueryFmtStr = `
-INSERT INTO cm_queries
-(monitor, query, created_by, created_at, changed_by, changed_at, next_run, latest_result)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-RETURNING %s;
-`
-
-func (s *codeMonitorStore) createTriggerQueryQuery(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) (*sqlf.Query, error) {
-	now := s.Now()
-	a := actor.FromContext(ctx)
-	return sqlf.Sprintf(
-		createTriggerQueryFmtStr,
-		monitorID,
-		args.Query,
-		a.UID,
-		now,
-		a.UID,
-		now,
-		now,
-		now,
-		sqlf.Join(queryColumns, ", "),
-	), nil
 }
 
 const updateTriggerQueryFmtStr = `
