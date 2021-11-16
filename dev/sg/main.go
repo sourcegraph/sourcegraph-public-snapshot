@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -130,51 +129,7 @@ func loadSecrets() error {
 	return err
 }
 
-// Migrate the old secret file to the new format.
-func migrateSecrets() error {
-	homePath, err := root.GetSGHomePath()
-	if err != nil {
-		return err
-	}
-	newfile := filepath.Join(homePath, defaultSecretsFile)
-	oldfile := filepath.Join(homePath, ".sg.token.json")
-	if _, err := os.Stat(newfile); os.IsNotExist(err) {
-		// new secrets file is not present
-		if _, err := os.Stat(oldfile); err == nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New version has breaking changes, attempting to migrate automatically"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Previous secret format found, migrating ..."))
-			// but the old one is
-			b, err := os.ReadFile(oldfile)
-			if err != nil {
-				return err
-			}
-			s, err := secrets.LoadFile(newfile)
-			if err != nil {
-				return err
-			}
-			err = s.PutAndSave("rfc", json.RawMessage(b))
-			if err != nil {
-				return err
-			}
-			err = os.Rename(oldfile, oldfile+".backup")
-			if err != nil {
-				return err
-			}
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Done! A backup has been created: %s", oldfile+".backup"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New secrets file: %s", newfile))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-		}
-	}
-	return nil
-}
-
 func main() {
-	// TODO(@jhchabran) drop this on Nov 15th.
-	if err := migrateSecrets(); err != nil {
-		fmt.Printf("failed to migrate secrets: %s\n", err)
-	}
-
 	if err := loadSecrets(); err != nil {
 		fmt.Printf("failed to open secrets: %s\n", err)
 	}
