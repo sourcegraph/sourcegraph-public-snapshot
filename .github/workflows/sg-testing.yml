@@ -43,6 +43,8 @@ jobs:
           brew install git gnu-sed comby pcre sqlite jq
           brew install go yarn node`
           brew install postgres redis
+          brew services start postgresql
+          brew services start redis
           (hash psql && echo "OK") || echo "NOT OK"
           . ~/.bash_profile 
           which psql
