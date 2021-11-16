@@ -28,7 +28,6 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 
-    console.log({ context: window.context })
 
     return (
         <div className="form-group">
