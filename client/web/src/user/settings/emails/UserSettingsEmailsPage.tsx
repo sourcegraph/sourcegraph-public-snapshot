@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -16,6 +17,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AddUserEmailForm } from './AddUserEmailForm'
 import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
 import { UserEmail } from './UserEmail'
+import styles from './UserSettingsEmailsPage.module.scss'
 
 interface Props {
     user: UserSettingsAreaUserFields
@@ -76,7 +78,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
     }
 
     return (
-        <div className="user-settings-emails-page">
+        <div className={styles.userSettingsEmailsPage}>
             <PageTitle title="Emails" />
             <PageHeader headingElement="h2" path={[{ text: 'Emails' }]} className="mb-3" />
 
@@ -93,7 +95,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
                 <h3>All configured emails</h3>
                 <ul className="list-group">
                     {emails.map(email => (
-                        <li key={email.email} className="user-settings-emails-page__list-item list-group-item">
+                        <li key={email.email} className={classNames('list-group-item', styles.listItem)}>
                             <UserEmail
                                 user={user.id}
                                 email={email}
@@ -105,15 +107,11 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
                         </li>
                     ))}
                     {emails.length === 0 && (
-                        <li className="user-settings-emails-page__list-item list-group-item text-muted">No emails</li>
+                        <li className={classNames('list-group-item text-muted', styles.listItem)}>No emails</li>
                     )}
                 </ul>
                 {/* re-fetch emails on onDidAdd to guarantee correct state */}
-                <AddUserEmailForm
-                    className="user-settings-emails-page__email-form"
-                    user={user.id}
-                    onDidAdd={fetchEmails}
-                />
+                <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
                 <hr className="my-4" />
                 <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
             </Container>

@@ -64,7 +64,6 @@ const defaultProps = (
     batchChangesExecutionEnabled: true,
     enableCodeMonitoring: true,
     activation: undefined,
-    hideNavLinks: false,
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,

@@ -21,12 +21,18 @@ type MockDB struct {
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *DBDoneFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
+	// ExecutorsFunc is an instance of a mock function object controlling
+	// the behavior of the method Executors.
+	ExecutorsFunc *DBExecutorsFunc
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.
 	ExternalServicesFunc *DBExternalServicesFunc
@@ -72,6 +78,9 @@ type MockDB struct {
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *DBTemporarySettingsFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *DBTransactFunc
 	// UserCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserCredentials.
 	UserCredentialsFunc *DBUserCredentialsFunc
@@ -106,6 +115,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		DoneFunc: &DBDoneFunc{
+			defaultHook: func(error) error {
+				return nil
+			},
+		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: func() database.EventLogStore {
 				return nil
@@ -114,6 +128,11 @@ func NewMockDB() *MockDB {
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
 				return nil, nil
+			},
+		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: func() database.ExecutorStore {
+				return nil
 			},
 		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
@@ -191,6 +210,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		TransactFunc: &DBTransactFunc{
+			defaultHook: func(context.Context) (database.DB, error) {
+				return nil, nil
+			},
+		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) database.UserCredentialsStore {
 				return nil
@@ -234,11 +258,17 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
 		},
+		DoneFunc: &DBDoneFunc{
+			defaultHook: i.Done,
+		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: i.Executors,
 		},
 		ExternalServicesFunc: &DBExternalServicesFunc{
 			defaultHook: i.ExternalServices,
@@ -284,6 +314,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
+		},
+		TransactFunc: &DBTransactFunc{
+			defaultHook: i.Transact,
 		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: i.UserCredentials,
@@ -504,6 +537,108 @@ func (c DBAuthzFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBDoneFunc describes the behavior when the Done method of the parent
+// MockDB instance is invoked.
+type DBDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []DBDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(DBDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *DBDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBDoneFunc) appendCall(r0 DBDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBDoneFuncCall objects describing the
+// invocations of this function.
+func (f *DBDoneFunc) History() []DBDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]DBDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBDoneFuncCall is an object that describes an invocation of method Done
+// on an instance of MockDB.
+type DBDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // DBEventLogsFunc describes the behavior when the EventLogs method of the
 // parent MockDB instance is invoked.
 type DBEventLogsFunc struct {
@@ -719,6 +854,105 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBExecutorsFunc describes the behavior when the Executors method of the
+// parent MockDB instance is invoked.
+type DBExecutorsFunc struct {
+	defaultHook func() database.ExecutorStore
+	hooks       []func() database.ExecutorStore
+	history     []DBExecutorsFuncCall
+	mutex       sync.Mutex
+}
+
+// Executors delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Executors() database.ExecutorStore {
+	r0 := m.ExecutorsFunc.nextHook()()
+	m.ExecutorsFunc.appendCall(DBExecutorsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Executors method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBExecutorsFunc) SetDefaultHook(hook func() database.ExecutorStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Executors method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBExecutorsFunc) PushHook(hook func() database.ExecutorStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBExecutorsFunc) SetDefaultReturn(r0 database.ExecutorStore) {
+	f.SetDefaultHook(func() database.ExecutorStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBExecutorsFunc) PushReturn(r0 database.ExecutorStore) {
+	f.PushHook(func() database.ExecutorStore {
+		return r0
+	})
+}
+
+func (f *DBExecutorsFunc) nextHook() func() database.ExecutorStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBExecutorsFunc) appendCall(r0 DBExecutorsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBExecutorsFuncCall objects describing the
+// invocations of this function.
+func (f *DBExecutorsFunc) History() []DBExecutorsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBExecutorsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBExecutorsFuncCall is an object that describes an invocation of method
+// Executors on an instance of MockDB.
+type DBExecutorsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ExecutorStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBExecutorsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBExecutorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBExternalServicesFunc describes the behavior when the ExternalServices
@@ -2244,6 +2478,111 @@ func (c DBTemporarySettingsFuncCall) Args() []interface{} {
 // invocation.
 func (c DBTemporarySettingsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// DBTransactFunc describes the behavior when the Transact method of the
+// parent MockDB instance is invoked.
+type DBTransactFunc struct {
+	defaultHook func(context.Context) (database.DB, error)
+	hooks       []func(context.Context) (database.DB, error)
+	history     []DBTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Transact(v0 context.Context) (database.DB, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(DBTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBTransactFunc) SetDefaultHook(hook func(context.Context) (database.DB, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBTransactFunc) PushHook(hook func(context.Context) (database.DB, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBTransactFunc) SetDefaultReturn(r0 database.DB, r1 error) {
+	f.SetDefaultHook(func(context.Context) (database.DB, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBTransactFunc) PushReturn(r0 database.DB, r1 error) {
+	f.PushHook(func(context.Context) (database.DB, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBTransactFunc) nextHook() func(context.Context) (database.DB, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBTransactFunc) appendCall(r0 DBTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBTransactFuncCall objects describing the
+// invocations of this function.
+func (f *DBTransactFunc) History() []DBTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]DBTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBTransactFuncCall is an object that describes an invocation of method
+// Transact on an instance of MockDB.
+type DBTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.DB
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBUserCredentialsFunc describes the behavior when the UserCredentials

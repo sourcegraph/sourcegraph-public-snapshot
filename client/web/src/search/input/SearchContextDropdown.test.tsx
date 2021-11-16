@@ -1,7 +1,8 @@
+import { render, fireEvent } from '@testing-library/react'
 import { mount } from 'enzyme'
 import React from 'react'
 import { act } from 'react-dom/test-utils'
-import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
+import { Dropdown, DropdownToggle } from 'reactstrap'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,7 +13,11 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
+import { AuthenticatedUser } from '../../auth'
+import { MockTemporarySettings } from '../../settings/temporary/testUtils'
+
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { SearchContextMenuItem } from './SearchContextMenu'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {
@@ -102,9 +107,133 @@ describe('SearchContextDropdown', () => {
         })
         element.update()
 
-        const item = element.find(DropdownItem).at(0)
+        const item = element.find(SearchContextMenuItem).at(0)
         item.simulate('click')
 
         sinon.assert.calledOnce(submitSearch)
+    })
+
+    describe('with CTA', () => {
+        let oldContext: any
+        beforeEach(() => {
+            oldContext = window.context
+            window.context = { externalServicesUserMode: 'all' } as any
+        })
+
+        afterEach(() => {
+            window.context = oldContext
+        })
+
+        it('should not display CTA if not on Sourcegraph.com', () => {
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={false}
+                        hasUserAddedRepositories={false}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
+        })
+
+        it('should display CTA on Sourcegraph.com if no repos have been added and not permanently dismissed', () => {
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={true}
+                        hasUserAddedRepositories={false}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).toBeInTheDocument()
+        })
+
+        it('should not display CTA on Sourcegraph.com if user is part of an org', () => {
+            const mockUserWithOrg = {
+                organizations: {
+                    nodes: [{ displayName: 'test org', id: '1', name: 'test' }],
+                },
+            } as AuthenticatedUser
+
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={true}
+                        hasUserAddedRepositories={false}
+                        authenticatedUser={mockUserWithOrg}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
+        })
+
+        it('should not display CTA on Sourcegraph.com if repos have been added', () => {
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={true}
+                        hasUserAddedRepositories={true}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
+        })
+
+        it('should not display CTA on Sourcegraph.com if dimissed', () => {
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': true }}>
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={true}
+                        hasUserAddedRepositories={false}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+
+            expect(queryByRole('button', { name: /Don't show this againr/ })).not.toBeInTheDocument()
+        })
+
+        it('should dismiss CTA when clicking dismiss button', () => {
+            const onSettingsChanged = sinon.spy()
+
+            const { getByRole, queryByRole } = render(
+                <MockTemporarySettings
+                    settings={{ 'search.contexts.ctaDismissed': false }}
+                    onSettingsChanged={onSettingsChanged}
+                >
+                    <SearchContextDropdown
+                        {...defaultProps}
+                        isSourcegraphDotCom={true}
+                        hasUserAddedRepositories={false}
+                    />
+                </MockTemporarySettings>
+            )
+
+            fireEvent.click(getByRole('button', { name: /context:/ }))
+            fireEvent.click(getByRole('button', { name: /Don't show this again/ }))
+
+            expect(queryByRole('button', { name: /Don't show this again/ })).not.toBeInTheDocument()
+            expect(getByRole('searchbox')).toBeInTheDocument()
+
+            sinon.assert.calledOnceWithExactly(onSettingsChanged, { 'search.contexts.ctaDismissed': true })
+        })
     })
 })

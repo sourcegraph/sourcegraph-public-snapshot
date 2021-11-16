@@ -350,6 +350,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     onClick={props.onExpandAllResultsToggle}
                                     className="btn btn-sm btn-outline-secondary text-decoration-none"
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                    aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
+                                    aria-live="polite"
                                 >
                                     {props.allExpanded ? (
                                         <ArrowCollapseUpIcon className="icon-inline mr-0" />

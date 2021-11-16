@@ -1,4 +1,5 @@
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import { Tab, TabList, TabPanel, TabPanels } from '@reach/tabs'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect } from 'react'
 
@@ -9,6 +10,8 @@ import { GitCommitAncestorFields, GitRefFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { replaceRevisionInURL } from '../../util/url'
 
+import { ConnectionPopoverTabs } from './components'
+import styles from './RevisionsPopover.module.scss'
 import { RevisionsPopoverCommits } from './RevisionsPopoverCommits'
 import { RevisionsPopoverReferences } from './RevisionsPopoverReferences'
 
@@ -73,8 +76,13 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
     return (
-        <Tabs defaultIndex={tabIndex} className="revisions-popover connection-popover" onChange={handleTabsChange}>
-            <div className="tablist-wrapper revisions-popover__tabs">
+        <ConnectionPopoverTabs
+            className={styles.revisionsPopover}
+            data-testid="revisions-popover"
+            defaultIndex={tabIndex}
+            onChange={handleTabsChange}
+        >
+            <div className={classNames('tablist-wrapper', styles.tabs)}>
                 <TabList>
                     {TABS.map(({ label, id }) => (
                         <Tab key={id} data-tab-content={id}>
@@ -85,7 +93,7 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                 <button
                     onClick={props.togglePopover}
                     type="button"
-                    className="btn btn-icon revisions-popover__tabs-close"
+                    className={classNames('btn btn-icon', styles.tabsClose)}
                     aria-label="Close"
                 >
                     <CloseIcon className="icon-inline" />
@@ -124,6 +132,6 @@ export const RevisionsPopover: React.FunctionComponent<RevisionsPopoverProps> = 
                     </TabPanel>
                 ))}
             </TabPanels>
-        </Tabs>
+        </ConnectionPopoverTabs>
     )
 }

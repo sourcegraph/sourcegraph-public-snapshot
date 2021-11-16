@@ -4,6 +4,8 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
+import styles from './modalHints.module.scss'
+
 export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
     [ExternalServiceKind.GITHUB]: (
         <small>
@@ -16,9 +18,9 @@ export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = 
             </Link>
             <span className="text-muted">
                 {' '}
-                with <code className="user-code-hosts-page__code--inline">repo</code>,{' '}
-                <code className="user-code-hosts-page__code--inline">read:org</code> and{' '}
-                <code className="user-code-hosts-page__code--inline">user:email</code> scopes.
+                with <code className={styles.codeInline}>repo</code>,{' '}
+                <code className={styles.codeInline}>read:org</code> and{' '}
+                <code className={styles.codeInline}>user:email</code> scopes.
             </span>
         </small>
     ),
@@ -29,9 +31,9 @@ export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = 
             </Link>
             <span className="text-muted">
                 {' '}
-                with <code className="user-code-hosts-page__code--inline">read_user</code>,{' '}
-                <code className="user-code-hosts-page__code--inline">read_api</code> and{' '}
-                <code className="user-code-hosts-page__code--inline">read_repository</code> scopes.
+                with <code className={styles.codeInline}>read_user</code>,{' '}
+                <code className={styles.codeInline}>read_api</code> and{' '}
+                <code className={styles.codeInline}>read_repository</code> scopes.
             </span>
         </small>
     ),

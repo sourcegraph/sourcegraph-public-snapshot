@@ -13,10 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func serveVerifyEmail(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		email := r.URL.Query().Get("email")
@@ -30,12 +29,12 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		// 🚨 SECURITY: require correct authed user to verify email
-		usr, err := database.Users(db).GetByCurrentAuthUser(ctx)
+		usr, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
 			return
 		}
-		email, alreadyVerified, err := database.UserEmails(db).Get(ctx, usr.ID, email)
+		email, alreadyVerified, err := db.UserEmails().Get(ctx, usr.ID, email)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
 			return
@@ -44,7 +43,7 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, fmt.Sprintf("User %d email %q is already verified", usr.ID, email), http.StatusBadRequest)
 			return
 		}
-		verified, err := database.UserEmails(db).Verify(ctx, usr.ID, email, verifyCode)
+		verified, err := db.UserEmails().Verify(ctx, usr.ID, email, verifyCode)
 		if err != nil {
 			httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 			return
@@ -54,9 +53,9 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		// Set the verified email as primary if user has no primary email
-		_, _, err = database.UserEmails(db).GetPrimaryEmail(ctx, usr.ID)
+		_, _, err = db.UserEmails().GetPrimaryEmail(ctx, usr.ID)
 		if err != nil {
-			if err := database.UserEmails(db).SetPrimaryEmail(ctx, usr.ID, email); err != nil {
+			if err := db.UserEmails().SetPrimaryEmail(ctx, usr.ID, email); err != nil {
 				httpLogAndError(w, "Could not set primary email.", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
 				return
 			}
@@ -64,7 +63,7 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 
 		logEmailVerified(ctx, db, r, actr.UID)
 
-		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: usr.ID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
@@ -76,7 +75,7 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func logEmailVerified(ctx context.Context, db dbutil.DB, r *http.Request, userID int32) {
+func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, userID int32) {
 	event := &database.SecurityEvent{
 		Name:      database.SecurityEventNameEmailVerified,
 		URL:       r.URL.Path,

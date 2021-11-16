@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -43,7 +44,10 @@ type executor struct {
 	ch                *btypes.Changeset
 	spec              *btypes.ChangesetSpec
 
-	css  sources.ChangesetSource
+	css     sources.ChangesetSource
+	cssErr  error
+	cssOnce sync.Once
+
 	repo *types.Repo
 }
 
@@ -56,12 +60,6 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	e.repo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "failed to load repository")
-	}
-
-	// Load the changeset source.
-	e.css, err = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.repo)
-	if err != nil {
-		return err
 	}
 
 	for _, op := range plan.Ops.ExecutionOrder() {
@@ -146,7 +144,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	// Figure out which authenticator we should use to modify the changeset.
 	// au is nil if we want to use the global credentials stored in the external
 	// service configuration.
-	pushConf, err := e.css.GitserverPushConfig(ctx, e.tx.ExternalServices(), e.repo)
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
+	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), e.repo)
 	if err != nil {
 		return err
 	}
@@ -174,10 +176,15 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
+
 	var exists bool
 	if asDraft {
 		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
-		draftCss, err := sources.ToDraftChangesetSource(e.css)
+		draftCss, err := sources.ToDraftChangesetSource(css)
 		if err != nil {
 			return err
 		}
@@ -190,7 +197,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		// ephemeral error, there's a race condition here.
 		// It's possible that `CreateChangeset` doesn't return the newest head ref
 		// commit yet, because the API of the codehost doesn't return it yet.
-		exists, err = e.css.CreateChangeset(ctx, cs)
+		exists, err = css.CreateChangeset(ctx, cs)
 		if err != nil {
 			return errors.Wrap(err, "creating changeset")
 		}
@@ -204,7 +211,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		}
 
 		if outdated {
-			if err := e.css.UpdateChangeset(ctx, cs); err != nil {
+			if err := css.UpdateChangeset(ctx, cs); err != nil {
 				return errors.Wrap(err, "updating changeset")
 			}
 		}
@@ -242,8 +249,12 @@ func (e *executor) importChangeset(ctx context.Context) error {
 }
 
 func (e *executor) loadChangeset(ctx context.Context) error {
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
 	repoChangeset := &sources.Changeset{Repo: e.repo, Changeset: e.ch}
-	return e.css.LoadChangeset(ctx, repoChangeset)
+	return css.LoadChangeset(ctx, repoChangeset)
 }
 
 // updateChangeset updates the given changeset's attribute on the code host
@@ -264,7 +275,12 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 		return errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
 	}
 
-	if err := e.css.UpdateChangeset(ctx, &cs); err != nil {
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := css.UpdateChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
 
@@ -273,8 +289,13 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 
 // reopenChangeset reopens the given changeset attribute on the code host.
 func (e *executor) reopenChangeset(ctx context.Context) (err error) {
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
+
 	cs := sources.Changeset{Repo: e.repo, Changeset: e.ch}
-	if err := e.css.ReopenChangeset(ctx, &cs); err != nil {
+	if err := css.ReopenChangeset(ctx, &cs); err != nil {
 		return errors.Wrap(err, "updating changeset")
 	}
 	return nil
@@ -306,9 +327,14 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 		return nil
 	}
 
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
+
 	cs := &sources.Changeset{Changeset: e.ch, Repo: e.repo}
 
-	if err := e.css.CloseChangeset(ctx, cs); err != nil {
+	if err := css.CloseChangeset(ctx, cs); err != nil {
 		return errors.Wrap(err, "closing changeset")
 	}
 	return nil
@@ -316,7 +342,12 @@ func (e *executor) closeChangeset(ctx context.Context) (err error) {
 
 // undraftChangeset marks the given changeset on its code host as ready for review.
 func (e *executor) undraftChangeset(ctx context.Context) (err error) {
-	draftCss, err := sources.ToDraftChangesetSource(e.css)
+	css, err := e.changesetSource(ctx)
+	if err != nil {
+		return err
+	}
+
+	draftCss, err := sources.ToDraftChangesetSource(css)
 	if err != nil {
 		return err
 	}
@@ -341,6 +372,13 @@ func (e *executor) sleep() {
 	if !e.noSleepBeforeSync {
 		time.Sleep(3 * time.Second)
 	}
+}
+
+func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource, error) {
+	e.cssOnce.Do(func() {
+		e.css, e.cssErr = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.repo)
+	})
+	return e.css, e.cssErr
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {

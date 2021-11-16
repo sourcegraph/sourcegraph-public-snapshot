@@ -1,6 +1,6 @@
+import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useMemo, useEffect } from 'react'
-import { NavLink, Redirect } from 'react-router-dom'
+import React, { useMemo, useEffect, useState } from 'react'
 import { of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
@@ -9,7 +9,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader } from '@sourcegraph/wildcard'
 
@@ -23,14 +22,16 @@ import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
-import { CodeMonitoringGettingStarted, HAS_SEEN_CODE_MONITORING_GETTING_STARTED } from './CodeMonitoringGettingStarted'
+import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitorList } from './CodeMonitorList'
 
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings>, ThemeProps {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
-    showGettingStarted?: boolean
+
+    // For testing purposes only
+    testForceTab?: 'list' | 'getting-started'
 }
 
 export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps> = ({
@@ -38,8 +39,8 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
-    showGettingStarted = false,
     isLightTheme,
+    testForceTab,
 }) => {
     useEffect(() => eventLogger.logViewEvent('CodeMonitoringPage'), [])
 
@@ -63,17 +64,23 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
         )
     )
 
-    const [hasSeenGettingStarted, setHasSeenGettingStarted] = useLocalStorage(
-        HAS_SEEN_CODE_MONITORING_GETTING_STARTED,
-        false
-    )
+    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started'>('list')
 
-    // If user has no code monitors, redirect to the getting started page
-    if (!showGettingStarted && userHasCodeMonitors === false && !hasSeenGettingStarted) {
-        return <Redirect to="/code-monitoring/getting-started" />
-    }
+    // If user has no code monitors, default to the getting started tab after loading
+    useEffect(() => {
+        if (userHasCodeMonitors === false) {
+            setCurrentTab('getting-started')
+        }
+    }, [userHasCodeMonitors])
 
-    const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && !showGettingStarted
+    // Force tab for testing
+    useEffect(() => {
+        if (testForceTab && testForceTab !== currentTab) {
+            setCurrentTab(testForceTab)
+        }
+    }, [currentTab, testForceTab])
+
+    const showList = userHasCodeMonitors !== 'loading' && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
     return (
         <div className="code-monitoring-page">
@@ -108,50 +115,62 @@ export const CodeMonitoringPage: React.FunctionComponent<CodeMonitoringPageProps
                 }
                 className="mb-3"
             />
-            {userHasCodeMonitors === 'loading' && <LoadingSpinner />}
 
-            <div className="d-flex flex-column">
-                <div className="code-monitoring-page-tabs mb-4">
-                    <div className="nav nav-tabs">
-                        <div className="nav-item">
-                            <NavLink to="/code-monitoring" className="nav-link" activeClassName="active" exact={true}>
-                                <span className="text-content" data-tab-content="Code monitors">
-                                    Code Monitors
-                                </span>
-                            </NavLink>
-                        </div>
-                        <div className="nav-item">
-                            <NavLink
-                                to="/code-monitoring/getting-started"
-                                className="nav-link"
-                                activeClassName="active"
-                                exact={true}
-                            >
-                                <span className="text-content" data-tab-content="Getting started">
-                                    Getting started
-                                </span>
-                            </NavLink>
+            {userHasCodeMonitors === 'loading' ? (
+                <LoadingSpinner />
+            ) : (
+                <div className="d-flex flex-column">
+                    <div className="code-monitoring-page-tabs mb-4">
+                        <div className="nav nav-tabs">
+                            <div className="nav-item">
+                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                <a
+                                    href=""
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        setCurrentTab('list')
+                                    }}
+                                    className={classNames('nav-link', currentTab === 'list' && 'active')}
+                                    role="button"
+                                >
+                                    <span className="text-content" data-tab-content="Code monitors">
+                                        Code monitors
+                                    </span>
+                                </a>
+                            </div>
+                            <div className="nav-item">
+                                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+                                <a
+                                    href=""
+                                    onClick={event => {
+                                        event.preventDefault()
+                                        setCurrentTab('getting-started')
+                                    }}
+                                    className={classNames('nav-link', currentTab === 'getting-started' && 'active')}
+                                    role="button"
+                                >
+                                    <span className="text-content" data-tab-content="Getting started">
+                                        Getting started
+                                    </span>
+                                </a>
+                            </div>
                         </div>
                     </div>
+
+                    {currentTab === 'getting-started' && (
+                        <CodeMonitoringGettingStarted isLightTheme={isLightTheme} isSignedIn={!!authenticatedUser} />
+                    )}
+
+                    {showList && (
+                        <CodeMonitorList
+                            settingsCascade={settingsCascade}
+                            authenticatedUser={authenticatedUser}
+                            fetchUserCodeMonitors={fetchUserCodeMonitors}
+                            toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
+                        />
+                    )}
                 </div>
-
-                {showGettingStarted && (
-                    <CodeMonitoringGettingStarted
-                        isLightTheme={isLightTheme}
-                        isSignedIn={!!authenticatedUser}
-                        setHasSeenGettingStarted={setHasSeenGettingStarted}
-                    />
-                )}
-
-                {showList && (
-                    <CodeMonitorList
-                        settingsCascade={settingsCascade}
-                        authenticatedUser={authenticatedUser}
-                        fetchUserCodeMonitors={fetchUserCodeMonitors}
-                        toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
-                    />
-                )}
-            </div>
+            )}
         </div>
     )
 }

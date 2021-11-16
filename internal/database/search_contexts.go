@@ -24,6 +24,10 @@ func SearchContexts(db dbutil.DB) SearchContextsStore {
 	return &searchContextsStore{store}
 }
 
+func SearchContextsWith(other basestore.ShareableStore) SearchContextsStore {
+	return &searchContextsStore{basestore.NewWithHandle(other.Handle())}
+}
+
 type SearchContextsStore interface {
 	basestore.ShareableStore
 	CountSearchContexts(context.Context, ListSearchContextsOptions) (int32, error)

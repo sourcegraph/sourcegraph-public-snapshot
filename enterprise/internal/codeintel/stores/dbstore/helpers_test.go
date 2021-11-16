@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -476,5 +477,16 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
 		AssociatedIndexID: expected.AssociatedIndexID,
+	}
+}
+
+func assertReferenceCounts(t *testing.T, store *Store, expectedReferenceCountsByID map[int]int) {
+	referenceCountsByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying reference counts: %s", err)
+	}
+
+	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }

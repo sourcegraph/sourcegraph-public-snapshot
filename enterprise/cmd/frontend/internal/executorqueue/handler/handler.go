@@ -8,15 +8,21 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type handler struct {
 	QueueOptions
+	executorStore database.ExecutorStore
 }
 
 type QueueOptions struct {
+	// Name signifies the type of work the queue serves to executors.
+	Name string
+
 	// Store is a required dbworker store store for each registered queue.
 	Store store.Store
 
@@ -30,8 +36,11 @@ type QueueOptions struct {
 	CanceledRecordsFetcher func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
-func newHandler(queueOptions QueueOptions) *handler {
-	return &handler{queueOptions}
+func newHandler(executorStore database.ExecutorStore, queueOptions QueueOptions) *handler {
+	return &handler{
+		executorStore: executorStore,
+		QueueOptions:  queueOptions,
+	}
 }
 
 var ErrUnknownJob = errors.New("unknown job")
@@ -145,12 +154,17 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 }
 
 // heartbeat calls Heartbeat for the given jobs.
-func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
+func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
+	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
+	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
+		return nil, err
+	}
+
 	return h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
+		WorkerHostname: executor.Hostname,
 	})
 }
 

@@ -12,12 +12,14 @@ import styles from './SearchContextCtaPrompt.module.scss'
 export interface SearchContextCtaPromptProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     hasUserAddedExternalServices: boolean
+    onDismiss: () => void
 }
 
 export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPromptProps> = ({
     authenticatedUser,
     hasUserAddedExternalServices,
     telemetryService,
+    onDismiss,
 }) => {
     const repositoriesVisibility =
         window.context.externalServicesUserMode === 'all' ||
@@ -46,20 +48,36 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
         telemetryService.log(`SearchContextCtaPrompt${actionKind}Click`)
     }
 
+    const onDismissClick = (): void => {
+        telemetryService.log('SearchContextCtaPromptDismissClick')
+        onDismiss()
+    }
+
     return (
-        <div className={styles.searchContextCtaPrompt}>
+        <div className={classNames(styles.searchContextCtaPrompt)}>
             <div className={styles.searchContextCtaPromptTitle}>
                 <Badge className="mr-1" status="new" />
                 <span>Search the code you care about</span>
             </div>
             <div className="text-muted">{copyText}</div>
+
             <Link
-                className={classNames('btn btn-primary', styles.searchContextCtaPromptButton)}
+                className={classNames('btn btn-primary btn-sm', styles.searchContextCtaPromptButton)}
                 to={linkTo}
                 onClick={onClick}
             >
                 {buttonText}
             </Link>
+            <button
+                type="button"
+                className={classNames(
+                    'btn btn-outline-secondary btn-sm border-0 ml-2',
+                    styles.searchContextCtaPromptButton
+                )}
+                onClick={onDismissClick}
+            >
+                Don't show this again
+            </button>
         </div>
     )
 }

@@ -12,14 +12,16 @@ import (
 )
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
-	c := &ChangesetSpec{}
-
-	var err error
-	c.Spec, err = batcheslib.ParseChangesetSpec([]byte(rawSpec))
+	spec, err := batcheslib.ParseChangesetSpec([]byte(rawSpec))
 	if err != nil {
 		return nil, err
 	}
 
+	return NewChangesetSpecFromSpec(spec)
+}
+
+func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
+	c := &ChangesetSpec{Spec: spec}
 	return c, c.computeDiffStat()
 }
 

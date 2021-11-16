@@ -15,6 +15,9 @@ type WebhookLog struct {
 }
 
 type WebhookLogMessage struct {
-	Header http.Header
-	Body   []byte
+	Header  http.Header
+	Body    []byte
+	Method  string `json:",omitempty"`
+	URL     string `json:",omitempty"`
+	Version string `json:",omitempty"`
 }

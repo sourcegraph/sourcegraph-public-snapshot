@@ -65,8 +65,8 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	if reposDir == "" {
@@ -250,15 +250,16 @@ func main() {
 func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	// Set up default settings first
 	fc := server.FusionConfig{
-		Enabled:         conn.UseFusionClient,
-		Client:          conn.P4Client,
-		LookAhead:       2000,
-		NetworkThreads:  12,
-		PrintBatch:      10,
-		Refresh:         100,
-		Retries:         10,
-		MaxChanges:      -1,
-		IncludeBinaries: false,
+		Enabled:             conn.UseFusionClient,
+		Client:              conn.P4Client,
+		LookAhead:           2000,
+		NetworkThreads:      12,
+		NetworkThreadsFetch: 12,
+		PrintBatch:          10,
+		Refresh:             100,
+		Retries:             10,
+		MaxChanges:          -1,
+		IncludeBinaries:     false,
 	}
 
 	if conn.FusionClient == nil {
@@ -268,6 +269,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	fc.Enabled = conn.FusionClient.Enabled || conn.UseFusionClient
 	fc.LookAhead = conn.FusionClient.LookAhead
 	fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
 	fc.PrintBatch = conn.FusionClient.PrintBatch
 	fc.Refresh = conn.FusionClient.Refresh
 	fc.Retries = conn.FusionClient.Retries
@@ -290,7 +292,6 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
-
 	//
 	// START FLAILING
 
@@ -303,9 +304,9 @@ func getDB() (dbutil.DB, error) {
 	// END FLAILING
 	//
 
-	dsn := conf.Get().ServiceConnections.PostgresDSN
+	dsn := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		newDSN := conf.Get().ServiceConnections().PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do

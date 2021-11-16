@@ -78,13 +78,10 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                             verified
                             verificationPending
                             viewerCanManuallyVerify
+                            isPrimary
                         }
                         createdAt
                         siteAdmin
-                        latestSettings {
-                            createdAt
-                            contents
-                        }
                         organizations {
                             nodes {
                                 name

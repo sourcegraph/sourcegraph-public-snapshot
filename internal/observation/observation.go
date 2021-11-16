@@ -219,7 +219,9 @@ func (op *Operation) trace(ctx context.Context, args Args) (*trace.Trace, contex
 	}
 
 	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
-	tr.LogFields(mergeLogFields(op.logFields, args.LogFields)...)
+	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
+		tr.LogFields(mergedFields...)
+	}
 	return tr, ctx
 }
 

@@ -72,10 +72,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={true}
   >
     <div
-      className="streaming-skipped-item pt-2 w-100 streaming-skipped-item--warn"
+      className="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
     >
       <Button
-        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
+        className="button p-2 w-100 bg-transparent border-0"
         color="outline-danger"
         disabled={false}
         onClick={[Function]}
@@ -84,7 +84,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
+          className="button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -94,7 +94,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(AlertCircleIcon)
-              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -102,7 +102,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               Error loading results
             </span>
             <Memo(ChevronDownIcon)
-              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
+              className="icon-inline flex-shrink-0 chevron"
             />
           </h4>
         </button>
@@ -144,12 +144,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="streaming-skipped-item__message text-left py-1"
+              className="message text-left py-1"
               dangerousInnerHTML="<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
 "
             >
               <div
-                className="streaming-skipped-item__message text-left py-1 markdown"
+                className="message text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
@@ -163,7 +163,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </Transition>
       </Collapse>
       <div
-        className="streaming-skipped-item__bottom-border-spacer mt-2"
+        className="bottomBorderSpacer mt-2"
       />
     </div>
   </SkippedMessage>
@@ -184,10 +184,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <div
-      className="streaming-skipped-item pt-2 w-100 streaming-skipped-item--warn"
+      className="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
     >
       <Button
-        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
+        className="button p-2 w-100 bg-transparent border-0"
         color="outline-danger"
         disabled={false}
         onClick={[Function]}
@@ -196,7 +196,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
+          className="button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -206,7 +206,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(AlertCircleIcon)
-              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -214,7 +214,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               Search timed out
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
+              className="icon-inline flex-shrink-0 chevron"
             />
           </h4>
         </button>
@@ -256,12 +256,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="streaming-skipped-item__message text-left py-1"
+              className="message text-left py-1"
               dangerousInnerHTML="<p>Search timed out</p>
 "
             >
               <div
-                className="streaming-skipped-item__message text-left py-1 markdown"
+                className="message text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>Search timed out</p>
@@ -275,7 +275,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </Transition>
       </Collapse>
       <div
-        className="streaming-skipped-item__bottom-border-spacer mt-2"
+        className="bottomBorderSpacer mt-2"
       />
     </div>
   </SkippedMessage>
@@ -296,10 +296,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <div
-      className="streaming-skipped-item pt-2 w-100"
+      className="pt-2 w-100 streamingSkippedItem"
     >
       <Button
-        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
+        className="button p-2 w-100 bg-transparent border-0"
         color="outline-primary"
         disabled={false}
         onClick={[Function]}
@@ -308,7 +308,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+          className="button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -318,7 +318,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(InformationOutlineIcon)
-              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -326,7 +326,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               10k forked repositories excluded
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
+              className="icon-inline flex-shrink-0 chevron"
             />
           </h4>
         </button>
@@ -368,12 +368,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="streaming-skipped-item__message text-left py-1"
+              className="message text-left py-1"
               dangerousInnerHTML="<p>10k forked repositories excluded</p>
 "
             >
               <div
-                className="streaming-skipped-item__message text-left py-1 markdown"
+                className="message text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>10k forked repositories excluded</p>
@@ -387,7 +387,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </Transition>
       </Collapse>
       <div
-        className="streaming-skipped-item__bottom-border-spacer mt-2"
+        className="bottomBorderSpacer mt-2"
       />
     </div>
   </SkippedMessage>
@@ -408,10 +408,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <div
-      className="streaming-skipped-item pt-2 w-100"
+      className="pt-2 w-100 streamingSkippedItem"
     >
       <Button
-        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
+        className="button p-2 w-100 bg-transparent border-0"
         color="outline-primary"
         disabled={false}
         onClick={[Function]}
@@ -420,7 +420,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+          className="button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -430,7 +430,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(InformationOutlineIcon)
-              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -438,7 +438,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               60k archived repositories excluded
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
+              className="icon-inline flex-shrink-0 chevron"
             />
           </h4>
         </button>
@@ -480,12 +480,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="streaming-skipped-item__message text-left py-1"
+              className="message text-left py-1"
               dangerousInnerHTML="<p>60k archived repositories excluded</p>
 "
             >
               <div
-                className="streaming-skipped-item__message text-left py-1 markdown"
+                className="message text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>60k archived repositories excluded</p>
@@ -499,7 +499,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </Transition>
       </Collapse>
       <div
-        className="streaming-skipped-item__bottom-border-spacer mt-2"
+        className="bottomBorderSpacer mt-2"
       />
     </div>
   </SkippedMessage>
@@ -520,10 +520,10 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     startOpen={false}
   >
     <div
-      className="streaming-skipped-item pt-2 w-100"
+      className="pt-2 w-100 streamingSkippedItem"
     >
       <Button
-        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
+        className="button p-2 w-100 bg-transparent border-0"
         color="outline-primary"
         disabled={false}
         onClick={[Function]}
@@ -532,7 +532,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+          className="button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -542,7 +542,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(InformationOutlineIcon)
-              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -550,7 +550,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               1 archived
             </span>
             <Memo(ChevronLeftIcon)
-              className="icon-inline flex-shrink-0 streaming-skipped-item__chevron"
+              className="icon-inline flex-shrink-0 chevron"
             />
           </h4>
         </button>
@@ -592,12 +592,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="streaming-skipped-item__message text-left py-1"
+              className="message text-left py-1"
               dangerousInnerHTML="<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
 "
             >
               <div
-                className="streaming-skipped-item__message text-left py-1 markdown"
+                className="message text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
@@ -611,7 +611,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </Transition>
       </Collapse>
       <div
-        className="streaming-skipped-item__bottom-border-spacer mt-2"
+        className="bottomBorderSpacer mt-2"
       />
     </div>
   </SkippedMessage>

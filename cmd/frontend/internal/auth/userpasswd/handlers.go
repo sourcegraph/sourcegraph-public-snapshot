@@ -36,6 +36,7 @@ type credentials struct {
 	Password        string `json:"password"`
 	AnonymousUserID string `json:"anonymousUserId"`
 	FirstSourceURL  string `json:"firstSourceUrl"`
+	LastSourceURL   string `json:"lastSourceUrl"`
 }
 
 // HandleSignUp handles submission of the user signup form.
@@ -203,7 +204,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, DatabaseID: usr.ID})
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
 	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {

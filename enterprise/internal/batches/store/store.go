@@ -94,6 +94,10 @@ func (s *Store) ObservationContext() *observation.Context {
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
 
+// DatabaseDB returns a database.DB with the same handle that this Store was
+// instantiated with.
+func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+
 // DB returns the underlying dbutil.DB that this Store was
 // instantiated with.
 // It's here for legacy reason to pass the dbutil.DB to a repos.Store while
@@ -246,6 +250,7 @@ type operations struct {
 	createBatchSpecWorkspace       *observation.Operation
 	getBatchSpecWorkspace          *observation.Operation
 	listBatchSpecWorkspaces        *observation.Operation
+	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
@@ -266,6 +271,7 @@ type operations struct {
 	getBatchSpecExecutionCacheEntry      *observation.Operation
 	markUsedBatchSpecExecutionCacheEntry *observation.Operation
 	createBatchSpecExecutionCacheEntry   *observation.Operation
+	cleanBatchSpecExecutionCacheEntries  *observation.Operation
 }
 
 var (
@@ -377,6 +383,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
 			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
@@ -397,6 +404,8 @@ func newOperations(observationContext *observation.Context) *operations {
 			getBatchSpecExecutionCacheEntry:      op("GetBatchSpecExecutionCacheEntry"),
 			markUsedBatchSpecExecutionCacheEntry: op("MarkUsedBatchSpecExecutionCacheEntry"),
 			createBatchSpecExecutionCacheEntry:   op("CreateBatchSpecExecutionCacheEntry"),
+
+			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
 		}
 	})
 

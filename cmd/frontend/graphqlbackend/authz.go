@@ -4,6 +4,9 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type AuthzResolver interface {
@@ -53,4 +56,13 @@ type PermissionsInfoResolver interface {
 	Permissions() []string
 	SyncedAt() *DateTime
 	UpdatedAt() DateTime
+}
+
+// subRepoPermsClient returns a global instance of the
+// authz.SubRepoPermissionChecker for use in graphqlbackend only.
+//
+// TODO(#26663): This should provide an instance of authz.SubRepoPermissionChecker backed
+// by an instantiated-once cache and the provided database handle.
+func subRepoPermsClient(db database.DB) authz.SubRepoPermissionChecker {
+	return authz.NewSubRepoPermsClient(db.SubRepoPerms())
 }

@@ -60,6 +60,7 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		// most importantly, the status code.
 		writer := &responseWriter{
 			ResponseWriter: w,
+			statusCode:     200,
 		}
 
 		// The external service ID is looked up within the webhook handler, but
@@ -77,13 +78,22 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		// Delegate to the next handler.
 		next.ServeHTTP(writer, r.WithContext(ctx))
 
+		// See if we have the requested URL.
+		url := ""
+		if u := r.URL; u != nil {
+			url = u.String()
+		}
+
 		// Write the payload.
 		if err := mw.store.Create(r.Context(), &types.WebhookLog{
 			ExternalServiceID: externalServiceID,
 			StatusCode:        writer.statusCode,
 			Request: types.WebhookLogMessage{
-				Header: r.Header,
-				Body:   buf.Bytes(),
+				Header:  r.Header,
+				Body:    buf.Bytes(),
+				Method:  r.Method,
+				URL:     url,
+				Version: r.Proto,
 			},
 			Response: types.WebhookLogMessage{
 				Header: writer.Header(),
@@ -110,11 +120,7 @@ type responseWriter struct {
 var _ http.ResponseWriter = &responseWriter{}
 
 func (rw *responseWriter) Write(data []byte) (int, error) {
-	if rw.statusCode == 0 {
-		rw.statusCode = http.StatusOK
-	}
 	rw.buf.Write(data)
-
 	return rw.ResponseWriter.Write(data)
 }
 

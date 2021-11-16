@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -107,7 +108,7 @@ func InitDB() (*sql.DB, error) {
 		// which would be added by running the migrations. Once we detect that
 		// it's missing, we run the migrations and try to update the version again.
 
-		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		err := backend.UpdateServiceVersion(ctx, database.NewDB(dbconn.Global), "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return nil, err
 		}
@@ -125,7 +126,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -170,14 +171,14 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
 	// work remaining.
-	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, sqlDB)
+	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
@@ -200,7 +201,7 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 	}
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient(), outOfBandMigrationRunner)
 
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 

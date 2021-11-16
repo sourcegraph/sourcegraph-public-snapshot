@@ -1,16 +1,25 @@
-# Quickstart 
+# Development quickstart
 
->  NOTE: If you run into any troubles please consult the [deprecated quickstart instructions without `sg`](deprecated_quickstart.md) or reach out on Slack:
->  - [As an open source contributor](https://sourcegraph-community.slack.com/archives/C02BG0M0ZJ7)
->  - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C01N83PS4TU)
+This is the quickstart guide for [developing Sourcegraph](../index.md).
+
+> NOTE: If you run into any troubles, you can alternatively consult the [deprecated quickstart instructions without `sg`](deprecated_quickstart.md) or reach out on Slack:
+>
+> - [As an open source contributor](https://sourcegraph-community.slack.com/archives/C02BG0M0ZJ7)
+> - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C01N83PS4TU)
+>
+> You can also get help on our [developer experience discussion forum](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience).
+
+<span class="virtual-br"></span>
+
+> NOTE: Looking for how to deploy or use Sourcegraph? See our [getting started](../../index.md#getting-started) options.
 
 ## Install `sg`
 
-At Sourcegraph we use [`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg), the Sourcegraph developer tool, to manage our local development environment.
+At Sourcegraph we use [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md), to manage our local development environment.
 
 To install `sg`, run the following in your terminal:
 
-```
+```sh
 curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 ```
 
@@ -20,7 +29,7 @@ See the [`sg` documentation](../background-information/sg/index.md) for more inf
 
 Open a terminal and run the following comming:
 
-```
+```sh
 sg setup
 ```
 
@@ -34,7 +43,7 @@ If you chose to run PostgreSQL and Redis **without Docker** they should already 
 
 If you chose to run Redis and PostgreSQL **with Docker** to then we need to run them:
 
-```
+```sh
 sg run redis-postgres
 ```
 
@@ -44,13 +53,13 @@ Keep this process running in a terminal window to keep the databases running. Fo
 
 **If you are a Sourcegraph employee**: start the local development server for Sourcegraph Enterprise with the following command:
 
-```
+```sh
 sg start
 ```
 
 **If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](https://github.com/sourcegraph/dev-private)**: you want to start Sourcegraph OSS, do this:
 
-```
+```sh
 sg start oss
 ```
 
@@ -64,7 +73,7 @@ Congratulations on making it to the end of the quickstart guide!
 
 If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
 
-```
+```sh
 sg start -help
 ```
 
@@ -72,13 +81,13 @@ That prints a list of possible configurations which you can start with `sg start
 
 For example, you can start Sourcegraph in the mode it uses on Sourcegraph.com by running the following in one terminal window
 
-```
+```sh
 sg start dotcom
 ```
 
 and then, in another terminal window, start the monitoring stack:
 
-```
+```sh
 sg start monitoring
 ```
 

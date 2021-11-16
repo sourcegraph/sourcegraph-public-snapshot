@@ -73,7 +73,7 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
                 <div>
                     <a
                         onClick={helpGettingStartedCTAOnClick}
-                        href="https://info.sourcegraph.com/talk-to-a-developer?_ga=2.257481099.1451692402.1630329056-789994471.1629391417"
+                        href=" https://info.sourcegraph.com/talk-to-a-developer?form_submission_source=inproduct?utm_campaign=inproduct-talktoadev&utm_medium=direct_traffic&utm_source=inproduct-talktoadev&utm_term=null&utm_content=talktoadevform"
                         {...linkProps}
                     >
                         Speak to an engineer

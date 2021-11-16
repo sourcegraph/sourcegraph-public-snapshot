@@ -8,14 +8,12 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -23,38 +21,8 @@ type TypeParameters interface {
 	typeParametersValue()
 }
 
-func (CommitParameters) typeParametersValue()  {}
-func (DiffParameters) typeParametersValue()    {}
 func (SymbolsParameters) typeParametersValue() {}
 func (TextParameters) typeParametersValue()    {}
-
-type CommitParameters struct {
-	RepoRevs           *RepositoryRevisions
-	PatternInfo        *CommitPatternInfo
-	Query              query.Q
-	Diff               bool
-	ExtraMessageValues []string
-}
-
-type DiffParameters struct {
-	Repo    api.RepoName
-	Options git.RawLogDiffSearchOptions
-}
-
-// CommitPatternInfo is the data type that describes the properties of
-// a pattern used for commit search.
-type CommitPatternInfo struct {
-	Pattern         string
-	IsRegExp        bool
-	IsCaseSensitive bool
-	FileMatchLimit  int32
-
-	IncludePatterns []string
-	ExcludePattern  string
-
-	PathPatternsAreRegExps       bool
-	PathPatternsAreCaseSensitive bool
-}
 
 type SymbolsParameters struct {
 	// Repo is the name of the repository to search in.
@@ -197,16 +165,6 @@ type TextParameters struct {
 	SearcherURLs *endpoint.Map
 }
 
-// TextParametersForCommitParameters is an intermediate type based on
-// TextParameters that encodes parameters exclusively for a commit search. The
-// commit search internals converts this type to CommitParameters. The
-// commitParameter type definitions will be merged in future.
-type TextParametersForCommitParameters struct {
-	PatternInfo *CommitPatternInfo
-	Repos       []*RepositoryRevisions
-	Query       query.Q
-}
-
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
 // sync with pkg/searcher/protocol.PatternInfo.
 type TextPatternInfo struct {
@@ -290,20 +248,21 @@ func (p *TextPatternInfo) String() string {
 }
 
 type RepoOptions struct {
-	RepoFilters       []string
-	MinusRepoFilters  []string
-	SearchContextSpec string
-	UserSettings      *schema.Settings
-	NoForks           bool
-	OnlyForks         bool
-	NoArchived        bool
-	OnlyArchived      bool
-	CommitAfter       string
-	Visibility        query.RepoVisibility
-	Ranked            bool // Return results ordered by rank
-	Limit             int
-	CacheLookup       bool
-	Query             query.Q
+	RepoFilters              []string
+	MinusRepoFilters         []string
+	CaseSensitiveRepoFilters bool
+	SearchContextSpec        string
+	UserSettings             *schema.Settings
+	NoForks                  bool
+	OnlyForks                bool
+	NoArchived               bool
+	OnlyArchived             bool
+	CommitAfter              string
+	Visibility               query.RepoVisibility
+	Limit                    int
+	Cursors                  []*types.Cursor
+	CacheLookup              bool
+	Query                    query.Q
 }
 
 func (op *RepoOptions) String() string {
@@ -323,6 +282,10 @@ func (op *RepoOptions) String() string {
 	}
 	if op.CommitAfter != "" {
 		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
+	}
+
+	if op.CaseSensitiveRepoFilters {
+		b.WriteString(" CaseSensitiveRepoFilters")
 	}
 
 	if op.NoForks {

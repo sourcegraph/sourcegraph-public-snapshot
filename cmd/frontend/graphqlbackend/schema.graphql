@@ -410,6 +410,10 @@ type Mutation {
         """
         firstSourceURL: String
         """
+        The last sourcegraph URL visited by the user, stored in a browser cookie.
+        """
+        lastSourceURL: String
+        """
         The URL when the event was logged.
         """
         url: String!
@@ -748,6 +752,10 @@ input Event {
     The first sourcegraph URL visited by the user, stored in a browser cookie.
     """
     firstSourceURL: String
+    """
+    The last sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    lastSourceURL: String
     """
     The URL when the event was logged.
     """
@@ -1406,7 +1414,9 @@ type Query {
     temporarySettings: TemporarySettings!
 
     """
-    Returns recently received webhooks that did not match an external service.
+    Returns recently received webhooks across all external services, optionally
+    limiting the returned values to only those that didn't match any external
+    service.
 
     Only site admins can access this field.
     """
@@ -1427,6 +1437,11 @@ type Query {
         onlyErrors: Boolean
 
         """
+        Only include webhook logs that were not matched to an external service.
+        """
+        onlyUnmatched: Boolean
+
+        """
         Only include webhook logs on or after this time.
         """
         since: DateTime
@@ -1436,6 +1451,122 @@ type Query {
         """
         until: DateTime
     ): WebhookLogConnection!
+
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String!
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architure running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
 }
 
 """
@@ -6400,18 +6531,63 @@ type WebhookLog implements Node {
     """
     The received webhook request.
     """
-    request: WebhookLogMessage!
+    request: WebhookLogRequest!
 
     """
     The response sent by the webhook handler.
     """
-    response: WebhookLogMessage!
+    response: WebhookLogResponse!
 }
 
 """
 A HTTP message (request or response) within a webhook log.
 """
-type WebhookLogMessage {
+interface WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A HTTP request within a webhook log.
+"""
+type WebhookLogRequest implements WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+
+    """
+    The method used in the HTTP request.
+    """
+    method: String!
+
+    """
+    The requested URL.
+    """
+    url: String!
+
+    """
+    The HTTP version in use.
+    """
+    version: String!
+}
+
+"""
+A HTTP response within a webhook log.
+"""
+type WebhookLogResponse implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """

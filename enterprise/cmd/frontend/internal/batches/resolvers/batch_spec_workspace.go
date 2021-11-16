@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -47,7 +47,7 @@ func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*graphqlb
 	r.repoOnce.Do(func() {
 		var repo *types.Repo
 		repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
-		r.repo = graphqlbackend.NewRepositoryResolver(database.NewDB(r.store.DB()), repo)
+		r.repo = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)
 	})
 	return r.repo, r.repoErr
 }
@@ -104,6 +104,14 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 				si.Skipped = true
 			}
 		}
+		// Mark all steps as skipped when a cached result was found.
+		if r.CachedResultFound() {
+			si.Skipped = true
+		}
+		// Mark all steps as skipped when a workspace is skipped.
+		if r.workspace.Skipped {
+			si.Skipped = true
+		}
 
 		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
 	}
@@ -148,8 +156,7 @@ func (r *batchSpecWorkspaceResolver) Unsupported() bool {
 }
 
 func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
-	// TODO(ssbc): not implemented
-	return false
+	return r.workspace.CachedResultFound
 }
 
 func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceStagesResolver {
@@ -209,6 +216,9 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 }
 
 func (r *batchSpecWorkspaceResolver) State() string {
+	if r.CachedResultFound() {
+		return "COMPLETED"
+	}
 	if r.workspace.Skipped {
 		return "SKIPPED"
 	}
@@ -219,7 +229,7 @@ func (r *batchSpecWorkspaceResolver) State() string {
 }
 
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.ChangesetSpecResolver, error) {
-	if r.workspace.Skipped {
+	if r.workspace.Skipped && !r.CachedResultFound() {
 		return nil, nil
 	}
 
@@ -231,9 +241,13 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 	if err != nil {
 		return nil, err
 	}
-	repos, err := r.store.Repos().GetReposSetByIDs(ctx, specs.RepoIDs()...)
-	if err != nil {
-		return nil, err
+	var repos map[api.RepoID]*types.Repo
+	repoIDs := specs.RepoIDs()
+	if len(repoIDs) > 0 {
+		repos, err = r.store.Repos().GetReposSetByIDs(ctx, specs.RepoIDs()...)
+		if err != nil {
+			return nil, err
+		}
 	}
 	resolvers := make([]graphqlbackend.ChangesetSpecResolver, 0, len(specs))
 	for _, spec := range specs {
@@ -243,13 +257,6 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 }
 
 func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	if r.execution == nil {
-		return nil, nil
-	}
-	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
-		return nil, nil
-	}
-
 	// TODO: Cache this computation.
 	resolvers, err := r.ChangesetSpecs(ctx)
 	if err != nil {
@@ -306,7 +313,7 @@ func (r *batchSpecWorkspaceStagesResolver) Setup() []graphqlbackend.ExecutionLog
 
 func (r *batchSpecWorkspaceStagesResolver) SrcExec() graphqlbackend.ExecutionLogEntryResolver {
 	if entry, ok := findExecutionLogEntry(r.execution, "step.src.0"); ok {
-		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DB(), entry)
+		return graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 	}
 
 	return nil
@@ -322,7 +329,7 @@ func (r *batchSpecWorkspaceStagesResolver) executionLogEntryResolversWithPrefix(
 		if !strings.HasPrefix(entry.Key, prefix) {
 			continue
 		}
-		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DB(), entry)
+		r := graphqlbackend.NewExecutionLogEntryResolver(r.store.DatabaseDB(), entry)
 		resolvers = append(resolvers, r)
 	}
 

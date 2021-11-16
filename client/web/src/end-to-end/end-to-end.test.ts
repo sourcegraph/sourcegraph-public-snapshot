@@ -952,7 +952,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('#repo-revision-popover', { visible: true })
                 await driver.page.click('#repo-revision-popover')
                 // Click "Tags" tab
-                const popoverSelector = '.revisions-popover [data-tab-content="tags"]'
+                const popoverSelector = '[data-testid="revisions-popover"] [data-tab-content="tags"]'
                 await driver.page.waitForSelector(popoverSelector, { visible: true })
                 await clickAnchorElement(popoverSelector)
                 const gitReferenceNodeSelector = 'a.git-ref-node[href*="0.5.0"]'
