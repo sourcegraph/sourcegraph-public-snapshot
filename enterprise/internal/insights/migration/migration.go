@@ -170,7 +170,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 		subject = api.SettingsSubject{User: &userId}
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
-		subject = api.SettingsSubject{User: &orgId}
+		subject = api.SettingsSubject{Org: &orgId}
 	} else {
 		subject = api.SettingsSubject{Site: true}
 	}
@@ -187,6 +187,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	}
 
 	// fmt.Println(settings)
+	fmt.Println("----------- Performing migration for row:", subject)
 
 	// First, migrate the 3 types of insights
 	langStatsInsights, err := getLangStatsInsights(ctx, *settings)
@@ -255,7 +256,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
 	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
 
-	return false, false, nil
+	return true, false, nil
 }
 
 // // Something like this? Maybe this doesn't need to be a helper function. We'll see.

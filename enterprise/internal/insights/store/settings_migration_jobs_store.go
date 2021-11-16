@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -57,7 +56,7 @@ const (
 func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error) {
 	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(getSettingsMigrationJobsSql, where)
-	fmt.Println(q)
+	//fmt.Println(q)
 
 	return scanSettingsMigrationJobs(s.Query(ctx, q))
 }
@@ -67,7 +66,7 @@ const getSettingsMigrationJobsSql = `
 SELECT user_id, org_id, global, total_insights, migrated_insights, total_dashboards, migrated_dashboards, runs,
 (CASE WHEN virtual_dashboard_created_at IS NULL THEN FALSE ELSE TRUE END) AS virtual_dashboard_created
 FROM settings_migration_jobs
-WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR virtual_dashboard_created_at IS NULL)
+WHERE %s AND virtual_dashboard_created_at IS NULL
 LIMIT 100
 FOR UPDATE SKIP LOCKED;
 `
@@ -141,6 +140,7 @@ ON CONFLICT DO NOTHING;
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error {
 	q := sqlf.Sprintf(updateTotalInsightsSql, totalInsights, getWhereForSubject(ctx, userId, orgId))
+	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -155,6 +155,7 @@ UPDATE settings_migration_jobs SET total_insights = %s WHERE %s
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error {
 	q := sqlf.Sprintf(updateMigratedInsightsSql, migratedInsights, getWhereForSubject(ctx, userId, orgId))
+	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -169,6 +170,7 @@ UPDATE settings_migration_jobs SET migrated_insights = %s WHERE %s
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error {
 	q := sqlf.Sprintf(updateTotalDashboardsSql, totalDashboards, getWhereForSubject(ctx, userId, orgId))
+	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -183,6 +185,7 @@ UPDATE settings_migration_jobs SET total_dashboards = %s WHERE %s
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error {
 	q := sqlf.Sprintf(updateMigratedDashboardsSql, migratedDashboards, getWhereForSubject(ctx, userId, orgId))
+	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -208,7 +211,7 @@ SELECT COUNT(*) from settings_migration_jobs;
 func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
 	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(countIncompleteJobsSql, where)
-	fmt.Println(q)
+	//fmt.Println(q)
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return count == 0, err
@@ -222,9 +225,9 @@ WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_
 
 func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Query {
 	if userId != nil {
-		return sqlf.Sprintf("user_id IS NOT NULL")
+		return sqlf.Sprintf("user_id = %s", *userId)
 	} else if orgId != nil {
-		return sqlf.Sprintf("org_id IS NOT NULL")
+		return sqlf.Sprintf("org_id = %s", *orgId)
 	} else {
 		return sqlf.Sprintf("global IS TRUE")
 	}
@@ -232,9 +235,9 @@ func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Quer
 
 func getWhereForSubjectType(ctx context.Context, jobType SettingsMigrationJobType) *sqlf.Query {
 	if jobType == UserJob {
-		return sqlf.Sprintf("user_id = %s")
+		return sqlf.Sprintf("user_id IS NOT NULL")
 	} else if jobType == OrgJob {
-		return sqlf.Sprintf("org_id = %s")
+		return sqlf.Sprintf("org_id IS NOT NULL")
 	} else {
 		return sqlf.Sprintf("global IS TRUE")
 	}
