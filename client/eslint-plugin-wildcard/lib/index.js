@@ -16,7 +16,7 @@ module.exports = {
       },
       rules: {
         'react/forbid-elements': [
-          'error',
+          'off', // Currently disabled until first `<Button />` component is migrated: https://github.com/sourcegraph/codemod/issues/31
           {
             forbid: [
               {
@@ -27,7 +27,7 @@ module.exports = {
           },
         ],
         '@sourcegraph/wildcard/forbid-class-name': [
-          'error',
+          'off', // Current disabled until first `<Badge />` component is migrated: https://github.com/sourcegraph/sourcegraph/issues/27622
           {
             forbid: [
               {
