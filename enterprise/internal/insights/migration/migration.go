@@ -6,11 +6,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -60,15 +59,13 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 // Is the transaction just across one of them? I need to read more about this, but that will take time. :(
 
 func (m *migrator) Up(ctx context.Context) (err error) {
-	fmt.Println("CALLING UP!!")
-
 	// tx, err := m.db.Transact(ctx)
 	// if err != nil {
 	// 	return err
 	// }
 	// defer func() { err = tx.Done(err) }()
 
-	migrationComplete, workCompleted, err := m.PerformGlobalMigration(ctx)
+	migrationComplete, workCompleted, err := m.performBatchMigration(ctx, store.GlobalJob)
 	if err != nil {
 		return err
 	}
@@ -79,71 +76,49 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	migrationComplete, workCompleted, err = m.performOrgMigration(ctx)
+	migrationComplete, workCompleted, err = m.performBatchMigration(ctx, store.OrgJob)
+	if err != nil {
+		return err
+	}
 	if !migrationComplete || workCompleted {
 		return nil
 	}
 
-	// migrationComplete, workCompleted, err = performUserMigration(tx)
-	// if !migrationComplete || workCompleted {
-	// 	return nil
-	// }
+	migrationComplete, workCompleted, err = m.performBatchMigration(ctx, store.UserJob)
+	if err != nil {
+		return err
+	}
+	if !migrationComplete || workCompleted {
+		return nil
+	}
 
 	return nil
 }
 
-// TODO: I don't think we need this at all, do we? What would it do? Should we use it to wipe out the jobs table to restart the migration?
+// TODO: I don't think we need this at all
 func (m *migrator) Down(ctx context.Context) (err error) {
 	return nil
 }
 
-// Instead of 3 different functions, maybe one that takes an argument? We'll see how much they have in common. Probably a lot.
-func (m *migrator) PerformGlobalMigration(ctx context.Context) (bool, bool, error) {
-	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, store.GlobalJob)
+func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, bool, error) {
+	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, jobType)
 	if err != nil {
 		fmt.Println(err)
 		return false, false, err
 	}
-	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, store.GlobalJob)
+	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, jobType)
 	if err != nil {
 		fmt.Println(err)
 		return false, false, err
 	}
 	if allComplete {
-		fmt.Println("global jobs all complete!")
+		fmt.Println("All jobs complete for type:", jobType)
 		return true, false, nil
 	}
-	// This would mean the job was locked, but not complete
+	// This would mean the jobs were locked, but not complete
 	if len(jobs) == 0 {
-		fmt.Println("global jobs locked, but not complete")
+		fmt.Println("All jobs locked, but not complete for type:", jobType)
 		return false, false, nil
-	}
-
-	migrationComplete, workCompleted, err := m.performMigrationForRow(ctx, *jobs[0])
-	if err != nil {
-		return false, false, err
-	}
-	if !migrationComplete || workCompleted {
-		return false, workCompleted, nil
-	}
-
-	return true, false, nil
-}
-
-func (m *migrator) performOrgMigration(ctx context.Context) (bool, bool, error) {
-	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, store.OrgJob)
-	if err != nil {
-		fmt.Println(err)
-		return false, false, err
-	}
-	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, store.OrgJob)
-	if err != nil {
-		fmt.Println(err)
-		return false, false, err
-	}
-	if allComplete {
-		fmt.Println("org jobs all complete!")
-		return true, false, nil
 	}
 
 	rowsCompleted := 0
@@ -156,15 +131,11 @@ func (m *migrator) performOrgMigration(ctx context.Context) (bool, bool, error) 
 	}
 
 	if rowsCompleted == len(jobs) {
-		return true, true, nil
+		return true, false, nil // This return statement is not it.
 	} else {
 		return false, true, nil
 	}
 }
-
-// func performUserMigration(tx *basestore.Store) (bool, bool, error) {
-// 	// This will probably follow the same logic as orgs
-// }
 
 // I don't think this needs to return an error.. we aren't going to be doing anything with it. We should just write
 // out if there's an error, upgrade runs, etc.
