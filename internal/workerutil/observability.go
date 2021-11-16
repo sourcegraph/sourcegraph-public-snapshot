@@ -87,7 +87,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, opts ...
 }
 
 func newOperations(observationContext *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		prefix,
 		metrics.WithLabels(append(keys, "op")...),

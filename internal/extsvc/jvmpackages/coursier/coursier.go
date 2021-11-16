@@ -40,7 +40,7 @@ func init() {
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
-	operations = NewOperationsFromMetrics(observationContext)
+	operations = NewOperations(observationContext)
 
 	// Should only be set for gitserver for persistence, repo-updater will use ephemeral storage.
 	// repo-updater only performs existence checks which doesnt involve downloading any JARs (except for JDK),

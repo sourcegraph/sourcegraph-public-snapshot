@@ -84,7 +84,7 @@ type operations struct {
 	writeVisibleUploads        *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
+func newOperations(observationContext *observation.Context, metrics *metrics.REDMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),

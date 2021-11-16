@@ -17,7 +17,7 @@ type operations struct {
 func newOperations(observationContext *observation.Context) *operations {
 	worker := observationContext.Operation(observation.Op{
 		Name: "CommitIndexer.Run",
-		Metrics: metrics.NewOperationMetrics(
+		Metrics: metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"insights_commit_indexer",
 			metrics.WithCountHelp("Total number of commit indexer executions"),
@@ -26,7 +26,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	getCommits := observationContext.Operation(observation.Op{
 		Name: "CommitIndexer.GetCommits",
-		Metrics: metrics.NewOperationMetrics(
+		Metrics: metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"insights_commit_indexer_fetch",
 			metrics.WithCountHelp("Time for the commit indexer to fetch commits from gitserver."),
