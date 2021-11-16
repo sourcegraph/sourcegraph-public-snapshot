@@ -41,7 +41,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md) and inclu
 
 A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
 
-> NOTE: Both read and write access to the associated repos for permissions syncing are required due to GitHub's token scope requirements. It is possible to not provide write access to all repositories and rely only on [user-centric sync](#background-permissions-syncing), at the cost of potentially having out-of-date permissions more frequently, though this is not recommended.
+> NOTE: Both read and write access to the associated repos for permissions syncing are strongly suggested due to GitHub's token scope requirements. Without write permissions, sync will rely only on [user-centric sync](#background-permissions-syncing) and continue working as expected, though Sourcegraph may have out-of-date permissions more frequently.
 
 <span class="virtual-br"></span>
 
