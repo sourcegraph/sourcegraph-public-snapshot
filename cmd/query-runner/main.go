@@ -210,10 +210,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// fails in order to avoid e.g. failed saved queries from executing
 	// constantly and potentially causing harm to the system. We'll retry at
 	// our normal interval, regardless of errors.
-	if query.UserID == nil {
-		return errors.New("user ID must be non-null")
-	}
-	v, execDuration, searchErr := performSearch(ctx, newQuery, *query.UserID)
+	v, execDuration, searchErr := performSearch(ctx, newQuery, query.UserID)
 	if err := api.InternalClient.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
 		Query:        query.Query,
 		LastExecuted: time.Now(),
