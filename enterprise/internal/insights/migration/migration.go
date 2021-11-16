@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
@@ -23,7 +26,7 @@ type migrator struct {
 	insightsDB dbutil.DB
 	postgresDB dbutil.DB
 
-	settingsMigrationJobsStore store.SettingsMigrationJobsStore
+	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
 	settingsStore              database.SettingsStore
 	insightStore               store.InsightStore
 	dashboardStore             store.DashboardStore
@@ -41,14 +44,15 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 }
 
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
-	// Select the total rows and the completed rows.
-
-	// If total is 0, return 0
-	// Otherwise, return completed / total
-
-	fmt.Println("CALLING PROGRESS!!")
-
-	return 0, nil
+	progress, _, err := basestore.ScanFirstFloat(m.settingsMigrationJobsStore.Query(ctx, sqlf.Sprintf(`
+		SELECT CASE c2.count
+				   WHEN 0 THEN 1
+				   ELSE
+					   CAST(c1.count AS FLOAT) / CAST(c2.count AS FLOAT) END
+		FROM (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs WHERE completed_at IS NOT NULL) c1,
+			 (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs) c2;
+	`)))
+	return progress, err
 }
 
 // I have questions about the transactions. We're using two completely different dbs here.
@@ -128,8 +132,8 @@ func (m *migrator) EnsureAllJobsAreQueued(ctx context.Context) (bool, error) {
 		orgId := settings.Subject.Org
 
 		m.settingsMigrationJobsStore.CreateSettingsMigrationJob(ctx, store.CreateSettingsMigrationJobArgs{
-			UserId:     userId,
-			OrgId:      orgId,
+			UserId: userId,
+			OrgId:  orgId,
 		})
 	}
 
@@ -311,9 +315,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// Hmm, dashboards can only succeed once all the insights have worked. Maybe we actually need to keep track
 	// of both insights and dashboards seprately.. like if all except 1 insight migrates we can't do the dashboards yet.
 	// Right?
-
-
-
 
 	// Caveats: we can't wipe everything out that already exists. We'll need to match on ids and check if something exists
 	// before creating it. This will also make it less of an all-or-nothing transaction. If we get errors on a few of these
