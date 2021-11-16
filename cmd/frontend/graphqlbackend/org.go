@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
@@ -26,9 +27,25 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	}
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
-		err := backend.CheckOrgAccess(ctx, r.db, org.ID)
-		if err != nil {
-			return nil, errors.Newf("org not found: %s", args.Name)
+		hasAccess := func() error {
+			err := backend.CheckOrgAccess(ctx, r.db, org.ID)
+			if err == nil {
+				return nil
+			}
+
+			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
+				if err == nil {
+					return nil
+				}
+			}
+
+			// NOTE: We want to present a unified error to unauthorized users to prevent
+			// them from differentiating service states by different error messages.
+			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
+		}
+		if err := hasAccess(); err != nil {
+			return nil, err
 		}
 	}
 	return &OrgResolver{db: r.db, org: org}, nil
