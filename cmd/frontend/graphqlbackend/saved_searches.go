@@ -140,6 +140,10 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
+	if args.UserID == nil {
+		return nil, errors.New("a saved search must have a user owner")
+	}
+
 	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
 	uid, err := unmarshalSavedSearchID(*args.UserID)
 	if err != nil {
@@ -176,6 +180,10 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
+	if args.UserID == nil {
+		return nil, errors.New("a saved search must have a user owner")
+	}
+
 	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
 	uid, err := unmarshalSavedSearchID(*args.UserID)
 	if err != nil {
