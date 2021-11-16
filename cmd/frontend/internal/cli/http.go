@@ -48,8 +48,8 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	}
 	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
-	// X-Requested-With header). Doing so would open it up to CSRF attacks.
+	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
+	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
