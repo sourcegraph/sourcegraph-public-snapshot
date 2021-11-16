@@ -17,7 +17,7 @@ import {
 
 const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
-async function startProductionServer(): Promise<void> {
+function startProductionServer(): void {
     if (!SOURCEGRAPH_API_URL) {
         throw new Error('production.server.ts only supports *web-standalone* usage')
     }
@@ -59,4 +59,4 @@ async function startProductionServer(): Promise<void> {
     })
 }
 
-startProductionServer().catch(error => signale.error(error))
+startProductionServer()
