@@ -140,7 +140,6 @@ ON CONFLICT DO NOTHING;
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error {
 	q := sqlf.Sprintf(updateTotalInsightsSql, totalInsights, getWhereForSubject(ctx, userId, orgId))
-	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -155,7 +154,6 @@ UPDATE settings_migration_jobs SET total_insights = %s WHERE %s
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error {
 	q := sqlf.Sprintf(updateMigratedInsightsSql, migratedInsights, getWhereForSubject(ctx, userId, orgId))
-	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -170,7 +168,6 @@ UPDATE settings_migration_jobs SET migrated_insights = %s WHERE %s
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error {
 	q := sqlf.Sprintf(updateTotalDashboardsSql, totalDashboards, getWhereForSubject(ctx, userId, orgId))
-	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -185,7 +182,6 @@ UPDATE settings_migration_jobs SET total_dashboards = %s WHERE %s
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error {
 	q := sqlf.Sprintf(updateMigratedDashboardsSql, migratedDashboards, getWhereForSubject(ctx, userId, orgId))
-	//fmt.Println(q)
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
@@ -211,7 +207,6 @@ SELECT COUNT(*) from settings_migration_jobs;
 func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
 	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(countIncompleteJobsSql, where)
-	//fmt.Println(q)
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return count == 0, err
