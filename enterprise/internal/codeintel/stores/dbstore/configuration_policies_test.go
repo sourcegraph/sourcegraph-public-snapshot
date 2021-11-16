@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -21,7 +20,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	query := sqlf.Sprintf(`
+	query := `
 		INSERT INTO lsif_configuration_policies (
 			id,
 			repository_id,
@@ -43,8 +42,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      null,             false, 6, false, true,  6, false),
 			(6, NULL, 'policy 6', 'GIT_TAG',    '',         '{github.com/*}', false, 6, false, true,  6, false),
 			(7, NULL, 'policy 7', 'GIT_TAG',    '3.0',      '{gitlab.com/*}', false, 7, false, true,  7, false)
-	`)
-	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	`
+	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
@@ -231,7 +230,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 		insertRepo(t, db, repositoryID, "github.com/test")
 
-		if err := store.UpdateReposMatchingPatterns(ctx, repositoryPatterns, 6); err != nil {
+		if err := store.UpdateReposMatchingPatterns(ctx, repositoryPatterns, 6, nil); err != nil {
 			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
 		}
 
@@ -302,7 +301,7 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	query := sqlf.Sprintf(`
+	query := `
 		INSERT INTO lsif_configuration_policies (
 			id,
 			repository_id,
@@ -317,8 +316,8 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES (1, 42, '{github.com/*}', 'policy 1', 'GIT_TREE', 'ab/', true, 2, false, false, 3, true)
-	`)
-	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	`
+	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
@@ -720,7 +719,7 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	query := sqlf.Sprintf(`
+	query := `
 		INSERT INTO lsif_configuration_policies (
 			id,
 			repository_id,
@@ -739,8 +738,8 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 			(2, NULL, 'policy 2', 'GIT_TREE', 'cd/', null, false, 2, true,  true,  2, true),
 			(3, NULL, 'policy 3', 'GIT_TREE', 'ef/', null, true,  3, false, false, 3, false),
 			(4, NULL, 'policy 4', 'GIT_TREE', 'gh/', null, false, 4, false, false, 4, false)
-	`)
-	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	`
+	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
