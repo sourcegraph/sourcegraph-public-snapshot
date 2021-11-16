@@ -5,7 +5,6 @@ const config = {
   meta: {
     docs: {
       description: 'Checks for forbidden className literals. Recommends Wildcard components instead',
-      recommended: true,
     },
   },
 

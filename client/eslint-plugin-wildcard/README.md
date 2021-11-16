@@ -1,3 +1,14 @@
 # eslint-plugin-wildcard
 
-Recommended ESLint config for Wildcard. This package should only be used alongside the @sourcegraph/wildcard component library.
+Recommended ESLint rules for consumers of the Wildcard component library.
+
+## Setup
+
+Update your `.eslintrc` file to add the following configuration:
+
+```js
+  plugins: ['@sourcegraph/wildcard'],
+  extends: ['plugin:@sourcegraph/wildcard/recommended'],
+```
+
+This will enable the plugin in your project and enforce our recommended rules.
