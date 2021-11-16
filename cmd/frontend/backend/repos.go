@@ -42,6 +42,19 @@ var Repos = &repos{
 	cache: dbcache.NewIndexableReposLister(database.GlobalRepos),
 }
 
+// NewRepos uses the provided `database.RepoStore` to initialize a new repos
+// store for the backend.
+//
+// NOTE: The underlying cache is reused from Repos global variable to actually
+// make cache be useful. This is mostly a workaround for now until we come up a
+// more idiomatic solution.
+func NewRepos(repoStore database.RepoStore) *repos {
+	return &repos{
+		store: repoStore,
+		cache: Repos.cache,
+	}
+}
+
 type repos struct {
 	store database.RepoStore
 	cache *dbcache.IndexableReposLister
