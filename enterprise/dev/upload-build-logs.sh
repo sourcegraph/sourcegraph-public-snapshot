@@ -22,7 +22,6 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-
 if hash go 2>/dev/null ; then
   echo "--- :go: Building sg"
   (
@@ -32,6 +31,8 @@ if hash go 2>/dev/null ; then
   popd
   )
 else
+  # The following code is a series a workaround to fix issues with the buildkite agents.
+  # TODO(@jhchabran) clean this once we've fixed the baremetal buildkite agents.
   echo "--- :arrow_down: Downloading sg"
   (
   set -x
