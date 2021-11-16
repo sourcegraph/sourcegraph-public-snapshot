@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs
     migrated_insights int NOT NULL DEFAULT 0,
     total_dashboards int NOT NULL DEFAULT 0,
     migrated_dashboards int NOT NULL DEFAULT 0,
-    virtual_dashboard_created_at TIMESTAMP,
     runs int NOT NULL DEFAULT 0,
     error_msg TEXT,
     completed_at timestamp
@@ -40,5 +39,12 @@ SELECT DISTINCT ON (user_id) id, user_id
 FROM settings
 WHERE user_id IS NOT NULL
 ORDER BY user_id, id DESC;
+
+
+INSERT INTO out_of_band_migrations(id, team, component, description, non_destructive,
+                                   apply_reverse, is_enterprise, introduced_version_major, introduced_version_minor)
+VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs',
+        'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.',
+        TRUE, FALSE, TRUE, 3, 34);
 
 COMMIT;
