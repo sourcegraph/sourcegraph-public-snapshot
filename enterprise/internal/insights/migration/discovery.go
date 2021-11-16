@@ -5,6 +5,7 @@ package migration
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -499,9 +500,9 @@ type timeInterval struct {
 
 func makeUniqueId(id string, subject api.SettingsSubject) string {
 	if subject.User != nil {
-		return id + "user-" + string(*subject.User)
+		return fmt.Sprintf("%s-user-%d", id, *subject.User)
 	} else if subject.Org != nil {
-		return id + "org-" + string(*subject.Org)
+		return fmt.Sprintf("%s-org-%d", id, *subject.Org)
 	} else {
 		return id
 	}
