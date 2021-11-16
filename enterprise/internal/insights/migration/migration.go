@@ -6,6 +6,10 @@ import (
 	"log"
 	"strings"
 
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -256,6 +260,49 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// to exist too; it's not part of items_completed. Another row maybe? virtual_dashboard_completed?
 
 	return false, false, nil
+}
+
+func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
+	var mapped []string
+	var failed []string
+
+	tx, err := m.dashboardStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, reference := range insightReferences {
+		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
+		if err != nil {
+			return nil, err
+		} else if !exists {
+			failed = append(failed, reference)
+		}
+		mapped = append(mapped, id)
+	}
+
+	var grants []store.DashboardGrant
+	if migration.userId != 0 {
+		grants = append(grants, store.UserDashboardGrant(migration.userId))
+	} else if len(migration.orgIds) == 1 {
+		grants = append(grants, store.OrgDashboardGrant(migration.orgIds[0]))
+	} else {
+		grants = append(grants, store.GlobalDashboardGrant())
+	}
+	_, err = tx.CreateDashboard(ctx, store.CreateDashboardArgs{
+		Dashboard: types.Dashboard{
+			Title:      title,
+			InsightIDs: mapped,
+			Save:       true,
+		},
+		Grants: grants,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateDashboard")
+	}
+
+	return failed, nil
 }
 
 // migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
