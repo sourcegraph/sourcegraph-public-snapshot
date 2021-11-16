@@ -12,6 +12,7 @@ import {
 } from '../../../../graphql-operations'
 import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
+import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPrompt, PreviewPromptForm } from './PreviewPrompt'
 import styles from './WorkspacesPreview.module.scss'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
@@ -114,14 +115,10 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
         onError: setResolutionError,
     })
 
-    const svgSource = `${window.context?.assetsRoot || ''}/img/batchchanges-preview-loading.svg`
-
     return (
         <>
             {isLoading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
-                <object type="image/svg+xml" data={svgSource} className="mt-4" height="50" width="50">
-                    <img src={svgSource} alt="Workspaces preview is loading..." />
-                </object>
+                <PreviewLoadingSpinner className="mt-4" />
             ) : null}
             {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
             {resolution?.state === 'COMPLETED' ? (
