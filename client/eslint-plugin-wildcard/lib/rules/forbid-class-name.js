@@ -11,24 +11,26 @@ const config = {
 
   create: function (context) {
     const configuration = context.options[0] || {}
-    const classNameReplacements = new Map(
-      configuration.forbid.map(({ className, component }) => [className, component])
-    )
+    const forbiddenClassNames = new Map(configuration.forbid.map(({ className, message }) => [className, message]))
 
     return {
-      JSXOpeningElement: node => {
-        const classNames = node.attributes.find(attr => attr?.name?.name === 'className')?.value?.value || ''
+      JSXAttribute: node => {
+        if (node.name.name !== 'className') {
+          return
+        }
+
+        const classNames = node.value.value
 
         if (!classNames) {
           return
         }
 
         classNames.split(' ').forEach(className => {
-          const replacement = classNameReplacements.get(className)
-          if (replacement) {
+          const message = forbiddenClassNames.get(className)
+          if (message) {
             context.report({
               node,
-              message: `Do not use the "${className}" class. Use the ${replacement} Wildcard component.`,
+              message: `"${className}" is forbidden. ${message}`,
             })
           }
         })

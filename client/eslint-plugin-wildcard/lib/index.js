@@ -1,4 +1,4 @@
-'use strict'
+// @ts-check
 
 const customRules = {
   'forbid-class-name': require('./rules/forbid-class-name'),
@@ -21,7 +21,7 @@ module.exports = {
             forbid: [
               {
                 element: 'button',
-                message: 'Use the Button component from @sourcegraph/wildcard',
+                message: 'Use the <Button /> component from @sourcegraph/wildcard instead.',
               },
             ],
           },
@@ -32,7 +32,7 @@ module.exports = {
             forbid: [
               {
                 className: 'badge',
-                component: '<Badge />',
+                message: 'Use the <Badge /> component from @sourcegraph/wildcard instead.',
               },
             ],
           },
