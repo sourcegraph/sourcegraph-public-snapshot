@@ -28,9 +28,26 @@ This feature is experimental. In particular, it comes with limitations:
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
 
+Feedback on server side Batch Changes is very welcome, feel free to open an [issue](https://github.com/sourcegraph/sourcegraph/issues), reach out through your usual support channel, or send a [direct message](https://twitter.com/MaloMarrec).
+
 ## How to enable computing Batch Changes server-side
 
 1. TODO
-1. 
-1. 
-1. 
+
+## FAQ
+
+### Can large batch changes execution be distributed on multiple executors?
+
+They can! Each changeset that is computed can be run concurrently, provided there are enough executors available.
+
+### I have several machines configured as executors, and they don't have the same specs (eg. memory). Can I submit some batch changes specifically to a given machine?
+
+No, all executors are equal in the eyes of Sourcegraph. We suggest making all executors equal.
+
+### What happens if the execution of a step fails?
+
+If the execution of a step on a given repository fails, that repository will be skipped, and execution on the other repositories will continue. Standard error and output will be available to the user for debugging purposes.
+
+### How do executors interact with code hosts? Will they clone repos directly? 
+
+ Executors do not interact directly with code hosts. They behave in a way [similar to src CLI](how_src_executes_a_batch_spec.m) today: executors interact with the Sourcegraph instance, the Sourcegraph instance interacts with the code host. In particular, executors download code from the Sourcegraph instance and executors do not need to access code hosts credentials directly.
