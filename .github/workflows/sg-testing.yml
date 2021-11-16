@@ -27,7 +27,7 @@ jobs:
 
       - name: Install SG
         run: |
-          ls -al /usr/local/bin
           cd dev/sg && go build -ldflags "-X main.BuildCommit=$(git rev-list -1 HEAD .)" .
-          sudo ./sg -y install
+          ./sg -y install
+          . ~/.bashrc
           sg version
