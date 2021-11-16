@@ -370,7 +370,9 @@ Each provider can implement optimizations to improve [sync performance](#permiss
 
 Some permissions providers in Sourcegraph can leverage code host webhooks to help [trigger a permissions sync](#permissions-sync-scheduling) on relevant events, which helps ensure permissions data in Sourcegraph is up to date.
 
-To see if your provider supports permissions caching, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports webhook events](#trigger-permissions-sync-from-github-webhooks).
+> NOTE: Webhook payloads is not used to populate permissions rules. All the prerequisite access for performing permissions sync for the relevant provider is still required.
+
+To see if your provider supports triggering syncs with webhooks, please refer to the relevant provider documentation on this page. For example, [the GitHub provider supports webhook events](#trigger-permissions-sync-from-github-webhooks).
 
 #### Permissions caching
 
