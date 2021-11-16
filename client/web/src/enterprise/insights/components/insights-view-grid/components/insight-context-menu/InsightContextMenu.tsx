@@ -2,17 +2,16 @@ import { Menu, MenuButton, MenuItem, MenuItems, MenuLink, MenuPopover } from '@r
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
-import React, { useContext } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { isSearchBasedInsight, LangStatsInsight } from '../../../../core/types'
-import { SearchBackendBasedInsight, SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
-import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
+import { Insight, InsightDashboard, isSearchBasedInsight } from '../../../../core/types'
 
 import styles from './InsightContextMenu.module.scss'
 
 export interface InsightCardMenuProps {
-    insight: SearchExtensionBasedInsight | LangStatsInsight | SearchBackendBasedInsight
+    insight: Insight
+    dashboard?: InsightDashboard | null
     zeroYAxisMin: boolean
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
@@ -23,12 +22,9 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insight, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin = noop } = props
-    const insightID = insight.id
+    const { insight, dashboard, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin = noop } = props
 
-    // Get dashboard information in case if insight card component
-    // is rendered on the dashboard page, otherwise get null value.
-    const { dashboard } = useContext(DashboardInsightsContext)
+    const insightID = insight.id
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
