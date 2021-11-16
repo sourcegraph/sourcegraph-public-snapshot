@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +26,7 @@ type migrator struct {
 	insightsDB dbutil.DB
 	postgresDB dbutil.DB
 
-	settingsMigrationJobsStore store.SettingsMigrationJobsStore
+	settingsMigrationJobsStore *store.DBSettingsMigrationJobsStore
 	settingsStore              database.SettingsStore
 	insightStore               *store.InsightStore
 	dashboardStore             *store.DBDashboardStore
@@ -40,14 +44,16 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 }
 
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
-	// Select the total rows and the completed rows.
-
-	// If total is 0, return 0
-	// Otherwise, return completed / total
-
-	fmt.Println("CALLING PROGRESS!!")
-
-	return 0, nil
+	progress, _, err := basestore.ScanFirstFloat(m.settingsMigrationJobsStore.Query(ctx, sqlf.Sprintf(`
+		SELECT CASE c2.count
+				   WHEN 0 THEN 1
+				   ELSE
+					   CAST(c1.count AS FLOAT) / CAST(c2.count AS FLOAT) END
+		FROM (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs WHERE completed_at IS NOT NULL) c1,
+			 (SELECT COUNT(*) AS count FROM insights_settings_migration_jobs) c2;
+	`)))
+	fmt.Println("Progress:", progress)
+	return progress, err
 }
 
 // I have questions about the transactions. We're using two completely different dbs here.
