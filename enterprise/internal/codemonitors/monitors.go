@@ -37,7 +37,7 @@ var monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.namespace_user_id"),
 }
 
-type CreateMonitorArgs struct {
+type MonitorArgs struct {
 	Description     string
 	Enabled         bool
 	NamespaceUserID *int32
@@ -51,7 +51,7 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s; -- monitorColumns
 `
 
-func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args CreateMonitorArgs) (*Monitor, error) {
+func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args MonitorArgs) (*Monitor, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
@@ -71,13 +71,6 @@ func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args CreateMonitor
 	return scanMonitor(row)
 }
 
-func nilOrInt32(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
-}
-
 const updateCodeMonitorFmtStr = `
 UPDATE cm_monitors
 SET description = %s,
@@ -90,29 +83,18 @@ WHERE id = %s
 RETURNING %s; -- monitorColumns
 `
 
-func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
-	var userID, orgID int32
-	err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, id int64, args MonitorArgs) (*Monitor, error) {
 	a := actor.FromContext(ctx)
-	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
 
 	q := sqlf.Sprintf(
 		updateCodeMonitorFmtStr,
-		args.Monitor.Update.Description,
-		args.Monitor.Update.Enabled,
-		nilOrInt32(userID),
-		nilOrInt32(orgID),
+		args.Description,
+		args.Enabled,
+		args.NamespaceUserID,
+		args.NamespaceOrgID,
 		a.UID,
 		s.Now(),
-		monitorID,
+		id,
 		sqlf.Join(monitorColumns, ", "),
 	)
 

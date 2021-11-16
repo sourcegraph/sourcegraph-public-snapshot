@@ -127,7 +127,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// Create monitor.
-	m, err := tx.store.CreateMonitor(ctx, cm.CreateMonitorArgs{
+	m, err := tx.store.CreateMonitor(ctx, cm.MonitorArgs{
 		Description:     args.Monitor.Description,
 		Enabled:         args.Monitor.Enabled,
 		NamespaceUserID: nilOrInt32(userID),
@@ -375,8 +375,22 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 
 func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
 	// Update monitor.
-	var mo *cm.Monitor
-	mo, err = r.store.UpdateMonitor(ctx, args)
+	var monitorID int64
+	if err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID); err != nil {
+		return nil, err
+	}
+
+	var userID, orgID int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID); err != nil {
+		return nil, err
+	}
+
+	mo, err := r.store.UpdateMonitor(ctx, monitorID, cm.MonitorArgs{
+		Description:     args.Monitor.Update.Description,
+		Enabled:         args.Monitor.Update.Enabled,
+		NamespaceUserID: nilOrInt32(userID),
+		NamespaceOrgID:  nilOrInt32(orgID),
+	})
 	if err != nil {
 		return nil, err
 	}

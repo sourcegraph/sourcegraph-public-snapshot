@@ -43,7 +43,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 
 	// Create monitor.
 	uid := actor.FromContext(ctx).UID
-	m, err := s.CreateMonitor(ctx, codemonitors.CreateMonitorArgs{
+	m, err := s.CreateMonitor(ctx, codemonitors.MonitorArgs{
 		Description:     testDescription,
 		Enabled:         true,
 		NamespaceUserID: &uid,
@@ -75,13 +75,6 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
 	return m, nil
-}
-
-func nilOrInt32(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
 }
 
 func NewTestStore(t *testing.T) (context.Context, *TestStore) {

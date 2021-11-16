@@ -185,7 +185,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
-			defaultHook: func(context.Context, CreateMonitorArgs) (*Monitor, error) {
+			defaultHook: func(context.Context, MonitorArgs) (*Monitor, error) {
 				return nil, nil
 			},
 		},
@@ -335,7 +335,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
-			defaultHook: func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
+			defaultHook: func(context.Context, int64, MonitorArgs) (*Monitor, error) {
 				return nil, nil
 			},
 		},
@@ -1259,15 +1259,15 @@ func (c CodeMonitorStoreCreateEmailActionFuncCall) Results() []interface{} {
 // CreateMonitor method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCreateMonitorFunc struct {
-	defaultHook func(context.Context, CreateMonitorArgs) (*Monitor, error)
-	hooks       []func(context.Context, CreateMonitorArgs) (*Monitor, error)
+	defaultHook func(context.Context, MonitorArgs) (*Monitor, error)
+	hooks       []func(context.Context, MonitorArgs) (*Monitor, error)
 	history     []CodeMonitorStoreCreateMonitorFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateMonitor delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 CreateMonitorArgs) (*Monitor, error) {
+func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 MonitorArgs) (*Monitor, error) {
 	r0, r1 := m.CreateMonitorFunc.nextHook()(v0, v1)
 	m.CreateMonitorFunc.appendCall(CodeMonitorStoreCreateMonitorFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1276,7 +1276,7 @@ func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 CreateMonito
 // SetDefaultHook sets function that is called when the CreateMonitor method
 // of the parent MockCodeMonitorStore instance is invoked and the hook queue
 // is empty.
-func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Context, CreateMonitorArgs) (*Monitor, error)) {
+func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Context, MonitorArgs) (*Monitor, error)) {
 	f.defaultHook = hook
 }
 
@@ -1284,7 +1284,7 @@ func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Con
 // CreateMonitor method of the parent MockCodeMonitorStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, CreateMonitorArgs) (*Monitor, error)) {
+func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, MonitorArgs) (*Monitor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1293,7 +1293,7 @@ func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
-	f.SetDefaultHook(func(context.Context, CreateMonitorArgs) (*Monitor, error) {
+	f.SetDefaultHook(func(context.Context, MonitorArgs) (*Monitor, error) {
 		return r0, r1
 	})
 }
@@ -1301,12 +1301,12 @@ func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 err
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreCreateMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
-	f.PushHook(func(context.Context, CreateMonitorArgs) (*Monitor, error) {
+	f.PushHook(func(context.Context, MonitorArgs) (*Monitor, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCreateMonitorFunc) nextHook() func(context.Context, CreateMonitorArgs) (*Monitor, error) {
+func (f *CodeMonitorStoreCreateMonitorFunc) nextHook() func(context.Context, MonitorArgs) (*Monitor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1345,7 +1345,7 @@ type CodeMonitorStoreCreateMonitorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 CreateMonitorArgs
+	Arg1 MonitorArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *Monitor
@@ -4562,24 +4562,24 @@ func (c CodeMonitorStoreUpdateEmailActionFuncCall) Results() []interface{} {
 // UpdateMonitor method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreUpdateMonitorFunc struct {
-	defaultHook func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)
-	hooks       []func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)
+	defaultHook func(context.Context, int64, MonitorArgs) (*Monitor, error)
+	hooks       []func(context.Context, int64, MonitorArgs) (*Monitor, error)
 	history     []CodeMonitorStoreUpdateMonitorFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateMonitor delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) UpdateMonitor(v0 context.Context, v1 *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
-	r0, r1 := m.UpdateMonitorFunc.nextHook()(v0, v1)
-	m.UpdateMonitorFunc.appendCall(CodeMonitorStoreUpdateMonitorFuncCall{v0, v1, r0, r1})
+func (m *MockCodeMonitorStore) UpdateMonitor(v0 context.Context, v1 int64, v2 MonitorArgs) (*Monitor, error) {
+	r0, r1 := m.UpdateMonitorFunc.nextHook()(v0, v1, v2)
+	m.UpdateMonitorFunc.appendCall(CodeMonitorStoreUpdateMonitorFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the UpdateMonitor method
 // of the parent MockCodeMonitorStore instance is invoked and the hook queue
 // is empty.
-func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultHook(hook func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)) {
+func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultHook(hook func(context.Context, int64, MonitorArgs) (*Monitor, error)) {
 	f.defaultHook = hook
 }
 
@@ -4587,7 +4587,7 @@ func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultHook(hook func(context.Con
 // UpdateMonitor method of the parent MockCodeMonitorStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeMonitorStoreUpdateMonitorFunc) PushHook(hook func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)) {
+func (f *CodeMonitorStoreUpdateMonitorFunc) PushHook(hook func(context.Context, int64, MonitorArgs) (*Monitor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4596,7 +4596,7 @@ func (f *CodeMonitorStoreUpdateMonitorFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
-	f.SetDefaultHook(func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
+	f.SetDefaultHook(func(context.Context, int64, MonitorArgs) (*Monitor, error) {
 		return r0, r1
 	})
 }
@@ -4604,12 +4604,12 @@ func (f *CodeMonitorStoreUpdateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 err
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreUpdateMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
-	f.PushHook(func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
+	f.PushHook(func(context.Context, int64, MonitorArgs) (*Monitor, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreUpdateMonitorFunc) nextHook() func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error) {
+func (f *CodeMonitorStoreUpdateMonitorFunc) nextHook() func(context.Context, int64, MonitorArgs) (*Monitor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4648,7 +4648,10 @@ type CodeMonitorStoreUpdateMonitorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *graphqlbackend.UpdateCodeMonitorArgs
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 MonitorArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *Monitor
@@ -4660,7 +4663,7 @@ type CodeMonitorStoreUpdateMonitorFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeMonitorStoreUpdateMonitorFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

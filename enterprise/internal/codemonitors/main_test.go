@@ -37,7 +37,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 	}
 	// Create monitor.
 	uid := actor.FromContext(ctx).UID
-	m, err := s.CreateMonitor(ctx, CreateMonitorArgs{
+	m, err := s.CreateMonitor(ctx, MonitorArgs{
 		Description:     testDescription,
 		Enabled:         true,
 		NamespaceUserID: &uid,
