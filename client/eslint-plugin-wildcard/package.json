@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@sourcegraph/eslint-config-wildcard",
+  "name": "@sourcegraph/eslint-plugin-wildcard",
   "version": "1.0.0",
   "description": "Recommended ESLint config for consumers of the Wildcard component library",
   "main": "lib/index.js",
