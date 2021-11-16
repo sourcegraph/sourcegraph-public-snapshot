@@ -42,8 +42,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 		ChangedAt:       r.Now(),
 		Description:     "test monitor",
 		Enabled:         true,
-		NamespaceUserID: &userID,
-		NamespaceOrgID:  nil,
+		NamespaceUserID: userID,
 	}
 
 	// Create a monitor.
@@ -178,21 +177,15 @@ func TestIsAllowedToEdit(t *testing.T) {
 	db := dbtesting.GetDB(t)
 
 	// Setup users and org
-	member := insertTestUser(t, db, "cm-user1", false)
-	notMember := insertTestUser(t, db, "cm-user2", false)
+	owner := insertTestUser(t, db, "cm-user1", false)
+	notOwner := insertTestUser(t, db, "cm-user2", false)
 	siteAdmin := insertTestUser(t, db, "cm-user3", true)
-
-	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
-	org, err := database.Orgs(db).Create(admContext, "cm-test-org", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	addUserToOrg(t, db, member, org.ID)
 
 	r := newTestResolver(t, db)
 
 	// Create a monitor and set org as owner.
-	ownerOpt := WithOwner(relay.MarshalID("Org", org.ID))
+	ownerOpt := WithOwner(relay.MarshalID("User", owner))
+	admContext := actor.WithActor(context.Background(), actor.FromUser(siteAdmin))
 	m, err := r.insertTestMonitorWithOpts(admContext, t, ownerOpt)
 	if err != nil {
 		t.Fatal(err)
@@ -203,11 +196,11 @@ func TestIsAllowedToEdit(t *testing.T) {
 		allowed bool
 	}{
 		{
-			user:    member,
+			user:    owner,
 			allowed: true,
 		},
 		{
-			user:    notMember,
+			user:    notOwner,
 			allowed: false,
 		},
 		{
@@ -225,8 +218,8 @@ func TestIsAllowedToEdit(t *testing.T) {
 	}
 
 	t.Run("cannot change namespace to one not editable by caller", func(t *testing.T) {
-		ctx := actor.WithActor(context.Background(), actor.FromUser(member))
-		notMemberNamespace := relay.MarshalID("User", notMember)
+		ctx := actor.WithActor(context.Background(), actor.FromUser(owner))
+		notMemberNamespace := relay.MarshalID("User", notOwner)
 		args := &graphqlbackend.UpdateCodeMonitorArgs{
 			Monitor: &graphqlbackend.EditMonitorArgs{
 				Id: m.ID(),
@@ -271,14 +264,13 @@ func TestIsAllowedToCreate(t *testing.T) {
 		{
 			user:    member,
 			owner:   relay.MarshalID("Org", org.ID),
-			allowed: true,
+			allowed: false,
 		},
 		{
 			user:    member,
 			owner:   relay.MarshalID("User", notMember),
 			allowed: false,
 		},
-
 		{
 			user:    notMember,
 			owner:   relay.MarshalID("Org", org.ID),
@@ -287,7 +279,7 @@ func TestIsAllowedToCreate(t *testing.T) {
 		{
 			user:    siteAdmin,
 			owner:   relay.MarshalID("Org", org.ID),
-			allowed: true,
+			allowed: false, // Error creating org owner
 		},
 		{
 			user:    siteAdmin,

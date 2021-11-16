@@ -389,7 +389,7 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	case "User":
 		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.store.Handle().DB()), ownerInt32)
 	case "Org":
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(r.store.Handle().DB()), ownerInt32)
+		return errors.Errorf("creating a code monitor with an org namespace is no longer supported")
 	default:
 		return errors.Errorf("provided ID is not a namespace")
 	}
@@ -401,16 +401,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner gra
 		return "", err
 	}
 
-	userID, orgID := monitor.NamespaceUserID, monitor.NamespaceOrgID
-	if (userID == nil && orgID == nil) || (userID != nil && orgID != nil) {
-		return "", errors.Errorf("invalid owner")
-	}
-
-	if orgID != nil {
-		return graphqlbackend.MarshalOrgID(*orgID), nil
-	} else {
-		return graphqlbackend.MarshalUserID(*userID), nil
-	}
+	return graphqlbackend.MarshalUserID(monitor.NamespaceUserID), nil
 }
 
 //
@@ -476,11 +467,7 @@ func (m *monitor) Enabled() bool {
 }
 
 func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	if m.NamespaceOrgID == nil {
-		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *m.NamespaceUserID)
-	} else {
-		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *m.NamespaceOrgID)
-	}
+	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.NamespaceUserID)
 	return n, err
 }
 
