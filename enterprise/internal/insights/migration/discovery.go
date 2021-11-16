@@ -31,14 +31,13 @@ func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) ([]insi
 
 	for id, body := range raw {
 		var temp insights.LangStatsInsight
-		temp.ID = id
+		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
 		}
 		temp.UserID = settingsRow.Subject.User
 		temp.OrgID = settingsRow.Subject.Org
-
 		results = append(results, temp)
 	}
 
@@ -57,7 +56,7 @@ func getFrontendInsights(ctx context.Context, settingsRow api.Settings) ([]insig
 
 	for id, body := range raw {
 		var temp insights.SearchInsight
-		temp.ID = id
+		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
@@ -89,7 +88,7 @@ func getBackendInsights(ctx context.Context, setting api.Settings) ([]insights.S
 
 	for _, val := range raw {
 		// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
-		temp, err := unmarshalBackendInsights(val)
+		temp, err := unmarshalBackendInsights(val, setting)
 		if err != nil {
 			// this isn't actually a total failure case, we could have partially parsed this dictionary.
 			multi = multierror.Append(multi, err)
@@ -147,7 +146,7 @@ func (i IntegratedInsights) Insights(perms permissionAssociations) []insights.Se
 	return results
 }
 
-func unmarshalBackendInsights(raw json.RawMessage) (IntegratedInsights, error) {
+func unmarshalBackendInsights(raw json.RawMessage, setting api.Settings) (IntegratedInsights, error) {
 	var dict map[string]json.RawMessage
 	var multi error
 	result := make(IntegratedInsights)
@@ -162,7 +161,7 @@ func unmarshalBackendInsights(raw json.RawMessage) (IntegratedInsights, error) {
 			multi = multierror.Append(multi, err)
 			continue
 		}
-		result[id] = temp
+		result[makeUniqueId(id, setting.Subject)] = temp
 	}
 
 	return result, multi
@@ -447,6 +446,9 @@ func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStor
 	} else {
 		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
 	}
+
+	// TODO: Okay so I think we're going to need a separate create method here that takes into account our logic
+	// of matching insight references by user/org.
 	_, err = dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{Dashboard: dashboard, Grants: grants})
 	if err != nil {
 		return err
@@ -495,3 +497,12 @@ type timeInterval struct {
 	value int
 }
 
+func makeUniqueId(id string, subject api.SettingsSubject) string {
+	if subject.User != nil {
+		return id + "user-" + string(*subject.User)
+	} else if subject.Org != nil {
+		return id + "org-" + string(*subject.Org)
+	} else {
+		return id
+	}
+}

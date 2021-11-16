@@ -73,10 +73,10 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	// migrationComplete, workCompleted, err = performOrgMigration(tx)
-	// if !migrationComplete || workCompleted {
-	// 	return nil
-	// }
+	migrationComplete, workCompleted, err = m.performOrgMigration(ctx)
+	if !migrationComplete || workCompleted {
+		return nil
+	}
 
 	// migrationComplete, workCompleted, err = performUserMigration(tx)
 	// if !migrationComplete || workCompleted {
@@ -124,36 +124,44 @@ func (m *migrator) PerformGlobalMigration(ctx context.Context) (bool, bool, erro
 	return true, false, nil
 }
 
-// func performOrgMigration(tx *basestore.Store) (bool, bool, error) {
-// 	// If there are no org rows
-// 	// return true, false, nil
+func (m *migrator) performOrgMigration(ctx context.Context) (bool, bool, error) {
+	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, store.OrgJob)
+	if err != nil {
+		fmt.Println(err)
+		return false, false, err
+	}
+	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, store.OrgJob)
+	if err != nil {
+		fmt.Println(err)
+		return false, false, err
+	}
+	if allComplete {
+		fmt.Println("org jobs all complete!")
+		return true, false, nil
+	}
 
-// 	// Check if all org rows are marked completed. (total_items == items_completed, dashboard_created == true)
-// 	// If so, return true, false, nil
+	rowsCompleted := 0
+	for _, job := range jobs {
+		// TODO: Not sure what to do with these. I think I made the returns too complicated. Will re-consider.
+		migrationComplete, _, _ := m.performMigrationForRow(ctx, *job)
+		if migrationComplete {
+			rowsCompleted++
+		}
+	}
 
-// 	// Attempt to pick up batchSize org rows.
-// 	// If we can't pick any up it's because they are locked
-// 	// return false, false, nil
-
-// 	// Loop over the rows that we've picked up
-// 	// Keep track such that if workCompleted is ever true, we make sure to return it as true from here.
-
-// 	// First pass: just do this for ONE row
-
-// 	migrationComplete, workCompleted, err := performMigrationForRow(tx, globalSettingsRow)
-// 	if err != nil {
-// 		return false, false, err
-// 	}
-// 	if !migrationComplete || workCompleted {
-// 		return false, workCompleted, nil
-// 	}
-
-// 	return true, false, nil
-// }
+	if rowsCompleted == len(jobs) {
+		return true, true, nil
+	} else {
+		return false, true, nil
+	}
+}
 
 // func performUserMigration(tx *basestore.Store) (bool, bool, error) {
 // 	// This will probably follow the same logic as orgs
 // }
+
+// I don't think this needs to return an error.. we aren't going to be doing anything with it. We should just write
+// out if there's an error, upgrade runs, etc.
 
 func (m *migrator) performMigrationForRow(ctx context.Context, job store.SettingsMigrationJob) (bool, bool, error) {
 	var subject api.SettingsSubject
@@ -180,6 +188,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 
 	// fmt.Println(settings)
 
+	// First, migrate the 3 types of insights
 	langStatsInsights, err := getLangStatsInsights(ctx, *settings)
 	if err != nil {
 		return false, false, err
@@ -200,9 +209,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
 	fmt.Println("total insights:", totalInsights)
 
-	// Update row with total_insights. Then compare with migrated_insights. If they're equal, continue. If not,
-	// Try migrating all of these insights.
-
 	var migratedInsightsCount int
 	if totalInsights != job.MigratedInsights {
 		err = m.settingsMigrationJobsStore.UpdateTotalInsights(ctx, job.UserId, job.OrgId, totalInsights)
@@ -218,6 +224,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 		}
 	}
 
+	// Then migrate the dashboards
 	dashboards, err := getDashboards(ctx, *settings)
 	if err != nil {
 		return false, true, err
@@ -240,13 +247,13 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	}
 
 	// TODO: Create virtual dashboard here.
+	// TODO: Then fill in completed_at and we're done!
+	// TODO: Also increment "runs"
+	// TODO: And if there are errors, write those out to error_msg.
 
 	// Error handling: If we're keeping track of total vs completed insights/dashboards, maybe we just need a state for retries. We can do like
 	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
 	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
-
-	// Create virtual dashboard. Some function here that, once all the items are done, it does the dashboard. Hmm the state of this needs
-	// to exist too; it's not part of items_completed. Another row maybe? virtual_dashboard_completed?
 
 	return false, false, nil
 }
