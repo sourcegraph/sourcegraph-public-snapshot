@@ -405,7 +405,7 @@ const WorkspaceStep: React.FunctionComponent<
                         .trim() === ''
             )
         ) {
-            outputLines.push('stderr: This command did not procude any logs')
+            outputLines.push('stderr: This command did not produce any logs')
         }
         if (step.exitCode !== null) {
             outputLines.push(`\nstdout: \nstdout: Command exited with status ${step.exitCode}`)
