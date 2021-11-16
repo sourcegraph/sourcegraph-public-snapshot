@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -83,6 +84,9 @@ type Logger struct {
 	recordID int
 
 	replacer *strings.Replacer
+
+	errs   *multierror.Error
+	errsMu sync.Mutex
 }
 
 // logEntryBufSize is the maximum number of log entries that are logged by the
@@ -108,6 +112,7 @@ func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, rep
 		done:     make(chan struct{}),
 		handles:  make(chan *entryHandle, logEntryBufsize),
 		replacer: strings.NewReplacer(oldnew...),
+		errs:     &multierror.Error{},
 	}
 
 	go l.writeEntries()
@@ -118,9 +123,14 @@ func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, rep
 // Flush waits until all entries have been written to the store and all
 // background goroutines that watch a log entry and possibly update it have
 // exited.
-func (l *Logger) Flush() {
+func (l *Logger) Flush() error {
 	close(l.handles)
 	<-l.done
+
+	l.errsMu.Lock()
+	defer l.errsMu.Unlock()
+
+	return l.errs.ErrorOrNil()
 }
 
 // Log redacts secrets from the given log entry and stores it.
@@ -152,6 +162,11 @@ func (l *Logger) writeEntries() {
 			// writing these logs as users will often want to see how far something
 			// progressed prior to a timeout.
 			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
+
+			l.errsMu.Lock()
+			l.errs = multierror.Append(l.errs, err)
+			l.errsMu.Unlock()
+
 			continue
 		}
 		log15.Info("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
@@ -207,6 +222,11 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			logMethod := log15.Warn
 			if lastWrite {
 				logMethod = log15.Error
+				// If lastWrite, this MUST complete for the job to be considered successful,
+				// so we want to hard-fail otherwise. We store away the error.
+				l.errsMu.Lock()
+				l.errs = multierror.Append(l.errs, err)
+				l.errsMu.Unlock()
 			}
 
 			logMethod(
