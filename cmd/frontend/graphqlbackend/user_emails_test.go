@@ -443,22 +443,23 @@ func TestResendUserEmailVerification(t *testing.T) {
 		}
 	})
 
-	resetMocks()
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: true}, nil
-	}
-	database.Mocks.UserEmails.SetLastVerification = func(context.Context, int32, string, string) error {
-		return nil
-	}
+	})
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+
+	userEmails := dbmock.NewMockUserEmailsStore()
+	userEmails.SetLastVerificationFunc.SetDefaultReturn(nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 	knownTime := time.Time{}.Add(1337 * time.Hour)
 	timeNow = func() time.Time {
 		return knownTime
 	}
-	db := database.NewDB(nil)
 
 	tests := []struct {
 		name            string
@@ -590,15 +591,14 @@ func TestResendUserEmailVerification(t *testing.T) {
 				emailSent = true
 				return nil
 			}
-			database.Mocks.UserEmails.Get = func(id int32, email string) (string, bool, error) {
+
+			userEmails.GetFunc.SetDefaultHook(func(ctx context.Context, id int32, email string) (string, bool, error) {
 				if email != test.email.Email {
 					return "", false, errors.New("oh no!")
 				}
 				return test.email.Email, test.email.VerifiedAt != nil, nil
-			}
-			database.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*database.UserEmail, error) {
-				return test.email, nil
-			}
+			})
+			userEmails.GetLatestVerificationSentEmailFunc.SetDefaultReturn(test.email, nil)
 
 			RunTests(t, test.gqlTests)
 

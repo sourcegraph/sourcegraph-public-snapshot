@@ -25,8 +25,8 @@
 
 ```
 
-`sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
-Learn more about the tool's overall vision in [`sg` Vision](./vision.md).
+[`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
+Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and how to use it in the [usage section](#usage).
 
 ## Quickstart
 
@@ -36,13 +36,15 @@ Learn more about the tool's overall vision in [`sg` Vision](./vision.md).
    curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
    ```
 
-3. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), start the default Sourcegraph environment:
+2. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), start the default Sourcegraph environment:
 
    ```sh
    sg start
    ```
 
-   Once the `enterprise-web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+3. Once the `enterprise-web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+
+A more detailed introduction is available in the [development quickstart guide](../../getting-started/quickstart.md).
 
 ## Installation
 
@@ -62,7 +64,7 @@ That will download the latest release of `sg` from [here](https://github.com/sou
 
 Run the following in the root of `sourcegraph/sourcegraph`:
 
-```
+```sh
 ./dev/sg/install.sh
 ```
 
@@ -90,7 +92,7 @@ If you want full control over where the `sg` binary ends up, use this option.
 
 In the root of `sourcegraph/sourcegraph`, run:
 
-```
+```sh
 go build -o ~/my/path/sg ./dev/sg
 ```
 
@@ -270,9 +272,6 @@ specific to your work.
 
 You can run `sg run debug-env` to see the environment variables passed `sg`'s child processes.
 
-## Debugger
-To attach the [Delve](https://github.com/go-delve/delve) debugger, pass the environment variable `DELVE=true` into `sg`. [Read more here](https://docs.sourcegraph.com/dev/how-to/debug_live_code#debug-go-code)
-
 ### Examples
 
 #### Changing database configuration
@@ -319,12 +318,17 @@ commandsets:
 
 With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batches`.
 
+### Attach a debugger
+
+To attach the [Delve](https://github.com/go-delve/delve) debugger, pass the environment variable `DELVE=true` into `sg`. [Read more here](https://docs.sourcegraph.com/dev/how-to/debug_live_code#debug-go-code)
+
 ## Contributing to `sg`
 
 Want to hack on `sg`? Great! Here's how:
 
 1. Read through the [`sg` Vision](./vision.md) to get an idea of what `sg` should be in the long term.
-2. Look at the open [`sg` issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Asg)
+2. Explore the [`sg` source code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg).
+3. Look at the open [`sg` issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Asg).
 
 When you want to hack on `sg` it's best to be in the `dev/sg` directory and run it from there:
 

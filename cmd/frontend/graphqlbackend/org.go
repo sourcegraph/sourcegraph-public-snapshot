@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
@@ -26,9 +27,25 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	}
 	// 🚨 SECURITY: Only org members can get org details on Cloud
 	if envvar.SourcegraphDotComMode() {
-		err := backend.CheckOrgAccess(ctx, r.db, org.ID)
-		if err != nil {
-			return nil, errors.Newf("org not found: %s", args.Name)
+		hasAccess := func() error {
+			err := backend.CheckOrgAccess(ctx, r.db, org.ID)
+			if err == nil {
+				return nil
+			}
+
+			if a := actor.FromContext(ctx); a.IsAuthenticated() {
+				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
+				if err == nil {
+					return nil
+				}
+			}
+
+			// NOTE: We want to present a unified error to unauthorized users to prevent
+			// them from differentiating service states by different error messages.
+			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
+		}
+		if err := hasAccess(); err != nil {
+			return nil, err
 		}
 	}
 	return &OrgResolver{db: r.db, org: org}, nil
@@ -276,7 +293,14 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := database.OrgMembers(r.db).Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
-	r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
+	if err != nil {
+		log15.Warn("schemaResolver.RemoveUserFromOrganization.SchedulePermsSync",
+			"userID", userID,
+			"error", err,
+		)
+	}
 	return nil, nil
 }
 
@@ -306,8 +330,15 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	if _, err := database.OrgMembers(r.db).Create(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
+
 	// Schedule permission sync for newly added user
-	r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
+	if err != nil {
+		log15.Warn("schemaResolver.AddUserToOrganization.SchedulePermsSync",
+			"userID", userToInvite.ID,
+			"error", err,
+		)
+	}
 	return &EmptyResponse{}, nil
 }
 

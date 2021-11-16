@@ -405,7 +405,7 @@ const WorkspaceStep: React.FunctionComponent<
                         .trim() === ''
             )
         ) {
-            outputLines.push('stderr: This command did not procude any logs')
+            outputLines.push('stderr: This command did not produce any logs')
         }
         if (step.exitCode !== null) {
             outputLines.push(`\nstdout: \nstdout: Command exited with status ${step.exitCode}`)
@@ -430,7 +430,7 @@ const WorkspaceStep: React.FunctionComponent<
         >
             <div className="p-2">
                 {!step.skipped && (
-                    <Tabs size="medium">
+                    <Tabs size="small">
                         <TabList>
                             <Tab key="logs">Logs</Tab>
                             <Tab key="output-variables">Output variables</Tab>
