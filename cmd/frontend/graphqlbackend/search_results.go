@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -1607,14 +1608,19 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
+		//
+		// TODO: We should use repos.Resolve here. However, the logic for
+		// UserID is different to repos.Resolve, so we need to work out how
+		// best to address that first.
 		userPrivateRepos, err := r.db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-			UserID:       userID, // Zero valued when not in sourcegraph.com mode
-			OnlyPrivate:  true,
-			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
-			OnlyForks:    args.RepoOptions.OnlyForks,
-			NoForks:      args.RepoOptions.NoForks,
-			OnlyArchived: args.RepoOptions.OnlyArchived,
-			NoArchived:   args.RepoOptions.NoArchived,
+			UserID:         userID, // Zero valued when not in sourcegraph.com mode
+			OnlyPrivate:    true,
+			LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+			OnlyForks:      args.RepoOptions.OnlyForks,
+			NoForks:        args.RepoOptions.NoForks,
+			OnlyArchived:   args.RepoOptions.OnlyArchived,
+			NoArchived:     args.RepoOptions.NoArchived,
+			ExcludePattern: repos.UnionRegExps(args.RepoOptions.MinusRepoFilters),
 		})
 
 		if err != nil {
