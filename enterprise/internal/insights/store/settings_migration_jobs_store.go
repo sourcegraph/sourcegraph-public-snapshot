@@ -65,9 +65,9 @@ func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.
 const getSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:GetSettingsMigrationJob
 SELECT user_id, org_id, global, total_insights, migrated_insights, total_dashboards, migrated_dashboards, runs,
-(CASE WHEN virtual_dashboard_created_at IS NULL THEN FALSE ELSE TRUE END) AS virtual_dashboard_created
-FROM settings_migration_jobs
-WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR virtual_dashboard_created_at IS NULL)
+(CASE WHEN completed_at IS NULL THEN FALSE ELSE TRUE END) AS dashboard_created
+FROM insights_settings_migration_jobs
+WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR completed_at IS NULL)
 LIMIT 100
 FOR UPDATE SKIP LOCKED;
 `
@@ -123,19 +123,19 @@ func (s *DBSettingsMigrationJobsStore) CreateSettingsMigrationJob(ctx context.Co
 
 const insertUserSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs_store.go:CreateSettingsMigrationJob
-INSERT INTO settings_migration_jobs (user_id) VALUES (%s)
+INSERT INTO insights_settings_migration_jobs (user_id) VALUES (%s)
 ON CONFLICT DO NOTHING;
 `
 
 const insertOrgSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-INSERT INTO settings_migration_jobs (org_id) VALUES (%s)
+INSERT INTO insights_settings_migration_jobs (org_id) VALUES (%s)
 ON CONFLICT DO NOTHING;
 `
 
 const insertGlobalSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-INSERT INTO settings_migration_jobs (global) VALUES (true)
+INSERT INTO insights_settings_migration_jobs (global) VALUES (true)
 ON CONFLICT DO NOTHING;
 `
 
@@ -150,7 +150,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, 
 
 const updateTotalInsightsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-UPDATE settings_migration_jobs SET total_insights = %s WHERE %s
+UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error {
@@ -164,7 +164,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Contex
 
 const updateMigratedInsightsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-UPDATE settings_migration_jobs SET migrated_insights = %s WHERE %s
+UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error {
@@ -178,7 +178,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context
 
 const updateTotalDashboardsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-UPDATE settings_migration_jobs SET total_dashboards = %s WHERE %s
+UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error {
@@ -192,7 +192,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Cont
 
 const updateMigratedDashboardsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-UPDATE settings_migration_jobs SET migrated_dashboards = %s WHERE %s
+UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) CountSettingsMigrationJobs(ctx context.Context) (int, error) {
@@ -202,7 +202,7 @@ func (s *DBSettingsMigrationJobsStore) CountSettingsMigrationJobs(ctx context.Co
 
 const countSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-SELECT COUNT(*) from settings_migration_jobs;
+SELECT COUNT(*) from insights_settings_migration_jobs;
 `
 
 func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
@@ -216,8 +216,8 @@ func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jo
 
 const countIncompleteJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:IsJobTypeComplete
-SELECT COUNT(*) FROM settings_migration_jobs
-WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR virtual_dashboard_created_at IS NULL);
+SELECT COUNT(*) FROM insights_settings_migration_jobs
+WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR completed_at IS NULL);
 `
 
 func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Query {

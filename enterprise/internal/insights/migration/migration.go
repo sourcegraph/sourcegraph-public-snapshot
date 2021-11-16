@@ -38,7 +38,7 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 	return &migrator{
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
-		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(insightsDB),
+		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
 		settingsStore:              database.Settings(postgresDB),
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
