@@ -78,6 +78,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             {batchSpecID && currentPreviewRequestTime && (
                 <WithBatchSpec
                     batchSpecID={batchSpecID}
+                    batchSpecStale={batchSpecStale}
                     setResolutionError={setResolutionError}
                     excludeRepo={excludeRepo}
                     currentPreviewRequestTime={currentPreviewRequestTime}
@@ -97,12 +98,15 @@ const getResolution = (queryResult?: WorkspaceResolutionStatusResult): Workspace
     queryResult?.node?.__typename === 'BatchSpec' ? queryResult.node.workspaceResolution : null
 
 interface WithBatchSpecProps
-    extends Required<Pick<WorkspacesPreviewProps, 'batchSpecID' | 'excludeRepo' | 'currentPreviewRequestTime'>> {
+    extends Required<
+        Pick<WorkspacesPreviewProps, 'batchSpecID' | 'batchSpecStale' | 'currentPreviewRequestTime' | 'excludeRepo'>
+    > {
     setResolutionError: (error: string) => void
 }
 
 const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
     batchSpecID,
+    batchSpecStale,
     currentPreviewRequestTime,
     setResolutionError,
     excludeRepo,
@@ -126,6 +130,7 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
                 <div className="d-flex flex-column align-items-center overflow-auto w-100">
                     <WorkspacesPreviewList
                         batchSpecID={batchSpecID}
+                        isStale={batchSpecStale}
                         setResolutionError={setResolutionError}
                         excludeRepo={excludeRepo}
                     />

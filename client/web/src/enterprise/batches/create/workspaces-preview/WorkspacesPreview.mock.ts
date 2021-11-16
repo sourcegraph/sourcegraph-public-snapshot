@@ -20,7 +20,7 @@ export const mockWorkspaceResolutionStatus = (
     },
 })
 
-const mockWorkspace = (
+export const mockWorkspace = (
     id: number,
     fields?: Partial<PreviewBatchSpecWorkspaceFields>
 ): PreviewBatchSpecWorkspaceFields => ({
@@ -34,10 +34,14 @@ const mockWorkspace = (
         id: `repo-${id}`,
         name: `github.com/my-org/repo-${id}`,
         url: 'superfake.com',
+        defaultBranch: {
+            id: 'main-branch-id',
+            ...fields?.repository?.defaultBranch,
+        },
         ...fields?.repository,
     },
     branch: {
-        id: `branch-${id}`,
+        id: 'main-branch-id',
         abbrevName: 'main',
         displayName: 'main',
         ...fields?.branch,
@@ -45,6 +49,7 @@ const mockWorkspace = (
             oid: 'asdf1234',
             ...fields?.branch?.target,
         },
+        url: 'superfake.com',
     },
 })
 
