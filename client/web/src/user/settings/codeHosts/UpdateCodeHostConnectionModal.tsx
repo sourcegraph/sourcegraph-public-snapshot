@@ -131,7 +131,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                                 className="btn btn-primary"
                                 loading={isLoading}
                                 disabled={!token || isLoading}
-                                label="Update token"
+                                label="Update code host connection"
                                 alwaysShowLabel={true}
                             />
                         ) : (
