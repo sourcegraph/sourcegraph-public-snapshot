@@ -53,7 +53,7 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
             </span>
             <span className={styles.receivedAt}>{format(Date.parse(receivedAt), 'Ppp')}</span>
             {isExpanded && (
-                <div className={classNames('px-4', 'pt-3', 'pb-4', styles.expanded)}>
+                <div className={classNames('px-4', 'pt-3', 'pb-2', styles.expanded)}>
                     <Tabs index={initialTabIndex} size="small">
                         <TabList>
                             <Tab>Request</Tab>
