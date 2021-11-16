@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-func Init(ctx context.Context, db dbutil.DB, _ conftypes.UnifiedWatchable, _outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db dbutil.DB, _ conftypes.UnifiedWatchable, _ *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	enterpriseServices.OrgRepositoryResolver = resolvers.NewResolver(database.NewDB(db))
 	return nil
 }
