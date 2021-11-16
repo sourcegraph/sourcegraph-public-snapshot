@@ -1,7 +1,6 @@
 import { Omit } from 'utility-types'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CodeHost } from '../shared/codeHost'
@@ -129,17 +128,35 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-export const gitlabCodeHost = subtypeOf<CodeHost>()({
+// TODO: memoize
+// NOTE: check success/error reponses
+const isPrivateRepository = (projectId?: string): Promise<boolean> => {
+    if (window.location.hostname !== 'gitlab.com' || !projectId) {
+        return Promise.resolve(true)
+    }
+    return fetch(`https://gitlab.com/api/v4/projects/${projectId}`)
+        .then(response => response.json() as { visibility?: 'public' | 'private' | 'internal' })
+        .then(json => json?.visibility !== 'public')
+        .catch(error => {
+            console.warn('Failed to fetch if the repository visibility.', error)
+            return true
+        })
+}
+
+export const gitlabCodeHost: CodeHost = {
     type: 'gitlab',
     name: 'GitLab',
     check: checkIsGitlab,
     codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,
     getCommandPaletteMount,
-    getContext: () => ({
-        ...getPageInfo(),
-        privateRepository: window.location.hostname !== 'gitlab.com',
-    }),
+    getContext: async () => {
+        const { projectId, ...pageInfo } = getPageInfo()
+        return {
+            ...pageInfo,
+            privateRepository: await isPrivateRepository(projectId),
+        }
+    },
     urlToFile: (sourcegraphURL, target, context): string => {
         // A view state means that a panel must be shown, and panels are currently only supported on
         // Sourcegraph (not code hosts).
@@ -214,4 +231,4 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
         }
         return null
     },
-})
+}

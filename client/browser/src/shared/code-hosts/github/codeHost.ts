@@ -367,6 +367,21 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
     },
 }
 
+// TODO: memoize
+// NOTE: check success/error reponses
+const isPrivateRepository = (repoName: string): Promise<boolean> => {
+    if (window.location.hostname !== 'github.com') {
+        return Promise.resolve(true)
+    }
+    return fetch(`https://api.github.com/repos/${repoName}`)
+        .then(response => response.json() as { private?: boolean })
+        .then(json => typeof json.private !== 'boolean' || json.private)
+        .catch(error => {
+            console.warn('Failed to fetch if the repository is private.', error)
+            return true
+        })
+}
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -374,24 +389,13 @@ export const githubCodeHost: CodeHost = {
     codeViewResolvers: [genericCodeViewResolver, fileLineContainerResolver, searchResultCodeViewResolver],
     contentViewResolvers: [markdownBodyViewResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
-    getContext: () => {
-        const repoHeaderHasPrivateMarker =
-            !!document.querySelector('.repohead .private') ||
-            !!document.querySelector('h1 .octicon-lock ~ [itemprop="author"] ~ [itemprop="name"]') ||
-            !!(
-                document
-                    .querySelector('h1 [itemprop="author"] ~ [itemprop="name"] ~ .Label')
-                    ?.textContent?.trim()
-                    .toLowerCase() === 'private'
-            )
-        const parsedURL = parseURL()
+    getContext: async () => {
+        const { repoName, rawRepoName, pageType } = parseURL()
+
         return {
-            ...parsedURL,
-            revision:
-                parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree'
-                    ? resolveFileInfo().blob.revision
-                    : undefined,
-            privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
+            rawRepoName,
+            revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
+            privateRepository: await isPrivateRepository(repoName),
         }
     },
     isLightTheme: defer(() => {

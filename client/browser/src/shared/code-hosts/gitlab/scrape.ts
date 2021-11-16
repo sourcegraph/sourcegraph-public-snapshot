@@ -21,6 +21,7 @@ export interface GitLabInfo extends RawRepoSpec {
 
     owner: string
     projectName: string
+    projectId?: string
 }
 
 /**
@@ -64,11 +65,14 @@ export function getPageInfo(): GitLabInfo {
     const pageKind = getPageKindFromPathName(owner, projectName, window.location.pathname)
     const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
 
+    const projectId = document.querySelector<HTMLInputElement>('#search_project_id')?.value
+
     return {
         owner,
         projectName,
         rawRepoName: [hostname, owner, projectName].join('/'),
         pageKind,
+        projectId,
     }
 }
 

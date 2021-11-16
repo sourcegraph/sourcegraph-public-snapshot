@@ -18,7 +18,7 @@ export interface ViewOnSourcegraphButtonClassProps {
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     codeHostType: string
-    getContext: () => CodeHostContext
+    context: CodeHostContext
     sourcegraphURL: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
@@ -38,7 +38,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     codeHostType,
     repoExistsOrError,
     sourcegraphURL,
-    getContext,
+    context,
     minimalUI,
     onConfigureSourcegraphClick,
     showSignInButton,
@@ -54,7 +54,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         iconClassName,
     }
 
-    const { rawRepoName, revision, privateRepository } = getContext()
+    const { rawRepoName, revision, privateRepository } = context
 
     const isPrivateCloudError =
         sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && repoExistsOrError === false && privateRepository

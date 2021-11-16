@@ -1,5 +1,5 @@
-import { Observable, of, zip } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { from, Observable, of, zip } from 'rxjs'
+import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
@@ -21,23 +21,27 @@ const useRawRepoNameAsFallback = (fileInfo: FileInfo): FileInfoWithRepoName => (
  */
 const resolveRepoNameForFileInfo = (
     fileInfo: FileInfo,
-    checkPrivateCloudError: (error: any) => boolean,
+    checkPrivateCloudError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithRepoName> =>
     resolveRepo({ rawRepoName: fileInfo.rawRepoName, requestGraphQL }).pipe(
         map(repoName => ({ ...fileInfo, repoName })),
-        catchError(error => {
+        catchError(error =>
             // Check if the repository is a private repository
             // that has not been found. (if the browser extension is pointed towards
             // Sourcegraph cloud). In that case, it's impossible to resolve the repo names,
             // so we keep the repo names inferred from the code host's DOM.
             // Note: we recover/fallback in this case so that we can show informative
             // alerts to the user.
-            if (checkPrivateCloudError(error)) {
-                return of(useRawRepoNameAsFallback(fileInfo))
-            }
-            throw error
-        })
+            from(checkPrivateCloudError(error)).pipe(
+                switchMap(hasPrivateCloudError => {
+                    if (hasPrivateCloudError) {
+                        return of(useRawRepoNameAsFallback(fileInfo))
+                    }
+                    throw error
+                })
+            )
+        )
     )
 
 /**
@@ -66,7 +70,7 @@ export const ensureRevisionIsClonedForFileInfo = (
 
 export const resolveRepoNamesForDiffOrFileInfo = (
     diffOrFileInfo: DiffOrBlobInfo,
-    checkPrivateCloudError: (error: any) => boolean,
+    checkPrivateCloudError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<DiffOrBlobInfo<FileInfoWithRepoName>> => {
     if ('blob' in diffOrFileInfo) {
