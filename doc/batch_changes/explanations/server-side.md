@@ -16,11 +16,12 @@ This feature is experimental. In particular, it comes with limitations:
 
 - only site admins can run batch changes server-side
 - the server side batch changes UI is minimal and will change a lot before the GA release
-- step-wise caching is not included server side
-- steps cannot include [files](batch_spec_yaml_reference.md#steps-files)
 - documentation is minimal and will change a lot before the GA release
 - batch change execution is not optimized
-- executors can only be installed on AWS and GCP, with Terraform (see [deploying executors](../../admin/deploy_executors.md))
+- executors can only be deployed on AWS and GCP, with Terraform (see [deploying executors](../../admin/deploy_executors.md))
+- step-wise caching is not included server side
+- steps cannot include [files](batch_spec_yaml_reference.md#steps-files)
+
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
 
