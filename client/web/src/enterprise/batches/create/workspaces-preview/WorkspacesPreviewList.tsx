@@ -3,7 +3,6 @@ import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     WorkspacesAndImportingChangesetsResult,
@@ -12,6 +11,7 @@ import {
 } from '../../../../graphql-operations'
 import { WORKSPACES_AND_IMPORTING_CHANGESETS } from '../backend'
 
+import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
 interface WorkspacesPreviewListProps {
@@ -47,7 +47,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
     })
 
     if (loading) {
-        return <LoadingSpinner className="my-4" />
+        return <PreviewLoadingSpinner className="my-4" />
     }
 
     const workspaces = data?.node?.__typename === 'BatchSpec' ? data.node.workspaceResolution?.workspaces : undefined

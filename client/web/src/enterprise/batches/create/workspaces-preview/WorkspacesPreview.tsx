@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -13,6 +12,7 @@ import {
 } from '../../../../graphql-operations'
 import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
+import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPrompt, PreviewPromptForm } from './PreviewPrompt'
 import styles from './WorkspacesPreview.module.scss'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
@@ -122,8 +122,7 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
     return (
         <>
             {isLoading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
-                // TODO: Show cooler loading indicator
-                <LoadingSpinner className="my-4" />
+                <PreviewLoadingSpinner className="mt-4" />
             ) : null}
             {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
             {resolution?.state === 'COMPLETED' ? (
