@@ -28,7 +28,6 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
         setPolicy(policy => ({ ...(policy || nullPolicy), ...updates }))
     }
 
-
     return (
         <div className="form-group">
             <h3>Auto-indexing</h3>
