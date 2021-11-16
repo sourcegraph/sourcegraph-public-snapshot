@@ -265,12 +265,13 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		}
 	}
 
-	user, err := database.Users(r.db).GetByID(ctx, userID)
+	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	lastSent, err := database.UserEmails(r.db).GetLatestVerificationSentEmail(ctx, args.Email)
+	userEmails := r.db.UserEmails()
+	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, args.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +281,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, errors.New("Last verification email sent too recently")
 	}
 
-	email, verified, err := database.UserEmails(r.db).Get(ctx, userID, args.Email)
+	email, verified, err := userEmails.Get(ctx, userID, args.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +294,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	err = database.UserEmails(r.db).SetLastVerification(ctx, userID, email, code)
+	err = userEmails.SetLastVerification(ctx, userID, email, code)
 	if err != nil {
 		return nil, err
 	}
