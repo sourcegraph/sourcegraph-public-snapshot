@@ -641,6 +641,19 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 		return entryID, err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", id,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", id,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
 		return entryID, ErrExecutionLogEntryNotUpdated
 	}
 	return entryID, nil
@@ -698,6 +711,7 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 
 		return ErrExecutionLogEntryNotUpdated
 	}
+
 	return nil
 }
 
