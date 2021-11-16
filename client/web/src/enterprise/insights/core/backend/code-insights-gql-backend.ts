@@ -336,8 +336,16 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
-        this.getDashboards(dashboardId).pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null))
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> => {
+        // the 'all' dashboardId is not a real dashboard so return early
+        if (dashboardId === 'all') {
+            return of(null)
+        }
+
+        return this.getDashboards(dashboardId).pipe(
+            map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null)
+        )
+    }
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.
