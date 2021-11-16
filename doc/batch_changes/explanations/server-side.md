@@ -50,4 +50,4 @@ If the execution of a step on a given repository fails, that repository will be 
 
 ### How do executors interact with code hosts? Will they clone repos directly? 
 
- Executors do not interact directly with code hosts. They behave in a way [similar to src CLI](how_src_executes_a_batch_spec.m) today: executors interact with the Sourcegraph instance, the Sourcegraph instance interacts with the code host. In particular, executors download code from the Sourcegraph instance and executors do not need to access code hosts credentials directly.
+ Executors do not interact directly with code hosts. They behave in a way [similar to src CLI](how_src_executes_a_batch_spec.md) today: executors interact with the Sourcegraph instance, the Sourcegraph instance interacts with the code host. In particular, executors download code from the Sourcegraph instance and executors do not need to access code hosts credentials directly.
