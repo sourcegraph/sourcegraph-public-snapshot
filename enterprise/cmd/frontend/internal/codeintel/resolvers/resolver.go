@@ -23,27 +23,32 @@ import (
 // by the API.
 type Resolver interface {
 	GetUploadByID(ctx context.Context, id int) (store.Upload, bool, error)
-	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]store.Upload, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
-	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
-	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
+
+	GetIndexByID(ctx context.Context, id int) (store.Index, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) error
-	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
-	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
+
 	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
 	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
+
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
 	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
+
+	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
 	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
+
+	UploadConnectionResolver(opts store.GetUploadsOptions) *UploadsResolver
+	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
+	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
 }
 
 type resolver struct {

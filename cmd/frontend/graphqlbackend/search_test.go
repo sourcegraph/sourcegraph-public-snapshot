@@ -15,10 +15,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -382,8 +382,6 @@ func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int32) *res
 }
 
 func BenchmarkSearchResults(b *testing.B) {
-	db := new(dbtesting.MockDB)
-
 	minimalRepos, zoektRepos := generateRepos(500_000)
 	zoektFileMatches := generateZoektMatches(1000)
 
@@ -393,14 +391,15 @@ func BenchmarkSearchResults(b *testing.B) {
 	})
 
 	ctx := context.Background()
+	db := dbmock.NewMockDB()
 
-	database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-		return minimalRepos, nil
-	}
-	database.Mocks.Repos.Count = func(ctx context.Context, opt database.ReposListOptions) (int, error) {
-		return len(minimalRepos), nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	repos := dbmock.NewMockRepoStore()
+	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
+	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	srp := authz.NewMockSubRepoPermissionChecker()
+	srp.EnabledFunc.SetDefaultReturn(false)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -411,15 +410,16 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			db: database.NewDB(db),
+			db: db,
 			SearchInputs: &run.SearchInputs{
 				Plan:         plan,
 				Query:        plan.ToParseTree(),
 				UserSettings: &schema.Settings{},
 			},
-			zoekt:    z,
-			reposMu:  &sync.Mutex{},
-			resolved: &searchrepos.Resolved{},
+			zoekt:        z,
+			reposMu:      &sync.Mutex{},
+			resolved:     &searchrepos.Resolved{},
+			subRepoPerms: srp,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {

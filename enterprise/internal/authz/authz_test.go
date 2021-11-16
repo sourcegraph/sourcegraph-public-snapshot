@@ -470,7 +470,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(
 			context.Background(),
-			&test.cfg,
+			staticConfig(test.cfg.SiteConfiguration),
 			&store,
 		)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
@@ -483,6 +483,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			t.Errorf("seriousProblems: (actual) %+v != (expected) %+v", asJSON(t, seriousProblems), asJSON(t, test.expSeriousProblems))
 		}
 	}
+}
+
+type staticConfig schema.SiteConfiguration
+
+func (s staticConfig) SiteConfig() schema.SiteConfiguration {
+	return schema.SiteConfiguration(s)
 }
 
 func mustURLParse(t *testing.T, u string) *url.URL {

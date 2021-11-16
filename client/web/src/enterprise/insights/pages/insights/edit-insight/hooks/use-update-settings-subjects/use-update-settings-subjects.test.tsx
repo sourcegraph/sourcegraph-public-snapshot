@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-hooks'
+import { act, renderHook } from '@testing-library/react-hooks'
 import React, { PropsWithChildren } from 'react'
 import { Observable, of } from 'rxjs'
 import sinon from 'sinon'
@@ -10,13 +10,14 @@ import { Settings } from '../../../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../../core/backend/create-insights-api'
 import { ApiService } from '../../../../../core/backend/types'
-import { InsightType, LangStatsInsight } from '../../../../../core/types'
+import { InsightExecutionType, InsightType, LangStatsInsight } from '../../../../../core/types'
 import { createGlobalSubject, createOrgSubject, createUserSubject } from '../../../../../mocks/settings-cascade'
 
 import { useUpdateSettingsSubject } from './use-update-settings-subjects'
 
 const DEFAULT_OLD_INSIGHT: LangStatsInsight = {
-    type: InsightType.Extension,
+    type: InsightExecutionType.Runtime,
+    viewType: InsightType.LangStats,
     title: 'old extension lang stats insight',
     id: 'codeStatsInsights.insight.oldExtensionLangStatsInsight',
     visibility: 'personal-subject-id',
@@ -25,7 +26,8 @@ const DEFAULT_OLD_INSIGHT: LangStatsInsight = {
 }
 
 const DEFAULT_NEW_INSIGHT: LangStatsInsight = {
-    type: InsightType.Extension,
+    type: InsightExecutionType.Runtime,
+    viewType: InsightType.LangStats,
     title: 'new extension lang stats insight',
     id: 'codeStatsInsights.insight.newExtensionLangStatsInsight',
     visibility: 'org-1-subject-id',

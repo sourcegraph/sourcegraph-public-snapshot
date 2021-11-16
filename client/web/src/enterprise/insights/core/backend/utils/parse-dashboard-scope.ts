@@ -1,4 +1,4 @@
-import { InsightsDashboardType } from '../../types'
+import { InsightsDashboardScope } from '../../types'
 
 /**
  * Helper function to parse the dashboard type from the grants object.
@@ -10,16 +10,16 @@ import { InsightsDashboardType } from '../../types'
  * @param grants.organizations {string[]}
  * @returns - The type of the dashboard
  */
-export const parseDashboardType = (grants?: {
+export const parseDashboardScope = (grants?: {
     global?: boolean
     users?: string[]
     organizations?: string[]
-}): InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global => {
+}): InsightsDashboardScope => {
     if (grants?.global) {
-        return InsightsDashboardType.Global
+        return InsightsDashboardScope.Global
     }
     if (grants?.organizations?.length) {
-        return InsightsDashboardType.Organization
+        return InsightsDashboardScope.Organization
     }
-    return InsightsDashboardType.Personal
+    return InsightsDashboardScope.Personal
 }

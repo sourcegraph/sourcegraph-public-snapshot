@@ -50,6 +50,7 @@ interface UsePreviewBatchSpecResult {
  */
 export const usePreviewBatchSpec = (
     namespace: SettingsUserSubject | SettingsOrgSubject,
+    noCache: boolean,
     onComplete?: () => void
 ): UsePreviewBatchSpecResult => {
     // Mutation to create a new batch spec from the raw input YAML code.
@@ -93,10 +94,10 @@ export const usePreviewBatchSpec = (
             // input YAML with a new one.
             const preview = (): Promise<unknown> =>
                 batchSpecID
-                    ? replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID } })
+                    ? replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } })
                     : // Otherwise, we're creating a new batch spec from the raw spec input YAML.
                       createBatchSpecFromRaw({
-                          variables: { spec: code, namespace: namespace.id },
+                          variables: { spec: code, namespace: namespace.id, noCache },
                       })
 
             return preview()
@@ -106,7 +107,7 @@ export const usePreviewBatchSpec = (
                 })
                 .catch(setError)
         },
-        [batchSpecID, namespace, createBatchSpecFromRaw, replaceBatchSpecInput, onComplete]
+        [batchSpecID, namespace, noCache, createBatchSpecFromRaw, replaceBatchSpecInput, onComplete]
     )
 
     return {

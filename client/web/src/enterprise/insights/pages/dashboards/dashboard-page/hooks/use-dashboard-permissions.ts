@@ -1,5 +1,5 @@
-import { InsightDashboard, InsightsDashboardType, isRealDashboard, isVirtualDashboard } from '../../../../core/types'
-import { isSettingsBasedInsightsDashboard } from '../../../../core/types/dashboard/real-dashboard'
+import { InsightDashboard, InsightsDashboardScope, isRealDashboard, isVirtualDashboard } from '../../../../core/types'
+import { isCustomInsightDashboard } from '../../../../core/types/dashboard/real-dashboard'
 import { isGlobalSubject, SupportedInsightSubject } from '../../../../core/types/subjects'
 
 enum DashboardReasonDenied {
@@ -36,6 +36,14 @@ export function useDashboardPermissions(
         }
     }
 
+    if (!dashboard) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
+    if (!dashboard) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
     if (isVirtualDashboard(dashboard)) {
         return {
             isConfigurable: false,
@@ -56,7 +64,7 @@ export function useDashboardPermissions(
 
     if (isRealDashboard(dashboard)) {
         // Settings based insights dashboards (custom dashboards created by users)
-        if (isSettingsBasedInsightsDashboard(dashboard)) {
+        if (isCustomInsightDashboard(dashboard)) {
             // Global scope permission handling
             if (isGlobalSubject(dashboardOwner)) {
                 const canBeEdited = dashboardOwner.viewerCanAdminister && dashboardOwner.allowSiteSettingsEdits
@@ -102,13 +110,11 @@ export function getTooltipMessage(
         case DashboardReasonDenied.PermissionDenied:
             return "You don't have permission to edit this dashboard"
         case DashboardReasonDenied.BuiltInCantBeEdited:
-            switch (dashboard.type) {
-                case InsightsDashboardType.All:
-                    return "This is an automatically created dashboard that lists all the insights you have access to. You can't edit this dashboard."
-                case InsightsDashboardType.Personal:
+            switch (dashboard.scope) {
+                case InsightsDashboardScope.Personal:
                     return "This is an automatically created dashboard that lists all your private insights. You can't edit this dashboard."
-                case InsightsDashboardType.Organization:
-                case InsightsDashboardType.Global:
+                case InsightsDashboardScope.Organization:
+                case InsightsDashboardScope.Global:
                     if (!dashboard.owner) {
                         throw new Error('TODO: support GraphQL API')
                     }

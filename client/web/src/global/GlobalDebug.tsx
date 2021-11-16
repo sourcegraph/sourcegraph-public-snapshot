@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React from 'react'
 
@@ -7,6 +8,8 @@ import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extens
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
+
+import styles from './GlobalDebug.module.scss'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
     location: H.Location
@@ -27,7 +30,7 @@ const ExtensionDevelopmentToolsError = (error: Error): JSX.Element => (
  */
 export const GlobalDebug: React.FunctionComponent<Props> = props =>
     SHOW_DEBUG ? (
-        <ul className="global-debug nav">
+        <ul className={classNames('nav', styles.globalDebug)}>
             <li className="nav-item">
                 <ErrorBoundary location={props.location} render={ExtensionDevelopmentToolsError}>
                     <ExtensionDevelopmentToolsPopover

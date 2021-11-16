@@ -347,7 +347,7 @@ export const createOverlayMount = (codeHostName: string, container: HTMLElement)
 
 export const createGlobalDebugMount = (): HTMLElement => {
     const mount = document.createElement('div')
-    mount.className = 'global-debug'
+    mount.dataset.globalDebug = 'true'
     document.body.append(mount)
     return mount
 }

@@ -10,13 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
-func AccessTokenAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
+func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Authorization")
 
@@ -69,7 +68,7 @@ func AccessTokenAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := database.AccessTokens(db).Lookup(r.Context(), token, requiredScope)
+			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
 			if err != nil {
 				log15.Error("Invalid access token.", "token", token, "err", err)
 				http.Error(w, "Invalid access token.", http.StatusUnauthorized)
@@ -91,7 +90,7 @@ func AccessTokenAuthMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 
 				// Sudo to the other user if this is a sudo token. We already checked that the token has
 				// the necessary scope in the Lookup call above.
-				user, err := database.Users(db).GetByUsername(r.Context(), sudoUser)
+				user, err := db.Users().GetByUsername(r.Context(), sudoUser)
 				if err != nil {
 					log15.Error("Invalid username used with sudo access token.", "sudoUser", sudoUser, "err", err)
 					var message string

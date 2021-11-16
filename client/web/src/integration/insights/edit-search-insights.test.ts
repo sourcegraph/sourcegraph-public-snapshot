@@ -342,7 +342,9 @@ describe('Code insight edit insight page', () => {
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="search-insight-edit-page-content"]')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector(
+            '[data-testid="line-chart__content"] [data-line-name="Imports of new graphql-operations types"] circle'
+        )
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
 

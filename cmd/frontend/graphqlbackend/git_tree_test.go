@@ -7,12 +7,17 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGitTree(t *testing.T) {
@@ -80,12 +85,32 @@ func TestGitTree(t *testing.T) {
 }
 
 func TestGitTree_SubRepo_Deny(t *testing.T) {
-	ctx := setupSubRepoDeny(context.Background(), t, []string{"foo bar/testFile"})
-	db := database.NewDB(nil)
+	mockDB := dbmock.NewMockDBFrom(database.NewDB(nil))
+	mockDB.SubRepoPermsFunc.SetDefaultHook(func() database.SubRepoPermsStore {
+		srp := dbmock.NewMockSubRepoPermsStore()
+		srp.GetByUserFunc.SetDefaultReturn(map[api.RepoName]authz.SubRepoPermissions{
+			"github.com/gorilla/mux": {
+				PathIncludes: []string{"**"},
+				PathExcludes: []string{"**/foo bar/testFile"},
+			},
+		}, nil)
+		return srp
+	})
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableSubRepoPermissions: true,
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	ctx := actor.WithActor(context.Background(), actor.FromUser(1))
 	tests := []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schema:  mustParseGraphQLSchema(t, mockDB),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

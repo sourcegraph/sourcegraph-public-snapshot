@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -125,7 +126,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -170,8 +171,8 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Create an out-of-band migration runner onto which each enterprise init function
@@ -200,7 +201,7 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 	}
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, conf.DefaultClient(), outOfBandMigrationRunner)
 
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 

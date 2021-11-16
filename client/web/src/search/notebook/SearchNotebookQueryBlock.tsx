@@ -33,7 +33,7 @@ import { BlockProps, QueryBlock } from '.'
 
 interface SearchNotebookQueryBlockProps
     extends BlockProps,
-        Omit<QueryBlock, 'type'>,
+        QueryBlock,
         Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
         ThemeProps,
         SettingsCascadeProps,

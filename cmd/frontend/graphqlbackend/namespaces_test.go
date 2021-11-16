@@ -16,15 +16,18 @@ import (
 
 func TestNamespace(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
-		db := database.NewDB(nil)
-		resetMocks()
 		const wantUserID = 3
-		database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+		users := dbmock.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			if id != wantUserID {
 				t.Errorf("got %d, want %d", id, wantUserID)
 			}
 			return &types.User{ID: wantUserID, Username: "alice"}, nil
-		}
+		})
+
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -49,15 +52,18 @@ func TestNamespace(t *testing.T) {
 	})
 
 	t.Run("organization", func(t *testing.T) {
-		db := database.NewDB(nil)
-		resetMocks()
 		const wantOrgID = 3
-		database.Mocks.Orgs.GetByID = func(_ context.Context, id int32) (*types.Org, error) {
+		orgs := dbmock.NewMockOrgStore()
+		orgs.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.Org, error) {
 			if id != wantOrgID {
 				t.Errorf("got %d, want %d", id, wantOrgID)
 			}
 			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
-		}
+		})
+
+		db := dbmock.NewMockDB()
+		db.OrgsFunc.SetDefaultReturn(orgs)
+
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -82,15 +88,12 @@ func TestNamespace(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		db := database.NewDB(nil)
-		resetMocks()
-
 		invalidID := "aW52YWxpZDoz"
 		wantErr := InvalidNamespaceIDErr{id: graphql.ID(invalidID)}
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schema: mustParseGraphQLSchema(t, dbmock.NewMockDB()),
 				Query: fmt.Sprintf(`
 				{
 					namespace(id: %q) {

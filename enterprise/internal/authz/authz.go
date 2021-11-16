@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -31,7 +31,7 @@ type ExternalServicesStore interface {
 // to false. "Warnings" are all other validation problems.
 func ProvidersFromConfig(
 	ctx context.Context,
-	cfg *conf.Unified,
+	cfg conftypes.SiteConfigQuerier,
 	store ExternalServicesStore,
 ) (
 	allowAccessByDefault bool,
@@ -121,14 +121,14 @@ func ProvidersFromConfig(
 	}
 
 	if len(gitHubConns) > 0 {
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.AuthProviders)
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.SiteConfig().AuthProviders)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)
 	}
 
 	if len(gitLabConns) > 0 {
-		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg.SiteConfiguration, gitLabConns)
+		glProviders, glProblems, glWarnings := gitlab.NewAuthzProviders(cfg.SiteConfig(), gitLabConns)
 		providers = append(providers, glProviders...)
 		seriousProblems = append(seriousProblems, glProblems...)
 		warnings = append(warnings, glWarnings...)
@@ -149,8 +149,8 @@ func ProvidersFromConfig(
 	}
 
 	// 🚨 SECURITY: Warn the admin when both code host authz provider and the permissions user mapping are configured.
-	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
-		cfg.SiteConfiguration.PermissionsUserMapping.Enabled {
+	if cfg.SiteConfig().PermissionsUserMapping != nil &&
+		cfg.SiteConfig().PermissionsUserMapping.Enabled {
 		allowAccessByDefault = false
 		if len(providers) > 0 {
 			serviceTypes := make([]string, len(providers))

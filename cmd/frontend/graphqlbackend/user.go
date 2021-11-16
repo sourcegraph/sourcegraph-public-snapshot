@@ -32,7 +32,7 @@ func (r *schemaResolver) User(
 	var user *types.User
 	switch {
 	case args.Username != nil:
-		user, err = database.Users(r.db).GetByUsername(ctx, *args.Username)
+		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
@@ -42,7 +42,7 @@ func (r *schemaResolver) User(
 				return nil, err
 			}
 		}
-		user, err = database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
+		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
 
 	default:
 		return nil, errors.New("must specify either username or email to look up a user")
@@ -268,7 +268,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.user.ID)
+	orgs, err := r.db.Orgs().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

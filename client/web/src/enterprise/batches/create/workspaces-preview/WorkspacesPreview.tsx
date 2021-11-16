@@ -1,9 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -13,6 +12,7 @@ import {
 } from '../../../../graphql-operations'
 import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
+import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPrompt, PreviewPromptForm } from './PreviewPrompt'
 import styles from './WorkspacesPreview.module.scss'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
@@ -78,6 +78,7 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
             {batchSpecID && currentPreviewRequestTime && (
                 <WithBatchSpec
                     batchSpecID={batchSpecID}
+                    batchSpecStale={batchSpecStale}
                     setResolutionError={setResolutionError}
                     excludeRepo={excludeRepo}
                     currentPreviewRequestTime={currentPreviewRequestTime}
@@ -89,20 +90,23 @@ export const WorkspacesPreview: React.FunctionComponent<WorkspacesPreviewProps> 
 
 const POLLING_INTERVAL = 1000
 
-type WorkspaceResolutionStatus = (WorkspaceResolutionStatusResult['node'] & {
+type WorkspaceResolution = (WorkspaceResolutionStatusResult['node'] & {
     __typename: 'BatchSpec'
 })['workspaceResolution']
 
-const getResolution = (queryResult?: WorkspaceResolutionStatusResult): WorkspaceResolutionStatus =>
+const getResolution = (queryResult?: WorkspaceResolutionStatusResult): WorkspaceResolution =>
     queryResult?.node?.__typename === 'BatchSpec' ? queryResult.node.workspaceResolution : null
 
 interface WithBatchSpecProps
-    extends Required<Pick<WorkspacesPreviewProps, 'batchSpecID' | 'excludeRepo' | 'currentPreviewRequestTime'>> {
+    extends Required<
+        Pick<WorkspacesPreviewProps, 'batchSpecID' | 'batchSpecStale' | 'currentPreviewRequestTime' | 'excludeRepo'>
+    > {
     setResolutionError: (error: string) => void
 }
 
 const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
     batchSpecID,
+    batchSpecStale,
     currentPreviewRequestTime,
     setResolutionError,
     excludeRepo,
@@ -111,21 +115,59 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
      * spec YAML that was last submitted for a preview.
      */
 }) => {
+    const { resolution, isLoading } = useBatchSpecWorkspaceResolution(batchSpecID, currentPreviewRequestTime, {
+        onError: setResolutionError,
+    })
+
+    return (
+        <>
+            {isLoading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
+                <PreviewLoadingSpinner className="mt-4" />
+            ) : null}
+            {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
+            {resolution?.state === 'COMPLETED' ? (
+                <div className="d-flex flex-column align-items-center overflow-auto w-100">
+                    <WorkspacesPreviewList
+                        batchSpecID={batchSpecID}
+                        isStale={batchSpecStale}
+                        setResolutionError={setResolutionError}
+                        excludeRepo={excludeRepo}
+                    />
+                </div>
+            ) : null}
+        </>
+    )
+}
+
+interface UseBatchSpecWorkspaceResolutionOptions {
+    onError?: (error: string) => void
+    fetchPolicy?: WatchQueryFetchPolicy
+}
+
+interface UseBatchSpecWorkspaceResolutionResult {
+    resolution?: WorkspaceResolution
+    isLoading: boolean
+}
+
+export const useBatchSpecWorkspaceResolution = (
+    batchSpecID?: string,
+    currentPreviewRequestTime?: string,
+    { onError, fetchPolicy = 'network-only' }: UseBatchSpecWorkspaceResolutionOptions = {}
+): UseBatchSpecWorkspaceResolutionResult => {
     const { data, refetch, loading, startPolling, stopPolling } = useQuery<
         WorkspaceResolutionStatusResult,
         WorkspaceResolutionStatusVariables
     >(WORKSPACE_RESOLUTION_STATUS, {
-        variables: { batchSpec: batchSpecID },
-        // This data is intentionally transient, so there's no need to cache it.
-        fetchPolicy: 'no-cache',
-        // Report Apollo client errors back to the parent.
-        onError: error => setResolutionError(error.message),
+        skip: !batchSpecID,
+        variables: { batchSpec: batchSpecID as string },
+        fetchPolicy,
+        onError: error => onError?.(error.message),
     })
 
     // Re-query the workspace resolution status when there's a new job requested.
     useEffect(() => {
-        refetch().catch((error: ApolloError) => setResolutionError(error.message))
-    }, [currentPreviewRequestTime, refetch, setResolutionError])
+        refetch().catch((error: ApolloError) => onError?.(error.message))
+    }, [currentPreviewRequestTime, refetch, onError])
 
     useEffect(() => {
         const resolution = getResolution(data)
@@ -140,31 +182,17 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
             resolution?.state === BatchSpecWorkspaceResolutionState.FAILED
         ) {
             // Report new workspace resolution worker errors back to the parent.
-            setResolutionError(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
+            onError?.(resolution.failureMessage || 'An unknown workspace resolution error occurred.')
         } else if (resolution?.state === BatchSpecWorkspaceResolutionState.COMPLETED) {
             // We can stop polling once the workspace resolution is complete.
             stopPolling()
         }
-    }, [data, startPolling, stopPolling, setResolutionError])
+    }, [data, startPolling, stopPolling, onError])
 
     const resolution = getResolution(data)
 
-    return (
-        <>
-            {loading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
-                // TODO: Show cooler loading indicator
-                <LoadingSpinner className="my-4" />
-            ) : null}
-            {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
-            {resolution?.state === 'COMPLETED' ? (
-                <div className="d-flex flex-column align-items-center overflow-auto w-100">
-                    <WorkspacesPreviewList
-                        batchSpecID={batchSpecID}
-                        setResolutionError={setResolutionError}
-                        excludeRepo={excludeRepo}
-                    />
-                </div>
-            ) : null}
-        </>
-    )
+    return {
+        resolution,
+        isLoading: loading,
+    }
 }

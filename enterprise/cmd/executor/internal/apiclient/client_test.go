@@ -348,9 +348,20 @@ func TestHeartbeat(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
-		responseStatus:   http.StatusOK,
-		responsePayload:  `[1]`,
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobIds": [1,2,3],
+
+			"os": "test-os",
+			"architecture": "test-architecture",
+			"dockerVersion": "test-docker-version",
+			"executorVersion": "test-executor-version",
+			"gitVersion": "test-git-version",
+			"igniteVersion": "test-ignite-version",
+			"srcCliVersion": "test-src-cli-version"
+		}`,
+		responseStatus:  http.StatusOK,
+		responsePayload: `[1]`,
 	}
 
 	testRoute(t, spec, func(client *Client) {
@@ -371,9 +382,20 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedPath:     "/.executors/queue/test_queue/heartbeat",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobIds": [1, 2, 3]}`,
-		responseStatus:   http.StatusInternalServerError,
-		responsePayload:  ``,
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobIds": [1,2,3],
+
+			"os": "test-os",
+			"architecture": "test-architecture",
+			"dockerVersion": "test-docker-version",
+			"executorVersion": "test-executor-version",
+			"gitVersion": "test-git-version",
+			"igniteVersion": "test-ignite-version",
+			"srcCliVersion": "test-src-cli-version"
+		}`,
+		responseStatus:  http.StatusInternalServerError,
+		responsePayload: ``,
 	}
 
 	testRoute(t, spec, func(client *Client) {
@@ -404,7 +426,17 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 			URL:      ts.URL,
 			Password: "hunter2",
 		},
+		TelemetryOptions: TelemetryOptions{
+			OS:              "test-os",
+			Architecture:    "test-architecture",
+			DockerVersion:   "test-docker-version",
+			ExecutorVersion: "test-executor-version",
+			GitVersion:      "test-git-version",
+			IgniteVersion:   "test-ignite-version",
+			SrcCliVersion:   "test-src-cli-version",
+		},
 	}
+
 	f(New(options, &observation.TestContext))
 }
 

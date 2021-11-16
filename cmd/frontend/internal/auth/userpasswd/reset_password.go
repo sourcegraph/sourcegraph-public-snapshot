@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -18,6 +19,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
+
+func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
+	return txemail.Send(ctx, txemail.Message{
+		To:       []string{email},
+		Template: resetPasswordEmailTemplates,
+		Data: struct {
+			Username string
+			URL      string
+			Host     string
+		}{
+			Username: username,
+			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+			Host:     globals.ExternalURL().Host,
+		},
+	})
+}
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
 func HandleResetPasswordInit(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
@@ -66,19 +83,7 @@ func HandleResetPasswordInit(db dbutil.DB) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		if err := txemail.Send(r.Context(), txemail.Message{
-			To:       []string{formData.Email},
-			Template: resetPasswordEmailTemplates,
-			Data: struct {
-				Username string
-				URL      string
-				Host     string
-			}{
-				Username: usr.Username,
-				URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
-				Host:     globals.ExternalURL().Host,
-			},
-		}); err != nil {
+		if err := SendResetPasswordURLEmail(r.Context(), formData.Email, usr.Username, resetURL); err != nil {
 			httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
 			return
 		}

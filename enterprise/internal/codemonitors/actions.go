@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-func (s *Store) CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error) {
+func (s *codeMonitorStore) CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) (err error) {
 	for _, a := range args {
 		e, err := s.CreateActionEmail(ctx, monitorID, a)
 		if err != nil {

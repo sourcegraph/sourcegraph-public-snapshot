@@ -39,7 +39,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 		return nil, err
 	}
 
-	orgs, err := database.Orgs(r.db).List(ctx, &r.opt)
+	orgs, err := r.db.Orgs().List(ctx, &r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 		return 0, err
 	}
 
-	count, err := database.Orgs(r.db).Count(ctx, r.opt)
+	count, err := r.db.Orgs().Count(ctx, r.opt)
 	return int32(count), err
 }
 

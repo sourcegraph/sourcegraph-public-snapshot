@@ -10,8 +10,10 @@ import { SupportedInsightSubject } from '../types/subjects'
 import {
     BackendInsightData,
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetBuiltInsightInput,
     GetLangStatsInsightContentInput,
@@ -34,15 +36,19 @@ export interface CodeInsightsBackend {
      */
     getDashboards: () => Observable<InsightDashboard[]>
 
-    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | undefined>
+    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
+
+    getDashboardSubjects: () => Observable<SupportedInsightSubject[]>
 
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
-    createDashboard: (input: DashboardCreateInput) => Observable<void>
+    createDashboard: (input: DashboardCreateInput) => Observable<DashboardCreateResult>
 
-    updateDashboard: (input: DashboardUpdateInput) => Observable<void>
+    updateDashboard: (input: DashboardUpdateInput) => Observable<DashboardUpdateResult>
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
+
+    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
 
     /**
      * Return all accessible for a user insights that are filtered by ids param.

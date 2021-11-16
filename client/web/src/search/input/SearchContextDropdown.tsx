@@ -43,7 +43,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         onEscapeMenuClose,
     } = props
 
-    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -82,7 +82,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
-    const isUserAnOrgMember = authenticatedUser?.organizations.nodes.length !== 0
+    const onCtaDismissed = (): void => {
+        setContextCtaDismissed(true)
+    }
+    const isUserAnOrgMember = authenticatedUser && authenticatedUser.organizations.nodes.length !== 0
 
     const onCloseMenu = useCallback(
         (isEscapeKey?: boolean) => {
@@ -125,19 +128,19 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className={styles.menu}>
-                {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
+                <SearchContextMenu
+                    {...props}
+                    selectSearchContextSpec={selectSearchContextSpec}
+                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                    fetchSearchContexts={fetchSearchContexts}
+                    closeMenu={onCloseMenu}
+                />
+                {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
-                    />
-                ) : (
-                    <SearchContextMenu
-                        {...props}
-                        selectSearchContextSpec={selectSearchContextSpec}
-                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                        fetchSearchContexts={fetchSearchContexts}
-                        closeMenu={onCloseMenu}
+                        onDismiss={onCtaDismissed}
                     />
                 )}
             </DropdownMenu>
