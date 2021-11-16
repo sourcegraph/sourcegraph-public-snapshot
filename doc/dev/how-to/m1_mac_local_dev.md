@@ -25,7 +25,7 @@ If you hit a Puppeteer error stating "The chromium binary is not available for a
 (Based on https://linguinecode.com/post/how-to-fix-m1-mac-puppeteer-chromium-arm64-bug)
 
 ## Jaeger
-[https://github.com/jhchabran/jaeger/releases/download/v1.28.1/jaeger-1.28.1-darwin-arm64.tar.gz](Get the Mac version of Jaeger), extract it, then 
+[Get the Mac version of Jaeger](https://github.com/jhchabran/jaeger/releases/download/v1.28.1/jaeger-1.28.1-darwin-arm64.tar.gz), extract it, then 
 
 ```
 # Set PROJECTS to where you're storing the sourcegraph repository.
