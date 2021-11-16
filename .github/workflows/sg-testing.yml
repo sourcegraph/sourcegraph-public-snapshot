@@ -27,12 +27,12 @@ jobs:
 
       - name: install sg
         run: |
-          pushd dev/sg 
+          cd dev/sg 
           go build -ldflags "-x main.buildcommit=$(git rev-list -1 head .)" .
           ./sg -y install
           . ~/.bashrc
           sg version
-          popd
+          cd ../..
 
       - name: run setup command
         run: |
