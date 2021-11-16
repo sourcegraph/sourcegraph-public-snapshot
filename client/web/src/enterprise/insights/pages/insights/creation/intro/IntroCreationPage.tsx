@@ -14,7 +14,7 @@ import { LinkWithQuery } from '../../../../components/link-with-query'
 import { LINE_CHART_DATA, PIE_CHART_DATA } from './charts-mock'
 import styles from './IntroCreationPage.module.scss'
 
-interface IntroCreationPageProps extends TelemetryProps {}
+interface IntroCreationPageProps extends TelemetryProps { }
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> = props => {
@@ -41,7 +41,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
             <PageTitle title="Create code insights" />
 
             <div className="mb-5">
-                <h2>Create new insight</h2>
+                <h2>Create insight</h2>
 
                 <p className="text-muted">
                     Code insights analyze your code based on any search query.{' '}

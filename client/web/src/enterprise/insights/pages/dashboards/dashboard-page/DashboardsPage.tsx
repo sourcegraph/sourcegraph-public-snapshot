@@ -58,14 +58,14 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     actions={
                         <>
                             <Link to="/insights/add-dashboard" className="btn btn-outline-secondary mr-2">
-                                <PlusIcon className="icon-inline" /> Create new dashboard
+                                <PlusIcon className="icon-inline" /> Create dashboard
                             </Link>
                             <Link
                                 to={`/insights/create?dashboardId=${dashboardID}`}
                                 className="btn btn-secondary"
                                 onClick={handleAddMoreInsightClick}
                             >
-                                <PlusIcon className="icon-inline" /> Create new insight
+                                <PlusIcon className="icon-inline" /> Create insight
                             </Link>
                         </>
                     }
