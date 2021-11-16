@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecWorkspaceResolutionState,
@@ -115,11 +114,14 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
         onError: setResolutionError,
     })
 
+    const svgSource = `${window.context?.assetsRoot || ''}/img/batchchanges-preview-loading.svg`
+
     return (
         <>
             {isLoading || resolution?.state === 'QUEUED' || resolution?.state === 'PROCESSING' ? (
-                // TODO: Show cooler loading indicator
-                <LoadingSpinner className="my-4" />
+                <object type="image/svg+xml" data={svgSource} className="mt-4" height="50" width="50">
+                    <img src={svgSource} alt="Workspaces preview is loading..." />
+                </object>
             ) : null}
             {/* TODO: Keep stale workspaces list visible while we wait for the resolution. */}
             {resolution?.state === 'COMPLETED' ? (
