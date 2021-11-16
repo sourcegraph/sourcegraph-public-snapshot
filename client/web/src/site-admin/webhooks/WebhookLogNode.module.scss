@@ -45,7 +45,7 @@
     @media (--sm-breakpoint-down) {
         display: block;
 
-        & > button {
+        > button {
             width: 100%;
         }
     }
