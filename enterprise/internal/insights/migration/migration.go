@@ -6,8 +6,12 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
+	"github.com/segmentio/ksuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -21,6 +25,8 @@ type migrator struct {
 
 	settingsMigrationJobsStore store.SettingsMigrationJobsStore
 	settingsStore              database.SettingsStore
+	insightStore               store.InsightStore
+	dashboardStore             store.DashboardStore
 }
 
 func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
@@ -29,6 +35,8 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 		postgresDB:                 postgresDB,
 		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(insightsDB),
 		settingsStore:              database.Settings(postgresDB),
+		insightStore:               *store.NewInsightStore(insightsDB),
+		dashboardStore:             store.NewDashboardStore(insightsDB),
 	}
 }
 
@@ -256,7 +264,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// Okay so now we have 4 different things to do BEFORE creating the virtual dashboard.
 	// Let's worry about errors later.
 
-	fmt.Println(settings)
+	// fmt.Println(settings)
 
 	langStatsInsights, err := getLangStatsInsights(ctx, *settings)
 	frontendInsights, err := getFrontendInsights(ctx, *settings)
@@ -272,16 +280,29 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// Update row with total_insights. Then compare with migrated_insights. If they're equal, continue. If not,
 	// Try migrating all of these insights.
 
-	// TODO: I don't like this. I think it might be easier to have separate store methods for the one field I'm actually updating.
-	// It seems like we will only be updating one field at a time.
-	err = m.settingsMigrationJobsStore.UpdateSettingsMigrationJob(ctx, store.UpdateSettingsMigrationJobArgs{
-		UserId: job.UserId, OrgId: job.OrgId, TotalInsights: totalInsights, MigratedInsights: job.MigratedInsights,
-		TotalDashboards: job.TotalDashboards, MigratedDashboards: job.MigratedDashboards, Runs: job.Runs})
+	var migratedInsightsCount int
+	if totalInsights != job.MigratedInsights {
+		err = m.settingsMigrationJobsStore.UpdateTotalInsights(ctx, job.UserId, job.OrgId, totalInsights)
+		fmt.Println("About to migrate langstats insights")
+
+		migratedInsightsCount += m.migrateLangStatsInsights(ctx, langStatsInsights)
+		//migratedInsightsCount += m.migrateFrontendInsights(ctx, frontendInsights)
+		//migratedInsightsCount += m.migrateBackendInsights(ctx, backendInsights)
+		err = m.settingsMigrationJobsStore.UpdateMigratedInsights(ctx, job.UserId, job.OrgId, migratedInsightsCount)
+	}
+
+	if totalInsights != migratedInsightsCount {
+		return false, false, nil
+	}
 
 	dashboards, err := getDashboards(ctx, *settings)
 	fmt.Println("dashboards:", dashboards)
 	totalDashboards := len(dashboards)
 	fmt.Println("total dashboards:", totalDashboards)
+
+	if totalDashboards != job.MigratedDashboards {
+		err = m.settingsMigrationJobsStore.UpdateTotalDashboards(ctx, job.UserId, job.OrgId, totalInsights)
+	}
 
 	// Update row with total_dashboards. Then compare with migrated_dashboards. If they're equal, continue. If not,
 	// Try migrating all of these insights.
@@ -343,6 +364,9 @@ func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) ([]insi
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
 		}
+		temp.UserID = settingsRow.Subject.User
+		temp.OrgID = settingsRow.Subject.Org
+
 		results = append(results, temp)
 	}
 
@@ -366,6 +390,9 @@ func getFrontendInsights(ctx context.Context, settingsRow api.Settings) ([]insig
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
 		}
+		temp.UserID = settingsRow.Subject.User
+		temp.OrgID = settingsRow.Subject.Org
+
 		results = append(results, temp)
 	}
 
@@ -389,6 +416,9 @@ func getBackendInsights(ctx context.Context, settingsRow api.Settings) ([]insigh
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
 		}
+		temp.UserID = settingsRow.Subject.User
+		temp.OrgID = settingsRow.Subject.Org
+
 		results = append(results, temp)
 	}
 
@@ -406,7 +436,7 @@ func getDashboards(ctx context.Context, settingsRow api.Settings) ([]insights.Se
 	}
 	for _, val := range raw {
 		// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
-		temp, err := unmarshalDashboard(val)
+		temp, err := unmarshalDashboard(val, settingsRow)
 		if err != nil {
 			continue
 		}
@@ -416,7 +446,7 @@ func getDashboards(ctx context.Context, settingsRow api.Settings) ([]insights.Se
 	return results, nil
 }
 
-func unmarshalDashboard(raw json.RawMessage) ([]insights.SettingDashboard, error) {
+func unmarshalDashboard(raw json.RawMessage, settingsRow api.Settings) ([]insights.SettingDashboard, error) {
 	var dict map[string]json.RawMessage
 	var multi error
 	result := []insights.SettingDashboard{}
@@ -432,8 +462,77 @@ func unmarshalDashboard(raw json.RawMessage) ([]insights.SettingDashboard, error
 			continue
 		}
 		temp.ID = id
+		temp.UserID = settingsRow.Subject.User
+		temp.OrgID = settingsRow.Subject.Org
+
 		result = append(result, temp)
 	}
 
 	return result, multi
+}
+
+func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []insights.LangStatsInsight) int {
+	var count, skipped, errorCount int
+	for _, d := range toMigrate {
+		if d.ID == "" {
+			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
+			skipped++
+			continue
+		}
+		err := migrateLangStatSeries(ctx, &m.insightStore, d)
+		if err != nil {
+			// we can't do anything about errors, so we will just skip it and log it
+			errorCount++
+			log15.Error("insights migration: error while migrating insight", "error", err)
+		} else {
+			count++
+		}
+	}
+	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
+	return count
+}
+
+func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore, from insights.LangStatsInsight) (err error) {
+	tx, err := insightStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
+
+	view := types.InsightView{
+		Title:            from.Title,
+		UniqueID:         from.ID,
+		OtherThreshold:   &from.OtherThreshold,
+		PresentationType: types.Pie,
+	}
+	series := types.InsightSeries{
+		SeriesID:           ksuid.New().String(),
+		Repositories:       []string{from.Repository},
+		SampleIntervalUnit: string(types.Month),
+	}
+	var grants []store.InsightViewGrant
+	if from.UserID != nil {
+		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.InsightViewGrant{store.GlobalGrant()}
+	}
+
+	view, err = tx.CreateView(ctx, view, grants)
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+	series, err = tx.CreateSeries(ctx, series)
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+	err = tx.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{})
+	if err != nil {
+		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+	}
+
+	return nil
 }

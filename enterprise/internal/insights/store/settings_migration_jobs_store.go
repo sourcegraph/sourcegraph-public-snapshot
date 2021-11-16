@@ -55,15 +55,7 @@ const (
 )
 
 func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error) {
-	var where *sqlf.Query
-	if jobType == UserJob {
-		where = sqlf.Sprintf("user_id IS NOT NULL AND org_id IS NULL AND global IS FALSE")
-	} else if jobType == OrgJob {
-		where = sqlf.Sprintf("user_id IS NULL AND org_id IS NOT NULL AND global IS FALSE")
-	} else {
-		where = sqlf.Sprintf("org_id IS NULL AND user_id IS NULL AND global IS TRUE")
-	}
-
+	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(getSettingsMigrationJobsSql, where)
 	fmt.Println(q)
 
@@ -147,49 +139,60 @@ INSERT INTO settings_migration_jobs (global) VALUES (true)
 ON CONFLICT DO NOTHING;
 `
 
-type UpdateSettingsMigrationJobArgs struct {
-	UserId             *int
-	OrgId              *int
-	TotalInsights      int
-	MigratedInsights   int
-	TotalDashboards    int
-	MigratedDashboards int
-	Runs               int
-}
-
-func (s *DBSettingsMigrationJobsStore) UpdateSettingsMigrationJob(ctx context.Context, args UpdateSettingsMigrationJobArgs) error {
-	var where *sqlf.Query
-	if args.UserId != nil {
-		where = sqlf.Sprintf("user_id = %s", args.UserId)
-	} else if args.OrgId != nil {
-		where = sqlf.Sprintf("org_id = %s", args.OrgId)
-	} else {
-		where = sqlf.Sprintf("global IS TRUE")
-	}
-
-	q := sqlf.Sprintf(
-		updateSettingsMigrationJobSql,
-		args.TotalInsights,
-		args.MigratedInsights,
-		args.TotalDashboards,
-		args.MigratedDashboards,
-		args.Runs,
-		where,
-	)
-
+func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error {
+	q := sqlf.Sprintf(updateTotalInsightsSql, totalInsights, getWhereForSubject(ctx, userId, orgId))
 	row := s.QueryRow(ctx, q)
 	if row.Err() != nil {
 		return row.Err()
 	}
-
 	return nil
 }
 
-const updateSettingsMigrationJobSql = `
+const updateTotalInsightsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-UPDATE settings_migration_jobs
-SET total_insights = %s, migrated_insights = %s, total_dashboards = %s, migrated_dashboards = %s, runs = %s
-WHERE %s
+UPDATE settings_migration_jobs SET total_insights = %s WHERE %s
+`
+
+func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error {
+	q := sqlf.Sprintf(updateMigratedInsightsSql, migratedInsights, getWhereForSubject(ctx, userId, orgId))
+	row := s.QueryRow(ctx, q)
+	if row.Err() != nil {
+		return row.Err()
+	}
+	return nil
+}
+
+const updateMigratedInsightsSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+UPDATE settings_migration_jobs SET migrated_insights = %s WHERE %s
+`
+
+func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error {
+	q := sqlf.Sprintf(updateTotalDashboardsSql, totalDashboards, getWhereForSubject(ctx, userId, orgId))
+	row := s.QueryRow(ctx, q)
+	if row.Err() != nil {
+		return row.Err()
+	}
+	return nil
+}
+
+const updateTotalDashboardsSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+UPDATE settings_migration_jobs SET total_dashboards = %s WHERE %s
+`
+
+func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error {
+	q := sqlf.Sprintf(updateMigratedDashboardsSql, migratedDashboards, getWhereForSubject(ctx, userId, orgId))
+	row := s.QueryRow(ctx, q)
+	if row.Err() != nil {
+		return row.Err()
+	}
+	return nil
+}
+
+const updateMigratedDashboardsSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+UPDATE settings_migration_jobs SET migrated_dashboards = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) CountSettingsMigrationJobs(ctx context.Context) (int, error) {
@@ -203,15 +206,7 @@ SELECT COUNT(*) from settings_migration_jobs;
 `
 
 func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
-	var where *sqlf.Query
-	if jobType == UserJob {
-		where = sqlf.Sprintf("user_id IS NOT NULL AND org_id IS NULL AND global IS FALSE")
-	} else if jobType == OrgJob {
-		where = sqlf.Sprintf("user_id IS NULL AND org_id IS NOT NULL AND global IS FALSE")
-	} else {
-		where = sqlf.Sprintf("org_id IS NULL AND user_id IS NULL AND global IS TRUE")
-	}
-
+	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(countIncompleteJobsSql, where)
 	fmt.Println(q)
 
@@ -225,9 +220,32 @@ SELECT COUNT(*) FROM settings_migration_jobs
 WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR virtual_dashboard_created_at IS NULL);
 `
 
+func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Query {
+	if userId != nil {
+		return sqlf.Sprintf("user_id IS NOT NULL")
+	} else if orgId != nil {
+		return sqlf.Sprintf("org_id IS NOT NULL")
+	} else {
+		return sqlf.Sprintf("global IS TRUE")
+	}
+}
+
+func getWhereForSubjectType(ctx context.Context, jobType SettingsMigrationJobType) *sqlf.Query {
+	if jobType == UserJob {
+		return sqlf.Sprintf("user_id = %s")
+	} else if jobType == OrgJob {
+		return sqlf.Sprintf("org_id = %s")
+	} else {
+		return sqlf.Sprintf("global IS TRUE")
+	}
+}
+
 type SettingsMigrationJobsStore interface {
 	CreateSettingsMigrationJob(ctx context.Context, args CreateSettingsMigrationJobArgs) error
-	UpdateSettingsMigrationJob(ctx context.Context, args UpdateSettingsMigrationJobArgs) error
+	UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error
+	UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error
+	UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error
+	UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error
 	CountSettingsMigrationJobs(ctx context.Context) (int, error)
 	GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error)
 	IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error)
