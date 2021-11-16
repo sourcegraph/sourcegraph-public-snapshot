@@ -85,20 +85,7 @@ type Client struct {
 
 // NewClient instantiates a new client by performing a GET request.
 func NewClient(baseURL string) (*Client, error) {
-	resp, err := http.Get(baseURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "get URL")
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	p, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "read GET body")
-	}
-
-	return &Client{
-		baseURL:    baseURL,
-	}, nil
+	return &Client{baseURL: baseURL}, nil
 }
 
 // authenticate is used to send a HTTP POST request to an URL that is able to authenticate
