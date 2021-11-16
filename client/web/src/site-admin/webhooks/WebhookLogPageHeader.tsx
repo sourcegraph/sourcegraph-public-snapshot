@@ -37,16 +37,18 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
     const errorCount = data?.webhookLogs.totalCount ?? 0
 
     return (
-        <div className="d-flex align-items-end">
-            <PerformanceGauge
-                className="mr-3"
-                count={data?.webhookLogs.totalCount}
-                countClassName={errorCount > 0 ? 'text-danger' : undefined}
-                label="recent error"
-            />
-            <PerformanceGauge count={data?.externalServices.totalCount} label="external service" />
-            <div className="flex-fill" />
-            <div className={styles.selectContainer}>
+        <div className={styles.grid}>
+            <div className={styles.errors}>
+                <PerformanceGauge
+                    count={data?.webhookLogs.totalCount}
+                    countClassName={errorCount > 0 ? 'text-danger' : undefined}
+                    label="recent error"
+                />
+            </div>
+            <div className={styles.services}>
+                <PerformanceGauge count={data?.externalServices.totalCount} label="external service" />
+            </div>
+            <div className={styles.selectService}>
                 <Select
                     aria-label="External service"
                     className="mb-0"
@@ -66,7 +68,7 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
                     ))}
                 </Select>
             </div>
-            <div className="ml-3">
+            <div className={styles.errorButton}>
                 <Button variant="danger" onClick={onErrorToggle} outline={!onlyErrors}>
                     <AlertCircleIcon className={classNames('icon-inline', styles.icon, onlyErrors && styles.enabled)} />
                     <span className="ml-1">Only errors</span>
