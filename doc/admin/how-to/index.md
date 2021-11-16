@@ -18,4 +18,5 @@
 - [How to troubleshoot a failure to update repositories when new repositories are added](update_repo_failure.md)
 - [How to run postgres queries in your Sourcegraph instance](run-psql.md)
 - [How to remove a repository from Sourcegraph](remove-repo.md)
+- [How to address common monorepo problems](monorepo-issues.md)
 

@@ -19,6 +19,7 @@ import { SearchExtensionBasedInsight } from '../../../../core/types/insight/sear
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
+import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
@@ -38,6 +39,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryPro
 export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
     const { insight, telemetryService, where, context, ...otherProps } = props
     const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
+    const { dashboard } = useContext(DashboardInsightsContext)
 
     const cachedInsight = useDistinctValue(insight)
 
@@ -61,7 +63,8 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             className={classNames('extension-insight-card', otherProps.className)}
             contextMenu={
                 <InsightContextMenu
-                    insightID={insight.id}
+                    insight={insight}
+                    dashboard={dashboard}
                     menuButtonClassName="ml-1 mr-n2 d-inline-flex"
                     zeroYAxisMin={zeroYAxisMin}
                     onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}

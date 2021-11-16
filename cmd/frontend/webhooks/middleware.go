@@ -17,10 +17,10 @@ import (
 // SetExternalServiceID attaches a specific external service ID to the current
 // webhook request for logging purposes.
 func SetExternalServiceID(ctx context.Context, id int64) {
+	// There's no else case here because it is expected that there's no setter
+	// if logging is disabled.
 	if setter, ok := ctx.Value(setterContextKey).(contextFunc); ok {
 		setter(id)
-	} else {
-		log15.Error("cannot get setter from context; this likely means that SetExternalServiceID has been called from outside a HTTP handler wrapped in LogMiddleware")
 	}
 }
 

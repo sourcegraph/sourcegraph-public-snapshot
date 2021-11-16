@@ -71,6 +71,9 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
             id
             name
             url
+            defaultBranch {
+                id
+            }
         }
         ignored
         unsupported
@@ -81,6 +84,7 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
             target {
                 oid
             }
+            url
         }
         path
         searchResultPaths

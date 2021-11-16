@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -425,8 +424,6 @@ func TestLonger(t *testing.T) {
 }
 
 func TestSearchResultsHydration(t *testing.T) {
-	db := &dbtesting.MockDB{T: t}
-
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
@@ -451,19 +448,18 @@ func TestSearchResultsHydration(t *testing.T) {
 		Fork:         false,
 	}
 
-	database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-		return hydratedRepo, nil
-	}
+	db := dbmock.NewMockDB()
 
-	database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-		if op.OnlyPrivate {
+	repos := dbmock.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(hydratedRepo, nil)
+	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+		if opt.OnlyPrivate {
 			return nil, nil
 		}
 		return []types.MinimalRepo{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
-	}
-	database.Mocks.Repos.Count = mockCount
-
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+	repos.CountFunc.SetDefaultReturn(0, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	zoektRepo := &zoekt.RepoListEntry{
 		Repository: zoekt.Repository{
@@ -526,7 +522,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	})
 
 	resolver := &searchResolver{
-		db: database.NewDB(db),
+		db: db,
 		SearchInputs: &run.SearchInputs{
 			Plan:         p,
 			Query:        p.ToParseTree(),
@@ -559,7 +555,6 @@ func TestSearchResultsHydration(t *testing.T) {
 }
 
 func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
-	db := &dbtesting.MockDB{T: t}
 	type fields struct {
 		results             []result.Match
 		searchResultsCommon streaming.Stats
@@ -631,7 +626,7 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				db: database.NewDB(db),
+				db: dbmock.NewMockDB(),
 				SearchResults: &SearchResults{
 					Stats:   tt.fields.searchResultsCommon,
 					Matches: tt.fields.results,
@@ -818,7 +813,7 @@ func TestCompareSearchResults(t *testing.T) {
 }
 
 func TestEvaluateAnd(t *testing.T) {
-	db := &dbtesting.MockDB{T: t}
+	db := dbmock.NewMockDB()
 
 	tests := []struct {
 		name         string
@@ -862,8 +857,9 @@ func TestEvaluateAnd(t *testing.T) {
 
 			ctx := context.Background()
 
-			database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
-				if len(op.IncludePatterns) > 0 || len(op.ExcludePattern) > 0 {
+			repos := dbmock.NewMockRepoStore()
+			repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
+				if len(opt.IncludePatterns) > 0 || len(opt.ExcludePattern) > 0 {
 					return nil, nil
 				}
 				repoNames := make([]types.MinimalRepo, len(minimalRepos))
@@ -871,11 +867,9 @@ func TestEvaluateAnd(t *testing.T) {
 					repoNames[i] = types.MinimalRepo{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
 				}
 				return repoNames, nil
-			}
-			database.Mocks.Repos.Count = func(ctx context.Context, opt database.ReposListOptions) (int, error) {
-				return len(minimalRepos), nil
-			}
-			defer func() { database.Mocks = database.MockStores{} }()
+			})
+			repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
+			db.ReposFunc.SetDefaultReturn(repos)
 
 			p, err := query.Pipeline(query.InitLiteral(tt.query))
 			if err != nil {
@@ -886,7 +880,7 @@ func TestEvaluateAnd(t *testing.T) {
 			srp.EnabledFunc.SetDefaultReturn(false)
 
 			resolver := &searchResolver{
-				db: database.NewDB(db),
+				db: db,
 				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
