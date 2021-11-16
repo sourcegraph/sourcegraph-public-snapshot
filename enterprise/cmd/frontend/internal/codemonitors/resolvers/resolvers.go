@@ -61,7 +61,16 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	newArgs := *args
 	newArgs.First += 1
 
-	ms, err := r.store.ListMonitors(ctx, userID, &newArgs)
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	ms, err := r.store.ListMonitors(ctx, cm.ListMonitorsOpts{
+		NamespaceUserID: &userID,
+		First:           intPtr(int(args.First)),
+		After:           intPtrToInt64Ptr(after),
+	})
 	if err != nil {
 		return nil, err
 	}

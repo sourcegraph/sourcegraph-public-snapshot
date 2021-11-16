@@ -7,7 +7,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -135,26 +134,44 @@ func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, monitorID int64) e
 	return s.Exec(ctx, q)
 }
 
+type ListMonitorsOpts struct {
+	NamespaceUserID *int32
+	After           *int64
+	First           *int
+}
+
+func (o ListMonitorsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o.NamespaceUserID != nil {
+		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", *o.NamespaceUserID))
+	}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+func (o ListMonitorsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
+}
+
 const monitorsFmtStr = `
 SELECT %s -- monitorColumns
 FROM cm_monitors
-WHERE namespace_user_id = %s
-AND id > %s
+WHERE %s
 ORDER BY id ASC
 LIMIT %s
 `
 
-func (s *codeMonitorStore) ListMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
+func (s *codeMonitorStore) ListMonitors(ctx context.Context, opts ListMonitorsOpts) ([]*Monitor, error) {
 	q := sqlf.Sprintf(
 		monitorsFmtStr,
 		sqlf.Join(monitorColumns, ","),
-		userID,
-		after,
-		args.First,
+		opts.Conds(),
+		opts.Limit(),
 	)
 
 	rows, err := s.Query(ctx, q)
