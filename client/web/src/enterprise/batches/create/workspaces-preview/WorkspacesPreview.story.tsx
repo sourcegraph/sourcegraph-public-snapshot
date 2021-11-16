@@ -9,10 +9,14 @@ import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
-import { WORKSPACES_AND_IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS } from '../backend'
+import { WORKSPACES, IMPORTING_CHANGESETS, WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
-import { mockWorkspaceResolutionStatus, mockWorkspacesAndImportingChangesets } from './WorkspacesPreview.mock'
+import {
+    mockWorkspaceResolutionStatus,
+    mockBatchSpecWorkspaces,
+    mockBatchSpecImportingChangesets,
+} from './WorkspacesPreview.mock'
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage/WorkspacesPreview', module).addDecorator(story => (
     <div className="p-3 container d-flex flex-column align-items-center">{story()}</div>
@@ -73,13 +77,24 @@ add('first preview, error', () => {
     )
 })
 
-const WORKSPACES_AND_IMPORTING_CHANGESETS_MOCK: WildcardMockedResponse = {
+const WORKSPACES_MOCK: WildcardMockedResponse = {
     request: {
-        query: getDocumentNode(WORKSPACES_AND_IMPORTING_CHANGESETS),
+        query: getDocumentNode(WORKSPACES),
         variables: MATCH_ANY_PARAMETERS,
     },
     result: {
-        data: mockWorkspacesAndImportingChangesets(10, 2),
+        data: mockBatchSpecWorkspaces(50),
+    },
+    nMatches: Number.POSITIVE_INFINITY,
+}
+
+const IMPORTING_CHANGESETS_MOCK: WildcardMockedResponse = {
+    request: {
+        query: getDocumentNode(IMPORTING_CHANGESETS),
+        variables: MATCH_ANY_PARAMETERS,
+    },
+    result: {
+        data: mockBatchSpecImportingChangesets(50),
     },
     nMatches: Number.POSITIVE_INFINITY,
 }
@@ -96,7 +111,8 @@ add('first preview, success', () => {
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
-        WORKSPACES_AND_IMPORTING_CHANGESETS_MOCK,
+        WORKSPACES_MOCK,
+        IMPORTING_CHANGESETS_MOCK,
     ])
 
     return (
@@ -130,7 +146,8 @@ add('first preview, stale', () => {
             },
             nMatches: Number.POSITIVE_INFINITY,
         },
-        WORKSPACES_AND_IMPORTING_CHANGESETS_MOCK,
+        WORKSPACES_MOCK,
+        IMPORTING_CHANGESETS_MOCK,
     ])
 
     return (
