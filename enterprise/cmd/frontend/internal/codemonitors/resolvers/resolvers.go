@@ -128,7 +128,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// Create trigger.
-	err = tx.store.CreateQueryTrigger(ctx, m.ID, args.Trigger)
+	err = tx.store.CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -370,8 +370,14 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
+
+	var triggerID int64
+	if err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID); err != nil {
+		return nil, err
+	}
+
 	// Update trigger.
-	err = r.store.UpdateQueryTrigger(ctx, args)
+	err = r.store.UpdateQueryTrigger(ctx, triggerID, args.Trigger.Update.Query)
 	if err != nil {
 		return nil, err
 	}

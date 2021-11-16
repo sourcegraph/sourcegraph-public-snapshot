@@ -31,20 +31,19 @@ type CodeMonitorStore interface {
 	ListMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID int32) (int32, error)
 
-	CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error
-	UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error
+	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error
+	UpdateQueryTrigger(ctx context.Context, id int64, query string) error
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
 	GetQueryTriggerForJob(ctx context.Context, jobID int) (*QueryTrigger, error)
+	EnqueueQueryTriggerJobs(ctx context.Context) error
+	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
+	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
 	UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
-
-	EnqueueQueryTriggerJobs(ctx context.Context) error
-	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
-	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
 	CreateEmailAction(ctx context.Context, monitorID int64, _ *EmailActionArgs) (*EmailAction, error)

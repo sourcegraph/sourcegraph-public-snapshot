@@ -190,7 +190,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
-			defaultHook: func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error {
+			defaultHook: func(context.Context, int64, string) error {
 				return nil
 			},
 		},
@@ -340,7 +340,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		UpdateQueryTriggerFunc: &CodeMonitorStoreUpdateQueryTriggerFunc{
-			defaultHook: func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error {
+			defaultHook: func(context.Context, int64, string) error {
 				return nil
 			},
 		},
@@ -1370,15 +1370,15 @@ func (c CodeMonitorStoreCreateMonitorFuncCall) Results() []interface{} {
 // CreateQueryTrigger method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCreateQueryTriggerFunc struct {
-	defaultHook func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error
-	hooks       []func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error
+	defaultHook func(context.Context, int64, string) error
+	hooks       []func(context.Context, int64, string) error
 	history     []CodeMonitorStoreCreateQueryTriggerFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateQueryTrigger delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateQueryTrigger(v0 context.Context, v1 int64, v2 *graphqlbackend.CreateTriggerArgs) error {
+func (m *MockCodeMonitorStore) CreateQueryTrigger(v0 context.Context, v1 int64, v2 string) error {
 	r0 := m.CreateQueryTriggerFunc.nextHook()(v0, v1, v2)
 	m.CreateQueryTriggerFunc.appendCall(CodeMonitorStoreCreateQueryTriggerFuncCall{v0, v1, v2, r0})
 	return r0
@@ -1387,7 +1387,7 @@ func (m *MockCodeMonitorStore) CreateQueryTrigger(v0 context.Context, v1 int64, 
 // SetDefaultHook sets function that is called when the CreateQueryTrigger
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error) {
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, string) error) {
 	f.defaultHook = hook
 }
 
@@ -1396,7 +1396,7 @@ func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error) {
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Context, int64, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1405,7 +1405,7 @@ func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error {
+	f.SetDefaultHook(func(context.Context, int64, string) error {
 		return r0
 	})
 }
@@ -1413,12 +1413,12 @@ func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error {
+	f.PushHook(func(context.Context, int64, string) error {
 		return r0
 	})
 }
 
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) nextHook() func(context.Context, int64, *graphqlbackend.CreateTriggerArgs) error {
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) nextHook() func(context.Context, int64, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1460,7 +1460,7 @@ type CodeMonitorStoreCreateQueryTriggerFuncCall struct {
 	Arg1 int64
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 *graphqlbackend.CreateTriggerArgs
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -4673,24 +4673,24 @@ func (c CodeMonitorStoreUpdateMonitorFuncCall) Results() []interface{} {
 // UpdateQueryTrigger method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreUpdateQueryTriggerFunc struct {
-	defaultHook func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error
-	hooks       []func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error
+	defaultHook func(context.Context, int64, string) error
+	hooks       []func(context.Context, int64, string) error
 	history     []CodeMonitorStoreUpdateQueryTriggerFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateQueryTrigger delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) UpdateQueryTrigger(v0 context.Context, v1 *graphqlbackend.UpdateCodeMonitorArgs) error {
-	r0 := m.UpdateQueryTriggerFunc.nextHook()(v0, v1)
-	m.UpdateQueryTriggerFunc.appendCall(CodeMonitorStoreUpdateQueryTriggerFuncCall{v0, v1, r0})
+func (m *MockCodeMonitorStore) UpdateQueryTrigger(v0 context.Context, v1 int64, v2 string) error {
+	r0 := m.UpdateQueryTriggerFunc.nextHook()(v0, v1, v2)
+	m.UpdateQueryTriggerFunc.appendCall(CodeMonitorStoreUpdateQueryTriggerFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UpdateQueryTrigger
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error) {
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, string) error) {
 	f.defaultHook = hook
 }
 
@@ -4699,7 +4699,7 @@ func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreUpdateQueryTriggerFunc) PushHook(hook func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error) {
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) PushHook(hook func(context.Context, int64, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4708,7 +4708,7 @@ func (f *CodeMonitorStoreUpdateQueryTriggerFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error {
+	f.SetDefaultHook(func(context.Context, int64, string) error {
 		return r0
 	})
 }
@@ -4716,12 +4716,12 @@ func (f *CodeMonitorStoreUpdateQueryTriggerFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreUpdateQueryTriggerFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error {
+	f.PushHook(func(context.Context, int64, string) error {
 		return r0
 	})
 }
 
-func (f *CodeMonitorStoreUpdateQueryTriggerFunc) nextHook() func(context.Context, *graphqlbackend.UpdateCodeMonitorArgs) error {
+func (f *CodeMonitorStoreUpdateQueryTriggerFunc) nextHook() func(context.Context, int64, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4760,7 +4760,10 @@ type CodeMonitorStoreUpdateQueryTriggerFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *graphqlbackend.UpdateCodeMonitorArgs
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -4769,7 +4772,7 @@ type CodeMonitorStoreUpdateQueryTriggerFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeMonitorStoreUpdateQueryTriggerFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

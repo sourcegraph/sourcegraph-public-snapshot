@@ -64,7 +64,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 	}
 
 	// Create trigger.
-	err = s.CreateQueryTrigger(ctx, m.ID, args.Trigger)
+	err = s.CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
 	if err != nil {
 		return nil, err
 	}
