@@ -27,7 +27,8 @@ jobs:
 
       - name: install sg
         run: |
-          pushd dev/sg && go build -ldflags "-x main.buildcommit=$(git rev-list -1 head .)" .
+          pushd dev/sg 
+          go build -ldflags "-x main.buildcommit=$(git rev-list -1 head .)" .
           ./sg -y install
           . ~/.bashrc
           sg version
