@@ -2,7 +2,8 @@ import {
     BatchSpecWorkspaceResolutionState,
     WorkspaceResolutionStatusResult,
     PreviewBatchSpecWorkspaceFields,
-    WorkspacesAndImportingChangesetsResult,
+    BatchSpecWorkspacesResult,
+    BatchSpecImportingChangesetsResult,
     PreviewBatchSpecImportingChangesetFields,
 } from '../../../../graphql-operations'
 
@@ -24,6 +25,7 @@ export const mockWorkspace = (
     id: number,
     fields?: Partial<PreviewBatchSpecWorkspaceFields>
 ): PreviewBatchSpecWorkspaceFields => ({
+    __typename: 'BatchSpecWorkspace',
     path: '/',
     searchResultPaths: ['/first-path'],
     cachedResultFound: false,
@@ -31,21 +33,25 @@ export const mockWorkspace = (
     unsupported: false,
     ...fields,
     repository: {
+        __typename: 'Repository',
         id: `repo-${id}`,
         name: `github.com/my-org/repo-${id}`,
         url: 'superfake.com',
         defaultBranch: {
+            __typename: 'GitRef',
             id: 'main-branch-id',
             ...fields?.repository?.defaultBranch,
         },
         ...fields?.repository,
     },
     branch: {
+        __typename: 'GitRef',
         id: 'main-branch-id',
         abbrevName: 'main',
         displayName: 'main',
         ...fields?.branch,
         target: {
+            __typename: 'GitObject',
             oid: 'asdf1234',
             ...fields?.branch?.target,
         },
@@ -56,7 +62,10 @@ export const mockWorkspace = (
 export const mockWorkspaces = (count: number): PreviewBatchSpecWorkspaceFields[] =>
     [...new Array(count).keys()].map(id => mockWorkspace(id))
 
-const mockImportingChangeset = (id: number): PreviewBatchSpecImportingChangesetFields => ({
+const mockImportingChangeset = (
+    id: number
+): PreviewBatchSpecImportingChangesetFields & { __typename: 'VisibleChangesetSpec' } => ({
+    __typename: 'VisibleChangesetSpec',
     id: `changeset-${id}`,
     description: {
         __typename: 'ExistingChangesetReference',
@@ -68,26 +77,41 @@ const mockImportingChangeset = (id: number): PreviewBatchSpecImportingChangesetF
     },
 })
 
-export const mockImportingChangesets = (count: number): PreviewBatchSpecImportingChangesetFields[] =>
-    [...new Array(count).keys()].map(id => mockImportingChangeset(id))
+export const mockImportingChangesets = (
+    count: number
+): (PreviewBatchSpecImportingChangesetFields & {
+    __typename: 'VisibleChangesetSpec'
+})[] => [...new Array(count).keys()].map(id => mockImportingChangeset(id))
 
-export const mockWorkspacesAndImportingChangesets = (
-    workspacesCount: number,
-    importsCount: number
-): WorkspacesAndImportingChangesetsResult => ({
+export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorkspacesResult => ({
     node: {
         __typename: 'BatchSpec',
         workspaceResolution: {
+            __typename: 'BatchSpecWorkspaceResolution',
             workspaces: {
+                __typename: 'BatchSpecWorkspaceConnection',
+                totalCount: workspacesCount,
+                pageInfo: {
+                    hasNextPage: true,
+                    endCursor: 'end-cursor',
+                },
                 nodes: mockWorkspaces(workspacesCount),
             },
         },
+    },
+})
+
+export const mockBatchSpecImportingChangesets = (importsCount: number): BatchSpecImportingChangesetsResult => ({
+    node: {
+        __typename: 'BatchSpec',
         importingChangesets: {
+            __typename: 'ChangesetSpecConnection',
             totalCount: importsCount,
-            nodes: mockImportingChangesets(importsCount).map(changeset => ({
-                __typename: 'VisibleChangesetSpec',
-                ...changeset,
-            })),
+            pageInfo: {
+                hasNextPage: true,
+                endCursor: 'end-cursor',
+            },
+            nodes: mockImportingChangesets(importsCount),
         },
     },
 })
