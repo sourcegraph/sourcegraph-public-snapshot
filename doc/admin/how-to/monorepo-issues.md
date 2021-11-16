@@ -15,15 +15,13 @@ The following bullets provide a general guidline to which service may require mo
 
 ![Screen Shot 2021-11-15 at 12 35 07 AM](https://user-images.githubusercontent.com/13024338/141749036-95759cbe-abd5-4d78-91eb-618423d2f66c.png)
 
-<br/>
-
 If you are regularly seeing the `Processing symbols is taking longer than expected. Try again in awhile` warning in your sidebar, its likely that your symbols and/or gitserver are underprovisioned need more CPU/mem resources.
 
-The [symbols sidebar](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/repo/RepoRevisionSidebarSymbols.tsx?L42) is dependent on the symbols and gitserver services. When Sourcegraph displays a page associated with a repo, a symbols search query is made to the graphQL API to retrieve the symbols associated with the current git revision context.  Symbols uses [ctags](https://github.com/universal-ctags/ctags#readme) to process a repo and generate the list of symbols displayed in the symbols sidebar. 
+The [symbols sidebar](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/web/src/repo/RepoRevisionSidebarSymbols.tsx?L42) is dependent on the symbols and gitserver services. When Sourcegraph displays a page associated with a repo, a symbols search query is made to the graphQL API to retrieve the symbols associated with the current git revision context, [if an index](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/search/symbol/symbol%5C.go+if+branch+:%3D+indexedSymbolsBranch%28&patternType=literal) has been created by zoekt (our background indexing service) the symbols the query should be resolved fairly quickly. However this query looks at recent commits, because monorepos are often a main workspace and therefore recieve frequent commits their main branch is often considered not to have an up to date zoekt index. In these cases the symbols query will be resolved by the Symbols service. 
 
-Ctags processing is lazy, and occurs only when the symbols service is first queried. When symbols recieves a query it [fetchs](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/symbols/internal/symbols/fetch%5C.go+fetchRepositoryArchive%28&patternType=literal) a repository archive from gitserver to parse, once the archive is parsed to produce an index, the index is [cached](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%406f4d327+file:%5Ecmd/symbols/internal/symbols/search%5C.go+s.writeAllSymbolsToNewDB%28&patternType=literal) on-disk in an SQLite database for use in subsequent queries. For large monorepos this indexing can take a few minutes resulting in timeouts.
+Symbols uses [ctags](https://github.com/universal-ctags/ctags#readme) to process a repo and generate the list of symbols displayed in the symbols sidebar. Ctags processing is lazy, and occurs only when the symbols service is first queried. When symbols recieves a query it [fetchs](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/symbols/internal/symbols/fetch%5C.go+fetchRepositoryArchive%28&patternType=literal) a [repository archive](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/gitserver/client%5C.go+func+%28c+*Client%29+Archive%28&patternType=literal) from gitserver to parse, once the archive is parsed to produce an index, the index is [cached](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%406f4d327+file:%5Ecmd/symbols/internal/symbols/search%5C.go+s.writeAllSymbolsToNewDB%28&patternType=literal) on-disk in an SQLite database for use in subsequent queries. For large monorepos this indexing can take a few minutes resulting in timeouts.
 
-To address this concern allocate more resources to the symbols service (to provide more processing power to the indexing operations) and to allocate more resources to the gitserver (to allow for the extra load associated with responding to fetch requests from symbols)
+To address this concern allocate more resources to the symbols service (to provide more processing power for indexing operations) and allocate more resources to the gitserver (to provide for the extra load associated with responding to fetch requests from symbols, and speed up sending the large repo)
 
 Below is an example of a diff to improve symbols performance in a k8s deployment.
 ```diff
@@ -48,9 +46,81 @@ Below is an example of a diff to improve symbols performance in a k8s deployment
 _Learn more about managing resources in [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations) and [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations)_
 
 ## Slow hover tooltip results
-Hovering over a symbol results in queries for definition and refeneces of the symbol in question. If the symbol is defined in a repo that has been indexed via lsif these results should be uneffected by the monorepo. However if no lsif index exists on the repo and the repo is unindexed, hover results rely on the symbols service and face the same challenges as described above in [symbols sidebar](#symbols-sidebar---processing-symbols)
+Hovering over a symbol results in queries for definition and references of the symbol selected. If the symbol is defined in a repo that has been indexed via lsif these results should be uneffected by the monorepo. However if no lsif index exists on the repo and the repo is unindexed, hover results rely on the symbols service and face the same challenges as described above in [symbols sidebar](#symbols-sidebar---processing-symbols)
 
 ## Slow history tab and git blame results
 ![Screen Shot 2021-11-15 at 1 10 16 AM](https://user-images.githubusercontent.com/13024338/141754063-2080c7c6-b5be-43c1-b9db-386e916d2968.png)
 
-Selecting the Show History button while viewing a file initiates a request to [fetch commits](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/repo/RepoRevisionSidebarCommits%5C.tsx+function+fetchCommits%28&patternType=literal) for the file. This request is ultimately resolved by gitserver. To improve performance allocate gitserver more CPU. 
+Selecting the Show History button while viewing a file initiates a request to [fetch commits](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/repo/RepoRevisionSidebarCommits%5C.tsx+function+fetchCommits%28&patternType=literal) for the file. This request is ultimately [resolved by gitserver]() using functionality similar to git log. To improve performance allocate gitserver more CPU. 
+
+
+
+
+
+
+query Symbols($repo: ID!, $revision: String!, $first: Int, $query: String, $includePatterns: [String!]) {
+  node(id: $repo) {
+    __typename
+    ... on Repository {
+      commit(rev: $revision) {
+        symbols(first: $first, query: $query, includePatterns: $includePatterns) {
+          ...SymbolConnectionFields
+          __typename
+        }
+        __typename
+      }
+      __typename
+    }
+  }
+}
+
+fragment SymbolConnectionFields on SymbolConnection {
+  __typename
+  pageInfo {
+    hasNextPage
+    __typename
+  }
+  nodes {
+    ...SymbolNodeFields
+    __typename
+  }
+}
+
+fragment SymbolNodeFields on Symbol {
+  __typename
+  name
+  containerName
+  kind
+  language
+  location {
+    resource {
+      path
+      __typename
+    }
+    range {
+      start {
+        line
+        character
+        __typename
+      }
+      end {
+        line
+        character
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+  url
+}
+
+{
+  "query": "",
+  "first": 100,
+  "repo": "UmVwb3NpdG9yeTozNzc3ODIzNQ==",
+  "revision": "main",
+  "includePatterns": [
+    "chrome/services/cups_proxy/proxy_manager\\.cc"
+  ]
+}
