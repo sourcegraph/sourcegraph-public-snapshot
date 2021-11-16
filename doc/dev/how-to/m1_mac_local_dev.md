@@ -1,5 +1,9 @@
 # Workarounds for M1 Mac local development
 
+## Rosetta
+
+Docker [requires Rosetta](https://docs.docker.com/desktop/mac/apple-silicon/#system-requirements) to run `amd64` binaries. It should be installed by default, but if that wasn't the case, run `softwareupdate --install-rosetta`.
+
 ## Puppeteer
 If you hit a Puppeteer error stating "The chromium binary is not available for arm64", you need to install Chromium for Puppeteer via Homebrew.
    ```
