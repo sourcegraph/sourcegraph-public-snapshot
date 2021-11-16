@@ -56,7 +56,7 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install
-          nvm use --delete-prefix
+          # nvm use --delete-prefix
           sudo su - _postgres createdb
           createuser --superuser sourcegraph
           psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
