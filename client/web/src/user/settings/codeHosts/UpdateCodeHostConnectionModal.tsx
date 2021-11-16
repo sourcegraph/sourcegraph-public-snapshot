@@ -82,7 +82,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
         >
             <div className="web-content">
                 <h3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
-                    Update {serviceName} token
+                    Update {serviceName} connection
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
@@ -101,7 +101,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                         {didAckMachineUserHint ? (
                             <>
                                 {' '}
-                                <label htmlFor="code-host-token">Personal access token</label>
+                                <label htmlFor="code-host-token">Access token</label>
                                 <div className="position-relative">
                                     <input
                                         id="code-host-token"

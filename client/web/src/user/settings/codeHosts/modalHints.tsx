@@ -18,26 +18,18 @@ const MachineUserRecommendation = (
 
 export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
     [ExternalServiceKind.GITHUB]: (
-        <small>
-            Use an access token
-            <span className="text-muted">
-                {' '}
-                with <code className={styles.codeInline}>repo</code>,{' '}
-                <code className={styles.codeInline}>read:org</code>, and{' '}
-                <code className={styles.codeInline}>user:email</code> scopes.
-            </span>{' '}
+        <small className="text-muted">
+            Use an access token with <code className={styles.codeInline}>repo</code>,{' '}
+            <code className={styles.codeInline}>read:org</code>, and{' '}
+            <code className={styles.codeInline}>user:email</code> scopes.
             {MachineUserRecommendation}
         </small>
     ),
     [ExternalServiceKind.GITLAB]: (
-        <small>
-            Use an access token
-            <span className="text-muted">
-                {' '}
-                with <code className={styles.codeInline}>read_user</code>,{' '}
-                <code className={styles.codeInline}>read_api</code> and{' '}
-                <code className={styles.codeInline}>read_repository</code> scopes.
-            </span>{' '}
+        <small className="text-muted">
+            Use an access token with <code className={styles.codeInline}>read_user</code>,{' '}
+            <code className={styles.codeInline}>read_api</code> and{' '}
+            <code className={styles.codeInline}>read_repository</code> scopes.
             {MachineUserRecommendation}
         </small>
     ),
@@ -54,8 +46,11 @@ export const getMachineUserFragment = (serviceName: string): React.ReactFragment
                 </Link>
                 .
             </h4>
-            Using your own personal access token may reveal your public and private repositories to other members of
-            your organization.
+
+            <span className="text-muted">
+                Using your own personal access token may reveal your public and private repositories to other members of
+                your organization.
+            </span>
         </div>
     </div>
 )
