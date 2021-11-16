@@ -41,6 +41,10 @@ Then, [add or edit a GitHub connection](../external_service/github.md) and inclu
 
 A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
 
+> NOTE: Both read and write access to the associated repos for permissions syncing are strongly suggested due to GitHub's token scope requirements. Without write permissions, sync will rely only on [user-centric sync](#background-permissions-syncing) and continue working as expected, though Sourcegraph may have out-of-date permissions more frequently.
+
+<span class="virtual-br"></span>
+
 > WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
 
 ### Trigger permissions sync from GitHub webhooks
@@ -265,8 +269,8 @@ Sourcegraph syncs permissions in the background by default to better handle repo
 
 Sourcegraph's background permissions syncing is a 2-way sync that combines data from both types of sync for each configured code host to populate the database tables Sourcegraph uses as its source-of-truth for what repositories a user has access to:
 
-- A *user-centric* permissions sync that updates the complete list of repositories a user has access to, from the user's view. This typically uses authentication associated with the user where available.
-- A *repository-centric* permissions sync that updates the complete list of all users that have access to a repository, from the repository's view. This may require elevated permissions to request from a code host.
+- **User-centric permissions syncs** update the complete list of repositories a user has access to, from the user's view. This typically uses authentication associated with the user where available.
+- **Repository-centric permissions syncs** update the complete list of all users that have access to a repository, from the repository's view. This may require elevated permissions to request from a code host.
 
 Both types of sync happen [repeatedly and continuously based on a variety of events and criteria](#permissions-sync-scheduling).
 
