@@ -111,20 +111,14 @@ WHERE id = %s
 RETURNING %s -- monitorColumns
 `
 
-func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*Monitor, error) {
-	var monitorID int64
-	err := relay.UnmarshalSpec(args.Id, &monitorID)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *codeMonitorStore) UpdateMonitorEnabled(ctx context.Context, id int64, enabled bool) (*Monitor, error) {
 	actorUID := actor.FromContext(ctx).UID
 	q := sqlf.Sprintf(
 		toggleCodeMonitorFmtStr,
-		args.Enabled,
+		enabled,
 		actorUID,
 		s.Now(),
-		monitorID,
+		id,
 		sqlf.Join(monitorColumns, ", "),
 	)
 

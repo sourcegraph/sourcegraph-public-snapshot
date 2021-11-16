@@ -157,10 +157,14 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (mr graphqlbackend.MonitorResolver, err error) {
 	err = r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
-		return nil, errors.Errorf("ToggleCodeMonitor: %w", err)
+		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
 	}
-	var mo *cm.Monitor
-	mo, err = r.store.ToggleMonitor(ctx, args)
+	var monitorID int64
+	if err := relay.UnmarshalSpec(args.Id, &monitorID); err != nil {
+		return nil, err
+	}
+
+	mo, err := r.store.UpdateMonitorEnabled(ctx, monitorID, args.Enabled)
 	if err != nil {
 		return nil, err
 	}
