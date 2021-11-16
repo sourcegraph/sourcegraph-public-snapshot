@@ -2,7 +2,10 @@
 
 <aside class="experimental"></aside>
 
-Instead of computing Batch Changes [diffs](how_src_executes_a_batch_spec.md) locally using `src-cli`, it's possible to offload this task to [executors](../../admin/deploy_executors.md). This feature is [experimental](../../admin/beta_and_experimental_features#experimental-features.md). Executors are also required to enable Code Intelligence [auto-indexing](https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing).
+
+By default, Batch Changes uses a [command line interface] in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
+
+Instead of computing Batch Changes locally using `src-cli`, it's possible to offload this task to [executors](../../admin/deploy_executors.md). This feature is [experimental](../../admin/beta_and_experimental_features#experimental-features.md). Executors are also required to enable Code Intelligence [auto-indexing](https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing).
 
 If enabled, server-side Batch Changes computing allows to:
 
@@ -14,14 +17,14 @@ If enabled, server-side Batch Changes computing allows to:
 
 This feature is experimental. In particular, it comes with limitations:
 
-- only site admins can run batch changes server-side
-- the server side batch changes UI is minimal and will change a lot before the GA release
-- documentation is minimal and will change a lot before the GA release
-- batch change execution is not optimized
-- executors can only be deployed on AWS and GCP, with Terraform (see [deploying executors](../../admin/deploy_executors.md))
-- step-wise caching is not included server side
-- steps cannot include [files](batch_spec_yaml_reference.md#steps-files)
-
+- Server-side Batch Changes is only available for self-hosted deployments. It is not available on Sourcegraph Cloud and on managed instances.
+- Only site admins can run batch changes server-side.
+- The server side batch changes UI is minimal and will change a lot before the GA release.
+- Documentation is minimal and will change a lot before the GA release.
+- Batch change execution is not optimized.
+- Executors can only be deployed on AWS and GCP, with Terraform (see [deploying executors](../../admin/deploy_executors.md)).
+- Step-wise caching is not included server side.
+- Steps cannot include [files](batch_spec_yaml_reference.md#steps-files).
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
 
