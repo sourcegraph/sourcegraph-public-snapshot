@@ -1,15 +1,27 @@
-import ImportIcon from 'mdi-react/ImportIcon'
 import React from 'react'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import {
+    useConnection,
+    UseConnectionResult,
+} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import {
-    WorkspacesAndImportingChangesetsResult,
-    WorkspacesAndImportingChangesetsVariables,
     Scalars,
+    PreviewBatchSpecWorkspaceFields,
+    BatchSpecWorkspacesResult,
+    BatchSpecWorkspacesVariables,
 } from '../../../../graphql-operations'
-import { WORKSPACES_AND_IMPORTING_CHANGESETS } from '../backend'
+import { WORKSPACES } from '../backend'
 
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
@@ -21,7 +33,6 @@ interface WorkspacesPreviewListProps {
      * spec input YAML in the editor.
      */
     isStale: boolean
-    setResolutionError: (error: string) => void
     /**
      * Function to automatically update repo query of input batch spec YAML to exclude the
      * provided repo + branch.
@@ -29,74 +40,77 @@ interface WorkspacesPreviewListProps {
     excludeRepo: (repo: string, branch: string) => void
 }
 
+const WORKSPACES_COUNT = 100
+
 export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewListProps> = ({
     batchSpecID,
     isStale,
-    setResolutionError,
     excludeRepo,
 }) => {
-    const { data, loading } = useQuery<
-        WorkspacesAndImportingChangesetsResult,
-        WorkspacesAndImportingChangesetsVariables
-    >(WORKSPACES_AND_IMPORTING_CHANGESETS, {
-        variables: { batchSpec: batchSpecID },
-        // This data is intentionally transient, so there's no need to cache it.
-        fetchPolicy: 'no-cache',
-        // Report Apollo client errors back to the parent.
-        onError: error => setResolutionError(error.message),
-    })
+    const { connection, error, loading, hasNextPage, fetchMore } = useWorkspaces(batchSpecID)
 
     if (loading) {
         return <PreviewLoadingSpinner className="my-4" />
     }
 
-    const workspaces = data?.node?.__typename === 'BatchSpec' ? data.node.workspaceResolution?.workspaces : undefined
-    const importingChangesets = data?.node?.__typename === 'BatchSpec' ? data.node.importingChangesets : undefined
-
     return (
-        <>
-            {!workspaces || workspaces.nodes.length === 0 ? (
-                <span className="text-muted">No workspaces found</span>
-            ) : (
-                <ul className="list-group p-1 mb-0 w-100">
-                    {workspaces?.nodes.map((item, index) => (
-                        <WorkspacesPreviewListItem
-                            key={`${item.repository.id}-${item.branch.id}`}
-                            item={item}
-                            isStale={isStale}
-                            exclude={excludeRepo}
-                            variant={index % 2 === 0 ? 'light' : 'dark'}
-                        />
-                    ))}
-                </ul>
+        <ConnectionContainer className="w-100">
+            {error && <ConnectionError errors={[error.message]} />}
+            <ConnectionList className="list-group list-group-flush w-100">
+                {connection?.nodes?.map((node, index) => (
+                    <WorkspacesPreviewListItem
+                        key={`${node.repository.id}-${node.branch.id}`}
+                        item={node}
+                        isStale={isStale}
+                        exclude={excludeRepo}
+                        variant={index % 2 === 0 ? 'light' : 'dark'}
+                    />
+                ))}
+            </ConnectionList>
+            {loading && <ConnectionLoading />}
+            {connection && (
+                <SummaryContainer centered={true}>
+                    <ConnectionSummary
+                        noSummaryIfAllNodesVisible={true}
+                        first={WORKSPACES_COUNT}
+                        connection={connection}
+                        noun="workspace"
+                        pluralNoun="workspaces"
+                        hasNextPage={hasNextPage}
+                        emptyElement={<span className="text-muted">No workspaces found</span>}
+                    />
+                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                </SummaryContainer>
             )}
-            {importingChangesets && importingChangesets.totalCount > 0 && (
-                <>
-                    <h4 className="align-self-start w-100 mt-4">Importing changesets</h4>
-                    <ul className="w-100">
-                        {importingChangesets?.nodes.map(node =>
-                            node.__typename === 'VisibleChangesetSpec' ? (
-                                <li className="w-100" key={node.id}>
-                                    <LinkOrSpan
-                                        to={
-                                            node.description.__typename === 'ExistingChangesetReference'
-                                                ? node.description.baseRepository.url
-                                                : undefined
-                                        }
-                                    >
-                                        <ImportIcon className="icon-inline" />{' '}
-                                        {node.description.__typename === 'ExistingChangesetReference' &&
-                                            node.description.baseRepository.name}
-                                    </LinkOrSpan>{' '}
-                                    #
-                                    {node.description.__typename === 'ExistingChangesetReference' &&
-                                        node.description.externalID}
-                                </li>
-                            ) : null
-                        )}
-                    </ul>
-                </>
-            )}
-        </>
+        </ConnectionContainer>
     )
 }
+
+const useWorkspaces = (batchSpecID: Scalars['ID']): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
+    useConnection<BatchSpecWorkspacesResult, BatchSpecWorkspacesVariables, PreviewBatchSpecWorkspaceFields>({
+        query: WORKSPACES,
+        variables: {
+            batchSpec: batchSpecID,
+            after: null,
+            first: WORKSPACES_COUNT,
+        },
+        options: {
+            useURL: false,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            console.log(WORKSPACES_COUNT)
+            const data = dataOrThrowErrors(result)
+
+            if (!data.node) {
+                throw new Error(`Batch spec with ID ${batchSpecID} does not exist`)
+            }
+            if (data.node.__typename !== 'BatchSpec') {
+                throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchSpec`)
+            }
+            if (!data.node.workspaceResolution) {
+                throw new Error(`No workspace resolution found for batch spec with ID ${batchSpecID}`)
+            }
+            return data.node.workspaceResolution.workspaces
+        },
+    })

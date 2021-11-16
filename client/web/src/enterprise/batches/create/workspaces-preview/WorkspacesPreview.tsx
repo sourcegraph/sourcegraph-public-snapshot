@@ -130,7 +130,6 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
                     <WorkspacesPreviewList
                         batchSpecID={batchSpecID}
                         isStale={batchSpecStale}
-                        setResolutionError={setResolutionError}
                         excludeRepo={excludeRepo}
                     />
                 </div>
