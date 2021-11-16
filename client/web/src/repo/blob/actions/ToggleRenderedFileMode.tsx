@@ -3,9 +3,9 @@ import React, { useEffect } from 'react'
 import { useLocation } from 'react-router'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
 
+import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 import { getURLForMode } from './utils'
@@ -34,21 +34,22 @@ export const ToggleRenderedFileMode: React.FunctionComponent<ToggledRenderedFile
 
     if (actionType === 'dropdown') {
         return (
-            <ButtonLink className="btn repo-header__file-action" to={getURLForMode(location, otherMode)}>
+            <RepoHeaderActionButtonLink className="btn" to={getURLForMode(location, otherMode)} file={true}>
                 <EyeIcon className="icon-inline" />
                 <span>{label}</span>
-            </ButtonLink>
+            </RepoHeaderActionButtonLink>
         )
     }
 
     return (
-        <ButtonLink
+        <RepoHeaderActionButtonLink
+            className="btn btn-icon"
+            file={false}
             to={getURLForMode(location, otherMode)}
             data-tooltip={label}
-            className="btn btn-icon repo-header__action"
         >
             <EyeIcon className="icon-inline" />{' '}
             <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
-        </ButtonLink>
+        </RepoHeaderActionButtonLink>
     )
 }
