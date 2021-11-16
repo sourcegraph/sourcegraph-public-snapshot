@@ -38,6 +38,7 @@ var (
 
 	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
 	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
+	yesFlag             = rootFlagSet.Bool("y", false, "force answer yes to every prompt")
 	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 

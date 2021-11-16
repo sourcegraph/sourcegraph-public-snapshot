@@ -397,6 +397,9 @@ Execute it in the 'sourcegraph' repository you cloned.`,
 }
 
 func getBool() bool {
+	if *yesFlag {
+		return true
+	}
 	var s string
 
 	fmt.Printf("(y/N): ")
