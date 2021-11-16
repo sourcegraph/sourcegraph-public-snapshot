@@ -169,13 +169,8 @@ func TestOrganizationRepositories(t *testing.T) {
 	orgs := dbmock.NewMockOrgStore()
 	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
 
-	database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) (repos []*types.Repo, err error) {
-		return []*types.Repo{
-			{
-				Name: "acme-repo",
-			},
-		}, nil
-	}
+	repos := dbmock.NewMockRepoStore()
+	repos.ListFunc.SetDefaultReturn([]*types.Repo{{Name: "acme-repo"}}, nil)
 
 	users := dbmock.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
@@ -188,6 +183,7 @@ func TestOrganizationRepositories(t *testing.T) {
 
 	db := dbmock.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
