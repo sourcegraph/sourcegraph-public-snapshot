@@ -314,7 +314,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
                 return [
                     {
-                        id: 'all',
+                        id: ALL_INSIGHTS_DASHBOARD_ID,
                         type: InsightsDashboardType.Virtual,
                         scope: InsightsDashboardScope.Personal,
                         title: 'All Insights',
@@ -338,7 +338,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> => {
         // the 'all' dashboardId is not a real dashboard so return early
-        if (dashboardId === 'all') {
+        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
             return of(null)
         }
 
