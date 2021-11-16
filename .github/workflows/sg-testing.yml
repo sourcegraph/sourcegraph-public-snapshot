@@ -41,6 +41,7 @@ jobs:
 
       - name: run setup commands manually
         run: |
+          set -x
           brew install --cask docker
           brew install git gnu-sed comby pcre sqlite jq
           # brew install go yarn node # skipping those to avoid clashing with what's already present on the VM
