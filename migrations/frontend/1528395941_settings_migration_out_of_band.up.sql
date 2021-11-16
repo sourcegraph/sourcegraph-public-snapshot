@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs
     migrated_insights int NOT NULL DEFAULT 0,
     total_dashboards int NOT NULL DEFAULT 0,
     migrated_dashboards int NOT NULL DEFAULT 0,
-    virtual_dashboard_created_at TIMESTAMP,
     runs int NOT NULL DEFAULT 0,
     error_msg TEXT,
     completed_at timestamp
