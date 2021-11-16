@@ -121,62 +121,7 @@ func main() {
 			return "", errors.Errorf("no sources for %q", repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			// We need an internal actor in case we are trying to access a private repo. We
-			// only need access in order to find out the type of code host we're using, so
-			// it's safe.
-			r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
-			if err != nil {
-				return nil, errors.Wrap(err, "get repository")
-			}
-
-			switch r.ExternalRepo.ServiceType {
-			case extsvc.TypePerforce:
-				// Extract options from external service config
-				var c schema.PerforceConnection
-				for _, info := range r.Sources {
-					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-					if err != nil {
-						return nil, errors.Wrap(err, "get external service")
-					}
-
-					normalized, err := jsonc.Parse(es.Config)
-					if err != nil {
-						return nil, errors.Wrap(err, "normalize JSON")
-					}
-
-					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-						return nil, errors.Wrap(err, "unmarshal JSON")
-					}
-					break
-				}
-
-				return &server.PerforceDepotSyncer{
-					MaxChanges:   int(c.MaxChanges),
-					Client:       c.P4Client,
-					FusionConfig: configureFusionClient(c),
-				}, nil
-			case extsvc.TypeJVMPackages:
-				var c schema.JVMPackagesConnection
-				for _, info := range r.Sources {
-					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-					if err != nil {
-						return nil, errors.Wrap(err, "get external service")
-					}
-
-					normalized, err := jsonc.Parse(es.Config)
-					if err != nil {
-						return nil, errors.Wrap(err, "normalize JSON")
-					}
-
-					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-						return nil, errors.Wrap(err, "unmarshal JSON")
-					}
-					break
-				}
-
-				return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
-			}
-			return &server.GitRepoSyncer{}, nil
+			return getVCSSyncer(externalServiceStore, repoStore, codeintelDB, ctx, repo)
 		},
 		Hostname:   hostname.Get(),
 		DB:         db,
@@ -317,4 +262,53 @@ func getDB() (dbutil.DB, error) {
 	})
 
 	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+}
+
+func getVCSSyncer(externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
+	codeintelDB *codeinteldbstore.Store, ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+	// We need an internal actor in case we are trying to access a private repo. We
+	// only need access in order to find out the type of code host we're using, so
+	// it's safe.
+	r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "get repository")
+	}
+
+	extractOptions := func(connection interface{}) error {
+		for _, info := range r.Sources {
+			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+			if err != nil {
+				return errors.Wrap(err, "get external service")
+			}
+			normalized, err := jsonc.Parse(extSvc.Config)
+			if err != nil {
+				return errors.Wrap(err, "normalize JSON")
+			}
+			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
+				return errors.Wrap(err, "unmarshal JSON")
+			}
+			return nil
+		}
+		return nil
+	}
+
+	switch r.ExternalRepo.ServiceType {
+	case extsvc.TypePerforce:
+		var c schema.PerforceConnection
+		if err := extractOptions(c); err != nil {
+			return nil, err
+		}
+		return &server.PerforceDepotSyncer{
+			MaxChanges:   int(c.MaxChanges),
+			Client:       c.P4Client,
+			FusionConfig: configureFusionClient(c),
+		}, nil
+	case extsvc.TypeJVMPackages:
+		var c schema.JVMPackagesConnection
+		if err := extractOptions(c); err != nil {
+			return nil, err
+		}
+		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
+	}
+	return &server.GitRepoSyncer{}, nil
 }
