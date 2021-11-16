@@ -430,7 +430,7 @@ const WorkspaceStep: React.FunctionComponent<
         >
             <div className="p-2">
                 {!step.skipped && (
-                    <Tabs size="medium">
+                    <Tabs size="small">
                         <TabList>
                             <Tab key="logs">Logs</Tab>
                             <Tab key="output-variables">Output variables</Tab>

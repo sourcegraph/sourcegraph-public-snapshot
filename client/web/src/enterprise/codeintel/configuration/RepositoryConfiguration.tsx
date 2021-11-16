@@ -31,7 +31,7 @@ export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationP
     onHandleIsLoading,
     ...props
 }) => (
-    <Tabs size="medium">
+    <Tabs size="small">
         <TabList>
             <RepositoryTab onHandleDisplayAction={onHandleDisplayAction}>Repository-specific policies</RepositoryTab>
             <RepositoryTab onHandleDisplayAction={onHandleDisplayAction}>Global policies</RepositoryTab>
