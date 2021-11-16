@@ -809,17 +809,21 @@ DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
 // If allowGlobalPolicies is false, then configuration policies that define neither a repository id
 // nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
 // repositories known to the instance.
-func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, limit int) (_ []int, err error) {
-	return s.selectRepositoriesForIndexScan(ctx, processDelay, limit, allowGlobalPolicies, timeutil.Now())
+func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (_ []int, err error) {
+	return s.selectRepositoriesForIndexScan(ctx, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, timeutil.Now())
 }
 
-func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int, allowGlobalPolicies bool, now time.Time) (_ []int, err error) {
-	ctx, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{})
+func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+	ctx, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("limit", limit),
+		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
 		selectRepositoriesForIndexScanQuery,
 		allowGlobalPolicies,
+		repositoryMatchLimit,
 		now,
 		int(processDelay/time.Second),
 		limit,
@@ -832,14 +836,18 @@ const selectRepositoriesForIndexScanQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
 WITH
 repositories_matching_policy AS (
-	SELECT r.id FROM repo r WHERE EXISTS (
-		SELECT 1
-		FROM lsif_configuration_policies p
-		WHERE
-			p.indexing_enabled AND
-			p.repository_id IS NULL AND
-			p.repository_patterns IS NULL AND
-			%s -- enable or disable this query
+	(
+		SELECT r.id FROM repo r WHERE EXISTS (
+			SELECT 1
+			FROM lsif_configuration_policies p
+			WHERE
+				p.indexing_enabled AND
+				p.repository_id IS NULL AND
+				p.repository_patterns IS NULL AND
+				%s -- completely enable or disable this query
+		)
+		ORDER BY stars DESC, id
+		LIMIT %s
 	)
 
 	UNION ALL

@@ -1059,28 +1059,28 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// Can return null last_index_scan
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 2, true, now); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 2, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1090,7 +1090,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	insertRepo(t, db, 54, "r4")
 
 	// 95 minutes later, new repository is not yet visible
-	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*95)); err != nil {
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*95)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1102,7 +1102,7 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	}
 
 	// 100 minutes later, only new repository is visible
-	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*100)); err != nil {
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*100)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
@@ -1143,29 +1143,39 @@ func TestSelectRepositoriesForIndexScanWithGlobalPolicy(t *testing.T) {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
+	// Returns nothing when disabled
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, false, nil, 100, now); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Returns at most configured limit
+	limit := 2
+
 	// Can return null last_index_scan
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 2, true, now); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, &limit, 100, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, true, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, true, nil, 100, now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)

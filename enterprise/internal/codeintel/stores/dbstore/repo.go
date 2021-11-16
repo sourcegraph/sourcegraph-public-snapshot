@@ -17,6 +17,8 @@ import (
 func (s *Store) RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
 	ctx, endObservation := s.operations.repoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("patterns", strings.Join(patterns, ", ")),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -86,6 +88,7 @@ LIMIT %s OFFSET %s
 func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
 	ctx, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("pattern", strings.Join(patterns, ",")),
+		log.Int("policyID", policyID),
 	}})
 	defer endObservation(1, observation.Args{})
 
