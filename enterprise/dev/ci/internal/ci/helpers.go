@@ -67,7 +67,7 @@ func ComputeConfig() Config {
 		version = strings.TrimPrefix(version, "v")
 	default:
 		taggedRelease = false
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
+		version = fmt.Sprintf("v3.32_%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
 	}
 
 	patchNoTest := strings.HasPrefix(branch, "docker-images-patch-notest/")
