@@ -269,8 +269,8 @@ Sourcegraph syncs permissions in the background by default to better handle repo
 
 Sourcegraph's background permissions syncing is a 2-way sync that combines data from both types of sync for each configured code host to populate the database tables Sourcegraph uses as its source-of-truth for what repositories a user has access to:
 
-- **User-centric permissions syncs** updates the complete list of repositories a user has access to, from the user's view. This typically uses authentication associated with the user where available.
-- **Repository-centric permissions syncs** updates the complete list of all users that have access to a repository, from the repository's view. This may require elevated permissions to request from a code host.
+- **User-centric permissions syncs** update the complete list of repositories a user has access to, from the user's view. This typically uses authentication associated with the user where available.
+- **Repository-centric permissions syncs** update the complete list of all users that have access to a repository, from the repository's view. This may require elevated permissions to request from a code host.
 
 Both types of sync happen [repeatedly and continuously based on a variety of events and criteria](#permissions-sync-scheduling).
 
