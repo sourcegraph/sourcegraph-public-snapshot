@@ -43,7 +43,7 @@ jobs:
         run: |
           brew install --cask docker
           brew install git gnu-sed comby pcre sqlite jq
-          brew install go yarn node`
+          brew install go yarn node
           brew install postgres redis
           brew services start postgresql
           brew services start redis
