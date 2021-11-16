@@ -4,7 +4,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useState } from 'react'
 
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
+import { Button, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { WebhookLogFields } from '../../graphql-operations'
 
@@ -31,7 +31,7 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
     return (
         <>
             <span className={styles.separator} />
-            <span>
+            <span className={styles.detailsButton}>
                 <button
                     type="button"
                     className="btn btn-icon"
@@ -45,13 +45,23 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
                     )}
                 </button>
             </span>
-            <span className={classNames('text-center', styles.statusCode)}>
+            <span className={styles.statusCode}>
                 <StatusCode code={statusCode} />
             </span>
             <span>
                 {externalService ? externalService.displayName : <span className="text-danger">Unmatched</span>}
             </span>
             <span className={styles.receivedAt}>{format(Date.parse(receivedAt), 'Ppp')}</span>
+            <span className={styles.smDetailsButton}>
+                <Button onClick={toggleExpanded} outline={true} variant="secondary">
+                    {isExpanded ? (
+                        <ChevronDownIcon className="icon-inline" aria-label="Close section" />
+                    ) : (
+                        <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
+                    )}{' '}
+                    {isExpanded ? 'Hide' : 'Show'} details
+                </Button>
+            </span>
             {isExpanded && (
                 <div className={classNames('px-4', 'pt-3', 'pb-2', styles.expanded)}>
                     <Tabs index={initialTabIndex} size="small">
