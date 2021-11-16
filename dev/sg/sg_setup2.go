@@ -274,7 +274,7 @@ var macOSDependencies = []dependencyCategory{
 		},
 	},
 	{
-		name: "Setup proxy for local develoopment",
+		name: "Setup proxy for local development",
 		dependencies: []*dependency{
 			{name: "/etc/hosts contains sourcegraph.test", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
 			{name: "is there a way to check whether root certificate is trusted?", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
