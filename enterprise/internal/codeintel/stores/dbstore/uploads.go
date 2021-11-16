@@ -815,15 +815,20 @@ func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay
 
 func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
 	ctx, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("limit", limit),
 		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+		log.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	limitExpression := sqlf.Sprintf("")
+	if repositoryMatchLimit != nil {
+		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
+	}
 
 	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
 		selectRepositoriesForIndexScanQuery,
 		allowGlobalPolicies,
-		repositoryMatchLimit,
+		limitExpression,
 		now,
 		int(processDelay/time.Second),
 		limit,
@@ -846,8 +851,8 @@ repositories_matching_policy AS (
 				p.repository_patterns IS NULL AND
 				%s -- completely enable or disable this query
 		)
-		ORDER BY stars DESC, id
-		LIMIT %s
+		ORDER BY stars DESC NULLS LAST, id
+		%s
 	)
 
 	UNION ALL
