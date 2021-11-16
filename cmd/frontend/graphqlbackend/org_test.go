@@ -16,11 +16,6 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
-	envvar.MockSourcegraphDotComMode(false)
-	t.Cleanup(func() {
-		envvar.MockSourcegraphDotComMode(false)
-	})
-
 	users := dbmock.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
@@ -35,7 +30,7 @@ func TestOrganization(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
 
-	t.Run("Default behavior", func(t *testing.T) {
+	t.Run("anyone can access by default", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -57,8 +52,11 @@ func TestOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Fails on Cloud if user is not org member", func(t *testing.T) {
+	t.Run("users not invited or not a member cannot access on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -76,16 +74,19 @@ func TestOrganization(t *testing.T) {
 				`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Message: "org not found: acme",
-						Path:    []interface{}{string("organization")},
+						Message: "org not found: name acme",
+						Path:    []interface{}{"organization"},
 					},
 				},
 			},
 		})
 	})
 
-	t.Run("Succeeds on Cloud if user is org member", func(t *testing.T) {
+	t.Run("org members can access on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		users := dbmock.NewMockUserStore()
@@ -97,6 +98,49 @@ func TestOrganization(t *testing.T) {
 		db := dbmock.NewMockDBFrom(db)
 		db.UsersFunc.SetDefaultReturn(users)
 		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+
+		RunTests(t, []*Test{
+			{
+				Schema:  mustParseGraphQLSchema(t, db),
+				Context: ctx,
+				Query: `
+				{
+					organization(name: "acme") {
+						name
+					}
+				}
+			`,
+				ExpectedResult: `
+				{
+					"organization": {
+						"name": "acme"
+					}
+				}
+				`,
+			},
+		})
+	})
+
+	t.Run("invited users can access on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+		orgMembers := dbmock.NewMockOrgMemberStore()
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+
+		orgInvites := dbmock.NewMockOrgInvitationStore()
+		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
+
+		db := dbmock.NewMockDBFrom(db)
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
 
 		RunTests(t, []*Test{
 			{
