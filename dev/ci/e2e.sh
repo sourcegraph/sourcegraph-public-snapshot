@@ -73,4 +73,3 @@ echo "--- coverage"
 yarn nyc report -r json
 # Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)
 ./dev/ci/codecov.sh -F e2e
-
