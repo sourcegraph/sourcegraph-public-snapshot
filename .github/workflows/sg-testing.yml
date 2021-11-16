@@ -36,6 +36,7 @@ jobs:
 
       - name: run setup command
         run: |
+          . ~/.bashrc
           sg -y setup
 
       - name: run setup commands manually
