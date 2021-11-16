@@ -5,11 +5,12 @@ This document is intended as an explanation of common issues faced by Sourcegrap
 _This document is targeted at docker-compose and kubernetes deployments, where services can be isolated for individual tuning_
 
 The following bullets provide a general guidline to which service may require more resources:
-- `sourcegraph-frontend` CPU/memory resource allocations
-- `searcher` CPU/memory resource allocations (allocate enough memory to hold all non-binary files in your repositories)
-- `indexedSearch` CPU/memory resource allocations (for the `zoekt-indexserver` pod, allocate enough memory to hold all non-binary files in your largest repository; for the `zoekt-webserver` pod, allocate enough memory to hold ~2.7x the size of all non-binary files in your repositories)
-- `symbols` CPU/memory resource allocations
-- `gitserver` CPU/memory resource allocations (allocate enough memory to hold your Git packed bare repositories)
+
+* `sourcegraph-frontend` CPU/memory resource allocations
+* `searcher` CPU/memory resource allocations (allocate enough memory to hold all non-binary files in your repositories)
+* `indexedSearch` CPU/memory resource allocations (for the `zoekt-indexserver` pod, allocate enough memory to hold all non-binary files in your largest repository; for the `zoekt-webserver` pod, allocate enough memory to hold ~2.7x the size of all non-binary files in your repositories)
+* `symbols` CPU/memory resource allocations
+* `gitserver` CPU/memory resource allocations (allocate enough memory to hold your Git packed bare repositories)
 
 ## Symbols sidebar - Processing symbols
 
