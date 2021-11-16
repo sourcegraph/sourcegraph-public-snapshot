@@ -15,7 +15,7 @@ If enabled, server-side Batch Changes computing allows to:
 
 ## Limitations
 
-This feature is experimental. In particular, it comes with limitations:
+This feature is experimental. In particular, it comes with the following limitations, that we plan to resolve before GA.
 
 - Server-side Batch Changes is only available for self-hosted deployments. It is not available on Sourcegraph Cloud and on managed instances.
 - Only site admins can run batch changes server-side.
