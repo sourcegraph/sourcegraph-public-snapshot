@@ -1,28 +1,25 @@
 package graphqlbackend
 
 import (
-	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCreateUser(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.Create = func(context.Context, database.NewUser) (*types.User, error) {
-		return &types.User{ID: 1, Username: "alice"}, nil
-	}
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
 
-	calledGrantPendingPermissions := false
-	database.Mocks.Authz.GrantPendingPermissions = func(context.Context, *database.GrantPendingPermissionsArgs) error {
-		calledGrantPendingPermissions = true
-		return nil
-	}
-	db := database.NewDB(nil)
+	authz := dbmock.NewMockAuthzStore()
+	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.AuthzFunc.SetDefaultReturn(authz)
 
 	RunTests(t, []*Test{
 		{
@@ -47,7 +44,6 @@ func TestCreateUser(t *testing.T) {
 			`,
 		},
 	})
-	if !calledGrantPendingPermissions {
-		t.Fatal("!calledGrantPendingPermissions")
-	}
+
+	mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
 }

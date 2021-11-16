@@ -45,6 +45,7 @@ add('default', () => (
                 {...noopBlockCallbacks}
                 id="query-block-1"
                 input="query"
+                type="query"
                 output={of(streamingSearchResult)}
                 isSelected={false}
                 isReadOnly={false}
@@ -70,6 +71,7 @@ add('selected', () => (
                 {...noopBlockCallbacks}
                 id="query-block-1"
                 input="query"
+                type="query"
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isOtherBlockSelected={false}
@@ -95,6 +97,7 @@ add('read-only selected', () => (
                 {...noopBlockCallbacks}
                 id="query-block-1"
                 input="query"
+                type="query"
                 output={of(streamingSearchResult)}
                 isSelected={true}
                 isReadOnly={true}

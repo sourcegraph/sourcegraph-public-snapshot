@@ -4,7 +4,6 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { authUser } from '../../../../../search/panels/utils'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../../core/backend/code-insights-setting-cascade-backend'
 import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
@@ -30,6 +29,6 @@ const codeInsightsBackend = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASC
 
 add('Page', () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} authenticatedUser={authUser} />
+        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>
 ))

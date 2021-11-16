@@ -88,7 +88,7 @@ const ExtensionViewsDirectorySectionContent: React.FunctionComponent<ExtensionVi
     )
 
     // Read code insights views from the settings cascade
-    const insights = useObservable(useMemo(() => getInsights(), [getInsights])) ?? EMPTY_INSIGHT_LIST
+    const insights = useObservable(useMemo(() => getInsights('all'), [getInsights])) ?? EMPTY_INSIGHT_LIST
 
     // Pull extension views with Extension API
     const extensionViews =

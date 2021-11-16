@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -40,16 +39,16 @@ func (r *organizationMembershipConnectionResolver) PageInfo() *graphqlutil.PageI
 }
 
 type organizationMembershipResolver struct {
-	db         dbutil.DB
+	db         database.DB
 	membership *types.OrgMembership
 }
 
 func (r *organizationMembershipResolver) Organization(ctx context.Context) (*OrgResolver, error) {
-	return OrgByIDInt32(ctx, database.NewDB(r.db), r.membership.OrgID)
+	return OrgByIDInt32(ctx, r.db, r.membership.OrgID)
 }
 
 func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, database.NewDB(r.db), r.membership.UserID)
+	return UserByIDInt32(ctx, r.db, r.membership.UserID)
 }
 
 func (r *organizationMembershipResolver) CreatedAt() DateTime {

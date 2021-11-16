@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -9,6 +10,13 @@ import (
 )
 
 var newValue = "a different value"
+
+func copyStrings(fields []jsonStringField) (out []string) {
+	for _, field := range fields {
+		out = append(out, *field.ptr)
+	}
+	return out
+}
 
 func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 	someSecret := "this is a secret, i hope no one steals it"
@@ -51,81 +59,78 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 		P4Passwd: someSecret,
 		P4User:   "admin",
 	}
+	jvmPackagesConfig := schema.JVMPackagesConnection{
+		Maven: &schema.Maven{
+			Credentials:  "top secret credentials",
+			Dependencies: []string{"placeholder"},
+		},
+	}
 	otherConfig := schema.OtherExternalServiceConnection{
 		Url:                   someSecret,
 		RepositoryPathPattern: "foo",
 	}
 	var tc = []struct {
-		kind        string
-		config      interface{} // the config for the service kind
-		editField   *string     // a pointer to a field on the config we can edit to simulate the user using the API
-		secretField *string     // a pointer to the field we expect to be obfuscated
+		kind      string
+		config    interface{}               // the config for the service kind
+		editField func(interface{}) *string // a pointer to a field on the config we can edit to simulate the user using the API
 	}{
 		{
-			kind:        extsvc.KindGitHub,
-			config:      &githubConfig,
-			editField:   &githubConfig.Url,
-			secretField: &githubConfig.Token,
+			kind:      extsvc.KindGitHub,
+			config:    &githubConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.GitHubConnection).Url },
 		},
 		{
-			kind:        extsvc.KindGitLab,
-			config:      &gitlabConfig,
-			editField:   &gitlabConfig.Url,
-			secretField: &gitlabConfig.Token,
+			kind:      extsvc.KindGitLab,
+			config:    &gitlabConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.GitLabConnection).Url },
 		},
 		{
-			kind:        extsvc.KindBitbucketCloud,
-			config:      &bitbucketCloudConfig,
-			editField:   &bitbucketCloudConfig.Url,
-			secretField: &bitbucketCloudConfig.AppPassword,
+			kind:      extsvc.KindBitbucketCloud,
+			config:    &bitbucketCloudConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.BitbucketCloudConnection).Url },
 		},
 		// BitbucketServer can have a password OR token, not both
 		{
-			kind:        extsvc.KindBitbucketServer,
-			config:      &bitbucketServerConfigWithPassword,
-			editField:   &bitbucketServerConfigWithPassword.Url,
-			secretField: &bitbucketServerConfigWithPassword.Password,
+			kind:      extsvc.KindBitbucketServer,
+			config:    &bitbucketServerConfigWithPassword,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.BitbucketServerConnection).Url },
 		},
 		{
-			kind:        extsvc.KindBitbucketServer,
-			config:      &bitbucketServerConfigWithToken,
-			editField:   &bitbucketServerConfigWithToken.Url,
-			secretField: &bitbucketServerConfigWithToken.Token,
+			kind:      extsvc.KindBitbucketServer,
+			config:    &bitbucketServerConfigWithToken,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.BitbucketServerConnection).Url },
 		},
 		{
-			kind:        extsvc.KindAWSCodeCommit,
-			config:      &awsCodeCommitConfig,
-			editField:   &awsCodeCommitConfig.Region,
-			secretField: &awsCodeCommitConfig.SecretAccessKey,
+			kind:      extsvc.KindAWSCodeCommit,
+			config:    &awsCodeCommitConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.AWSCodeCommitConnection).Region },
 		},
 		{
-			kind:        extsvc.KindAWSCodeCommit,
-			config:      &awsCodeCommitConfig,
-			editField:   &awsCodeCommitConfig.Region,
-			secretField: &awsCodeCommitConfig.GitCredentials.Password,
-		},
-		{
-			kind:        extsvc.KindPhabricator,
-			config:      &phabricatorConfig,
-			editField:   &phabricatorConfig.Url,
-			secretField: &phabricatorConfig.Token,
+			kind:      extsvc.KindPhabricator,
+			config:    &phabricatorConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.PhabricatorConnection).Url },
 		},
 		{
 			kind:      extsvc.KindGitolite,
 			config:    &gitoliteConfig,
-			editField: &gitoliteConfig.Host,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.GitoliteConnection).Host },
 		},
 		{
-			kind:        extsvc.KindPerforce,
-			config:      &perforceConfig,
-			editField:   &perforceConfig.P4User,
-			secretField: &perforceConfig.P4Passwd,
+			kind:      extsvc.KindPerforce,
+			config:    &perforceConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.PerforceConnection).P4User },
 		},
 		{
-			kind:        extsvc.KindOther,
-			config:      &otherConfig,
-			editField:   &otherConfig.RepositoryPathPattern,
-			secretField: &otherConfig.Url,
+			kind:      extsvc.KindJVMPackages,
+			config:    &jvmPackagesConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.JVMPackagesConnection).Maven.Dependencies[0] },
+		},
+		{
+			kind:   extsvc.KindOther,
+			config: &otherConfig,
+			editField: func(cfg interface{}) *string {
+				return &cfg.(*schema.OtherExternalServiceConnection).RepositoryPathPattern
+			},
 		},
 	}
 	for _, c := range tc {
@@ -137,11 +142,13 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			}
 			old := string(buf)
 
-			var unredactedField string
+			var unredactedFields []string
 			// capture the field before redacting
-			if c.secretField != nil {
-				unredactedField = *c.secretField
+			infos, err := redactionInfo(c.config)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
 			}
+			unredactedFields = copyStrings(infos)
 
 			// first we redact the config as it was received from the DB, then write the redacted form to the user
 			svc := ExternalService{
@@ -160,8 +167,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			if err := json.Unmarshal([]byte(redacted), &c.config); err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}
-			if c.secretField != nil {
-				if want, got := RedactedSecret, *c.secretField; want != got {
+			infos, err = redactionInfo(c.config)
+			if err != nil {
+				t.Fatalf("unexpected error: %s", err)
+			}
+			for _, got := range copyStrings(infos) {
+				if want := RedactedSecret; want != got {
 					t.Errorf("want: %q, got: %q", want, got)
 				}
 			}
@@ -172,7 +183,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 				Config: old,
 			}
 			// edit a field
-			*c.editField = newValue
+			*c.editField(c.config) = newValue
 			buf, err = json.Marshal(c.config)
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
@@ -200,14 +211,16 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			}
 
 			// our updated fields are still here
-			if *c.editField != newValue {
-				t.Errorf("expected %s got %s", newValue, *c.editField)
+			if *c.editField(c.config) != newValue {
+				t.Errorf("expected %s got %s", newValue, *c.editField(c.config))
 			}
-			if c.secretField != nil {
-				// and the secret is no longer redacted
-				if want, got := unredactedField, *c.secretField; want != got {
-					t.Errorf("want: %q, got %q", want, got)
-				}
+			// and the secrets is no longer redacted
+			infos, err = redactionInfo(c.config)
+			if err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+			if want, got := unredactedFields, copyStrings(infos); !reflect.DeepEqual(want, got) {
+				t.Errorf("want: %q, got %q", want, got)
 			}
 		})
 	}

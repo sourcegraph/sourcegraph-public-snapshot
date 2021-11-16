@@ -46,7 +46,7 @@ func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
 }
 
 type RepoUpdaterClient interface {
-	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
 }
 
 type ExternalServiceStore interface {

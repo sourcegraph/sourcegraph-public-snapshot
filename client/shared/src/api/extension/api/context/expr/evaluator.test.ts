@@ -9,6 +9,7 @@ const FIXTURE_CONTEXT: Context = {
     x: 'y',
     o: { k: 'v' },
     array: [7],
+    'panel.url': '#tab=panelID',
 }
 
 describe('Expression', () => {
@@ -61,6 +62,7 @@ describe('TemplateExpression', () => {
         'a${x}b': 'ayb',
         '_${x}_${a}_${a+b}': '_y_1_2',
         '_${`-${x}-`}_': '_-y-_',
+        "_${sub(get(context, 'panel.url'), 'panelID', 'implementations')}_": '_#tab=implementations_',
     }
     /* eslint-enable no-template-curly-in-string */
     for (const [template, want] of Object.entries(TESTS)) {

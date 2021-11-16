@@ -125,12 +125,27 @@ You should ensure you're signed into any Sourcegraph instance you point the exte
 
 Click reload for Sourcegraph at `about:debugging`
 
+### Safari
+
+> **Note**: Requires MacOS with Xcode installed
+
+1. `yarn --cwd client/browser dev:safari`
+1. Open Safari then: `Develop > Allow Unsigned Extensions`
+1. Open `client/browser/build/Sourcegraph for Safari/Sourcegraph for Safari.xcodeproj` using Xcode
+1. Choose `Sourcegraph for Safari (macOS)` in the top toolbar and click Run icon
+1. It should build and add extension to your local Safari (Check `Preferences > Extensions tab`)
+
+[See more details.](https://developer.apple.com/documentation/safariservices/safari_web_extensions/running_your_safari_web_extension)
+
 ## Testing
 
-- Unit tests: `yarn test`
-- E2E tests: `yarn test-e2e`
+- Unit tests: `sg test bext`
+- Integration tests: `sg test bext-integration`
+- E2E tests:
+  - `EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build`
+  - `sg test bext-e2e`
 
-### e2e tests
+### E2E tests
 
 The test suite in `end-to-end/github.test.ts` runs on the release branch `bext/release` in both Chrome and Firefox against a Sourcegraph Docker instance.
 

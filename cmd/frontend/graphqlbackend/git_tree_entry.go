@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -36,8 +36,10 @@ var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
+//
+// Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db     dbutil.DB
+	db     database.DB
 	commit *GitCommitResolver
 
 	contentOnce sync.Once
@@ -50,10 +52,15 @@ type GitTreeEntryResolver struct {
 
 	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
+
+	// Responsible for filtering out sub-repository content.
+	//
+	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
+	subRepoPerms authz.SubRepoPermissionChecker
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db dbutil.DB, stat fs.FileInfo) *GitTreeEntryResolver {
-	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
+func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat, subRepoPerms: subRepoPermsClient(db)}
 }
 
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
@@ -76,6 +83,20 @@ func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	r.contentOnce.Do(func() {
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
+
+		perms, err := authz.CurrentUserPermissions(ctx, r.subRepoPerms, authz.RepoContent{
+			Repo: r.commit.repoResolver.RepoName(),
+			Path: r.Path(),
+		})
+		if err != nil {
+			log15.Error("checking sub-repo permissions", "error", err)
+			r.content, r.contentErr = nil, err
+		}
+		// No access
+		if !perms.Include(authz.Read) {
+			r.content, r.contentErr = nil, nil
+			return
+		}
 
 		r.content, r.contentErr = git.ReadFile(
 			ctx,
@@ -132,7 +153,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 		if strings.HasPrefix(url, "../") {
 			url = path.Join(r.Repository().Name(), url)
 		}
-		repoName, err := cloneURLToRepoName(ctx, database.NewDB(r.db), url)
+		repoName, err := cloneURLToRepoName(ctx, r.db, url)
 		if err != nil {
 			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
 			return "", nil
@@ -171,7 +192,7 @@ func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallin
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, database.NewDB(r.db), repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.db, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
@@ -213,8 +234,9 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := git.ReadDir(
+	entries, err := gitReadDir(
 		ctx,
+		r.subRepoPerms,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		path.Dir(r.Path()),

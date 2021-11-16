@@ -15,7 +15,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -140,6 +139,13 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
 		// any other changes but still commit the transaction as a whole.
 		return inTransaction(ctx, h.dbStore, func(tx DBStore) error {
+			// Before we mark the upload as complete, we need to delete any existing completed uploads
+			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
+			// will fail as these values form a unique constraint.
+			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+				return errors.Wrap(err, "store.DeleteOverlappingDumps")
+			}
+
 			// Find the date of the commit and store that in the upload record. We do this now as we
 			// will need to find the _oldest_ commit with code intelligence data to efficiently update
 			// the commit graph for the repository.
@@ -164,20 +170,10 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 
 			// When inserting a new completed upload record, update the reference counts both to it from
 			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
-			// We decrement reference counts of dependencies on upload deletion, so this count should
-			// always be up to date as records are created and removed.
-			if err := tx.UpdateNumReferences(ctx, []int{upload.ID}); err != nil {
-				return errors.Wrap(err, "store.UpdateNumReferences")
-			}
-			if err := tx.UpdateDependencyNumReferences(ctx, []int{upload.ID}, false); err != nil {
-				return errors.Wrap(err, "store.UpdateDependencyNumReferences")
-			}
-
-			// Before we mark the upload as complete, we need to delete any existing completed uploads
-			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
-			// will fail as these values form a unique constraint.
-			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-				return errors.Wrap(err, "store.DeleteOverlappingDumps")
+			// We always keep this value up to date - we also decrement reference counts of dependencies
+			// on upload deletion or when the set of uploads providing an existing package change.
+			if err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, store.DependencyReferenceCountUpdateTypeAdd); err != nil {
+				return errors.Wrap(err, "store.UpdateReferenceCount")
 			}
 
 			// Insert a companion record to this upload that will asynchronously trigger other workers to
@@ -264,7 +260,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
 	// Upsert values used for documentation search that have high contention. We do this with the raw LSIF store
 	// instead of in the transaction below because the rows being upserted tend to have heavy contention.
 	repositoryNameID, languageNameID, err := lsifStore.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)

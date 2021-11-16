@@ -14,14 +14,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { InputTooltip } from '@sourcegraph/web/src/components/InputTooltip'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
-import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
-import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import {
-    ChangesetState,
-    VisibleChangesetApplyPreviewFields,
-    VisibleChangesetSpecFields,
-} from '../../../../graphql-operations'
+import { ChangesetState, VisibleChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { Description } from '../../Description'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
@@ -30,6 +23,7 @@ import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { checkPublishability } from '../utils'
 
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from './backend'
+import { ChangesetSpecFileDiffConnection } from './ChangesetSpecFileDiffConnection'
 import { GitBranchChangesetDescriptionInfo } from './GitBranchChangesetDescriptionInfo'
 import { PreviewActions } from './PreviewActions'
 import { PreviewNodeIndicator } from './PreviewNodeIndicator'
@@ -395,7 +389,7 @@ const ExpandedSection: React.FunctionComponent<
                         history={history}
                         isLightTheme={isLightTheme}
                         location={location}
-                        spec={node.targets.changesetSpec}
+                        spec={node.targets.changesetSpec.id}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                     />
                 </>
@@ -438,51 +432,6 @@ const ExpandedSection: React.FunctionComponent<
             )}
             {selectedTab === 'commits' && <GitBranchChangesetDescriptionInfo node={node} />}
         </>
-    )
-}
-
-const ChangesetSpecFileDiffConnection: React.FunctionComponent<
-    {
-        spec: VisibleChangesetSpecFields
-        history: H.History
-        location: H.Location
-
-        /** Used for testing. **/
-        queryChangesetSpecFileDiffs?: typeof _queryChangesetSpecFileDiffs
-    } & ThemeProps
-> = ({ spec, history, location, isLightTheme, queryChangesetSpecFileDiffs = _queryChangesetSpecFileDiffs }) => {
-    /** Fetches the file diffs for the changeset */
-    const queryFileDiffs = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryChangesetSpecFileDiffs({
-                after: args.after ?? null,
-                first: args.first ?? null,
-                changesetSpec: spec.id,
-            }),
-        [spec.id, queryChangesetSpecFileDiffs]
-    )
-    return (
-        <FileDiffConnection
-            listClassName="list-group list-group-flush"
-            noun="changed file"
-            pluralNoun="changed files"
-            queryConnection={queryFileDiffs}
-            nodeComponent={FileDiffNode}
-            nodeComponentProps={{
-                history,
-                location,
-                isLightTheme,
-                persistLines: true,
-                lineNumbers: true,
-            }}
-            defaultFirst={15}
-            hideSearch={true}
-            noSummaryIfAllNodesVisible={true}
-            history={history}
-            location={location}
-            useURLQuery={false}
-            cursorPaging={true}
-        />
     )
 }
 

@@ -3,45 +3,32 @@ package run
 import (
 	"context"
 	"math"
-	"regexp"
-	"runtime"
 
+	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var MockSearchRepositories func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
+type RepoSearch struct {
+	Args  *search.TextParameters
+	Limit int
+}
 
-// SearchRepositories searches for repositories by name.
-//
-// For a repository to match a query, the repository's name must match all of the repo: patterns AND the
-// default patterns (i.e., the patterns that are not prefixed with any search field).
-func SearchRepositories(ctx context.Context, args *search.TextParameters, limit int32, stream streaming.Sender) (err error) {
-	if MockSearchRepositories != nil {
-		results, stats, err := MockSearchRepositories(args)
-		stream.Send(streaming.SearchEvent{
-			Results: results,
-			Stats:   stats.Deref(),
-		})
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "run.SearchRepositories", "")
+func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) (err error) {
+	tr, ctx := trace.New(ctx, "RepoSearch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	ctx, stream, cancel := streaming.WithLimit(ctx, stream, int(limit))
-	defer cancel()
 
 	fieldAllowlist := map[string]struct{}{
 		query.FieldRepo:               {},
@@ -62,63 +49,56 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 	}
 	// Don't return repo results if the search contains fields that aren't on the allowlist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
-	for field := range args.Query.Fields() {
+	for field := range s.Args.Query.Fields() {
 		if _, ok := fieldAllowlist[field]; !ok {
 			tr.LazyPrintf("contains dissallowed field: %s", field)
 			return nil
 		}
 	}
 
-	patternRe := args.PatternInfo.Pattern
-	if !args.Query.IsCaseSensitive() {
-		patternRe = "(?i)" + patternRe
-	}
-
 	tr.LogFields(
-		otlog.String("pattern", patternRe),
-		otlog.Int32("limit", limit))
+		otlog.String("pattern", s.Args.PatternInfo.Pattern),
+		otlog.Int("limit", s.Limit))
 
-	pattern, err := regexp.Compile(patternRe)
-	if err != nil {
-		return err
+	opts := s.Args.RepoOptions // copy
+
+	if s.Args.PatternInfo.Pattern != "" {
+		opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
+		opts.RepoFilters = append(opts.RepoFilters, s.Args.PatternInfo.Pattern)
+		opts.CaseSensitiveRepoFilters = s.Args.Query.IsCaseSensitive()
 	}
 
-	// Filter args.Repos by matching their names against the query pattern.
-	tr.LogFields(otlog.Int("resolved.len", len(args.Repos)))
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)
+	defer cleanup()
 
-	results := make(chan []*search.RepositoryRevisions)
-	go func() {
-		defer close(results)
-		matchRepos(pattern, args.Repos, results)
-	}()
+	err = repos.Paginate(ctx, &opts, func(page *searchrepos.Resolved) error {
+		tr.LogFields(otlog.Int("resolved.len", len(page.RepoRevs)))
 
-	// Filter the repos if there is a repohasfile: or -repohasfile field.
-	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
-		// Fallback to batch for reposToAdd
-		var repos []*search.RepositoryRevisions
-		for matched := range results {
-			repos = append(repos, matched...)
+		// Filter the repos if there is a repohasfile: or -repohasfile field.
+		if len(s.Args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(s.Args.PatternInfo.FilePatternsReposMustInclude) > 0 {
+			// Fallback to batch for reposToAdd
+			page.RepoRevs, err = reposToAdd(ctx, s.Args, page.RepoRevs)
+			if err != nil {
+				return err
+			}
 		}
-		repos, err = reposToAdd(ctx, args, repos)
-		if err != nil {
-			return err
-		}
+
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, repos),
+			Results: repoRevsToRepoMatches(ctx, page.RepoRevs),
 		})
+
 		return nil
+	})
+
+	if errors.Is(err, searchrepos.ErrNoResolvedRepos) {
+		err = nil
 	}
 
-	count := 0
-	for repos := range results {
-		count += len(repos)
-		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, repos),
-		})
-	}
-	tr.LogFields(otlog.Int("matched.len", count))
+	return err
+}
 
-	return nil
+func (*RepoSearch) Name() string {
+	return "Repo"
 }
 
 func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisions) []result.Match {
@@ -137,61 +117,6 @@ func repoRevsToRepoMatches(ctx context.Context, repos []*search.RepositoryRevisi
 		}
 	}
 	return matches
-}
-
-func matchRepos(pattern *regexp.Regexp, resolved []*search.RepositoryRevisions, results chan<- []*search.RepositoryRevisions) {
-	/*
-		goos: linux
-		goarch: amd64
-		pkg: github.com/sourcegraph/sourcegraph/internal/search/run
-		cpu: Intel(R) Core(TM) i9-8950HK CPU @ 2.90GHz
-		BenchmarkSearchRepositories-8   	      39	  31514267 ns/op
-		BenchmarkSearchRepositories-8   	      26	  38898255 ns/op
-		BenchmarkSearchRepositories-8   	      36	  31482727 ns/op
-		BenchmarkSearchRepositories-8   	      33	  30513691 ns/op
-		BenchmarkSearchRepositories-8   	      30	  37038388 ns/op
-		BenchmarkSearchRepositories-8   	      30	  38095363 ns/op
-		BenchmarkSearchRepositories-8   	      36	  39347784 ns/op
-		BenchmarkSearchRepositories-8   	      28	  41431416 ns/op
-		BenchmarkSearchRepositories-8   	      30	  41695426 ns/op
-		BenchmarkSearchRepositories-8   	      28	  39782412 ns/op
-		PASS
-		ok  	github.com/sourcegraph/sourcegraph/internal/search/run	18.729s
-	*/
-	workers := runtime.NumCPU()
-	limit := len(resolved) / workers
-
-	last := make(chan struct{})
-	close(last)
-
-	for i := 0; i < workers; i++ {
-		page := resolved[i*limit : i*limit+limit]
-		if i == workers-1 {
-			page = resolved[i*limit:]
-		}
-
-		wait := last
-		done := make(chan struct{})
-		last = done
-
-		go func() {
-			defer close(done)
-
-			var matched []*search.RepositoryRevisions
-			for _, r := range page {
-				if pattern.MatchString(string(r.Repo.Name)) {
-					matched = append(matched, r)
-				}
-			}
-
-			// Wait for the previous chunk to send its matches
-			// before sending ours.
-			<-wait
-			results <- matched
-		}()
-	}
-
-	<-last
 }
 
 func reposContainingPath(ctx context.Context, args *search.TextParameters, repos []*search.RepositoryRevisions, pattern string) ([]*result.FileMatch, error) {

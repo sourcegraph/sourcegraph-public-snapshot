@@ -1,282 +1,257 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SearchStatsPage limitHit 1`] = `
-<div
-  className="search-stats-page container mt-4"
->
-  <header
-    className="d-flex align-items-center justify-content-between mb-3"
-  >
-    <h2
-      className="d-flex align-items-center mb-0"
-    >
-      <svg
-        className="mdi-icon icon-inline mr-2"
-        fill="currentColor"
-        height={24}
-        viewBox="0 0 24 24"
-        width={24}
-      >
-        <path
-          d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"
-        />
-      </svg>
-       Code statistics
-       
-      <small
-        className="badge badge-secondary text-uppercase ml-2"
-      >
-        Experimental
-      </small>
-    </h2>
-  </header>
-  <form
-    className="form"
-    onInvalid={[Function]}
-    onSubmit={[Function]}
-  >
-    <div
-      className="form-group d-flex align-items-stretch"
-    >
-      <input
-        autoCapitalize="off"
-        autoComplete="off"
-        autoCorrect="off"
-        className="form-control flex-1 test-stats-query"
-        id="stats-page__query"
-        onChange={[Function]}
-        placeholder="Enter a Sourcegraph search query"
-        spellCheck={false}
-        type="search"
-        value="abc"
-      />
-    </div>
-  </form>
-  <hr
-    className="my-3"
-  />
+<DocumentFragment>
   <div
-    className="alert alert-warning"
+    class="search-stats-page container mt-4"
   >
-    Limit hit. Add 
-    <code>
-      count:
-      5000
-    </code>
-     (or an even larger number) to your query to retry with a higher limit.
+    <header
+      class="d-flex align-items-center justify-content-between mb-3"
+    >
+      <h2
+        class="d-flex align-items-center mb-0"
+      >
+        <svg
+          class="mdi-icon icon-inline mr-2"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
+        >
+          <path
+            d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"
+          />
+        </svg>
+         Code statistics 
+        <small
+          class="badge badge-secondary text-uppercase ml-2"
+        >
+          Experimental
+        </small>
+      </h2>
+    </header>
+    <form
+      class="form"
+    >
+      <div
+        class="form-group d-flex align-items-stretch"
+      >
+        <input
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          class="form-control flex-1 test-stats-query"
+          id="stats-page__query"
+          placeholder="Enter a Sourcegraph search query"
+          spellcheck="false"
+          type="search"
+          value="abc"
+        />
+      </div>
+    </form>
+    <hr
+      class="my-3"
+    />
+    <div
+      class="alert alert-warning"
+    >
+      Limit hit. Add 
+      <code>
+        count:5000
+      </code>
+       (or an even larger number) to your query to retry with a higher limit.
+    </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`SearchStatsPage renders 1`] = `
-<div
-  className="search-stats-page container mt-4"
->
-  <header
-    className="d-flex align-items-center justify-content-between mb-3"
-  >
-    <h2
-      className="d-flex align-items-center mb-0"
-    >
-      <svg
-        className="mdi-icon icon-inline mr-2"
-        fill="currentColor"
-        height={24}
-        viewBox="0 0 24 24"
-        width={24}
-      >
-        <path
-          d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"
-        />
-      </svg>
-       Code statistics
-       
-      <small
-        className="badge badge-secondary text-uppercase ml-2"
-      >
-        Experimental
-      </small>
-    </h2>
-  </header>
-  <form
-    className="form"
-    onInvalid={[Function]}
-    onSubmit={[Function]}
-  >
-    <div
-      className="form-group d-flex align-items-stretch"
-    >
-      <input
-        autoCapitalize="off"
-        autoComplete="off"
-        autoCorrect="off"
-        className="form-control flex-1 test-stats-query"
-        id="stats-page__query"
-        onChange={[Function]}
-        placeholder="Enter a Sourcegraph search query"
-        spellCheck={false}
-        type="search"
-        value="abc"
-      />
-    </div>
-  </form>
-  <hr
-    className="my-3"
-  />
+<DocumentFragment>
   <div
-    className="card mb-3"
+    class="search-stats-page container mt-4"
   >
-    <h4
-      className="card-header"
+    <header
+      class="d-flex align-items-center justify-content-between mb-3"
     >
-      Languages
-    </h4>
-    <div
-      className="d-flex"
-    >
-      <div
-        className="flex-0 border-right"
+      <h2
+        class="d-flex align-items-center mb-0"
       >
-        <table
-          className="search-stats-page__table table mb-0 border-top-0"
+        <svg
+          class="mdi-icon icon-inline mr-2"
+          fill="currentColor"
+          height="24"
+          viewBox="0 0 24 24"
+          width="24"
         >
-          <thead>
-            <tr
-              className="small"
-            >
-              <th
-                className="border-top-0"
-              >
-                <span
-                  className="sr-only"
-                >
-                  Language
-                </span>
-              </th>
-              <th
-                className="border-top-0"
-              >
-                Lines
-              </th>
-              <th
-                className="border-top-0"
-              >
-                <span
-                  className="sr-only"
-                >
-                  Percent
-                </span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <a
-                  href="/search?q=abc+lang:a&patternType=literal"
-                  onClick={[Function]}
-                >
-                  A
-                </a>
-              </td>
-              <td>
-                100
-              </td>
-              <td>
-                50%
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <a
-                  href="/search?q=abc+lang:b&patternType=literal"
-                  onClick={[Function]}
-                >
-                  B
-                </a>
-              </td>
-              <td>
-                50
-              </td>
-              <td>
-                25%
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <a
-                  href="/search?q=abc+lang:c&patternType=literal"
-                  onClick={[Function]}
-                >
-                  C
-                </a>
-              </td>
-              <td>
-                10
-              </td>
-              <td>
-                5%
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <a
-                  href="/search?q=abc+lang:d&patternType=literal"
-                  onClick={[Function]}
-                >
-                  D
-                </a>
-              </td>
-              <td>
-                5
-              </td>
-              <td>
-                3%
-              </td>
-            </tr>
-            <tr>
-              <td>
-                Unknown
-              </td>
-              <td>
-                35
-              </td>
-              <td>
-                18%
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <path
+            d="M16,11.78L20.24,4.45L21.97,5.45L16.74,14.5L10.23,10.75L5.46,19H22V21H2V3H4V17.54L9.5,8L16,11.78Z"
+          />
+        </svg>
+         Code statistics 
+        <small
+          class="badge badge-secondary text-uppercase ml-2"
+        >
+          Experimental
+        </small>
+      </h2>
+    </header>
+    <form
+      class="form"
+    >
       <div
-        className="flex-1 mx-4"
+        class="form-group d-flex align-items-stretch"
+      >
+        <input
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          class="form-control flex-1 test-stats-query"
+          id="stats-page__query"
+          placeholder="Enter a Sourcegraph search query"
+          spellcheck="false"
+          type="search"
+          value="abc"
+        />
+      </div>
+    </form>
+    <hr
+      class="my-3"
+    />
+    <div
+      class="card mb-3"
+    >
+      <h4
+        class="card-header"
+      >
+        Languages
+      </h4>
+      <div
+        class="d-flex"
       >
         <div
-          className="recharts-responsive-container"
-          style={
-            Object {
-              "height": 600,
-              "maxHeight": undefined,
-              "minHeight": undefined,
-              "minWidth": undefined,
-              "width": "100%",
-            }
-          }
+          class="flex-0 border-right"
+        >
+          <table
+            class="search-stats-page__table table mb-0 border-top-0"
+          >
+            <thead>
+              <tr
+                class="small"
+              >
+                <th
+                  class="border-top-0"
+                >
+                  <span
+                    class="sr-only"
+                  >
+                    Language
+                  </span>
+                </th>
+                <th
+                  class="border-top-0"
+                >
+                  Lines
+                </th>
+                <th
+                  class="border-top-0"
+                >
+                  <span
+                    class="sr-only"
+                  >
+                    Percent
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <a
+                    href="/search?q=abc+lang:a&patternType=literal"
+                  >
+                    A
+                  </a>
+                </td>
+                <td>
+                  100
+                </td>
+                <td>
+                  50%
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="/search?q=abc+lang:b&patternType=literal"
+                  >
+                    B
+                  </a>
+                </td>
+                <td>
+                  50
+                </td>
+                <td>
+                  25%
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="/search?q=abc+lang:c&patternType=literal"
+                  >
+                    C
+                  </a>
+                </td>
+                <td>
+                  10
+                </td>
+                <td>
+                  5%
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="/search?q=abc+lang:d&patternType=literal"
+                  >
+                    D
+                  </a>
+                </td>
+                <td>
+                  5
+                </td>
+                <td>
+                  3%
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Unknown
+                </td>
+                <td>
+                  35
+                </td>
+                <td>
+                  18%
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div
+          class="flex-1 mx-4"
         >
           <div
-            style={
-              Object {
-                "display": "none",
-                "height": 0,
-                "position": "absolute",
-                "visibility": "hidden",
-                "width": 0,
-              }
-            }
-          />
+            class="recharts-responsive-container"
+            style="width: 100%; height: 600px;"
+          >
+            <div
+              style="position: absolute; width: 0px; height: 0px; visibility: hidden; display: none;"
+            />
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;

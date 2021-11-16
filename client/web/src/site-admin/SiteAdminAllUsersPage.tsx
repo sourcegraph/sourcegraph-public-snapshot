@@ -113,9 +113,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         <span className="text-muted">{this.props.node.displayName}</span>
                     </div>
                     <div>
-                        <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
-                            <SettingsIcon className="icon-inline" /> Settings
-                        </Link>{' '}
+                        {!window.context.sourcegraphDotComMode && (
+                                <Link
+                                    className="btn btn-sm btn-secondary"
+                                    to={`${userURL(this.props.node.username)}/settings`}
+                                >
+                                    <SettingsIcon className="icon-inline" /> Settings
+                                </Link>
+                            ) &&
+                            ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
                                 type="button"
@@ -190,6 +196,12 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             reset link:
                         </p>
                         <CopyableText text={this.state.resetPasswordURL} size={40} />
+                    </div>
+                )}
+                {this.state.resetPasswordURL === null && (
+                    <div className="alert alert-success mt-2">
+                        Password was reset. The reset link was sent to the primary email of the user:{' '}
+                        <strong>{this.props.node.emails.find(item => item.isPrimary)?.email}</strong>
                     </div>
                 )}
             </li>

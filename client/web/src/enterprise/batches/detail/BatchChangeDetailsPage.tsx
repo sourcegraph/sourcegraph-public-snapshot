@@ -18,13 +18,7 @@ import {
 } from '../../../graphql-operations'
 import { Description } from '../Description'
 
-import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    deleteBatchChange as _deleteBatchChange,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
-    BATCH_CHANGE_BY_NAMESPACE,
-} from './backend'
+import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'

@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 var builtinExtensions = map[string]bool{
@@ -52,7 +51,7 @@ var builtinExtensions = map[string]bool{
 	"sourcegraph/vhdl":       true,
 }
 
-func defaultSettings(db dbutil.DB) map[string]interface{} {
+func defaultSettings(db database.DB) map[string]interface{} {
 	extensionIDs := []string{}
 	for id := range builtinExtensions {
 		extensionIDs = append(extensionIDs, id)
@@ -72,7 +71,7 @@ func defaultSettings(db dbutil.DB) map[string]interface{} {
 const singletonDefaultSettingsGQLID = "DefaultSettings"
 
 type defaultSettingsResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	gqlID string
 }
 
@@ -88,7 +87,7 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 		return nil, err
 	}
 	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(contents)}
-	return &settingsResolver{database.NewDB(r.db), &settingsSubject{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }

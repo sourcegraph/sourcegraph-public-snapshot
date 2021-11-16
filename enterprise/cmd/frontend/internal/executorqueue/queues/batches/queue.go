@@ -23,6 +23,7 @@ func QueueOptions(db dbutil.DB, accessToken func() string, observationContext *o
 
 	store := background.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 	return handler.QueueOptions{
+		Name:                   "batches",
 		Store:                  store,
 		RecordTransformer:      recordTransformer,
 		CanceledRecordsFetcher: store.FetchCanceled,

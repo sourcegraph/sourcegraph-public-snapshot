@@ -31,6 +31,7 @@ export interface DashboardCreationFields {
     name: string
     visibility: string
     type?: string
+    userId?: string
 }
 
 export interface InsightsDashboardCreationContentProps {
@@ -41,7 +42,7 @@ export interface InsightsDashboardCreationContentProps {
      */
     subjects: SupportedInsightSubject[]
 
-    onSubmit: (values: DashboardCreationFields) => SubmissionErrors | Promise<SubmissionErrors> | void
+    onSubmit: (values: DashboardCreationFields) => Promise<SubmissionErrors>
     children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
 }
 
@@ -65,7 +66,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
         initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
         // Override onSubmit to pass type value
         // to correctly set the grants property for graphql api
-        onSubmit: async () => {
+        onSubmit: async (): Promise<SubmissionErrors> => {
             let type = 'organization'
             if (visibility.input.value === userSubjectID) {
                 type = 'personal'
@@ -75,7 +76,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
                 type = 'global'
             }
 
-            await onSubmit({
+            return onSubmit({
                 name: name.input.value,
                 visibility: visibility.input.value,
                 type,

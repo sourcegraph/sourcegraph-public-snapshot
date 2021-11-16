@@ -46,6 +46,7 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 	for _, e := range executions {
 		executionsByWorkspaceID[e.BatchSpecWorkspaceID] = e
 	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(nodes))
 	for _, w := range nodes {
 		res := &batchSpecWorkspaceResolver{
@@ -57,12 +58,13 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 		}
 		resolvers = append(resolvers, res)
 	}
+
 	return resolvers, nil
 }
 
 func (r *batchSpecWorkspaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// TODO(ssbc): not implemented
-	return 0, nil
+	count, err := r.store.CountBatchSpecWorkspaces(ctx, r.opts)
+	return int32(count), err
 }
 
 func (r *batchSpecWorkspaceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

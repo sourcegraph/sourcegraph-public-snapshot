@@ -10,6 +10,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -200,8 +201,8 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 	if opts.JobQuery != "" {
 		var job *buildkite.Job
 		for _, j := range buildDetails.Jobs {
-			idMatch := (j.ID != nil && *j.ID == opts.JobQuery)
-			nameMatch := (j.Name != nil && strings.Contains(strings.ToLower(*j.Name), strings.ToLower(opts.JobQuery)))
+			idMatch := j.ID != nil && *j.ID == opts.JobQuery
+			nameMatch := j.Name != nil && strings.Contains(strings.ToLower(*j.Name), strings.ToLower(opts.JobQuery))
 			if idMatch || nameMatch {
 				job = j
 				break

@@ -28,6 +28,10 @@ type InsightsResolver interface {
 
 	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 	UpdateLineChartSearchInsight(ctx context.Context, args *UpdateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	CreatePieChartSearchInsight(ctx context.Context, args *CreatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	UpdatePieChartSearchInsight(ctx context.Context, args *UpdatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+
+	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
 
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
@@ -166,6 +170,11 @@ type LineChartInsightViewPresentation interface {
 	SeriesPresentation(ctx context.Context) ([]LineChartDataSeriesPresentationResolver, error)
 }
 
+type PieChartInsightViewPresentation interface {
+	Title(ctx context.Context) (string, error)
+	OtherThreshold(ctx context.Context) (float64, error)
+}
+
 type LineChartDataSeriesPresentationResolver interface {
 	SeriesId(ctx context.Context) (string, error)
 	Label(ctx context.Context) (string, error)
@@ -181,6 +190,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 
 type InsightPresentation interface {
 	ToLineChartInsightViewPresentation() (LineChartInsightViewPresentation, bool)
+	ToPieChartInsightViewPresentation() (PieChartInsightViewPresentation, bool)
 }
 
 type InsightTimeScope interface {
@@ -274,6 +284,33 @@ type UpdateLineChartSearchInsightInput struct {
 	ViewControls        InsightViewControlsInput
 }
 
+type CreatePieChartSearchInsightArgs struct {
+	Input CreatePieChartSearchInsightInput
+}
+
+type CreatePieChartSearchInsightInput struct {
+	Query               string
+	RepositoryScope     RepositoryScopeInput
+	PresentationOptions PieChartOptionsInput
+	Dashboards          *[]graphql.ID
+}
+
+type UpdatePieChartSearchInsightArgs struct {
+	Id    graphql.ID
+	Input UpdatePieChartSearchInsightInput
+}
+
+type UpdatePieChartSearchInsightInput struct {
+	Query               string
+	RepositoryScope     RepositoryScopeInput
+	PresentationOptions PieChartOptionsInput
+}
+
+type PieChartOptionsInput struct {
+	Title          string
+	OtherThreshold float64
+}
+
 type InsightViewControlsInput struct {
 	Filters InsightViewFiltersInput
 }
@@ -322,4 +359,8 @@ type InsightViewQueryArgs struct {
 	After   *string
 	Id      *graphql.ID
 	Filters *InsightViewFiltersInput
+}
+
+type DeleteInsightViewArgs struct {
+	Id graphql.ID
 }

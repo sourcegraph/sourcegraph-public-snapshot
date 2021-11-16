@@ -42,12 +42,7 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
 
                 <Route
                     path={`${match.url}/add-dashboard`}
-                    render={() => (
-                        <InsightsDashboardCreationPage
-                            telemetryService={telemetryService}
-                            authenticatedUser={authenticatedUser}
-                        />
-                    )}
+                    render={() => <InsightsDashboardCreationPage telemetryService={telemetryService} />}
                 />
             </Switch>
         </>

@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -34,11 +33,11 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
 }
 
 // CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.
-func CheckUserIsSiteAdmin(ctx context.Context, db dbutil.DB, userID int32) error {
+func CheckUserIsSiteAdmin(ctx context.Context, db database.DB, userID int32) error {
 	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
-	user, err := database.Users(db).GetByID(ctx, userID)
+	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -201,6 +201,10 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
         [setHiddenSectionIds, telemetryService]
     )
 
+    useEffect(() => {
+        telemetryService.logViewEvent('NoResultsPage')
+    }, [telemetryService])
+
     return (
         <div className={styles.root}>
             <h2>Sourcegraph basics</h2>
@@ -371,7 +375,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                     setHiddenSectionIds([])
                                 }}
                             >
-                                Turn all panels on.
+                                Show all panels.
                             </button>
                         </p>
                     )}

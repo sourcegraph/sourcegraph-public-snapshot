@@ -2,13 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -30,7 +28,7 @@ func newResolverWithClock(db dbutil.DB, clock func() time.Time) graphqlbackend.C
 }
 
 type Resolver struct {
-	store *cm.Store
+	store cm.CodeMonitorStore
 }
 
 func (r *Resolver) Now() time.Time {
@@ -259,58 +257,17 @@ func sendTestEmail(ctx context.Context, recipient graphql.ID, description string
 }
 
 func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) (actionIDs []graphql.ID, err error) {
-	limit := 50
-	var (
-		ids   []graphql.ID
-		after *string
-		q     *sqlf.Query
-	)
-	// Paging.
-	for {
-		q, err = r.store.ReadActionEmailQuery(ctx, monitorID, &graphqlbackend.ListActionArgs{
-			First: int32(limit),
-			After: after,
-		})
-		if err != nil {
-			return nil, err
-		}
-		es, cur, err := r.actionIDsForMonitorIDINT64SinglePage(ctx, q, limit)
-		if err != nil {
-			return nil, err
-		}
-		ids = append(ids, es...)
-		if cur == nil {
-			break
-		}
-		after = cur
+	emailActions, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
+		MonitorID: intPtr(int(monitorID)),
+	})
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]graphql.ID, len(emailActions))
+	for i, emailAction := range emailActions {
+		ids[i] = (&monitorEmail{MonitorEmail: emailAction}).ID()
 	}
 	return ids, nil
-}
-
-func (r *Resolver) actionIDsForMonitorIDINT64SinglePage(ctx context.Context, q *sqlf.Query, limit int) (ids []graphql.ID, cursor *string, err error) {
-	var rows *sql.Rows
-	rows, err = r.store.Query(ctx, q)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	var es []*cm.MonitorEmail
-	es, err = cm.ScanEmails(rows)
-	if err != nil {
-		return nil, nil, err
-	}
-	ids = make([]graphql.ID, 0, len(es))
-	for _, e := range es {
-		ids = append(ids, (&monitorEmail{MonitorEmail: e}).ID())
-	}
-
-	// Set the cursor if the result size equals limit.
-	if len(ids) == limit {
-		stringID := string(ids[len(ids)-1])
-		cursor = &stringID
-	}
-	return ids, cursor, nil
 }
 
 // splitActionIDs splits actions into three buckets: create, delete and update.
@@ -439,54 +396,21 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 }
 
 func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner graphql.ID, err error) {
-	var (
-		q      *sqlf.Query
-		rows   *sql.Rows
-		userID *int32
-		orgID  *int32
-	)
-	q, err = ownerForID64Query(ctx, monitorID)
+	monitor, err := r.store.MonitorByIDInt64(ctx, monitorID)
 	if err != nil {
 		return "", err
 	}
-	rows, err = r.store.Query(ctx, q)
-	if err != nil {
-		return "", err
-	}
-	defer rows.Close()
 
-	for rows.Next() {
-		if err = rows.Scan(
-			&userID,
-			&orgID,
-		); err != nil {
-			return "", err
-		}
-	}
-	err = rows.Close()
-	if err != nil {
-		return "", err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err = rows.Err(); err != nil {
-		return "", err
-	}
+	userID, orgID := monitor.NamespaceUserID, monitor.NamespaceOrgID
 	if (userID == nil && orgID == nil) || (userID != nil && orgID != nil) {
 		return "", errors.Errorf("invalid owner")
 	}
+
 	if orgID != nil {
 		return graphqlbackend.MarshalOrgID(*orgID), nil
 	} else {
 		return graphqlbackend.MarshalUserID(*userID), nil
 	}
-}
-
-func ownerForID64Query(ctx context.Context, monitorID int64) (*sqlf.Query, error) {
-	const ownerForId32Query = `SELECT namespace_user_id, namespace_org_id FROM cm_monitors WHERE id = %s`
-	return sqlf.Sprintf(
-		ownerForId32Query,
-		monitorID,
-	), nil
 }
 
 //
@@ -573,21 +497,21 @@ func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionAr
 }
 
 func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int, monitorID int64, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
 	// For now, we only support emails as actions. Once we add other actions such as
 	// webhooks, we have to query those tables here too.
-	q, err := r.store.ReadActionEmailQuery(ctx, monitorID, args)
+	es, err := r.store.ListEmailActions(ctx, cm.ListActionsOpts{
+		MonitorID: intPtr(int(monitorID)),
+		After:     after,
+		First:     intPtr(int(args.First)),
+	})
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.store.Query(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	es, err := cm.ScanEmails(rows)
-	if err != nil {
-		return nil, err
-	}
+
 	totalCount, err := r.store.TotalCountActionEmails(ctx, monitorID)
 	if err != nil {
 		return nil, err
@@ -824,11 +748,25 @@ func (m *monitorEmail) ID() graphql.ID {
 }
 
 func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
-	ajs, err := m.store.ReadActionEmailEvents(ctx, m.Id, m.triggerEventID, args)
+	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
 	}
-	totalCount, err := m.store.TotalActionEmailEvents(ctx, m.Id, m.triggerEventID)
+
+	ajs, err := m.store.ListActionJobs(ctx, cm.ListActionJobsOpts{
+		EmailID:        intPtr(int(m.Id)),
+		TriggerEventID: m.triggerEventID,
+		First:          intPtr(int(args.First)),
+		After:          after,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount, err := m.store.CountActionJobs(ctx, cm.ListActionJobsOpts{
+		EmailID:        intPtr(int(m.Id)),
+		TriggerEventID: m.triggerEventID,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +774,19 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 	for i, aj := range ajs {
 		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
 	}
-	return &monitorActionEventConnection{events: events, totalCount: totalCount}, nil
+	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
+}
+
+func intPtr(i int) *int { return &i }
+
+func unmarshalAfter(after *string) (*int, error) {
+	if after == nil {
+		return nil, nil
+	}
+
+	var a int
+	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
+	return &a, err
 }
 
 //

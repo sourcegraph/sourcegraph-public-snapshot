@@ -29,7 +29,7 @@ import (
 type CachedLocationResolver struct {
 	sync.RWMutex
 	children map[api.RepoID]*cachedRepositoryResolver
-	db       dbutil.DB
+	db       database.DB
 }
 
 type cachedRepositoryResolver struct {
@@ -47,7 +47,7 @@ type cachedCommitResolver struct {
 // NewCachedLocationResolver creates a location resolver with an empty cache.
 func NewCachedLocationResolver(db dbutil.DB) *CachedLocationResolver {
 	return &CachedLocationResolver{
-		db:       db,
+		db:       database.NewDB(db),
 		children: map[api.RepoID]*cachedRepositoryResolver{},
 	}
 }
@@ -214,7 +214,7 @@ func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.R
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(database.NewDB(r.db), repo), nil
+	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
 // Commit resolves the git commit with the given repository resolver and commit hash. This method may
@@ -240,11 +240,11 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
 func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver *gql.GitCommitResolver, path string) (*gql.GitTreeEntryResolver, error) {
-	return gql.NewGitTreeEntryResolver(commitResolver, r.db, gql.CreateFileInfo(path, true)), nil
+	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, true)), nil
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
-// resulting list may be smaller than the the input list as any locations with a commit not known by
+// resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.
 func resolveLocations(ctx context.Context, locationResolver *CachedLocationResolver, locations []resolvers.AdjustedLocation) ([]gql.LocationResolver, error) {
 	resolvedLocations := make([]gql.LocationResolver, 0, len(locations))

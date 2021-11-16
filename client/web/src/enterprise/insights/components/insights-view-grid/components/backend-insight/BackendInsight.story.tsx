@@ -10,7 +10,7 @@ import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../..
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../../../core/backend/code-insights-setting-cascade-backend'
-import { InsightType } from '../../../../core/types'
+import { InsightExecutionType, InsightType } from '../../../../core/types'
 import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
@@ -24,7 +24,8 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBackendBasedInsight = {
     title: 'Mock Backend Insight',
     series: [],
     visibility: '',
-    type: InsightType.Backend,
+    type: InsightExecutionType.Backend,
+    viewType: InsightType.SearchBased,
     id: 'searchInsights.insight.mock_backend_insight_id',
 }
 

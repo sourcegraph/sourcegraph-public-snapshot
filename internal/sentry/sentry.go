@@ -11,7 +11,7 @@ import (
 	"github.com/cockroachdb/sentry-go"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -22,7 +22,7 @@ var sentryDebug, _ = strconv.ParseBool(env.Get("SENTRY_DEBUG", "false", "print d
 // environment variable as the DSN. It then watches site configuration for any
 // subsequent changes. SENTRY_DEBUG can be set as a boolean to print debug
 // messages.
-func Init() {
+func Init(c conftypes.WatchableSiteConfig) {
 	initClient := func(dsn string) error {
 		if dsn == "" {
 			return nil
@@ -55,12 +55,12 @@ func Init() {
 	}
 
 	go func() {
-		conf.Watch(func() {
-			if conf.Get().Log == nil {
+		c.Watch(func() {
+			if c.SiteConfig().Log == nil {
 				return
 			}
 
-			sentryConfig := conf.Get().Log.Sentry
+			sentryConfig := c.SiteConfig().Log.Sentry
 			if sentryConfig == nil {
 				return
 			}

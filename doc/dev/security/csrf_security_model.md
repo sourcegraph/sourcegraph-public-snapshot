@@ -16,7 +16,6 @@ If you are looking for general information or wish to disclose a vulnerability, 
   - [Non-API endpoints](#non-api-endpoints)
     - [Non-API endpoints are generally static, unprivileged content only](#non-api-endpoints-are-generally-static-unprivileged-content-only)
       - [Exclusion: window.context](#exclusion-windowcontext)
-      - [Exclusion: pre-fetched content](#exclusion-pre-fetched-content)
       - [Exclusion: username/password manipulation (sign in, password reset, etc.)](#exclusion-usernamepassword-manipulation-sign-in-password-reset-etc)
     - [Risk of CSRF attacks against our non-API endpoints](#risk-of-csrf-attacks-against-our-non-api-endpoints)
     - [How we protect against CSRF in non-API endpoints](#how-we-protect-against-csrf-in-non-api-endpoints)
@@ -28,17 +27,20 @@ If you are looking for general information or wish to disclose a vulnerability, 
     - [Known issue](#known-issue)
   - [Improving our CSRF threat model](#improving-our-csrf-threat-model)
     - [Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)
-    - [Audit usages of pre-fetched content embedded into pages](#audit-usages-of-pre-fetched-content-embedded-into-pages)
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
     - [Remove our CSRF tokens](#remove-our-csrf-tokens)
     - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
-    - [Deprecate `corsOrigin`, add `api.corsOrigin`](#deprecate-corsorigin-add-apicorsorigin)
 
 # Living document
 
 This is a living document, with a changelog as follows:
 
 * Aug 13th, 2021: [@slimsag](https://github.com/slimsag) does an in-depth analysis & review of our CSRF threat model and creates this document.
+* Nov 8th, 2021: [@slimsag](https://github.com/slimsag) audited all potential instances of pre-fetched content embedded into pages and found we have none, the following is NOT true ([#27236](https://github.com/sourcegraph/sourcegraph/pull/27236)):
+  * "Some Sourcegraph pages pre-fetch content: on the backend, data is pre-fetched for the user so that they need not make a request for the data corresponding to the page immediately upon loading it. Instead, we fetch it and embed it into the `GET` page response, giving JavaScript access to it immediately upon page load."
+* Nov 8th, 2021: [@slimsag](https://github.com/slimsag) adjusted CORS handling to forbid cross-origin requests on all non-API routes. ([#27240](https://github.com/sourcegraph/sourcegraph/pull/27240), [#27245](https://github.com/sourcegraph/sourcegraph/pull/27245)):
+  * Non-API routes, such as sign in / sign out, no longer allow cross-origin requests even if the origin matches an allowed origin in the `corsOrigin` site configuration setting.
+  * The `corsOrigin` site configuration setting now only configures cross-origin requests for _API routes_ (nobody should ever need a cross-origin request for non-API routes.)
 
 # Prerequisites
 
@@ -130,12 +132,6 @@ Importantly, this context may contain information which is specific to the user'
 
 TODO(slimsag): TODO(security): It is my belief JSContext should _NOT_ contain sensitive information. This makes caching of GET requests tricky and very risky, this is a dangerous weak spot in our threat model and we should correct it ASAP.
 
-#### Exclusion: pre-fetched content
-
-Some Sourcegraph pages pre-fetch content: on the backend, data is pre-fetched for the user so that they need not make a request for the data corresponding to the page immediately upon loading it. Instead, we fetch it and embed it into the `GET` page response, giving JavaScript access to it immediately upon page load. 
-
-TODO(slimsag): TODO(security): actually vet if this is true, it was in the past but it could potentially no longer be true.
-
 #### Exclusion: username/password manipulation (sign in, password reset, etc.)
 
 The following are distinct non-API routes, registered under non-API endpoints. They inherit the middleware for handling authentication based on session cookies, and utilize the same CSRF protection as other non-API endpoints:
@@ -160,7 +156,7 @@ The primary risk of a forged request making its way to a non-API endpoint in Sou
 3. Any other potentially-sensitive information we embed in `window` described in the two exclusions above.
 4. Authentication cookie access, which is used to authenticate API endpoint requests (more on this below.)
 
-Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the three exclusions listed above (`Exclusion: window.context`, `Exclusion: pre-fetched content`, and `Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
+Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the two exclusions listed above (`Exclusion: window.context`, and `Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
 
 With all of this in mind, it is worth calling out that:
 
@@ -254,14 +250,6 @@ Performing this would allow us to restrict `window.context` to ONLY public conte
 
 See also: [Exclusion: window.context](#exclusion-windowcontext)
 
-### Audit usages of pre-fetched content embedded into pages
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-Similar to "[Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)", if we completed both of these actions we would then have eliminated all questions surrounding caching of Sourcegraph pages. This is a critical component to improving our CSRF threat model.
-
-See also: [Exclusion: pre-fetched content](#exclusion-pre-fetched-content)
-
 ### Eliminate the username/password manipulation exclusion
 
 This may be completed at ANY time. It has NO pre-requisites.
@@ -298,29 +286,3 @@ This one is really a no-brainer, really:
    2. github1s.com's author requesting API access: [Bug: Using Sourcegraph.com GraphQL API from other websites is broken #18847](https://github.com/sourcegraph/sourcegraph/issues/18847)
    3. Various enterprise customers requesting it.
 3. By making our API endpoints CORS-restrictive as they are today, even when access token authentication is being performed, we have pushed ourselves and customers into performing more risky behavior by allowing "trusted" origins in their site `corsOrigin` setting (or, much worse, setting it to `"*"`). Again, this is much worse than having a CORS setting of `*` IFF token authentication is being performed. See "[How we protect against CSRF in API endpoints](#how-we-protect-against-csrf-in-api-endpoints)", "[Known issue](#known-issue)"
-
-### Deprecate `corsOrigin`, add `api.corsOrigin`
-
-This may be completed at ANY time. It has NO pre-requisites.
-
-Think about this for a minute: `corsOrigin` allows one the privilege of performing CSRF attacks against a Sourcegraph instance, even against endpoints like:
-
-* Sign up
-* Site initialization (admin account creation)
-* Sign in
-* Sign out
-* Reset password
-* Reset password code entry
-* Verify email
-* Checking if username is taken
-
-This is not helpful, nobody should be using these endpoints outside of Sourcegraph's own site. What people *do* need, however, is the ability to set the CORS origin specifically for our API endpoints.
-
-That is because there ARE origins where session-based authentication with Sourcegraph's API should be allowed:
-
-* The browser extension
-* Code hosts
-* Trusted internal tools at enterprise deployments
-* etc.
-
-It should be possible for a site admin to configure the CORS policy for the API (`api.corsOrigin`) without granting CORS access to all our other routes - which is NOT useful.

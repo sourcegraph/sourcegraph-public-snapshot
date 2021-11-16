@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useState } from 'react'
@@ -12,8 +11,9 @@ import { ConnectionSummary } from '@sourcegraph/web/src/components/FilteredConne
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
-import { GitReferenceNode, GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
+import { GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
 
+import { ConnectionPopoverGitReferenceNode } from './components'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'
 
 interface GitReferencePopoverNodeProps extends Pick<GitReferenceNodeProps, 'node' | 'onClick'> {
@@ -43,14 +43,11 @@ const GitReferencePopoverNode: React.FunctionComponent<GitReferencePopoverNodePr
         isCurrent = node.name === `refs/heads/${defaultBranch}`
     }
     return (
-        <GitReferenceNode
+        <ConnectionPopoverGitReferenceNode
             node={node}
             url={getPathFromRevision(location.pathname + location.search + location.hash, node.abbrevName)}
             ancestorIsLink={false}
-            className={classNames(
-                'connection-popover__node-link',
-                isCurrent && 'connection-popover__node-link--active'
-            )}
+            active={isCurrent}
             onClick={onClick}
             icon={isSpeculative ? SearchIcon : undefined}
         />

@@ -140,7 +140,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = multierror.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String()))
+			err = multierror.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String())).ErrorOrNil()
 		}
 	}()
 
@@ -226,11 +226,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 		return nil
 	}
 
-	var errors error
+	var errors *multierror.Error
 	for j := range jobs {
-		multierror.Append(errors, runJob(j))
+		errors = multierror.Append(errors, runJob(j))
 	}
-	return errors
+	return errors.ErrorOrNil()
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {

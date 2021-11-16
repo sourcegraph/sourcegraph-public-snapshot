@@ -10,6 +10,7 @@
 | `-id` | The ID of the user to delete. |  |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 
 
 ## Usage
@@ -26,6 +27,8 @@ Usage of 'src users delete':
     	Skip validation of TLS certificates against trusted chains
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
 Examples:
 

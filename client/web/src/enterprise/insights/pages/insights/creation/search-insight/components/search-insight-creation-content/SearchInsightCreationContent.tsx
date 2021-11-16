@@ -72,7 +72,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         step.input.onChange('months')
     }
 
-    const validEditSeries = editSeries.filter(series => series.valid)
     const repositoriesList = getSanitizedRepositories(repositories.input.value)
 
     // If some fields that needed to run live preview  are invalid
@@ -80,7 +79,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
         repositoriesList.length > 0 &&
-        (series.meta.validState === 'VALID' || validEditSeries.length) &&
+        series.meta.validState === 'VALID' &&
         stepValue.meta.validState === 'VALID' &&
         // For all repos mode we are not able to show the live preview chart
         !allReposMode.input.value

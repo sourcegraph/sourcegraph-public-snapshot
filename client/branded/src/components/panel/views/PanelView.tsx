@@ -44,6 +44,9 @@ export const PanelView = React.memo<Props>(props => (
                 extensionsController={props.extensionsController}
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
+                onSelectLocation={(): void =>
+                    props.telemetryService.log('ReferencePanelResultsClicked', { action: 'click' })
+                }
             />
         )}
         {!props.panelView.content && !props.panelView.reactElement && !props.panelView.locationProvider && (

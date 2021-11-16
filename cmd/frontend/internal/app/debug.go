@@ -17,22 +17,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
-var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
-var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+var (
+	grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
+	jaegerURLFromEnv  = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+)
 
 func init() {
 	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
 }
 
-func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
+func addNoK8sClientHandler(r *mux.Router, db database.DB) {
 	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Cluster information not available`)
 		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
@@ -81,14 +83,14 @@ var PreMountGrafanaHook func() error
 // This error is returned if the current license does not support monitoring.
 const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
 
-func addNoGrafanaHandler(r *mux.Router, db dbutil.DB) {
+func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
 	})
 	r.Handle("/grafana", adminOnly(noGrafana, db))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db dbutil.DB) {
+func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
 	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
 	})
@@ -96,7 +98,7 @@ func addGrafanaNotLicensedHandler(r *mux.Router, db dbutil.DB) {
 }
 
 // addReverseProxyForService registers a reverse proxy for the specified service.
-func addGrafana(r *mux.Router, db dbutil.DB) {
+func addGrafana(r *mux.Router, db database.DB) {
 	if PreMountGrafanaHook != nil {
 		if err := PreMountGrafanaHook(); err != nil {
 			addGrafanaNotLicensedHandler(r, db)
@@ -128,14 +130,14 @@ func addGrafana(r *mux.Router, db dbutil.DB) {
 	}
 }
 
-func addNoJaegerHandler(r *mux.Router, db dbutil.DB) {
+func addNoJaegerHandler(r *mux.Router, db database.DB) {
 	noJaeger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Jaeger endpoint proxying: Please set env var JAEGER_SERVER_URL`)
 	})
 	r.Handle("/jaeger", adminOnly(noJaeger, db))
 }
 
-func addJaeger(r *mux.Router, db dbutil.DB) {
+func addJaeger(r *mux.Router, db database.DB) {
 	if len(jaegerURLFromEnv) > 0 {
 		fmt.Println("Jaeger URL from env ", jaegerURLFromEnv)
 		jaegerURL, err := url.Parse(jaegerURLFromEnv)
@@ -159,7 +161,7 @@ func addJaeger(r *mux.Router, db dbutil.DB) {
 	}
 }
 
-func addZoekt(r *mux.Router, db dbutil.DB) {
+func addZoekt(r *mux.Router, db database.DB) {
 	z := search.Indexed()
 	if z == nil {
 		return
@@ -179,9 +181,9 @@ func addZoekt(r *mux.Router, db dbutil.DB) {
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.
-func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
+func adminOnly(next http.Handler, db database.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), database.NewDB(db)); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
@@ -196,7 +198,7 @@ func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
 // It also accepts the error from creating `srcprometheus.Client` as an parameter, to validate
 // Prometheus configuration.
 func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
-	return func(c conf.Unified) conf.Problems {
+	return func(c conftypes.SiteConfigQuerier) conf.Problems {
 		// surface new prometheus client error if it was unexpected
 		prometheusUnavailable := errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
 		if promErr != nil && !prometheusUnavailable {
@@ -204,7 +206,7 @@ func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Valid
 		}
 
 		// no need to validate prometheus config if no `observability.*` settings are configured
-		observabilityNotConfigured := len(c.ObservabilityAlerts) == 0 && len(c.ObservabilitySilenceAlerts) == 0
+		observabilityNotConfigured := len(c.SiteConfig().ObservabilityAlerts) == 0 && len(c.SiteConfig().ObservabilitySilenceAlerts) == 0
 		if observabilityNotConfigured {
 			// no observability configuration, no checks to make
 			return nil

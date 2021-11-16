@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -32,7 +31,7 @@ type affiliatedRepositoriesConnection struct {
 	once  sync.Once
 	nodes []*codeHostRepositoryResolver
 	err   error
-	db    dbutil.DB
+	db    database.DB
 }
 
 func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHostRepositoryResolver, error) {
@@ -43,7 +42,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		)
 		// get all external services for the user, the organization, or for the specified external service
 		if a.codeHost == 0 {
-			svcs, err = database.ExternalServices(a.db).List(ctx, database.ExternalServicesListOptions{
+			svcs, err = a.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 				NamespaceUserID: a.userID,
 				NamespaceOrgID:  a.orgID,
 			})
@@ -52,13 +51,13 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				return
 			}
 		} else {
-			svc, err := database.ExternalServices(a.db).GetByID(ctx, a.codeHost)
+			svc, err := a.db.ExternalServices().GetByID(ctx, a.codeHost)
 			if err != nil {
 				a.err = err
 				return
 			}
 			// 🚨 SECURITY: check if user can access external service
-			err = backend.CheckExternalServiceAccess(ctx, database.NewDB(a.db), svc.NamespaceUserID, svc.NamespaceOrgID)
+			err = backend.CheckExternalServiceAccess(ctx, a.db, svc.NamespaceUserID, svc.NamespaceOrgID)
 			if err != nil {
 				a.err = err
 				return
@@ -157,7 +156,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 type codeHostRepositoryResolver struct {
 	repo     *types.CodeHostRepository
 	codeHost *types.ExternalService
-	db       dbutil.DB
+	db       database.DB
 }
 
 func (r *codeHostRepositoryResolver) Name() string {
@@ -170,14 +169,14 @@ func (r *codeHostRepositoryResolver) Private() bool {
 
 func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
 	return &externalServiceResolver{
-		db:              database.NewDB(r.db),
+		db:              r.db,
 		externalService: r.codeHost,
 	}
 }
 
-func allowPrivate(ctx context.Context, db dbutil.DB, userID, orgID int32) (bool, error) {
+func allowPrivate(ctx context.Context, db database.DB, userID, orgID int32) (bool, error) {
 	if userID > 0 {
-		mode, err := database.Users(db).UserAllowedExternalServices(ctx, userID)
+		mode, err := db.Users().UserAllowedExternalServices(ctx, userID)
 		if err != nil {
 			return false, err
 		}

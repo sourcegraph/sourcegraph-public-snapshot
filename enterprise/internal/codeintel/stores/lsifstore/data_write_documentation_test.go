@@ -57,7 +57,7 @@ func TestWriteDocumentationUpload(t *testing.T) {
 	isDefaultBranch := true
 
 	db := dbtest.NewDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	{
 		tx, err := store.Transact(ctx)
@@ -99,7 +99,7 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	pathInfo := &precise.DocumentationPathInfoData{
 		PathID:  "/github.com/sourcegraph/lsif-go/internal",
@@ -136,7 +136,7 @@ func TestWriteDocumentationMappings(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	filePath := "internal/index/indexer.go"
 	mapping := precise.DocumentationMapping{

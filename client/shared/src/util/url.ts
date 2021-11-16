@@ -102,8 +102,8 @@ export interface ModeSpec {
     mode: string
 }
 
-// Implementations are provided by language extensions.
-type BlobViewState = 'def' | 'references'
+// `panelID` is intended for substitution (e.g. `sub(panel.url, 'panelID', 'implementations')`)
+type BlobViewState = 'def' | 'references' | 'panelID'
 
 export interface ViewStateSpec {
     /**
@@ -536,7 +536,12 @@ export function toPrettyBlobURL(
  */
 export function toAbsoluteBlobURL(
     sourcegraphURL: string,
-    context: RepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+    context: RepoSpec &
+        RevisionSpec &
+        FileSpec &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec>
 ): string {
     // toPrettyBlobURL() always returns an URL starting with a forward slash,
     // no need to add one here

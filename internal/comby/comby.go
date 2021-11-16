@@ -43,6 +43,8 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-match-only")
 	case Diff:
 		rawArgs = append(rawArgs, "-json-only-diff")
+	case NewlineSeparatedOutput:
+		rawArgs = append(rawArgs, "-stdout", "-newline-separated")
 	case Replacement:
 		// Output contains replacement data in rewritten_source of JSON.
 	}
@@ -190,6 +192,10 @@ func toFileReplacement(b []byte) Result {
 	return r
 }
 
+func toOutput(b []byte) Result {
+	return &Output{Value: b}
+}
+
 func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
@@ -237,7 +243,7 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 	return matches, nil
 }
 
-// Replacements returns all matches in all files for which comby finds matches.
+// Replacements performs in-place replacement for match and rewrite template.
 func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
 	defer span.Finish()
@@ -251,4 +257,21 @@ func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
 		matches = append(matches, r.(*FileReplacement))
 	}
 	return matches, nil
+}
+
+// Outputs performs substitution of all variables captured in a match
+// pattern in a rewrite template and outputs the result, newline-sparated.
+func Outputs(ctx context.Context, args Args) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs")
+	defer span.Finish()
+
+	results, err := Run(ctx, args, toOutput)
+	if err != nil {
+		return "", err
+	}
+	var values []string
+	for _, r := range results {
+		values = append(values, string(r.(*Output).Value))
+	}
+	return strings.Join(values, "\n"), nil
 }

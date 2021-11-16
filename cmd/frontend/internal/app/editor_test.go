@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -59,15 +59,12 @@ func TestEditorRev(t *testing.T) {
 }
 
 func TestEditorRedirect(t *testing.T) {
-	database.Mocks.Repos.GetFirstRepoNamesByCloneURL = func(ctx context.Context, cloneURL string) (api.RepoName, error) {
-		return "", nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.Repos = database.MockRepos{}
-	})
+	repos := dbmock.NewMockRepoStore()
+	repos.GetFirstRepoNamesByCloneURLFunc.SetDefaultReturn("", nil)
 
-	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(
+		[]*types.ExternalService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
@@ -101,11 +98,13 @@ func TestEditorRedirect(t *testing.T) {
 				DisplayName: "OtherSCP",
 				Config:      `{"url":"ssh://git@git.codehost.com"}`,
 			},
-		}, nil
-	}
-	t.Cleanup(func() {
-		database.Mocks.ExternalServices = database.MockExternalServices{}
-	})
+		},
+		nil,
+	)
+
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	cases := []struct {
 		name            string
@@ -323,7 +322,7 @@ func TestEditorRedirect(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			editorRequest, parseErr := parseEditorRequest(nil, c.q)
+			editorRequest, parseErr := parseEditorRequest(db, c.q)
 			if errStr(parseErr) != c.wantParseErr {
 				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
 			}
