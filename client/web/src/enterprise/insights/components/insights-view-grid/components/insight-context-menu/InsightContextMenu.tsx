@@ -5,12 +5,8 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useContext } from 'react'
 import { Link } from 'react-router-dom'
 
-import { InsightType, LangStatsInsight } from '../../../../core/types'
-import {
-    isSearchBasedInsightId,
-    SearchBackendBasedInsight,
-    SearchExtensionBasedInsight,
-} from '../../../../core/types/insight/search-insight'
+import { isSearchBasedInsight, LangStatsInsight } from '../../../../core/types'
+import { SearchBackendBasedInsight, SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 
 import styles from './InsightContextMenu.module.scss'
@@ -27,7 +23,7 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insight, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin } = props
+    const { insight, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin = noop } = props
     const insightID = insight.id
 
     // Get dashboard information in case if insight card component
@@ -36,9 +32,6 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
     const editUrl = dashboard?.id
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
-
-    const showYAxisToggleMenu =
-        (isSearchBasedInsightId(insightID) || insight.viewType === InsightType.SearchBased) && onToggleZeroYAxisMin
 
     return (
         <Menu>
@@ -68,7 +61,7 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
                                 Edit
                             </MenuLink>
 
-                            {showYAxisToggleMenu && (
+                            {isSearchBasedInsight(insight) && (
                                 <MenuItem
                                     role="menuitemcheckbox"
                                     data-testid="InsightContextMenuEditLink"
