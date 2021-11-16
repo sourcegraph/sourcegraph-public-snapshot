@@ -3,6 +3,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useCallback } from 'react'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { Button, Select } from '@sourcegraph/wildcard'
 
 import { WebhookLogPageHeaderResult } from '../../graphql-operations'
 
@@ -45,9 +46,10 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
             />
             <PerformanceGauge count={data?.externalServices.totalCount} label="external service" />
             <div className="flex-fill" />
-            <div>
-                <select
-                    className={classNames('form-control', styles.control)}
+            <div className={styles.selectContainer}>
+                <Select
+                    aria-label="External service"
+                    className="mb-0"
                     onChange={({ target: { value } }) => onSelect(value)}
                     value={externalService}
                 >
@@ -62,24 +64,13 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
                             {displayName}
                         </option>
                     ))}
-                </select>
+                </Select>
             </div>
-            <div>
-                <button
-                    type="button"
-                    className={classNames(
-                        'btn',
-                        'ml-3',
-                        'd-flex',
-                        'align-items-center',
-                        styles.control,
-                        onlyErrors ? 'btn-danger' : 'btn-outline-danger'
-                    )}
-                    onClick={onErrorToggle}
-                >
-                    <AlertCircleIcon className={classNames(styles.icon, onlyErrors && styles.enabled)} />
+            <div className="ml-3">
+                <Button variant="danger" onClick={onErrorToggle} outline={!onlyErrors}>
+                    <AlertCircleIcon className={classNames('icon-inline', styles.icon, onlyErrors && styles.enabled)} />
                     <span className="ml-1">Only errors</span>
-                </button>
+                </Button>
             </div>
         </div>
     )

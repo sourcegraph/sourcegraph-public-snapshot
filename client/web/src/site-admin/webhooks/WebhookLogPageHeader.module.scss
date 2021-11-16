@@ -1,11 +1,13 @@
-.control {
-    height: 2.8rem;
-}
-
 .icon {
     fill: var(--danger) !important;
 }
 
 .icon.enabled {
     fill: var(--light-text) !important;
+}
+
+.select-container > div {
+    // The .form-group container on <Select /> brings in a 1em bottom margin, so
+    // we need to override that.
+    margin-bottom: 0;
 }
