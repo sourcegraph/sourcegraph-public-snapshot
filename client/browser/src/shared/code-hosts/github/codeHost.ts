@@ -7,6 +7,7 @@ import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellif
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 import {
     FileSpec,
     RepoSpec,
@@ -367,15 +368,13 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
     },
 }
 
-// TODO: memoize
 // NOTE: check success/error reponses
 const isPrivateRepository = (repoName: string): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
-    return fetch(`https://api.github.com/repos/${repoName}`)
-        .then(response => response.json() as { private?: boolean })
-        .then(json => typeof json.private !== 'boolean' || json.private)
+    return fetchCache<{ private?: boolean }>(`https://api.github.com/repos/${repoName}`)
+        .then(({ data }) => typeof data.private !== 'boolean' || data.private)
         .catch(error => {
             console.warn('Failed to fetch if the repository is private.', error)
             return true

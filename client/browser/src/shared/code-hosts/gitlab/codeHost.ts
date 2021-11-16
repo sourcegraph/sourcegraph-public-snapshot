@@ -1,6 +1,7 @@
 import { Omit } from 'utility-types'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CodeHost } from '../shared/codeHost'
@@ -128,15 +129,15 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-// TODO: memoize
-// NOTE: check success/error reponses
-const isPrivateRepository = (projectId?: string): Promise<boolean> => {
+// NOTE: check success/error responses
+export const isPrivateRepository = (projectId?: string): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !projectId) {
         return Promise.resolve(true)
     }
-    return fetch(`https://gitlab.com/api/v4/projects/${projectId}`)
-        .then(response => response.json() as { visibility?: 'public' | 'private' | 'internal' })
-        .then(json => json?.visibility !== 'public')
+    return fetchCache<{ visibility?: 'public' | 'private' | 'internal' }>(
+        `https://gitlab.com/api/v4/projects/${projectId}`
+    )
+        .then(({ data }) => data?.visibility !== 'public')
         .catch(error => {
             console.warn('Failed to fetch if the repository visibility.', error)
             return true
