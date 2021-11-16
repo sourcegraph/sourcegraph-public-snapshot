@@ -137,7 +137,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             insight={{ id: insight.id, view: data?.view }}
             contextMenu={
                 <InsightContextMenu
-                    insightID={insight.id}
+                    insight={insight}
                     menuButtonClassName="ml-1 mr-n2 d-inline-flex"
                     zeroYAxisMin={zeroYAxisMin}
                     onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}

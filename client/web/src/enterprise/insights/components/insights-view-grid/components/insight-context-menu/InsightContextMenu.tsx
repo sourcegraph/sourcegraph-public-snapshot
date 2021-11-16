@@ -5,13 +5,18 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useContext } from 'react'
 import { Link } from 'react-router-dom'
 
-import { isSearchBasedInsightId } from '../../../../core/types/insight/search-insight'
+import { InsightType, LangStatsInsight } from '../../../../core/types'
+import {
+    isSearchBasedInsightId,
+    SearchBackendBasedInsight,
+    SearchExtensionBasedInsight,
+} from '../../../../core/types/insight/search-insight'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
 
 import styles from './InsightContextMenu.module.scss'
 
 export interface InsightCardMenuProps {
-    insightID: string
+    insight: SearchExtensionBasedInsight | LangStatsInsight | SearchBackendBasedInsight
     zeroYAxisMin: boolean
     menuButtonClassName?: string
     onDelete: (insightID: string) => void
@@ -22,7 +27,8 @@ export interface InsightCardMenuProps {
  * Renders context menu (three dots menu) for particular insight card.
  */
 export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> = props => {
-    const { insightID, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin } = props
+    const { insight, zeroYAxisMin, menuButtonClassName, onDelete, onToggleZeroYAxisMin } = props
+    const insightID = insight.id
 
     // Get dashboard information in case if insight card component
     // is rendered on the dashboard page, otherwise get null value.
@@ -31,7 +37,8 @@ export const InsightContextMenu: React.FunctionComponent<InsightCardMenuProps> =
         ? `/insights/edit/${insightID}?dashboardId=${dashboard.id}`
         : `/insights/edit/${insightID}`
 
-    const showYAxisToggleMenu = isSearchBasedInsightId(insightID) && onToggleZeroYAxisMin
+    const showYAxisToggleMenu =
+        (isSearchBasedInsightId(insightID) || insight.viewType === InsightType.SearchBased) && onToggleZeroYAxisMin
 
     return (
         <Menu>
