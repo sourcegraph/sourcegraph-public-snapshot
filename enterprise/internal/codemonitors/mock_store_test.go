@@ -185,7 +185,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
-			defaultHook: func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
+			defaultHook: func(context.Context, CreateMonitorArgs) (*Monitor, error) {
 				return nil, nil
 			},
 		},
@@ -1259,15 +1259,15 @@ func (c CodeMonitorStoreCreateEmailActionFuncCall) Results() []interface{} {
 // CreateMonitor method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCreateMonitorFunc struct {
-	defaultHook func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error)
-	hooks       []func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error)
+	defaultHook func(context.Context, CreateMonitorArgs) (*Monitor, error)
+	hooks       []func(context.Context, CreateMonitorArgs) (*Monitor, error)
 	history     []CodeMonitorStoreCreateMonitorFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateMonitor delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
+func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 CreateMonitorArgs) (*Monitor, error) {
 	r0, r1 := m.CreateMonitorFunc.nextHook()(v0, v1)
 	m.CreateMonitorFunc.appendCall(CodeMonitorStoreCreateMonitorFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -1276,7 +1276,7 @@ func (m *MockCodeMonitorStore) CreateMonitor(v0 context.Context, v1 *graphqlback
 // SetDefaultHook sets function that is called when the CreateMonitor method
 // of the parent MockCodeMonitorStore instance is invoked and the hook queue
 // is empty.
-func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error)) {
+func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Context, CreateMonitorArgs) (*Monitor, error)) {
 	f.defaultHook = hook
 }
 
@@ -1284,7 +1284,7 @@ func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultHook(hook func(context.Con
 // CreateMonitor method of the parent MockCodeMonitorStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error)) {
+func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, CreateMonitorArgs) (*Monitor, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1293,7 +1293,7 @@ func (f *CodeMonitorStoreCreateMonitorFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 error) {
-	f.SetDefaultHook(func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
+	f.SetDefaultHook(func(context.Context, CreateMonitorArgs) (*Monitor, error) {
 		return r0, r1
 	})
 }
@@ -1301,12 +1301,12 @@ func (f *CodeMonitorStoreCreateMonitorFunc) SetDefaultReturn(r0 *Monitor, r1 err
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreCreateMonitorFunc) PushReturn(r0 *Monitor, r1 error) {
-	f.PushHook(func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
+	f.PushHook(func(context.Context, CreateMonitorArgs) (*Monitor, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCreateMonitorFunc) nextHook() func(context.Context, *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
+func (f *CodeMonitorStoreCreateMonitorFunc) nextHook() func(context.Context, CreateMonitorArgs) (*Monitor, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1345,7 +1345,7 @@ type CodeMonitorStoreCreateMonitorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *graphqlbackend.CreateMonitorArgs
+	Arg1 CreateMonitorArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *Monitor

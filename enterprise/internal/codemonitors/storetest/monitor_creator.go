@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -29,68 +28,49 @@ type TestStore struct {
 func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codemonitors.Monitor, error) {
 	t.Helper()
 
-	owner := relay.MarshalID("User", actor.FromContext(ctx).UID)
-	args := &graphqlbackend.CreateCodeMonitorArgs{
-		Monitor: &graphqlbackend.CreateMonitorArgs{
-			Namespace:   owner,
-			Description: testDescription,
-			Enabled:     true,
+	actions := []*codemonitors.EmailActionArgs{
+		{
+			Enabled:  true,
+			Priority: "NORMAL",
+			Header:   "test header 1",
 		},
-		Trigger: &graphqlbackend.CreateTriggerArgs{
-			Query: testQuery,
-		},
-		Actions: []*graphqlbackend.CreateActionArgs{
-			{
-				Email: &graphqlbackend.CreateActionEmailArgs{
-					Enabled:    true,
-					Priority:   "NORMAL",
-					Recipients: []graphql.ID{owner},
-					Header:     "test header 1"},
-			},
-			{
-				Email: &graphqlbackend.CreateActionEmailArgs{
-					Enabled:    true,
-					Priority:   "CRITICAL",
-					Recipients: []graphql.ID{owner},
-					Header:     "test header 2"},
-			},
+		{
+			Enabled:  true,
+			Priority: "CRITICAL",
+			Header:   "test header 2",
 		},
 	}
 
 	// Create monitor.
-	m, err := s.CreateMonitor(ctx, args.Monitor)
+	uid := actor.FromContext(ctx).UID
+	m, err := s.CreateMonitor(ctx, codemonitors.CreateMonitorArgs{
+		Description:     testDescription,
+		Enabled:         true,
+		NamespaceUserID: &uid,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Create trigger.
-	err = s.CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
+	err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, a := range args.Actions {
-		if a.Email != nil {
-			e, err := s.CreateEmailAction(ctx, m.ID, &codemonitors.EmailActionArgs{
-				Enabled:  a.Email.Enabled,
-				Priority: a.Email.Priority,
-				Header:   a.Email.Header,
-			})
-			if err != nil {
-				return nil, err
-			}
+	for _, a := range actions {
+		e, err := s.CreateEmailAction(ctx, m.ID, &codemonitors.EmailActionArgs{
+			Enabled:  a.Enabled,
+			Priority: a.Priority,
+			Header:   a.Header,
+		})
+		if err != nil {
+			return nil, err
+		}
 
-			for _, recipient := range a.Email.Recipients {
-				var userID, orgID int32
-				if err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID); err != nil {
-					return nil, err
-				}
-
-				err := s.CreateRecipient(ctx, e.ID, nilOrInt32(userID), nilOrInt32(orgID))
-				if err != nil {
-					return nil, err
-				}
-			}
+		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		if err != nil {
+			return nil, err
 		}
 		// TODO(camdencheek): add other action types (webhooks) here
 	}

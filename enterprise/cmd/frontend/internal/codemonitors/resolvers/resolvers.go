@@ -121,8 +121,18 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 	defer func() { err = tx.store.Done(err) }()
 
+	var userID, orgID int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Namespace, &userID, &orgID); err != nil {
+		return nil, err
+	}
+
 	// Create monitor.
-	m, err := tx.store.CreateMonitor(ctx, args.Monitor)
+	m, err := tx.store.CreateMonitor(ctx, cm.CreateMonitorArgs{
+		Description:     args.Monitor.Description,
+		Enabled:         args.Monitor.Enabled,
+		NamespaceUserID: nilOrInt32(userID),
+		NamespaceOrgID:  nilOrInt32(orgID),
+	})
 	if err != nil {
 		return nil, err
 	}

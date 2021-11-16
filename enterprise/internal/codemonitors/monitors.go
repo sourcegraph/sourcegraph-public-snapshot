@@ -37,6 +37,13 @@ var monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.namespace_user_id"),
 }
 
+type CreateMonitorArgs struct {
+	Description     string
+	Enabled         bool
+	NamespaceUserID *int32
+	NamespaceOrgID  *int32
+}
+
 const insertCodeMonitorFmtStr = `
 INSERT INTO cm_monitors
 (created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
@@ -44,13 +51,7 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s; -- monitorColumns
 `
 
-func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*Monitor, error) {
-	var orgID, userID int32
-	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
-	if err != nil {
-		return nil, err
-	}
-
+func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args CreateMonitorArgs) (*Monitor, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
@@ -61,8 +62,8 @@ func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbacke
 		a.UID,
 		args.Description,
 		args.Enabled,
-		nilOrInt32(userID),
-		nilOrInt32(orgID),
+		args.NamespaceUserID,
+		args.NamespaceOrgID,
 		sqlf.Join(monitorColumns, ", "),
 	)
 

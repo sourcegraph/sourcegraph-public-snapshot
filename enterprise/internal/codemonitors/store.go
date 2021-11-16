@@ -23,7 +23,7 @@ type CodeMonitorStore interface {
 	Clock() func() time.Time
 	Exec(ctx context.Context, query *sqlf.Query) error
 
-	CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*Monitor, error)
+	CreateMonitor(ctx context.Context, args CreateMonitorArgs) (*Monitor, error)
 	UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)
 	ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*Monitor, error)
 	DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) error
