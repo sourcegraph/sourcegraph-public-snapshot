@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -131,17 +130,8 @@ DELETE FROM cm_monitors
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) error {
-	var monitorID int64
-	err := relay.UnmarshalSpec(args.Id, &monitorID)
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf(
-		deleteMonitorFmtStr,
-		monitorID,
-	)
+func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, monitorID int64) error {
+	q := sqlf.Sprintf(deleteMonitorFmtStr, monitorID)
 	return s.Exec(ctx, q)
 }
 

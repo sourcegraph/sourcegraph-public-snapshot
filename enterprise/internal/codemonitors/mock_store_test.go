@@ -205,7 +205,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
-			defaultHook: func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error {
+			defaultHook: func(context.Context, int64) error {
 				return nil
 			},
 		},
@@ -1709,15 +1709,15 @@ func (c CodeMonitorStoreDeleteEmailActionsFuncCall) Results() []interface{} {
 // DeleteMonitor method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreDeleteMonitorFunc struct {
-	defaultHook func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error
-	hooks       []func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error
+	defaultHook func(context.Context, int64) error
+	hooks       []func(context.Context, int64) error
 	history     []CodeMonitorStoreDeleteMonitorFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteMonitor delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) DeleteMonitor(v0 context.Context, v1 *graphqlbackend.DeleteCodeMonitorArgs) error {
+func (m *MockCodeMonitorStore) DeleteMonitor(v0 context.Context, v1 int64) error {
 	r0 := m.DeleteMonitorFunc.nextHook()(v0, v1)
 	m.DeleteMonitorFunc.appendCall(CodeMonitorStoreDeleteMonitorFuncCall{v0, v1, r0})
 	return r0
@@ -1726,7 +1726,7 @@ func (m *MockCodeMonitorStore) DeleteMonitor(v0 context.Context, v1 *graphqlback
 // SetDefaultHook sets function that is called when the DeleteMonitor method
 // of the parent MockCodeMonitorStore instance is invoked and the hook queue
 // is empty.
-func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultHook(hook func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error) {
+func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultHook(hook func(context.Context, int64) error) {
 	f.defaultHook = hook
 }
 
@@ -1734,7 +1734,7 @@ func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultHook(hook func(context.Con
 // DeleteMonitor method of the parent MockCodeMonitorStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *CodeMonitorStoreDeleteMonitorFunc) PushHook(hook func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error) {
+func (f *CodeMonitorStoreDeleteMonitorFunc) PushHook(hook func(context.Context, int64) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1743,7 +1743,7 @@ func (f *CodeMonitorStoreDeleteMonitorFunc) PushHook(hook func(context.Context, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error {
+	f.SetDefaultHook(func(context.Context, int64) error {
 		return r0
 	})
 }
@@ -1751,12 +1751,12 @@ func (f *CodeMonitorStoreDeleteMonitorFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreDeleteMonitorFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error {
+	f.PushHook(func(context.Context, int64) error {
 		return r0
 	})
 }
 
-func (f *CodeMonitorStoreDeleteMonitorFunc) nextHook() func(context.Context, *graphqlbackend.DeleteCodeMonitorArgs) error {
+func (f *CodeMonitorStoreDeleteMonitorFunc) nextHook() func(context.Context, int64) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1795,7 +1795,7 @@ type CodeMonitorStoreDeleteMonitorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *graphqlbackend.DeleteCodeMonitorArgs
+	Arg1 int64
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

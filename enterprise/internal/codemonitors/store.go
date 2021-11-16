@@ -26,7 +26,7 @@ type CodeMonitorStore interface {
 	CreateMonitor(ctx context.Context, args MonitorArgs) (*Monitor, error)
 	UpdateMonitor(ctx context.Context, id int64, args MonitorArgs) (*Monitor, error)
 	UpdateMonitorEnabled(ctx context.Context, id int64, enabled bool) (*Monitor, error)
-	DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) error
+	DeleteMonitor(ctx context.Context, id int64) error
 	GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error)
 	ListMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID int32) (int32, error)

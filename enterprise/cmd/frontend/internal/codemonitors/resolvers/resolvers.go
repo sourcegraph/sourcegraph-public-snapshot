@@ -176,8 +176,13 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	if err != nil {
 		return nil, errors.Errorf("DeleteCodeMonitor: %w", err)
 	}
-	err = r.store.DeleteMonitor(ctx, args)
-	if err != nil {
+
+	var monitorID int64
+	if err := relay.UnmarshalSpec(args.Id, &monitorID); err != nil {
+		return nil, err
+	}
+
+	if err := r.store.DeleteMonitor(ctx, monitorID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
