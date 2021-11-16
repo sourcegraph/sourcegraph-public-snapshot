@@ -52,7 +52,7 @@ jobs:
           which psql
           NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
           curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o /tmp/install-nvm.sh
-          sh /tmp/install-nvm.sh` 
+          sh /tmp/install-nvm.sh 
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install
