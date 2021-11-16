@@ -41,7 +41,7 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 			}
 
 			// NOTE: We want to present a unified error to unauthorized users to prevent
-			// them differentiating service state by different error messages.
+			// them from differentiating service states by different error messages.
 			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
 		}
 		if err := hasAccess(); err != nil {
