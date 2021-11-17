@@ -4,7 +4,9 @@
 >Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
 >with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
 
-Executors are an experimental service that powers automatically indexing a repository for precise code intelligence.
+Executors are an experimental service that can run resource-intensive tasks, such as:
+- automatically indexing a repository for precise code intelligence
+- [computing batch changes](../batch-changes/explanations/server-side.md)
 
 ## Installation
 
