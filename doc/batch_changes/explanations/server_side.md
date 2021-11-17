@@ -29,10 +29,6 @@ Server-side Batch Changes has been tested to run a simple 20k changeset batch ch
 
 Feedback on server side Batch Changes is very welcome, feel free to open an [issue](https://github.com/sourcegraph/sourcegraph/issues), reach out through your usual support channel, or send a [direct message](https://twitter.com/MaloMarrec).
 
-## How to enable computing Batch Changes server-side
-
-1. TODO
-
 ## FAQ
 
 ### Can large batch changes execution be distributed on multiple executors?
