@@ -27,6 +27,10 @@ To enable encryption you must specify key config for each of the keys defined in
     // encrypts data in user_credentials and batch_changes_site_credentials
     "batchChangesCredentialKey": {
       // ...
+    },
+    // encrypts data in webhook_logs
+    "webhookLogKey": {
+      // ...
     }
   }
 }
