@@ -5,8 +5,8 @@ import { gql } from '@apollo/client'
  * information.
  */
 export const GET_INSIGHT_VIEW_GQL = gql`
-    query GetInsightView($id: ID) {
-        insightViews(id: $id) {
+    query GetInsightView($id: ID, $filters: InsightViewFiltersInput) {
+        insightViews(id: $id, filters: $filters) {
             nodes {
                 id
                 dataSeries {

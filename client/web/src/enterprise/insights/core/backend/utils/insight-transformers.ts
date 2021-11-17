@@ -96,6 +96,10 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
                     // In gql api we don't have this concept as visibility on FE.
                     // Insights have special system about visibility on BE only.
                     visibility: '',
+                    filters: {
+                        includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
+                    },
                 }
             }
 
