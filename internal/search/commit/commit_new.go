@@ -33,57 +33,62 @@ type CommitSearch struct {
 }
 
 func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
-	totalSearched := 0
-	return repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
-		resultType := "commit"
-		if j.Diff {
-			resultType = "diff"
+	var repoRevs []*search.RepositoryRevisions
+	err := repos.Paginate(ctx, nil, func(page *searchrepos.Resolved) error {
+		repoRevs = append(repoRevs, page.RepoRevs...)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	resultType := "commit"
+	if j.Diff {
+		resultType = "diff"
+	}
+	if err := CheckSearchLimits(j.HasTimeFilter, len(repoRevs), resultType); err != nil {
+		return err
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+	for _, repoRev := range repoRevs {
+		repoRev := repoRev // we close over repoRev in onMatches
+
+		// Skip the repo if no revisions were resolved for it
+		if len(repoRev.Revs) == 0 {
+			continue
 		}
-		totalSearched += len(page.RepoRevs)
-		if err := CheckSearchLimits(j.HasTimeFilter, totalSearched, resultType); err != nil {
-			return err
+
+		args := &protocol.SearchRequest{
+			Repo:        repoRev.Repo.Name,
+			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
+			Query:       j.Query,
+			IncludeDiff: j.Diff,
+			Limit:       j.Limit,
 		}
 
-		g, ctx := errgroup.WithContext(ctx)
-		for _, repoRev := range page.RepoRevs {
-			repoRev := repoRev // we close over repoRev in onMatches
-
-			// Skip the repo if no revisions were resolved for it
-			if len(repoRev.Revs) == 0 {
-				continue
+		onMatches := func(in []protocol.CommitMatch) {
+			res := make([]result.Match, 0, len(in))
+			for _, protocolMatch := range in {
+				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
 			}
-
-			args := &protocol.SearchRequest{
-				Repo:        repoRev.Repo.Name,
-				Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-				Query:       j.Query,
-				IncludeDiff: j.Diff,
-				Limit:       j.Limit,
-			}
-
-			onMatches := func(in []protocol.CommitMatch) {
-				res := make([]result.Match, 0, len(in))
-				for _, protocolMatch := range in {
-					res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
-				}
-				stream.Send(streaming.SearchEvent{
-					Results: res,
-				})
-			}
-
-			g.Go(func() error {
-				limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-				stream.Send(streaming.SearchEvent{
-					Stats: streaming.Stats{
-						IsLimitHit: limitHit,
-					},
-				})
-				return err
+			stream.Send(streaming.SearchEvent{
+				Results: res,
 			})
 		}
 
-		return g.Wait()
-	})
+		g.Go(func() error {
+			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
+			stream.Send(streaming.SearchEvent{
+				Stats: streaming.Stats{
+					IsLimitHit: limitHit,
+				},
+			})
+			return err
+		})
+	}
+
+	return g.Wait()
 }
 
 func (j CommitSearch) Name() string {
