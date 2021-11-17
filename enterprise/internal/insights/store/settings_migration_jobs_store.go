@@ -63,8 +63,8 @@ func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.
 
 const getSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:GetSettingsMigrationJob
-SELECT user_id, org_id, global, total_insights, migrated_insights, total_dashboards, migrated_dashboards, runs,
-(CASE WHEN completed_at IS NULL THEN FALSE ELSE TRUE END) AS dashboard_created
+SELECT user_id, org_id, (CASE WHEN global IS NULL THEN FALSE ELSE TRUE END) AS global, total_insights, migrated_insights,
+total_dashboards, migrated_dashboards, runs, (CASE WHEN completed_at IS NULL THEN FALSE ELSE TRUE END) AS dashboard_created
 FROM insights_settings_migration_jobs
 WHERE %s AND completed_at IS NULL
 LIMIT 100

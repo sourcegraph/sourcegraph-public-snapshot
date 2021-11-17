@@ -401,19 +401,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 			continue
 		}
 
-		// TODO: We need a store method to check for this. We can probably use some SQL query to determine
-		// if a dashboard is the same by comparing its title, attached insights and grants.
-		// insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{ UniqueID: d.ID, WithoutAuthorization: true})
-		// if err != nil {
-		// 	skipped++
-		// 	continue
-		// }
-		// if len(insight) > 0 {
-		// 	count++
-		// 	continue
-		// }
-
-		err := migrateDashboard(ctx, m.dashboardStore, d)
+		err := m.migrateDashboard(ctx, d)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
 			errorCount++
@@ -424,38 +412,6 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 	}
 	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
 	return count
-}
-
-func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
-	tx, err := dashboardStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Store.Done(err) }()
-
-	dashboard := types.Dashboard{
-		Title:      from.Title,
-		InsightIDs: from.InsightIds,
-	}
-	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
-
-	var grants []store.DashboardGrant
-	if from.UserID != nil {
-		grants = []store.DashboardGrant{store.UserDashboardGrant(int(*from.UserID))}
-	} else if from.OrgID != nil {
-		grants = []store.DashboardGrant{store.OrgDashboardGrant(int(*from.OrgID))}
-	} else {
-		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
-	}
-
-	// TODO: Okay so I think we're going to need a separate create method here that takes into account our logic
-	// of matching insight references by user/org.
-	_, err = dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{Dashboard: dashboard, Grants: grants})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // there seems to be some global insights with possibly old schema that have a step field
