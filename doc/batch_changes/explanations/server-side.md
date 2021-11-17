@@ -23,7 +23,7 @@ This feature is experimental. In particular, it comes with the following limitat
 - Batch change execution is not optimized.
 - Executors can only be deployed on AWS and GCP, with Terraform (see [deploying executors](../../admin/deploy_executors.md)).
 - Step-wise caching is not included server side.
-- Steps cannot include [files](batch_spec_yaml_reference.md#steps-files).
+- Steps cannot include [files](../references/batch_spec_yaml_reference.md#steps-files).
 
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
 
