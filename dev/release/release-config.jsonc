@@ -13,12 +13,12 @@
     "captainSlackUsername": "Crystal Augustus",
     "captainGitHubUsername": "caugustus-sourcegraph",
     // Release versions
-    "previousRelease": "3.33.0",
-    "upcomingRelease": "3.33.1",
+    "previousRelease": "3.33.1",
+    "upcomingRelease": "3.34.0",
     // Release dates
-    "oneWorkingDayBeforeRelease": "16 November 2021 10:00 PST",
-    "releaseDate": "17 November 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "17 November 2021 10:00 PST",
+    "oneWorkingDayBeforeRelease": "19 November 2021 10:00 PST",
+    "releaseDate": "22 November 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "23 November 2021 10:00 PST",
     // Channel where messages from the tooling are posted
     "slackAnnounceChannel": "dev-announce",
     // Email for preparing calendar events
