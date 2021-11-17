@@ -11,7 +11,7 @@ LOCKFILE="$FILE.lock"
 exec 100>"$LOCKFILE" || exit 1
 flock 100 || exit 1
 
-if test -f "$FILE"; then
+if [ ! -f "$FILE" ]; then
   touch $FILE
   buildkite-agent annotate --context "$BUILDKITE_JOB_ID" --append "$BUILDKITE_LABEL\n"
 fi
