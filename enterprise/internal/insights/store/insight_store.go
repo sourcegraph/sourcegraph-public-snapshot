@@ -158,6 +158,15 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 	return s.GroupByView(ctx, viewSeries), nil
 }
 
+func (s *InsightStore) GetAllMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.GetAll(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GroupByView(ctx, viewSeries), nil
+}
+
 func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.InsightViewSeries) []types.Insight {
 	mapped := make(map[string][]types.InsightViewSeries, len(viewSeries))
 	for _, series := range viewSeries {
