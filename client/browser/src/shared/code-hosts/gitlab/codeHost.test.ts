@@ -1,8 +1,11 @@
+import fetch from 'jest-fetch-mock'
 import { readFile } from 'mz/fs'
+
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
-import { getToolbarMount, gitlabCodeHost } from './codeHost'
+import { getToolbarMount, gitlabCodeHost, isPrivateRepository } from './codeHost'
 
 describe('gitlab/codeHost', () => {
     describe('gitlabCodeHost', () => {
@@ -102,6 +105,78 @@ describe('gitlab/codeHost', () => {
             ).toBe(
                 'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs#9e1d3828a925c1eca74b74c20b58a9138f886d29_3_5'
             )
+        })
+    })
+})
+
+describe.only('isPrivateRepository', () => {
+    beforeAll(() => {
+        fetchCache.disableCache()
+    })
+
+    afterAll(() => {
+        fetchCache.enableCache()
+    })
+
+    it('returns [true] if not on "gitlab.com"', async () => {
+        expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+    })
+
+    describe('when on "gitlab.com"', () => {
+        const { location } = window
+
+        beforeAll(() => {
+            fetch.enableMocks()
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            delete window.location
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window.location = new URL('https://gitlab.com')
+        })
+
+        beforeEach(() => {
+            fetch.mockClear()
+        })
+
+        afterAll(() => {
+            fetch.disableMocks()
+
+            window.location = location
+        })
+
+        it('return [true] on unsuccessful request', async () => {
+            fetch.mockRejectOnce(new Error('Error happened'))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('return [true] if empty response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({}))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('return [true] from response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({ visibility: 'private' }))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+
+            fetch.mockResponseOnce(JSON.stringify({ visibility: 'internal' }))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+
+            expect(fetch).toHaveBeenCalledTimes(2)
+        })
+
+        it('return [false] from response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({ visibility: 'public' }))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeFalsy()
+            expect(fetch).toHaveBeenCalledTimes(1)
         })
     })
 })

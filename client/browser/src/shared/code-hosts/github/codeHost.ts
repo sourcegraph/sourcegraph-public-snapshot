@@ -368,8 +368,7 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
     },
 }
 
-// NOTE: check success/error reponses
-const isPrivateRepository = (repoName: string): Promise<boolean> => {
+export const isPrivateRepository = (repoName: string): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }

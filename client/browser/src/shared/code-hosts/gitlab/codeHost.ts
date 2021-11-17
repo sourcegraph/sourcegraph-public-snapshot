@@ -129,7 +129,6 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-// NOTE: check success/error responses
 export const isPrivateRepository = (projectId?: string): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !projectId) {
         return Promise.resolve(true)

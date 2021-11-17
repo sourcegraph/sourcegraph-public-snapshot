@@ -1,7 +1,10 @@
 import { existsSync, readdirSync } from 'fs'
 
+import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
+
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'
@@ -11,6 +14,7 @@ import {
     createFileLineContainerToolbarMount,
     githubCodeHost,
     checkIsGitHubDotCom,
+    isPrivateRepository,
 } from './codeHost'
 
 const testCodeHost = (fixturePath: string): void => {
@@ -190,6 +194,73 @@ describe('github/codeHost', () => {
             expect(checkIsGitHubDotCom('https://wwwwgithub.com')).toBe(false)
             expect(checkIsGitHubDotCom('https://www.githubccom')).toBe(false)
             expect(checkIsGitHubDotCom('http://githubccom')).toBe(false)
+        })
+    })
+})
+
+describe('isPrivateRepository', () => {
+    beforeAll(() => {
+        fetchCache.disableCache()
+    })
+
+    afterAll(() => {
+        fetchCache.enableCache()
+    })
+
+    it('returns [true] if not on "github.com"', async () => {
+        expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+    })
+
+    describe('when on "github.com"', () => {
+        const { location } = window
+
+        beforeAll(() => {
+            fetch.enableMocks()
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            delete window.location
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window.location = new URL('https://github.com')
+        })
+
+        beforeEach(() => {
+            fetch.mockClear()
+        })
+
+        afterAll(() => {
+            fetch.disableMocks()
+
+            window.location = location
+        })
+
+        it('return [true] on unsuccessful request', async () => {
+            fetch.mockRejectOnce(new Error('Error happened'))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('return [true] if empty response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({}))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('return [true] from response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({ private: true }))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('return [false] from response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({ private: false }))
+
+            expect(await isPrivateRepository('test-org/test-repo')).toBeFalsy()
+            expect(fetch).toHaveBeenCalledTimes(1)
         })
     })
 })
