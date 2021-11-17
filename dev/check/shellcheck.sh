@@ -12,7 +12,7 @@ OUT=$(shellcheck --external-sources --source-path="SCRIPTDIR" --color=always "${
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo "$OUT" | ./dev/ci/annotate.sh --section "shellcheck"
+  echo -e "$OUT" | ./dev/ci/annotate.sh --section "shellcheck"
 fi
 
 exit $EXIT_CODE

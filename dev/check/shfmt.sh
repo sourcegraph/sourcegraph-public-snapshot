@@ -9,7 +9,7 @@ EXIT_CODE=$?
 echo "$OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo "$OUT" | ./dev/ci/annotate.sh --section "shfmt"
+  echo -e "$OUT" | ./dev/ci/annotate.sh --section "shfmt"
 fi
 
 exit $EXIT_CODE
