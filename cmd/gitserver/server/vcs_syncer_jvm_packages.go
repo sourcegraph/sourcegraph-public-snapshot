@@ -467,24 +467,6 @@ func roundJVMVersionToNearestStableVersion(javaVersion int) int {
 	return javaVersion
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.MavenDependency) (string, error) {
-	gitName := dependency.MavenModule.CoursierSyntax() + " authors"
-	gitEmail := "code-intel@sourcegraph.com"
-	cmd.Dir = workingDirectory
-	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_NAME="+gitName)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_DATE="+stableGitCommitDate)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := runWith(ctx, cmd, false, nil)
-	if err != nil {
-		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
-	}
-	return string(output), nil
-}
-
 type lsifJavaJSON struct {
 	Kind         string   `json:"kind"`
 	JVM          string   `json:"jvm"`
