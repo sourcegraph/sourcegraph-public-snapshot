@@ -278,11 +278,11 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 			return false, true, nil
 		}
 	}
-
-	_, err = m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), allDefinedInsightIds, migrationContext)
+	err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
 	if err != nil {
-		return false, false, errors.Wrap(err, "CreateSpecialCaseDashboard")
+		return false, false, err
 	}
+
 	// TODO: Then fill in completed_at and we're done!
 	// TODO: Also increment "runs"
 	// TODO: And if there are errors, write those out to error_msg.
@@ -308,6 +308,14 @@ func replaceIfEmpty(firstChoice *string, replacement string) string {
 		return replacement
 	}
 	return *firstChoice
+}
+
+func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) error {
+	_, err := m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	if err != nil {
+		return errors.Wrap(err, "CreateSpecialCaseDashboard")
+	}
+	return nil
 }
 
 func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
