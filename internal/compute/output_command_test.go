@@ -66,7 +66,18 @@ func TestRun(t *testing.T) {
 	}
 
 	autogold.Want(
-		"template substitution",
+		"template substitution regexp",
 		"(1)\n(2)\n(3)\n").
 		Equal(t, test(`content:output((\d) -> ($1))`, "a 1 b 2 c 3"))
+
+	// If we are not on CI skip the test if comby is not installed.
+	if os.Getenv("CI") == "" && !comby.Exists() {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
+	autogold.Want(
+		"template substitution structural",
+		">bar<").
+		Equal(t, test(`content:output.structural(foo(:[arg]) -> >:[arg]<)`, "foo(bar)"))
+
 }
