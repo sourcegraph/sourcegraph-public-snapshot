@@ -5,6 +5,7 @@ package migration
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -31,14 +32,13 @@ func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) ([]insi
 
 	for id, body := range raw {
 		var temp insights.LangStatsInsight
-		temp.ID = id
+		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
 		}
 		temp.UserID = settingsRow.Subject.User
 		temp.OrgID = settingsRow.Subject.Org
-
 		results = append(results, temp)
 	}
 
@@ -57,7 +57,7 @@ func getFrontendInsights(ctx context.Context, settingsRow api.Settings) ([]insig
 
 	for id, body := range raw {
 		var temp insights.SearchInsight
-		temp.ID = id
+		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
 			// a deprecated schema collides with this field name, so skip any deserialization errors
 			continue
@@ -89,7 +89,7 @@ func getBackendInsights(ctx context.Context, setting api.Settings) ([]insights.S
 
 	for _, val := range raw {
 		// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
-		temp, err := unmarshalBackendInsights(val)
+		temp, err := unmarshalBackendInsights(val, setting)
 		if err != nil {
 			// this isn't actually a total failure case, we could have partially parsed this dictionary.
 			multi = multierror.Append(multi, err)
@@ -147,7 +147,7 @@ func (i IntegratedInsights) Insights(perms permissionAssociations) []insights.Se
 	return results
 }
 
-func unmarshalBackendInsights(raw json.RawMessage) (IntegratedInsights, error) {
+func unmarshalBackendInsights(raw json.RawMessage, setting api.Settings) (IntegratedInsights, error) {
 	var dict map[string]json.RawMessage
 	var multi error
 	result := make(IntegratedInsights)
@@ -162,7 +162,7 @@ func unmarshalBackendInsights(raw json.RawMessage) (IntegratedInsights, error) {
 			multi = multierror.Append(multi, err)
 			continue
 		}
-		result[id] = temp
+		result[makeUniqueId(id, setting.Subject)] = temp
 	}
 
 	return result, multi
@@ -401,19 +401,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 			continue
 		}
 
-		// TODO: We need a store method to check for this. We can probably use some SQL query to determine
-		// if a dashboard is the same by comparing its title, attached insights and grants.
-		// insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{ UniqueID: d.ID, WithoutAuthorization: true})
-		// if err != nil {
-		// 	skipped++
-		// 	continue
-		// }
-		// if len(insight) > 0 {
-		// 	count++
-		// 	continue
-		// }
-
-		err := migrateDashboard(ctx, m.dashboardStore, d)
+		err := m.migrateDashboard(ctx, d)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
 			errorCount++
@@ -424,35 +412,6 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 	}
 	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
 	return count
-}
-
-func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
-	tx, err := dashboardStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Store.Done(err) }()
-
-	dashboard := types.Dashboard{
-		Title:      from.Title,
-		InsightIDs: from.InsightIds,
-	}
-	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
-
-	var grants []store.DashboardGrant
-	if from.UserID != nil {
-		grants = []store.DashboardGrant{store.UserDashboardGrant(int(*from.UserID))}
-	} else if from.OrgID != nil {
-		grants = []store.DashboardGrant{store.OrgDashboardGrant(int(*from.OrgID))}
-	} else {
-		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
-	}
-	_, err = dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{Dashboard: dashboard, Grants: grants})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // there seems to be some global insights with possibly old schema that have a step field
@@ -495,3 +454,12 @@ type timeInterval struct {
 	value int
 }
 
+func makeUniqueId(id string, subject api.SettingsSubject) string {
+	if subject.User != nil {
+		return fmt.Sprintf("%s-user-%d", id, *subject.User)
+	} else if subject.Org != nil {
+		return fmt.Sprintf("%s-org-%d", id, *subject.Org)
+	} else {
+		return id
+	}
+}

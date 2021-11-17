@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -57,17 +56,17 @@ const (
 func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error) {
 	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(getSettingsMigrationJobsSql, where)
-	fmt.Println(q)
+	//fmt.Println(q)
 
 	return scanSettingsMigrationJobs(s.Query(ctx, q))
 }
 
 const getSettingsMigrationJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:GetSettingsMigrationJob
-SELECT user_id, org_id, global, total_insights, migrated_insights, total_dashboards, migrated_dashboards, runs,
-(CASE WHEN completed_at IS NULL THEN FALSE ELSE TRUE END) AS dashboard_created
+SELECT user_id, org_id, (CASE WHEN global IS NULL THEN FALSE ELSE TRUE END) AS global, total_insights, migrated_insights,
+total_dashboards, migrated_dashboards, runs, (CASE WHEN completed_at IS NULL THEN FALSE ELSE TRUE END) AS dashboard_created
 FROM insights_settings_migration_jobs
-WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR completed_at IS NULL)
+WHERE %s AND completed_at IS NULL
 LIMIT 100
 FOR UPDATE SKIP LOCKED;
 `
@@ -208,7 +207,6 @@ SELECT COUNT(*) from insights_settings_migration_jobs;
 func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error) {
 	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(countIncompleteJobsSql, where)
-	fmt.Println(q)
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return count == 0, err
@@ -222,9 +220,9 @@ WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_
 
 func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Query {
 	if userId != nil {
-		return sqlf.Sprintf("user_id IS NOT NULL")
+		return sqlf.Sprintf("user_id = %s", *userId)
 	} else if orgId != nil {
-		return sqlf.Sprintf("org_id IS NOT NULL")
+		return sqlf.Sprintf("org_id = %s", *orgId)
 	} else {
 		return sqlf.Sprintf("global IS TRUE")
 	}
@@ -232,9 +230,9 @@ func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Quer
 
 func getWhereForSubjectType(ctx context.Context, jobType SettingsMigrationJobType) *sqlf.Query {
 	if jobType == UserJob {
-		return sqlf.Sprintf("user_id = %s")
+		return sqlf.Sprintf("user_id IS NOT NULL")
 	} else if jobType == OrgJob {
-		return sqlf.Sprintf("org_id = %s")
+		return sqlf.Sprintf("org_id IS NOT NULL")
 	} else {
 		return sqlf.Sprintf("global IS TRUE")
 	}
