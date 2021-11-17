@@ -2,6 +2,7 @@ import { Omit } from 'utility-types'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
+import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { CodeHost } from '../shared/codeHost'
@@ -143,7 +144,7 @@ export const isPrivateRepository = (projectId?: string): Promise<boolean> => {
         })
 }
 
-export const gitlabCodeHost: CodeHost = {
+export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
     check: checkIsGitlab,
@@ -231,4 +232,4 @@ export const gitlabCodeHost: CodeHost = {
         }
         return null
     },
-}
+})

@@ -109,7 +109,7 @@ describe('gitlab/codeHost', () => {
     })
 })
 
-describe.only('isPrivateRepository', () => {
+describe('isPrivateRepository', () => {
     beforeAll(() => {
         fetchCache.disableCache()
     })
@@ -146,21 +146,21 @@ describe.only('isPrivateRepository', () => {
             window.location = location
         })
 
-        it('return [true] on unsuccessful request', async () => {
+        it('returns [true] on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
 
             expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('return [true] if empty response', async () => {
+        it('returns [true] if empty response', async () => {
             fetch.mockResponseOnce(JSON.stringify({}))
 
             expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('return [true] from response', async () => {
+        it('returns [true] from response', async () => {
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'private' }))
 
             expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
@@ -172,7 +172,7 @@ describe.only('isPrivateRepository', () => {
             expect(fetch).toHaveBeenCalledTimes(2)
         })
 
-        it('return [false] from response', async () => {
+        it('returns [false] from response', async () => {
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'public' }))
 
             expect(await isPrivateRepository('test-org/test-repo')).toBeFalsy()
