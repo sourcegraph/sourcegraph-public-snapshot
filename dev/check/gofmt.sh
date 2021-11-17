@@ -6,6 +6,8 @@ echo "--- gofmt"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+./dev/ci/annotate.sh
+
 # Check if all code is gofmt'd
 
 DIFF=$(find . \( -path ./vendor -o -path ./vendored \) -prune -o -name '*.go' -exec gofmt -s -w -d {} +)

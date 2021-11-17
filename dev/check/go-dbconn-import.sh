@@ -10,6 +10,8 @@ trap "echo ^^^ +++" ERR
 set -euf -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
+./dev/ci/annotate.sh
+
 allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/frontend
   github.com/sourcegraph/sourcegraph/cmd/gitserver

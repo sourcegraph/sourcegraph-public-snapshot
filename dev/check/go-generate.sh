@@ -6,6 +6,8 @@ trap "echo ^^^ +++" ERR
 
 set -eo pipefail
 
+./dev/ci/annotate.sh
+
 main() {
   cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 

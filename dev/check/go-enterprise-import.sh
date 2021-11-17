@@ -6,6 +6,8 @@ echo "--- go enterprise import"
 
 trap "echo ^^^ +++" ERR
 
+./dev/ci/annotate.sh
+
 set -euxf -o pipefail
 
 prefix=github.com/sourcegraph/sourcegraph/enterprise

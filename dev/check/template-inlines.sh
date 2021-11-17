@@ -4,6 +4,8 @@ echo "--- template inlines"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
+./dev/ci/annotate.sh
+
 set -euf -o pipefail
 unset CDPATH
 
