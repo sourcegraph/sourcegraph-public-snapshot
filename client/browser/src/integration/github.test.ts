@@ -20,9 +20,7 @@ describe('GitHub', () => {
             await driver.setExtensionSourcegraphUrl()
         }
     })
-    after(() => {
-        driver?.close()
-    })
+    after(() => driver?.close())
 
     let testContext: BrowserIntegrationTestContext
     beforeEach(async function () {
