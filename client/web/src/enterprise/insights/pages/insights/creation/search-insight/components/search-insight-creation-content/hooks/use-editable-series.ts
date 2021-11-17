@@ -7,8 +7,10 @@ import { DEFAULT_ACTIVE_COLOR } from '../../form-color-input/FormColorInput'
 
 import { remove, replace } from './helpers'
 
+export const EDIT_SERIES_PREFIX = 'runtime-series'
+
 export const createDefaultEditSeries = (series?: Partial<EditableDataSeries>): EditableDataSeries => ({
-    id: uuid.v4(),
+    id: `${EDIT_SERIES_PREFIX}.${uuid.v4()}`,
     ...defaultEditSeries,
     ...series,
 })

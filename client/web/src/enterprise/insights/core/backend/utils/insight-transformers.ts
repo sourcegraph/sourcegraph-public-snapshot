@@ -73,6 +73,7 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
             )
 
             const series = insight.presentation.seriesPresentation.map(series => ({
+                id: series.seriesId,
                 name: series.label,
                 query:
                     insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
