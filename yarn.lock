@@ -3427,10 +3427,10 @@
     sourcegraph "^24.0.0 || ^25.0.0 || ^25.0.0"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/eslint-config@^0.25.1":
-  version "0.25.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.25.1.tgz#e6cf1f79cf64d9e3e231aa8160160514b30da98b"
-  integrity sha512-Txu1ejqe5zGOp28JrfhTy0TutxJGvXr6GdM79K9YAfusq/Eq6mz3p1kfY43byqkzr5aNnXI0xgK8oEcPxLjdaQ==
+"@sourcegraph/eslint-config@^0.26.0":
+  version "0.26.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.26.0.tgz#73371fe4019d9311ec7fa422e70d92129d57c2bf"
+  integrity sha512-mjNeGOtzJwsrMr0r+RxS/HA7sZdyZiQfW+t3mE686fwYPINRBeUDeK51tYfAPzzAYtlGA0ENTJsxrUYJfdLpNw==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^4.28.3"
@@ -3446,6 +3446,7 @@
     eslint-plugin-react-hooks "^4.2.0"
     eslint-plugin-rxjs "^2.1.5"
     eslint-plugin-unicorn "^21.0.0"
+    eslint-plugin-unused-imports "^1.1.5"
 
 "@sourcegraph/event-positions@^1.0.4":
   version "1.0.4"
@@ -10901,6 +10902,18 @@ eslint-plugin-unicorn@^21.0.0:
     reserved-words "^0.1.2"
     safe-regex "^2.1.1"
     semver "^7.3.2"
+
+eslint-plugin-unused-imports@^1.1.5:
+  version "1.1.5"
+  resolved "https://registry.npmjs.org/eslint-plugin-unused-imports/-/eslint-plugin-unused-imports-1.1.5.tgz#a2b992ef0faf6c6c75c3815cc47bde76739513c2"
+  integrity sha512-TeV8l8zkLQrq9LBeYFCQmYVIXMjfHgdRQLw7dEZp4ZB3PeR10Y5Uif11heCsHRmhdRIYMoewr1d9ouUHLbLHew==
+  dependencies:
+    eslint-rule-composer "^0.3.0"
+
+eslint-rule-composer@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/eslint-rule-composer/-/eslint-rule-composer-0.3.0.tgz#79320c927b0c5c0d3d3d2b76c8b4a488f25bbaf9"
+  integrity sha512-bt+Sh8CtDmn2OajxvNO+BX7Wn4CIWMpTRm3MaiKPCQcnnlm0CS2mhui6QaoeQugs+3Kj2ESKEEGJUdVafwhiCg==
 
 eslint-scope@5.1.1, eslint-scope@^5.1.1:
   version "5.1.1"
