@@ -16,11 +16,11 @@ if [ ! -f "$FILE" ]; then
   buildkite-agent annotate --context "$BUILDKITE_JOB_ID" --append "$BUILDKITE_LABEL\n"
 fi
 
-BODY='<pre class="term"><code>'
+BODY='```term'
 while IFS= read -r line; do
   BODY="${BODY}\n${line}"
 done
-BODY="${BODY}</code></pre>"
+BODY="${BODY}```"
 
 echo $BODY
 
