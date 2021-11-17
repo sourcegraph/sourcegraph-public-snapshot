@@ -50,6 +50,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const context: UserSettingsSidebarItemConditionContext = {
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,

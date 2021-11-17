@@ -98,6 +98,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
      * Changes. */
     batchChangesDisableWebhooksWarning: boolean
 
+    batchChangesWebhookLogsEnabled: boolean
+
     /** Whether the code intel auto-indexer feature is enabled on the site. */
     codeIntelAutoIndexingEnabled: boolean
 
