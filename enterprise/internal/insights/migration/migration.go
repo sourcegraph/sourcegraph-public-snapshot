@@ -7,17 +7,18 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -36,6 +37,7 @@ type migrator struct {
 	settingsStore              database.SettingsStore
 	insightStore               *store.InsightStore
 	dashboardStore             *store.DBDashboardStore
+	orgStore                   database.OrgStore
 }
 
 func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrator {
@@ -46,6 +48,7 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 		settingsStore:              database.Settings(postgresDB),
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
+		orgStore:                   database.Orgs(postgresDB),
 	}
 }
 
@@ -65,15 +68,13 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 // Is the transaction just across one of them? I need to read more about this, but that will take time. :(
 
 func (m *migrator) Up(ctx context.Context) (err error) {
-	fmt.Println("CALLING UP!!")
-
 	// tx, err := m.db.Transact(ctx)
 	// if err != nil {
 	// 	return err
 	// }
 	// defer func() { err = tx.Done(err) }()
 
-	migrationComplete, workCompleted, err := m.PerformGlobalMigration(ctx)
+	migrationComplete, workCompleted, err := m.performBatchMigration(ctx, store.GlobalJob)
 	if err != nil {
 		return err
 	}
@@ -84,87 +85,69 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		return nil
 	}
 
-	// migrationComplete, workCompleted, err = performOrgMigration(tx)
-	// if !migrationComplete || workCompleted {
-	// 	return nil
-	// }
+	migrationComplete, workCompleted, err = m.performBatchMigration(ctx, store.OrgJob)
+	if err != nil {
+		return err
+	}
+	if !migrationComplete || workCompleted {
+		return nil
+	}
 
-	// migrationComplete, workCompleted, err = performUserMigration(tx)
-	// if !migrationComplete || workCompleted {
-	// 	return nil
-	// }
+	migrationComplete, workCompleted, err = m.performBatchMigration(ctx, store.UserJob)
+	if err != nil {
+		return err
+	}
+	if !migrationComplete || workCompleted {
+		return nil
+	}
 
 	return nil
 }
 
-// TODO: I don't think we need this at all, do we? What would it do? Should we use it to wipe out the jobs table to restart the migration?
+// TODO: I don't think we need this at all
 func (m *migrator) Down(ctx context.Context) (err error) {
 	return nil
 }
 
-// Instead of 3 different functions, maybe one that takes an argument? We'll see how much they have in common. Probably a lot.
-func (m *migrator) PerformGlobalMigration(ctx context.Context) (bool, bool, error) {
-	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, store.GlobalJob)
+func (m *migrator) performBatchMigration(ctx context.Context, jobType store.SettingsMigrationJobType) (bool, bool, error) {
+	jobs, err := m.settingsMigrationJobsStore.GetNextSettingsMigrationJobs(ctx, jobType)
 	if err != nil {
 		fmt.Println(err)
 		return false, false, err
 	}
-	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, store.GlobalJob)
+	allComplete, err := m.settingsMigrationJobsStore.IsJobTypeComplete(ctx, jobType)
 	if err != nil {
 		fmt.Println(err)
 		return false, false, err
 	}
 	if allComplete {
-		fmt.Println("global jobs all complete!")
+		fmt.Println("All jobs complete for type:", jobType)
 		return true, false, nil
 	}
-	// This would mean the job was locked, but not complete
+	// This would mean the jobs were locked, but not complete
 	if len(jobs) == 0 {
-		fmt.Println("global jobs locked, but not complete")
+		fmt.Println("All jobs locked, but not complete for type:", jobType)
 		return false, false, nil
 	}
 
-	migrationComplete, workCompleted, err := m.performMigrationForRow(ctx, *jobs[0])
-	if err != nil {
-		return false, false, err
-	}
-	if !migrationComplete || workCompleted {
-		return false, workCompleted, nil
+	rowsCompleted := 0
+	for _, job := range jobs {
+		// TODO: Not sure what to do with these. I think I made the returns too complicated. Will re-consider.
+		migrationComplete, _, _ := m.performMigrationForRow(ctx, *job)
+		if migrationComplete {
+			rowsCompleted++
+		}
 	}
 
-	return true, false, nil
+	if rowsCompleted == len(jobs) {
+		return true, false, nil // This return statement is not it.
+	} else {
+		return false, true, nil
+	}
 }
 
-// func performOrgMigration(tx *basestore.Store) (bool, bool, error) {
-// 	// If there are no org rows
-// 	// return true, false, nil
-
-// 	// Check if all org rows are marked completed. (total_items == items_completed, dashboard_created == true)
-// 	// If so, return true, false, nil
-
-// 	// Attempt to pick up batchSize org rows.
-// 	// If we can't pick any up it's because they are locked
-// 	// return false, false, nil
-
-// 	// Loop over the rows that we've picked up
-// 	// Keep track such that if workCompleted is ever true, we make sure to return it as true from here.
-
-// 	// First pass: just do this for ONE row
-
-// 	migrationComplete, workCompleted, err := performMigrationForRow(tx, globalSettingsRow)
-// 	if err != nil {
-// 		return false, false, err
-// 	}
-// 	if !migrationComplete || workCompleted {
-// 		return false, workCompleted, nil
-// 	}
-
-// 	return true, false, nil
-// }
-
-// func performUserMigration(tx *basestore.Store) (bool, bool, error) {
-// 	// This will probably follow the same logic as orgs
-// }
+// I don't think this needs to return an error.. we aren't going to be doing anything with it. We should just write
+// out if there's an error, upgrade runs, etc.
 
 func (m *migrator) performMigrationForRow(ctx context.Context, job store.SettingsMigrationJob) (bool, bool, error) {
 	var subject api.SettingsSubject
@@ -173,7 +156,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 		subject = api.SettingsSubject{User: &userId}
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
-		subject = api.SettingsSubject{User: &orgId}
+		subject = api.SettingsSubject{Org: &orgId}
 	} else {
 		subject = api.SettingsSubject{Site: true}
 	}
@@ -190,7 +173,9 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	}
 
 	// fmt.Println(settings)
+	fmt.Println("----------- Performing migration for row:", subject)
 
+	// First, migrate the 3 types of insights
 	langStatsInsights, err := getLangStatsInsights(ctx, *settings)
 	if err != nil {
 		return false, false, err
@@ -211,9 +196,6 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	totalInsights := len(langStatsInsights) + len(frontendInsights) + len(backendInsights)
 	fmt.Println("total insights:", totalInsights)
 
-	// Update row with total_insights. Then compare with migrated_insights. If they're equal, continue. If not,
-	// Try migrating all of these insights.
-
 	var migratedInsightsCount int
 	if totalInsights != job.MigratedInsights {
 		err = m.settingsMigrationJobsStore.UpdateTotalInsights(ctx, job.UserId, job.OrgId, totalInsights)
@@ -229,6 +211,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 		}
 	}
 
+	// Then migrate the dashboards
 	dashboards, err := getDashboards(ctx, *settings)
 	if err != nil {
 		return false, true, err
@@ -251,15 +234,15 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	}
 
 	// TODO: Create virtual dashboard here.
+	// TODO: Then fill in completed_at and we're done!
+	// TODO: Also increment "runs"
+	// TODO: And if there are errors, write those out to error_msg.
 
 	// Error handling: If we're keeping track of total vs completed insights/dashboards, maybe we just need a state for retries. We can do like
 	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
 	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
 
-	// Create virtual dashboard. Some function here that, once all the items are done, it does the dashboard. Hmm the state of this needs
-	// to exist too; it's not part of items_completed. Another row maybe? virtual_dashboard_completed?
-
-	return false, false, nil
+	return true, false, nil
 }
 
 func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
@@ -350,4 +333,39 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 // 	// return nil
 // }
 
-// Okay so we're going to scan through each JSON blob 4 times. One for each of the 3 insight types, and once for dashboards.
+func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard) (err error) {
+	tx, err := m.dashboardStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
+
+	mc := migrationContext{}
+	if from.UserID != nil {
+		orgs, err := m.orgStore.GetByUserID(ctx, *from.UserID)
+		if err != nil {
+			return err
+		}
+		orgIds := make([]int, 0, len(orgs))
+		for _, org := range orgs {
+			orgIds = append(orgIds, int(org.ID))
+		}
+		mc = migrationContext{
+			userId: int(*from.UserID),
+			orgIds: orgIds,
+		}
+	} else if from.OrgID != nil {
+		mc = migrationContext{
+			orgIds: []int{int(*from.OrgID)},
+		}
+	}
+
+	_, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
