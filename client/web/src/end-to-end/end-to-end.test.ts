@@ -1064,15 +1064,18 @@ describe('e2e test suite', () => {
                         await driver.assertNonemptyLocalRefs()
 
                         // verify the appropriate # of references are fetched
-                        await driver.page.waitForSelector('[data-testid="panel-tabs-content"] .file-match-children', {
-                            visible: true,
-                        })
+                        await driver.page.waitForSelector(
+                            '[data-testid="panel-tabs-content"] [data-testid="file-match-children"]',
+                            {
+                                visible: true,
+                            }
+                        )
                         await retry(async () =>
                             expect(
                                 await driver.page.evaluate(
                                     () =>
                                         document.querySelectorAll(
-                                            '[data-testid="panel-tabs-content"] .file-match-children__item'
+                                            '[data-testid="panel-tabs-content"] [data-testid="file-match-children-item"]'
                                         ).length
                                 )
                             ).toEqual(

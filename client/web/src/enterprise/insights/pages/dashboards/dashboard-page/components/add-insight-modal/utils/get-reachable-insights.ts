@@ -63,7 +63,7 @@ export function getReachableInsights(props: UseReachableInsightsProps): Reachabl
                 ...Object.keys(settings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}),
             ]
 
-            return Object.keys(possibleInsightKeys)
+            return possibleInsightKeys
                 .map(key => parseInsightFromSubject(key, configureSubject))
                 .filter(isDefined)
                 .map(insight => ({

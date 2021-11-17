@@ -1697,7 +1697,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	addCommitSearch := func(diff bool) {
-		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
+		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit), args.RepoOptions)
 		if err != nil {
 			agg.Error(err)
 			return

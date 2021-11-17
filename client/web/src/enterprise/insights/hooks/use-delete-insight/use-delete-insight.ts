@@ -46,8 +46,6 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
                 console.error(error)
                 setError(error)
             }
-
-            setLoading(false)
         },
         [loading, deleteInsight]
     )

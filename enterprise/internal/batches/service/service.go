@@ -89,7 +89,7 @@ var (
 // TODO: We should create one per observationContext.
 func newOperations(observationContext *observation.Context) *operations {
 	operationsOnce.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
@@ -1161,7 +1161,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	var errs *multierror.Error
-	var jobIDs = make([]int64, len(jobs))
+	jobIDs := make([]int64, len(jobs))
 
 	for i, j := range jobs {
 		if !j.State.Retryable() {

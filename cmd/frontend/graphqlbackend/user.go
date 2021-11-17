@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -243,7 +242,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		}
 		update.Username = *args.Username
 	}
-	if err := database.Users(r.db).Update(ctx, userID, update); err != nil {
+	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
 	return UserByIDInt32(ctx, r.db, userID)
@@ -413,7 +412,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
 	}
 	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
+		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
@@ -428,7 +427,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		}}
 	} else {
 		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(*args.OrderBy),
+			Field:      ToDBRepoListColumn(*args.OrderBy),
 			Descending: args.Descending,
 		}}
 	}
@@ -437,7 +436,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.UserID = r.user.ID
 		opt.IncludeUserPublicRepos = true
 	} else {
-		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
+		id, err := UnmarshalExternalServiceID(*args.ExternalServiceID)
 		if err != nil {
 			return nil, err
 		}
@@ -478,8 +477,8 @@ func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) 
 //
 // If that subject's username is different from the proposed one, then a
 // change is being attempted and may be rejected by viewerCanChangeUsername.
-func viewerIsChangingUsername(ctx context.Context, db dbutil.DB, subjectUserID int32, proposedUsername string) bool {
-	subject, err := database.Users(db).GetByID(ctx, subjectUserID)
+func viewerIsChangingUsername(ctx context.Context, db database.DB, subjectUserID int32, proposedUsername string) bool {
+	subject, err := db.Users().GetByID(ctx, subjectUserID)
 	if err != nil {
 		log15.Warn("viewerIsChangingUsername", "error", err)
 		return true

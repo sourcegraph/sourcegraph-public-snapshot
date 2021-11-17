@@ -73,12 +73,9 @@ func (s *JVMPackagesSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL)
 	}
 
 	for _, dependency := range dependencies {
-		sources, err := coursier.FetchSources(ctx, s.Config, dependency)
+		_, err := coursier.FetchSources(ctx, s.Config, dependency)
 		if err != nil {
 			return err
-		}
-		if len(sources) == 0 {
-			return errors.Errorf("no sources for dependency %s", dependency)
 		}
 	}
 	return nil
@@ -248,23 +245,17 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	// Always clean up created temporary directories.
 	defer os.RemoveAll(tmpDirectory)
 
-	sourceCodePaths, err := coursier.FetchSources(ctx, s.Config, dependency)
+	sourceCodeJarPath, err := coursier.FetchSources(ctx, s.Config, dependency)
 	if err != nil {
 		return err
 	}
-
-	if len(sourceCodePaths) == 0 {
-		return errors.Errorf("no sources for dependency %s", dependency)
-	}
-
-	sourceCodePath := sourceCodePaths[0]
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	if _, err := runCommandInDirectory(ctx, cmd, tmpDirectory, dependency); err != nil {
 		return err
 	}
 
-	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodePath, s.Config)
+	err = s.commitJar(ctx, dependency, tmpDirectory, sourceCodeJarPath, s.Config)
 	if err != nil {
 		return err
 	}
@@ -426,17 +417,11 @@ func inferJVMVersionFromByteCode(ctx context.Context, connection *schema.JVMPack
 		return dependency.Version, nil
 	}
 
-	byteCodePaths, err := coursier.FetchByteCode(ctx, connection, dependency)
+	byteCodeJarPath, err := coursier.FetchByteCode(ctx, connection, dependency)
 	if err != nil {
 		return "", err
 	}
-
-	if len(byteCodePaths) == 0 {
-		return "", errors.Errorf("no bytecode jar for dependency %s", dependency)
-	}
-
-	byteCodePath := byteCodePaths[0]
-	majorVersionString, err := classFileMajorVersion(byteCodePath)
+	majorVersionString, err := classFileMajorVersion(byteCodeJarPath)
 	if err != nil {
 		return "", err
 	}
