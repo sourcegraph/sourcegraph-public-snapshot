@@ -20,7 +20,9 @@ describe('GitHub', () => {
             await driver.setExtensionSourcegraphUrl()
         }
     })
-    after(() => driver?.close())
+    after(() => {
+        driver?.close()
+    })
 
     let testContext: BrowserIntegrationTestContext
     beforeEach(async function () {
@@ -36,6 +38,13 @@ describe('GitHub', () => {
         })
         testContext.server.any('https://api.github.com/_private/browser/*').intercept((request, response) => {
             response.sendStatus(200)
+        })
+
+        testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
+            response
+                .status(200)
+                .setHeader('Access-Control-Allow-Origin', 'https://github.com')
+                .send(JSON.stringify({ visibility: 'private' }))
         })
 
         testContext.overrideGraphQL({
