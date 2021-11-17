@@ -369,3 +369,25 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 
 	return nil
 }
+
+func (m *migrator) dashboardExists(ctx context.Context, dashboard insights.SettingDashboard) (bool, error) {
+	var grantsQuery *sqlf.Query
+	if dashboard.UserID != nil {
+		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
+	} else if dashboard.OrgID != nil {
+		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
+	} else {
+		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
+	}
+
+	count, _, err := basestore.ScanFirstInt(m.dashboardStore.Query(ctx, sqlf.Sprintf(`
+		SELECT COUNT(*) from dashboard
+		JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
+		WHERE dashboard.title = %s AND %s;
+	`, dashboard.Title, grantsQuery)))
+	if err != nil {
+		return false, err
+	}
+
+	return count != 0, nil
+}

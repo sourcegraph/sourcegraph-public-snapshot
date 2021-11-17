@@ -401,7 +401,18 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 			continue
 		}
 
-		err := m.migrateDashboard(ctx, d)
+		exists, err := m.dashboardExists(ctx, d)
+		if err != nil {
+			// Skip?
+			skipped++
+			continue
+		}
+		if exists {
+			count++
+			continue
+		}
+
+		err = m.migrateDashboard(ctx, d)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
 			errorCount++
