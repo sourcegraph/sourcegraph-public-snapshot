@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added the "no results page", a help page shown if a search doesn't return any results [#26154](https://github.com/sourcegraph/sourcegraph/pull/26154)
 - Added monitoring page for Redis databases [#26967](https://github.com/sourcegraph/sourcegraph/issues/26967)
 - The search indexer only polls repositories that have been marked as changed. This reduces a large source of load in installations with a large number of repositories. If you notice index staleness, you can try disabling by setting the environment variable `SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED` on `sourcegraph-frontend`. [#27058](https://github.com/sourcegraph/sourcegraph/issues/27058)
+- Pings include instance wide total counts of Code Insights grouped by presentation type, series type, and presentation-series type. [#27602](https://github.com/sourcegraph/sourcegraph/pull/27602)
 
 ### Changed
 
