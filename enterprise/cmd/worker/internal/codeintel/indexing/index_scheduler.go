@@ -64,11 +64,22 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 		return nil
 	}
 
+	var repositoryMatchLimit *int
+	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
+		repositoryMatchLimit = &val
+	}
+
 	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
 	// the backlog.
-	repositories, err := s.dbStore.SelectRepositoriesForIndexScan(ctx, s.repositoryProcessDelay, s.repositoryBatchSize)
+	repositories, err := s.dbStore.SelectRepositoriesForIndexScan(
+		ctx,
+		s.repositoryProcessDelay,
+		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		repositoryMatchLimit,
+		s.repositoryBatchSize,
+	)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
 	}

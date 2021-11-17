@@ -283,7 +283,7 @@ var (
 // TODO: We should create one per observationContext.
 func newOperations(observationContext *observation.Context) *operations {
 	operationsOnce.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"batches_dbstore",
 			metrics.WithLabels("op"),

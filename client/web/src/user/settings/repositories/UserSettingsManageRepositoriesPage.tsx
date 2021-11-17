@@ -37,7 +37,15 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { externalServiceUserModeFromTags, Owner } from '../cloud-ga'
 
+import {
+    FilterInput,
+    ListItemContainer,
+    RepositoryNodeContainer,
+    ShimmerContainer,
+    UserSettingReposContainer,
+} from './components'
 import { CheckboxRepositoryNode } from './RepositoryNode'
+import styles from './UserSettingsManageRepositoriesPage.module.scss'
 
 interface Props
     extends TelemetryProps,
@@ -574,7 +582,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     />
                     <div className="d-flex flex-column ml-2">
                         <p className="mb-0">Sync all repositories</p>
-                        <p className="user-settings-repos__text-light text-muted">
+                        <p className="font-weight-normal text-muted">
                             Will sync all current and future public and private repositories
                         </p>
                     </div>
@@ -590,12 +598,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p
-                        className={classNames({
-                            'user-settings-repos__text-disabled': noCodeHostsOrErrors,
-                            'mb-0': true,
-                        })}
-                    >
+                    <p className={classNames('mb-0', noCodeHostsOrErrors && styles.textDisabled)}>
                         Sync selected repositories
                     </p>
                 </div>
@@ -621,8 +624,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     ))}
                 </select>
             </div>
-            <input
-                className="form-control user-settings-repos__filter-input"
+            <FilterInput
+                className="form-control"
                 type="search"
                 placeholder="Filter repositories..."
                 name="query"
@@ -689,7 +692,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
-                <td className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom">
+                <RepositoryNodeContainer
+                    as="td"
+                    className="p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
+                >
                     <input
                         id="select-all-repos"
                         className="mr-3"
@@ -711,7 +717,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             } selected`}</small>
                         )) || <small>Select all</small>}
                     </label>
-                </td>
+                </RepositoryNodeContainer>
             </tr>
             {filteredRepos.map((repo, index) => {
                 if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
@@ -743,24 +749,24 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             {!isOrgOwner && (
                 <>
                     <div className="mt-2 row">
-                        <div className="user-settings-repos__shimmer-circle mr-2" />
-                        <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
+                        <ShimmerContainer circle={true} className="mr-2" />
+                        <ShimmerContainer className="mb-1 p-2 border-top-0 col-sm-2" />
                     </div>
                     <div className="mt-1 ml-2 row">
-                        <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
+                        <ShimmerContainer className="mb-3 p-2 ml-1 border-top-0 col-sm-6" />
                     </div>
                 </>
             )}
 
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer p-2 mb-1 border-top-0 col-sm-3" />
+                <ShimmerContainer circle={true} className="mr-2" />
+                <ShimmerContainer className="p-2 mb-1 border-top-0 col-sm-3" />
             </div>
         </div>
     )
 
     return (
-        <div className="user-settings-repos">
+        <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
             <h2 className="d-flex mb-2">
                 Manage Repositories <Badge status="beta" className="ml-2" useLink={true} />
@@ -779,7 +785,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             </p>
             <Container>
                 <ul className="list-group">
-                    <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
+                    <ListItemContainer key="from-code-hosts">
                         <div>
                             <h3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</h3>
 
@@ -841,9 +847,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                 )
                             }
                         </div>
-                    </li>
+                    </ListItemContainer>
                     {window.context.sourcegraphDotComMode && !isOrgOwner && (
-                        <li className="list-group-item user-settings-repos__container" key="add-textarea">
+                        <ListItemContainer key="add-textarea">
                             <div>
                                 <h3>Other public repositories</h3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
@@ -871,7 +877,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                                     </div>
                                 )}
                             </div>
-                        </li>
+                        </ListItemContainer>
                     )}
                 </ul>
             </Container>
@@ -899,6 +905,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     Cancel
                 </Link>
             </Form>
-        </div>
+        </UserSettingReposContainer>
     )
 }

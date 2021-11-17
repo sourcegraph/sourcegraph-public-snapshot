@@ -32,7 +32,8 @@ type externalServiceResolver struct {
 const externalServiceIDKind = "ExternalService"
 
 func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	id, err := unmarshalExternalServiceID(gqlID)
+	id, err := UnmarshalExternalServiceID(gqlID)
+
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func marshalExternalServiceID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)
 }
 
-func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
+func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
 	if kind := relay.UnmarshalKind(id); kind != externalServiceIDKind {
 		err = errors.Errorf("expected graphql ID to have kind %q; got %q", externalServiceIDKind, kind)
 		return

@@ -56,8 +56,9 @@ type GitCommitResolver struct {
 	commitErr  error
 }
 
-// When commit is set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
-// a bunch of them and already have them at hand.
+// NewGitCommitResolver returns a new CommitResulover. When commit is set to nil,
+// commit will be loaded lazily as needed by the resolver. Pass in a commit when
+// you have batch-loaded a bunch of them and already have them at hand.
 func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,

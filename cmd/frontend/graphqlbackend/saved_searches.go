@@ -42,18 +42,10 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 
 	// 🚨 SECURITY: Make sure the current user has permission to get the saved
 	// search.
-	if ss.Config.UserID != nil {
-		if *ss.Config.UserID != actor.FromContext(ctx).UID {
-			return nil, &backend.InsufficientAuthorizationError{
-				Message: "current user has insufficient privileges to view saved search",
-			}
+	if ss.Config.UserID != actor.FromContext(ctx).UID {
+		return nil, &backend.InsufficientAuthorizationError{
+			Message: "current user has insufficient privileges to view saved search",
 		}
-	} else if ss.Config.OrgID != nil {
-		if err := backend.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("failed to get saved search: no Org ID or User ID associated with saved search")
 	}
 
 	savedSearch := &savedSearchResolver{
@@ -65,7 +57,6 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 			Notify:          ss.Config.Notify,
 			NotifySlack:     ss.Config.NotifySlack,
 			UserID:          ss.Config.UserID,
-			OrgID:           ss.Config.OrgID,
 			SlackWebhookURL: ss.Config.SlackWebhookURL,
 		},
 	}
@@ -89,21 +80,11 @@ func (r savedSearchResolver) Description() string { return r.s.Description }
 func (r savedSearchResolver) Query() string { return r.s.Query }
 
 func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
-	if r.s.OrgID != nil {
-		n, err := NamespaceByID(ctx, r.db, MarshalOrgID(*r.s.OrgID))
-		if err != nil {
-			return nil, err
-		}
-		return &NamespaceResolver{n}, nil
+	n, err := NamespaceByID(ctx, r.db, MarshalUserID(r.s.UserID))
+	if err != nil {
+		return nil, err
 	}
-	if r.s.UserID != nil {
-		n, err := NamespaceByID(ctx, r.db, MarshalUserID(*r.s.UserID))
-		if err != nil {
-			return nil, err
-		}
-		return &NamespaceResolver{n}, nil
-	}
-	return nil, nil
+	return &NamespaceResolver{n}, nil
 }
 
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
@@ -159,28 +140,17 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
-	var userID, orgID *int32
+	if args.UserID == nil {
+		return nil, errors.New("a saved search must have a user owner")
+	}
+
 	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
-	if args.UserID != nil {
-		u, err := unmarshalSavedSearchID(*args.UserID)
-		if err != nil {
-			return nil, err
-		}
-		userID = &u
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, u); err != nil {
-			return nil, err
-		}
-	} else if args.OrgID != nil {
-		o, err := unmarshalSavedSearchID(*args.OrgID)
-		if err != nil {
-			return nil, err
-		}
-		orgID = &o
-		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, o); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("failed to create saved search: no Org ID or User ID associated with saved search")
+	uid, err := unmarshalSavedSearchID(*args.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, uid); err != nil {
+		return nil, err
 	}
 
 	if !queryHasPatternType(args.Query) {
@@ -192,8 +162,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
 		NotifySlack: args.NotifySlack,
-		UserID:      userID,
-		OrgID:       orgID,
+		UserID:      uid,
 	})
 	if err != nil {
 		return nil, err
@@ -211,28 +180,17 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
-	var userID, orgID *int32
+	if args.UserID == nil {
+		return nil, errors.New("a saved search must have a user owner")
+	}
+
 	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
-	if args.UserID != nil {
-		u, err := unmarshalSavedSearchID(*args.UserID)
-		if err != nil {
-			return nil, err
-		}
-		userID = &u
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, u); err != nil {
-			return nil, err
-		}
-	} else if args.OrgID != nil {
-		o, err := unmarshalSavedSearchID(*args.OrgID)
-		if err != nil {
-			return nil, err
-		}
-		orgID = &o
-		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, o); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("failed to update saved search: no Org ID or User ID associated with saved search")
+	uid, err := unmarshalSavedSearchID(*args.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, uid); err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalSavedSearchID(args.ID)
@@ -250,8 +208,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
 		NotifySlack: args.NotifySlack,
-		UserID:      userID,
-		OrgID:       orgID,
+		UserID:      uid,
 	})
 	if err != nil {
 		return nil, err
@@ -272,16 +229,8 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 	// 🚨 SECURITY: Make sure the current user has permission to delete a saved search for the specified user or org.
-	if ss.Config.UserID != nil {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, *ss.Config.UserID); err != nil {
-			return nil, err
-		}
-	} else if ss.Config.OrgID != nil {
-		if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, *ss.Config.OrgID); err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, ss.Config.UserID); err != nil {
+		return nil, err
 	}
 	err = r.db.SavedSearches().Delete(ctx, id)
 	if err != nil {

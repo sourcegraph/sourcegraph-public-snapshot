@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
@@ -72,7 +72,7 @@ func TestOrganization(t *testing.T) {
 					"organization": null
 				}
 				`,
-				ExpectedErrors: []*gqlerrors.QueryError{
+				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "org not found: name acme",
 						Path:    []interface{}{"organization"},
@@ -165,29 +165,8 @@ func TestOrganization(t *testing.T) {
 	})
 }
 
-func TestOrganizationRepositories(t *testing.T) {
-	orgs := dbmock.NewMockOrgStore()
-	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
-
-	repos := dbmock.NewMockRepoStore()
-	repos.ListFunc.SetDefaultReturn([]*types.Repo{{Name: "acme-repo"}}, nil)
-
-	users := dbmock.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-
-	orgMembers := dbmock.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
-
-	featureFlags := dbmock.NewMockFeatureFlagStore()
-	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
-
+func TestOrganizationRepositories_OSS(t *testing.T) {
 	db := dbmock.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 	RunTests(t, []*Test{
@@ -205,18 +184,11 @@ func TestOrganizationRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
-				{
-					"organization": {
-						"name": "acme",
-						"repositories": {
-							"nodes": [{
-								"name": "acme-repo"
-							}]
-						}
-					}
-				}
-			`,
+			ExpectedErrors: []*errors.QueryError{{
+				Message:   `Cannot query field "repositories" on type "Org".`,
+				Locations: []errors.Location{{Line: 5, Column: 7}},
+				Rule:      "FieldsOnCorrectType",
+			}},
 			Context: ctx,
 		},
 	})

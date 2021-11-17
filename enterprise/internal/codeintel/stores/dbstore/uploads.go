@@ -803,18 +803,32 @@ DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
 `
 
 // SelectRepositoriesForIndexScan returns a set of repository identifiers that should be considered
-// for indexing jobs. Repositories that were returned previously from this call within the  given
+// for indexing jobs. Repositories that were returned previously from this call within the given
 // process delay are not returned.
-func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
-	return s.selectRepositoriesForIndexScan(ctx, processDelay, limit, timeutil.Now())
+//
+// If allowGlobalPolicies is false, then configuration policies that define neither a repository id
+// nor a non-empty set of repository patterns wl be ignored. When true, such policies apply over all
+// repositories known to the instance.
+func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) (_ []int, err error) {
+	return s.selectRepositoriesForIndexScan(ctx, processDelay, allowGlobalPolicies, repositoryMatchLimit, limit, timeutil.Now())
 }
 
-func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
-	ctx, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{})
+func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int, now time.Time) (_ []int, err error) {
+	ctx, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
+		log.Int("limit", limit),
+	}})
 	defer endObservation(1, observation.Args{})
+
+	limitExpression := sqlf.Sprintf("")
+	if repositoryMatchLimit != nil {
+		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
+	}
 
 	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
 		selectRepositoriesForIndexScanQuery,
+		allowGlobalPolicies,
+		limitExpression,
 		now,
 		int(processDelay/time.Second),
 		limit,
@@ -826,10 +840,35 @@ func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay
 const selectRepositoriesForIndexScanQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
 WITH
-search_context_repositories AS (
-	SELECT repo_id FROM user_public_repos UNION ALL
-	SELECT repo_id FROM search_context_repos UNION ALL
-	SELECT repo_id FROM external_service_repos WHERE user_id IS NOT NULL
+repositories_matching_policy AS (
+	(
+		SELECT r.id FROM repo r WHERE EXISTS (
+			SELECT 1
+			FROM lsif_configuration_policies p
+			WHERE
+				p.indexing_enabled AND
+				p.repository_id IS NULL AND
+				p.repository_patterns IS NULL AND
+				%s -- completely enable or disable this query
+		)
+		ORDER BY stars DESC NULLS LAST, id
+		%s
+	)
+
+	UNION ALL
+
+	SELECT p.repository_id AS id
+	FROM lsif_configuration_policies p
+	WHERE
+		p.indexing_enabled AND
+		p.repository_id IS NOT NULL
+
+	UNION ALL
+
+	SELECT rpl.repo_id AS id
+	FROM lsif_configuration_policies p
+	JOIN lsif_configuration_policies_repository_pattern_lookup rpl ON rpl.policy_id = p.id
+	WHERE p.indexing_enabled
 ),
 candidate_repositories AS (
 	SELECT r.id AS id
@@ -837,7 +876,7 @@ candidate_repositories AS (
 	WHERE
 		r.deleted_at IS NULL AND
 		r.blocked IS NULL AND
-		r.id IN (SELECT repo_id FROM search_context_repositories)
+		r.id IN (SELECT id FROM repositories_matching_policy)
 ),
 repositories AS (
 	SELECT cr.id

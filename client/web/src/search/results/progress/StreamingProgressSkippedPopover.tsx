@@ -83,7 +83,7 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
             {skipped.message && (
                 <Collapse isOpen={isOpen}>
                     <Markdown
-                        className={classNames(styles.message, 'text-left py-1')}
+                        className={classNames(styles.message, styles.markdown, 'text-left py-1')}
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
                     />
                 </Collapse>

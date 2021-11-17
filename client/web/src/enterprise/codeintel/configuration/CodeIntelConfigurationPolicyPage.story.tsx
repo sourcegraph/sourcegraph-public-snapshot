@@ -109,14 +109,19 @@ const previewRepositoryFilterRequest = {
     },
     result: {
         data: {
-            previewRepositoryFilter: [
-                {
-                    name: 'github.com/sourcegraph/sourcegraph',
-                },
-                {
-                    name: '*',
-                },
-            ],
+            previewRepositoryFilter: {
+                nodes: [
+                    {
+                        name: 'github.com/sourcegraph/sourcegraph',
+                    },
+                    {
+                        name: '*',
+                    },
+                ],
+                totalCount: 3,
+                totalMatches: 2,
+                limit: null,
+            },
         },
     },
 }

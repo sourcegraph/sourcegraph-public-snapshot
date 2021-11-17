@@ -88,12 +88,12 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
         set={[Function]}
       >
         <MenuButton
-          className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
+          className="bg-transparent align-items-center test-activation-nav-item-toggle activationDropdownButton"
         >
           <button
             aria-controls="menu--1"
             aria-haspopup={true}
-            className="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
+            className="bg-transparent align-items-center test-activation-nav-item-toggle activationDropdownButton"
             data-reach-menu-button=""
             id="menu-button--menu"
             onKeyDown={[Function]}
@@ -101,7 +101,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
             type="button"
           >
             <div
-              className="activation-dropdown-button__confetti"
+              className="confetti"
             >
               <Confetti
                 active={false}
@@ -135,7 +135,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
             </div>
             Get started
             <div
-              className="activation-dropdown-button__confetti"
+              className="confetti"
             >
               <Confetti
                 active={false}
@@ -168,13 +168,13 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               </Confetti>
             </div>
             <span
-              className="activation-dropdown-button__progress-bar-container"
+              className="progressBarContainer"
             >
               <CircularProgressbar
                 background={false}
                 backgroundPadding={0}
                 circleRatio={1}
-                className="activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
+                className="test-activation-progress-bar circularProgressBar"
                 classes={
                   Object {
                     "background": "CircularProgressbar-background",
@@ -201,7 +201,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                 value={0}
               >
                 <svg
-                  className="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
+                  className="CircularProgressbar test-activation-progress-bar circularProgressBar"
                   data-test-id="CircularProgressbar"
                   style={Object {}}
                   viewBox="0 0 100 100"
@@ -264,13 +264,15 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
           </button>
         </MenuButton>
         <MenuPopover
-          className="activation-dropdown dropdown-menu show"
+          className="dropdown-menu activationDropdown show"
+          data-testid="activation-dropdown"
           hidden={false}
         >
           <Popover
             as="div"
-            className="activation-dropdown dropdown-menu show"
+            className="dropdown-menu activationDropdown show"
             data-reach-menu-popover=""
+            data-testid="activation-dropdown"
             hidden={false}
             onBlur={[Function]}
             targetRef={
@@ -278,13 +280,13 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                 "current": <button
                   aria-controls="menu--1"
                   aria-haspopup="true"
-                  class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
+                  class="bg-transparent align-items-center test-activation-nav-item-toggle activationDropdownButton"
                   data-reach-menu-button=""
                   id="menu-button--menu"
                   type="button"
                 >
                   <div
-                    class="activation-dropdown-button__confetti"
+                    class="confetti"
                   >
                     <div
                       style="position: relative;"
@@ -292,17 +294,17 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                   </div>
                   Get started
                   <div
-                    class="activation-dropdown-button__confetti"
+                    class="confetti"
                   >
                     <div
                       style="position: relative;"
                     />
                   </div>
                   <span
-                    class="activation-dropdown-button__progress-bar-container"
+                    class="progressBarContainer"
                   >
                     <svg
-                      class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
+                      class="CircularProgressbar test-activation-progress-bar circularProgressBar"
                       data-test-id="CircularProgressbar"
                       viewBox="0 0 100 100"
                     >
@@ -341,13 +343,14 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                 containerInfo={
                   <reach-portal>
                     <div
-                      class="activation-dropdown dropdown-menu show"
+                      class="dropdown-menu activationDropdown show"
                       data-reach-menu-popover=""
                       data-reach-popover=""
+                      data-testid="activation-dropdown"
                       style="position: absolute; left: 0px; top: 0px;"
                     >
                       <div
-                        class="dropdown-item-text activation-dropdown-header"
+                        class="dropdown-item-text activationDropdownHeader"
                       >
                         <h3
                           class="mb-0"
@@ -361,34 +364,34 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         </p>
                       </div>
                       <div
-                        class="activation-checklist list-group list-group-flush activation-dropdown__checklist"
+                        class="list-group list-group-flush activationChecklist checklist"
                       >
                         <div
                           data-reach-accordion=""
                         >
                           <div
-                            class="activation-checklist__container list-group-item"
+                            class="list-group-item container"
                             data-reach-accordion-item=""
                             data-state="collapsed"
                           >
                             <button
                               aria-controls="panel--1--0"
                               aria-expanded="false"
-                              class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                              class="list-group-item list-group-item-action btn-link button"
                               data-reach-accordion-button=""
                               id="button--1--0"
                             >
                               <div
-                                class="activation-checklist-item d-flex justify-content-between"
+                                class="d-flex justify-content-between activationChecklistItem"
                               >
                                 <div
                                   class="d-flex align-items-center"
                                 >
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-down"
+                                    class="icon-inline iconContainer iconDown"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -400,10 +403,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     </svg>
                                   </span>
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-right"
+                                    class="icon-inline iconContainer iconRight"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -444,35 +447,35 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               tabindex="-1"
                             >
                               <div
-                                class="activation-checklist__detail pb-1"
+                                class="pb-1 detail"
                               >
                                 Configure Sourcegraph to talk to your code host and fetch a list of your repositories.
                               </div>
                             </div>
                           </div>
                           <div
-                            class="activation-checklist__container list-group-item"
+                            class="list-group-item container"
                             data-reach-accordion-item=""
                             data-state="collapsed"
                           >
                             <button
                               aria-controls="panel--1--1"
                               aria-expanded="false"
-                              class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                              class="list-group-item list-group-item-action btn-link button"
                               data-reach-accordion-button=""
                               id="button--1--1"
                             >
                               <div
-                                class="activation-checklist-item d-flex justify-content-between"
+                                class="d-flex justify-content-between activationChecklistItem"
                               >
                                 <div
                                   class="d-flex align-items-center"
                                 >
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-down"
+                                    class="icon-inline iconContainer iconDown"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -484,10 +487,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     </svg>
                                   </span>
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-right"
+                                    class="icon-inline iconContainer iconRight"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -528,7 +531,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               tabindex="-1"
                             >
                               <div
-                                class="activation-checklist__detail pb-1"
+                                class="pb-1 detail"
                               >
                                 <span>
                                   Head to the 
@@ -548,28 +551,28 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                             </div>
                           </div>
                           <div
-                            class="activation-checklist__container list-group-item"
+                            class="list-group-item container"
                             data-reach-accordion-item=""
                             data-state="collapsed"
                           >
                             <button
                               aria-controls="panel--1--2"
                               aria-expanded="false"
-                              class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                              class="list-group-item list-group-item-action btn-link button"
                               data-reach-accordion-button=""
                               id="button--1--2"
                             >
                               <div
-                                class="activation-checklist-item d-flex justify-content-between"
+                                class="d-flex justify-content-between activationChecklistItem"
                               >
                                 <div
                                   class="d-flex align-items-center"
                                 >
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-down"
+                                    class="icon-inline iconContainer iconDown"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -581,10 +584,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     </svg>
                                   </span>
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-right"
+                                    class="icon-inline iconContainer iconRight"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -625,35 +628,35 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               tabindex="-1"
                             >
                               <div
-                                class="activation-checklist__detail pb-1"
+                                class="pb-1 detail"
                               >
                                 To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".
                               </div>
                             </div>
                           </div>
                           <div
-                            class="activation-checklist__container list-group-item"
+                            class="list-group-item container"
                             data-reach-accordion-item=""
                             data-state="collapsed"
                           >
                             <button
                               aria-controls="panel--1--3"
                               aria-expanded="false"
-                              class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                              class="list-group-item list-group-item-action btn-link button"
                               data-reach-accordion-button=""
                               id="button--1--3"
                             >
                               <div
-                                class="activation-checklist-item d-flex justify-content-between"
+                                class="d-flex justify-content-between activationChecklistItem"
                               >
                                 <div
                                   class="d-flex align-items-center"
                                 >
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-down"
+                                    class="icon-inline iconContainer iconDown"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -665,10 +668,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                     </svg>
                                   </span>
                                   <span
-                                    class="activation-checklist-item__icon-container icon-inline icon-right"
+                                    class="icon-inline iconContainer iconRight"
                                   >
                                     <svg
-                                      class="mdi-icon activation-checklist-item__icon"
+                                      class="mdi-icon icon"
                                       fill="currentColor"
                                       height="24"
                                       viewBox="0 0 24 24"
@@ -709,7 +712,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               tabindex="-1"
                             >
                               <div
-                                class="activation-checklist__detail pb-1"
+                                class="pb-1 detail"
                               >
                                 Configure a single-sign on (SSO) provider or have at least one other teammate sign up.
                               </div>
@@ -723,8 +726,9 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
               >
                 <PopoverImpl
                   as="div"
-                  className="activation-dropdown dropdown-menu show"
+                  className="dropdown-menu activationDropdown show"
                   data-reach-menu-popover=""
+                  data-testid="activation-dropdown"
                   hidden={false}
                   onBlur={[Function]}
                   targetRef={
@@ -732,13 +736,13 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                       "current": <button
                         aria-controls="menu--1"
                         aria-haspopup="true"
-                        class="activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center test-activation-nav-item-toggle"
+                        class="bg-transparent align-items-center test-activation-nav-item-toggle activationDropdownButton"
                         data-reach-menu-button=""
                         id="menu-button--menu"
                         type="button"
                       >
                         <div
-                          class="activation-dropdown-button__confetti"
+                          class="confetti"
                         >
                           <div
                             style="position: relative;"
@@ -746,17 +750,17 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         </div>
                         Get started
                         <div
-                          class="activation-dropdown-button__confetti"
+                          class="confetti"
                         >
                           <div
                             style="position: relative;"
                           />
                         </div>
                         <span
-                          class="activation-dropdown-button__progress-bar-container"
+                          class="progressBarContainer"
                         >
                           <svg
-                            class="CircularProgressbar activation-dropdown-button__circular-progress-bar test-activation-progress-bar"
+                            class="CircularProgressbar test-activation-progress-bar circularProgressBar"
                             data-test-id="CircularProgressbar"
                             viewBox="0 0 100 100"
                           >
@@ -791,9 +795,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                   }
                 >
                   <div
-                    className="activation-dropdown dropdown-menu show"
+                    className="dropdown-menu activationDropdown show"
                     data-reach-menu-popover=""
                     data-reach-popover=""
+                    data-testid="activation-dropdown"
                     hidden={false}
                     onBlur={[Function]}
                     style={
@@ -805,7 +810,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                     }
                   >
                     <div
-                      className="dropdown-item-text activation-dropdown-header"
+                      className="dropdown-item-text activationDropdownHeader"
                     >
                       <h3
                         className="mb-0"
@@ -867,7 +872,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                         }
                       }
                       alwaysShow={true}
-                      className="activation-dropdown__checklist"
+                      className="checklist"
                       completed={
                         Object {
                           "ConnectedCodeHost": false,
@@ -916,7 +921,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                       }
                     >
                       <div
-                        className="activation-checklist list-group list-group-flush activation-dropdown__checklist"
+                        className="list-group list-group-flush activationChecklist checklist"
                       >
                         <Accordion
                           collapsible={true}
@@ -958,21 +963,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   "element": <button
                                     aria-controls="panel--1--0"
                                     aria-expanded="false"
-                                    class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    class="list-group-item list-group-item-action btn-link button"
                                     data-reach-accordion-button=""
                                     id="button--1--0"
                                   >
                                     <div
-                                      class="activation-checklist-item d-flex justify-content-between"
+                                      class="d-flex justify-content-between activationChecklistItem"
                                     >
                                       <div
                                         class="d-flex align-items-center"
                                       >
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-down"
+                                          class="icon-inline iconContainer iconDown"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -984,10 +989,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           </svg>
                                         </span>
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-right"
+                                          class="icon-inline iconContainer iconRight"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1024,21 +1029,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   "element": <button
                                     aria-controls="panel--1--1"
                                     aria-expanded="false"
-                                    class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    class="list-group-item list-group-item-action btn-link button"
                                     data-reach-accordion-button=""
                                     id="button--1--1"
                                   >
                                     <div
-                                      class="activation-checklist-item d-flex justify-content-between"
+                                      class="d-flex justify-content-between activationChecklistItem"
                                     >
                                       <div
                                         class="d-flex align-items-center"
                                       >
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-down"
+                                          class="icon-inline iconContainer iconDown"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1050,10 +1055,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           </svg>
                                         </span>
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-right"
+                                          class="icon-inline iconContainer iconRight"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1090,21 +1095,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   "element": <button
                                     aria-controls="panel--1--2"
                                     aria-expanded="false"
-                                    class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    class="list-group-item list-group-item-action btn-link button"
                                     data-reach-accordion-button=""
                                     id="button--1--2"
                                   >
                                     <div
-                                      class="activation-checklist-item d-flex justify-content-between"
+                                      class="d-flex justify-content-between activationChecklistItem"
                                     >
                                       <div
                                         class="d-flex align-items-center"
                                       >
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-down"
+                                          class="icon-inline iconContainer iconDown"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1116,10 +1121,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           </svg>
                                         </span>
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-right"
+                                          class="icon-inline iconContainer iconRight"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1156,21 +1161,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                   "element": <button
                                     aria-controls="panel--1--3"
                                     aria-expanded="false"
-                                    class="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    class="list-group-item list-group-item-action btn-link button"
                                     data-reach-accordion-button=""
                                     id="button--1--3"
                                   >
                                     <div
-                                      class="activation-checklist-item d-flex justify-content-between"
+                                      class="d-flex justify-content-between activationChecklistItem"
                                     >
                                       <div
                                         class="d-flex align-items-center"
                                       >
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-down"
+                                          class="icon-inline iconContainer iconDown"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1182,10 +1187,10 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                           </svg>
                                         </span>
                                         <span
-                                          class="activation-checklist-item__icon-container icon-inline icon-right"
+                                          class="icon-inline iconContainer iconRight"
                                         >
                                           <svg
-                                            class="mdi-icon activation-checklist-item__icon"
+                                            class="mdi-icon icon"
                                             fill="currentColor"
                                             height="24"
                                             viewBox="0 0 24 24"
@@ -1225,21 +1230,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                               data-reach-accordion=""
                             >
                               <AccordionItem
-                                className="activation-checklist__container list-group-item"
+                                className="list-group-item container"
                                 key="ConnectedCodeHost"
                               >
                                 <div
-                                  className="activation-checklist__container list-group-item"
+                                  className="list-group-item container"
                                   data-reach-accordion-item=""
                                   data-state="collapsed"
                                 >
                                   <AccordionButton
-                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    className="list-group-item list-group-item-action btn-link button"
                                   >
                                     <button
                                       aria-controls="panel--1--0"
                                       aria-expanded={false}
-                                      className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                      className="list-group-item list-group-item-action btn-link button"
                                       data-reach-accordion-button=""
                                       id="button--1--0"
                                       onClick={[Function]}
@@ -1253,23 +1258,23 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         title="Add repositories"
                                       >
                                         <div
-                                          className="activation-checklist-item d-flex justify-content-between"
+                                          className="d-flex justify-content-between activationChecklistItem"
                                         >
                                           <div
                                             className="d-flex align-items-center"
                                           >
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-down"
+                                              className="icon-inline iconContainer iconDown"
                                             >
                                               <Memo(ChevronDownIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-right"
+                                              className="icon-inline iconContainer iconRight"
                                             >
                                               <Memo(ChevronRightIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span>
@@ -1299,7 +1304,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                       tabIndex={-1}
                                     >
                                       <div
-                                        className="activation-checklist__detail pb-1"
+                                        className="pb-1 detail"
                                       >
                                         Configure Sourcegraph to talk to your code host and fetch a list of your repositories.
                                       </div>
@@ -1308,21 +1313,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 </div>
                               </AccordionItem>
                               <AccordionItem
-                                className="activation-checklist__container list-group-item"
+                                className="list-group-item container"
                                 key="DidSearch"
                               >
                                 <div
-                                  className="activation-checklist__container list-group-item"
+                                  className="list-group-item container"
                                   data-reach-accordion-item=""
                                   data-state="collapsed"
                                 >
                                   <AccordionButton
-                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    className="list-group-item list-group-item-action btn-link button"
                                   >
                                     <button
                                       aria-controls="panel--1--1"
                                       aria-expanded={false}
-                                      className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                      className="list-group-item list-group-item-action btn-link button"
                                       data-reach-accordion-button=""
                                       id="button--1--1"
                                       onClick={[Function]}
@@ -1351,23 +1356,23 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         title="Search your code"
                                       >
                                         <div
-                                          className="activation-checklist-item d-flex justify-content-between"
+                                          className="d-flex justify-content-between activationChecklistItem"
                                         >
                                           <div
                                             className="d-flex align-items-center"
                                           >
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-down"
+                                              className="icon-inline iconContainer iconDown"
                                             >
                                               <Memo(ChevronDownIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-right"
+                                              className="icon-inline iconContainer iconRight"
                                             >
                                               <Memo(ChevronRightIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span>
@@ -1397,7 +1402,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                       tabIndex={-1}
                                     >
                                       <div
-                                        className="activation-checklist__detail pb-1"
+                                        className="pb-1 detail"
                                       >
                                         <span>
                                           Head to the 
@@ -1419,21 +1424,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 </div>
                               </AccordionItem>
                               <AccordionItem
-                                className="activation-checklist__container list-group-item"
+                                className="list-group-item container"
                                 key="FoundReferences"
                               >
                                 <div
-                                  className="activation-checklist__container list-group-item"
+                                  className="list-group-item container"
                                   data-reach-accordion-item=""
                                   data-state="collapsed"
                                 >
                                   <AccordionButton
-                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    className="list-group-item list-group-item-action btn-link button"
                                   >
                                     <button
                                       aria-controls="panel--1--2"
                                       aria-expanded={false}
-                                      className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                      className="list-group-item list-group-item-action btn-link button"
                                       data-reach-accordion-button=""
                                       id="button--1--2"
                                       onClick={[Function]}
@@ -1447,23 +1452,23 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         title="Find some references"
                                       >
                                         <div
-                                          className="activation-checklist-item d-flex justify-content-between"
+                                          className="d-flex justify-content-between activationChecklistItem"
                                         >
                                           <div
                                             className="d-flex align-items-center"
                                           >
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-down"
+                                              className="icon-inline iconContainer iconDown"
                                             >
                                               <Memo(ChevronDownIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-right"
+                                              className="icon-inline iconContainer iconRight"
                                             >
                                               <Memo(ChevronRightIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span>
@@ -1493,7 +1498,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                       tabIndex={-1}
                                     >
                                       <div
-                                        className="activation-checklist__detail pb-1"
+                                        className="pb-1 detail"
                                       >
                                         To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".
                                       </div>
@@ -1502,21 +1507,21 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                 </div>
                               </AccordionItem>
                               <AccordionItem
-                                className="activation-checklist__container list-group-item"
+                                className="list-group-item container"
                                 key="EnabledSharing"
                               >
                                 <div
-                                  className="activation-checklist__container list-group-item"
+                                  className="list-group-item container"
                                   data-reach-accordion-item=""
                                   data-state="collapsed"
                                 >
                                   <AccordionButton
-                                    className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                    className="list-group-item list-group-item-action btn-link button"
                                   >
                                     <button
                                       aria-controls="panel--1--3"
                                       aria-expanded={false}
-                                      className="activation-checklist__button list-group-item list-group-item-action btn-link"
+                                      className="list-group-item list-group-item-action btn-link button"
                                       data-reach-accordion-button=""
                                       id="button--1--3"
                                       onClick={[Function]}
@@ -1530,23 +1535,23 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                         title="Configure SSO or share with teammates"
                                       >
                                         <div
-                                          className="activation-checklist-item d-flex justify-content-between"
+                                          className="d-flex justify-content-between activationChecklistItem"
                                         >
                                           <div
                                             className="d-flex align-items-center"
                                           >
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-down"
+                                              className="icon-inline iconContainer iconDown"
                                             >
                                               <Memo(ChevronDownIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span
-                                              className="activation-checklist-item__icon-container icon-inline icon-right"
+                                              className="icon-inline iconContainer iconRight"
                                             >
                                               <Memo(ChevronRightIcon)
-                                                className="activation-checklist-item__icon"
+                                                className="icon"
                                               />
                                             </span>
                                             <span>
@@ -1576,7 +1581,7 @@ exports[`ActivationDropdown renders the activation dropdown 1`] = `
                                       tabIndex={-1}
                                     >
                                       <div
-                                        className="activation-checklist__detail pb-1"
+                                        className="pb-1 detail"
                                       >
                                         Configure a single-sign on (SSO) provider or have at least one other teammate sign up.
                                       </div>
