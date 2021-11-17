@@ -2,13 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
-
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type AuthzResolver interface {
@@ -58,22 +53,4 @@ type PermissionsInfoResolver interface {
 	Permissions() []string
 	SyncedAt() *DateTime
 	UpdatedAt() DateTime
-}
-
-var subRepoOnce sync.Once
-var subRepoClient *authz.SubRepoPermsClient
-
-// subRepoPermsClient returns a reusable instance of the
-// authz.SubRepoPermissionChecker that maintains a shared cache.
-func subRepoPermsClient(db database.DB) authz.SubRepoPermissionChecker {
-	subRepoOnce.Do(func() {
-		var err error
-		subRepoClient, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
-		if err != nil {
-			// We expect creating a client to always succeed. If not, it is due to an error
-			// in our code when instantiating it.
-			panic(fmt.Sprintf("creating SubRepoPermsClient: %v", err))
-		}
-	})
-	return subRepoClient.WithGetter(db.SubRepoPerms())
 }

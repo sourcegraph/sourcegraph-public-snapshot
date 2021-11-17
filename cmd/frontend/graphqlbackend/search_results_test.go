@@ -14,7 +14,6 @@ import (
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
@@ -427,7 +426,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	id := 42
 	repoName := "reponame-foobar"
 	fileName := "foobar.go"
-	unauthorizedFileName := "cant-see-me.md"
 
 	repoWithIDs := &types.Repo{
 		ID:   api.RepoID(id),
@@ -481,18 +479,6 @@ func TestSearchResultsHydration(t *testing.T) {
 			},
 		},
 		Checksum: []byte{0, 1, 2},
-	}, {
-		Score:        3.0,
-		FileName:     unauthorizedFileName, // Gets filtered out
-		RepositoryID: uint32(repoWithIDs.ID),
-		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
-		Branches:     []string{"master"},
-		LineMatches: []zoekt.LineMatch{
-			{
-				Line: nil,
-			},
-		},
-		Checksum: []byte{0, 1, 3},
 	}}
 
 	z := &searchbackend.FakeSearcher{
@@ -509,18 +495,6 @@ func TestSearchResultsHydration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srp := authz.NewMockSubRepoPermissionChecker()
-	srp.EnabledFunc.SetDefaultReturn(true)
-	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, i int32, rc authz.RepoContent) (authz.Perms, error) {
-		if i != ctxUser {
-			return authz.Read, nil
-		}
-		if rc.Path != unauthorizedFileName {
-			return authz.Read, nil
-		}
-		return authz.None, nil
-	})
-
 	resolver := &searchResolver{
 		db: db,
 		SearchInputs: &run.SearchInputs{
@@ -528,10 +502,9 @@ func TestSearchResultsHydration(t *testing.T) {
 			Query:        p.ToParseTree(),
 			UserSettings: &schema.Settings{},
 		},
-		zoekt:        z,
-		reposMu:      &sync.Mutex{},
-		resolved:     &searchrepos.Resolved{},
-		subRepoPerms: srp,
+		zoekt:    z,
+		reposMu:  &sync.Mutex{},
+		resolved: &searchrepos.Resolved{},
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
@@ -886,10 +859,9 @@ func TestEvaluateAnd(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				zoekt:        z,
-				reposMu:      &sync.Mutex{},
-				resolved:     &searchrepos.Resolved{},
-				subRepoPerms: srp,
+				zoekt:    z,
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
@@ -960,11 +932,10 @@ func TestSearchContext(t *testing.T) {
 					Query:        p.ToParseTree(),
 					UserSettings: &schema.Settings{},
 				},
-				reposMu:      &sync.Mutex{},
-				resolved:     &searchrepos.Resolved{},
-				zoekt:        mockZoekt,
-				db:           db,
-				subRepoPerms: srp,
+				reposMu:  &sync.Mutex{},
+				resolved: &searchrepos.Resolved{},
+				zoekt:    mockZoekt,
+				db:       db,
 			}
 
 			_, err = resolver.Results(context.Background())
@@ -1051,164 +1022,6 @@ func TestIsContextError(t *testing.T) {
 		t.Run(c.err.Error(), func(t *testing.T) {
 			if got := isContextError(ctx, c.err); got != c.want {
 				t.Fatalf("wanted %t, got %t", c.want, got)
-			}
-		})
-	}
-}
-
-func TestSubRepoPermsFilter(t *testing.T) {
-	unauthorizedFileName := "README.md"
-	errorFileName := "file.go"
-	var userWithSubRepoPerms int32 = 1234
-
-	srp := authz.NewMockSubRepoPermissionChecker()
-	srp.EnabledFunc.SetDefaultReturn(true)
-	srp.PermissionsFunc.SetDefaultHook(func(c context.Context, user int32, rc authz.RepoContent) (authz.Perms, error) {
-		if user == userWithSubRepoPerms {
-			switch rc.Path {
-			case unauthorizedFileName:
-				// This file should be filtered out
-				return authz.None, nil
-			case errorFileName:
-				// Simulate an error case, should be filtered out
-				return authz.None, errors.New(errorFileName)
-			}
-		}
-		return authz.Read, nil
-	})
-
-	type args struct {
-		ctxActor *actor.Actor
-		event    *streaming.SearchEvent
-	}
-	tests := []struct {
-		name      string
-		args      args
-		wantEvent *streaming.SearchEvent
-		wantErr   string
-	}{
-		{
-			name: "read from user with no perms",
-			args: args{
-				ctxActor: actor.FromUser(789),
-				event: &streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: unauthorizedFileName,
-							},
-						},
-					},
-				},
-			},
-			wantEvent: &streaming.SearchEvent{
-				Results: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: unauthorizedFileName,
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "read for user with sub-repo perms",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				event: &streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: "not-unauthorized.md",
-							},
-						},
-					},
-				},
-			},
-			wantEvent: &streaming.SearchEvent{
-				Results: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: "not-unauthorized.md",
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "drop match due to auth for user with sub-repo perms",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				event: &streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: unauthorizedFileName,
-							},
-						},
-						&result.FileMatch{
-							File: result.File{
-								Path: "random-name.md",
-							},
-						},
-					},
-				},
-			},
-			wantEvent: &streaming.SearchEvent{
-				Results: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: "random-name.md",
-						},
-					},
-				},
-			},
-		},
-		{
-			name: "drop match due to auth for user with sub-repo perms and error",
-			args: args{
-				ctxActor: actor.FromUser(userWithSubRepoPerms),
-				event: &streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{
-							File: result.File{
-								Path: errorFileName,
-							},
-						},
-						&result.FileMatch{
-							File: result.File{
-								Path: "random-name.md",
-							},
-						},
-					},
-				},
-			},
-			wantEvent: &streaming.SearchEvent{
-				Results: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: "random-name.md",
-						},
-					},
-				},
-			},
-			wantErr: "subRepoPermsFilter",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := actor.WithActor(context.Background(), tt.args.ctxActor)
-			err := subRepoPermsFilter(ctx, srp)(tt.args.event)
-			if diff := cmp.Diff(tt.args.event, tt.wantEvent, cmpopts.IgnoreUnexported(search.RepoStatusMap{})); diff != "" {
-				t.Fatal(diff)
-			}
-			if tt.wantErr != "" {
-				if err == nil {
-					t.Fatal("expected err, got none")
-				}
-				if !strings.Contains(err.Error(), tt.wantErr) {
-					t.Fatalf("expected err %q, got %q", tt.wantErr, err.Error())
-				}
 			}
 		})
 	}

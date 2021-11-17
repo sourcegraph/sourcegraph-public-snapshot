@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"io/fs"
 	"net/url"
 	"os"
 	"sync"
@@ -10,13 +9,11 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -57,11 +54,6 @@ type GitCommitResolver struct {
 	commit     *gitapi.Commit
 	commitOnce sync.Once
 	commitErr  error
-
-	// Responsible for filtering out sub-repository content.
-	//
-	// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-	subRepoPerms authz.SubRepoPermissionChecker
 }
 
 // NewGitCommitResolver returns a new CommitResulover. When commit is set to nil,
@@ -75,7 +67,6 @@ func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.Commi
 		gitRepo:         repo.RepoName(),
 		oid:             GitObjectID(id),
 		commit:          commit,
-		subRepoPerms:    subRepoPermsClient(db),
 	}
 }
 
@@ -212,7 +203,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	defer span.Finish()
 	span.SetTag("path", args.Path)
 
-	stat, err := gitStat(ctx, r.subRepoPerms, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -231,7 +222,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*GitTreeEntryResolver, error) {
-	stat, err := gitStat(ctx, r.subRepoPerms, r.gitRepo, api.CommitID(r.oid), args.Path)
+	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -361,20 +352,4 @@ func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
 	url := *r.repoResolver.RepoMatch.URL()
 	url.Path += "@" + string(r.oid)
 	return &url
-}
-
-func gitStat(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
-		Repo: repo,
-		Path: path,
-	})
-	if err != nil {
-		log15.Error("checking sub-repo permissions in gitStat", "error", err)
-		return nil, err
-	}
-	// No access
-	if !perms.Include(authz.Read) {
-		return nil, os.ErrNotExist
-	}
-	return git.Stat(ctx, repo, commit, path)
 }
