@@ -62,7 +62,7 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 > - If write access to repositories is required, the token must have `repo` scope *and* the token's account must have write access to all repositories. This can happen by being added as a direct contributor, being on a team with write access to the repository, being an admin for the repository's organization, and so on.
 > - If write access to organizations is required, the token must have `write:org` scope *and* the token's account must have write access for all organizations. This can happen by being an admin in all relevant organizations.
 >
-> Learn more about how the GitHub API is used in the corresponding feature documentation.
+> Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
 ## GitHub.com rate limits
 
