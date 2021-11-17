@@ -4,7 +4,7 @@
 
 By default, Batch Changes uses a [command line interface] in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
-Instead of computing Batch Changes locally using `src-cli`, it's possible to offload this task to [executors](../../admin/deploy_executors.md). This feature is [experimental](../../admin/beta_and_experimental_features.md#experimental-features). Executors are also required to enable Code Intelligence [auto-indexing](../../code_intelligence/explanations/auto_indexing).
+Instead of computing Batch Changes locally using `src-cli`, it's possible to offload this task to [executors](../../admin/deploy_executors.md). This feature is [experimental](../../admin/beta_and_experimental_features.md#experimental-features). Executors are also required to enable Code Intelligence [auto-indexing](../../code_intelligence/explanations/auto_indexing.md).
 
 If enabled, server-side Batch Changes computing allows to:
 
