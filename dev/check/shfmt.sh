@@ -6,10 +6,11 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 OUT=$(shfmt -d .)
 EXIT_CODE=$?
-echo "$OUT"
+echo -e "$OUT"
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo -e "$OUT" | ./dev/ci/annotate.sh --section "shfmt"
+  echo -e "$OUT" | ./dev/ci/annotate.sh -s "shfmt"
+  echo "^^^ +++"
 fi
 
 exit $EXIT_CODE

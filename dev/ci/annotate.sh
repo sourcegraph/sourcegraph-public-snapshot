@@ -3,6 +3,27 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 set -ex
 
+SECTION=''
+MARKDOWN='false'
+
+print_usage() {
+  printf "Usage:\necho \"your annotation\" | annotate.sh -s my-section\necho \"your markdown\" | annotate.sh -m -s my-section\n"
+}
+
+if [ $# -eq 0 ]; then
+  print_usage
+  exit 1
+fi
+
+while getopts 's:m' flag; do
+  case "${flag}" in
+    s) SECTION="${OPTARG}" ;;
+    m) MARKDOWN='true' ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
 # We create a file to indicate that this program has already been called
 # and there is no need to add a title to the annotation.
 FILE=.annotate
@@ -18,6 +39,15 @@ fi
 
 BODY=""
 while IFS= read -r line; do
-  BODY=$(printf "%s\n%s" "$BODY" "$line")
+  if [ -z "$BODY" ]; then 
+    BODY="$line"
+  else 
+    BODY=$(printf "%s\n%s" "$BODY" "$line")
+  fi
 done
-printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+
+if [ "$MARKDOWN" = true ]; then
+  printf "_%s_\n%s\n" "$SECTION" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+else
+  printf "_%s_\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+fi
