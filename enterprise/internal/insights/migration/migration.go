@@ -155,6 +155,11 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	var subjectName string
 	orgStore := database.Orgs(m.postgresDB)
 
+	defer func() {
+		m.settingsMigrationJobsStore.UpdateRuns(ctx, job.UserId, job.OrgId, job.Runs+1)
+		// Fill in any errors? Or append the errors?
+	}()
+
 	if job.UserId != nil {
 		userId := int32(*job.UserId)
 		subject = api.SettingsSubject{User: &userId}
@@ -283,13 +288,10 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 		return false, false, err
 	}
 
-	// TODO: Then fill in completed_at and we're done!
-	// TODO: Also increment "runs"
-	// TODO: And if there are errors, write those out to error_msg.
-
-	// Error handling: If we're keeping track of total vs completed insights/dashboards, maybe we just need a state for retries. We can do like
-	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
-	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
+	err = m.settingsMigrationJobsStore.MarkCompleted(ctx, job.UserId, job.OrgId)
+	if err != nil {
+		return false, false, err
+	}
 
 	return true, false, nil
 }
