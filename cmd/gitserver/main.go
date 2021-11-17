@@ -121,7 +121,7 @@ func main() {
 			return "", errors.Errorf("no sources for %q", repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(externalServiceStore, repoStore, codeintelDB, ctx, repo)
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
 		},
 		Hostname:   hostname.Get(),
 		DB:         db,
@@ -264,8 +264,8 @@ func getDB() (dbutil.DB, error) {
 	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
 }
 
-func getVCSSyncer(externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
-	codeintelDB *codeinteldbstore.Store, ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
+	codeintelDB *codeinteldbstore.Store, repo api.RepoName) (server.VCSSyncer, error) {
 	// We need an internal actor in case we are trying to access a private repo. We
 	// only need access in order to find out the type of code host we're using, so
 	// it's safe.
@@ -289,7 +289,7 @@ func getVCSSyncer(externalServiceStore database.ExternalServiceStore, repoStore 
 			}
 			return nil
 		}
-		return nil
+		return errors.Errorf("unexpected empty Sources map in %v", r)
 	}
 
 	switch r.ExternalRepo.ServiceType {
