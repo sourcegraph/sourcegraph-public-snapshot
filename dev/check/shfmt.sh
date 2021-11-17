@@ -8,4 +8,9 @@ set -ex
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-shfmt -d .
+OUT=$(shfmt -d .)
+EXIT_CODE=$?
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo "$OUT" | ./dev/ci/annotate.sh --section "shfmt"
+end
