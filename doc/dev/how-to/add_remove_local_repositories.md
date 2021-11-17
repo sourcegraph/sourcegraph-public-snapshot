@@ -15,7 +15,7 @@ Find this section of the code:
     {
       "authorization": {},
       "url": "https://github.com",
-      "token": "f189fe46ca1901b4988936cbc671f8305715ed73", // unprivileged sqs-test user
+      "token": xxxxxx
       "repositoryQuery": ["affiliated"],
       "repos": [
         "sourcegraph/sourcegraph",
@@ -30,7 +30,7 @@ Find this section of the code:
     },
     {
       "url": "https://ghe.sgdev.org",
-      "token": "1ec8973c1debb3232468b514b1a850dba87ee29a",
+      "token": xxxxx
       "repositoryQuery": ["org:sourcegraph gorilla"]
     }
   ],
