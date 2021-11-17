@@ -40,30 +40,27 @@ const (
 	java11MajorVersion = 53
 )
 
-func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+func createPlaceholderJar(t *testing.T, dir string, contents []byte, jarName, contentPath string) {
 	t.Helper()
-	sourcesPath, err := os.Create(path.Join(dir, jarName))
+	jarPath, err := os.Create(path.Join(dir, jarName))
 	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(sourcesPath)
-	exampleWriter, err := zipWriter.Create(exampleFilePath)
-	assert.Nil(t, err)
-	_, err = exampleWriter.Write([]byte(contents))
-	assert.Nil(t, err)
-	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, sourcesPath.Close())
-}
-
-func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
-	t.Helper()
-	byteCodePath, err := os.Create(path.Join(dir, jarName))
-	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(byteCodePath)
-	exampleWriter, err := zipWriter.Create(exampleClassfilePath)
+	zipWriter := zip.NewWriter(jarPath)
+	exampleWriter, err := zipWriter.Create(contentPath)
 	assert.Nil(t, err)
 	_, err = exampleWriter.Write(contents)
 	assert.Nil(t, err)
 	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, byteCodePath.Close())
+	assert.Nil(t, jarPath.Close())
+}
+
+func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+	t.Helper()
+	createPlaceholderJar(t, dir, []byte(contents), jarName, exampleFilePath)
+}
+
+func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
+	t.Helper()
+	createPlaceholderJar(t, dir, contents, jarName, exampleClassfilePath)
 }
 
 func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
