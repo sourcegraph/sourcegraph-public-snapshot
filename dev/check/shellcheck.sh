@@ -2,10 +2,6 @@
 
 echo "--- shellcheck"
 
-trap "echo ^^^ +++" ERR
-
-set -e
-
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 SHELL_SCRIPTS=()
@@ -16,5 +12,7 @@ OUT=$(shellcheck --external-sources --source-path="SCRIPTDIR" --color=always "${
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
-  echo "$OUT" | ./dev/ci/annotate.sh --section "shfmt"
+  echo "$OUT" | ./dev/ci/annotate.sh --section "shellcheck"
 fi
+
+exit $EXIT_CODE
