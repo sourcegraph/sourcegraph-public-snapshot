@@ -40,7 +40,7 @@ interface WorkspacesPreviewListProps {
     excludeRepo: (repo: string, branch: string) => void
 }
 
-const WORKSPACES_COUNT = 100
+const WORKSPACES_PER_PAGE_COUNT = 100
 
 export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewListProps> = ({
     batchSpecID,
@@ -72,7 +72,7 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
                         noSummaryIfAllNodesVisible={true}
-                        first={WORKSPACES_COUNT}
+                        first={WORKSPACES_PER_PAGE_COUNT}
                         connection={connection}
                         noun="workspace"
                         pluralNoun="workspaces"
@@ -92,14 +92,13 @@ const useWorkspaces = (batchSpecID: Scalars['ID']): UseConnectionResult<PreviewB
         variables: {
             batchSpec: batchSpecID,
             after: null,
-            first: WORKSPACES_COUNT,
+            first: WORKSPACES_PER_PAGE_COUNT,
         },
         options: {
             useURL: false,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
-            console.log(WORKSPACES_COUNT)
             const data = dataOrThrowErrors(result)
 
             if (!data.node) {

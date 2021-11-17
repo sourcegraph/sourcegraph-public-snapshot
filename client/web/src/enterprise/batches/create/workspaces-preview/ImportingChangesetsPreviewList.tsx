@@ -36,7 +36,7 @@ interface ImportingChangesetsPreviewListProps {
     isStale: boolean
 }
 
-const CHANGESETS_COUNT = 100
+const CHANGESETS_PER_PAGE_COUNT = 100
 
 export const ImportingChangesetsPreviewList: React.FunctionComponent<ImportingChangesetsPreviewListProps> = ({
     batchSpecID,
@@ -80,7 +80,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<ImportingCh
                 <SummaryContainer centered={true}>
                     <ConnectionSummary
                         noSummaryIfAllNodesVisible={true}
-                        first={CHANGESETS_COUNT}
+                        first={CHANGESETS_PER_PAGE_COUNT}
                         connection={connection}
                         noun="imported changeset"
                         pluralNoun="imported changesets"
@@ -108,14 +108,13 @@ const useImportingChangesets = (
         variables: {
             batchSpec: batchSpecID,
             after: null,
-            first: CHANGESETS_COUNT,
+            first: CHANGESETS_PER_PAGE_COUNT,
         },
         options: {
             useURL: false,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
-            console.log(CHANGESETS_COUNT)
             const data = dataOrThrowErrors(result)
 
             if (!data.node) {
