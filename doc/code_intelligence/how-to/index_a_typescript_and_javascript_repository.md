@@ -178,7 +178,7 @@ The following projects have example Travis CI configurations to generate and upl
 
 > **_NOTE:_** This is also applicable if you are using a mono-repo that contains different projects. For example, Project A is located in `<repo root>/proja/` and Project B is located in `<repo root>/projb/`. You just need to invoke `lsif-tsc` and `src lsif upload` in both `./proja` and `./projb` directories to generate and upload a precise code intelligence index for each project.
 
-   Check out the tool's [documentation](https://github.com/microsoft/lsif-node/blob/main/README.md) if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
+   Check out the tool's documentation if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
 
 1. Upload the data to a Sourcegraph instance with
 
