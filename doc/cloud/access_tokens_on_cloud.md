@@ -16,3 +16,5 @@ For further instructions and information about personal access tokens and settin
 - GitHub: [Machine users in GitHub docs](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)
 - GitHub: [Personal access tokens](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 - GitLab: [Personal access tokens](https://docs.gitlab.com/ee/security/token_overview.html#security-considerations)
+
+Looking for Sourcegraph API access tokens? See [creating a Sourcegraph API access token](../cli/how-tos/creating_an_access_token.md)
