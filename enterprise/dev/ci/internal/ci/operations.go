@@ -572,7 +572,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 // after the e2e tests pass.
 //
 // It requires Config as an argument because published images require a lot of metadata.
-func publishFinalDockerImage(c Config, app string, insiders bool) operations.Operation {
+func publishFinalDockerImage(c Config, app string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		devImage := images.DevRegistryImage(app, "")
 		publishImage := images.PublishedRegistryImage(app, "")
@@ -587,7 +587,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 				images = append(images, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
 			}
 
-			if insiders {
+			if c.RunType.Is(MainBranch) {
 				images = append(images, fmt.Sprintf("%s:insiders", image))
 			}
 		}
