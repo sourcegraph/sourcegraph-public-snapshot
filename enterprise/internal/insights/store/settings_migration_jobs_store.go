@@ -98,46 +98,6 @@ func scanSettingsMigrationJobs(rows *sql.Rows, queryErr error) (_ []*SettingsMig
 	return results, nil
 }
 
-type CreateSettingsMigrationJobArgs struct {
-	UserId *int32
-	OrgId  *int32
-}
-
-func (s *DBSettingsMigrationJobsStore) CreateSettingsMigrationJob(ctx context.Context, args CreateSettingsMigrationJobArgs) error {
-	var q *sqlf.Query
-	if args.UserId != nil {
-		q = sqlf.Sprintf(insertUserSettingsMigrationJobsSql, *args.UserId)
-	} else if args.OrgId != nil {
-		q = sqlf.Sprintf(insertOrgSettingsMigrationJobsSql, *args.OrgId)
-	} else {
-		q = sqlf.Sprintf(insertGlobalSettingsMigrationJobsSql)
-	}
-	row := s.QueryRow(ctx, q)
-	if row.Err() != nil {
-		return row.Err()
-	}
-
-	return nil
-}
-
-const insertUserSettingsMigrationJobsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs_store.go:CreateSettingsMigrationJob
-INSERT INTO insights_settings_migration_jobs (user_id) VALUES (%s)
-ON CONFLICT DO NOTHING;
-`
-
-const insertOrgSettingsMigrationJobsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-INSERT INTO insights_settings_migration_jobs (org_id) VALUES (%s)
-ON CONFLICT DO NOTHING;
-`
-
-const insertGlobalSettingsMigrationJobsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
-INSERT INTO insights_settings_migration_jobs (global) VALUES (true)
-ON CONFLICT DO NOTHING;
-`
-
 func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error {
 	q := sqlf.Sprintf(updateTotalInsightsSql, totalInsights, getWhereForSubject(ctx, userId, orgId))
 	row := s.QueryRow(ctx, q)
@@ -148,7 +108,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateTotalInsights(ctx context.Context, 
 }
 
 const updateTotalInsightsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateTotalInsights
 UPDATE insights_settings_migration_jobs SET total_insights = %s WHERE %s
 `
 
@@ -162,7 +122,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateMigratedInsights(ctx context.Contex
 }
 
 const updateMigratedInsightsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateMigratedInsights
 UPDATE insights_settings_migration_jobs SET migrated_insights = %s WHERE %s
 `
 
@@ -176,7 +136,7 @@ func (s *DBSettingsMigrationJobsStore) UpdateTotalDashboards(ctx context.Context
 }
 
 const updateTotalDashboardsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateTotalDashboards
 UPDATE insights_settings_migration_jobs SET total_dashboards = %s WHERE %s
 `
 
@@ -190,8 +150,36 @@ func (s *DBSettingsMigrationJobsStore) UpdateMigratedDashboards(ctx context.Cont
 }
 
 const updateMigratedDashboardsSql = `
--- source: enterprise/internal/insights/store/settings_migration_jobs.go:CreateSettingsMigrationJob
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateMigratedDashboards
 UPDATE insights_settings_migration_jobs SET migrated_dashboards = %s WHERE %s
+`
+
+func (s *DBSettingsMigrationJobsStore) UpdateRuns(ctx context.Context, userId *int, orgId *int, runs int) error {
+	q := sqlf.Sprintf(updateRunsSql, runs, getWhereForSubject(ctx, userId, orgId))
+	row := s.QueryRow(ctx, q)
+	if row.Err() != nil {
+		return row.Err()
+	}
+	return nil
+}
+
+const updateRunsSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:UpdateRuns
+UPDATE insights_settings_migration_jobs SET runs = %s WHERE %s
+`
+
+func (s *DBSettingsMigrationJobsStore) MarkCompleted(ctx context.Context, userId *int, orgId *int) error {
+	q := sqlf.Sprintf(markCompletedSql, s.Now(), getWhereForSubject(ctx, userId, orgId))
+	row := s.QueryRow(ctx, q)
+	if row.Err() != nil {
+		return row.Err()
+	}
+	return nil
+}
+
+const markCompletedSql = `
+-- source: enterprise/internal/insights/store/settings_migration_jobs.go:MarkCompleted
+UPDATE insights_settings_migration_jobs SET completed_at = %s WHERE %s
 `
 
 func (s *DBSettingsMigrationJobsStore) CountSettingsMigrationJobs(ctx context.Context) (int, error) {
@@ -239,11 +227,12 @@ func getWhereForSubjectType(ctx context.Context, jobType SettingsMigrationJobTyp
 }
 
 type SettingsMigrationJobsStore interface {
-	CreateSettingsMigrationJob(ctx context.Context, args CreateSettingsMigrationJobArgs) error
 	UpdateTotalInsights(ctx context.Context, userId *int, orgId *int, totalInsights int) error
 	UpdateMigratedInsights(ctx context.Context, userId *int, orgId *int, migratedInsights int) error
 	UpdateTotalDashboards(ctx context.Context, userId *int, orgId *int, totalDashboards int) error
 	UpdateMigratedDashboards(ctx context.Context, userId *int, orgId *int, migratedDashboards int) error
+	UpdateRuns(ctx context.Context, userId *int, orgId *int, runs int) error
+	MarkCompleted(ctx context.Context, userId *int, orgId *int) error
 	CountSettingsMigrationJobs(ctx context.Context) (int, error)
 	GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error)
 	IsJobTypeComplete(ctx context.Context, jobType SettingsMigrationJobType) (bool, error)
