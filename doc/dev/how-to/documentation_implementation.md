@@ -17,7 +17,7 @@ Each of these areas has the docs organized by the 4 different types:
 1. Explanation or background information
 1. Reference
 
-This structure is inspired by the [Divio documentation system](https://documentation.divio.com/).
+This structure is inspired by the [Diátaxis documentation framework](https://diataxis.fr/).
 
 ## Previewing changes locally
 
