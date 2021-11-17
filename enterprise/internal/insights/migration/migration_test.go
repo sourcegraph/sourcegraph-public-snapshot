@@ -165,17 +165,6 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 		}
 	}
 
-	// clear := func() {
-	// 	_, err := timescale.Exec("truncate insight_view CASCADE;")
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// 	_, err = timescale.Exec("truncate dashboard CASCADE;")
-	// 	if err != nil {
-	// 		t.Fatal(err)
-	// 	}
-	// }
-
 	t.Run("user special dashboard", func(t *testing.T) {
 		subjectName := "Samwise Gamgee"
 		insightReferences := []string{"ringsThrownIntoMountDoom1", "wateringTheGarden1", "hobbitsInTheShire1"}
