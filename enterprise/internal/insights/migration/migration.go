@@ -327,7 +327,21 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 // 	// return nil
 // }
 
-func (m *migrator) migrateDashboard(ctx context.Context, tx *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
+func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard) (err error) {
+	tx, err := m.dashboardStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	exists, err := tx.DashboardExists(ctx, from)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
 	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
 
 	mc := migrationContext{}
