@@ -393,6 +393,12 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 }
 
 func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.SettingDashboard) int {
+	tx, err := m.dashboardStore.Transact(ctx)
+	if err != nil {
+		return 0
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
 	var count, skipped, errorCount int
 	for _, d := range toMigrate {
 		if d.ID == "" {
@@ -401,7 +407,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 			continue
 		}
 
-		exists, err := m.dashboardExists(ctx, d)
+		exists, err := tx.DashboardExists(ctx, d)
 		if err != nil {
 			// Skip?
 			skipped++
@@ -412,7 +418,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 			continue
 		}
 
-		err = m.migrateDashboard(ctx, d)
+		err = m.migrateDashboard(ctx, tx, d)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
 			errorCount++

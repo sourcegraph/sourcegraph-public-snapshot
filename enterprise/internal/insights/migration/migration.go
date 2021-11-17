@@ -245,15 +245,9 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	return true, false, nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
+func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
 	var mapped []string
 	var failed []string
-
-	tx, err := m.dashboardStore.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
 
 	for _, reference := range insightReferences {
 		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
@@ -333,13 +327,7 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 // 	// return nil
 // }
 
-func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard) (err error) {
-	tx, err := m.dashboardStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Store.Done(err) }()
-
+func (m *migrator) migrateDashboard(ctx context.Context, tx *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
 	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
 
 	mc := migrationContext{}
@@ -362,32 +350,10 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		}
 	}
 
-	_, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
+	_, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, mc)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (m *migrator) dashboardExists(ctx context.Context, dashboard insights.SettingDashboard) (bool, error) {
-	var grantsQuery *sqlf.Query
-	if dashboard.UserID != nil {
-		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
-	} else if dashboard.OrgID != nil {
-		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
-	} else {
-		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
-	}
-
-	count, _, err := basestore.ScanFirstInt(m.dashboardStore.Query(ctx, sqlf.Sprintf(`
-		SELECT COUNT(*) from dashboard
-		JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
-		WHERE dashboard.title = %s AND %s;
-	`, dashboard.Title, grantsQuery)))
-	if err != nil {
-		return false, err
-	}
-
-	return count != 0, nil
 }
