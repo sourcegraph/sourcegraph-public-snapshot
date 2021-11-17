@@ -106,8 +106,9 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        {window.context.sourcegraphDotComMode && <strong>{this.props.node.username}</strong>}
-                        {!window.context.sourcegraphDotComMode && (
+                        {window.context.sourcegraphDotComMode ? (
+                            <strong>{this.props.node.username}</strong>
+                        ) : (
                             <Link to={`/users/${this.props.node.username}`}>
                                 <strong>{this.props.node.username}</strong>
                             </Link>
