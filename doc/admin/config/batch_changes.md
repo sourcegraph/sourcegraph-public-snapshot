@@ -105,7 +105,7 @@ To only allow changesets to be reconciled at 1 changeset per minute on (UTC) wee
 
 Sourcegraph can track incoming webhooks from code hosts to more easily debug issues with webhook delivery. These webhooks can be viewed by going to **Site Admin > Batch Changes > Incoming webhooks**.
 
-By default, sites without encryption enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
+By default, sites without [database encryption](encryption.md) enabled will retain three days of webhook logs. Sites with encryption will not retain webhook logs by default, as webhooks may include sensitive information; these sites can enable webhook logging and optionally configure encryption for them by using the settings below.
 
 ### Enabling webhook logging
 
