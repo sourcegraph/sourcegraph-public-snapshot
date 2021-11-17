@@ -15,7 +15,8 @@
 
 Executors are Sourcegraph's solution for running untrusted code in a secure and controllable way.
 
-The precise code intelligence [auto-indexing feature](../code_intelligence/explanations/auto_indexing), in particular, requires the invocation of arbitrary and untrusted code to support the resolution of project dependencies. Invocation of post-install hooks, use of insecure [package management tools](https://github.com/golang/go/issues/29230), and package manager proxy attacks can create opportunities in which an adversary can gain unlimited use compute or exfiltrate data. The latter outcome is particularly dangerous for on-premise installations of Sourcegraph, which is the chosen option for companies wanting to maintain strict privacy of their code property.
+
+Running untrusted code is a core requirement of features such as precise code intelligence [auto-indexing](../code_intelligence/explanations/auto_indexing), and [server-side batch changes](../batch_changes/explanations/server_side.md). Auto-indexing jobs, in particular, requires the invocation of arbitrary and untrusted code to support the resolution of project dependencies. Invocation of post-install hooks, use of insecure [package management tools](https://github.com/golang/go/issues/29230), and package manager proxy attacks can create opportunities in which an adversary can gain unlimited use compute or exfiltrate data. The latter outcome is particularly dangerous for on-premise installations of Sourcegraph, which is the chosen option for companies wanting to maintain strict privacy of their code property.
 
 Instead of performing this work within the Sourcegraph instance, where code is available on disk and unprotected internal services are available over the local network, we move untrusted compute into a sandboxed environment, the _executor_, that has access only to the clone of a single repository on disk (its _workspace_) and to the public internet.
 
@@ -27,7 +28,7 @@ Compute jobs are coordinated by the executor binary, which polls a configured So
 
 When a compute job is available, it will be assigned to the executor for processing. After accepting a job, the executor spawns an empty [Firecracker](https://firecracker-microvm.github.io/) microVM via [Waveworks Ignite](https://ignite.readthedocs.io/en/stable/). A workspace prepared with the target repository is moved into virtual machine. A series of Docker commands are invoked inside of the microVM, which generally produces an artifact on disk to send back to the Sourcegraph instance via [src CLI](../cli/index.md). The status and logs of this compute job are streamed back to the Sourcegraph instance as the job progresses.
 
-TODO - more about sandbox model
+Here we perform security and isolation is in-depth as much as possible. Untrusted code is run only within a fresh virtual machine, and the host machine running untrusted code does not have privileged access to the Sourcegraph instance. The API to which the executor instances can authenticate provides only the exact data needed to perform the job. See [_Firecracker: Lightweight Virtualization for Serverless Applications_](https://www.amazon.science/publications/firecracker-lightweight-virtualization-for-serverless-applications) for an in-depth look at the isolation model provided by the Firecracker Virtual Machine Monitor (VMM).
 
 ## Installation
 
