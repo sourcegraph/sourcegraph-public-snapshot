@@ -34,7 +34,8 @@ Administration is usually handled by site administrators are the admins responsi
 - [Setting the URL for your instance](url.md)
 - [Repository permissions](repo/permissions.md)
   - [Row-level security](repo/row_level_security.md)
-  
+- [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
+
 For deployment configuration, please refer to the relevant [installation guide](./install/index.md).
 
 ## [Observability](observability.md)
@@ -48,6 +49,7 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Code intelligence and language servers](../code_intelligence/index.md)
 - [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Search](search.md)
+- [Batch Changes](../batch_changes/index.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
 - [Usage statistics](usage_statistics.md)

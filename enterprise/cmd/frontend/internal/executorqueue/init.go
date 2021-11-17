@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
@@ -29,9 +30,9 @@ func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, ou
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
 	// in the worker.
-	queueOptions := map[string]handler.QueueOptions{
-		"codeintel": codeintelqueue.QueueOptions(db, accessToken, observationContext),
-		"batches":   batches.QueueOptions(db, accessToken, observationContext),
+	queueOptions := []handler.QueueOptions{
+		codeintelqueue.QueueOptions(db, accessToken, observationContext),
+		batches.QueueOptions(db, accessToken, observationContext),
 	}
 
 	handler, err := codeintel.NewCodeIntelUploadHandler(ctx, conf, db, true, services)
@@ -39,7 +40,7 @@ func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, ou
 		return err
 	}
 
-	queueHandler, err := newExecutorQueueHandler(queueOptions, accessToken, handler)
+	queueHandler, err := newExecutorQueueHandler(database.NewDB(db).Executors(), queueOptions, accessToken, handler)
 	if err != nil {
 		return err
 	}

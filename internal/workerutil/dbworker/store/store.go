@@ -641,6 +641,19 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 		return entryID, err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, id)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", id,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", id,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
 		return entryID, ErrExecutionLogEntryNotUpdated
 	}
 	return entryID, nil
@@ -682,8 +695,23 @@ func (s *store) UpdateExecutionLogEntry(ctx context.Context, recordID, entryID i
 		return err
 	}
 	if !ok {
+		debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
+		if debugErr != nil {
+			log15.Error("failed to fetch debug information for job",
+				"recordID", recordID,
+				"err", debugErr,
+			)
+		}
+		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+			"recordID", recordID,
+			"debug", debug,
+			"options.workerHostname", options.WorkerHostname,
+			"options.state", options.State,
+		)
+
 		return ErrExecutionLogEntryNotUpdated
 	}
+
 	return nil
 }
 
@@ -908,6 +936,32 @@ func (s *store) formatQuery(query string, args ...interface{}) *sqlf.Query {
 
 func (s *store) now() time.Time {
 	return s.options.clock.Now().UTC()
+}
+
+const fetchDebugInformationForJob = `
+-- source: internal/workerutil/store.go:UpdateExecutionLogEntry
+SELECT
+	row_to_json(%s)
+FROM
+	%s
+WHERE
+	{id} = %s
+`
+
+func (s *store) fetchDebugInformationForJob(ctx context.Context, recordID int) (debug string, err error) {
+	debug, ok, err := basestore.ScanFirstNullString(s.Query(ctx, s.formatQuery(
+		fetchDebugInformationForJob,
+		quote(s.options.TableName),
+		quote(s.options.TableName),
+		recordID,
+	)))
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.Newf("fetching debug information for record %d didn't return rows")
+	}
+	return debug, nil
 }
 
 // quote wraps the given string in a *sqlf.Query so that it is not passed to the database

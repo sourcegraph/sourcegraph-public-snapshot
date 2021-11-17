@@ -10,13 +10,13 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { CustomInsightDashboard } from '../../../../../core/types'
 
 import styles from './DeleteDashobardModal.module.scss'
 import { useDeleteDashboardHandler } from './hooks/use-delete-dashboard-handler'
 
 export interface DeleteDashboardModalProps {
-    dashboard: SettingsBasedInsightDashboard
+    dashboard: CustomInsightDashboard
     onClose: () => void
 }
 

@@ -1,10 +1,10 @@
 import { useMemo } from 'react'
 
 import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../schema/settings.schema'
-import { InsightDashboard, InsightsDashboardType } from '../../core/types'
+import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../core/types'
 import { isSubjectInsightSupported } from '../../core/types/subjects'
 
 import { getInsightIdsFromSettings, getSubjectDashboards } from './utils'
@@ -14,7 +14,9 @@ import { getInsightIdsFromSettings, getSubjectDashboards } from './utils'
  */
 export const ALL_INSIGHTS_DASHBOARD: InsightDashboard = {
     id: 'all',
-    type: InsightsDashboardType.All,
+    type: InsightsDashboardType.Virtual,
+    scope: InsightsDashboardScope.Personal,
+    title: 'All Insights',
     insightIds: [],
 }
 

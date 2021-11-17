@@ -39,6 +39,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
+    batchChangesWebhookLogsEnabled: false,
     enableCodeMonitoring: false,
     telemetryService: {} as any,
     isExtensionAlertAnimating: false,

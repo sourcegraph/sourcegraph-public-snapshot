@@ -238,11 +238,48 @@ export const excludeRepo = (spec: string, repo: string, branch: string): YAMLMan
     return removeRepoResult
 }
 
-// TODO: Parse YAML and actually verify presence of on: key instead
 /**
- * Simply checks for the presence of an "on: " string within the batch spec YAML. Does not
- * check validity of the spec.
+ * Checks for a valid "on: " sequence within the provided YAML AST parsed from the input
+ * batch spec.
+ *
+ * @param ast the `YAMLMap` node parsed from the input batch spec
+ */
+const hasOnStatement = (ast: YAMLMap): boolean => {
+    // Find the `YAMLMapping` node with the key "on"
+    const onMapping = find(ast.mappings, mapping => mapping.key.value === 'on')
+    // Take the sequence of values for the "on" key
+    const onSequence = onMapping?.value
+
+    return Boolean(onSequence && isYAMLSequence(onSequence) && onSequence.items.length > 0)
+}
+
+/**
+ * Checks for a valid "importChangesets: " sequence within the provided YAML AST parsed
+ * from the input batch spec.
+ *
+ * @param ast the `YAMLMap` node parsed from the input batch spec
+ */
+const hasImportChangesetsStatement = (ast: YAMLMap): boolean => {
+    // Find the `YAMLMapping` node with the key "importing changesets"
+    const importMapping = find(ast.mappings, mapping => mapping.key.value === 'importChangesets')
+    // Take the sequence of values for the "importChangesets" key
+    const importSequence = importMapping?.value
+
+    return Boolean(importSequence && isYAMLSequence(importSequence) && importSequence.items.length > 0)
+}
+
+/**
+ * Checks for a valid "on" or "importChangesets: " sequence within the provided raw batch
+ * spec YAML string.
  *
  * @param spec the raw batch spec YAML string
  */
-export const hasOnStatement = (spec: string): boolean => !!spec.match(/^on:\n\s*- \S+/m)
+export const hasOnOrImportChangesetsStatement = (spec: string): boolean => {
+    const ast = load(spec)
+
+    if (!isYAMLMap(ast) || ast.errors.length > 0) {
+        return false
+    }
+
+    return hasOnStatement(ast) || hasImportChangesetsStatement(ast)
+}

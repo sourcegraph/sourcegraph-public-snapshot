@@ -1,13 +1,22 @@
-import { InsightsDashboardType, RealInsightDashboard } from '../../../../../../core/types'
+import {
+    InsightDashboard,
+    isGlobalDashboard,
+    isPersonalDashboard,
+    isVirtualDashboard,
+    RealInsightDashboard,
+} from '../../../../../../core/types'
+import { isBuiltInInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
  * Get formatted dashboard title for the dashboard select option.
  */
-export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
-    const { builtIn } = dashboard
+export const getDashboardTitle = (dashboard: InsightDashboard): string => {
+    if (isVirtualDashboard(dashboard)) {
+        return dashboard.title
+    }
 
-    if (builtIn) {
-        if (dashboard.type === InsightsDashboardType.Global) {
+    if (isBuiltInInsightDashboard(dashboard)) {
+        if (isGlobalDashboard(dashboard)) {
             return 'Global Insights'
         }
 
@@ -21,15 +30,13 @@ export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
  * Get formatted dashboard owner name. Used for list option badge element.
  */
 export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string => {
-    const { type } = dashboard
-
-    if (type === InsightsDashboardType.Personal || dashboard.grants?.users?.length) {
+    if (isPersonalDashboard(dashboard)) {
         return 'Private'
     }
 
-    if (type === InsightsDashboardType.Global || dashboard.grants?.global) {
+    if (isGlobalDashboard(dashboard)) {
         return 'Global'
     }
 
-    return dashboard.owner?.name || dashboard.grants?.organizations?.[0] || 'Unknown'
+    return dashboard.owner?.name ?? dashboard.grants?.organizations?.[0] ?? 'Unknown'
 }

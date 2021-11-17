@@ -12,6 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { EditUserProfileForm } from './EditUserProfileForm'
+import styles from './UserSettingsProfilePage.module.scss'
 
 export const EditUserProfilePageGQLFragment = gql`
     fragment EditUserProfilePage on User {
@@ -32,7 +33,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, 
     useEffect(() => eventLogger.logViewEvent('UserProfile'), [])
 
     return (
-        <div className="user-settings-profile-page">
+        <div>
             <PageTitle title="Profile" />
             <PageHeader
                 path={[{ text: 'Profile' }]}
@@ -49,7 +50,7 @@ export const UserSettingsProfilePage: React.FunctionComponent<Props> = ({ user, 
                         started using Sourcegraph <Timestamp date={user.createdAt} />.
                     </>
                 }
-                className="user-settings-profile-page__heading"
+                className={styles.heading}
             />
             {props.activation?.completed && percentageDone(props.activation.completed) < 100 && (
                 <Container className="mb-3">

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -42,7 +43,7 @@ type Resolver interface {
 
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
-	PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error)
+	PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
 	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 
@@ -236,8 +237,21 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
 }
 
-func (r *resolver) PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error) {
-	return r.dbStore.RepoIDsByGlobPattern(ctx, pattern)
+func (r *resolver) PreviewRepositoryFilter(ctx context.Context, patterns []string, limit, offset int) (_ []int, totalCount int, repositoryMatchLimit *int, _ error) {
+	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
+		repositoryMatchLimit = &val
+
+		if offset+limit > *repositoryMatchLimit {
+			limit = *repositoryMatchLimit - offset
+		}
+	}
+
+	ids, totalCount, err := r.dbStore.RepoIDsByGlobPatterns(ctx, patterns, limit, offset)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+
+	return ids, totalCount, repositoryMatchLimit, nil
 }
 
 func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {

@@ -7,12 +7,12 @@ import {
     Insight,
     InsightDashboard,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
-    InsightType,
+    InsightExecutionType,
     InsightTypePrefix,
     isLangStatsInsight,
     isVirtualDashboard,
 } from '../types'
-import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../types/dashboard/real-dashboard'
 
 import { addInsightToDashboard } from './dashboards'
 
@@ -29,12 +29,12 @@ const getInsightSettingKey = (insight: Insight): string[] => {
     // Search based insight may live in two main places
     switch (insight.type) {
         // Extension based lives on top level of settings file by its id
-        case InsightType.Extension: {
+        case InsightExecutionType.Runtime: {
             return [insight.id]
         }
 
         // Backend based insight lives in insights.allrepos map
-        case InsightType.Backend: {
+        case InsightExecutionType.Backend: {
             return [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insight.id]
         }
     }
@@ -42,7 +42,7 @@ const getInsightSettingKey = (insight: Insight): string[] => {
 
 export const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
     const dashboardSettingKey =
-        !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
+        dashboard && !isVirtualDashboard(dashboard) && isCustomInsightDashboard(dashboard)
             ? dashboard.settingsKey
             : undefined
 
@@ -64,7 +64,7 @@ export const addInsight = (settings: string, insight: Insight, dashboard: Insigh
  */
 export const addInsightToSettings = (settings: string, insight: Insight): string => {
     // remove all synthetic properties from the insight object
-    const { id, visibility, type, ...originalInsight } = insight
+    const { id, visibility, type, viewType, ...originalInsight } = insight
     const insightSettingsKey = getInsightSettingKey(insight)
 
     // Add insight to the user settings

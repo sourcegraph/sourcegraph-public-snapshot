@@ -3,13 +3,14 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../schema/settings.schema'
 import {
-    INSIGHTS_DASHBOARDS_SETTINGS_KEY,
-    InsightsDashboardType,
+    CustomInsightDashboard,
     InsightDashboard,
-    isInsightSettingKey,
-    SettingsBasedInsightDashboard,
     InsightDashboardOwner,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
+    INSIGHTS_DASHBOARDS_SETTINGS_KEY,
+    InsightsDashboardScope,
+    InsightsDashboardType,
+    isInsightSettingKey,
 } from '../../core/types'
 import { isSearchBasedInsightId, SearchBasedExtensionInsightSettings } from '../../core/types/insight/search-insight'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../../core/types/subjects'
@@ -49,14 +50,14 @@ export function getInsightIdsFromSettings(settings: Settings): string[] {
  * all insights from subject settings.
  */
 export function getSubjectDashboards(subject: SupportedInsightSubject, settings: Settings): InsightDashboard[] {
-    const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
+    const { dashboardScope, ...owner } = getDashboardOwnerInfo(subject)
 
     const subjectBuiltInDashboard: InsightDashboard = {
         owner,
         id: owner.id,
-        builtIn: true,
+        type: InsightsDashboardType.BuiltIn,
         title: owner.name,
-        type: dashboardType,
+        scope: dashboardScope,
         insightIds: getInsightIdsFromSettings(settings),
     }
 
@@ -79,12 +80,12 @@ export function getSubjectDashboardByID(
     subject: SettingsSubject,
     settings: Settings,
     dashboardKey: string
-): SettingsBasedInsightDashboard | undefined {
+): CustomInsightDashboard | undefined {
     if (!isSubjectInsightSupported(subject)) {
         return undefined
     }
 
-    const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
+    const { dashboardScope, ...owner } = getDashboardOwnerInfo(subject)
 
     // Select dashboard configuration from the subject settings
     const dashboardSettings = settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY]?.[dashboardKey]
@@ -95,7 +96,8 @@ export function getSubjectDashboardByID(
 
     return {
         owner,
-        type: dashboardType,
+        scope: dashboardScope,
+        type: InsightsDashboardType.Custom,
         settingsKey: dashboardKey,
         ...dashboardSettings,
     }
@@ -105,7 +107,7 @@ interface DashboardOwnerInfo extends InsightDashboardOwner {
     /**
      * Currently we support three types of subject that can have insights dashboard.
      */
-    dashboardType: InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global
+    dashboardScope: InsightsDashboardScope
 }
 
 /**
@@ -119,21 +121,21 @@ export function getDashboardOwnerInfo(subject: SupportedInsightSubject): Dashboa
             return {
                 id: subject.id,
                 name: 'Global',
-                dashboardType: InsightsDashboardType.Global,
+                dashboardScope: InsightsDashboardScope.Global,
             }
         }
         case 'Org':
             return {
                 id: subject.id,
                 name: subject.displayName ?? subject.name,
-                dashboardType: InsightsDashboardType.Organization,
+                dashboardScope: InsightsDashboardScope.Organization,
             }
 
         case 'User':
             return {
                 id: subject.id,
                 name: subject.displayName ?? subject.username,
-                dashboardType: InsightsDashboardType.Personal,
+                dashboardScope: InsightsDashboardScope.Personal,
             }
     }
 }

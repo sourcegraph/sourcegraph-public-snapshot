@@ -13,6 +13,7 @@ import { Container } from '@sourcegraph/wildcard'
 
 import { SiteAdminRepositoryFields, UserRepositoriesResult, Maybe } from '../../../graphql-operations'
 
+import styles from './RepositoriesList.module.scss'
 import { RepositoryNode } from './RepositoryNode'
 
 interface Props {
@@ -93,7 +94,7 @@ export const RepositoriesList: React.FunctionComponent<Props> = ({
                 location={location}
                 emptyElement={NoMatchedRepos}
                 totalCountSummaryComponent={TotalCountSummary}
-                inputClassName="user-settings-repos__filter-input"
+                inputClassName={styles.filterInput}
             />
         </Container>
     )

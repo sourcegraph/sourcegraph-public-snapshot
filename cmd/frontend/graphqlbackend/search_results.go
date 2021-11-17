@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -1607,14 +1608,19 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
+		//
+		// TODO: We should use repos.Resolve here. However, the logic for
+		// UserID is different to repos.Resolve, so we need to work out how
+		// best to address that first.
 		userPrivateRepos, err := r.db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-			UserID:       userID, // Zero valued when not in sourcegraph.com mode
-			OnlyPrivate:  true,
-			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
-			OnlyForks:    args.RepoOptions.OnlyForks,
-			NoForks:      args.RepoOptions.NoForks,
-			OnlyArchived: args.RepoOptions.OnlyArchived,
-			NoArchived:   args.RepoOptions.NoArchived,
+			UserID:         userID, // Zero valued when not in sourcegraph.com mode
+			OnlyPrivate:    true,
+			LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+			OnlyForks:      args.RepoOptions.OnlyForks,
+			NoForks:        args.RepoOptions.NoForks,
+			OnlyArchived:   args.RepoOptions.OnlyArchived,
+			NoArchived:     args.RepoOptions.NoArchived,
+			ExcludePattern: repos.UnionRegExps(args.RepoOptions.MinusRepoFilters),
 		})
 
 		if err != nil {
@@ -1691,7 +1697,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	addCommitSearch := func(diff bool) {
-		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
+		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit), args.RepoOptions)
 		if err != nil {
 			agg.Error(err)
 			return
@@ -1911,42 +1917,43 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 // subRepoPermsFilter returns a callback that is used to drop results in the given SearchEvent
 // that the actor in the given context does not have read access to.
 func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) error {
-	actor := actor.FromContext(ctx)
+	a := actor.FromContext(ctx)
 
 	return func(event *streaming.SearchEvent) error {
+		// Filter in place, keeping results the given actor is authorized to see.
 		tr, ctx := trace.New(ctx, "subRepoPermsFilter", "")
-		errs := &multierror.Error{}
-		authorized := event.Results[:0]
-		resultsCount := len(event.Results)
-
+		var (
+			errs         = &multierror.Error{}
+			authorized   = 0
+			resultsCount = len(event.Results)
+		)
 		defer func() {
 			tr.SetError(errs.ErrorOrNil())
 			tr.LazyPrintf("actor=(%s) authorized=%d unauthorized=%d",
-				actor.String(), len(authorized), resultsCount-len(authorized))
+				a.String(), authorized, resultsCount-authorized)
 			tr.Finish()
 		}()
-
-		for _, match := range event.Results {
-			key := match.Key()
-			perms, err := authz.ActorPermissions(ctx, srp, actor, authz.RepoContent{
+		for _, result := range event.Results {
+			key := result.Key()
+			perms, err := authz.ActorPermissions(ctx, srp, a, authz.RepoContent{
 				Repo: key.Repo,
 				Path: key.Path,
 			})
 			if err != nil {
 				// Log error but don't propagate upwards to ensure data does not leak
 				log15.Error("subRepoPermsFilter check failed",
-					"actor.UID", actor.UID,
-					"match.Key", key,
+					"actor.UID", a.UID,
+					"result.Key", key,
 					"error", err)
 				errs = multierror.Append(errs, fmt.Errorf("subRepoPermsFilter: failed to check sub-repo permissions"))
 			}
 			if perms.Include(authz.Read) {
-				authorized = append(authorized, match)
+				event.Results[authorized] = result
+				authorized++
 			}
 		}
-
 		// Only keep authorized matches
-		event.Results = authorized
+		event.Results = event.Results[:authorized]
 
 		return errs.ErrorOrNil()
 	}

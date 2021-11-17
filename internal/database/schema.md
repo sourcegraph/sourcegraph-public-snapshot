@@ -461,7 +461,7 @@ Referenced by:
  changed_at        | timestamp with time zone |           | not null | now()
  changed_by        | integer                  |           | not null | 
  enabled           | boolean                  |           | not null | true
- namespace_user_id | integer                  |           |          | 
+ namespace_user_id | integer                  |           | not null | 
  namespace_org_id  | integer                  |           |          | 
 Indexes:
     "cm_monitors_pkey" PRIMARY KEY, btree (id)
@@ -477,6 +477,8 @@ Referenced by:
     TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 
 ```
+
+**namespace_org_id**: DEPRECATED: code monitors cannot be owned by an org
 
 # Table "public.cm_queries"
 ```
@@ -749,6 +751,52 @@ Check constraints:
     "event_logs_check_version_not_empty" CHECK (version <> ''::text)
 
 ```
+
+# Table "public.executor_heartbeats"
+```
+      Column      |           Type           | Collation | Nullable |                     Default                     
+------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
+ hostname         | text                     |           | not null | 
+ queue_name       | text                     |           | not null | 
+ os               | text                     |           | not null | 
+ architecture     | text                     |           | not null | 
+ docker_version   | text                     |           | not null | 
+ executor_version | text                     |           | not null | 
+ git_version      | text                     |           | not null | 
+ ignite_version   | text                     |           | not null | 
+ src_cli_version  | text                     |           | not null | 
+ first_seen_at    | timestamp with time zone |           | not null | now()
+ last_seen_at     | timestamp with time zone |           | not null | now()
+Indexes:
+    "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
+    "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+
+```
+
+Tracks the most recent activity of executors attached to this Sourcegraph instance.
+
+**architecture**: The machine architure running the executor.
+
+**docker_version**: The version of Docker used by the executor.
+
+**executor_version**: The version of the executor.
+
+**first_seen_at**: The first time a heartbeat from the executor was received.
+
+**git_version**: The version of Git used by the executor.
+
+**hostname**: The uniquely identifying name of the executor.
+
+**ignite_version**: The version of Ignite used by the executor.
+
+**last_seen_at**: The last time a heartbeat from the executor was received.
+
+**os**: The operating system running the executor.
+
+**queue_name**: The queue name that the executor polls for work.
+
+**src_cli_version**: The version of src-cli used by the executor.
 
 # Table "public.external_service_repos"
 ```
@@ -1886,7 +1934,7 @@ Indexes:
  updated_at        | timestamp with time zone |           | not null | now()
  notify_owner      | boolean                  |           | not null | 
  notify_slack      | boolean                  |           | not null | 
- user_id           | integer                  |           |          | 
+ user_id           | integer                  |           | not null | 
  org_id            | integer                  |           |          | 
  slack_webhook_url | text                     |           |          | 
 Indexes:
@@ -1898,6 +1946,8 @@ Foreign-key constraints:
     "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
+
+**org_id**: DEPRECATED: saved searches must be owned by a user
 
 # Table "public.schema_migrations"
 ```

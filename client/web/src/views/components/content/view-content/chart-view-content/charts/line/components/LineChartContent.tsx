@@ -311,6 +311,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     key={line.dataKey as string}
                                     // eslint-disable-next-line jsx-a11y/aria-role
                                     role="graphics-datagroup"
+                                    data-line-name={line.name ?? 'unknown'}
                                     aria-label={`Line ${index + 1} of ${series.length}. Name: ${
                                         line.name ?? 'unknown'
                                     }`}

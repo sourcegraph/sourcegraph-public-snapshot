@@ -8,18 +8,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExternalAccountResolver_AccountData(t *testing.T) {
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{SiteAdmin: id == 1}, nil
-	}
-	defer func() {
-		database.Mocks.Users = database.MockUsers{}
-	}()
+	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
 
 	tests := []struct {
 		name        string
@@ -67,6 +68,7 @@ func TestExternalAccountResolver_AccountData(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			r := &externalAccountResolver{
+				db: db,
 				account: extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: test.serviceType,

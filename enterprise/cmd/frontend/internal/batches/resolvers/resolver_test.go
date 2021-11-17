@@ -40,7 +40,7 @@ func TestNullIDResilience(t *testing.T) {
 	db := dbtest.NewDB(t)
 	sr := New(store.New(db, &observation.TestContext, nil))
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), sr, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), sr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestCreateBatchSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +308,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +424,7 @@ func TestApplyBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,7 +554,7 @@ func TestCreateBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -625,7 +625,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -817,7 +817,7 @@ func TestMoveBatchChange(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1060,7 +1060,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1208,7 +1208,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	}
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1291,7 +1291,7 @@ func TestCreateChangesetComments(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1399,7 +1399,7 @@ func TestReenqueueChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1509,7 +1509,7 @@ func TestMergeChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1619,7 +1619,7 @@ func TestCloseChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1745,7 +1745,7 @@ func TestPublishChangesets(t *testing.T) {
 	})
 
 	r := &Resolver{store: cstore}
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), r, nil, nil, nil, nil, nil, nil, nil)
+	s, err := newSchema(database.NewDB(db), r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1809,3 +1809,7 @@ mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
 `
 
 func stringPtr(s string) *string { return &s }
+
+func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
+	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil)
+}

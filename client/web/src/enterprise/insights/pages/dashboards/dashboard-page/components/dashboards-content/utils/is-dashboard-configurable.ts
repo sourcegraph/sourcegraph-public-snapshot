@@ -1,5 +1,5 @@
-import { InsightDashboard, isRealDashboard, SettingsBasedInsightDashboard } from '../../../../../../core/types'
-import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
+import { InsightDashboard, isRealDashboard, CustomInsightDashboard } from '../../../../../../core/types'
+import { isCustomInsightDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
  * Only dashboards that are stored in user/org/global settings can be edited.
@@ -9,6 +9,5 @@ import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/d
  */
 export const isDashboardConfigurable = (
     currentDashboard: InsightDashboard | undefined
-): currentDashboard is SettingsBasedInsightDashboard =>
-    isRealDashboard(currentDashboard) &&
-    (isSettingsBasedInsightsDashboard(currentDashboard) || !!currentDashboard.grants)
+): currentDashboard is CustomInsightDashboard =>
+    !!currentDashboard && isRealDashboard(currentDashboard) && isCustomInsightDashboard(currentDashboard)

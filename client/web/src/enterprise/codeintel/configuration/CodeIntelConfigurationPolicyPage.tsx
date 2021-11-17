@@ -118,6 +118,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
                 {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
             </Container>
+
             <div className="mb-3">
                 <Button
                     type="submit"

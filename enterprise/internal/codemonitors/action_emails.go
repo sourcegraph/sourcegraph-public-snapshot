@@ -94,7 +94,7 @@ func (s *codeMonitorStore) runEmailQuery(ctx context.Context, q *sqlf.Query) (*M
 		return nil, err
 	}
 	defer rows.Close()
-	es, err := ScanEmails(rows)
+	es, err := scanEmails(rows)
 	if err != nil {
 		return nil, err
 	}
@@ -193,28 +193,7 @@ func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListAction
 		return nil, err
 	}
 	defer rows.Close()
-	return ScanEmails(rows)
-}
-
-const readActionEmailFmtStr = `
-SELECT id, monitor, enabled, priority, header, created_by, created_at, changed_by, changed_at
-FROM cm_emails
-WHERE monitor = %s
-AND id > %s
-LIMIT %s;
-`
-
-func (s *codeMonitorStore) ReadActionEmailQuery(ctx context.Context, monitorID int64, args *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
-	return sqlf.Sprintf(
-		readActionEmailFmtStr,
-		monitorID,
-		after,
-		args.First,
-	), nil
+	return scanEmails(rows)
 }
 
 const createActionEmailFmtStr = `
@@ -267,7 +246,7 @@ var EmailsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_emails.changed_at"),
 }
 
-func ScanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
+func scanEmails(rows *sql.Rows) (ms []*MonitorEmail, err error) {
 	for rows.Next() {
 		m := &MonitorEmail{}
 		if err = rows.Scan(

@@ -17,6 +17,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
+import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
@@ -204,12 +205,12 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
-            // eslint-disable-next-line jsx-a11y/anchor-is-valid
-            <a
-                className="btn repo-header__file-action test-go-to-code-host"
+            <RepoHeaderActionAnchor
+                className="btn test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"
+                file={true}
                 rel="noopener noreferrer"
                 id={TARGET_ID}
                 onClick={onClick}
@@ -217,15 +218,14 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
             >
                 <Icon className="icon-inline" />
                 <span>{descriptiveText}</span>
-            </a>
+            </RepoHeaderActionAnchor>
         )
     }
 
     return (
         <>
-            {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
-            <a
-                className="btn btn-icon repo-header__action test-go-to-code-host"
+            <RepoHeaderActionAnchor
+                className="btn btn-icon test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 href={hijackLink ? '' : url}
                 target="_blank"
@@ -237,7 +237,7 @@ export const GoToCodeHostAction: React.FunctionComponent<Props & RepoHeaderConte
                 aria-label={descriptiveText}
             >
                 <Icon className="icon-inline" />
-            </a>
+            </RepoHeaderActionAnchor>
 
             <InstallBrowserExtensionPopover
                 url={url}

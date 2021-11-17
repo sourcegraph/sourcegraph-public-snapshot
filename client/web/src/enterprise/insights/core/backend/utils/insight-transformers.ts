@@ -3,8 +3,8 @@ import { uniq } from 'lodash'
 
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { GetInsightsResult, TimeIntervalStepUnit, TimeIntervalStepInput } from '../../../../../graphql-operations'
-import { Insight, InsightType, SearchBasedInsight } from '../../types'
+import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../graphql-operations'
+import { Insight, InsightExecutionType, InsightType, SearchBasedInsight } from '../../types'
 
 function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     switch (step.unit) {
@@ -26,7 +26,7 @@ function getDurationFromStep(step: TimeIntervalStepInput): Duration {
  * insight data series time step to GQL time interval model.
  */
 export function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepUnit, number] {
-    if (insight.type === InsightType.Backend) {
+    if (insight.type === InsightExecutionType.Backend) {
         return [TimeIntervalStepUnit.WEEK, 2]
     }
 
@@ -65,8 +65,7 @@ export function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepU
  *
  * @param insight - gql insight model
  */
-export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight | undefined => {
-    // TODO [VK] Support lang stats insight
+export const getInsightView = (insight: InsightViewNode): Insight | undefined => {
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
             const isBackendInsight = insight.dataSeriesDefinitions.every(
@@ -88,12 +87,15 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
 
             if (isBackendInsight) {
                 return {
-                    type: InsightType.Backend,
-                    presentationType: 'LineChartInsightViewPresentation',
                     id: insight.id,
-                    visibility: '',
+                    type: InsightExecutionType.Backend,
+                    viewType: InsightType.SearchBased,
                     title: insight.presentation.title,
                     series,
+
+                    // In gql api we don't have this concept as visibility on FE.
+                    // Insights have special system about visibility on BE only.
+                    visibility: '',
                 }
             }
 
@@ -104,25 +106,37 @@ export const getInsightView = (insight: GetInsightsResult['insightViews']['nodes
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
 
             return {
-                type: InsightType.Extension,
-                presentationType: 'LineChartInsightViewPresentation',
                 id: insight.id,
+                type: InsightExecutionType.Runtime,
+                viewType: InsightType.SearchBased,
                 title: insight.presentation.title,
-                visibility: '',
                 step,
                 repositories,
                 series,
+
+                // In gql api we don't have this concept as visibility on FE.
+                // Insights have special system about visibility on BE only.
+                visibility: '',
             }
         }
-        // TODO: Just adding this to remove an error. This will need to cover pie charts instad.
-        default: {
+
+        case 'PieChartInsightViewPresentation': {
+            // At the moment we BE doesn't have special fragment type for Lang Stats repositories.
+            // We use search based definition (first repo of first definition). For lang-stats
+            // it always should be exactly one series with repository scope info.
+            const repository = insight.dataSeriesDefinitions[0].repositoryScope.repositories[0] ?? ''
+
             return {
-                type: InsightType.Backend,
-                presentationType: 'LineChartInsightViewPresentation',
                 id: insight.id,
+                type: InsightExecutionType.Runtime,
+                viewType: InsightType.LangStats,
+                title: insight.presentation.title,
+                otherThreshold: insight.presentation.otherThreshold,
+                repository,
+
+                // In gql api we don't have this concept as visibility on FE.
+                // Insights have special system about visibility on BE only.
                 visibility: '',
-                title: '',
-                series: [],
             }
         }
     }

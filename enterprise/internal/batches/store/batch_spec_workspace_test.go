@@ -192,6 +192,62 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		})
 	})
 
+	t.Run("Count", func(t *testing.T) {
+		t.Run("All", func(t *testing.T) {
+			have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := int64(2); have != want {
+				t.Fatalf("invalid count returned: want=%d have=%d", want, have)
+			}
+		})
+
+		t.Run("ByBatchSpecID", func(t *testing.T) {
+			for _, ws := range workspaces {
+				have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					BatchSpecID: ws.BatchSpecID,
+				})
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if ws.RepoID == deletedRepo.ID {
+					if have != 0 {
+						t.Fatalf("expected zero results, but got: %d", have)
+					}
+					return
+				}
+				if have != 1 {
+					t.Fatalf("wrong number of results. have=%d", have)
+				}
+			}
+		})
+
+		t.Run("ByID", func(t *testing.T) {
+			for _, ws := range workspaces {
+				have, err := s.CountBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					IDs: []int64{ws.ID},
+				})
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if ws.RepoID == deletedRepo.ID {
+					if have != 0 {
+						t.Fatalf("expected zero results, but got: %d", have)
+					}
+					return
+				}
+				if have != 1 {
+					t.Fatalf("wrong number of results. have=%d", have)
+				}
+			}
+		})
+	})
+
 	t.Run("MarkSkippedBatchSpecWorkspaces", func(t *testing.T) {
 		tests := []struct {
 			batchSpec   *btypes.BatchSpec

@@ -4,7 +4,6 @@ package codemonitors
 
 import (
 	"context"
-	"database/sql"
 	"sync"
 	"time"
 
@@ -111,12 +110,6 @@ type MockCodeMonitorStore struct {
 	// NowFunc is an instance of a mock function object controlling the
 	// behavior of the method Now.
 	NowFunc *CodeMonitorStoreNowFunc
-	// QueryFunc is an instance of a mock function object controlling the
-	// behavior of the method Query.
-	QueryFunc *CodeMonitorStoreQueryFunc
-	// ReadActionEmailQueryFunc is an instance of a mock function object
-	// controlling the behavior of the method ReadActionEmailQuery.
-	ReadActionEmailQueryFunc *CodeMonitorStoreReadActionEmailQueryFunc
 	// RecipientsForEmailIDInt64Func is an instance of a mock function
 	// object controlling the behavior of the method
 	// RecipientsForEmailIDInt64.
@@ -317,16 +310,6 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return time.Time{}
 			},
 		},
-		QueryFunc: &CodeMonitorStoreQueryFunc{
-			defaultHook: func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-				return nil, nil
-			},
-		},
-		ReadActionEmailQueryFunc: &CodeMonitorStoreReadActionEmailQueryFunc{
-			defaultHook: func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-				return nil, nil
-			},
-		},
 		RecipientsForEmailIDInt64Func: &CodeMonitorStoreRecipientsForEmailIDInt64Func{
 			defaultHook: func(context.Context, int64, *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error) {
 				return nil, nil
@@ -489,12 +472,6 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		},
 		NowFunc: &CodeMonitorStoreNowFunc{
 			defaultHook: i.Now,
-		},
-		QueryFunc: &CodeMonitorStoreQueryFunc{
-			defaultHook: i.Query,
-		},
-		ReadActionEmailQueryFunc: &CodeMonitorStoreReadActionEmailQueryFunc{
-			defaultHook: i.ReadActionEmailQuery,
 		},
 		RecipientsForEmailIDInt64Func: &CodeMonitorStoreRecipientsForEmailIDInt64Func{
 			defaultHook: i.RecipientsForEmailIDInt64,
@@ -3833,231 +3810,6 @@ func (c CodeMonitorStoreNowFuncCall) Args() []interface{} {
 // invocation.
 func (c CodeMonitorStoreNowFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// CodeMonitorStoreQueryFunc describes the behavior when the Query method of
-// the parent MockCodeMonitorStore instance is invoked.
-type CodeMonitorStoreQueryFunc struct {
-	defaultHook func(context.Context, *sqlf.Query) (*sql.Rows, error)
-	hooks       []func(context.Context, *sqlf.Query) (*sql.Rows, error)
-	history     []CodeMonitorStoreQueryFuncCall
-	mutex       sync.Mutex
-}
-
-// Query delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) Query(v0 context.Context, v1 *sqlf.Query) (*sql.Rows, error) {
-	r0, r1 := m.QueryFunc.nextHook()(v0, v1)
-	m.QueryFunc.appendCall(CodeMonitorStoreQueryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Query method of the
-// parent MockCodeMonitorStore instance is invoked and the hook queue is
-// empty.
-func (f *CodeMonitorStoreQueryFunc) SetDefaultHook(hook func(context.Context, *sqlf.Query) (*sql.Rows, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Query method of the parent MockCodeMonitorStore instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *CodeMonitorStoreQueryFunc) PushHook(hook func(context.Context, *sqlf.Query) (*sql.Rows, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *CodeMonitorStoreQueryFunc) SetDefaultReturn(r0 *sql.Rows, r1 error) {
-	f.SetDefaultHook(func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *CodeMonitorStoreQueryFunc) PushReturn(r0 *sql.Rows, r1 error) {
-	f.PushHook(func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeMonitorStoreQueryFunc) nextHook() func(context.Context, *sqlf.Query) (*sql.Rows, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreQueryFunc) appendCall(r0 CodeMonitorStoreQueryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of CodeMonitorStoreQueryFuncCall objects
-// describing the invocations of this function.
-func (f *CodeMonitorStoreQueryFunc) History() []CodeMonitorStoreQueryFuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreQueryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreQueryFuncCall is an object that describes an invocation
-// of method Query on an instance of MockCodeMonitorStore.
-type CodeMonitorStoreQueryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *sqlf.Query
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *sql.Rows
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreQueryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreQueryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// CodeMonitorStoreReadActionEmailQueryFunc describes the behavior when the
-// ReadActionEmailQuery method of the parent MockCodeMonitorStore instance
-// is invoked.
-type CodeMonitorStoreReadActionEmailQueryFunc struct {
-	defaultHook func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error)
-	hooks       []func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error)
-	history     []CodeMonitorStoreReadActionEmailQueryFuncCall
-	mutex       sync.Mutex
-}
-
-// ReadActionEmailQuery delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) ReadActionEmailQuery(v0 context.Context, v1 int64, v2 *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-	r0, r1 := m.ReadActionEmailQueryFunc.nextHook()(v0, v1, v2)
-	m.ReadActionEmailQueryFunc.appendCall(CodeMonitorStoreReadActionEmailQueryFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ReadActionEmailQuery
-// method of the parent MockCodeMonitorStore instance is invoked and the
-// hook queue is empty.
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ReadActionEmailQuery method of the parent MockCodeMonitorStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) SetDefaultReturn(r0 *sqlf.Query, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) PushReturn(r0 *sqlf.Query, r1 error) {
-	f.PushHook(func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-		return r0, r1
-	})
-}
-
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) nextHook() func(context.Context, int64, *graphqlbackend.ListActionArgs) (*sqlf.Query, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) appendCall(r0 CodeMonitorStoreReadActionEmailQueryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// CodeMonitorStoreReadActionEmailQueryFuncCall objects describing the
-// invocations of this function.
-func (f *CodeMonitorStoreReadActionEmailQueryFunc) History() []CodeMonitorStoreReadActionEmailQueryFuncCall {
-	f.mutex.Lock()
-	history := make([]CodeMonitorStoreReadActionEmailQueryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// CodeMonitorStoreReadActionEmailQueryFuncCall is an object that describes
-// an invocation of method ReadActionEmailQuery on an instance of
-// MockCodeMonitorStore.
-type CodeMonitorStoreReadActionEmailQueryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int64
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *graphqlbackend.ListActionArgs
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *sqlf.Query
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c CodeMonitorStoreReadActionEmailQueryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c CodeMonitorStoreReadActionEmailQueryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreRecipientsForEmailIDInt64Func describes the behavior when
