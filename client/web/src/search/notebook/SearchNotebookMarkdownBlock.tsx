@@ -139,7 +139,7 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
                     ref={blockElement}
                 >
                     <div className={styles.output} data-testid="output">
-                        <Markdown dangerousInnerHTML={output ?? ''} />
+                        <Markdown className={styles.markdown} dangerousInnerHTML={output ?? ''} />
                     </div>
                 </div>
                 {blockMenu}

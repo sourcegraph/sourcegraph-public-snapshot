@@ -1,8 +1,8 @@
 # Using executors to compute Batch Changes server-side
 
-<aside class="experimental"></aside>
+<aside class="experimental">Experimental</aside>
 
-By default, Batch Changes uses a [command line interface] in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
+By default, Batch Changes uses a command line interface in your local environment to [compute diffs](how_src_executes_a_batch_spec.md) and create changesets. This can be impractical for creating batch changes affecting hundreds or thousands of repositories, with large numbers of workspaces, or if the batch change steps require CPU, memory, or disk resources that are unavailable locally.
 
 Instead of computing Batch Changes locally using `src-cli`, it's possible to offload this task to [executors](../../admin/deploy_executors.md). This feature is [experimental](../../admin/beta_and_experimental_features.md#experimental-features). Executors are also required to enable Code Intelligence [auto-indexing](../../code_intelligence/explanations/auto_indexing.md).
 
@@ -28,10 +28,6 @@ This feature is experimental. In particular, it comes with the following limitat
 Server-side Batch Changes has been tested to run a simple 20k changeset batch change. Actual performance and setup requirements depend on the complexity of the batch change.
 
 Feedback on server side Batch Changes is very welcome, feel free to open an [issue](https://github.com/sourcegraph/sourcegraph/issues), reach out through your usual support channel, or send a [direct message](https://twitter.com/MaloMarrec).
-
-## How to enable computing Batch Changes server-side
-
-1. TODO
 
 ## FAQ
 
