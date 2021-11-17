@@ -293,7 +293,14 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := database.OrgMembers(r.db).Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
-	r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
+
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userID}})
+	if err != nil {
+		log15.Warn("schemaResolver.RemoveUserFromOrganization.SchedulePermsSync",
+			"userID", userID,
+			"error", err,
+		)
+	}
 	return nil, nil
 }
 
@@ -323,8 +330,15 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	if _, err := database.OrgMembers(r.db).Create(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
+
 	// Schedule permission sync for newly added user
-	r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
+	err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}})
+	if err != nil {
+		log15.Warn("schemaResolver.AddUserToOrganization.SchedulePermsSync",
+			"userID", userToInvite.ID,
+			"error", err,
+		)
+	}
 	return &EmptyResponse{}, nil
 }
 

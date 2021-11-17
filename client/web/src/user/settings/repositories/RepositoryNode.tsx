@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
@@ -11,6 +12,9 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
+
+import { RepositoryNodeContainer } from './components'
+import styles from './RepositoryNode.module.scss'
 
 interface RepositoryNodeProps {
     name: string
@@ -55,7 +59,7 @@ const StatusIcon: React.FunctionComponent<StatusIconProps> = ({ mirrorInfo }) =>
     }
     return (
         <small className="mr-2">
-            <TickIcon className="icon-inline user-settings-repos__check" />
+            <TickIcon className={classNames('icon-inline', styles.check)} />
         </small>
     )
 }
@@ -69,19 +73,19 @@ const CodeHostIcon: React.FunctionComponent<CodeHostIconProps> = ({ hostType }) 
         case ExternalServiceKind.GITHUB:
             return (
                 <small className="mr-2">
-                    <GithubIcon className="icon-inline user-settings-repos__github" />
+                    <GithubIcon className={classNames('icon-inline', styles.github)} />
                 </small>
             )
         case ExternalServiceKind.GITLAB:
             return (
                 <small className="mr-2">
-                    <GitlabIcon className="icon-inline user-settings-repos__gitlab" />
+                    <GitlabIcon className={classNames('icon-inline', styles.gitlab)} />
                 </small>
             )
         case ExternalServiceKind.BITBUCKETCLOUD:
             return (
                 <small className="mr-2">
-                    <BitbucketIcon className="icon-inline user-settings-repos__bitbucket" />
+                    <BitbucketIcon className="icon-inline" />
                 </small>
             )
         default:
@@ -113,10 +117,10 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
     )
 
     return (
-        <tr className="user-settings-repos__repositorynode">
+        <RepositoryNodeContainer as="tr">
             <td className="border-color">
                 <a
-                    className="w-100 d-flex justify-content-between align-items-center user-settings-repos__link"
+                    className={classNames('w-100 d-flex justify-content-between align-items-center', styles.link)}
                     href={url}
                     onClick={handleOnClick}
                 >
@@ -132,7 +136,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                     </div>
                 </a>
             </td>
-        </tr>
+        </RepositoryNodeContainer>
     )
 }
 
@@ -167,9 +171,10 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
     )
     return (
         <tr className="cursor-pointer" key={name}>
-            <td
+            <RepositoryNodeContainer
+                as="td"
                 role="gridcell"
-                className="p-2 w-100 d-flex justify-content-between user-settings-repos__repositorynode"
+                className="p-2 w-100 d-flex justify-content-between"
                 onClick={onClick}
             >
                 <div className="d-flex align-items-center">
@@ -191,7 +196,7 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                     />
                 </div>
                 <div>{isPrivate && <div className="badge bg-color-2 text-muted">Private</div>}</div>
-            </td>
+            </RepositoryNodeContainer>
         </tr>
     )
 }

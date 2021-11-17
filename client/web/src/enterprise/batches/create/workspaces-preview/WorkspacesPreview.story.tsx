@@ -33,45 +33,6 @@ add('initial', () => (
     </WebStory>
 ))
 
-add('first preview, loading', () => {
-    const mocks = new WildcardMockLink([
-        {
-            request: {
-                query: getDocumentNode(WORKSPACE_RESOLUTION_STATUS),
-                variables: MATCH_ANY_PARAMETERS,
-            },
-            result: {
-                data: mockWorkspaceResolutionStatus(
-                    select(
-                        'Status',
-                        [BatchSpecWorkspaceResolutionState.QUEUED, BatchSpecWorkspaceResolutionState.PROCESSING],
-                        BatchSpecWorkspaceResolutionState.QUEUED
-                    )
-                ),
-            },
-            nMatches: Number.POSITIVE_INFINITY,
-        },
-    ])
-
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={mocks}>
-                    <WorkspacesPreview
-                        {...props}
-                        batchSpecID="fakelol"
-                        currentPreviewRequestTime="1234"
-                        previewDisabled={false}
-                        preview={noop}
-                        batchSpecStale={false}
-                        excludeRepo={noop}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
-})
-
 add('first preview, error', () => {
     const mocks = new WildcardMockLink([
         {

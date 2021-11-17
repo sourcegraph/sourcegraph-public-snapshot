@@ -82,10 +82,17 @@ func NewConfig(now time.Time) Config {
 	// special tag adjustments based on run type
 	switch {
 	case runType.Is(TaggedRelease):
+		// This tag is used for publishing versioned releases.
+		//
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		tag = strings.TrimPrefix(tag, "v")
-	default:
+	case runType.Is(MainBranch):
+		// This tag is used for deploying continuously. Only ever generate this on the
+		// main branch.
 		tag = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
+	default:
+		// Encode branch inside build tag by default.
+		tag = fmt.Sprintf("%s_%05d_%s_%.7s", branch, buildNumber, now.Format("2006-01-02"), commit)
 	}
 	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
 		// Add additional patch suffix

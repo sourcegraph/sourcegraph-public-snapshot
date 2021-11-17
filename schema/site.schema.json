@@ -393,7 +393,21 @@
       "default": false
     },
     "codeIntelAutoIndexing.enabled": {
-      "description": "Enables/disables the code intel auto-indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
+      "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
+      "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
+      "type": "integer",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": -1
+    },
+    "codeIntelAutoIndexing.allowGlobalPolicies": {
+      "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
