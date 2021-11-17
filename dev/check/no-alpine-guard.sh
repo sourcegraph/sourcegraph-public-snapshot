@@ -11,8 +11,6 @@ path_filter() {
   echo "${withPath# -o }"
 }
 
-./dev/ci/annotate.sh
-
 set +e
 ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' \
   ':(exclude)doc/admin/updates/docker_compose.md' \

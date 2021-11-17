@@ -6,8 +6,6 @@ echo "--- docsite check (lint Markdown files in doc/)"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-./dev/ci/annotate.sh
-
 # Check broken links, etc., in Markdown files in doc/.
 
 echo

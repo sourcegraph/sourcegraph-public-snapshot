@@ -5,8 +5,6 @@ echo "--- check yarn.lock for duplicates"
 
 # Prevent duplicates in yarn.lock/node_modules that lead to errors and bloated bundle sizes
 
-./dev/ci/annotate.sh
-
 # mutex is necessary since CI runs various yarn installs in parallel
 yarn --mutex network --frozen-lockfile --ignore-scripts
 

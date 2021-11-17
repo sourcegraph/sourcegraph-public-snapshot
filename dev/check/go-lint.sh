@@ -7,8 +7,6 @@ trap "echo ^^^ +++" ERR
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-./dev/ci/annotate.sh
-
 export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
 export GO111MODULE=on
