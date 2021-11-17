@@ -6,7 +6,7 @@
 
 Executors are an experimental service that can run resource-intensive tasks on behalf of the Sourcegraph instance, such as:
 - automatically indexing a repository for precise code intelligence
-- [computing batch changes](../batch-changes/explanations/server-side.md)
+- [computing batch changes](../batch_changes/explanations/server_side.md)
 
 ## Installation
 
