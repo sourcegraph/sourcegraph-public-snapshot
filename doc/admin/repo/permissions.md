@@ -39,7 +39,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md) and inclu
 }
 ```
 
-A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
+A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) and both read and write access to all relevant repositories is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
 
 > NOTE: Both read and write access to the associated repos for permissions syncing are strongly suggested due to GitHub's token scope requirements. Without write permissions, sync will rely only on [user-centric sync](#background-permissions-syncing) and continue working as expected, though Sourcegraph may have out-of-date permissions more frequently.
 
@@ -100,7 +100,8 @@ In the corresponding [authorization provider](../auth/index.md#github) in [site 
 }
 ```
 
-A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) read repository, organization, and team permissions and memberships in order to cache them across syncs.
+A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) and both read and write access to all relevant repositories and organizations is required to fetch repository and team permissions and team memberships is required and cache them across syncs.
+Read-only access will *not* work with cached permissions sync, but will work with [regular GitHub permissions sync](#github) (with [some drawbacks](#github)).
 
 When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
