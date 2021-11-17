@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
@@ -24,6 +25,8 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { Scalars, SymbolNodeFields, SymbolsResult, SymbolsVariables } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
+import styles from './RepoRevisionSidebarSymbols.module.scss'
+
 function symbolIsActive(symbolLocation: string, currentLocation: H.Location): boolean {
     const current = parseBrowserRepoURL(H.createPath(currentLocation))
     const symbol = parseBrowserRepoURL(symbolLocation)
@@ -46,17 +49,17 @@ interface SymbolNodeProps {
 const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
     const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
     return (
-        <li className="repo-revision-sidebar-symbols-node" data-tooltip={node.location.resource.path}>
+        <li className={styles.repoRevisionSidebarSymbolsNode} data-tooltip={node.location.resource.path}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-revision-sidebar-symbols-node__link test-symbol-link"
-                activeClassName="repo-revision-sidebar-symbols-node__link--active"
+                className={classNames('test-symbol-link', styles.link)}
+                activeClassName={styles.linkActive}
             >
                 <SymbolIcon kind={node.kind} className="icon-inline mr-1 test-symbol-icon" />
-                <span className="repo-revision-sidebar-symbols-node__name test-symbol-name">{node.name}</span>
+                <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
                 {node.containerName && (
-                    <span className="repo-revision-sidebar-symbols-node__container-name">
+                    <span className={styles.containerName}>
                         <small>{node.containerName}</small>
                     </span>
                 )}
@@ -178,15 +181,15 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
     )
 
     return (
-        <ConnectionContainer className="repo-revision-sidebar-symbols h-100" compact={true}>
+        <ConnectionContainer className={classNames('h-100', styles.repoRevisionSidebarSymbols)} compact={true}>
             <ConnectionForm
                 inputValue={searchValue}
                 onInputChange={event => setSearchValue(event.target.value)}
                 inputPlaceholder="Search symbols..."
                 compact={true}
-                formClassName="repo-revision-sidebar-symbols__form"
+                formClassName={styles.form}
             />
-            <SummaryContainer compact={true} className="repo-revision-sidebar-symbols__summary-container">
+            <SummaryContainer compact={true} className={styles.summaryContainer}>
                 {query && summary}
             </SummaryContainer>
             {error && <ConnectionError errors={[error.message]} compact={true} />}
@@ -200,7 +203,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             )}
             {loading && <ConnectionLoading compact={true} />}
             {!loading && connection && (
-                <SummaryContainer compact={true} className="repo-revision-sidebar-symbols__summary-container">
+                <SummaryContainer compact={true} className={styles.summaryContainer}>
                     {!query && summary}
                     {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
                 </SummaryContainer>

@@ -880,11 +880,11 @@ describe('e2e test suite', () => {
                 )
                 await driver.page.waitForSelector('.test-tree-page-no-recent-commits')
                 await driver.page.click('.test-tree-page-show-all-commits')
-                await driver.page.waitForSelector('.git-commit-node__message', { visible: true })
+                await driver.page.waitForSelector('[data-testid="git-commit-node-message"]', { visible: true })
                 await retry(async () =>
                     expect(
                         await driver.page.evaluate(
-                            () => document.querySelectorAll('.git-commit-node__message')[3].textContent
+                            () => document.querySelectorAll('[data-testid="git-commit-node-message"]')[3].textContent
                         )
                     ).toContain('Add support for new/removed binary files.')
                 )
@@ -898,7 +898,7 @@ describe('e2e test suite', () => {
                 await retry(async () =>
                     expect(
                         await driver.page.evaluate(
-                            () => document.querySelectorAll('.git-commit-node__oid')[3].textContent
+                            () => document.querySelectorAll('[data-testid="git-commit-node-oid"]')[3].textContent
                         )
                     ).toEqual('2083912')
                 )
@@ -955,7 +955,7 @@ describe('e2e test suite', () => {
                 const popoverSelector = '[data-testid="revisions-popover"] [data-tab-content="tags"]'
                 await driver.page.waitForSelector(popoverSelector, { visible: true })
                 await clickAnchorElement(popoverSelector)
-                const gitReferenceNodeSelector = 'a.git-ref-node[href*="0.5.0"]'
+                const gitReferenceNodeSelector = 'a[data-testid="git-ref-node"][href*="0.5.0"]'
                 await driver.page.waitForSelector(gitReferenceNodeSelector, { visible: true })
                 await clickAnchorElement(gitReferenceNodeSelector)
                 await driver.assertWindowLocation('/github.com/sourcegraph/go-diff@v0.5.0/-/blob/diff/diff.go')

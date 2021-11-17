@@ -8,11 +8,11 @@
 
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
-
     border-left: none;
     border-right: none;
     border-top: none;
     border-bottom: 1px solid var(--git-ref-divider-color);
+
     &:first-of-type {
         border-top: 1px solid var(--git-ref-divider-color);
     }
