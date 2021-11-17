@@ -79,10 +79,12 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
         if (seriesValue[index]) {
             const newSeriesID = newEditSeries[index].id
 
-            setSeriesBeforeEdit({
-                ...seriesBeforeEdit,
-                [newSeriesID]: seriesValue[index],
-            })
+            if (newSeriesID) {
+                setSeriesBeforeEdit({
+                    ...seriesBeforeEdit,
+                    [newSeriesID]: seriesValue[index],
+                })
+            }
         }
 
         series.meta.setState(state => ({ ...state, value: newEditSeries }))
@@ -91,7 +93,8 @@ export function useEditableSeries(props: UseEditableSeriesProps): UseEditableSer
     const handleEditSeriesCancel = (index: number): void => {
         series.meta.setState(state => {
             const series = [...state.value]
-            const seriesValueBeforeEdit = seriesBeforeEdit[series[index].id]
+            const seriesId = series[index].id
+            const seriesValueBeforeEdit = seriesId && seriesBeforeEdit[seriesId]
 
             // If we have series by this index that means user activated
             // cancellation of edit mode of series that already exists

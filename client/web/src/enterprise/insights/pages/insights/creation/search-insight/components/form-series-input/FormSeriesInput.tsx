@@ -15,7 +15,7 @@ const requiredNameField = createRequiredValidator('Name is a required field for 
 const validQuery = createRequiredValidator('Query is a required field for data series.')
 
 interface FormSeriesInputProps {
-    id: string
+    id: string | null
 
     /** Series index. */
     index: number
