@@ -21,8 +21,7 @@ type Monitor struct {
 	ChangedAt       time.Time
 	Description     string
 	Enabled         bool
-	NamespaceUserID *int32
-	NamespaceOrgID  *int32
+	NamespaceUserID int32
 }
 
 var monitorColumns = []*sqlf.Query{
@@ -34,7 +33,6 @@ var monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.description"),
 	sqlf.Sprintf("cm_monitors.enabled"),
 	sqlf.Sprintf("cm_monitors.namespace_user_id"),
-	sqlf.Sprintf("cm_monitors.namespace_org_id"),
 }
 
 func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (m *Monitor, err error) {
@@ -87,7 +85,7 @@ func (s *codeMonitorStore) Monitors(ctx context.Context, userID int32, args *gra
 }
 
 const monitorByIDFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id
 FROM cm_monitors
 WHERE id = %s
 `
@@ -108,7 +106,7 @@ func (s *codeMonitorStore) TotalCountMonitors(ctx context.Context, userID int32)
 }
 
 const monitorsFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id
 FROM cm_monitors
 WHERE namespace_user_id = %s
 AND id > %s
@@ -159,8 +157,8 @@ func (s *codeMonitorStore) toggleCodeMonitorQuery(ctx context.Context, args *gra
 
 const insertCodeMonitorFmtStr = `
 INSERT INTO cm_monitors
-(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id)
+VALUES (%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
@@ -182,7 +180,6 @@ func (s *codeMonitorStore) createCodeMonitorQuery(ctx context.Context, args *gra
 		args.Description,
 		args.Enabled,
 		nilOrInt32(userID),
-		nilOrInt32(orgID),
 		sqlf.Join(monitorColumns, ", "),
 	), nil
 }
@@ -192,7 +189,6 @@ UPDATE cm_monitors
 SET description = %s,
 	enabled	= %s,
 	namespace_user_id = %s,
-	namespace_org_id = %s,
 	changed_by = %s,
 	changed_at = %s
 WHERE id = %s
@@ -218,7 +214,6 @@ func (s *codeMonitorStore) updateCodeMonitorQuery(ctx context.Context, args *gra
 		args.Monitor.Update.Description,
 		args.Monitor.Update.Enabled,
 		nilOrInt32(userID),
-		nilOrInt32(orgID),
 		a.UID,
 		now,
 		monitorID,
@@ -254,7 +249,6 @@ func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
 			&m.Description,
 			&m.Enabled,
 			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
 		); err != nil {
 			return nil, err
 		}
