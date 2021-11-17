@@ -311,22 +311,22 @@ func replaceIfEmpty(firstChoice *string, replacement string) string {
 }
 
 func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) (*types.Dashboard, error) {
-	created, _, err := m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	tx, err := m.dashboardStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	created, _, err := m.createDashboard(ctx, tx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
 	if err != nil {
 		return nil, errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
 	return created, nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, _ []string, err error) {
+func (m *migrator) createDashboard(ctx context.Context, tx *store.DBDashboardStore, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, _ []string, err error) {
 	var mapped []string
 	var failed []string
-
-	tx, err := m.dashboardStore.Transact(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() { err = tx.Done(err) }()
 
 	for _, reference := range insightReferences {
 		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
@@ -415,6 +415,14 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
+	exists, err := tx.DashboardExists(ctx, from)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
 	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
 
 	mc := migrationContext{}
@@ -437,7 +445,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		}
 	}
 
-	_, _, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
+	_, _, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, mc)
 	if err != nil {
 		return err
 	}
