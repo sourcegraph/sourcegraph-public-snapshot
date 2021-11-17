@@ -13,15 +13,14 @@ flock 100 || exit 1
 
 if [ ! -f "$FILE" ]; then
   touch $FILE
-  buildkite-agent annotate --context "$BUILDKITE_JOB_ID" --append "$BUILDKITE_LABEL\n"
+  buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append "${BUILDKITE_LABEL}
+"
 fi
 
 BODY='```term'
 while IFS= read -r line; do
   BODY="${BODY}\n${line}"
 done
-BODY="${BODY}```"
+buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append "${BODY}"
+buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append '```'
 
-echo $BODY
-
-buildkite-agent annotate --context "$BUILDKITE_JOB_ID" --append "$BODY"
