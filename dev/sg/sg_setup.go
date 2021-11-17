@@ -152,10 +152,17 @@ var macOSInstructionsAfterClone = []instruction{
 		readsBool: `docker`,
 	},
 	{
-		ifBool: "docker",
-		prompt: "Nothing to do yet!",
-		comment: `Nothing to do here, since you already installed Docker for Mac.
-We provide a docker compose file at dev/redis-postgres.yml to make it easy to run Redis and PostgreSQL as Docker containers, with docker compose.`},
+		ifBool:  "docker",
+		prompt:  "Install psql, the postgresql command line client",
+		comment: `While Postgres and Redis will be running within Docker, psql is mandatory to connect.`,
+		command: `brew install libpq`,
+	},
+	{
+		ifBool:  "docker",
+		prompt:  "Add psql to the PATH",
+		comment: `By default, brew does not make psql available when shipped through libpq.`,
+		command: `echo 'export PATH="/opt/homebrew/opt/libpq/bin:$PATH"' >> ~/.zshrc`,
+	},
 	{
 		ifNotBool: "docker",
 		prompt:    `Install PostgreSQL and Redis with the following commands`,
@@ -177,9 +184,9 @@ brew services start redis`,
 	{
 		ifNotBool: "docker",
 		prompt:    `Ensure psql, the PostgreSQL command line client, is available`,
-		comment:   `If the previous command printed "NOT OK", you can run the command below to fix that`,
-		command: `hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
-source ~/.bash_profile`,
+		comment:   `So if the previous command show "NOT OK", you can run the command below to fix that`,
+		command: `hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.zshrc }
+source ~/.zshrc`,
 	},
 	{
 		ifNotBool: "docker",
