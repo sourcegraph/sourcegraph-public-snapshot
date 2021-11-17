@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 )
 
 type DBDashboardStore struct {
@@ -346,7 +347,7 @@ WHERE dashboard_id = %s
 `
 
 const getViewFromDashboardByViewId = `
--- source: enterprise/internal/insights/store/insight_store.go:GetViewFromDashboardByViewId
+-- source: enterprise/internal/insights/store/dashboard_store.go:GetViewFromDashboardByViewId
 SELECT COUNT(*)
 FROM dashboard_insight_view div
 	INNER JOIN insight_view iv ON div.insight_view_id = iv.id
@@ -354,12 +355,12 @@ WHERE div.dashboard_id = %s AND iv.unique_id = %s
 `
 
 const getDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
+-- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboardGrants
 SELECT * FROM dashboard_grants where dashboard_id = %s
 `
 
 const getDashboardGrantsByPermissionsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
+-- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboardGrants
 SELECT count(*)
 FROM dashboard
 WHERE id = ANY (%s)
@@ -367,7 +368,7 @@ AND id NOT IN (%s);
 `
 
 const addDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+-- source: enterprise/internal/insights/store/dashboard_store.go:AddDashboardGrants
 INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
 VALUES %s;
 `
@@ -379,3 +380,29 @@ type DashboardStore interface {
 	DeleteDashboard(ctx context.Context, id int64) error
 	HasDashboardPermission(ctx context.Context, dashboardId []int, userIds []int, orgIds []int) (bool, error)
 }
+
+// This is only used for the oob migration. Can be removed when that is deprecated.
+func (s *DBDashboardStore) DashboardExists(ctx context.Context, dashboard insights.SettingDashboard) (bool, error) {
+	var grantsQuery *sqlf.Query
+	if dashboard.UserID != nil {
+		grantsQuery = sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
+	} else if dashboard.OrgID != nil {
+		grantsQuery = sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
+	} else {
+		grantsQuery = sqlf.Sprintf("dg.global IS TRUE")
+	}
+
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(dashboardExistsSql, dashboard.Title, grantsQuery)))
+	if err != nil {
+		return false, err
+	}
+
+	return count != 0, nil
+}
+
+const dashboardExistsSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:DashboardExists
+SELECT COUNT(*) from dashboard
+JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
+WHERE dashboard.title = %s AND %s;
+`
