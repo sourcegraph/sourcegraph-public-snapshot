@@ -274,7 +274,7 @@ func triggerUpdaterPipeline(c Config) func(*bk.Pipeline) {
 }
 
 // images used by cluster-qa test
-func clusterDockerImages(images []string) string {
+func clusterDockerImages(images []string) string { //nolint
 	var clusterImages []string
 	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
 	for _, image := range images {
@@ -285,7 +285,7 @@ func clusterDockerImages(images []string) string {
 	return strings.Join(clusterImages, "\n")
 }
 
-func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
+func triggerE2EandQA(c Config, commonEnv map[string]string) func(*bk.Pipeline) { //nolint
 	var async bool
 	if c.isMainBranch() {
 		async = true
