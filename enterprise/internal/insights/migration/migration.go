@@ -270,7 +270,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	if totalDashboards != job.MigratedDashboards {
 		err = m.settingsMigrationJobsStore.UpdateTotalDashboards(ctx, job.UserId, job.OrgId, totalDashboards)
 
-		migratedDashboardsCount += m.migrateDashboards(ctx, dashboards)
+		migratedDashboardsCount += m.migrateDashboards(ctx, dashboards, migrationContext)
 
 		err = m.settingsMigrationJobsStore.UpdateMigratedDashboards(ctx, job.UserId, job.OrgId, migratedDashboardsCount)
 		if totalDashboards != migratedDashboardsCount {
@@ -408,7 +408,7 @@ func (c migrationContext) buildUniqueIdCondition(insightId string) string {
 // 	// return nil
 // }
 
-func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard) (err error) {
+func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDashboard, migrationContext migrationContext) (err error) {
 	tx, err := m.dashboardStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -424,28 +424,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	}
 
 	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
-
-	mc := migrationContext{}
-	if from.UserID != nil {
-		orgs, err := m.orgStore.GetByUserID(ctx, *from.UserID)
-		if err != nil {
-			return err
-		}
-		orgIds := make([]int, 0, len(orgs))
-		for _, org := range orgs {
-			orgIds = append(orgIds, int(org.ID))
-		}
-		mc = migrationContext{
-			userId: int(*from.UserID),
-			orgIds: orgIds,
-		}
-	} else if from.OrgID != nil {
-		mc = migrationContext{
-			orgIds: []int{int(*from.OrgID)},
-		}
-	}
-
-	_, _, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, mc)
+	_, _, err = m.createDashboard(ctx, tx, from.Title, from.InsightIds, migrationContext)
 	if err != nil {
 		return err
 	}
