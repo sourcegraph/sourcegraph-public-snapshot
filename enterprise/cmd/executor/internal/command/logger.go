@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-type executionLogEntryStore interface {
+type ExecutionLogEntryStore interface {
 	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) (int, error)
 	UpdateExecutionLogEntry(ctx context.Context, id, entryID int, entry workerutil.ExecutionLogEntry) error
 }
@@ -76,7 +76,7 @@ func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
 // Logger tracks command invocations and stores the command's output and
 // error stream values.
 type Logger struct {
-	store   executionLogEntryStore
+	store   ExecutionLogEntryStore
 	done    chan struct{}
 	handles chan *entryHandle
 
@@ -99,7 +99,7 @@ const logEntryBufsize = 50
 // replace with a non-sensitive value.
 // Each log message is written to the store in a goroutine. The Flush method
 // must be called to ensure all entries are written.
-func NewLogger(store executionLogEntryStore, job executor.Job, recordID int, replacements map[string]string) *Logger {
+func NewLogger(store ExecutionLogEntryStore, job executor.Job, recordID int, replacements map[string]string) *Logger {
 	oldnew := make([]string, 0, len(replacements)*2)
 	for k, v := range replacements {
 		oldnew = append(oldnew, k, v)
@@ -163,9 +163,7 @@ func (l *Logger) writeEntries() {
 			// progressed prior to a timeout.
 			log15.Warn("Failed to upload executor log entry for job", "id", l.recordID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit, "error", err)
 
-			l.errsMu.Lock()
-			l.errs = multierror.Append(l.errs, err)
-			l.errsMu.Unlock()
+			l.appendError(err)
 
 			continue
 		}
@@ -224,9 +222,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 				logMethod = log15.Error
 				// If lastWrite, this MUST complete for the job to be considered successful,
 				// so we want to hard-fail otherwise. We store away the error.
-				l.errsMu.Lock()
-				l.errs = multierror.Append(l.errs, err)
-				l.errsMu.Unlock()
+				l.appendError(err)
 			}
 
 			logMethod(
@@ -242,6 +238,12 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			old = current
 		}
 	}
+}
+
+func (l *Logger) appendError(err error) {
+	l.errsMu.Lock()
+	l.errs = multierror.Append(l.errs, err)
+	l.errsMu.Unlock()
 }
 
 // If old didn't have exit code or duration and current does, update; we're finished.
