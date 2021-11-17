@@ -8,7 +8,8 @@ set -ex
 FILE=.annotate
 LOCKFILE="$FILE.lock"
 
-lockfile "$LOCKFILE"
+exec 100>"$LOCKFILE" || exit 1
+flock 100 || exit 1
 
 if test -f "$FILE"; then
   touch $FILE
@@ -16,5 +17,3 @@ if test -f "$FILE"; then
 fi
 
 buildkite-agent annotate --context "$BUILDKITE_JOB_ID" --append "Annotation! 🚀"
-
-rm -f "$LOCKFILE"
