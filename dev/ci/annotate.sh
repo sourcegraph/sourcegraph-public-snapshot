@@ -18,8 +18,6 @@ fi
 
 BODY=""
 while IFS= read -r line; do
-  BODY="${BODY}\n${line}"
+  BODY=$(printf "%s\n%s" "$BODY" "$line")
 done
 printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
-
-
