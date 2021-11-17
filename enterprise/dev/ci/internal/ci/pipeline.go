@@ -154,7 +154,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
 		// Publish images after everything is done
 		ops.Append(wait,
-			publishFinalDockerImage(c, patchImage, false))
+			publishFinalDockerImage(c, patchImage))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -162,7 +162,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
-			publishFinalDockerImage(c, app, false),
+			publishFinalDockerImage(c, app),
 		})
 
 	case CandidatesNoTest:
@@ -223,7 +223,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
+			ops.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
 		if c.RunType.Is(MainBranch) {
