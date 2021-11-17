@@ -72,7 +72,7 @@ func (d MavenDependency) IsJDK() bool {
 	return d.MavenModule.IsJDK()
 }
 
-func (d MavenDependency) CoursierSyntax() string {
+func (d MavenDependency) PackageManagerSyntax() string {
 	return fmt.Sprintf("%s:%s:%s", d.MavenModule.GroupID, d.MavenModule.ArtifactID, d.Version)
 }
 
@@ -84,7 +84,7 @@ func (d MavenDependency) LsifJavaDependencies() []string {
 	if d.IsJDK() {
 		return []string{}
 	}
-	return []string{d.CoursierSyntax()}
+	return []string{d.PackageManagerSyntax()}
 }
 
 // ParseMavenDependency parses a dependency string in the Coursier format (colon seperated group ID, artifact ID and version)

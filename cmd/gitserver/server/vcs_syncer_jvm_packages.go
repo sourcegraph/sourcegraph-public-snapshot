@@ -135,7 +135,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		}
 		// the gitPushDependencyTag method is reponsible for cleaning up temporary directories.
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency, i == 0); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency.CoursierSyntax())
+			return errors.Wrapf(err, "error pushing dependency %q", dependency.PackageManagerSyntax())
 		}
 	}
 
@@ -291,7 +291,7 @@ func (s *JVMPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource.MavenDependency,
 	workingDirectory, sourceCodeJarPath string, connection *schema.JVMPackagesConnection) error {
 	if err := unzipJarFile(sourceCodeJarPath, workingDirectory); err != nil {
-		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.CoursierSyntax(), sourceCodeJarPath)
+		return errors.Wrapf(err, "failed to unzip jar file for %s to %v", dependency.PackageManagerSyntax(), sourceCodeJarPath)
 	}
 
 	file, err := os.Create(filepath.Join(workingDirectory, "lsif-java.json"))
@@ -325,12 +325,12 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 	}
 
 	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
-	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.CoursierSyntax(), "--date", stableGitCommitDate)
+	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify", "-m", dependency.PackageManagerSyntax(), "--date", stableGitCommitDate)
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.CoursierSyntax(), dependency.GitTagFromVersion())
+	cmd = exec.CommandContext(ctx, "git", "tag", "-m", dependency.PackageManagerSyntax(), dependency.GitTagFromVersion())
 	if _, err := runCommandInDirectory(ctx, cmd, workingDirectory, dependency); err != nil {
 		return err
 	}
