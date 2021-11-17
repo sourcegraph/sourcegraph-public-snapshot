@@ -14,7 +14,9 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableSubRepoPermissions: true,
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
 			},
 		},
 	})
@@ -145,7 +147,9 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableSubRepoPermissions: true,
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
 			},
 		},
 	})
@@ -178,7 +182,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 
 	// Trigger expiry
 	client.since = func(time time.Time) time.Duration {
-		return cacheTTL + 1
+		return defaultCacheTTL + 1
 	}
 
 	_, err = client.Permissions(ctx, 1, content)

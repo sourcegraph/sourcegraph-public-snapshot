@@ -571,8 +571,6 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
-	// EnableSubRepoPermissions description: Enables sub-repo permission checking
-	EnableSubRepoPermissions bool `json:"enableSubRepoPermissions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
@@ -588,7 +586,8 @@ type ExperimentalFeatures struct {
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
-	StructuralSearch string `json:"structuralSearch,omitempty"`
+	StructuralSearch   string              `json:"structuralSearch,omitempty"`
+	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 	// VersionContexts description: DEPRECATED: Use search contexts instead.
@@ -1691,6 +1690,14 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+type SubRepoPermissions struct {
+	// Enabled description: Enables sub-repo permission checking
+	Enabled bool `json:"enabled,omitempty"`
+	// UserCacheSize description: The number of user permissions to cache
+	UserCacheSize int `json:"userCacheSize,omitempty"`
+	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
+	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

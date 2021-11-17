@@ -63,7 +63,7 @@ type SubRepoPermsClient struct {
 }
 
 const defaultCacheSize = 1000
-const cacheTTL = 10 * time.Second
+const defaultCacheTTL = 10 * time.Second
 
 // cachedRules caches the perms rules known for a particular user by repo.
 type cachedRules struct {
@@ -92,6 +92,13 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 	if err != nil {
 		return nil, errors.Wrap(err, "creating LRU cache")
 	}
+
+	conf.Watch(func() {
+		if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize > 0 {
+			cache.Resize(c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize)
+		}
+	})
+
 	return &SubRepoPermsClient{
 		permissionsGetter: permissionsGetter,
 		clock:             time.Now,
@@ -198,7 +205,13 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 	// Fast path for cached rules
 	item, _ := s.cache.Get(userID)
 	cached, ok := item.(cachedRules)
-	if ok && s.since(cached.timestamp) <= cacheTTL {
+
+	ttl := defaultCacheTTL
+	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds > 0 {
+		ttl = time.Duration(c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds) * time.Second
+	}
+
+	if ok && s.since(cached.timestamp) <= ttl {
 		subRepoPermsCacheHit.WithLabelValues("true").Inc()
 		return cached.rules, nil
 	}
@@ -251,8 +264,10 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 }
 
 func (s *SubRepoPermsClient) Enabled() bool {
-	c := conf.Get()
-	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableSubRepoPermissions
+	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil {
+		return c.ExperimentalFeatures.SubRepoPermissions.Enabled
+	}
+	return false
 }
 
 // CurrentUserPermissions returns the level of access the authenticated user within
