@@ -278,7 +278,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 			return false, true, nil
 		}
 	}
-	err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
+	_, err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
 	if err != nil {
 		return false, false, err
 	}
@@ -310,28 +310,28 @@ func replaceIfEmpty(firstChoice *string, replacement string) string {
 	return *firstChoice
 }
 
-func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) error {
-	_, err := m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) (*types.Dashboard, error) {
+	created, _, err := m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
 	if err != nil {
-		return errors.Wrap(err, "CreateSpecialCaseDashboard")
+		return nil, errors.Wrap(err, "CreateSpecialCaseDashboard")
 	}
-	return nil
+	return created, nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
+func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, _ []string, err error) {
 	var mapped []string
 	var failed []string
 
 	tx, err := m.dashboardStore.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	for _, reference := range insightReferences {
 		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		} else if !exists {
 			failed = append(failed, reference)
 		}
@@ -346,19 +346,21 @@ func (m *migrator) createDashboard(ctx context.Context, title string, insightRef
 	} else {
 		grants = append(grants, store.GlobalDashboardGrant())
 	}
-	_, err = tx.CreateDashboard(ctx, store.CreateDashboardArgs{
+	created, err := tx.CreateDashboard(ctx, store.CreateDashboardArgs{
 		Dashboard: types.Dashboard{
 			Title:      title,
 			InsightIDs: mapped,
 			Save:       true,
 		},
 		Grants: grants,
+		UserID: []int{migration.userId},
+		OrgID:  migration.orgIds,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateDashboard")
+		return nil, nil, errors.Wrap(err, "CreateDashboard")
 	}
 
-	return failed, nil
+	return created, failed, nil
 }
 
 // migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
@@ -435,7 +437,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		}
 	}
 
-	_, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
+	_, _, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
 	if err != nil {
 		return err
 	}
