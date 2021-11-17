@@ -218,8 +218,7 @@ The development server startup script as well as the docker compose file provide
 		ifNotBool: "docker",
 		prompt:    `Create a database for the current Unix user`,
 		comment:   `You need a fresh Postgres database and a database user that has full ownership of that database.`,
-		command: `sudo su - _postgres
-createdb`,
+		command:   `createdb`,
 	},
 	{
 		ifNotBool: "docker",
