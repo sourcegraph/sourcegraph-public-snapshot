@@ -63,6 +63,7 @@ jobs:
           # psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
           # createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
           sudo ./dev/add_https_domain_to_hosts.sh
+          brew install nss
           ./dev/caddy.sh trust 
 
       - name: run sg doctor
