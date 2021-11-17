@@ -76,6 +76,13 @@ export function activate(context: vscode.ExtensionContext): void {
                         webviewView: webview,
                     })
 
+                    // TODO open search tab on sidebar focus
+                    // webview.onDidChangeVisibility(() => {
+                    //     if(webview.visible) {
+
+                    //     }
+                    // })
+
                     webview.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
                     })

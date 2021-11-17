@@ -41,6 +41,7 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     selectedSearchContextSpec,
     children,
 }) => {
+    // TODO(TJ): use onNavbarQueryChange for VSCE
     const builtURLQuery = buildSearchURLQuery(
         updateFilter(query, FilterType.type, type as string),
         patternType,
