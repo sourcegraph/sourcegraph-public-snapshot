@@ -1,4 +1,4 @@
-# Security recommendations for access tokens on Sourcegraph Cloud
+# Security recommendations for code host access tokens on Sourcegraph Cloud
 
 Both GitHub and GitLab code host connections for organizations require an access token. There are two types of tokens you can supply:
 
@@ -7,9 +7,9 @@ This is a personal access token generated for a “machine user” that is only 
 - **Personal access token** (not recommended):  
 This gives the code host connection the same level of access to repositories as the account that created the token, including all public and private repositories associated with the account.
 
-We recommend setting up a machine user to configure your organization’s code host connections.
+We recommend setting up a machine user on your code host to configure your organization’s code host connections.
 
-**Using your own personal access token in your organization’s code host connection may reveal your public and private repositories to other members of your organization.** This is because during early access for organizations on Sourcegraph Cloud, all members of your organization have administration access to the organization settings, including which repositories are synced to Sourcegraph Cloud. The list of repositories available to be synced to Sourcegraph Cloud is determined through the access token associated with the code host connection.
+**Using your own personal access token from your code host in your organization’s code host connection may reveal your public and private repositories to other members of your organization.** This is because during early access for organizations on Sourcegraph Cloud, all members of your organization have administration access to the organization settings, including which repositories are synced to Sourcegraph Cloud. The list of repositories available to be synced to Sourcegraph Cloud is determined through the access token associated with the code host connection.
 
 For further instructions and information about personal access tokens and setting up a machine user, please see:
 
