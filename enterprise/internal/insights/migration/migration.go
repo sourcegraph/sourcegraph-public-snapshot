@@ -3,6 +3,12 @@ package migration
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
+
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -35,7 +41,7 @@ func NewMigrator(insightsDB dbutil.DB, postgresDB dbutil.DB) oobmigration.Migrat
 	return &migrator{
 		insightsDB:                 insightsDB,
 		postgresDB:                 postgresDB,
-		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(insightsDB),
+		settingsMigrationJobsStore: store.NewSettingsMigrationJobsStore(postgresDB),
 		settingsStore:              database.Settings(postgresDB),
 		insightStore:               store.NewInsightStore(insightsDB),
 		dashboardStore:             store.NewDashboardStore(insightsDB),
@@ -233,6 +239,81 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// seriously wrong and needs to be looked at? That can also be reset to 0 manually if need be to retry it again later.
 
 	return true, false, nil
+}
+
+func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
+	var mapped []string
+	var failed []string
+
+	tx, err := m.dashboardStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, reference := range insightReferences {
+		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
+		if err != nil {
+			return nil, err
+		} else if !exists {
+			failed = append(failed, reference)
+		}
+		mapped = append(mapped, id)
+	}
+
+	var grants []store.DashboardGrant
+	if migration.userId != 0 {
+		grants = append(grants, store.UserDashboardGrant(migration.userId))
+	} else if len(migration.orgIds) == 1 {
+		grants = append(grants, store.OrgDashboardGrant(migration.orgIds[0]))
+	} else {
+		grants = append(grants, store.GlobalDashboardGrant())
+	}
+	_, err = tx.CreateDashboard(ctx, store.CreateDashboardArgs{
+		Dashboard: types.Dashboard{
+			Title:      title,
+			InsightIDs: mapped,
+			Save:       true,
+		},
+		Grants: grants,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateDashboard")
+	}
+
+	return failed, nil
+}
+
+// migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
+// user ID, as well as any orgs they belong to. If we are migrating an org, we would populate this with just that orgID.
+type migrationContext struct {
+	userId int
+	orgIds []int
+}
+
+func (m *migrator) lookupUniqueId(ctx context.Context, migration migrationContext, insightId string) (string, bool, error) {
+	return basestore.ScanFirstString(m.insightStore.Query(ctx, migration.ToInsightUniqueIdQuery(insightId)))
+}
+
+func (c migrationContext) ToInsightUniqueIdQuery(insightId string) *sqlf.Query {
+	similarClause := sqlf.Sprintf("unique_id similar to %s", c.buildUniqueIdCondition(insightId))
+	globalClause := sqlf.Sprintf("unique_id = %s", insightId)
+
+	q := sqlf.Sprintf("select unique_id from insight_view where %s limit 1", sqlf.Join([]*sqlf.Query{similarClause, globalClause}, "OR"))
+
+	log.Println(q.Query(sqlf.PostgresBindVar), q.Args())
+	return q
+}
+
+func (c migrationContext) buildUniqueIdCondition(insightId string) string {
+	var conds []string
+	for _, orgId := range c.orgIds {
+		conds = append(conds, fmt.Sprintf("org-%d", orgId))
+	}
+	if c.userId != 0 {
+		conds = append(conds, fmt.Sprintf("user-%d", c.userId))
+	}
+	return fmt.Sprintf("%s-%%(%s)%%", insightId, strings.Join(conds, "|"))
 }
 
 // // Something like this? Maybe this doesn't need to be a helper function. We'll see.
