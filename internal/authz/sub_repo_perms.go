@@ -8,8 +8,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,6 +55,25 @@ type SubRepoPermissionsGetter interface {
 // Always use NewSubRepoPermsClient to instantiate an instance.
 type SubRepoPermsClient struct {
 	permissionsGetter SubRepoPermissionsGetter
+	clock             func() time.Time
+	since             func(time.Time) time.Duration
+
+	group *singleflight.Group
+	cache *lru.Cache
+}
+
+const defaultCacheSize = 1000
+const defaultCacheTTL = 10 * time.Second
+
+// cachedRules caches the perms rules known for a particular user by repo.
+type cachedRules struct {
+	rules     map[api.RepoName]compiledRules
+	timestamp time.Time
+}
+
+type compiledRules struct {
+	includes []glob.Glob
+	excludes []glob.Glob
 }
 
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
@@ -66,9 +87,36 @@ type SubRepoPermsClient struct {
 //
 // Note that sub-repo permissions are currently opt-in via the
 // experimentalFeatures.enableSubRepoPermissions option.
-func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) *SubRepoPermsClient {
+func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepoPermsClient, error) {
+	cache, err := lru.New(defaultCacheSize)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating LRU cache")
+	}
+
+	conf.Watch(func() {
+		if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize > 0 {
+			cache.Resize(c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize)
+		}
+	})
+
 	return &SubRepoPermsClient{
 		permissionsGetter: permissionsGetter,
+		clock:             time.Now,
+		since:             time.Since,
+		group:             &singleflight.Group{},
+		cache:             cache,
+	}, nil
+}
+
+// WithGetter returns a new instance that uses the supplied getter. The cache
+// from the original instance is left intact.
+func (s *SubRepoPermsClient) WithGetter(g SubRepoPermissionsGetter) *SubRepoPermsClient {
+	return &SubRepoPermsClient{
+		permissionsGetter: g,
+		clock:             s.clock,
+		since:             s.since,
+		group:             s.group,
+		cache:             s.cache,
 	}
 }
 
@@ -77,6 +125,12 @@ var subRepoPermsPermissionsDuration = promauto.NewHistogramVec(prometheus.Histog
 	Name: "authz_sub_repo_perms_permissions_duration_seconds",
 	Help: "Time spent syncing",
 }, []string{"error"})
+
+// subRepoPermsCacheHit tracks the number of cache hits and misses for sub-repo permissions
+var subRepoPermsCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "authz_sub_repo_perms_permissions_cache_count",
+	Help: "The number of sub-repo perms cache hits or misses",
+}, []string{"hit"})
 
 // Permissions return the current permissions granted to the given user on the
 // given content. If sub-repo permissions are disabled, it is a no-op that return
@@ -112,14 +166,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
-	srp, err := s.permissionsGetter.GetByUser(ctx, userID)
+	repoRules, err := s.getCompiledRules(ctx, userID)
 	if err != nil {
-		err = errors.Wrap(err, "getting permissions")
-		return
+		return None, errors.Wrap(err, "compiling match rules")
 	}
 
-	// Check repo
-	repoRules, ok := srp[content.Repo]
+	rules, ok := repoRules[content.Repo]
 	if !ok {
 		// If we make it this far it implies that we have access at the repo level.
 		// Having any empty set of rules here implies that we can access the whole repo.
@@ -128,37 +180,17 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		return Read, nil
 	}
 
-	// TODO: This will be very slow until we can cache compiled rules
-	includeMatchers := make([]glob.Glob, 0, len(repoRules.PathIncludes))
-	for _, rule := range repoRules.PathIncludes {
-		var g glob.Glob
-		if g, err = glob.Compile(rule, '/'); err != nil {
-			err = errors.Wrap(err, "building include matcher")
-			return
-		}
-		includeMatchers = append(includeMatchers, g)
-	}
-	excludeMatchers := make([]glob.Glob, 0, len(repoRules.PathExcludes))
-	for _, rule := range repoRules.PathExcludes {
-		var g glob.Glob
-		if g, err = glob.Compile(rule, '/'); err != nil {
-			err = errors.Wrap(err, "building exclude matcher")
-			return
-		}
-		excludeMatchers = append(excludeMatchers, g)
-	}
-
 	// Rules are created including the repo name
 	toMatch := path.Join(string(content.Repo), content.Path)
 
 	// The current path needs to either be included or NOT excluded and we'll give
 	// preference to exclusion.
-	for _, rule := range excludeMatchers {
+	for _, rule := range rules.excludes {
 		if rule.Match(toMatch) {
 			return
 		}
 	}
-	for _, rule := range includeMatchers {
+	for _, rule := range rules.includes {
 		if rule.Match(toMatch) {
 			return Read, nil
 		}
@@ -168,9 +200,74 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 	return None, nil
 }
 
+// getCompiledRules fetches rules for the given repo with caching.
+func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32) (map[api.RepoName]compiledRules, error) {
+	// Fast path for cached rules
+	item, _ := s.cache.Get(userID)
+	cached, ok := item.(cachedRules)
+
+	ttl := defaultCacheTTL
+	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds > 0 {
+		ttl = time.Duration(c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds) * time.Second
+	}
+
+	if ok && s.since(cached.timestamp) <= ttl {
+		subRepoPermsCacheHit.WithLabelValues("true").Inc()
+		return cached.rules, nil
+	}
+	subRepoPermsCacheHit.WithLabelValues("false").Inc()
+
+	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
+	// work
+	groupKey := strconv.FormatInt(int64(userID), 10)
+	result, err, _ := s.group.Do(groupKey, func() (interface{}, error) {
+		repoPerms, err := s.permissionsGetter.GetByUser(ctx, userID)
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching rules")
+		}
+		toCache := cachedRules{
+			rules:     make(map[api.RepoName]compiledRules, len(repoPerms)),
+			timestamp: time.Time{},
+		}
+		for repo, perms := range repoPerms {
+			includes := make([]glob.Glob, 0, len(perms.PathIncludes))
+			for _, rule := range perms.PathIncludes {
+				g, err := glob.Compile(rule, '/')
+				if err != nil {
+					return nil, errors.Wrap(err, "building include matcher")
+				}
+				includes = append(includes, g)
+			}
+			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
+			for _, rule := range perms.PathExcludes {
+				g, err := glob.Compile(rule, '/')
+				if err != nil {
+					return nil, errors.Wrap(err, "building exclude matcher")
+				}
+				excludes = append(excludes, g)
+			}
+			toCache.rules[repo] = compiledRules{
+				includes: includes,
+				excludes: excludes,
+			}
+		}
+		toCache.timestamp = s.clock()
+		s.cache.Add(userID, toCache)
+		return toCache.rules, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	compiled := result.(map[api.RepoName]compiledRules)
+	return compiled, nil
+}
+
 func (s *SubRepoPermsClient) Enabled() bool {
-	c := conf.Get()
-	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableSubRepoPermissions
+	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil {
+		return c.ExperimentalFeatures.SubRepoPermissions.Enabled
+	}
+	return false
 }
 
 // CurrentUserPermissions returns the level of access the authenticated user within

@@ -103,7 +103,9 @@ func TestGitTree_SubRepo_Deny(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableSubRepoPermissions: true,
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
 			},
 		},
 	})

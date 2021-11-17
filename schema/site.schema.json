@@ -125,10 +125,28 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "enableSubRepoPermissions": {
-          "description": "Enables sub-repo permission checking",
-          "type": "boolean",
-          "default": false
+        "subRepoPermissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables sub-repo permission checking",
+              "type": "boolean",
+              "default": false
+            },
+            "userCacheSize": {
+              "description": "The number of user permissions to cache",
+              "type": "integer",
+              "default": 1000,
+              "minimum": 1
+            },
+            "userCacheTTLSeconds": {
+              "description": "The TTL in seconds for cached user permissions",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          }
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
