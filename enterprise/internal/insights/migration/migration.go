@@ -151,14 +151,46 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 
 func (m *migrator) performMigrationForRow(ctx context.Context, job store.SettingsMigrationJob) (bool, bool, error) {
 	var subject api.SettingsSubject
+	var migrationContext migrationContext
+	var subjectName string
+	orgStore := database.Orgs(m.postgresDB)
+
 	if job.UserId != nil {
 		userId := int32(*job.UserId)
 		subject = api.SettingsSubject{User: &userId}
+
+		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
+		// resolve insight ID collisions as if it were in a setting cascade
+		orgs, err := orgStore.GetByUserID(ctx, userId)
+		if err != nil {
+			return false, false, errors.Wrap(err, "OrgStoreGetByUserID")
+		}
+		orgIds := make([]int, 0, len(orgs))
+		for _, org := range orgs {
+			orgIds = append(orgIds, int(org.ID))
+		}
+		migrationContext.userId = int(userId)
+		migrationContext.orgIds = orgIds
+
+		userStore := database.Users(m.postgresDB)
+		user, err := userStore.GetByID(ctx, userId)
+		if err != nil {
+			return false, false, errors.Wrap(err, "UserStoreGetByID")
+		}
+		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
 		subject = api.SettingsSubject{Org: &orgId}
+		migrationContext.orgIds = []int{*job.OrgId}
+		org, err := orgStore.GetByID(ctx, orgId)
+		if err != nil {
+			return false, false, errors.Wrap(err, "OrgStoreGetByID")
+		}
+		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
 	} else {
 		subject = api.SettingsSubject{Site: true}
+		// nothing to set for migration context, it will infer global based on the lack of user / orgs
+		subjectName = "Global"
 	}
 	settings, err := m.settingsStore.GetLatest(ctx, subject)
 	if err != nil {
@@ -187,6 +219,20 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	backendInsights, err := getBackendInsights(ctx, *settings)
 	if err != nil {
 		return false, false, err
+	}
+
+	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
+	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
+	// to reconstruct the special case user / org / global dashboard
+	allDefinedInsightIds := make([]string, 0, len(langStatsInsights)+len(frontendInsights)+len(backendInsights))
+	for _, insight := range langStatsInsights {
+		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+	}
+	for _, insight := range frontendInsights {
+		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+	}
+	for _, insight := range backendInsights {
+		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
 	}
 
 	fmt.Println("lang stats:", langStatsInsights)
@@ -232,8 +278,11 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 			return false, true, nil
 		}
 	}
+	_, err = m.createSpecialCaseDashboard(ctx, subjectName, allDefinedInsightIds, migrationContext)
+	if err != nil {
+		return false, false, err
+	}
 
-	// TODO: Create virtual dashboard here.
 	// TODO: Then fill in completed_at and we're done!
 	// TODO: Also increment "runs"
 	// TODO: And if there are errors, write those out to error_msg.
@@ -245,20 +294,44 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	return true, false, nil
 }
 
-func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
+func specialCaseDashboardTitle(subjectName string) string {
+	format := "%s Insights"
+	if subjectName == "Global" {
+		return fmt.Sprintf(format, subjectName)
+	}
+	return fmt.Sprintf(format, fmt.Sprintf("%s's", subjectName))
+}
+
+// replaceIfEmpty will return a string where the first argument is given priority if non-empty.
+func replaceIfEmpty(firstChoice *string, replacement string) string {
+	if firstChoice == nil || *firstChoice == "" {
+		return replacement
+	}
+	return *firstChoice
+}
+
+func (m *migrator) createSpecialCaseDashboard(ctx context.Context, subjectName string, insightReferences []string, migration migrationContext) (*types.Dashboard, error) {
+	created, _, err := m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), insightReferences, migration)
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateSpecialCaseDashboard")
+	}
+	return created, nil
+}
+
+func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ *types.Dashboard, _ []string, err error) {
 	var mapped []string
 	var failed []string
 
 	tx, err := m.dashboardStore.Transact(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	for _, reference := range insightReferences {
 		id, exists, err := m.lookupUniqueId(ctx, migration, reference)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		} else if !exists {
 			failed = append(failed, reference)
 		}
@@ -273,19 +346,21 @@ func (m *migrator) createDashboard(ctx context.Context, title string, insightRef
 	} else {
 		grants = append(grants, store.GlobalDashboardGrant())
 	}
-	_, err = tx.CreateDashboard(ctx, store.CreateDashboardArgs{
+	created, err := tx.CreateDashboard(ctx, store.CreateDashboardArgs{
 		Dashboard: types.Dashboard{
 			Title:      title,
 			InsightIDs: mapped,
 			Save:       true,
 		},
 		Grants: grants,
+		UserID: []int{migration.userId},
+		OrgID:  migration.orgIds,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateDashboard")
+		return nil, nil, errors.Wrap(err, "CreateDashboard")
 	}
 
-	return failed, nil
+	return created, failed, nil
 }
 
 // migrationContext represents a context for which we are currently migrating. If we are migrating a user setting we would populate this with their
@@ -362,7 +437,7 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 		}
 	}
 
-	_, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
+	_, _, err = m.createDashboard(ctx, from.Title, from.InsightIds, mc)
 	if err != nil {
 		return err
 	}
