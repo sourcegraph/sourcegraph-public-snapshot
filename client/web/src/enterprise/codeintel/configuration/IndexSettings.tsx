@@ -9,6 +9,7 @@ import { nullPolicy } from './usePoliciesConfigurations'
 
 export interface IndexingSettingsProps {
     policy: CodeIntelligenceConfigurationPolicyFields
+    repo?: { id: string }
     setPolicy: (
         updater: (
             policy: CodeIntelligenceConfigurationPolicyFields | undefined
@@ -19,6 +20,7 @@ export interface IndexingSettingsProps {
 
 export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
     policy,
+    repo,
     setPolicy,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
 }) => {
@@ -44,7 +46,7 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({
             </div>
 
             {!allowGlobalPolicies &&
-                policy.repository === null &&
+                repo === undefined &&
                 (policy.repositoryPatterns || []).length === 0 &&
                 policy.indexingEnabled && (
                     <div className="alert alert-danger">

@@ -116,7 +116,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
                 <RetentionSettings policy={policy} setPolicy={setPolicy} />
 
-                {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+                {indexingEnabled && <IndexingSettings repo={repo} policy={policy} setPolicy={setPolicy} />}
             </Container>
 
             <div className="mb-3">
