@@ -246,7 +246,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
-	schema, err := graphqlbackend.NewSchema(db,
+	codeintelSentry, err := sentry.NewWithDsn(conf.DefaultClient().SiteConfig().Log.Sentry.CodeIntelDSN)
+	if err != nil {
+		return err
+	}
+
+	schema, err := graphqlbackend.NewSchema(
+		db,
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
 		enterprise.InsightsResolver,
@@ -256,6 +262,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
+		codeintelSentry,
 	)
 	if err != nil {
 		return err

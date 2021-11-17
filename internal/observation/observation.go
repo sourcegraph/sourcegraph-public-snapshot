@@ -53,7 +53,6 @@ package observation
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -298,12 +297,10 @@ func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event
 
 // emitSentryError will send errors to Sentry.
 func (op *Operation) emitSentryError(err *error) {
-	fmt.Println("check error", err)
 	if err == nil || *err == nil {
 		return
 	}
 
-	fmt.Println("sentry", op.context.Sentry)
 	if op.context.Sentry == nil {
 		return
 	}

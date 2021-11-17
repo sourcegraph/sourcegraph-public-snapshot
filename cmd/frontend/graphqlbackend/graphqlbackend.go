@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -353,6 +354,7 @@ func NewSchema(
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
 	orgRepositoryResolver OrgRepositoryResolver,
+	codeintelSentry *sentry.Hub,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -373,7 +375,18 @@ func NewSchema(
 		schemas = append(schemas, codeIntelSchema)
 		// Register NodeByID handlers.
 		for kind, res := range codeIntel.NodeResolvers() {
-			resolver.nodeByIDFns[kind] = res
+			resolver.nodeByIDFns[kind] = func(kind string, f NodeByIDFunc) NodeByIDFunc {
+				return func(ctx context.Context, id graphql.ID) (Node, error) {
+					node, err := f(ctx, id)
+					if err != nil {
+						codeintelSentry.CaptureError(err, map[string]string{
+							"kind":      kind,
+							"graphqlID": string(id),
+						})
+					}
+					return node, err
+				}
+			}(kind, res)
 		}
 	}
 
