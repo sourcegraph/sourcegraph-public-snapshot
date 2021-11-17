@@ -168,14 +168,46 @@ func (m *migrator) PerformGlobalMigration(ctx context.Context) (bool, bool, erro
 
 func (m *migrator) performMigrationForRow(ctx context.Context, job store.SettingsMigrationJob) (bool, bool, error) {
 	var subject api.SettingsSubject
+	var migrationContext migrationContext
+	var subjectName string
+	orgStore := database.Orgs(m.postgresDB)
+
 	if job.UserId != nil {
 		userId := int32(*job.UserId)
 		subject = api.SettingsSubject{User: &userId}
+
+		// when this is a user setting we need to load all of the organizations the user is a member of so that we can
+		// resolve insight ID collisions as if it were in a setting cascade
+		orgs, err := orgStore.GetByUserID(ctx, userId)
+		if err != nil {
+			return false, false, errors.Wrap(err, "OrgStoreGetByUserID")
+		}
+		orgIds := make([]int, 0, len(orgs))
+		for _, org := range orgs {
+			orgIds = append(orgIds, int(org.ID))
+		}
+		migrationContext.userId = int(userId)
+		migrationContext.orgIds = orgIds
+
+		userStore := database.Users(m.postgresDB)
+		user, err := userStore.GetByID(ctx, userId)
+		if err != nil {
+			return false, false, errors.Wrap(err, "UserStoreGetByID")
+		}
+		subjectName = replaceIfEmpty(&user.DisplayName, user.Username)
 	} else if job.OrgId != nil {
 		orgId := int32(*job.OrgId)
 		subject = api.SettingsSubject{User: &orgId}
+		migrationContext.orgIds = []int{*job.OrgId}
+		org, err := orgStore.GetByID(ctx, orgId)
+		if err != nil {
+			return false, false, errors.Wrap(err, "OrgStoreGetByID")
+		}
+		subjectName = replaceIfEmpty(org.DisplayName, org.Name)
 	} else {
 		subject = api.SettingsSubject{Site: true}
+		// nothing to set for migration context, it will infer global based on the lack of user / orgs
+		subjectName = "Global"
 	}
 	settings, err := m.settingsStore.GetLatest(ctx, subject)
 	if err != nil {
@@ -202,6 +234,20 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	backendInsights, err := getBackendInsights(ctx, *settings)
 	if err != nil {
 		return false, false, err
+	}
+
+	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
+	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
+	// to reconstruct the special case user / org / global dashboard
+	allDefinedInsightIds := make([]string, 0, len(langStatsInsights)+len(frontendInsights)+len(backendInsights))
+	for _, insight := range langStatsInsights {
+		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+	}
+	for _, insight := range frontendInsights {
+		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
+	}
+	for _, insight := range backendInsights {
+		allDefinedInsightIds = append(allDefinedInsightIds, insight.ID)
 	}
 
 	fmt.Println("lang stats:", langStatsInsights)
@@ -250,7 +296,10 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 		}
 	}
 
-	// TODO: Create virtual dashboard here.
+	_, err = m.createDashboard(ctx, specialCaseDashboardTitle(subjectName), allDefinedInsightIds, migrationContext)
+	if err != nil {
+		return false, false, errors.Wrap(err, "CreateSpecialCaseDashboard")
+	}
 
 	// Error handling: If we're keeping track of total vs completed insights/dashboards, maybe we just need a state for retries. We can do like
 	// idk, 10 retries? Call them runs even. So when a runthrough is completed it increments it. And if it gets to 10 that means something is
@@ -260,6 +309,22 @@ func (m *migrator) performMigrationForRow(ctx context.Context, job store.Setting
 	// to exist too; it's not part of items_completed. Another row maybe? virtual_dashboard_completed?
 
 	return false, false, nil
+}
+
+func specialCaseDashboardTitle(subjectName string) string {
+	format := "%s Insights"
+	if subjectName == "Global" {
+		return fmt.Sprintf(format, subjectName)
+	}
+	return fmt.Sprintf(format, fmt.Sprintf("%s's", subjectName))
+}
+
+// replaceIfEmpty will return a string where the first argument is given priority if non-empty.
+func replaceIfEmpty(firstChoice *string, replacement string) string {
+	if firstChoice == nil || *firstChoice == "" {
+		return replacement
+	}
+	return *firstChoice
 }
 
 func (m *migrator) createDashboard(ctx context.Context, title string, insightReferences []string, migration migrationContext) (_ []string, err error) {
