@@ -88,8 +88,6 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 			ID:          userID,
 			Description: "test query",
 			Query:       "test type:diff patternType:regexp",
-			Notify:      true,
-			NotifySlack: false,
 			UserID:      userID,
 		},
 	}
@@ -116,8 +114,6 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 				UserID:      userID,
 				Description: "test query",
 				Query:       "test type:diff patternType:regexp",
-				Notify:      true,
-				NotifySlack: false,
 			},
 		},
 		nil,
@@ -243,8 +239,6 @@ func TestUpdateSavedSearch(t *testing.T) {
 		ID:          key,
 		Description: "updated query description",
 		Query:       "test type:diff patternType:regexp",
-		Notify:      true,
-		NotifySlack: false,
 		UserID:      key,
 	}}
 
@@ -286,8 +280,6 @@ func TestDeleteSavedSearch(t *testing.T) {
 			Key:         "1",
 			Description: "test query",
 			Query:       "test type:diff",
-			Notify:      true,
-			NotifySlack: false,
 			UserID:      key,
 		},
 	}, nil)
