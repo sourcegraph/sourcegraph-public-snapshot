@@ -42,6 +42,7 @@ jobs:
       - name: installing Docker
         run: |
           brew install --cask virtualbox
+          sudo spctl --master-disable
           mkdir -p ~/.docker/machine/cache
           curl -Lo ~/.docker/machine/cache/boot2docker.iso https://github.com/boot2docker/boot2docker/releases/download/v19.03.12/boot2docker.iso
           brew install docker docker-machine
