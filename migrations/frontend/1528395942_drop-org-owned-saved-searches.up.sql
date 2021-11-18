@@ -14,13 +14,4 @@ BEGIN;
 
 -- COMMENT ON COLUMN saved_searches.org_id IS 'DEPRECATED: saved searches must be owned by a user';
 
-UPDATE saved_searches
-SET (notify_owner, notify_slack) = (false, false);
-
-ALTER TABLE saved_searches
-	ADD CONSTRAINT saved_searches_notifications_disabled CHECK (
-		notify_owner = false
-		AND notify_slack = false
-	);
-
 COMMIT;
