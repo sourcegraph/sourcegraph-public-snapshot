@@ -58,45 +58,57 @@ func (c *SearchResultsResolver) LimitHit() bool {
 	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
 }
 
-func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
-	repos := c.Stats.Repos
-	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
-	}
-	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].ID() < resolvers[b].ID()
-	})
-	return resolvers
+func (c *SearchResultsResolver) Repositories(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, 0)
 }
 
 func (c *SearchResultsResolver) RepositoriesCount() int32 {
 	return int32(len(c.Stats.Repos))
 }
 
-func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
-	var resolvers []*RepositoryResolver
-	c.Stats.Status.Filter(mask, func(id api.RepoID) {
-		if r, ok := c.Stats.Repos[id]; ok {
-			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
+func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, mask search.RepoStatus) ([]*RepositoryResolver, error) {
+	var ids []api.RepoID
+	if mask == 0 {
+		ids = make([]api.RepoID, 0, len(c.Stats.Repos))
+		for id := range c.Stats.Repos {
+			ids = append(ids, id)
 		}
+	} else {
+		c.Stats.Status.Filter(mask, func(id api.RepoID) {
+			ids = append(ids, id)
+		})
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	resolvers := make([]*RepositoryResolver, 0, len(ids))
+	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
+		IDs: ids,
+	}, func(repo *types.MinimalRepo) {
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, repo.ToRepo()))
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
 	})
-	return resolvers
+	return resolvers, nil
 }
 
-func (c *SearchResultsResolver) Cloning() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusCloning)
+func (c *SearchResultsResolver) Cloning(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, search.RepoStatusCloning)
 }
 
-func (c *SearchResultsResolver) Missing() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusMissing)
+func (c *SearchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, search.RepoStatusMissing)
 }
 
-func (c *SearchResultsResolver) Timedout() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusTimedout)
+func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, search.RepoStatusTimedout)
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
