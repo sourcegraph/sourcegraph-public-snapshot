@@ -58,6 +58,7 @@ import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
+import { createLineChartContentFromIndexedSeries } from './utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView } from './utils/insight-transformers'
 import { prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
@@ -162,7 +163,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     title: insight.title ?? insight.title,
                     // TODO: is this still used anywhere?
                     subtitle: '',
-                    content: [createLineChartContent({ series: data.dataSeries }, insight.series)],
+                    content: [createLineChartContentFromIndexedSeries(data.dataSeries, insight.series)],
                     isFetchingHistoricalData: data.dataSeries.some(
                         ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
                     ),
