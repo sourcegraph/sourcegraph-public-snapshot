@@ -89,7 +89,7 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
                         <div className="alert alert-info" role="alert">
                             Updating the access token may affect which repositories can be synced with Sourcegraph.{' '}
                             <Link
-                                to="https://docs.sourcegraph.com/cloud/TBD"
+                                to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-weight-normal"
