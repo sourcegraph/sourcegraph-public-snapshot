@@ -22,7 +22,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-if hash go 2>/dev/null ; then
+if hash go 2>/dev/null; then
   echo "--- :go: Building sg"
   (
     set -x
