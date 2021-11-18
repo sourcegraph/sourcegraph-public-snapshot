@@ -39,17 +39,17 @@ jobs:
           . ~/.bashrc
           sg -y setup
 
-      # - name: installing Docker
-      #   run: |
-      #     mkdir -p ~/.docker/machine/cache
-      #     curl -Lo ~/.docker/machine/cache/boot2docker.iso https://github.com/boot2docker/boot2docker/releases/download/v19.03.12/boot2docker.iso
-      #     brew install docker docker-machine
+      - name: installing Docker
+        run: |
+          mkdir -p ~/.docker/machine/cache
+          curl -Lo ~/.docker/machine/cache/boot2docker.iso https://github.com/boot2docker/boot2docker/releases/download/v19.03.12/boot2docker.iso
+          brew install docker docker-machine
 
       - name: run setup commands manually
         run: |
           set -x
-          brew install docker --cask
-          sudo /Applications/Docker.app/Contents/MacOS/Docker
+          # brew install docker --cask
+          # sudo /Applications/Docker.app/Contents/MacOS/Docker
           # brew install git gnu-sed comby pcre sqlite jq
           # # brew install go yarn node # skipping those to avoid clashing with what's already present on the VM
           # brew install postgres redis
