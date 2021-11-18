@@ -14,7 +14,6 @@ export GO111MODULE=on
 config_file="$(pwd)/.golangci.yml"
 lint_script="$(pwd)/dev/golangci-lint.sh"
 annotate_script="$(pwd)/dev/ci/annotate.sh"
-global_exit_code=0
 
 run() {
   LINTER_ARG=${1}
@@ -27,13 +26,13 @@ run() {
   echo -e "$OUT"
 
   if [ $EXIT_CODE -ne 0 ]; then
-    # We want to return after running all tests, we don't want to fail fast, so 
+    # We want to return after running all tests, we don't want to fail fast, so
     # we store the EXIT_CODE (in a tmp file as this is running in a sub-shell).
-    echo "$EXIT_CODE" > $TMPFILE
+    echo "$EXIT_CODE" >"$TMPFILE"
     echo -e "$OUT" | "$annotate_script" -s "golangci-lint"
     echo "^^^ +++"
   fi
-  
+
   return $EXIT_CODE
 }
 
@@ -44,12 +43,12 @@ if [ $# -eq 0 ]; then
 
     echo "--- golangci-lint $d"
 
-    run "./..." 
+    run "./..."
 
     popd >/dev/null
   done
 else
-  run "$@" 
+  run "$@"
 fi
 
 exit $(cat "$TMPFILE")
