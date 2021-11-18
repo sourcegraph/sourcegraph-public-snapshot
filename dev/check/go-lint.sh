@@ -27,10 +27,11 @@ run() {
 
   if [ $EXIT_CODE -ne 0 ]; then
     global_exit_code="$EXIT_CODE"
-
     echo -e "$OUT" | "$annotate_script" -s "golangci-lint"
     echo "^^^ +++"
   fi
+
+  return "$EXIT_CODE"
 }
 
 # If no args are given, traverse through each project with a `go.mod`
@@ -48,4 +49,5 @@ else
   run "$@"
 fi
 
+echo "Global exit code:" "$global_exit_code"
 exit $global_exit_code

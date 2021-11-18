@@ -31,12 +31,12 @@ done
 FILE=.annotate
 LOCKFILE="$FILE.lock"
 
-exec 100>"$LOCKFILE" || exit 1
-flock 100 || exit 1
+# exec 100>"$LOCKFILE" || exit 1
+# flock 100 || exit 1
 
 if [ ! -f "$FILE" ]; then
   touch $FILE
-  printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "**%s**\n\n" "$BUILDKITE_LABEL" | cat #buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
 fi
 
 BODY=""
@@ -49,7 +49,7 @@ while IFS= read -r line; do
 done
 
 if [ "$MARKDOWN" = true ]; then
-  printf "_%s_\n%s\n" "$SECTION" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "_%s_\n%s\n" "$SECTION" "$BODY" | cat #buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
 else
-  printf "_%s_\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "_%s_\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | cat #buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
 fi
