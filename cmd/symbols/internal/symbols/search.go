@@ -5,7 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"regexp/syntax"
 	"strings"
@@ -14,6 +18,7 @@ import (
 	"github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 
 	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
@@ -112,14 +117,37 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.OpenWithPath(ctx, fmt.Sprintf("%d-%s@%s", symbolsDBVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
-		err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+	diskcacheFile, err := s.cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
+		newest, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 		if err != nil {
-			if err == context.Canceled {
-				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
-			}
 			return err
 		}
+
+		if newest == "" {
+			// There are no existing SQLite DBs to reuse, so write a completely new one.
+			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+			if err != nil {
+				if err == context.Canceled {
+					log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
+				}
+				return err
+			}
+		} else {
+			// Copy the existing DB to a new DB and update the new DB
+			err = copyFile(newest, tempDBFile)
+			if err != nil {
+				return err
+			}
+
+			err = s.updateSymbols(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+			if err != nil {
+				if err == context.Canceled {
+					log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
+				}
+				return err
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -248,6 +276,7 @@ type symbolInDB struct {
 	Signature     string
 	Pattern       string
 
+	// Whether or not the symbol is local to the file.
 	FileLimited bool
 }
 
@@ -307,6 +336,22 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		err = tx.Commit()
 	}()
 
+	_, err = tx.Exec(
+		`CREATE TABLE IF NOT EXISTS meta (
+    		id INTEGER PRIMARY KEY CHECK (id = 0),
+			revision TEXT NOT NULL
+		)`)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO meta (id, revision) VALUES (0, ?)`,
+		string(commitID))
+	if err != nil {
+		return err
+	}
+
 	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
 	// http://jmoiron.github.io/sqlx/#query
@@ -359,7 +404,76 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	return s.parseUncached(ctx, repoName, commitID, func(symbol result.Symbol) error {
+	return s.parseUncached(ctx, repoName, commitID, []string{}, func(symbol result.Symbol) error {
+		symbolInDBValue := symbolToSymbolInDB(symbol)
+		_, err := insertStatement.Exec(&symbolInDBValue)
+		return err
+	})
+}
+
+// writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
+// symbols, and writes them to the blank database file `dbFile`.
+func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// Read old commit
+	row := tx.QueryRow(`SELECT revision FROM meta`)
+	oldCommit := api.CommitID("")
+	if err = row.Scan(&oldCommit); err != nil {
+		return err
+	}
+
+	// Write new commit
+	_, err = tx.Exec(
+		`UPDATE meta SET revision = ?`,
+		string(commitID))
+	if err != nil {
+		return err
+	}
+
+	// git diff
+	changes, err := s.GitDiff(ctx, repoName, oldCommit, commitID)
+	if err != nil {
+		return err
+	}
+
+	deleteStatement, err := tx.Prepare("DELETE FROM symbols WHERE path = ?")
+	if err != nil {
+		return err
+	}
+
+	insertStatement, err := tx.PrepareNamed(
+		fmt.Sprintf(
+			"INSERT INTO symbols %s VALUES %s",
+			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
+			"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"))
+	if err != nil {
+		return err
+	}
+
+	for _, path := range append(changes.Deleted, changes.Modified...) {
+		_, err := deleteStatement.Exec(path)
+		return err
+	}
+
+	return s.parseUncached(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
@@ -383,4 +497,58 @@ func SanityCheck() error {
 	}
 
 	return nil
+}
+
+// findNewestFile lists the directory and returns the newest file's basename.
+func findNewestFile(dir string) (string, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return "", nil
+	}
+
+	var mostRecentTime time.Time
+	newest := ""
+	for _, fi := range files {
+		if fi.Mode().IsRegular() {
+			if newest == "" || fi.ModTime().After(mostRecentTime) {
+				mostRecentTime = fi.ModTime()
+				newest = fi.Name()
+			}
+		}
+	}
+
+	return newest, nil
+}
+
+// copyFile is like the cp command.
+func copyFile(from string, to string) error {
+	fromFile, err := os.Open(from)
+	if err != nil {
+		return err
+	}
+	defer fromFile.Close()
+
+	toFile, err := os.OpenFile(to, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer toFile.Close()
+
+	_, err = io.Copy(toFile, fromFile)
+	return err
+}
+
+// Changes are added and deleted paths.
+type Changes struct {
+	Added    []string
+	Modified []string
+	Deleted  []string
+}
+
+func NewChanges() Changes {
+	return Changes{
+		Added:    []string{},
+		Modified: []string{},
+		Deleted:  []string{},
+	}
 }

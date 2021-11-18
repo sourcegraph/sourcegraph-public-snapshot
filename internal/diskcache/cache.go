@@ -56,7 +56,7 @@ type FetcherWithPath func(context.Context, string) error
 
 // Open will open a file from the local cache with key. If missing, fetcher
 // will fill the cache first. Open also performs single-flighting for fetcher.
-func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *File, err error) {
+func (s *Store) Open(ctx context.Context, key []string, fetcher Fetcher) (file *File, err error) {
 	return s.OpenWithPath(ctx, key, func(ctx context.Context, path string) error {
 		readCloser, err := fetcher(ctx)
 		if err != nil {
@@ -77,7 +77,7 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 
 // OpenWithPath will open a file from the local cache with key. If missing, fetcher
 // will fill the cache first. Open also performs single-flighting for fetcher.
-func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWithPath) (file *File, err error) {
+func (s *Store) OpenWithPath(ctx context.Context, key []string, fetcher FetcherWithPath) (file *File, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Cached Fetch")
 	if s.Component != "" {
 		ext.Component.Set(span, s.Component)
@@ -101,6 +101,11 @@ func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWit
 
 	path := s.path(key)
 	span.LogKV("key", key, "path", path)
+
+	err = os.MkdirAll(filepath.Dir(path), os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
 
 	// First do a fast-path, assume already on disk
 	f, err := os.Open(path)
@@ -140,11 +145,18 @@ func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWit
 }
 
 // path returns the path for key.
-func (s *Store) path(key string) string {
-	// path uses a sha256 hash of the key since we want to use it for the
-	// disk name.
-	h := sha256.Sum256([]byte(key))
-	return filepath.Join(s.Dir, hex.EncodeToString(h[:])) + ".zip"
+func (s *Store) path(key []string) string {
+	encoded := []string{s.Dir}
+	for _, k := range key {
+		encoded = append(encoded, EncodeKeyComponent(k))
+	}
+	return filepath.Join(encoded...) + ".zip"
+}
+
+// EncodeKeyComponent uses a sha256 hash of the key since we want to use it for the disk name.
+func EncodeKeyComponent(component string) string {
+	h := sha256.Sum256([]byte(component))
+	return hex.EncodeToString(h[:])
 }
 
 func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *File, err error) {
@@ -230,7 +242,15 @@ func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 		return strings.HasSuffix(fi.Name(), ".zip")
 	}
 
-	entries, err := os.ReadDir(s.Dir)
+	list := []fs.FileInfo{}
+	err = filepath.Walk(s.Dir,
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			list = append(list, info)
+			return nil
+		})
 	if err != nil {
 		if os.IsNotExist(err) {
 			return EvictStats{
@@ -239,14 +259,6 @@ func (s *Store) Evict(maxCacheSizeBytes int64) (stats EvictStats, err error) {
 			}, nil
 		}
 		return stats, errors.Wrapf(err, "failed to ReadDir %s", s.Dir)
-	}
-
-	list := make([]fs.FileInfo, len(entries))
-	for i := range entries {
-		list[i], err = entries[i].Info()
-		if err != nil {
-			return stats, err
-		}
 	}
 
 	// Sum up the total size of all zips

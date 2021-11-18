@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -66,8 +67,35 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	service := symbols.Service{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar"})
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar", Paths: paths})
+		},
+		GitDiff: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (*symbols.Changes, error) {
+			output, err := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames").Output(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			changes := symbols.NewChanges()
+			// output is a sequence of: M NUL cmd/symbols/internal/symbols/fetch.go NUL
+			slices := bytes.Split(output, []byte{0})
+			for i := 0; i < len(slices); {
+				status := slices[i][0]
+				i += 1
+				path := string(slices[i])
+				i += 1
+
+				switch status {
+				case 'A':
+					changes.Added = append(changes.Added, path)
+				case 'M':
+					changes.Modified = append(changes.Modified, path)
+				case 'D':
+					changes.Deleted = append(changes.Deleted, path)
+				}
+			}
+
+			return &changes, nil
 		},
 		NewParser: symbols.NewParser,
 		Path:      cacheDir,
