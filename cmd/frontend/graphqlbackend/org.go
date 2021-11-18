@@ -308,9 +308,17 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	Organization graphql.ID
 	Username     string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Do not allow direct add on cloud.
+	// get the organization ID as an integer first
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("adding users to organization directly is not allowed")
+		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+			return nil, errors.Errorf("Must be a member of the organization to add members", err)
+		}
 	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
@@ -318,16 +326,11 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
-		return nil, err
-	}
-
 	userToInvite, _, err := getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := database.OrgMembers(r.db).Create(ctx, orgID, userToInvite.ID); err != nil {
+	if _, err := r.db.OrgMembers().Create(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
 
