@@ -51,4 +51,5 @@ else
   run "$@"
 fi
 
-exit "$(cat "$TMPFILE")"
+read -r EXIT_CODE <"$TMPFILE"
+exit "$EXIT_CODE"
