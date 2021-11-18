@@ -49,6 +49,7 @@ func (m *MavenModule) CloneURL() string {
 	return cloneURL.String()
 }
 
+// See [NOTE: Dependency-terminology]
 type MavenDependency struct {
 	MavenModule
 	Version string
