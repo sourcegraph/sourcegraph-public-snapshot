@@ -280,11 +280,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {showSignUpCta && (
-                    <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
-                        <div className="mr-3 my-3 my-md-0 text-center col-md-2">
+                    <div className={classNames('card my-2 mr-3 d-flex p-3 flex-md-row justify-content-between flex-column align-items-center', styles.streamingSearchResultsCtaContainer)}>
+                        <div className={classNames('my-3 w-10 col-md-1', styles.streamingSearchResultsCtaIcon)}>
                             <SearchBetaIcon />
                         </div>
-                        <div className="col-md-6 text-center">
+                        <div className="col-md-7 px-md-0 text-md-start">
                             <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
                                 <strong>
                                     Sign up to add your public and private repositories and unlock search flow
