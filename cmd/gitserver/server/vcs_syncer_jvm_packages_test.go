@@ -23,19 +23,19 @@ import (
 )
 
 const (
-	exampleJar                = "sources.jar"
-	exampleByteCodeJar        = "bytes.jar"
-	exampleJar2               = "sources2.jar"
-	exampleByteCodeJar2       = "bytes2.jar"
-	exampleFilePath           = "Example.java"
-	exampleClassfilePath      = "Example.class"
-	exampleFileContents       = "package example;\npublic class Example {}\n"
-	exampleFileContents2      = "package example;\npublic class Example { public static final int x = 42; }\n"
-	examplePackageVersion     = "1.0.0"
-	examplePackageVersion2    = "2.0.0"
-	examplePackageDependency  = "org.example:example:1.0.0"
-	examplePackageDependency2 = "org.example:example:2.0.0"
-	examplePackageUrl         = "maven/org.example/example"
+	exampleJar               = "sources.jar"
+	exampleByteCodeJar       = "bytes.jar"
+	exampleJar2              = "sources2.jar"
+	exampleByteCodeJar2      = "bytes2.jar"
+	exampleFilePath          = "Example.java"
+	exampleClassfilePath     = "Example.class"
+	exampleFileContents      = "package example;\npublic class Example {}\n"
+	exampleFileContents2     = "package example;\npublic class Example { public static final int x = 42; }\n"
+	exampleVersion           = "1.0.0"
+	exampleVersion2          = "2.0.0"
+	exampleVersionedPackage  = "org.example:example:1.0.0"
+	exampleVersionedPackage2 = "org.example:example:2.0.0"
+	examplePackageUrl        = "maven/org.example/example"
 
 	// These magic numbers come from the table here https://en.wikipedia.org/wiki/Java_class_file#General_layout
 	java5MajorVersion  = 49
@@ -99,8 +99,8 @@ else
   exit 1
 fi
 `,
-		examplePackageVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
-		examplePackageVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
+		exampleVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
+		exampleVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
 	)
 	_, err = coursierPath.WriteString(script)
 	assert.Nil(t, err)
@@ -196,19 +196,19 @@ func TestJVMCloneCommand(t *testing.T) {
 	}
 	bareGitDirectory := path.Join(dir, "git")
 
-	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
 		"v1.0.0\n",
 	)
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
 
-	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency, examplePackageDependency2})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
 	assertCommandOutput(t,
 		exec.Command("git", "tag", "--list"),
 		bareGitDirectory,
@@ -216,33 +216,33 @@ func TestJVMCloneCommand(t *testing.T) {
 	)
 
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, "lsif-java.json")),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, "lsif-java.json")),
 		bareGitDirectory,
 		// Assert that Java 8 is used for a library compiled with Java 5.
-		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "8", examplePackageDependency),
+		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "8", exampleVersionedPackage),
 	)
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion2, "lsif-java.json")),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion2, "lsif-java.json")),
 		bareGitDirectory,
 		// Assert that Java 11 is used for a library compiled with Java 11.
-		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "11", examplePackageDependency2),
+		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "11", exampleVersionedPackage2),
 	)
 
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
 
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion2, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion2, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents2,
 	)
 
-	s.runCloneCommand(t, bareGitDirectory, []string{examplePackageDependency})
+	s.runCloneCommand(t, bareGitDirectory, []string{exampleVersionedPackage})
 	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", examplePackageVersion, exampleFilePath)),
+		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
 		bareGitDirectory,
 		exampleFileContents,
 	)
