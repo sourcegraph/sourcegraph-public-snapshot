@@ -38,7 +38,7 @@ Find this section of the code:
 
 **BEFORE** you make any changes, it is **strongly recommended** that you make a local backup of this file so that you can easily revert any changes if needed.
 
-To add or remove repositories, change the entires in the **repos** array:
+To add or remove repositories, change the entries in the **repos** array:
 
 ```
       "repos": [
