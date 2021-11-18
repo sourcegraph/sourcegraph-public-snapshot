@@ -12,6 +12,7 @@ import {
 } from '../../../../graphql-operations'
 import { WORKSPACE_RESOLUTION_STATUS } from '../backend'
 
+import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'
 import { PreviewPrompt, PreviewPromptForm } from './PreviewPrompt'
 import styles from './WorkspacesPreview.module.scss'
@@ -130,9 +131,9 @@ const WithBatchSpec: React.FunctionComponent<WithBatchSpecProps> = ({
                     <WorkspacesPreviewList
                         batchSpecID={batchSpecID}
                         isStale={batchSpecStale}
-                        setResolutionError={setResolutionError}
                         excludeRepo={excludeRepo}
                     />
+                    <ImportingChangesetsPreviewList batchSpecID={batchSpecID} isStale={batchSpecStale} />
                 </div>
             ) : null}
         </>
