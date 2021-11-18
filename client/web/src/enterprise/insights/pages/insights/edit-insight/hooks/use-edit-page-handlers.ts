@@ -42,7 +42,7 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
                 newInsight,
             }).toPromise()
 
-            eventLogger.log('Insight Edit', { insightType: newInsight.type }, { insightType: newInsight.type })
+            eventLogger.log('InsightEdit', { insightType: newInsight.type }, { insightType: newInsight.type })
 
             if (!dashboard || isVirtualDashboard(dashboard)) {
                 // Navigate user to the dashboard page with new created dashboard
