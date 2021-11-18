@@ -3,7 +3,9 @@
 echo "--- golangci-lint"
 trap 'rm -f "$TMPFILE"' EXIT
 set -e
-TMPFILE=$(mktemp) || exit 1
+TMPFILE=$(mktemp)
+
+echo "0" >"$TMPFILE"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
@@ -32,8 +34,6 @@ run() {
     echo -e "$OUT" | "$annotate_script" -s "golangci-lint"
     echo "^^^ +++"
   fi
-
-  return $EXIT_CODE
 }
 
 # If no args are given, traverse through each project with a `go.mod`
