@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
 	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/lints"
 )
 
@@ -24,10 +24,5 @@ func lint(ctx context.Context, args []string) error {
 		args = lints.DefaultLints
 	}
 
-	graph, err := graph.Load()
-	if err != nil {
-		return err
-	}
-
-	return lints.Run(graph, args)
+	return errors.New("Uppercase")
 }
