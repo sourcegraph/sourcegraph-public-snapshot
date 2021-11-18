@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type batchSpecWorkspaceConnectionResolver struct {
@@ -47,11 +48,21 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 		executionsByWorkspaceID[e.BatchSpecWorkspaceID] = e
 	}
 
+	repoIDs := make([]api.RepoID, len(nodes))
+	for _, w := range nodes {
+		repoIDs = append(repoIDs, w.RepoID)
+	}
+	repos, err := r.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(nodes))
 	for _, w := range nodes {
 		res := &batchSpecWorkspaceResolver{
-			store:     r.store,
-			workspace: w,
+			store:         r.store,
+			workspace:     w,
+			preloadedRepo: repos[w.RepoID],
 		}
 		if ex, ok := executionsByWorkspaceID[w.ID]; ok {
 			res.execution = ex

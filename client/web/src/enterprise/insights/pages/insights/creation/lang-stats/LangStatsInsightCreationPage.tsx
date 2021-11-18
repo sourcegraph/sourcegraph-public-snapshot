@@ -80,7 +80,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 telemetryService.log(
-                    'Insight Addition',
+                    'InsightAddition',
                     { insightType: 'codeStatsInsights' },
                     { insightType: 'codeStatsInsights' }
                 )

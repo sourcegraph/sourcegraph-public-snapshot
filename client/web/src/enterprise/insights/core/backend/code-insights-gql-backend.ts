@@ -18,6 +18,7 @@ import {
     GetInsightViewResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
+    InsightViewFiltersInput,
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
     RemoveInsightViewFromDashboardResult,
@@ -134,13 +135,17 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // TODO: Rethink all of this method. Currently `createViewContent` expects a different format of
     // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
     // fit with both of those shapes.
-    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<GetInsightViewResult>({
+    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> => {
+        const filters: InsightViewFiltersInput = {
+            includeRepoRegex: insight.filters?.includeRepoRegexp,
+            excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+        }
+
+        return from(
+            // TODO: Use watchQuery instead of query when setting migration api is deprecated
+            this.apolloClient.query<GetInsightViewResult>({
                 query: GET_INSIGHT_VIEW_GQL,
-                variables: { id: insight.id },
-                // In order to avoid unnecessary requests and enable caching for BE insights
-                fetchPolicy: 'cache-first',
+                variables: { id: insight.id, filters },
             })
         ).pipe(
             // Note: this insight is guaranteed to exist since this function
@@ -166,6 +171,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 },
             }))
         )
+    }
 
     public getBuiltInInsightData = getBuiltInInsight
 
@@ -314,7 +320,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
                 return [
                     {
-                        id: 'all',
+                        id: ALL_INSIGHTS_DASHBOARD_ID,
                         type: InsightsDashboardType.Virtual,
                         scope: InsightsDashboardScope.Personal,
                         title: 'All Insights',
@@ -336,8 +342,16 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         )
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
-        this.getDashboards(dashboardId).pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null))
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> => {
+        // the 'all' dashboardId is not a real dashboard so return early
+        if (dashboardId === ALL_INSIGHTS_DASHBOARD_ID) {
+            return of(null)
+        }
+
+        return this.getDashboards(dashboardId).pipe(
+            map(dashboards => dashboards.find(({ id }) => id === dashboardId) ?? null)
+        )
+    }
 
     // This is only used to check for duplicate dashboards. Thi is not required for the new GQL API.
     // So we just return null to get the form to always accept.

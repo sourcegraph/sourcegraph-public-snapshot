@@ -13,7 +13,7 @@
     "captainSlackUsername": "Crystal Augustus",
     "captainGitHubUsername": "caugustus-sourcegraph",
     // Release versions
-    "previousRelease": "3.33.0",
+    "previousRelease": "3.33.1",
     "upcomingRelease": "3.34.0",
     // Release dates
     "oneWorkingDayBeforeRelease": "19 November 2021 10:00 PST",

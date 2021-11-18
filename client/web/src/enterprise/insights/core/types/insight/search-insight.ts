@@ -4,7 +4,7 @@ import { Duration } from 'date-fns'
 // from these settings and insight schema json definitions.
 import {
     BackendInsight as SearchBasedBackendInsightSettings,
-    BackendInsightSeries as SearchBasedInsightSeries,
+    BackendInsightSeries,
     InsightFilters as SearchBasedBackendFilters,
 } from '../../../../../schema/settings.schema'
 
@@ -18,7 +18,7 @@ import { InsightExecutionType, InsightTypePrefix, InsightType, SyntheticInsightF
  * Note: In the same time extensions also have this type in their public API
  * Search based insight extension - https://github.com/sourcegraph/sourcegraph-search-insights/blob/1b204a579160bab4208a1266cf4ad6e735cdd774/package.json#L50
  */
-export type { SearchBasedInsightSeries, SearchBasedBackendFilters, SearchBasedBackendInsightSettings }
+export type { SearchBasedBackendFilters, SearchBasedBackendInsightSettings }
 
 /**
  * Search based insight supports two types of configuration
@@ -38,6 +38,7 @@ export interface SearchExtensionBasedInsight extends SearchBasedExtensionInsight
 export interface SearchBackendBasedInsight extends SearchBasedBackendInsightSettings, SyntheticInsightFields {
     type: InsightExecutionType.Backend
     viewType: InsightType.SearchBased
+    series: SearchBasedInsightSeries[]
 }
 
 /**
@@ -49,6 +50,10 @@ export interface SearchBasedExtensionInsightSettings {
     repositories: string[]
     series: SearchBasedInsightSeries[]
     step: Duration
+}
+
+export interface SearchBasedInsightSeries extends BackendInsightSeries {
+    id: string | null
 }
 
 /**

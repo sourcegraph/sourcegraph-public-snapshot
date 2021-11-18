@@ -94,6 +94,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
+    {
+        path: '/batch-changes/webhook-logs',
+        exact: true,
+        render: lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage'),
+        condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
+            batchChangesEnabled && batchChangesWebhookLogsEnabled,
+    },
 
     // Code intelligence upload routes
     {

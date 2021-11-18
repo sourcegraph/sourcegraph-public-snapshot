@@ -15,8 +15,8 @@ type Operations struct {
 	runCommand    *observation.Operation
 }
 
-func NewOperationsFromMetrics(observationContext *observation.Context) *Operations {
-	metrics := metrics.NewOperationMetrics(
+func NewOperations(observationContext *observation.Context) *Operations {
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_coursier",
 		metrics.WithLabels("op"),

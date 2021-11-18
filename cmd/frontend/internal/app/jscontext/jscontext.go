@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -88,8 +89,10 @@ type JSContext struct {
 
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
@@ -187,8 +190,10 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), dbconn.Global) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
+		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 

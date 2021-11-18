@@ -73,6 +73,7 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
             )
 
             const series = insight.presentation.seriesPresentation.map(series => ({
+                id: series.seriesId,
                 name: series.label,
                 query:
                     insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
@@ -96,6 +97,10 @@ export const getInsightView = (insight: InsightViewNode): Insight | undefined =>
                     // In gql api we don't have this concept as visibility on FE.
                     // Insights have special system about visibility on BE only.
                     visibility: '',
+                    filters: {
+                        includeRepoRegexp: insight.appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: insight.appliedFilters.excludeRepoRegex ?? '',
+                    },
                 }
             }
 

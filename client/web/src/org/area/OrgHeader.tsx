@@ -27,6 +27,7 @@ export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaH
 export const OrgHeader: React.FunctionComponent<Props> = ({
     batchChangesEnabled,
     batchChangesExecutionEnabled,
+    batchChangesWebhookLogsEnabled,
     org,
     navItems,
     match,
@@ -63,6 +64,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
                                     condition({
                                         batchChangesEnabled,
                                         batchChangesExecutionEnabled,
+                                        batchChangesWebhookLogsEnabled,
                                         org,
                                         isSourcegraphDotCom,
                                     }) && (
