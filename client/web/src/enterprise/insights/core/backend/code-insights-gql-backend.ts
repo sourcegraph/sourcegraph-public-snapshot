@@ -18,6 +18,7 @@ import {
     GetInsightViewResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
+    InsightViewFiltersInput,
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
     RemoveInsightViewFromDashboardResult,
@@ -134,13 +135,17 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // TODO: Rethink all of this method. Currently `createViewContent` expects a different format of
     // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
     // fit with both of those shapes.
-    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<GetInsightViewResult>({
+    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> => {
+        const filters: InsightViewFiltersInput = {
+            includeRepoRegex: insight.filters?.includeRepoRegexp,
+            excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+        }
+
+        return from(
+            // TODO: Use watchQuery instead of query when setting migration api is deprecated
+            this.apolloClient.query<GetInsightViewResult>({
                 query: GET_INSIGHT_VIEW_GQL,
-                variables: { id: insight.id },
-                // In order to avoid unnecessary requests and enable caching for BE insights
-                fetchPolicy: 'cache-first',
+                variables: { id: insight.id, filters },
             })
         ).pipe(
             // Note: this insight is guaranteed to exist since this function
@@ -166,6 +171,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 },
             }))
         )
+    }
 
     public getBuiltInInsightData = getBuiltInInsight
 

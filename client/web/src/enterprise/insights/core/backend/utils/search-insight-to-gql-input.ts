@@ -40,6 +40,7 @@ export function prepareSearchInsightUpdateInput(
     const [unit, value] = getStepInterval(insight)
     const input: UpdateLineChartSearchInsightInput = {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+            seriesId: series.id,
             query: series.query,
             options: {
                 label: series.name,

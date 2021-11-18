@@ -3,6 +3,14 @@ import { gql } from '@apollo/client'
 export const INSIGHT_VIEW_FRAGMENT = gql`
     fragment InsightViewNode on InsightView {
         id
+        defaultFilters {
+            includeRepoRegex
+            excludeRepoRegex
+        }
+        appliedFilters {
+            includeRepoRegex
+            excludeRepoRegex
+        }
         presentation {
             __typename
             ... on LineChartInsightViewPresentation {
