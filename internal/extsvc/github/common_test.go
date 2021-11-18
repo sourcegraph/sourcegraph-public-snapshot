@@ -365,6 +365,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsArchived:       true,
 		IsLocked:         true,
 		ViewerPermission: "ADMIN",
+		Visibility:       "internal",
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -378,6 +379,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsArchived:       true,
 		IsDisabled:       true,
 		ViewerPermission: "ADMIN",
+		Visibility:       "private",
 	}
 
 	testCases := []struct {
@@ -402,7 +404,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isLocked": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
     },
     "repo_sourcegraph_clojure_grapher": {
       "id": "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
@@ -414,7 +417,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isDisabled": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "private"
     }
   }
 }
@@ -436,7 +440,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
       "isFork": false,
       "isArchived": true,
       "isLocked": true,
-      "viewerPermission": "ADMIN"
+      "viewerPermission": "ADMIN",
+      "visibility": "internal"
     },
     "repo_sourcegraph_clojure_grapher": null
   },
