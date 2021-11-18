@@ -29,10 +29,20 @@ func (p *progressAggregator) Update(event streaming.SearchEvent) {
 		return
 	}
 
+	if p.Stats.Repos == nil {
+		p.Stats.Repos = map[sgapi.RepoID]struct{}{}
+	}
+
 	p.Dirty = true
 	p.Stats.Update(&event.Stats)
 	for _, match := range event.Results {
 		p.MatchCount += match.ResultCount()
+
+		// Historically we only had one event populate Stats.Repos and it was
+		// the full universe of repos. With Repo Pagination this is no longer
+		// true. Rather than updating every backend to populate this field, we
+		// iterate over results and union in the result IDs.
+		p.Stats.Repos[match.RepoName().ID] = struct{}{}
 	}
 
 	if p.MatchCount > p.Limit {
