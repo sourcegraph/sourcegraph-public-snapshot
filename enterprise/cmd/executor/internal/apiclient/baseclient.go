@@ -9,6 +9,7 @@ import (
 	"net/url"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -70,13 +71,18 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusNoContent {
 			return false, nil, nil
 		}
 
-		return false, nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+		content, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log15.Error("Failed to read response body", "error", err)
+		}
+
+		return false, nil, errors.Errorf("unexpected status code %d (%s)", resp.StatusCode, content)
 	}
 
 	return true, resp.Body, nil
