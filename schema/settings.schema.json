@@ -228,7 +228,7 @@
       }
     },
     "search.globbing": {
-      "description": "Enables globbing for supported field values",
+      "description": "REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.",
       "type": "boolean",
       "default": false,
       "!go": {
