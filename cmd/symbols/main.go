@@ -71,7 +71,10 @@ func main() {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar", Paths: paths})
 		},
 		GitDiff: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (*symbols.Changes, error) {
-			output, err := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames").Output(ctx)
+			command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+			command.Repo = repo
+
+			output, err := command.Output(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -79,11 +82,19 @@ func main() {
 			changes := symbols.NewChanges()
 			// output is a sequence of: M NUL cmd/symbols/internal/symbols/fetch.go NUL
 			slices := bytes.Split(output, []byte{0})
-			for i := 0; i < len(slices); {
-				status := slices[i][0]
-				i += 1
-				path := string(slices[i])
-				i += 1
+			for i := 0; i < len(slices)-1; i += 2 {
+				statusIdx := i
+				fileIdx := i + 1
+
+				if len(slices[statusIdx]) == 0 {
+					continue
+				}
+				status := slices[statusIdx][0]
+
+				if len(slices[fileIdx]) == 0 {
+					continue
+				}
+				path := string(slices[fileIdx])
 
 				switch status {
 				case 'A':
@@ -94,6 +105,8 @@ func main() {
 					changes.Deleted = append(changes.Deleted, path)
 				}
 			}
+
+			fmt.Println("Changes A M D", len(changes.Added), len(changes.Modified), len(changes.Deleted))
 
 			return &changes, nil
 		},

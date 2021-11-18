@@ -123,7 +123,11 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 			return err
 		}
 
+		start := time.Now()
+
+		fmt.Println("================================================================================")
 		if newest == "" {
+			fmt.Println("GOTTA MAKE A NEW GUY")
 			// There are no existing SQLite DBs to reuse, so write a completely new one.
 			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
 			if err != nil {
@@ -133,6 +137,7 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 				return err
 			}
 		} else {
+			fmt.Println("USING OLD DUDE", newest, tempDBFile)
 			// Copy the existing DB to a new DB and update the new DB
 			err = copyFile(newest, tempDBFile)
 			if err != nil {
@@ -147,6 +152,8 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 				return err
 			}
 		}
+		fmt.Println("Time Taken:", time.Since(start))
+		fmt.Println("================================================================================")
 
 		return nil
 	})
@@ -258,7 +265,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 // filenames to prevent a newer version of the symbols service from attempting
 // to read from a database created by an older (and likely incompatible) symbols
 // service. Increment this when you change the database schema.
-const symbolsDBVersion = 3
+const symbolsDBVersion = 4
 
 // symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
 // namelowercase and pathlowercase, which enable indexed case insensitive
@@ -449,10 +456,14 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 	}
 
 	// git diff
+	fmt.Println("RepoName:", repoName)
 	changes, err := s.GitDiff(ctx, repoName, oldCommit, commitID)
+	fmt.Println("Error is:", err)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("SUCCESSFULLY GOT CHANGES!!")
 
 	deleteStatement, err := tx.Prepare("DELETE FROM symbols WHERE path = ?")
 	if err != nil {
@@ -499,8 +510,9 @@ func SanityCheck() error {
 	return nil
 }
 
-// findNewestFile lists the directory and returns the newest file's basename.
+// findNewestFile lists the directory and returns the newest file's path, prepended with dir.
 func findNewestFile(dir string) (string, error) {
+	fmt.Println("=> Searching in dir:", dir)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return "", nil
@@ -510,9 +522,15 @@ func findNewestFile(dir string) (string, error) {
 	newest := ""
 	for _, fi := range files {
 		if fi.Mode().IsRegular() {
+			if !strings.HasSuffix(fi.Name(), ".zip") {
+				continue
+			}
+
 			if newest == "" || fi.ModTime().After(mostRecentTime) {
+				fmt.Println("Found Newer:", newest, "->", filepath.Join(dir, fi.Name()))
+
 				mostRecentTime = fi.ModTime()
-				newest = fi.Name()
+				newest = filepath.Join(dir, fi.Name())
 			}
 		}
 	}
