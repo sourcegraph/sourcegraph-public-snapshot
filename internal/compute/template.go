@@ -1,8 +1,10 @@
 package compute
 
 import (
+	"bytes"
 	"encoding/json"
 	"strings"
+	"text/template"
 	"unicode/utf8"
 )
 
@@ -175,4 +177,61 @@ func toJSONString(template *Template) string {
 	}
 	json, _ := json.Marshal(jsons)
 	return string(json)
+}
+
+var builtinVariables = []string{
+	"repo",
+	"path",
+	"content",
+	"commit",
+	"author",
+}
+
+func isBuiltinVariable(str string) bool {
+	for _, v := range builtinVariables {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+func templatize(pattern string) (string, error) {
+	t, err := scanTemplate([]byte(pattern))
+	if err != nil {
+		return "", err
+	}
+	var templatized []string
+	for _, atom := range *t {
+		switch a := atom.(type) {
+		case Constant:
+			templatized = append(templatized, string(a))
+		case Variable:
+			if isBuiltinVariable(a.Name[1:]) {
+				templateVar := strings.Title(a.Name[1:])
+				templatized = append(templatized, `{{.`+templateVar+`}}`)
+				continue
+			}
+			// Leave alone other variables that don't correspond to
+			// builtins (e.g., regex capture groups)
+			templatized = append(templatized, a.Name)
+		}
+	}
+	return strings.Join(templatized, ""), nil
+}
+
+func substituteMetaVariables(pattern string, value interface{}) (string, error) {
+	templated, err := templatize(pattern)
+	if err != nil {
+		return "", err
+	}
+	t, err := template.New("").Parse(templated)
+	if err != nil {
+		return "", err
+	}
+	var result bytes.Buffer
+	if err := t.Execute(&result, value); err != nil {
+		return "", err
+	}
+	return result.String(), nil
 }
