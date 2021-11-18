@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/amplitude"
@@ -84,12 +85,14 @@ func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		if err := publishSourcegraphDotComEvents(events); err != nil {
-			return err
-		}
-		if err := publishAmplitudeEvents(events); err != nil {
-			return err
-		}
+		go func() {
+			if err := publishSourcegraphDotComEvents(events); err != nil {
+				log15.Error("publishSourcegraphDotComEvents failed", "err", err)
+			}
+			if err := publishAmplitudeEvents(events); err != nil {
+				log15.Error("publishAmplitudeEvents failed", "err", err)
+			}
+		}()
 	}
 
 	if err := logLocalEvents(ctx, db, events); err != nil {
