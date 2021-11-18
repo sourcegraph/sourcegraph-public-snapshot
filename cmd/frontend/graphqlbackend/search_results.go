@@ -1445,21 +1445,28 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			break
 		}
 
-		cloning := len(v.Cloning())
-		timedout := len(v.Timedout())
-		if cloning == 0 && timedout == 0 {
+		status := v.Stats.Status
+		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
 			break // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
+		var cloning, timedout int
+		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
+			cloning++
+		})
+		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+			timedout++
+		})
+
 		if attempts > 5 {
-			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
-			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
+			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", cloning, "timedout", timedout)
+			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", cloning, timedout)
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed
 		// out, so try again in a few seconds.
 		attempts++
-		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
+		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout)
 		time.Sleep(5 * time.Second)
 	}
 
