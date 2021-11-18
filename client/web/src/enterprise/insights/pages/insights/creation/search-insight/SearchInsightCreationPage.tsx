@@ -77,7 +77,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 telemetryService.log(
-                    'Insight Addition',
+                    'InsightAddition',
                     { insightType: 'searchInsights' },
                     { insightType: 'searchInsights' }
                 )
