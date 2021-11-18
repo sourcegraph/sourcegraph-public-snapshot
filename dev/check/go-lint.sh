@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 echo "--- golangci-lint"
-
+trap 'rm -f "$TMPFILE"' EXIT
 set -e
+TMPFILE=$(mktemp) || exit 1
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
@@ -12,8 +13,8 @@ export GO111MODULE=on
 
 config_file="$(pwd)/.golangci.yml"
 lint_script="$(pwd)/dev/golangci-lint.sh"
-global_exit_code=0
 annotate_script="$(pwd)/dev/ci/annotate.sh"
+global_exit_code=0
 
 run() {
   LINTER_ARG=${1}
@@ -26,12 +27,14 @@ run() {
   echo -e "$OUT"
 
   if [ $EXIT_CODE -ne 0 ]; then
-    global_exit_code="$EXIT_CODE"
+    # We want to return after running all tests, we don't want to fail fast, so 
+    # we store the EXIT_CODE (in a tmp file as this is running in a sub-shell).
+    echo "$EXIT_CODE" > $TMPFILE
     echo -e "$OUT" | "$annotate_script" -s "golangci-lint"
     echo "^^^ +++"
   fi
-
-  return "$EXIT_CODE"
+  
+  return $EXIT_CODE
 }
 
 # If no args are given, traverse through each project with a `go.mod`
@@ -41,13 +44,12 @@ if [ $# -eq 0 ]; then
 
     echo "--- golangci-lint $d"
 
-    run "./..."
+    run "./..." 
 
     popd >/dev/null
   done
 else
-  run "$@"
+  run "$@" 
 fi
 
-echo "Global exit code:" "$global_exit_code"
-exit $global_exit_code
+exit $(cat "$TMPFILE")
