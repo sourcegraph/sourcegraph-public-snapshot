@@ -1,7 +1,7 @@
 import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 
 import { LineChartSearchInsightDataSeriesInput, LineChartSearchInsightInput } from '../../../../../graphql-operations'
-import { InsightDashboard, SearchBasedInsight } from '../../types'
+import { InsightDashboard, isVirtualDashboard, SearchBasedInsight } from '../../types'
 import { isSearchBackendBasedInsight, SearchBasedBackendFilters } from '../../types/insight/search-insight'
 
 import { getStepInterval } from './insight-transformers'
@@ -26,7 +26,7 @@ export function prepareSearchInsightCreateInput(
         options: { title: insight.title },
     }
 
-    if (dashboard?.id) {
+    if (dashboard && !isVirtualDashboard(dashboard)) {
         input.dashboards = [dashboard.id]
     }
     return input
