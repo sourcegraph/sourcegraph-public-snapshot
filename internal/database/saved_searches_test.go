@@ -37,7 +37,8 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	_, err = SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -70,7 +71,8 @@ func TestSavedSearchesCreate(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -84,7 +86,8 @@ func TestSavedSearchesCreate(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	if !reflect.DeepEqual(ss, want) {
 		t.Errorf("query is '%v', want '%v'", ss, want)
@@ -107,7 +110,8 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	_, err = SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -118,7 +122,8 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		ID:          1,
 		Query:       "test2",
 		Description: "test2",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 
 	updatedSearch, err := SavedSearches(db).Update(ctx, updated)
@@ -147,7 +152,8 @@ func TestSavedSearchesDelete(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	_, err = SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -185,7 +191,8 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -203,7 +210,8 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}}
 	if !reflect.DeepEqual(savedSearch, want) {
 		t.Errorf("query is '%v+', want '%v+'", savedSearch, want)
@@ -226,7 +234,8 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -244,7 +253,8 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		Key:         "1",
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}}
 
 	if diff := cmp.Diff(want, savedSearch); diff != "" {
@@ -268,7 +278,8 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
 	if err != nil {
@@ -277,6 +288,52 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 
 	if ss == nil {
 		t.Fatalf("no saved search returned, create failed")
+	}
+
+	org1, err := Orgs(db).Create(ctx, "org1", nil)
+	if err != nil {
+		t.Fatal("can't create org1", err)
+	}
+	org2, err := Orgs(db).Create(ctx, "org2", nil)
+	if err != nil {
+		t.Fatal("can't create org2", err)
+	}
+
+	orgFake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		UserID:      nil,
+		OrgID:       &org1.ID,
+	}
+	orgSearch, err := SavedSearches(db).Create(ctx, orgFake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if orgSearch == nil {
+		t.Fatalf("no saved search returned, org saved search create failed")
+	}
+
+	org2Fake := &types.SavedSearch{
+		Query:       "test",
+		Description: "test",
+		UserID:      nil,
+		OrgID:       &org2.ID,
+	}
+	org2Search, err := SavedSearches(db).Create(ctx, org2Fake)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if org2Search == nil {
+		t.Fatalf("no saved search returned, org2 saved search create failed")
+	}
+
+	_, err = OrgMembers(db).Create(ctx, org1.ID, userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = OrgMembers(db).Create(ctx, org2.ID, userID)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	savedSearches, err := SavedSearches(db).ListSavedSearchesByUserID(ctx, userID)
@@ -288,7 +345,20 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		UserID:      userID,
+		UserID:      &userID,
+		OrgID:       nil,
+	}, {
+		ID:          2,
+		Query:       "test",
+		Description: "test",
+		UserID:      nil,
+		OrgID:       &org1.ID,
+	}, {
+		ID:          3,
+		Query:       "test",
+		Description: "test",
+		UserID:      nil,
+		OrgID:       &org2.ID,
 	}}
 
 	if !reflect.DeepEqual(savedSearches, want) {
