@@ -27,6 +27,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         batchChangesEnabled: true,
         batchChangesDisableWebhooksWarning: false,
         batchChangesWebhookLogsEnabled: true,
+        executorsEnabled: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
         externalServicesUserMode: 'public',
