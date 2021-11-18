@@ -2,9 +2,8 @@
 
 echo "--- golangci-lint"
 
-trap "echo ^^^ +++" ERR
+set -e
 
-set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 export GOBIN="$PWD/.bin"
@@ -13,21 +12,24 @@ export GO111MODULE=on
 
 config_file="$(pwd)/.golangci.yml"
 lint_script="$(pwd)/dev/golangci-lint.sh"
+global_exit_code=0
+annotate_script="$(pwd)/dev/ci/annotate.sh"
 
 run() {
   LINTER_ARG=${1}
 
+  set +e
   OUT=$("$lint_script" --config "$config_file" run "$LINTER_ARG")
   EXIT_CODE=$?
+  set -e
+
   echo -e "$OUT"
 
   if [ $EXIT_CODE -ne 0 ]; then
-    echo -e "$OUT" | ./dev/ci/annotate.sh -s "golangci-lint"
-    echo "^^^ +++"
+    global_exit_code="$EXIT_CODE"
 
-    exit $EXIT_CODE
-  else
-    echo $EXIT_CODE
+    echo -e "$OUT" | "$annotate_script" -s "golangci-lint"
+    echo "^^^ +++"
   fi
 }
 
@@ -45,3 +47,5 @@ if [ $# -eq 0 ]; then
 else
   run "$@"
 fi
+
+exit $global_exit_code
