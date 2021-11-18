@@ -31,7 +31,7 @@ type Resolver interface {
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]store.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) error
 
-	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error)
+	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
 	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)
@@ -188,7 +188,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	), nil
 }
 
-func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error) {
+func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, int, error) {
 	return r.dbStore.GetConfigurationPolicies(ctx, opts)
 }
 

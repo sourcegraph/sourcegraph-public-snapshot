@@ -24,6 +24,7 @@ import (
 const (
 	DefaultUploadPageSize                  = 50
 	DefaultIndexPageSize                   = 50
+	DefaultConfigurationPolicyPageSize     = 50
 	DefaultRepositoryFilterPreviewPageSize = 50
 )
 
@@ -266,30 +267,46 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
-// 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
-func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) ([]gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	opts := store.GetConfigurationPoliciesOptions{}
+// 🚨 SECURITY: configuration policies contain only repository ids and patterns
+func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) (gql.CodeIntelligenceConfigurationPolicyConnectionResolver, error) {
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	pageSize := DefaultConfigurationPolicyPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	opts := store.GetConfigurationPoliciesOptions{
+		Limit:  pageSize,
+		Offset: offset,
+	}
+
 	if args.Repository != nil {
 		id64, err := unmarshalRepositoryID(*args.Repository)
 		if err != nil {
 			return nil, err
 		}
 		opts.RepositoryID = int(id64)
-	} else {
-		opts.ConsiderPatterns = true
+	}
+	if args.Query != nil {
+		opts.Term = *args.Query
+	}
+	if args.ForDataRetention != nil {
+		opts.ForDataRetention = *args.ForDataRetention
+	}
+	if args.ForIndexing != nil {
+		opts.ForIndexing = *args.ForIndexing
 	}
 
-	policies, err := r.resolver.GetConfigurationPolicies(ctx, opts)
+	policies, totalCount, err := r.resolver.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]gql.CodeIntelligenceConfigurationPolicyResolver, 0, len(policies))
-	for _, policy := range policies {
-		resolvers = append(resolvers, NewConfigurationPolicyResolver(policy))
-	}
-
-	return resolvers, nil
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(policies, totalCount), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies

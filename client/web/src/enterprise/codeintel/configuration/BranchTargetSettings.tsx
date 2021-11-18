@@ -7,7 +7,7 @@ import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-oper
 import { GitTypeSelector } from './GitTypeSelector'
 import { ObjectsMatchingGitPattern } from './ObjectsMatchingGitPattern'
 import { ReposMatchingPatternList } from './ReposMatchingPatternList'
-import { nullPolicy } from './usePoliciesConfigurations'
+import { nullPolicy } from './usePolicies'
 
 export interface BranchTargetSettingsProps {
     repoId?: string
@@ -48,7 +48,11 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                 <small className="form-text text-muted">Required.</small>
             </div>
 
-            {!repoId && (
+            {repoId || policy.repository ? (
+                <div className="mb-3">
+                    This configuration policy applies only to {policy.repository?.name || 'the current repository'}.
+                </div>
+            ) : (
                 <ReposMatchingPatternList
                     repositoryPatterns={policy.repositoryPatterns}
                     setRepositoryPatterns={updater =>
@@ -71,7 +75,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
             />
 
             <ObjectsMatchingGitPattern
-                repoId={repoId}
+                repoId={repoId || policy.repository?.id}
                 type={policy.type}
                 pattern={policy.pattern}
                 setPattern={pattern => updatePolicy({ ...(policy || nullPolicy), pattern })}

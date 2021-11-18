@@ -13,11 +13,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/Dynam
 
 import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'
 import allConfigSchema from './schema.json'
-import {
-    useInferredConfig,
-    useRepositoryConfig,
-    useUpdateConfigurationForRepository,
-} from './usePoliciesConfigurations'
+import { useInferredConfig, useRepositoryConfig, useUpdateConfigurationForRepository } from './usePolicies'
 
 export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     repoId: string
