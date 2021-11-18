@@ -537,6 +537,7 @@ fragment RepositoryFields on Repository {
 	viewerPermission
 	stargazerCount
 	forkCount
+	visibility
 }
 	`
 	}
