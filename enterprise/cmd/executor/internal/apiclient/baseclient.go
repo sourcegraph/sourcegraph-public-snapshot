@@ -77,12 +77,13 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 			return false, nil, nil
 		}
 
-		content, err := io.ReadAll(resp.Body)
-		if err != nil {
+		if content, err := io.ReadAll(resp.Body); err != nil {
 			log15.Error("Failed to read response body", "error", err)
+		} else {
+			log15.Error("apiclient got unexpected status code", "code", resp.StatusCode, "body", content)
 		}
 
-		return false, nil, errors.Errorf("unexpected status code %d (%s)", resp.StatusCode, content)
+		return false, nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	return true, resp.Body, nil
