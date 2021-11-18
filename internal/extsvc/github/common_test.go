@@ -77,14 +77,14 @@ func TestClient_GetRepository(t *testing.T) {
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
-	"node_id": "i",
-	"full_name": "o/r",
-	"description": "d",
-	"html_url": "https://github.example.com/o/r",
-	"fork": true,
-	"stargazers_count": 30,
-	"watchers_count": 20,
-	"forks_count": 5,
+  "node_id": "i",
+  "full_name": "o/r",
+  "description": "d",
+  "html_url": "https://github.example.com/o/r",
+  "fork": true,
+  "stargazers_count": 30,
+  "watchers_count": 20,
+  "forks_count": 5,
   "visibility": "internal"
 }
 `,
