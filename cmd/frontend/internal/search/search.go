@@ -105,6 +105,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Limit:        inputs.MaxResults(),
 		Trace:        trace.URL(trace.ID(ctx)),
 		DisplayLimit: displayLimit,
+		RepoNamer:    repoNamer(ctx, h.db),
 	}
 
 	sendProgress := func() {
