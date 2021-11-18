@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/csrf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -52,7 +50,6 @@ type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
 	ExternalURL    string            `json:"externalURL,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
-	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
@@ -115,9 +112,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		headers["Cache-Control"] = "no-cache"
 	}
 
-	csrfToken := csrf.Token(req)
-	headers["X-Csrf-Token"] = csrfToken
-
 	siteID := siteid.Get()
 
 	// Show the site init screen?
@@ -152,7 +146,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	return JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
-		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),

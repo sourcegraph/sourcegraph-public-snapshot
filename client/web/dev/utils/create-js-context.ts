@@ -31,7 +31,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         codeIntelAutoIndexingAllowGlobalPolicies: false,
         externalServicesUserMode: 'public',
         productResearchPageEnabled: true,
-        csrfToken: 'qwerty',
         assetsRoot: '/.assets',
         deployType: 'dev',
         debug: true,
