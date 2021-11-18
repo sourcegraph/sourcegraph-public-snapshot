@@ -160,7 +160,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if progress.Stats.Repos == nil {
-			progress.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+			progress.Stats.Repos = make(map[api.RepoID]struct{})
 		}
 
 		for i, match := range event.Results {
@@ -174,7 +174,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if _, ok := progress.Stats.Repos[repo.ID]; !ok {
-				progress.Stats.Repos[repo.ID] = repo
+				progress.Stats.Repos[repo.ID] = struct{}{}
 			}
 
 			eventMatch := fromMatch(match, repoMetadata)
