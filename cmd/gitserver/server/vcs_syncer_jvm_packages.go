@@ -347,29 +347,11 @@ func unzipJarFile(jarPath, destination string) (err error) {
 	destinationDirectory := strings.TrimSuffix(destination, string(os.PathSeparator)) + string(os.PathSeparator)
 
 	for _, file := range reader.File {
-		if strings.HasPrefix(file.Name, ".git/") {
-			// For security reasons, don't unzip files under the `.git/`
-			// directory. See https://github.com/sourcegraph/security-issues/issues/163
+		cleanedOutputPath, isPotentiallyMalicious :=
+			isPotentiallyMaliciousFilepathInArchive(file.Name, destinationDirectory)
+		if isPotentiallyMalicious {
 			continue
 		}
-		if strings.HasSuffix(file.Name, "/") {
-			// Skip directory entries. Directory entries must end
-			// with a forward slash (even on Windows) according to
-			// `file.Name` docstring.
-			continue
-		}
-		if strings.HasPrefix(file.Name, "/") {
-			// Skip absolute paths. While they are extracted relative to `destination`,
-			// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
-			continue
-		}
-		cleanedOutputPath := path.Join(destination, file.Name)
-		if !strings.HasPrefix(cleanedOutputPath, destinationDirectory) {
-			// For security reasons, skip file if it's not a child
-			// of the target directory. See "Zip Slip Vulnerability".
-			continue
-		}
-
 		err := copyZipFileEntry(file, cleanedOutputPath)
 		if err != nil {
 			return err
