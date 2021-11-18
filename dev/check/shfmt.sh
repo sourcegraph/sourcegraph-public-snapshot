@@ -2,7 +2,7 @@
 
 echo "--- shfmt (ensure shell-scripts are formatted consistently)"
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../.. || exit
 
 OUT=$(shfmt -d .)
 EXIT_CODE=$?
