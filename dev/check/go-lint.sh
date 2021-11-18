@@ -51,4 +51,4 @@ else
   run "$@"
 fi
 
-exit $(cat "$TMPFILE")
+exit "$(cat "${TMPFILE}")"
