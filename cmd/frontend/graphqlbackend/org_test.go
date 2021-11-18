@@ -1,18 +1,25 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"net/http"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestOrganization(t *testing.T) {
@@ -160,6 +167,137 @@ func TestOrganization(t *testing.T) {
 					}
 				}
 				`,
+			},
+		})
+	})
+}
+
+func TestAddOrganizationMember(t *testing.T) {
+	userID := int32(2)
+	userName := "add-org-member"
+	orgID := int32(1)
+	orgIDString := string(MarshalOrgID(orgID))
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: orgID, Name: "acme"}, nil)
+
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: userName}, nil)
+
+	orgMembers := dbmock.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: orgID, UserID: userID}, nil)
+
+	featureFlags := dbmock.NewMockFeatureFlagStore()
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+	// tests below depend on config being there
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
+
+	// mock repo updater http client
+	oldClient := repoupdater.DefaultClient.HTTPClient
+	repoupdater.DefaultClient.HTTPClient = &http.Client{
+		Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte{'{', '}'})),
+			}, nil
+		}),
+	}
+
+	defer func() {
+		repoupdater.DefaultClient.HTTPClient = oldClient
+	}()
+
+	db := dbmock.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	t.Run("Works for site admin if not on Cloud", func(t *testing.T) {
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
+				addUserToOrganization(organization: $organization, username: $username) {
+					alwaysNil
+				}
+			}`,
+			ExpectedResult: `{
+				"addUserToOrganization": {
+					"alwaysNil": null
+				}
+			}`,
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+				"username":     userName,
+			},
+		})
+	})
+
+	t.Run("Does not work for site admin on Cloud", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
+				addUserToOrganization(organization: $organization, username: $username) {
+					alwaysNil
+				}
+			}`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*gqlerrors.QueryError{
+				{
+					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
+					Path:    []interface{}{string("addUserToOrganization")},
+				},
+			},
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+				"username":     userName,
+			},
+		})
+	})
+
+	t.Run("Works on Cloud if site admin is org member", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+			if userID == 1 {
+				return &types.OrgMembership{OrgID: orgID, UserID: 1}, nil
+			} else if userID == 2 {
+				return nil, &database.ErrOrgMemberNotFound{}
+			}
+			t.Fatalf("Unexpected user ID received for OrgMembers.GetByOrgIDAndUserID: %d", userID)
+			return nil, nil
+		})
+
+		defer func() {
+			envvar.MockSourcegraphDotComMode(false)
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+		}()
+
+		RunTest(t, &Test{
+			Schema:  mustParseGraphQLSchema(t, db),
+			Context: ctx,
+			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
+				addUserToOrganization(organization: $organization, username: $username) {
+					alwaysNil
+				}
+			}`,
+			ExpectedResult: `{
+				"addUserToOrganization": {
+					"alwaysNil": null
+				}
+			}`,
+			Variables: map[string]interface{}{
+				"organization": orgIDString,
+				"username":     userName,
 			},
 		})
 	})
