@@ -10,16 +10,13 @@ import {
     AddInsightViewToDashboardResult,
     CreateDashboardResult,
     CreateInsightsDashboardInput,
-    CreateLangStatsInsightResult,
-    CreateSearchBasedInsightResult,
     DeleteDashboardResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
     GetInsightViewResult,
     InsightsDashboardsResult,
     InsightSubjectsResult,
-    LineChartSearchInsightInput,
-    PieChartSearchInsightInput,
+    InsightViewFiltersInput,
     RemoveInsightViewFromDashboardResult,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
@@ -54,6 +51,7 @@ import {
     InsightUpdateInput,
     ReachableInsight,
 } from './code-insights-backend-types'
+import { createInsight } from './gql-backend-handlers/create-insight'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
@@ -63,7 +61,7 @@ import { createLineChartContent } from './utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView } from './utils/insight-transformers'
 import { parseDashboardScope } from './utils/parse-dashboard-scope'
-import { prepareSearchInsightCreateInput, prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
+import { prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
@@ -134,13 +132,17 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // TODO: Rethink all of this method. Currently `createViewContent` expects a different format of
     // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
     // fit with both of those shapes.
-    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> =>
-        fromObservableQuery(
-            this.apolloClient.watchQuery<GetInsightViewResult>({
+    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> => {
+        const filters: InsightViewFiltersInput = {
+            includeRepoRegex: insight.filters?.includeRepoRegexp,
+            excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+        }
+
+        return from(
+            // TODO: Use watchQuery instead of query when setting migration api is deprecated
+            this.apolloClient.query<GetInsightViewResult>({
                 query: GET_INSIGHT_VIEW_GQL,
-                variables: { id: insight.id },
-                // In order to avoid unnecessary requests and enable caching for BE insights
-                fetchPolicy: 'cache-first',
+                variables: { id: insight.id, filters },
             })
         ).pipe(
             // Note: this insight is guaranteed to exist since this function
@@ -166,6 +168,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 },
             }))
         )
+    }
 
     public getBuiltInInsightData = getBuiltInInsight
 
@@ -173,57 +176,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // it was part of setting-cascade based API.
     public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => of([])
 
-    public createInsight = (input: InsightCreateInput): Observable<unknown> => {
-        const { insight, dashboard } = input
-
-        switch (insight.viewType) {
-            case InsightType.SearchBased: {
-                const input: LineChartSearchInsightInput = prepareSearchInsightCreateInput(insight, dashboard)
-
-                return from(
-                    this.apolloClient.mutate<CreateSearchBasedInsightResult>({
-                        mutation: gql`
-                            mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
-                                createLineChartSearchInsight(input: $input) {
-                                    view {
-                                        id
-                                    }
-                                }
-                            }
-                        `,
-                        variables: { input },
-                    })
-                )
-            }
-
-            case InsightType.LangStats: {
-                return from(
-                    this.apolloClient.mutate<CreateLangStatsInsightResult, { input: PieChartSearchInsightInput }>({
-                        mutation: gql`
-                            mutation CreateLangStatsInsight($input: PieChartSearchInsightInput!) {
-                                createPieChartSearchInsight(input: $input) {
-                                    view {
-                                        id
-                                    }
-                                }
-                            }
-                        `,
-                        variables: {
-                            input: {
-                                query: '',
-                                repositoryScope: { repositories: [insight.repository] },
-                                presentationOptions: {
-                                    title: insight.title,
-                                    otherThreshold: insight.otherThreshold,
-                                },
-                                dashboards: [dashboard?.id ?? ''],
-                            },
-                        },
-                    })
-                )
-            }
-        }
-    }
+    public createInsight = (input: InsightCreateInput): Observable<unknown> => createInsight(this.apolloClient, input)
 
     public updateInsight = (input: InsightUpdateInput): Observable<void[]> => {
         const insight = input.newInsight
@@ -307,6 +260,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             this.apolloClient.watchQuery<InsightsDashboardsResult>({
                 query: GET_INSIGHTS_DASHBOARDS_GQL,
                 variables: { id },
+                fetchPolicy: 'cache-first',
             })
         ).pipe(
             map(result => {
@@ -412,7 +366,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                                 const newDashboardsReference = cache.writeFragment({
                                     data: data.createInsightsDashboard.dashboard,
                                     fragment: gql`
-                                        fragment NewTodo on InsightsDashboard {
+                                        fragment NewDashboard on InsightsDashboard {
                                             id
                                             title
                                             views {

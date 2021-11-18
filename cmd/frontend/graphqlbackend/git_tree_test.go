@@ -9,16 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGitTree(t *testing.T) {
@@ -73,91 +69,6 @@ func TestGitTree(t *testing.T) {
             "name": "testFile",
             "path": "foo bar/testFile",
             "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/blob/foo%20bar/testFile"
-          }
-        ]
-      }
-    }
-  }
-}
-			`,
-		},
-	}
-	testGitTree(t, db, tests)
-}
-
-func TestGitTree_SubRepo_Deny(t *testing.T) {
-	srp := dbmock.NewMockSubRepoPermsStore()
-	srp.GetByUserFunc.SetDefaultReturn(
-		map[api.RepoName]authz.SubRepoPermissions{
-			"github.com/gorilla/mux": {
-				PathIncludes: []string{"**"},
-				PathExcludes: []string{"**/foo bar/testFile"},
-			},
-		},
-		nil,
-	)
-
-	db := dbmock.NewMockDB()
-	db.SubRepoPermsFunc.SetDefaultReturn(srp)
-
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
-				},
-			},
-		},
-	})
-	defer conf.Mock(nil)
-
-	ctx := actor.WithActor(context.Background(), actor.FromUser(1))
-	tests := []*Test{
-		{
-			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
-			Query: `
-				{
-					repository(name: "github.com/gorilla/mux") {
-						commit(rev: "` + exampleCommitSHA1 + `") {
-							tree(path: "foo bar") {
-								directories {
-									name
-									path
-									url
-								}
-								files {
-									name
-									path
-									url
-								}
-							}
-						}
-					}
-				}
-			`,
-			ExpectedResult: `
-{
-  "repository": {
-    "commit": {
-      "tree": {
-        "directories": [
-          {
-            "name": "Geoffrey's random queries.32r242442bf",
-            "path": "foo bar/Geoffrey's random queries.32r242442bf",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/tree/foo%20bar/Geoffrey%27s%20random%20queries.32r242442bf"
-          },
-          {
-            "name": "testDirectory",
-            "path": "foo bar/testDirectory",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/tree/foo%20bar/testDirectory"
-          }
-        ],
-        "files": [
-          {
-            "name": "% token.4288249258.sql",
-            "path": "foo bar/% token.4288249258.sql",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/blob/foo%20bar/%25%20token.4288249258.sql"
           }
         ]
       }

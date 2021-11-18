@@ -95,7 +95,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 ) : (
                     line && (
                         <SeriesCard
-                            key={`${line.id}-card`}
+                            key={`${line.id ?? line.name}-card`}
                             isRemoveSeriesAvailable={!isBackendInsightEdit}
                             onEdit={() => onEditSeriesRequest(index)}
                             onRemove={() => onSeriesRemove(index)}

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
@@ -26,7 +25,6 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
@@ -60,45 +58,68 @@ func (c *SearchResultsResolver) LimitHit() bool {
 	return c.Stats.IsLimitHit || (c.limit > 0 && len(c.Matches) > c.limit)
 }
 
-func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
-	repos := c.Stats.Repos
-	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
+func (c *SearchResultsResolver) matchesRepoIDs() map[api.RepoID]struct{} {
+	m := map[api.RepoID]struct{}{}
+	for _, id := range c.Matches {
+		m[id.RepoName().ID] = struct{}{}
 	}
-	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].ID() < resolvers[b].ID()
-	})
-	return resolvers
+	return m
+}
+
+func (c *SearchResultsResolver) Repositories(ctx context.Context) ([]*RepositoryResolver, error) {
+	// c.Stats.Repos does not necessarily respect limits that are applied in
+	// our graphql layers. Instead we generate the list from the matches.
+	m := c.matchesRepoIDs()
+	ids := make([]api.RepoID, 0, len(m))
+	for id := range m {
+		ids = append(ids, id)
+	}
+	return c.repositoryResolvers(ctx, ids)
 }
 
 func (c *SearchResultsResolver) RepositoriesCount() int32 {
-	return int32(len(c.Stats.Repos))
+	return int32(len(c.matchesRepoIDs()))
 }
 
-func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*RepositoryResolver {
-	var resolvers []*RepositoryResolver
-	c.Stats.Status.Filter(mask, func(id api.RepoID) {
-		if r, ok := c.Stats.Repos[id]; ok {
-			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
-		}
+func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []api.RepoID) ([]*RepositoryResolver, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	resolvers := make([]*RepositoryResolver, 0, len(ids))
+	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
+		IDs: ids,
+	}, func(repo *types.MinimalRepo) {
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, repo.ToRepo()))
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
 	})
-	return resolvers
+	return resolvers, nil
 }
 
-func (c *SearchResultsResolver) Cloning() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusCloning)
+func (c *SearchResultsResolver) repoIDsByStatus(mask search.RepoStatus) []api.RepoID {
+	var ids []api.RepoID
+	c.Stats.Status.Filter(mask, func(id api.RepoID) {
+		ids = append(ids, id)
+	})
+	return ids
 }
 
-func (c *SearchResultsResolver) Missing() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusMissing)
+func (c *SearchResultsResolver) Cloning(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusCloning))
 }
 
-func (c *SearchResultsResolver) Timedout() []*RepositoryResolver {
-	return c.repositoryResolvers(search.RepoStatusTimedout)
+func (c *SearchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusMissing))
+}
+
+func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedout))
 }
 
 func (c *SearchResultsResolver) IndexUnavailable() bool {
@@ -672,7 +693,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				jobs = append(jobs, &unindexed.TextSearch{
+				jobs = append(jobs, &unindexed.RepoSubsetTextSearch{
 					ZoektArgs:         zoektArgs,
 					SearcherArgs:      searcherArgs,
 					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
@@ -1447,21 +1468,28 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			break
 		}
 
-		cloning := len(v.Cloning())
-		timedout := len(v.Timedout())
-		if cloning == 0 && timedout == 0 {
+		status := v.Stats.Status
+		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
 			break // zero results, but no cloning or timed out repos. No point in retrying.
 		}
 
+		var cloning, timedout int
+		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
+			cloning++
+		})
+		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+			timedout++
+		})
+
 		if attempts > 5 {
-			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
-			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", len(v.Cloning()), len(v.Timedout()))
+			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", cloning, "timedout", timedout)
+			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", cloning, timedout)
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed
 		// out, so try again in a few seconds.
 		attempts++
-		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", len(v.Cloning()), "timedout", len(v.Timedout()))
+		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout)
 		time.Sleep(5 * time.Second)
 	}
 
@@ -1564,16 +1592,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		ctx, stream, cancelOnLimit = streaming.WithLimit(ctx, stream, limit)
 		defer cancelOnLimit()
 	}
-
-	var agg *run.Aggregator
-	if r.subRepoPerms.Enabled() {
-		// If enabled, provide an additional filtering function for aggregator to apply.
-		//
-		// TODO(#27372): Applying sub-repo permissions here is not the intended final design.
-		agg = run.NewAggregator(r.db, stream, subRepoPermsFilter(ctx, r.subRepoPerms))
-	} else {
-		agg = run.NewAggregator(r.db, stream, nil)
-	}
+	agg := run.NewAggregator(r.db, stream)
 
 	// This ensures we properly cleanup in the case of an early return. In
 	// particular we want to cancel global searches before returning early.
@@ -1729,7 +1748,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		case "Repo":
 			return waitGroup(true)
-		case "Text":
+		case "RepoSubsetText":
 			return waitGroup(true)
 		case "Structural":
 			return waitGroup(true)
@@ -1912,49 +1931,4 @@ func (r *searchResolver) getExactFilePatterns() map[string]struct{} {
 			}
 		})
 	return m
-}
-
-// subRepoPermsFilter returns a callback that is used to drop results in the given SearchEvent
-// that the actor in the given context does not have read access to.
-func subRepoPermsFilter(ctx context.Context, srp authz.SubRepoPermissionChecker) func(event *streaming.SearchEvent) error {
-	a := actor.FromContext(ctx)
-
-	return func(event *streaming.SearchEvent) error {
-		// Filter in place, keeping results the given actor is authorized to see.
-		tr, ctx := trace.New(ctx, "subRepoPermsFilter", "")
-		var (
-			errs         = &multierror.Error{}
-			authorized   = 0
-			resultsCount = len(event.Results)
-		)
-		defer func() {
-			tr.SetError(errs.ErrorOrNil())
-			tr.LazyPrintf("actor=(%s) authorized=%d unauthorized=%d",
-				a.String(), authorized, resultsCount-authorized)
-			tr.Finish()
-		}()
-		for _, result := range event.Results {
-			key := result.Key()
-			perms, err := authz.ActorPermissions(ctx, srp, a, authz.RepoContent{
-				Repo: key.Repo,
-				Path: key.Path,
-			})
-			if err != nil {
-				// Log error but don't propagate upwards to ensure data does not leak
-				log15.Error("subRepoPermsFilter check failed",
-					"actor.UID", a.UID,
-					"result.Key", key,
-					"error", err)
-				errs = multierror.Append(errs, fmt.Errorf("subRepoPermsFilter: failed to check sub-repo permissions"))
-			}
-			if perms.Include(authz.Read) {
-				event.Results[authorized] = result
-				authorized++
-			}
-		}
-		// Only keep authorized matches
-		event.Results = event.Results[:authorized]
-
-		return errs.ErrorOrNil()
-	}
 }

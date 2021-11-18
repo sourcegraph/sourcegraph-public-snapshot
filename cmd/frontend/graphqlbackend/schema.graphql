@@ -1936,11 +1936,11 @@ type SearchResults {
     """
     sparkline: [Int!]!
     """
-    Repositories that were eligible to be searched.
+    Repositories from results.
     """
     repositories: [Repository!]!
     """
-    The number of repositories that were eligible to be searched (for clients
+    The number of repositories that had results (for clients
     that just wish to know how many without querying the, sometimes extremely
     large, list).
     """

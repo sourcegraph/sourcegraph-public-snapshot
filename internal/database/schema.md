@@ -1934,20 +1934,19 @@ Indexes:
  updated_at        | timestamp with time zone |           | not null | now()
  notify_owner      | boolean                  |           | not null | 
  notify_slack      | boolean                  |           | not null | 
- user_id           | integer                  |           | not null | 
+ user_id           | integer                  |           |          | 
  org_id            | integer                  |           |          | 
  slack_webhook_url | text                     |           |          | 
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Check constraints:
+    "saved_searches_notifications_disabled" CHECK (notify_owner = false AND notify_slack = false)
     "user_or_org_id_not_null" CHECK (user_id IS NOT NULL AND org_id IS NULL OR org_id IS NOT NULL AND user_id IS NULL)
 Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
 ```
-
-**org_id**: DEPRECATED: saved searches must be owned by a user
 
 # Table "public.schema_migrations"
 ```

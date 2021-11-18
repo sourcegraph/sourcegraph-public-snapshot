@@ -462,7 +462,10 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
                         <div className={styles.section}>
                             <h2>Changes</h2>
-                            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                            <FilteredConnection<
+                                GitCommitFields,
+                                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                            >
                                 location={props.location}
                                 className="mt-2"
                                 listClassName="list-group list-group-flush"
@@ -471,7 +474,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 queryConnection={queryCommits}
                                 nodeComponent={GitCommitNode}
                                 nodeComponentProps={{
-                                    className: 'list-group-item',
+                                    className: classNames('list-group-item', styles.gitCommitNode),
+                                    messageSubjectClassName: styles.gitCommitNodeMessageSubject,
                                     compact: true,
                                 }}
                                 updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}

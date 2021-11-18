@@ -18,6 +18,7 @@ import { externalLinkFieldsFragment } from '../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
+import styles from './RepositoryCommitsPage.module.scss'
 
 export const gitCommitFragment = gql`
     fragment GitCommitFields on GitCommit {
@@ -133,10 +134,10 @@ export const RepositoryCommitsPage: React.FunctionComponent<Props> = ({ useBread
     )
 
     return (
-        <div className="repository-commits-page">
+        <div className={styles.repositoryCommitsPage}>
             <PageTitle title="Commits" />
             <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                className="repository-commits-page__content"
+                className={styles.content}
                 listClassName="list-group list-group-flush"
                 noun="commit"
                 pluralNoun="commits"

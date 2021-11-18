@@ -83,7 +83,18 @@ type compiledRules struct {
 // data within a repo. Sub-repository permissions enforcement is on top of existing
 // repository permissions, which means the user must already have access to the
 // repository itself. The intention is for this client to be created once at startup
-// and passed in to all places that need to check sub repo permissions.
+// and passed in to all places that need to check sub repo permissions. For example:
+//
+// 	subRepoOnce.Do(func() {
+// 		var err error
+// 		subRepoClient, err = authz.NewSubRepoPermsClient(database.SubRepoPerms(db))
+// 		if err != nil {
+// 			// We expect creating a client to always succeed. If not, it is due to an error
+// 			// in our code when instantiating it.
+// 			panic(fmt.Sprintf("creating SubRepoPermsClient: %v", err))
+// 		}
+// 	})
+// 	return subRepoClient.WithGetter(db.SubRepoPerms())
 //
 // Note that sub-repo permissions are currently opt-in via the
 // experimentalFeatures.enableSubRepoPermissions option.

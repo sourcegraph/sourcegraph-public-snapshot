@@ -24,8 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
-	userToInvite, err = database.Users(db).GetByUsername(ctx, username)
+func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
+	userToInvite, err = db.Users().GetByUsername(ctx, username)
 	if err != nil {
 		return nil, "", err
 	}
@@ -42,7 +42,7 @@ func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username s
 		}
 	}
 
-	if _, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
+	if _, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
 		return nil, "", errors.New("user is already a member of the organization")
 	} else if !errors.HasType(err, &database.ErrOrgMemberNotFound{}) {
 		return nil, "", err

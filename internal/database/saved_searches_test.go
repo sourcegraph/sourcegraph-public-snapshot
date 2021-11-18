@@ -37,8 +37,6 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	_, err = SavedSearches(db).Create(ctx, fake)
@@ -72,8 +70,6 @@ func TestSavedSearchesCreate(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
@@ -88,8 +84,6 @@ func TestSavedSearchesCreate(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	if !reflect.DeepEqual(ss, want) {
@@ -113,8 +107,6 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	_, err = SavedSearches(db).Create(ctx, fake)
@@ -126,8 +118,6 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		ID:          1,
 		Query:       "test2",
 		Description: "test2",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 
@@ -157,8 +147,6 @@ func TestSavedSearchesDelete(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	_, err = SavedSearches(db).Create(ctx, fake)
@@ -197,8 +185,6 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
@@ -217,8 +203,6 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}}
 	if !reflect.DeepEqual(savedSearch, want) {
@@ -242,8 +226,6 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
@@ -262,8 +244,6 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		Key:         "1",
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}}
 
@@ -288,8 +268,6 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}
 	ss, err := SavedSearches(db).Create(ctx, fake)
@@ -310,8 +288,6 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      userID,
 	}}
 

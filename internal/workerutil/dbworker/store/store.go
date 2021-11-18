@@ -568,7 +568,35 @@ func (s *store) Heartbeat(ctx context.Context, ids []int, options HeartbeatOptio
 	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
 
 	knownIDs, err = basestore.ScanInts(s.Query(ctx, s.formatQuery(updateCandidateQuery, quotedTableName, sqlf.Join(conds, "AND"), quotedTableName, s.now())))
-	return knownIDs, err
+	if err != nil {
+		return nil, err
+	}
+
+	if len(knownIDs) != len(ids) {
+	outer:
+		for _, recordID := range ids {
+			for _, test := range knownIDs {
+				if test == recordID {
+					continue outer
+				}
+			}
+
+			debug, debugErr := s.fetchDebugInformationForJob(ctx, recordID)
+			if debugErr != nil {
+				log15.Error("failed to fetch debug information for job",
+					"recordID", recordID,
+					"err", debugErr,
+				)
+			}
+			log15.Error("heartbeat lost a job",
+				"recordID", recordID,
+				"debug", debug,
+				"options.workerHostname", options.WorkerHostname,
+			)
+		}
+	}
+
+	return knownIDs, nil
 }
 
 const updateCandidateQuery = `
