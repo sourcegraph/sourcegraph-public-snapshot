@@ -368,6 +368,9 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
     },
 }
 
+/**
+ * See https://docs.github.com/en/rest/reference/repos#get-a-repository
+ */
 export const isPrivateRepository = (repoName: string): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)

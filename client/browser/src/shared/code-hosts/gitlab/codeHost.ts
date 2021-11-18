@@ -130,6 +130,9 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
+/**
+ * See https://docs.gitlab.com/ee/api/projects.html#get-single-project
+ */
 export const isPrivateRepository = (projectId?: string): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !projectId) {
         return Promise.resolve(true)
