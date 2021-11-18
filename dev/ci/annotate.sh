@@ -19,8 +19,10 @@ while getopts 's:m' flag; do
   case "${flag}" in
     s) SECTION="${OPTARG}" ;;
     m) MARKDOWN='true' ;;
-    *) print_usage
-       exit 1 ;;
+    *)
+      print_usage
+      exit 1
+      ;;
   esac
 done
 
@@ -34,20 +36,20 @@ flock 100 || exit 1
 
 if [ ! -f "$FILE" ]; then
   touch $FILE
-  printf "**%s**\n\n" "$BUILDKITE_LABEL" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "**%s**\n\n" "$BUILDKITE_LABEL" | cat #buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
 fi
 
 BODY=""
 while IFS= read -r line; do
-  if [ -z "$BODY" ]; then 
+  if [ -z "$BODY" ]; then
     BODY="$line"
-  else 
+  else
     BODY=$(printf "%s\n%s" "$BODY" "$line")
   fi
 done
 
 if [ "$MARKDOWN" = true ]; then
-  printf "_%s_\n%s\n" "$SECTION" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "_%s_\n%s\n" "$SECTION" "$BODY" | cat #buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
 else
-  printf "_%s_\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
+  printf "_%s_\n\`\`\`term\n%s\n\`\`\`\n" "$SECTION" "$BODY" | cat #buildkite-agent annotate --style error --context "$BUILDKITE_JOB_ID" --append
 fi
