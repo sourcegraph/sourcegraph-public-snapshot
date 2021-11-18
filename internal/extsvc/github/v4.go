@@ -537,15 +537,20 @@ fragment RepositoryFields on Repository {
 	viewerPermission
 	stargazerCount
 	forkCount
-	visibility
 }
 	`
 	}
-	ghe300Fields := []string{}
+	conditionalFields := []string{}
 	version := c.determineGitHubVersion(ctx)
-	if ghe300PlusOrDotComSemver.Check(version) {
-		ghe300Fields = append(ghe300Fields, "stargazerCount")
+
+	if ghe220PlusOrDotComSemver.Check(version) {
+		conditionalFields = append(conditionalFields, "visibility")
 	}
+
+	if ghe300PlusOrDotComSemver.Check(version) {
+		conditionalFields = append(conditionalFields, "stargazerCount")
+	}
+
 	// Some fields are not yet available on GitHub Enterprise yet
 	// or are available but too new to expect our customers to have updated:
 	// - viewerPermission
@@ -564,5 +569,5 @@ fragment RepositoryFields on Repository {
 	forkCount
 	%s
 }
-	`, strings.Join(ghe300Fields, "\n	"))
+	`, strings.Join(conditionalFields, "\n	"))
 }
