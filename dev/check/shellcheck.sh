@@ -2,7 +2,11 @@
 
 echo "--- shellcheck"
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../.. || exit
+trap "echo ^^^ +++" ERR
+
+set -e
+
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 SHELL_SCRIPTS=()
 
