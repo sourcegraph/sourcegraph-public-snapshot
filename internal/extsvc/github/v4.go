@@ -540,15 +540,15 @@ fragment RepositoryFields on Repository {
 }
 	`
 	}
-	conditionalFields := []string{}
+	conditionalGHEFields := []string{}
 	version := c.determineGitHubVersion(ctx)
 
 	if ghe220PlusOrDotComSemver.Check(version) {
-		conditionalFields = append(conditionalFields, "visibility")
+		conditionalGHEFields = append(conditionalGHEFields, "visibility")
 	}
 
 	if ghe300PlusOrDotComSemver.Check(version) {
-		conditionalFields = append(conditionalFields, "stargazerCount")
+		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
 	}
 
 	// Some fields are not yet available on GitHub Enterprise yet
@@ -569,5 +569,5 @@ fragment RepositoryFields on Repository {
 	forkCount
 	%s
 }
-	`, strings.Join(conditionalFields, "\n	"))
+	`, strings.Join(conditionalGHEFields, "\n	"))
 }
