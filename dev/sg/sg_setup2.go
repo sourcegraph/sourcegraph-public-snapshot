@@ -52,6 +52,8 @@ func setup2Exec(ctx context.Context, args []string) error {
 		panic("unsupported os!")
 	}
 
+	// TODO: Check whether we are in the repository or not
+
 	failed := []int{}
 	for i := range deps {
 		failed = append(failed, i)
@@ -505,7 +507,7 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 			{name: "yarn", check: checkInPath("yarn")},
 			{name: "node", check: checkInPath("node")},
 		},
-		// todo: customAllInOnecommand
+		// TODO: customAllInOnecommand
 		// - install asdf
 		// - reload asdf
 		// - check for sourcegraph repository
