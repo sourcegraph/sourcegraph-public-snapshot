@@ -14,10 +14,10 @@ import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wild
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 
 import { BranchTargetSettings } from './BranchTargetSettings'
+import { FlashMessage } from './FlashMessage'
 import { IndexingSettings } from './IndexSettings'
 import { RetentionSettings } from './RetentionSettings'
 import { useDeletePolicies, usePolicyConfigurationByID, useSavePolicyConfiguration } from './usePolicies'
-import { FlashMessage } from './FlashMessage'
 
 export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -74,7 +74,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     },
                 })
             )
-    }, [policy, repo, savePolicyConfiguration, setSaved, history])
+    }, [policy, repo, savePolicyConfiguration, history])
 
     const handleDelete = useCallback(
         async (id: string, name: string) => {
