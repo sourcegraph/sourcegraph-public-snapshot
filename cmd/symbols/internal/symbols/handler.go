@@ -9,28 +9,19 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
 type symbolsHandler struct {
-	gitserverClient sqlite.GitserverClient
-	parser          parser.Parser
-	cache           *diskcache.Store
+	searcher search.Searcher
 }
 
 func NewHandler(
-	gitserverClient sqlite.GitserverClient,
-	parser parser.Parser,
-	cache *diskcache.Store,
+	searcher search.Searcher,
 ) http.Handler {
 	h := &symbolsHandler{
-		gitserverClient: gitserverClient,
-		parser:          parser,
-		cache:           cache,
+		searcher: searcher,
 	}
 
 	mux := http.NewServeMux()
@@ -46,7 +37,7 @@ func (h *symbolsHandler) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := search.Search(r.Context(), h.gitserverClient, h.parser, h.cache, args, sqlite.WriteDBFile)
+	result, err := h.searcher.Search(r.Context(), args)
 	if err != nil {
 		if err == context.Canceled && r.Context().Err() == context.Canceled {
 			return // client went away

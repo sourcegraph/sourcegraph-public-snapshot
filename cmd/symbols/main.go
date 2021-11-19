@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -81,11 +82,12 @@ func main() {
 
 	gitserverClient := &gitserverClient{}
 	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
+	searcher := search.NewSearcher(gitserverClient, parser, cache, sqlite.WriteDBFile)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(symbols.NewHandler(gitserverClient, parser, cache))),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(symbols.NewHandler(searcher))),
 	})
 
 	evictionDuration := time.Second * 10

@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	symbolsSearch "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -47,7 +49,8 @@ func TestHandler(t *testing.T) {
 	}
 
 	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	server := httptest.NewServer(NewHandler(gitserverClient, parser, cache))
+	searcher := symbolsSearch.NewSearcher(gitserverClient, parser, cache, sqlite.WriteDBFile)
+	server := httptest.NewServer(NewHandler(searcher))
 	defer server.Close()
 	client := symbolsclient.Client{
 		URL:        server.URL,

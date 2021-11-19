@@ -71,6 +71,9 @@ func BenchmarkSearch(b *testing.B) {
 		b.Fatal(err)
 	}
 
+	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
+	searcher := NewSearcher(gitserverClient, parser, cache, sqlite.WriteDBFile)
+
 	ctx := context.Background()
 	b.ResetTimer()
 
@@ -94,7 +97,7 @@ func BenchmarkSearch(b *testing.B) {
 					b.Fatal(err)
 				}
 				defer os.Remove(tempFile.Name())
-				parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
+
 				err = sqlite.WriteAllSymbolsToNewDB(ctx, parser, tempFile.Name(), test.Repo, test.CommitID)
 				if err != nil {
 					b.Fatal(err)
@@ -105,14 +108,13 @@ func BenchmarkSearch(b *testing.B) {
 
 	runQueryTest := func(test types.SearchArgs) {
 		b.Run(fmt.Sprintf("searching %s@%s %s", path.Base(string(test.Repo)), test.CommitID[:3], test.Query), func(b *testing.B) {
-			parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-			_, err := Search(ctx, gitserverClient, parser, cache, test, sqlite.WriteDBFile)
+			_, err := searcher.Search(ctx, test)
 			if err != nil {
 				b.Fatal(err)
 			}
 			b.ResetTimer()
 			for n := 0; n < b.N; n++ {
-				_, err := Search(ctx, gitserverClient, parser, cache, test, sqlite.WriteDBFile)
+				_, err := searcher.Search(ctx, test)
 				if err != nil {
 					b.Fatal(err)
 				}
