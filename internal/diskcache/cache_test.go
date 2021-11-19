@@ -23,7 +23,7 @@ func TestOpen(t *testing.T) {
 	do := func() (*File, bool) {
 		want := "foobar"
 		calledFetcher := false
-		f, err := store.Open(context.Background(), "key", func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := store.Open(context.Background(), []string{"key"}, func(ctx context.Context) (io.ReadCloser, error) {
 			calledFetcher = true
 			return io.NopCloser(bytes.NewReader([]byte(want))), nil
 		})
