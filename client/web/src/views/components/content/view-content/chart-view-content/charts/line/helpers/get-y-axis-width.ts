@@ -1,7 +1,7 @@
 import { numberFormatter } from '../components/TickComponent'
 
 const APPROXIMATE_SYMBOL_WIDTH = 11
-const MINIMAL_NUMBER_OF_LABEL_SYMBOLS = 2
+const MINIMAL_NUMBER_OF_LABEL_SYMBOLS = 3
 
 /**
  * Returns width of Y label chart part based on max number of character
