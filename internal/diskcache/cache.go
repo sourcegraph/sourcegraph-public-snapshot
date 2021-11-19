@@ -189,7 +189,6 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 	// partially written file. We ensure the file is writeable and truncate
 	// it.
 	tmpPath := path + ".part"
-
 	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temporary archive cache item")
