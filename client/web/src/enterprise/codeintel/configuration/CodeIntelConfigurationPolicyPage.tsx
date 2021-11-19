@@ -17,6 +17,7 @@ import { BranchTargetSettings } from './BranchTargetSettings'
 import { IndexingSettings } from './IndexSettings'
 import { RetentionSettings } from './RetentionSettings'
 import { useDeletePolicies, usePolicyConfigurationByID, useSavePolicyConfiguration } from './usePolicies'
+import { FlashMessage } from './FlashMessage'
 
 export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -61,6 +62,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
         return savePolicyConfiguration({ variables })
             .then(() =>
                 history.push({
+                    pathname: './',
                     state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
                 })
             )
@@ -72,7 +74,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     },
                 })
             )
-    }, [policy, repo, savePolicyConfiguration, history])
+    }, [policy, repo, savePolicyConfiguration, setSaved, history])
 
     const handleDelete = useCallback(
         async (id: string, name: string) => {
@@ -85,6 +87,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             }).then(() =>
                 history.push({
+                    pathname: './',
                     state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
                 })
             )
@@ -119,6 +122,10 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
 
+            {history.location.state && (
+                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
+            )}
+
             {policy.protected ? (
                 <div className="alert alert-info">
                     This configuration policy is protected. Protected configuration policies may not be deleted and only
@@ -130,10 +137,10 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                         <Button
                             type="button"
                             variant="danger"
-                            disabled={isSaving || isDeleting || !comparePolicies(policy, saved)}
+                            disabled={isSaving || isDeleting}
                             onClick={() => handleDelete(policy.id, policy.name)}
                             data-tooltip={`Deleting this policy may immediate affect data retention${
-                                indexingEnabled && ' and auto-indexing'
+                                indexingEnabled ? ' and auto-indexing' : ''
                             }.`}
                         >
                             {!isDeleting && (

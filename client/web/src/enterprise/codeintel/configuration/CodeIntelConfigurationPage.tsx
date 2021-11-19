@@ -99,7 +99,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                         },
                     ]}
                     description={`Rules that control data retention${
-                        indexingEnabled && ' and auto-indexing'
+                        indexingEnabled ? ' and auto-indexing' : ''
                     } behavior for precise code intelligence.`}
                     className="mb-3"
                 />
@@ -109,7 +109,6 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
             {history.location.state && (
                 <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
             )}
-
             <Container>
                 <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, {}>
                     listComponent="div"
