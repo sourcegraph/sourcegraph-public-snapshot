@@ -459,7 +459,9 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 
 	for _, path := range append(changes.Deleted, changes.Modified...) {
 		_, err := deleteStatement.Exec(path)
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return s.parseUncached(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
