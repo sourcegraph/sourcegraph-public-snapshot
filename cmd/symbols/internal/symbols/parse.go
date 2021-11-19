@@ -39,7 +39,7 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol result.Symbol) error) (err error) {
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -65,7 +65,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	}()
 
 	tr.LazyPrintf("fetch")
-	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID)
+	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
 		return err

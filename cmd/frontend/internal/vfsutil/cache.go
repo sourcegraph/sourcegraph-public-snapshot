@@ -52,7 +52,7 @@ func cachedFetch(ctx context.Context, component, key string, fetcher func(contex
 		Dir:       filepath.Join(ArchiveCacheDir, component),
 		Component: component,
 	}
-	f, err := s.Open(ctx, key, fetcher)
+	f, err := s.Open(ctx, []string{key}, fetcher)
 	if err != nil {
 		return nil, err
 	}
