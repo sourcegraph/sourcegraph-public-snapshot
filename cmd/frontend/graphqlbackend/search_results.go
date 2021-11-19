@@ -17,7 +17,6 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -222,30 +221,12 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, ctx := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
+	tr, _ := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
 	defer func() {
 		tr.Finish()
 	}()
 
-	globbing := false
-	// For search, sr.userSettings is set in (r *searchResolver) Results(ctx
-	// context.Context). However we might regress on that or call DynamicFilters from
-	// other code paths. Hence we fallback to accessing the user settings directly.
-	if sr.UserSettings != nil {
-		globbing = getBoolPtr(sr.UserSettings.SearchGlobbing, false)
-	} else {
-		settings, err := decodedViewerFinalSettings(ctx, sr.db)
-		if err != nil {
-			log15.Warn("DynamicFilters: could not get user settings from database")
-		} else {
-			globbing = getBoolPtr(settings.SearchGlobbing, false)
-		}
-	}
-	tr.LogFields(otlog.Bool("globbing", globbing))
-
-	filters := streaming.SearchFilters{
-		Globbing: globbing,
-	}
+	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
 		Results: sr.Matches,
 		Stats:   sr.Stats,

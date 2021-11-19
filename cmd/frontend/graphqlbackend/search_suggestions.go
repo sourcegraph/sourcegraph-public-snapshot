@@ -537,16 +537,6 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 type suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
-	// from "field:^foo$" to "field:^foo".
-	globbing := false
-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		globbing = true
-	}
-	if globbing {
-		r.Query = query.FuzzifyRegexPatterns(r.Query)
-	}
-
 	args.applyDefaultsAndConstraints()
 
 	if len(r.Query) == 0 {
