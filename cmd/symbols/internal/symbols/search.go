@@ -2,17 +2,13 @@ package symbols
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
-
-	"github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -29,15 +25,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
-
-func init() {
-	sql.Register("sqlite3_with_regexp",
-		&sqlite3.SQLiteDriver{
-			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
-				return conn.RegisterFunc("REGEXP", regexp.MatchString, true)
-			},
-		})
-}
 
 func doSearch(ctx context.Context, gitserverClient GitserverClient, cache *diskcache.Store, parserPool ParserPool, fetchSem chan int, args protocol.SearchArgs) (*result.Symbols, error) {
 	var err error
