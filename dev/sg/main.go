@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -36,8 +35,11 @@ var (
 	// `parseConf` before.
 	globalConf *Config
 
-	rootFlagSet         = flag.NewFlagSet("sg", flag.ExitOnError)
-	verboseFlag         = rootFlagSet.Bool("v", false, "verbose mode")
+	rootFlagSet = flag.NewFlagSet("sg", flag.ExitOnError)
+	verboseFlag = rootFlagSet.Bool("v", false, "verbose mode")
+	// pristineLimitsFlag is a workaround to handle issues around setting limits on the buildkite agents.
+	// TODO(@jhchabran) check this again once we modernize the agents.
+	pristineLimitsFlag  = rootFlagSet.Bool("pristine-limits", false, "prevent sg from updating maximum open files limits")
 	configFlag          = rootFlagSet.String("config", defaultConfigFile, "configuration file")
 	overwriteConfigFlag = rootFlagSet.String("overwrite", defaultConfigOverwriteFile, "configuration overwrites file that is gitignored and can be used to, for example, add credentials")
 
@@ -67,6 +69,8 @@ var (
 	}
 )
 
+// setMaxOpenFiles will bump the maximum opened files count.
+// It's harmless since the limit only persists for the lifetime of the process and it's quick too.
 func setMaxOpenFiles() error {
 	const maxOpenFiles = 10000
 
@@ -129,51 +133,7 @@ func loadSecrets() error {
 	return err
 }
 
-// Migrate the old secret file to the new format.
-func migrateSecrets() error {
-	homePath, err := root.GetSGHomePath()
-	if err != nil {
-		return err
-	}
-	newfile := filepath.Join(homePath, defaultSecretsFile)
-	oldfile := filepath.Join(homePath, ".sg.token.json")
-	if _, err := os.Stat(newfile); os.IsNotExist(err) {
-		// new secrets file is not present
-		if _, err := os.Stat(oldfile); err == nil {
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New version has breaking changes, attempting to migrate automatically"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Previous secret format found, migrating ..."))
-			// but the old one is
-			b, err := os.ReadFile(oldfile)
-			if err != nil {
-				return err
-			}
-			s, err := secrets.LoadFile(newfile)
-			if err != nil {
-				return err
-			}
-			err = s.PutAndSave("rfc", json.RawMessage(b))
-			if err != nil {
-				return err
-			}
-			err = os.Rename(oldfile, oldfile+".backup")
-			if err != nil {
-				return err
-			}
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "Done! A backup has been created: %s", oldfile+".backup"))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "New secrets file: %s", newfile))
-			stdout.Out.WriteLine(output.Linef("", output.StyleSearchMatch, "--------------------------------------------------------------------------"))
-		}
-	}
-	return nil
-}
-
 func main() {
-	// TODO(@jhchabran) drop this on Nov 15th.
-	if err := migrateSecrets(); err != nil {
-		fmt.Printf("failed to migrate secrets: %s\n", err)
-	}
-
 	if err := loadSecrets(); err != nil {
 		fmt.Printf("failed to open secrets: %s\n", err)
 	}
@@ -185,10 +145,13 @@ func main() {
 
 	checkSgVersion()
 
-	// We always try to set this, since we often want to watch files, start commands, etc.
-	if err := setMaxOpenFiles(); err != nil {
-		fmt.Printf("failed to set max open files: %s\n", err)
-		os.Exit(1)
+	if !*pristineLimitsFlag {
+		// Unless asked otherwise, we always try to set this, since we
+		// often want to watch files, start commands, etc...
+		if err := setMaxOpenFiles(); err != nil {
+			fmt.Printf("failed to set max open files: %s\n", err)
+			os.Exit(1)
+		}
 	}
 
 	if err := rootCommand.Run(ctx); err != nil {

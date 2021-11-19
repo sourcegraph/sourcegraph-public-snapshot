@@ -79,11 +79,49 @@ extend type Mutation {
 
 extend type Query {
     """
-    Get the complete list of configuration policies. If repository is supplied, then the
-    configuration policies attached to that repository are returned. If repository is not
-    supplied, then all global configuration policies are returned.
+    Returns precise code intelligence configuration policies that control data retention
+    and (if enabled) auto-indexing behavior.
     """
-    codeIntelligenceConfigurationPolicies(repository: ID): [CodeIntelligenceConfigurationPolicy!]!
+    codeIntelligenceConfigurationPolicies(
+        """
+        If repository is supplied, then only the configuration policies that apply to
+        repository are returned. If repository is not supplied, then all policies are
+        returned.
+        """
+        repository: ID
+
+        """
+        An (optional) search query that searches over the name property.
+        """
+        query: String
+
+        """
+        If set to true, then only configuration policies with data retention enabled are returned.
+        """
+        forDataRetention: Boolean
+
+        """
+        If set to true, then only configuration policies with indexing enabled are returned.
+        """
+        forIndexing: Boolean
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+
+        A future request can be made for more results by passing in the
+        'CodeIntelligenceConfigurationPolicyConnection.pageInfo.endCursor'
+        that is returned.
+        """
+        after: String
+    ): CodeIntelligenceConfigurationPolicyConnection!
 
     """
     The repository's LSIF uploads.
@@ -118,7 +156,7 @@ extend type Query {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -150,7 +188,7 @@ extend type Query {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -169,10 +207,25 @@ extend type Query {
     """
     previewRepositoryFilter(
         """
-        A pattern matching the name of the matching repository.
+        A set of patterns matching the name of the matching repository.
         """
-        pattern: String!
-    ): [Repository!]!
+        patterns: [String!]!
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'RepositoryFilterPreview.pageInfo.endCursor' that is returned.
+        """
+        after: String
+    ): RepositoryFilterPreview!
 
     """
     Search over documentation
@@ -188,6 +241,57 @@ extend type Query {
         """
         repos: [String!]
     ): DocumentationSearchResults!
+}
+
+"""
+A decorated connection of repositories resulting from 'previewRepositoryFilter'.
+"""
+type RepositoryFilterPreview {
+    """
+    A list of repositories composing the current page.
+    """
+    nodes: [Repository!]!
+
+    """
+    The total number of repositories in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The maximum number of repository matches a single policy can make.
+    """
+    limit: Int
+
+    """
+    The number of repositories matching the given filter. This value exceeds the
+    value of totalCount of the result when totalMatches > limit.
+    """
+    totalMatches: Int!
+}
+
+"""
+A list of code intelligence configuration policies.
+"""
+type CodeIntelligenceConfigurationPolicyConnection {
+    """
+    A list of code intelligence configuration policies.
+    """
+    nodes: [CodeIntelligenceConfigurationPolicy!]!
+
+    """
+    The total number of policies in this result set.
+    """
+    totalCount: Int
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -305,7 +409,7 @@ extend type Repository {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 
@@ -336,7 +440,7 @@ extend type Repository {
         """
         When specified, indicates that this request should be paginated and
         the first N results (relative to the cursor) should be returned. i.e.
-        how many results to return per page. It must be in the range of 0-5000.
+        how many results to return per page.
         """
         first: Int
 

@@ -39,7 +39,7 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// If logging is disabled, we'll immediately forward to the next
 		// handler, turning this middleware into a no-op.
-		if !loggingEnabled(conf.Get()) {
+		if !LoggingEnabled(conf.Get()) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -143,7 +143,7 @@ func loggingEnabledByDefault(keys *schema.EncryptionKeys) bool {
 	return true
 }
 
-func loggingEnabled(c *conf.Unified) bool {
+func LoggingEnabled(c *conf.Unified) bool {
 	if logging := c.WebhookLogging; logging != nil && logging.Enabled != nil {
 		return *logging.Enabled
 	}

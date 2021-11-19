@@ -105,14 +105,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Limit:        inputs.MaxResults(),
 		Trace:        trace.URL(trace.ID(ctx)),
 		DisplayLimit: displayLimit,
+		RepoNamer:    repoNamer(ctx, h.db),
 	}
 
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
-	}
-
-	filters := &streaming.SearchFilters{
-		Globbing: false, // TODO
 	}
 
 	// Store marshalled matches and flush periodically or when we go over
@@ -137,6 +134,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
 
+	filters := &streaming.SearchFilters{}
+
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
@@ -158,10 +157,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if progress.Stats.Repos == nil {
-			progress.Stats.Repos = make(map[api.RepoID]types.MinimalRepo)
-		}
-
 		for i, match := range event.Results {
 			repo := match.RepoName()
 
@@ -170,10 +165,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// searched repos that user shouldn't have access to.
 			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
-			}
-
-			if _, ok := progress.Stats.Repos[repo.ID]; !ok {
-				progress.Stats.Repos[repo.ID] = repo
 			}
 
 			eventMatch := fromMatch(match, repoMetadata)

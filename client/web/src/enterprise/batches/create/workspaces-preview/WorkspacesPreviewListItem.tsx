@@ -57,7 +57,7 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
             </div>
             <div className="flex-1">
                 <Link
-                    className={classNames(styles.link, (toBeExcluded || isStale) && styles.linkDisabled)}
+                    className={classNames(styles.link, (toBeExcluded || isStale) && styles.linkStale)}
                     to={item.branch.url}
                 >
                     {item.repository.name}:{item.branch.abbrevName}

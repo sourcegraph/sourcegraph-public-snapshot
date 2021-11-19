@@ -7,13 +7,13 @@
    {
     "reason": "repository-missing",
     "title": "2 missing",
-    "message": "2 repositories could not be searched. Try searching again or reducing the scope of your query with `repo:`, `context:` or other filters.\n* `missing-1`\n* `missing-2`",
+    "message": "2 repositories could not be searched. Try searching again or reducing the scope of your query with `repo:`, `context:` or other filters.\n* `repo-2`\n* `repo-3`",
     "severity": "info"
    },
    {
     "reason": "repository-cloning",
     "title": "1 cloning",
-    "message": "`cloning-1` could not be searched since it is still cloning. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.",
+    "message": "`repo-4` could not be searched since it is still cloning. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.",
     "severity": "info"
    },
    {
@@ -29,7 +29,7 @@
    {
     "reason": "shard-timeout",
     "title": "1 timed out",
-    "message": "`timedout-1` could not be searched in time. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.",
+    "message": "`repo-1` could not be searched in time. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.",
     "severity": "warn"
    },
    {

@@ -27,6 +27,12 @@ There are four fields for configuring which repositories are mirrored/synchroniz
 - [`repositoryQuery`](github.md#configuration)<br>A list of strings with three pre-defined options (`public`, `affiliated`, `none`, none of which are subject to result limitations), and/or a [GitHub advanced search query](https://github.com/search/advanced). Note: There is an existing limitation that requires the latter, GitHub advanced search queries, to return [less than 1000 results](#repositoryquery-returns-first-1000-results-only). See [this issue](https://github.com/sourcegraph/sourcegraph/issues/2562) for ongoing work to address this limitation.
 - [`exclude`](github.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, `orgs`, and `repositoryQuery` fields.
 
+### Private repositories
+
+A [token that has the prerequisite scopes](#github-api-token-and-access) is required in order to clone private repositories for search, as well as at least read access to the relevant private repositories.
+
+See [GitHub API token and access](#github-api-token-and-access) for more details.
+
 ## GitHub API token and access
 
 The GitHub service requires a `token` in order to access their API. There are two different types of tokens you can supply:
@@ -38,9 +44,9 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 | Feature                                               | Required token scopes                                                                                          |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [Sync private repositories](#github)                  | `repo`                                                                                                         |
+| [Sync private repositories](#private-repositories)    | `repo`                                                                                                         |
 | [Sync repository permissions][permissions]            | `repo`                                                                                                         |
-| [Repository permissions caching][permissions-caching] | `write:org`                                                                                                    |
+| [Repository permissions caching][permissions-caching] | `repo`, `write:org`                                                                                            |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
 [permissions]: ../repo/permissions.md#github
@@ -50,14 +56,13 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 <span class="virtual-br"></span>
 
-> WARNING: In addition to the prerequisite token scopes, the account attached to the token must actually have access to the relevant resources for [complete permissions sync](./../repo/permissions.md#complete-sync-vs-incremental-sync) (i.e. you cannot grant `repo` access to a repository that the token's account itself does not have write access for).
+> WARNING: In addition to the prerequisite token scopes, the account attached to the token must actually have the same level of access to the relevant resources that you are trying to grant. For example:
 >
-> For example:
+> - If read access to repositories is required, the token must have `repo` scope *and* the token's account must have read access to the relevant repositories. This can happen by being directly granted read access to repositories, being on a team with read access to the repository, and so on.
+> - If write access to repositories is required, the token must have `repo` scope *and* the token's account must have write access to all repositories. This can happen by being added as a direct contributor, being on a team with write access to the repository, being an admin for the repository's organization, and so on.
+> - If write access to organizations is required, the token must have `write:org` scope *and* the token's account must have write access for all organizations. This can happen by being an admin in all relevant organizations.
 >
-> - If the `repo` scope is needed, the token's account must have write access to all repositories as well. This can happen by being added as a direct contributor, being on a team with write access to the repository, being an admin for the repository's organization, and so on.
-> - If the `write:org` scope is needed, the token's account must have write access for all organizations as well. This can happen by being an admin in the organization.
->
-> Learn more about how the GitHub API is used in the corresponding feature documentation.
+> Learn more about how the GitHub API is used and what level of access is required in the corresponding feature documentation.
 
 ## GitHub.com rate limits
 

@@ -11,6 +11,8 @@ import {
     InsightTypePrefix,
     isLangStatsInsight,
     isVirtualDashboard,
+    InsightConfiguration,
+    isSearchBasedInsight,
 } from '../types'
 import { isCustomInsightDashboard } from '../types/dashboard/real-dashboard'
 
@@ -63,12 +65,34 @@ export const addInsight = (settings: string, insight: Insight, dashboard: Insigh
  * @param insight - insight configuration to add in settings file
  */
 export const addInsightToSettings = (settings: string, insight: Insight): string => {
-    // remove all synthetic properties from the insight object
-    const { id, visibility, type, viewType, ...originalInsight } = insight
     const insightSettingsKey = getInsightSettingKey(insight)
 
     // Add insight to the user settings
-    return modify(settings, insightSettingsKey, originalInsight)
+    return modify(settings, insightSettingsKey, getSanitizedInsight(insight))
+}
+
+/**
+ * Returns insight configuration, removes all synthetic properties from the insight object
+ */
+const getSanitizedInsight = (insight: Insight): InsightConfiguration => {
+    if (isLangStatsInsight(insight)) {
+        const { id, visibility, type, viewType, ...originalInsight } = insight
+
+        return originalInsight
+    }
+
+    if (isSearchBasedInsight(insight)) {
+        const { id, visibility, type, viewType, ...originalInsight } = insight
+        const sanitizedSeries = originalInsight.series.map(line => ({
+            name: line.name,
+            query: line.query,
+            stroke: line.stroke,
+        }))
+
+        return { ...originalInsight, series: sanitizedSeries }
+    }
+
+    return insight
 }
 
 interface RemoveInsightFromSettingsInputs {

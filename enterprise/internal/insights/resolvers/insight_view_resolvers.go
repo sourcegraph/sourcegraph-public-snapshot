@@ -463,7 +463,7 @@ type insightPayloadResolver struct {
 }
 
 func (c *insightPayloadResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
-	mapped, err := c.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: []int{int(actor.FromContext(ctx).UID)}})
+	mapped, err := c.insightStore.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: []int{int(actor.FromContext(ctx).UID)}})
 	if err != nil {
 		return nil, err
 	}

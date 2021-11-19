@@ -147,16 +147,21 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	defer func() { err = s.Done(err) }()
 
-	var q *cm.MonitorQuery
-	q, err = s.GetQueryByRecordID(ctx, record.RecordID())
+	q, err := s.GetQueryByRecordID(ctx, record.RecordID())
 	if err != nil {
 		return err
 	}
+
+	m, err := s.MonitorByIDInt64(ctx, q.Monitor)
+	if err != nil {
+		return err
+	}
+
 	newQuery := newQueryWithAfterFilter(q)
 
 	// Search.
 	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery)
+	results, err = search(ctx, newQuery, m.NamespaceUserID)
 	if err != nil {
 		return err
 	}

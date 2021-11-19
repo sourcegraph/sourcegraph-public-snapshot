@@ -116,6 +116,10 @@ export function parseInsightFromSubject(
             type: InsightExecutionType.Backend,
             viewType: type,
             ...insightConfiguration,
+            series: insightConfiguration.series?.map((line, index) => ({
+                id: `${line.name}-${index}`,
+                ...line,
+            })),
         }
     }
 

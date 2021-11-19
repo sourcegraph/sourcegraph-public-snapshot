@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -120,7 +121,7 @@ type gqlSearchResponse struct {
 	Errors []interface{}
 }
 
-func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
+func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
@@ -141,6 +142,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Sourcegraph-User-ID", strconv.FormatInt(int64(userID), 10))
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")

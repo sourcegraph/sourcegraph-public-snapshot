@@ -6,7 +6,7 @@ import React, { memo } from 'react'
 export const PreviewLoadingSpinner: React.FunctionComponent<{
     className?: string
 }> = memo(({ className }) => {
-    const svgSource = `${window.context?.assetsRoot || ''}/img/batchchanges-preview-loading.svg`
+    const svgSource = `${window.context?.assetsRoot || ''}/img/unoptimized/batchchanges-preview-loading.svg`
 
     return (
         <object type="image/svg+xml" data={svgSource} className={className} height="50" width="50">

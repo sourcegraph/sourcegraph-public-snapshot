@@ -100,6 +100,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     return (
         <Dropdown
             isOpen={isOpen}
+            data-testid="dropdown"
             toggle={toggleOpen}
             a11y={false} /* Override default keyboard events in reactstrap */
             className={className}
@@ -111,6 +112,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     'test-search-context-dropdown',
                     isOpen && styles.buttonOpen
                 )}
+                data-testid="dropdown-toggle"
                 color="link"
                 disabled={isContextFilterInQuery}
                 data-tooltip={disabledTooltipText}

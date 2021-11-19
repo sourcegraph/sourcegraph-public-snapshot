@@ -41,24 +41,22 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
     }
 `
 
-export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
-    query WorkspacesAndImportingChangesets($batchSpec: ID!) {
+export const WORKSPACES = gql`
+    query BatchSpecWorkspaces($batchSpec: ID!, $first: Int, $after: String) {
         node(id: $batchSpec) {
             __typename
             ... on BatchSpec {
                 workspaceResolution {
-                    workspaces(first: 10000) {
+                    __typename
+                    workspaces(first: $first, after: $after) {
+                        __typename
+                        totalCount
+                        pageInfo {
+                            hasNextPage
+                            endCursor
+                        }
                         nodes {
                             ...PreviewBatchSpecWorkspaceFields
-                        }
-                    }
-                }
-                importingChangesets(first: 10000) {
-                    totalCount
-                    nodes {
-                        __typename
-                        ... on VisibleChangesetSpec {
-                            ...PreviewBatchSpecImportingChangesetFields
                         }
                     }
                 }
@@ -67,21 +65,26 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
     }
 
     fragment PreviewBatchSpecWorkspaceFields on BatchSpecWorkspace {
+        __typename
         repository {
+            __typename
             id
             name
             url
             defaultBranch {
+                __typename
                 id
             }
         }
         ignored
         unsupported
         branch {
+            __typename
             id
             abbrevName
             displayName
             target {
+                __typename
                 oid
             }
             url
@@ -90,8 +93,36 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
         searchResultPaths
         cachedResultFound
     }
+`
+
+export const IMPORTING_CHANGESETS = gql`
+    query BatchSpecImportingChangesets($batchSpec: ID!, $first: Int, $after: String) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                importingChangesets(first: $first, after: $after) {
+                    __typename
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                    nodes {
+                        __typename
+                        ... on VisibleChangesetSpec {
+                            ...PreviewBatchSpecImportingChangesetFields
+                        }
+                        ... on HiddenChangesetSpec {
+                            ...PreviewBatchSpecImportingHiddenChangesetFields
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     fragment PreviewBatchSpecImportingChangesetFields on VisibleChangesetSpec {
+        __typename
         id
         description {
             __typename
@@ -103,5 +134,10 @@ export const WORKSPACES_AND_IMPORTING_CHANGESETS = gql`
                 externalID
             }
         }
+    }
+
+    fragment PreviewBatchSpecImportingHiddenChangesetFields on HiddenChangesetSpec {
+        __typename
+        id
     }
 `
