@@ -11,7 +11,7 @@ Sourcegraph development is open source at:
 
 A hands-on introduction for setting up your local development environment.
 
-- [Quickstart](getting-started/quickstart.md)
+- [Quickstart](getting-started/index.md)
 
 ## [Background information](background-information/index.md)
 
@@ -104,30 +104,12 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ### Local development
 
-- [DEPRECATED: Quickstart without `sg`](getting-started/deprecated_quickstart.md)
-- [How to debug live code](how-to/debug_live_code.md)
-- [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
-- [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
-- [Use `golangci-lint`](how-to/use-golangci-lint.md)
-- [Set up local development with M1 mac](how-to/m1_mac_local_dev.md)
+- See the [Quickstart](getting-started/quickstart.md) guide.
 
 ### New features
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
 - [How to use feature flags](how-to/use_feature_flags.md)
-
-### [Troubleshooting](how-to/troubleshooting_local_development.md)
-
-- [Problems with node_modules or Javascript packages](how-to/troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
-- [dial tcp 127.0.0.1:3090: connect: connection refused](how-to/troubleshooting_local_development.md#dial-tcp-1270013090-connect-connection-refused)
-- [Database migration failures](how-to/troubleshooting_local_development.md#database-migration-failures)
-- [Internal Server Error](how-to/troubleshooting_local_development.md#internal-server-error)
-- [Increase maximum available file descriptors.](how-to/troubleshooting_local_development.md#increase-maximum-available-file-descriptors)
-- [Caddy 2 certificate problems](how-to/troubleshooting_local_development.md#caddy-2-certificate-problems)
-- [Running out of disk space](how-to/troubleshooting_local_development.md#running-out-of-disk-space)
-- [Certificate expiry](how-to/troubleshooting_local_development.md#certificate-expiry)
-- [CPU/RAM/bandwidth/battery usage](how-to/troubleshooting_local_development.md#cpurambandwidthbattery-usage)
-- [Permission errors for Grafana and Prometheus](how-to/troubleshooting_local_development.md#permission-errors-for-grafana-and-prometheus-containers)
 
 ### Implementing Sourcegraph
 
