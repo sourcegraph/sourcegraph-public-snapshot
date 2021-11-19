@@ -195,7 +195,7 @@ func main() {
 func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	// Set up default settings first
 	fc := server.FusionConfig{
-		Enabled:             conn.UseFusionClient,
+		Enabled:             false,
 		Client:              conn.P4Client,
 		LookAhead:           2000,
 		NetworkThreads:      12,
@@ -211,14 +211,29 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		return fc
 	}
 
-	fc.Enabled = conn.FusionClient.Enabled || conn.UseFusionClient
+	// Required
+	fc.Enabled = conn.FusionClient.Enabled
 	fc.LookAhead = conn.FusionClient.LookAhead
-	fc.NetworkThreads = conn.FusionClient.NetworkThreads
-	fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
-	fc.PrintBatch = conn.FusionClient.PrintBatch
-	fc.Refresh = conn.FusionClient.Refresh
-	fc.Retries = conn.FusionClient.Retries
-	fc.MaxChanges = conn.FusionClient.MaxChanges
+
+	// Optional
+	if fc.NetworkThreads > 0 {
+		fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	}
+	if fc.NetworkThreadsFetch > 0 {
+		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
+	}
+	if fc.PrintBatch > 0 {
+		fc.PrintBatch = conn.FusionClient.PrintBatch
+	}
+	if fc.Refresh > 0 {
+		fc.Refresh = conn.FusionClient.Refresh
+	}
+	if fc.Retries > 0 {
+		fc.Retries = conn.FusionClient.Retries
+	}
+	if fc.MaxChanges > 0 {
+		fc.MaxChanges = conn.FusionClient.MaxChanges
+	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
 
 	return fc
