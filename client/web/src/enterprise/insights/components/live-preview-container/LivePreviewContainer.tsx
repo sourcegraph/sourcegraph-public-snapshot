@@ -3,11 +3,11 @@ import RefreshIcon from 'mdi-react/RefreshIcon'
 import React, { ReactElement, ReactNode } from 'react'
 import { ChartContent } from 'sourcegraph'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { ChartViewContent } from '../../../../views/components/content/view-content/chart-view-content/ChartViewContent'
 
 import styles from './LivePreviewContainer.module.scss'

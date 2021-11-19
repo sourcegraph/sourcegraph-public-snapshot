@@ -41,6 +41,12 @@ export interface SearchSidebarProps
      * for search.
      */
     useQueryState: UseStore<SearchQueryState>
+
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     * */
+    forceButton?: boolean
 }
 
 export enum SectionID {
@@ -150,6 +156,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         patternType: props.patternType,
                         query,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
+                        forceButton: props.forceButton,
                     })}
                 </SearchSidebarSection>
                 <SearchSidebarSection

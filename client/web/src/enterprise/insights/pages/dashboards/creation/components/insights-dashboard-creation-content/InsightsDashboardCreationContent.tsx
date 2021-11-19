@@ -1,8 +1,8 @@
 import React, { ReactNode, useCallback, useContext } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
-import { ErrorAlert } from '../../../../../../../components/alerts'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'

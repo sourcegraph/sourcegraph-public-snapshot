@@ -3,6 +3,7 @@ import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
@@ -16,7 +17,6 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegr
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { PageTitle } from '../../components/PageTitle'
 import { Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'

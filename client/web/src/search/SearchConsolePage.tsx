@@ -6,6 +6,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
+import {
+    StreamingSearchResultsList,
+    StreamingSearchResultsListProps,
+} from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
@@ -18,7 +22,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
-import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
+import searchResultsStyles from './results/StreamingSearchResults.module.scss'
 import styles from './SearchConsolePage.module.scss'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
@@ -162,7 +166,14 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         (results.state === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <StreamingSearchResultsList {...props} allExpanded={false} results={results} />
+                            <StreamingSearchResultsList
+                                {...props}
+                                allExpanded={false}
+                                results={results}
+                                footerClassName={searchResultsStyles.streamingSearchResultsContentCentered}
+                                assetsRoot={window.context?.assetsRoot}
+                                executedQuery={props.location.search}
+                            />
                         ))}
                 </div>
             </div>

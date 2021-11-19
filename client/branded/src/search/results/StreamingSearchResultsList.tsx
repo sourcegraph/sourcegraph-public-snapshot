@@ -7,7 +7,9 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { SearchResult } from '@sourcegraph/branded/src/components/SearchResult'
 import { NoResultsPage } from '@sourcegraph/branded/src/search/results/NoResultsPage'
+import { StreamingSearchResultFooter } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsFooter'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -26,10 +28,6 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchResult } from '../../components/SearchResult'
-
-import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
-
 const initialItemsToShow = 15
 const incrementalItemsToShow = 10
 
@@ -41,9 +39,14 @@ export interface StreamingSearchResultsListProps
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
-    location: H.Location
+    location?: H.Location
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    footerClassName?: string
+    /** Available to web app through JS Context */
+    assetsRoot?: string
+    /** TODO EXPLAIN */
+    executedQuery: string
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -58,6 +61,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     searchContextsEnabled,
     showSearchContext,
     platformContext,
+    footerClassName,
+    assetsRoot,
+    executedQuery,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -68,7 +74,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     // Reset scroll visibility state when new search is started
     useEffect(() => {
         setItemsToShow(initialItemsToShow)
-    }, [location.search])
+    }, [executedQuery])
 
     const itemKey = useCallback((item: SearchMatch): string => {
         if (item.type === 'content' || item.type === 'symbol') {
@@ -145,7 +151,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             />
 
             {itemsToShow >= (results?.results.length || 0) && (
-                <StreamingSearchResultFooter results={results}>
+                <StreamingSearchResultFooter results={results} className={footerClassName}>
                     <>
                         {results?.state === 'complete' && results?.results.length === 0 && (
                             <NoResultsPage
@@ -154,7 +160,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
-                                assetsRoot={window.context?.assetsRoot}
+                                assetsRoot={assetsRoot}
                             />
                         )}
                     </>
@@ -164,7 +170,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     )
 }
 
-// TODO(tj) move to shared
 function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
     switch (result.type) {
         case 'content':

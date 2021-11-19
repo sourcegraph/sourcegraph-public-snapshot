@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useMemo } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isExtensionEnabled } from '@sourcegraph/shared/src/extensions/extension'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -10,8 +11,6 @@ import { mergeSettings, SettingsCascadeProps, SettingsSubject } from '@sourcegra
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { createRecord } from '@sourcegraph/shared/src/util/createRecord'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
-import { ErrorAlert } from '../components/alerts'
 
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'

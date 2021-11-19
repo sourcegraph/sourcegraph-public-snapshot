@@ -95,10 +95,20 @@ export interface SiteConfiguration {
      * Allow adding JVM packages code host connections
      */
     jvmPackages?: "enabled" | "disabled";
-    /**
-     * Enables sub-repo permission checking
-     */
-    enableSubRepoPermissions?: boolean;
+    subRepoPermissions?: {
+      /**
+       * Enables sub-repo permission checking
+       */
+      enabled?: boolean;
+      /**
+       * The number of user permissions to cache
+       */
+      userCacheSize?: number;
+      /**
+       * The TTL in seconds for cached user permissions
+       */
+      userCacheTTLSeconds?: number;
+    };
     /**
      * Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
      */

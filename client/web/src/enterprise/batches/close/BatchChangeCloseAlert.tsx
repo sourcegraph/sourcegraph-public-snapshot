@@ -1,11 +1,11 @@
 import * as H from 'history'
 import React, { useCallback, useState } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { ErrorAlert } from '../../../components/alerts'
 import { Scalars } from '../../../graphql-operations'
 
 import { closeBatchChange as _closeBatchChange } from './backend'

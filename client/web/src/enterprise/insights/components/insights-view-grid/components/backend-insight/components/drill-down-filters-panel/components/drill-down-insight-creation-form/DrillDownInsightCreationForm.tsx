@@ -1,9 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
 import { useAsyncInsightTitleValidator } from '../../../../../../../form/hooks/use-async-insight-title-validator'

@@ -5,6 +5,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import {
     ConfiguredRegistryExtension,
@@ -21,7 +22,6 @@ import { createAggregateError, ErrorLike, isErrorLike, asError } from '@sourcegr
 
 import { AuthenticatedUser } from '../../auth'
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorMessage } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'

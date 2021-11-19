@@ -3,6 +3,7 @@ import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActivationProps, percentageDone } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationChecklist } from '@sourcegraph/shared/src/components/activation/ActivationChecklist'
@@ -15,7 +16,6 @@ import { numberWithCommas, pluralize } from '@sourcegraph/shared/src/util/string
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { ErrorAlert } from '../../components/alerts'
 import { Collapsible } from '../../components/Collapsible'
 import { PageTitle } from '../../components/PageTitle'
 import { Scalars } from '../../graphql-operations'

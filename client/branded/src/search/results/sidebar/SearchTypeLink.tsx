@@ -22,6 +22,11 @@ export interface SearchTypeLinksProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     query: string
     onNavbarQueryChange: (queryState: QueryState) => void
+    /**
+     * Force search type links to be rendered as buttons.
+     * Used e.g. in the VS Code extension to update search query state.
+     * */
+    forceButton?: boolean
 }
 
 interface SearchTypeLinkProps extends SearchTypeLinksProps {
@@ -41,7 +46,6 @@ const SearchTypeLink: React.FunctionComponent<SearchTypeLinkProps> = ({
     selectedSearchContextSpec,
     children,
 }) => {
-    // TODO(TJ): use onNavbarQueryChange for VSCE
     const builtURLQuery = buildSearchURLQuery(
         updateFilter(query, FilterType.type, type as string),
         patternType,
@@ -92,7 +96,7 @@ const SearchSymbol: React.FunctionComponent<Omit<SearchTypeLinkProps, 'type'>> =
         })
     }, [query, onNavbarQueryChange])
 
-    if (containsLiteralOrPattern(query)) {
+    if (!props.forceButton && containsLiteralOrPattern(query)) {
         return (
             <SearchTypeLink {...props} type={type}>
                 {props.children}
@@ -120,6 +124,14 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         })
     }
 
+    function updateQueryWithType(type: string): void {
+        props.onNavbarQueryChange({
+            query: updateFilter(props.query, FilterType.type, type),
+        })
+    }
+
+    const SearchTypeLinkOrButton = props.forceButton ? SearchTypeButton : SearchTypeLink
+
     return [
         <SearchTypeButton onClick={updateQueryWithRepoExample} key="repo">
             Search repos by org or name
@@ -127,11 +139,11 @@ export const getSearchTypeLinks = (props: SearchTypeLinksProps): ReactElement[] 
         <SearchSymbol {...props} key="symbol">
             Find a symbol
         </SearchSymbol>,
-        <SearchTypeLink {...props} type="diff" key="diff">
+        <SearchTypeLinkOrButton {...props} type="diff" key="diff" onClick={() => updateQueryWithType('diff')}>
             Search diffs
-        </SearchTypeLink>,
-        <SearchTypeLink {...props} type="commit" key="commit">
+        </SearchTypeLinkOrButton>,
+        <SearchTypeLinkOrButton {...props} type="commit" key="commit" onClick={() => updateQueryWithType('commit')}>
             Search commit messages
-        </SearchTypeLink>,
+        </SearchTypeLinkOrButton>,
     ]
 }

@@ -7,6 +7,7 @@ import React, { useState, useCallback, useRef, useMemo } from 'react'
 import { useLocation } from 'react-router'
 import { Observable, of } from 'rxjs'
 
+import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
@@ -20,7 +21,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
+import searchResultsStyles from '../results/StreamingSearchResults.module.scss'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -187,6 +188,9 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             telemetryService={telemetryService}
                             settingsCascade={settingsCascade}
                             platformContext={platformContext}
+                            footerClassName={searchResultsStyles.streamingSearchResultsContentCentered}
+                            assetsRoot={window.context?.assetsRoot}
+                            executedQuery={location.search}
                         />
                     </div>
                 )}

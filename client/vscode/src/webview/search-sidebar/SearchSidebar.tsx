@@ -13,7 +13,6 @@ import styles from './SearchSidebar.module.scss'
 interface SearchSidebarProps extends Pick<WebviewPageProps, 'platformContext' | 'sourcegraphVSCodeExtensionAPI'> {}
 
 export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeExtensionAPI }) => {
-    // TODO consider creating store in index.tsx
     const useQueryState: UseStore<SearchQueryState> = useMemo(() => {
         const useStore = create<SearchQueryState>((set, get) => ({
             queryState: { query: '' },
@@ -83,6 +82,7 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
 
     return (
         <BrandedSearchSidebar
+            forceButton={true}
             className={styles.sidebarContainer}
             filters={dynamicFilters}
             useQueryState={useQueryState}

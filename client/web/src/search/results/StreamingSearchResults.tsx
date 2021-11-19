@@ -3,7 +3,9 @@ import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { StreamingProgress } from '@sourcegraph/branded/src/search/results/progress/StreamingProgress'
 import { SearchSidebar } from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebar'
+import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -32,13 +34,11 @@ import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
 import { DidYouMean } from './DidYouMean'
-import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { getRevisions } from './sidebar/Revisions'
 import styles from './StreamingSearchResults.module.scss'
-import { StreamingSearchResultsList } from './StreamingSearchResultsList'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
@@ -296,7 +296,14 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                     </div>
                 )}
 
-                <StreamingSearchResultsList {...props} results={results} allExpanded={allExpanded} />
+                <StreamingSearchResultsList
+                    {...props}
+                    results={results}
+                    allExpanded={allExpanded}
+                    footerClassName={styles.streamingSearchResultsContentCentered}
+                    assetsRoot={window.context?.assetsRoot}
+                    executedQuery={location.search}
+                />
             </div>
         </div>
     )

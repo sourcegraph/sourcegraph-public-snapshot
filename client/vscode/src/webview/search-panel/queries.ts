@@ -4,6 +4,10 @@ export const searchQuery = gql`
     query Search($query: String!, $patternType: SearchPatternType) {
         search(version: V2, query: $query, patternType: $patternType) {
             results {
+                matchCount
+                repositoriesCount
+                elapsedMilliseconds
+                limitHit
                 results {
                     __typename
                     ... on FileMatch {
@@ -103,4 +107,3 @@ export const searchQuery = gql`
         }
     }
 `
-// TODO: suggestions

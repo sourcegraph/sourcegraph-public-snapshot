@@ -2,9 +2,8 @@ import { storiesOf } from '@storybook/react'
 import * as React from 'react'
 import sinon from 'sinon'
 
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import { Progress } from '@sourcegraph/shared/src/search/stream'
-
-import { WebStory } from '../../../components/WebStory'
 
 import { StreamingProgress } from './StreamingProgress'
 
@@ -28,9 +27,9 @@ add('0 results, in progress', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -43,11 +42,11 @@ add('0 results, in progress, traced', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => (
                 <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} showTrace={true} />
             )}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -60,9 +59,9 @@ add('1 result from 1 repository, in progress', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -75,9 +74,9 @@ add('big numbers, done', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -91,7 +90,7 @@ add('big numbers, done, traced', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => (
                 <StreamingProgress
                     progress={progress}
@@ -100,7 +99,7 @@ add('big numbers, done, traced', () => {
                     showTrace={true}
                 />
             )}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -134,9 +133,9 @@ add('2 results from 2 repositories, complete, skipped with info', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -170,9 +169,9 @@ add('2 results from 2 repositories, loading, skipped with info', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -216,9 +215,9 @@ add('2 results from 2 repositories, complete, skipped with warning', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="complete" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })
 
@@ -262,8 +261,8 @@ add('2 results from 2 repositories, loading, skipped with warning', () => {
     }
 
     return (
-        <WebStory>
+        <BrandedStory>
             {() => <StreamingProgress progress={progress} state="loading" onSearchAgain={onSearchAgain} />}
-        </WebStory>
+        </BrandedStory>
     )
 })

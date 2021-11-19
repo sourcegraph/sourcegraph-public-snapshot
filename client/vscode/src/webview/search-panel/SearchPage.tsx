@@ -171,7 +171,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme }
                     className={classNames(styles.withEditorFont, 'flex-grow-1 flex-shrink-past-contents')}
                 />
             </div>
-            {loading ? <p>Loading...</p> : <SearchResults platformContext={platformContext} />}
+            {loading ? <p>Loading...</p> : <SearchResults platformContext={platformContext} theme={theme} />}
         </div>
     )
 }

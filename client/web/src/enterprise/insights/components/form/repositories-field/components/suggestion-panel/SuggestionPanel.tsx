@@ -2,10 +2,9 @@ import { ComboboxList, ComboboxOption, ComboboxOptionText } from '@reach/combobo
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
-
-import { ErrorAlert } from '../../../../../../../components/alerts'
 
 import styles from './SuggestionPanel.module.scss'
 

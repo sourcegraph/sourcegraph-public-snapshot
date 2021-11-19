@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback } from 'react'
 
+import { ErrorAlert, ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,7 +11,6 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ErrorAlert, ErrorMessage } from '../alerts'
 
 import { AddExternalServiceOptions } from './externalServices'
 

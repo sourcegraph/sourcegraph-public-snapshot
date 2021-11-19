@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { ErrorAlert, ErrorAlertProps } from '@sourcegraph/web/src/components/alerts'
+import { ErrorAlert, ErrorAlertProps } from '@sourcegraph/branded/src/components/alerts'
 
 import styles from './TreeRowAlert.module.scss'
 

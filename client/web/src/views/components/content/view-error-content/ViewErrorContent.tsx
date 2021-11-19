@@ -1,9 +1,9 @@
 import { MdiReactIconComponentType } from 'mdi-react'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { ErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 
-import { ErrorAlert } from '../../../../components/alerts'
 import { ViewCardDescription } from '../../card/view-card-description/ViewCardDescription'
 
 interface ViewErrorContentProps {

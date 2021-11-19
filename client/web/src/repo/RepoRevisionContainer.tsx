@@ -6,6 +6,8 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Popover } from 'reactstrap'
 
+import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import {
     CloneInProgressError,
     isCloneInProgressErrorLike,
@@ -25,14 +27,12 @@ import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
-import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
 
 import { CopyPathAction } from './actions/CopyPathAction'

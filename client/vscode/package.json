@@ -1,10 +1,10 @@
 {
   "private": true,
-  "name": "@sourcegraph/vscode",
-  "displayName": "Sourcegraph",
+  "name": "sourcegraph-preview",
+  "displayName": "Sourcegraph - preview",
   "version": "0.0.1",
   "description": "Sourcegraph VS Code extension",
-  "publisher": "sourcegraph",
+  "publisher": "kandalatj",
   "sideEffects": false,
   "license": "Apache-2.0",
   "engines": {

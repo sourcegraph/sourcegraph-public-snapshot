@@ -6,6 +6,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { SearchResult } from '@sourcegraph/branded/src/components/SearchResult'
+import { StreamingProgress } from '@sourcegraph/branded/src/search/results/progress/StreamingProgress'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -21,12 +23,10 @@ import {
     RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { SearchResult } from '../../components/SearchResult'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import * as helpers from '../helpers'
 
-import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'

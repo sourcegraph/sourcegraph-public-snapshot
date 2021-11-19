@@ -1,19 +1,17 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { StreamingProgressCount } from '@sourcegraph/branded/src/search/results/progress/StreamingProgressCount'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
-
-import { ErrorAlert } from '../../components/alerts'
-
-import { StreamingProgressCount } from './progress/StreamingProgressCount'
-import styles from './StreamingSearchResults.module.scss'
 
 export const StreamingSearchResultFooter: React.FunctionComponent<{
     results?: AggregateStreamingSearchResults
     children?: React.ReactChild | React.ReactChild[]
-}> = ({ results, children }) => (
-    <div className={classNames(styles.streamingSearchResultsContentCentered, 'd-flex flex-column align-items-center')}>
+    className?: string
+}> = ({ results, children, className }) => (
+    <div className={classNames(className, 'd-flex flex-column align-items-center')}>
         {(!results || results?.state === 'loading') && (
             <div className="text-center my-4" data-testid="loading-container">
                 <LoadingSpinner className="icon-inline" />

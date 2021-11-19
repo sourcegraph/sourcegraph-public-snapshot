@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { Observable, Subject, NEVER } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -14,7 +15,6 @@ import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
-import { ErrorAlert } from '../../../../components/alerts'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'

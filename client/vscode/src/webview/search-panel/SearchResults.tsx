@@ -1,10 +1,10 @@
-import FileIcon from 'mdi-react/FileIcon'
 import React, { useCallback } from 'react'
 
+import { StreamingSearchResultsList } from '@sourcegraph/branded/src/search/results/StreamingSearchResultsList'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import {
+    AggregateStreamingSearchResults,
     CommitMatch,
     ContentMatch,
     PathMatch,
@@ -12,18 +12,27 @@ import {
     SearchMatch,
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
-import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { CommitSearchResultFields, FileMatchFields, RepositoryFields, SearchResult } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
-import styles from './SearchResults.module.scss'
-
 import { useQueryState } from '.'
 
-interface SearchResultsProps extends Pick<WebviewPageProps, 'platformContext'> {}
+interface SearchResultsProps extends Pick<WebviewPageProps, 'platformContext' | 'theme'> {}
 
-export const SearchResults = React.memo<SearchResultsProps>(({ platformContext }) => {
+// TODO(tj): just try to move the whole StreamingSearchResults file to shared and use THAT!
+// Only difference is "show more" button, which we can add here
+//  (refer to https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.27.4/-/blob/client/web/src/search/results/SearchResultsList.tsx?L442)
+// Also varies in that "location.search" is source of truth for search query in streaming search result.
+// can change prop to 'queriedSearch'/'executedQuery', pass location.search in webapp, pass zustand value in vsce?
+// also make location optional in streaming then.
+
+// Stremaing result footer also makes no sense here, figure out a way to use the same NoResultsPage and pass it as a child to the footer
+// optionally... maybe renderFooter: (children: JSX.Element) => JSX.Element
+
+export const SearchResults = React.memo<SearchResultsProps>(({ platformContext, theme }) => {
+    // TODO handler search results changing. maybe pass search results prop from parent and don't render this while loading?
+    const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
     const searchResults = useQueryState(({ state }) => state.searchResults)
 
     const fetchHighlightedFileLineRangesWithContext = useCallback(
@@ -31,50 +40,52 @@ export const SearchResults = React.memo<SearchResultsProps>(({ platformContext }
         [platformContext]
     )
 
+    // Convert GQL type to SearchMatch
+
     if (!searchResults) {
+        // TODO loading state.. might not delegate to <StreamingSearchResultsList>
         return null
     }
-
-    // Convert GQL type to SearchMatch
+    // todo memoize
     const matches = convertGQLSearchToSearchMatches(searchResults)
 
-    const renderedMatches: JSX.Element[] | undefined = matches
-        .map(match => {
-            switch (match.type) {
-                case 'content':
-                case 'path':
-                case 'symbol': {
-                    const renderedFileMatch = (
-                        <FileMatch
-                            icon={FileIcon}
-                            result={match}
-                            expanded={true}
-                            settingsCascade={{ final: {}, subjects: [] }}
-                            showAllMatches={false}
-                            telemetryService={{
-                                log: () => {},
-                                logViewEvent: () => {},
-                            }}
-                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
-                            onSelect={() => console.log('on select!')}
-                        />
-                    )
-                    return renderedFileMatch
-                }
-                // TODO render these
-                case 'commit':
-                    return null
-                case 'repo':
-                    return null
-            }
-        })
-        .filter(isDefined)
+    // TODO error state
+    const results: AggregateStreamingSearchResults = {
+        state: 'complete',
+        results: matches,
+        filters: searchResults.search?.results.dynamicFilters ?? [],
+        progress: {
+            matchCount: searchResults.search?.results.matchCount ?? 0,
+            durationMs: searchResults.search?.results.elapsedMilliseconds ?? 0,
+            repositoriesCount: searchResults.search?.results.repositoriesCount ?? 0,
+            skipped: [],
+        },
+    }
 
-    // We need <FileMatch> and <SearchResult>.
-    // - <FileMatch> is already in shared
-    // - move <SearchResult> to shared
-
-    return <div className={styles.result}>{renderedMatches}</div>
+    return (
+        <>
+            <StreamingSearchResultsList
+                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
+                isLightTheme={theme === 'theme-light'}
+                executedQuery={executedQuery}
+                // TODO use real settings (getSettings() on comlink extension API)
+                settingsCascade={{ final: {}, subjects: [] }}
+                // TODO use real telemetry service
+                telemetryService={{
+                    log: () => {},
+                    logViewEvent: () => {},
+                }}
+                // Default to false until we implement <SearchResultsInfoBar>, which is where this value is set.
+                allExpanded={false}
+                isSourcegraphDotCom={false}
+                searchContextsEnabled={true}
+                showSearchContext={true}
+                platformContext={platformContext}
+                results={results}
+            />
+            {/* TODO show more button */}
+        </>
+    )
 })
 
 export function convertGQLSearchToSearchMatches(searchResult: SearchResult): SearchMatch[] {

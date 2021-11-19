@@ -3,6 +3,7 @@ import * as H from 'history'
 import React, { useEffect, useState, useCallback } from 'react'
 import { catchError } from 'rxjs/operators'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,7 +11,6 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
-import { ErrorAlert } from '../alerts'
 import { PageTitle } from '../PageTitle'
 
 import { isExternalService, updateExternalService, fetchExternalService as _fetchExternalService } from './backend'

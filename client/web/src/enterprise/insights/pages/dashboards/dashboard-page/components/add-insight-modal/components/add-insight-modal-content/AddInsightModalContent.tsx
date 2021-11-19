@@ -3,9 +3,9 @@ import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { ErrorAlert } from '../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
 import { FormInput } from '../../../../../../../components/form/form-input/FormInput'
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'

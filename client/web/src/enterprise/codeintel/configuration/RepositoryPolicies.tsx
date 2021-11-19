@@ -1,8 +1,8 @@
 import * as H from 'history'
 import React, { FunctionComponent, useCallback, useEffect } from 'react'
 
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
