@@ -6,8 +6,8 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
-
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '@sourcegraph/web/src/components/SaveToolbar'
+
 import { AuthenticatedUser } from '../../../../auth'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { useInferredConfig, useRepositoryConfig, useUpdateConfigurationForRepository } from '../hooks/usePolicies'
