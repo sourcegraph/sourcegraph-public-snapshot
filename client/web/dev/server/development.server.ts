@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import compression from 'compression'
+import { RequestHandler } from 'express'
 import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
 import { once } from 'lodash'
 import signale from 'signale'
@@ -9,8 +10,10 @@ import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
+    getCSRFTokenCookieMiddleware,
     environmentConfig,
     getAPIProxySettings,
+    getCSRFTokenAndCookie,
     shouldCompressResponse,
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
@@ -33,6 +36,7 @@ const {
 interface DevelopmentServerInit {
     proxyRoutes: string[]
     proxyMiddlewareOptions: HTTPProxyMiddlewareOptions
+    csrfTokenCookieMiddleware: RequestHandler
 }
 
 async function startDevelopmentServer(): Promise<void> {
@@ -45,11 +49,16 @@ async function startDevelopmentServer(): Promise<void> {
         throw new Error('development.server.ts only supports *web-standalone* usage')
     }
 
+    // Get CSRF token value from the `SOURCEGRAPH_API_URL`.
+    const { csrfContextValue, csrfCookieValue } = await getCSRFTokenAndCookie(SOURCEGRAPH_API_URL)
+
     const init: DevelopmentServerInit = {
         proxyRoutes: PROXY_ROUTES,
         proxyMiddlewareOptions: getAPIProxySettings({
+            csrfContextValue,
             apiURL: SOURCEGRAPH_API_URL,
         }),
+        csrfTokenCookieMiddleware: getCSRFTokenCookieMiddleware(csrfCookieValue),
     }
 
     switch (environmentConfig.DEV_WEB_BUILDER) {
@@ -66,6 +75,7 @@ async function startDevelopmentServer(): Promise<void> {
 async function startWebpackDevelopmentServer({
     proxyRoutes,
     proxyMiddlewareOptions,
+    csrfTokenCookieMiddleware,
 }: DevelopmentServerInit): Promise<void> {
     const proxyConfig: ProxyConfigArrayItem = {
         context: proxyRoutes,
@@ -98,6 +108,7 @@ async function startWebpackDevelopmentServer({
         // Disable default DevServer compression. We need more fine grained compression to support streaming search.
         compress: false,
         onBeforeSetupMiddleware: developmentServer => {
+            developmentServer.app.use(csrfTokenCookieMiddleware)
             // Re-enable gzip compression using our own `compression` filter.
             developmentServer.app.use(compression({ filter: shouldCompressResponse }))
         },
@@ -122,11 +133,13 @@ async function startWebpackDevelopmentServer({
 async function startEsbuildDevelopmentServer({
     proxyRoutes,
     proxyMiddlewareOptions,
+    csrfTokenCookieMiddleware,
 }: DevelopmentServerInit): Promise<void> {
     const manifest = getManifest()
     const htmlPage = getHTMLPage(manifest)
 
     await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
+        app.use(csrfTokenCookieMiddleware)
         app.use(createProxyMiddleware(proxyRoutes, proxyMiddlewareOptions))
         app.get(/.*/, (_request, response) => {
             response.send(htmlPage)

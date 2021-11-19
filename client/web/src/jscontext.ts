@@ -15,6 +15,7 @@ export interface AuthProvider {
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
+    csrfToken: string
     userAgentIsBot: boolean
 
     /**
