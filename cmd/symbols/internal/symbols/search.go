@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -513,7 +512,7 @@ func SanityCheck() error {
 // findNewestFile lists the directory and returns the newest file's path, prepended with dir.
 func findNewestFile(dir string) (string, error) {
 	fmt.Println("=> Searching in dir:", dir)
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return "", nil
 	}
@@ -521,15 +520,20 @@ func findNewestFile(dir string) (string, error) {
 	var mostRecentTime time.Time
 	newest := ""
 	for _, fi := range files {
-		if fi.Mode().IsRegular() {
+		if fi.Type().IsRegular() {
 			if !strings.HasSuffix(fi.Name(), ".zip") {
 				continue
 			}
 
-			if newest == "" || fi.ModTime().After(mostRecentTime) {
+			info, err := fi.Info()
+			if err != nil {
+				return "", err
+			}
+
+			if newest == "" || info.ModTime().After(mostRecentTime) {
 				fmt.Println("Found Newer:", newest, "->", filepath.Join(dir, fi.Name()))
 
-				mostRecentTime = fi.ModTime()
+				mostRecentTime = info.ModTime()
 				newest = filepath.Join(dir, fi.Name())
 			}
 		}
