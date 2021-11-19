@@ -112,10 +112,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		_ = eventWriter.Event("progress", progress.Current())
 	}
 
-	filters := &streaming.SearchFilters{
-		Globbing: false, // TODO
-	}
-
 	// Store marshalled matches and flush periodically or when we go over
 	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
 	// still write more than that.
@@ -137,6 +133,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
+
+	filters := &streaming.SearchFilters{}
 
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {

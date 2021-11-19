@@ -28,6 +28,7 @@ If you are looking for general information or wish to disclose a vulnerability, 
   - [Improving our CSRF threat model](#improving-our-csrf-threat-model)
     - [Audit usages of `window.context` to exclude any sensitive information](#audit-usages-of-windowcontext-to-exclude-any-sensitive-information)
     - [Eliminate the username/password manipulation exclusion](#eliminate-the-usernamepassword-manipulation-exclusion)
+    - [Remove our CSRF tokens](#remove-our-csrf-tokens)
     - [API endpoints should default to CORS `*` IFF access token authentication is being performed](#api-endpoints-should-default-to-cors--iff-access-token-authentication-is-being-performed)
 
 # Living document
@@ -40,12 +41,6 @@ This is a living document, with a changelog as follows:
 * Nov 8th, 2021: [@slimsag](https://github.com/slimsag) adjusted CORS handling to forbid cross-origin requests on all non-API routes. ([#27240](https://github.com/sourcegraph/sourcegraph/pull/27240), [#27245](https://github.com/sourcegraph/sourcegraph/pull/27245)):
   * Non-API routes, such as sign in / sign out, no longer allow cross-origin requests even if the origin matches an allowed origin in the `corsOrigin` site configuration setting.
   * The `corsOrigin` site configuration setting now only configures cross-origin requests for _API routes_ (nobody should ever need a cross-origin request for non-API routes.)
-* Nov 16th, 2021: [@slimsag](https://github.com/slimsag) and the Security team audited `window.context` to identify if it included any sensitive information that could be of risk.
-  * We found no risk in this data, except for its inclusion of CSRF tokens.
-  * JSContext is embedded in the content of HTML pages on GET requests and included CSRF tokens. This meant sensitive, unique user data was present in GET requests that were thought to otherwise be static pages. It is likely that we had a caching vulnerability here in which user A's GET request would be cached (e.g. by an intermediary CDN) and user B's request would use User A's cached CSRF token to perform their subsequent requests. However, since we already relied on browser CORS policies and our CSRF tokens were only a secondary means of security, this was not a real vulnerability. It did however illustrate the importance of simplifying our CSRF threat model.
-* Nov 16th, 2021: [@slimsag](https://github.com/slimsag) removed our CSRF security tokens/cookies entirely, instead having Sourcegraph rely solely on browser's CORS policies to prevent CSRF attacks. [#7658](https://github.com/sourcegraph/sourcegraph/issues/7658)
-  * In practice, this is just as safe and leads to a simpler CSRF threat model which reduces security risks associated with our threat model complexity. 
-  * This fixed the theoretical caching vulnerability with CSRF tokens mentioned in the prior bullet point. This was not a real vulnerability, but shows another example of why removing our CSRF tokens was the right choice to reduce complexity and ensure our CSRF threat model is solid and well understood.
 
 # Prerequisites
 
@@ -123,7 +118,7 @@ Aside from the folloowing exclusions, non-API endpoints only serve static, unpri
 
 ```
 	<script ignore-csp>
-		window.context = {"externalURL":"https://sourcegraph.com","xhrHeaders":{"X-Requested-With":"Sourcegraph","x-sourcegraph-client":"https://sourcegraph.com"},"userAgentIsBot":false,"assetsRoot":"/.assets","version":"105021_2021-08-13_2c6eb84","isAuthenticatedUser":false,"sentryDSN":"https://ae2f74442b154faf90b5ff0f7cd1c618@sentry.io/1391511","siteID":"SourcegraphWeb","siteGQLID":"U2l0ZToic2l0ZSI=","debug":false,"needsSiteInit":false,"emailEnabled":true,"site":{"auth.public":true,"authz.enforceForSiteAdmins":true,"update.channel":"release"},"likelyDockerOnMac":false,"needServerRestart":false,"deployType":"kubernetes","sourcegraphDotComMode":true,"billingPublishableKey":"pk_live_1LPIDxv3bZH5wTv9NRcu9Sik","accessTokensAllow":"all-users-create","allowSignup":true,"resetPasswordEnabled":true,"externalServicesUserMode":"public","authProviders":[{"isBuiltin":true,"displayName":"Builtin username-password authentication","serviceType":"builtin","authenticationURL":""},{"isBuiltin":false,"displayName":"GitHub","serviceType":"github","authenticationURL":"/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4"},{"isBuiltin":false,"displayName":"GitLab","serviceType":"gitlab","authenticationURL":"/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3A51686001d882eae9c23bbc3d976ca07ba52c5b14fd099230a1463ac9c37f2b8b"}],"branding":{"brandName":"Sourcegraph"},"batchChangesEnabled":false,"codeIntelAutoIndexingEnabled":true,"productResearchPageEnabled":true,"experimentalFeatures":{"andOrQuery":"enabled","jvmPackages":"enabled","ranking":{"maxReorderQueueSize":16},"rateLimitAnonymous":500,"search.index.branches":{"github.com/go-yaml/yaml":["v2","v3"],"github.com/kubernetes/kubernetes":["release-1.17"],"github.com/sourcegraph/sourcegraph":["3.17","v3.0.0"]},"searchMultipleRevisionsPerRepository":true}}
+		window.context = {"externalURL":"https://sourcegraph.com","xhrHeaders":{"X-Csrf-Token":"fKle7JmU0wfA1ol7+1sIKftRL8qklk4YqpNX5kwdAXAzg+xEGl1d7yiOR2B+PjCM9uJAZKGgV3nrN6bLt2HPuw==","X-Requested-With":"Sourcegraph","x-sourcegraph-client":"https://sourcegraph.com"},"csrfToken":"fKle7JmU0wfA1ol7+1sIKftRL8qklk4YqpNX5kwdAXAzg+xEGl1d7yiOR2B+PjCM9uJAZKGgV3nrN6bLt2HPuw==","userAgentIsBot":false,"assetsRoot":"/.assets","version":"105021_2021-08-13_2c6eb84","isAuthenticatedUser":false,"sentryDSN":"https://ae2f74442b154faf90b5ff0f7cd1c618@sentry.io/1391511","siteID":"SourcegraphWeb","siteGQLID":"U2l0ZToic2l0ZSI=","debug":false,"needsSiteInit":false,"emailEnabled":true,"site":{"auth.public":true,"authz.enforceForSiteAdmins":true,"update.channel":"release"},"likelyDockerOnMac":false,"needServerRestart":false,"deployType":"kubernetes","sourcegraphDotComMode":true,"billingPublishableKey":"pk_live_1LPIDxv3bZH5wTv9NRcu9Sik","accessTokensAllow":"all-users-create","allowSignup":true,"resetPasswordEnabled":true,"externalServicesUserMode":"public","authProviders":[{"isBuiltin":true,"displayName":"Builtin username-password authentication","serviceType":"builtin","authenticationURL":""},{"isBuiltin":false,"displayName":"GitHub","serviceType":"github","authenticationURL":"/.auth/github/login?pc=https%3A%2F%2Fgithub.com%2F%3A%3Ae917b2b7fa9040e1edd4"},{"isBuiltin":false,"displayName":"GitLab","serviceType":"gitlab","authenticationURL":"/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F%3A%3A51686001d882eae9c23bbc3d976ca07ba52c5b14fd099230a1463ac9c37f2b8b"}],"branding":{"brandName":"Sourcegraph"},"batchChangesEnabled":false,"codeIntelAutoIndexingEnabled":true,"productResearchPageEnabled":true,"experimentalFeatures":{"andOrQuery":"enabled","jvmPackages":"enabled","ranking":{"maxReorderQueueSize":16},"rateLimitAnonymous":500,"search.index.branches":{"github.com/go-yaml/yaml":["v2","v3"],"github.com/kubernetes/kubernetes":["release-1.17"],"github.com/sourcegraph/sourcegraph":["3.17","v3.0.0"]},"searchMultipleRevisionsPerRepository":true}}
 		window.pageError =  null 
 	</script>
 ```
@@ -131,8 +126,11 @@ Aside from the folloowing exclusions, non-API endpoints only serve static, unpri
 The context provided has various uses:
 
 * It contains context that is merely needed to render the page, e.g. options which are enabled on the site such as which logo image to render (customizable), etc.
+* It contains context that is more critical, such as which exact CSRF tokens to include when making requests, or XHR headers to use when making requests.
 
 Importantly, this context may contain information which is specific to the user's current authentication. That is, if you are authenticated as e.g. an site admin or user, it may contain sensitive information - even though it is merely a GET request.
+
+TODO(slimsag): TODO(security): It is my belief JSContext should _NOT_ contain sensitive information. This makes caching of GET requests tricky and very risky, this is a dangerous weak spot in our threat model and we should correct it ASAP.
 
 #### Exclusion: username/password manipulation (sign in, password reset, etc.)
 
@@ -151,12 +149,19 @@ They are [registered here in code](https://sourcegraph.com/github.com/sourcegrap
 
 ### Risk of CSRF attacks against our non-API endpoints
 
-Non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content (which has no sensitive or user-specific data) and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the exclusions listed above (`Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
+The primary risk of a forged request making its way to a non-API endpoint in Sourcegraph is that the attacker could steal the potentially sensitive data embedded in `window.context`:
+
+1. The `window.context.xhrHeaders`, which contain a `X-Csrf-Token` header.
+2. The `window.context.csrfToken` field, which contains the same CSRF token.
+3. Any other potentially-sensitive information we embed in `window` described in the two exclusions above.
+4. Authentication cookie access, which is used to authenticate API endpoint requests (more on this below.)
+
+Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the two exclusions listed above (`Exclusion: window.context`, and `Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
 
 With all of this in mind, it is worth calling out that:
 
-* IF we had _no_ protection at all against CSRF on these routes (no CSRF tokens/cookies and a CORS response header directly mirroring the requesting origin with authentication allowed)
-* IF embedded `window` content was not a risk (it is not today)
+* IF we had _no_ protection at all against CSRF on these routes (no CSRF tokens/cookies and a CORS response header of `*`)
+* IF embedded `window` content was not a risk (it absolutely is today)
 * THEN we would not be at risk of CSRF attacks at all, because even if `<form>`, `<img>`, and JavaScript on foreign pages could make requests to Sourcegraph's HTTP API:
   * The API routes are protected (they forbid cookie-based authentication unless a custom `X-Requested-With: Sourcegraph` header is present, more on this below.)
   * The non-API routes would be dumb, content-serving routes only. There is no create/delete/modify action. It effectively would be dumb, static-content web serving endpoints only.
@@ -164,13 +169,16 @@ With all of this in mind, it is worth calling out that:
 
 ### How we protect against CSRF in non-API endpoints
 
-We rely solely on browser's CORS policies to prevent against CSRF attacks in our non-API endpoints:
+There are two ways in which we prevent against CSRF in our non-API endpoints:
 
-1. We only allow trusted domains in our CORS handling policy.
-2. Site admins can configure trusted CORS domains via the site configuration's [`corsOrigin`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eschema/site%5C.schema%5C.json+corsOrigin&patternType=literal) setting, but this setting DOES NOT affect our response to these non-API endpoints (cross-origin requests to non-API endpoints are always denied.)
-4. This is our **only** means of protecting against CSRF. It applies both to the static-content-serving routes, as well as to the username/password manipulation endpoints described above.
-
-In Nov 2021, we removed CSRF tokens which increased complexity of our security model and provably introduced security risks. See the "Living document" section above for more information.
+1. Browser's CORS policies
+   1. We only allow trusted domains in our CORS handling policy.
+   2. Site admins can configure trusted CORS domains via the site configuration's [`corsOrigin`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eschema/site%5C.schema%5C.json+corsOrigin&patternType=literal) setting.
+   3. This is our **primary** means of protecting against CSRF. It applies both to the static-content-serving routes, as well as to the username/password manipulation endpoints described above.
+2. CSRF tokens
+   1. The first GET request to Sourcegraph returns a CSRF token via `window.context.csrfToken`, and ALL subsequent requests to _non-API endpoints_ require the subsequent CSRF token. This is 100% a secondary, cautionary means of protection: we do not actually need these, they can be removed.
+   2. Our CSRF tokens have in the past been **a major source of security issues**: sometimes, they have gotten falsely rejected due to corruption. This leads to all users being unable to authenticate with `CSRF: token invalid` errors. Site admins, and us, have attempted to fix this in the past by wiping out Redis data which stored (still today? unsure) the CSRF tokens. If done incorrectly, e.g. while Sourcegraph allows sign-ups, user IDs in the Redis DB's authentication cookies and Postgres DB could become mismatched resulting in incorrect authentication.
+   3. It is @slimsag's recommendation we remove our CSRF tokens and rely solely on browser CORS policies for simplicity to avoid this type of issue (and others not mentioned here.) If you are reading this and are reporting that we do not have CSRF tokens as a vulnerability, this is why: it's not safer, it's more complexity and riskier.
 
 ## API endpoints
 
@@ -253,6 +261,18 @@ We would do well to:
 1. Place these routes into a separate category, so we have "(1) API endpoints, (2) non-API endpoints, and (3) user signup endpoints" or similar.
 2. The routes should be easily identified based on URL path - they should be under a common prefix, not under separate URLs as they are today.
 3. We should ensure the logic for registering these routes is under a distinct location. Today, they are registered under, and inherit all of the middlewares of, the non-API page routes. That is not ideal and could be risky long-term if that logic changes at all without an understanding of how it could impact these "UI routes" (as they are called in code.)
+
+### Remove our CSRF tokens
+
+This may be completed at ANY time. It has NO pre-requisites.
+
+As described in "[How we protect against CSRF in non-API endpoints](#how-we-protect-against-csrf-in-non-api-endpoints)", our existing CSRF tokens are actually _detrimental to security_, and add complexity which has _provably harmed our security in the past_. This is a case where security-in-depth has caused us harm: if we did not have these CSRF tokens, customers would provably have not run into these security incidents.
+
+There are of course other fixes we can take in this area, such as ensuring user IDs between Redis and Postgres are impossible to mix (this document speaks only about CSRF threats); or investing heavily in improving and understanding our CSRF token model - but it is absolutely NOT required at all as it is only a secondary means of protection today. My firm belief is that we are better off keeping our CSRF threat model simple, so that everyone can understand it.
+
+There is no immediate risk here, however, in not removing these. They have been in place for several years and it has been at least 2 years since a customer has ran into this, and we've added documentation and other preventative measures against the issues we've faced here in the past.
+
+We should remove them. Tracking issue from several years ago, concluding the same thing: https://github.com/sourcegraph/sourcegraph/issues/7658
 
 ### API endpoints should default to CORS `*` IFF access token authentication is being performed
 

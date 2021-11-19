@@ -1,19 +1,23 @@
-import { ApolloError, FetchResult, MutationFunctionOptions, ApolloCache, OperationVariables } from '@apollo/client'
+import { ApolloClient, ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
+import { from, Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { gql, useQuery, useMutation } from '@sourcegraph/shared/src/graphql/graphql'
+import { getDocumentNode, gql, useMutation, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import {
-    Exact,
-    CodeIntelligenceConfigurationPolicyFields,
     CodeIntelligenceConfigurationPoliciesResult,
+    CodeIntelligenceConfigurationPoliciesVariables,
+    CodeIntelligenceConfigurationPolicyFields,
+    CodeIntelligenceConfigurationPolicyResult,
     DeleteCodeIntelligenceConfigurationPolicyResult,
     DeleteCodeIntelligenceConfigurationPolicyVariables,
+    Exact,
+    GitObjectType,
     IndexConfigurationResult,
     InferredIndexConfigurationResult,
-    UpdateRepositoryIndexConfigurationResult,
-    CodeIntelligenceConfigurationPolicyResult,
-    GitObjectType,
     UpdateCodeIntelligenceConfigurationPolicyResult,
+    UpdateRepositoryIndexConfigurationResult,
 } from '../../../graphql-operations'
 
 // Query
@@ -24,6 +28,7 @@ const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
         name
         repository {
             id
+            name
         }
         repositoryPatterns
         type
@@ -55,31 +60,72 @@ export const nullPolicy = {
     repository: null,
 }
 
-interface UsePoliciesConfigResult {
-    policies: CodeIntelligenceConfigurationPolicyFields[]
-    loadingPolicies: boolean
-    policiesError: ApolloError | undefined
+interface PolicyConnection {
+    nodes: CodeIntelligenceConfigurationPolicyFields[]
+    totalCount: number | null
+    pageInfo: { endCursor: string | null; hasNextPage: boolean }
 }
 
 export const POLICIES_CONFIGURATION = gql`
-    query CodeIntelligenceConfigurationPolicies($repositoryId: ID) {
-        codeIntelligenceConfigurationPolicies(repository: $repositoryId) {
-            ...CodeIntelligenceConfigurationPolicyFields
+    query CodeIntelligenceConfigurationPolicies(
+        $repository: ID
+        $query: String
+        $forDataRetention: Boolean
+        $forIndexing: Boolean
+        $first: Int
+        $after: String
+    ) {
+        codeIntelligenceConfigurationPolicies(
+            repository: $repository
+            query: $query
+            forDataRetention: $forDataRetention
+            forIndexing: $forIndexing
+            first: $first
+            after: $after
+        ) {
+            nodes {
+                ...CodeIntelligenceConfigurationPolicyFields
+            }
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
         }
     }
 
     ${defaultCodeIntelligenceConfigurationPolicyFieldsFragment}
 `
 
-export const usePoliciesConfig = (repositoryId?: string | null): UsePoliciesConfigResult => {
-    const vars = repositoryId ? { variables: { repositoryId } } : {}
-    const { data, error, loading } = useQuery<CodeIntelligenceConfigurationPoliciesResult>(POLICIES_CONFIGURATION, vars)
-
-    return {
-        policies: data?.codeIntelligenceConfigurationPolicies || [],
-        loadingPolicies: loading,
-        policiesError: error,
+export const queryPolicies = (
+    {
+        repository,
+        first,
+        query,
+        forDataRetention,
+        forIndexing,
+        after,
+    }: GQL.ICodeIntelligenceConfigurationPoliciesOnQueryArguments,
+    client: ApolloClient<object>
+): Observable<PolicyConnection> => {
+    const vars: CodeIntelligenceConfigurationPoliciesVariables = {
+        repository: repository ?? null,
+        query: query ?? null,
+        forDataRetention: forDataRetention ?? null,
+        forIndexing: forIndexing ?? null,
+        first: first ?? null,
+        after: after ?? null,
     }
+
+    return from(
+        client.query<CodeIntelligenceConfigurationPoliciesResult>({
+            query: getDocumentNode(POLICIES_CONFIGURATION),
+            variables: vars,
+        })
+    ).pipe(
+        map(({ data }) => data),
+        map(({ codeIntelligenceConfigurationPolicies }) => codeIntelligenceConfigurationPolicies)
+    )
 }
 
 interface UseRepositoryConfigResult {
@@ -245,24 +291,6 @@ export const useDeletePolicies = (): UseDeletePoliciesResult => {
         isDeleting: loading,
         deleteError: error,
     }
-}
-
-export interface CachedRepositoryPolicies {
-    __ref: string
-}
-
-export const updateDeletePolicyCache = (
-    cache: ApolloCache<DeleteCodeIntelligenceConfigurationPolicyResult>,
-    id: string
-): boolean => {
-    const policyReference = cache.identify({ __typename: 'CodeIntelligenceConfigurationPolicy', id })
-    return cache.modify({
-        fields: {
-            codeIntelligenceConfigurationPolicies(existingPolicies: CachedRepositoryPolicies[] = []) {
-                return existingPolicies.filter(({ __ref }) => __ref !== policyReference)
-            },
-        },
-    })
 }
 
 const UPDATE_CONFIGURATION_FOR_REPOSITORY = gql`

@@ -222,6 +222,10 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+func ExecutorsEnabled() bool {
+	return Get().ExecutorsAccessToken != ""
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled

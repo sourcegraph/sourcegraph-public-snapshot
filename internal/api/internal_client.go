@@ -48,7 +48,8 @@ type ConfigSavedQuery struct {
 	Query           string  `json:"query"`
 	Notify          bool    `json:"notify,omitempty"`
 	NotifySlack     bool    `json:"notifySlack,omitempty"`
-	UserID          int32   `json:"userID"`
+	UserID          *int32  `json:"userID"`
+	OrgID           *int32  `json:"orgID"`
 	SlackWebhookURL *string `json:"slackWebhookURL"`
 }
 

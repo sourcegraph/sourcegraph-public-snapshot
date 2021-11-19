@@ -122,8 +122,8 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-				return nil, nil
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				return nil, 0, nil
 			},
 		},
 		GetUploadsFunc: &DBStoreGetUploadsFunc{
@@ -1037,24 +1037,24 @@ func (c DBStoreDoneFuncCall) Results() []interface{} {
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked.
 type DBStoreGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
-	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	history     []DBStoreGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
-	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1063,7 +1063,7 @@ func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1071,21 +1071,21 @@ func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1130,7 +1130,10 @@ type DBStoreGetConfigurationPoliciesFuncCall struct {
 	Result0 []dbstore.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1142,7 +1145,7 @@ func (c DBStoreGetConfigurationPoliciesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreGetUploadsFunc describes the behavior when the GetUploads method

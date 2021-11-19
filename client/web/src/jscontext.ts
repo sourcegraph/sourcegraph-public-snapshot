@@ -15,6 +15,7 @@ export interface AuthProvider {
 
 export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
+    csrfToken: string
     userAgentIsBot: boolean
 
     /**
@@ -98,6 +99,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
+
+    /** Whether executors are enabled on the site. */
+    executorsEnabled: boolean
 
     /** Whether the code intel auto-indexer feature is enabled on the site. */
     codeIntelAutoIndexingEnabled: boolean

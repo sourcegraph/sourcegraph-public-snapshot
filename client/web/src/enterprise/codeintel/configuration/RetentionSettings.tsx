@@ -5,7 +5,7 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
 import { DurationSelect } from './DurationSelect'
-import { nullPolicy } from './usePoliciesConfigurations'
+import { nullPolicy } from './usePolicies'
 
 export interface RetentionSettingsProps {
     policy: CodeIntelligenceConfigurationPolicyFields

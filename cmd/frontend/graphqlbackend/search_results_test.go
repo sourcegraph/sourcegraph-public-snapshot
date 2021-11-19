@@ -204,10 +204,9 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 	fileMatchRev.InputRev = &rev
 
 	type testCase struct {
-		descr                             string
-		searchResults                     []result.Match
-		expectedDynamicFilterStrsRegexp   map[string]int
-		expectedDynamicFilterStrsGlobbing map[string]int
+		descr                           string
+		searchResults                   []result.Match
+		expectedDynamicFilterStrsRegexp map[string]int
 	}
 
 	tests := []testCase{
@@ -218,9 +217,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
-			},
 		},
 
 		{
@@ -229,10 +225,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
 				`lang:markdown`:   1,
-			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
-				`lang:markdown`: 1,
 			},
 		},
 
@@ -243,10 +235,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`repo:^testRepo$@develop3.0`: 1,
 				`lang:markdown`:              1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo@develop3.0`: 1,
-				`lang:markdown`:            1,
-			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using first extension",
@@ -255,20 +243,12 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`repo:^testRepo$`: 1,
 				`lang:typescript`: 1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`:   1,
-				`lang:typescript`: 1,
-			},
 		},
 		{
 			descr:         "file match from a language with two file extensions, using second extension",
 			searchResults: []result.Match{fileMatch("/testFile.tsx")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
-			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`:   1,
 				`lang:typescript`: 1,
 			},
 		},
@@ -280,11 +260,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`-file:(^|/)node_modules/`: 1,
 				`lang:markdown`:            1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
-				`-file:node_modules/** -file:**/node_modules/**`: 1,
-				`lang:markdown`: 1,
-			},
 		},
 		{
 			descr:         "file match which matches one of the common file filters",
@@ -293,11 +268,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`repo:^testRepo$`:          1,
 				`-file:(^|/)node_modules/`: 1,
 				`lang:markdown`:            1,
-			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
-				`-file:node_modules/** -file:**/node_modules/**`: 1,
-				`lang:markdown`: 1,
 			},
 		},
 		{
@@ -311,11 +281,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`-file:_test\.go$`: 1,
 				`lang:go`:          2,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`:    2,
-				`-file:**_test.go`: 1,
-				`lang:go`:          2,
-			},
 		},
 
 		{
@@ -326,10 +291,6 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`: 1,
 				`lang:rust`:       1,
-			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`: 1,
-				`lang:rust`:     1,
 			},
 		},
 
@@ -346,30 +307,19 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 				`-file:\.js\.map$`: 2,
 				`lang:javascript`:  1,
 			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`:   3,
-				`-file:**.min.js`: 1,
-				`-file:**.js.map`: 2,
-				`lang:javascript`: 1,
-			},
 		},
 
 		// If there are no search results, no filters should be displayed.
 		{
-			descr:                             "no results",
-			searchResults:                     []result.Match{},
-			expectedDynamicFilterStrsRegexp:   map[string]int{},
-			expectedDynamicFilterStrsGlobbing: map[string]int{},
+			descr:                           "no results",
+			searchResults:                   []result.Match{},
+			expectedDynamicFilterStrsRegexp: map[string]int{},
 		},
 		{
 			descr:         "values containing spaces are quoted",
 			searchResults: []result.Match{fileMatch("/.gitignore")},
 			expectedDynamicFilterStrsRegexp: map[string]int{
 				`repo:^testRepo$`:    1,
-				`lang:"ignore list"`: 1,
-			},
-			expectedDynamicFilterStrsGlobbing: map[string]int{
-				`repo:testRepo`:      1,
 				`lang:"ignore list"`: 1,
 			},
 		},
@@ -390,12 +340,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 					actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
 				}
 
-				if globbing {
-					expectedDynamicFilterStrs = test.expectedDynamicFilterStrsGlobbing
-				} else {
-					expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
-				}
-
+				expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
 				if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
 					t.Errorf("mismatch (-want, +got):\n%s", diff)
 				}
