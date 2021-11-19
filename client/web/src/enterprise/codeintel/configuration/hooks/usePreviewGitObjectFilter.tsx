@@ -19,7 +19,7 @@ export interface GitObjectPreviewResult {
     }[]
 }
 
-const PREVIEW_GIT_OBJECT_FILTER = gql`
+export const PREVIEW_GIT_OBJECT_FILTER = gql`
     query PreviewGitObjectFilter($id: ID!, $type: GitObjectType!, $pattern: String!) {
         node(id: $id) {
             ...RepositoryPreviewGitObjectFilter

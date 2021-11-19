@@ -17,7 +17,7 @@ interface RepositoryPreviewResult {
     limit: number | null
 }
 
-const PREVIEW_REPOSITORY_FILTER = gql`
+export const PREVIEW_REPOSITORY_FILTER = gql`
     query PreviewRepositoryFilter($patterns: [String!]!) {
         previewRepositoryFilter(patterns: $patterns) {
             nodes {

@@ -7,7 +7,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import { LsifIndexesForRepoResult, LsifIndexesForRepoVariables, LsifIndexFields } from '../../../../graphql-operations'
 
-import { lsifIndexFieldsFragment } from './backend'
+import { lsifIndexFieldsFragment } from './types'
 
 interface IndexConnection {
     nodes: LsifIndexFields[]

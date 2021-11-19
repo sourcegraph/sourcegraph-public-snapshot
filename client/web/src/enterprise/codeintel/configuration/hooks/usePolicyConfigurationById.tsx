@@ -8,29 +8,9 @@ import {
     GitObjectType,
 } from '../../../../graphql-operations'
 
-const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
-    fragment CodeIntelligenceConfigurationPolicyFields on CodeIntelligenceConfigurationPolicy {
-        __typename
-        id
-        name
-        repository {
-            id
-            name
-        }
-        repositoryPatterns
-        type
-        pattern
-        protected
-        retentionEnabled
-        retentionDurationHours
-        retainIntermediateCommits
-        indexingEnabled
-        indexCommitMaxAgeHours
-        indexIntermediateCommits
-    }
-`
+import { defaultCodeIntelligenceConfigurationPolicyFieldsFragment } from './types'
 
-const POLICY_CONFIGURATION_BY_ID = gql`
+export const POLICY_CONFIGURATION_BY_ID = gql`
     query CodeIntelligenceConfigurationPolicy($id: ID!) {
         node(id: $id) {
             ...CodeIntelligenceConfigurationPolicyFields

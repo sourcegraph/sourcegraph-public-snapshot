@@ -9,7 +9,7 @@ import {
     QueueAutoIndexJobsForRepoResult,
 } from '../../../../graphql-operations'
 
-import { lsifIndexFieldsFragment } from './backend'
+import { lsifIndexFieldsFragment } from './types'
 
 const QUEUE_AUTO_INDEX_JOBS = gql`
     mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {

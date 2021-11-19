@@ -1,12 +1,10 @@
-import { ApolloError,  } from '@apollo/client'
+import { ApolloError } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 
-import {
-    InferredIndexConfigurationResult,
-} from '../../../../graphql-operations'
+import { InferredIndexConfigurationResult } from '../../../../graphql-operations'
 
-const INFERRED_CONFIGURATION = gql`
+export const INFERRED_CONFIGURATION = gql`
     query InferredIndexConfiguration($id: ID!) {
         node(id: $id) {
             ...RepositoryInferredIndexConfigurationFields

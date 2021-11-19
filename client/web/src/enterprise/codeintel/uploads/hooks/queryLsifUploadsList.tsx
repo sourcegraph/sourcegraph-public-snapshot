@@ -12,6 +12,8 @@ import {
     LsifUploadsResult,
 } from '../../../../graphql-operations'
 
+import { lsifUploadFieldsFragment } from './types'
+
 const LSIF_UPLOAD_LIST = gql`
     query LsifUploads(
         $state: LSIFUploadState

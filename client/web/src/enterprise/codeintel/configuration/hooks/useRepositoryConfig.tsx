@@ -10,7 +10,7 @@ interface UseRepositoryConfigResult {
     repositoryError: ApolloError | undefined
 }
 
-const REPOSITORY_CONFIGURATION = gql`
+export const REPOSITORY_CONFIGURATION = gql`
     query IndexConfiguration($id: ID!) {
         node(id: $id) {
             ...RepositoryIndexConfigurationFields

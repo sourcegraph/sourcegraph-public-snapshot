@@ -8,7 +8,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { LsifIndexFields, LsifIndexResult } from '../../../../graphql-operations'
 
-import { lsifIndexFieldsFragment } from './backend'
+import { lsifIndexFieldsFragment } from './types'
 
 const LSIF_INDEX_FIELDS = gql`
     query LsifIndex($id: ID!) {

@@ -9,47 +9,9 @@ import {
     CodeIntelligenceConfigurationPoliciesResult,
     CodeIntelligenceConfigurationPoliciesVariables,
     CodeIntelligenceConfigurationPolicyFields,
-    GitObjectType,
 } from '../../../../graphql-operations'
 
-const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
-    fragment CodeIntelligenceConfigurationPolicyFields on CodeIntelligenceConfigurationPolicy {
-        __typename
-        id
-        name
-        repository {
-            id
-            name
-        }
-        repositoryPatterns
-        type
-        pattern
-        protected
-        retentionEnabled
-        retentionDurationHours
-        retainIntermediateCommits
-        indexingEnabled
-        indexCommitMaxAgeHours
-        indexIntermediateCommits
-    }
-`
-
-export const nullPolicy = {
-    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-    id: '',
-    name: '',
-    repositoryPatterns: null,
-    type: GitObjectType.GIT_UNKNOWN,
-    pattern: '',
-    protected: false,
-    retentionEnabled: false,
-    retentionDurationHours: null,
-    retainIntermediateCommits: false,
-    indexingEnabled: false,
-    indexCommitMaxAgeHours: null,
-    indexIntermediateCommits: false,
-    repository: null,
-}
+import { defaultCodeIntelligenceConfigurationPolicyFieldsFragment } from './types'
 
 interface PolicyConnection {
     nodes: CodeIntelligenceConfigurationPolicyFields[]
@@ -57,7 +19,7 @@ interface PolicyConnection {
     pageInfo: { endCursor: string | null; hasNextPage: boolean }
 }
 
-const POLICIES_CONFIGURATION = gql`
+export const POLICIES_CONFIGURATION = gql`
     query CodeIntelligenceConfigurationPolicies(
         $repository: ID
         $query: String
