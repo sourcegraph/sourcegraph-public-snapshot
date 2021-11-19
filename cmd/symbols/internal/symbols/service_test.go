@@ -71,25 +71,19 @@ func TestService(t *testing.T) {
 		return createTar(files)
 	})
 
+	cache := &diskcache.Store{
+		Dir:               tmpDir,
+		Component:         "symbols",
+		BackgroundTimeout: 20 * time.Minute,
+	}
+
 	parserPool, err := NewParserPool(func() (ctags.Parser, error) { return mockParser{"x", "y"}, nil }, 15)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	service := Service{
-		GitserverClient: gitserverClient,
-		ParserPool:      parserPool,
-		Path:            tmpDir,
-		Cache: &diskcache.Store{
-			Dir:               tmpDir,
-			Component:         "symbols",
-			BackgroundTimeout: 20 * time.Minute,
-		},
-	}
+	service := NewService(tmpDir, gitserverClient, cache, parserPool, 15)
 
-	if err := service.Init(); err != nil {
-		t.Fatal(err)
-	}
 	server := httptest.NewServer(service.Handler())
 	defer server.Close()
 	client := symbolsclient.Client{

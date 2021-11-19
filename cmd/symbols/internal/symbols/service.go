@@ -10,32 +10,47 @@ import (
 
 // Service is the symbols service.
 type Service struct {
-	GitserverClient GitserverClient
-
-	// MaxConcurrentFetchTar is the maximum number of concurrent calls allowed
-	// to FetchTar. It defaults to 15.
-	MaxConcurrentFetchTar int
-
 	// Path is the directory in which to store the cache.
 	Path string
+
+	GitserverClient GitserverClient
 
 	// Cache is the disk backed Cache.
 	Cache *diskcache.Store
 
 	ParserPool ParserPool
 
-	// fetchSem is a semaphore to limit concurrent calls to FetchTar. The
-	// semaphore size is controlled by MaxConcurrentFetchTar
 	fetchSem chan int
 }
 
-// Start must be called before any requests are handled.
-func (s *Service) Init() error {
-	if s.MaxConcurrentFetchTar == 0 {
-		s.MaxConcurrentFetchTar = 15
+type HandlerFactory interface {
+	Handler() http.Handler
+}
+
+func NewService(
+	path string,
+	gitserverClient GitserverClient,
+	cache *diskcache.Store,
+	parserPool ParserPool,
+	maxConcurrentFetchTar int,
+) HandlerFactory {
+	return newService(path, gitserverClient, cache, parserPool, maxConcurrentFetchTar)
+}
+
+func newService(
+	path string,
+	gitserverClient GitserverClient,
+	cache *diskcache.Store,
+	parserPool ParserPool,
+	maxConcurrentFetchTar int,
+) *Service {
+	return &Service{
+		Path:            path,
+		GitserverClient: gitserverClient,
+		Cache:           cache,
+		ParserPool:      parserPool,
+		fetchSem:        make(chan int, maxConcurrentFetchTar),
 	}
-	s.fetchSem = make(chan int, s.MaxConcurrentFetchTar)
-	return nil
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
