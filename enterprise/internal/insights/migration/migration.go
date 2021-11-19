@@ -2,6 +2,7 @@ package migration
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -432,4 +433,19 @@ func (m *migrator) migrateDashboard(ctx context.Context, from insights.SettingDa
 	}
 
 	return nil
+}
+
+func updateTimeSeriesReferences(handle dbutil.DB, ctx context.Context, oldId, newId string) error {
+	q := sqlf.Sprintf("update series_points set series_id = %s where series_id = %s", newId, oldId)
+	tempStore := basestore.NewWithDB(handle, sql.TxOptions{})
+	err := tempStore.Exec(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "updateTimeSeriesReferences")
+	}
+	return nil
+}
+
+func updateSeriesId(insightStore *store.InsightStore, ctx context.Context, oldId, newId string) error {
+	q := sqlf.Sprintf("update insight_series set series_id = %s where series_id = %s", newId, oldId)
+	return insightStore.Exec(ctx, q)
 }
