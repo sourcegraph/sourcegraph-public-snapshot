@@ -21,24 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// startParsers starts the parser process pool.
-func (s *Service) startParsers() error {
-	n := s.NumParserProcesses
-	if n == 0 {
-		n = runtime.GOMAXPROCS(0)
-	}
-
-	s.parsers = make(chan ctags.Parser, n)
-	for i := 0; i < n; i++ {
-		parser, err := s.NewParser()
-		if err != nil {
-			return errors.Wrap(err, "NewParser")
-		}
-		s.parsers <- parser
-	}
-	return nil
-}
-
 func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
@@ -128,53 +110,38 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 // parse gets a parser from the pool and uses it to satisfy the parse request.
 func (s *Service) parse(ctx context.Context, req parseRequest) (entries []*ctags.Entry, err error) {
 	parseQueueSize.Inc()
+	parser, err := s.ParserPool.Get(ctx)
+	parseQueueSize.Dec()
 
-	select {
-	case <-ctx.Done():
-		parseQueueSize.Dec()
-		if ctx.Err() == context.DeadlineExceeded {
+	if err != nil {
+		if err == context.DeadlineExceeded {
 			parseQueueTimeouts.Inc()
 		}
-		return nil, ctx.Err()
-	case parser, ok := <-s.parsers:
-		parseQueueSize.Dec()
-
-		if !ok {
-			return nil, nil
-		}
-
-		if parser == nil {
-			// The parser failed for some previous receiver (who returned a nil parser to the channel). Try
-			// creating a parser.
-			var err error
-			parser, err = s.NewParser()
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		defer func() {
-			if err == nil {
-				if e := recover(); e != nil {
-					err = errors.Errorf("panic: %s", e)
-				}
-			}
-			if err == nil {
-				// Return parser to pool.
-				s.parsers <- parser
-			} else {
-				// Close parser and return nil to pool, indicating that the next receiver should create a new
-				// parser.
-				log15.Error("Closing failed parser and creating a new one.", "path", req.path, "error", err)
-				parseFailed.Inc()
-				parser.Close()
-				s.parsers <- nil
-			}
-		}()
-		parsing.Inc()
-		defer parsing.Dec()
-		return parser.Parse(req.path, req.data)
+		return nil, err
 	}
+
+	defer func() {
+		if err == nil {
+			if e := recover(); e != nil {
+				err = errors.Errorf("panic: %s", e)
+			}
+		}
+		if err == nil {
+			s.ParserPool.Done(parser)
+		} else {
+			// Close parser and return nil to pool, indicating that the next receiver should create a new
+			// parser.
+			log15.Error("Closing failed parser and creating a new one.", "path", req.path, "error", err)
+			parseFailed.Inc()
+			parser.Close()
+			s.ParserPool.Done(nil)
+		}
+	}()
+
+	parsing.Inc()
+	defer parsing.Dec()
+
+	return parser.Parse(req.path, req.data)
 }
 
 func entryToSymbol(e *ctags.Entry) result.Symbol {

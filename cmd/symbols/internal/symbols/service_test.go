@@ -71,12 +71,15 @@ func TestService(t *testing.T) {
 		return createTar(files)
 	})
 
+	parserPool, err := NewParserPool(func() (ctags.Parser, error) { return mockParser{"x", "y"}, nil }, 15)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	service := Service{
 		GitserverClient: gitserverClient,
-		NewParser: func() (ctags.Parser, error) {
-			return mockParser{"x", "y"}, nil
-		},
-		Path: tmpDir,
+		ParserPool:      parserPool,
+		Path:            tmpDir,
 		Cache: &diskcache.Store{
 			Dir:               tmpDir,
 			Component:         "symbols",

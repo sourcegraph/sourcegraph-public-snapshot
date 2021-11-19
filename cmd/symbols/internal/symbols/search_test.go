@@ -20,9 +20,15 @@ func BenchmarkSearch(b *testing.B) {
 
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(testutil.FetchTarFromGithubWithPaths)
+
+	parserPool, err := NewParserPool(NewParser, 15)
+	if err != nil {
+		b.Fatal(err)
+	}
+
 	service := Service{
 		GitserverClient: gitserverClient,
-		NewParser:       NewParser,
+		ParserPool:      parserPool,
 		Path:            "/tmp/symbols-cache",
 		Cache: &diskcache.Store{
 			Dir:               "/tmp/symbols-cache",

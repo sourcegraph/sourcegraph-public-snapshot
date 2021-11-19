@@ -72,12 +72,16 @@ func main() {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
+	parserPool, err := symbols.NewParserPool(symbols.NewParser, config.ctagsProcesses)
+	if err != nil {
+		log.Fatalf("Failed to parser pool: %s", err)
+	}
+
 	service := &symbols.Service{
-		GitserverClient:    &gitserverClient{},
-		NewParser:          symbols.NewParser,
-		Path:               config.cacheDir,
-		NumParserProcesses: config.ctagsProcesses,
-		Cache:              cache,
+		GitserverClient: &gitserverClient{},
+		ParserPool:      parserPool,
+		Path:            config.cacheDir,
+		Cache:           cache,
 	}
 
 	if err := service.Init(); err != nil {

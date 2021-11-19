@@ -31,7 +31,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commitID)
 
-	requestCh := make(chan parseRequest, s.NumParserProcesses)
+	requestCh := make(chan parseRequest)
 	errCh := make(chan error, 1)
 
 	// Done is called when the returned reader is closed, or if this function
