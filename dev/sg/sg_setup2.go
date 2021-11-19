@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/garyburd/redigo/redis"
@@ -58,6 +59,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 
 	for len(failed) != 0 {
 
+		out.ClearScreen()
 		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "-------------------------------------"))
 		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "|        Welcome to sg setup!       |"))
 		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "-------------------------------------"))
@@ -65,9 +67,11 @@ func setup2Exec(ctx context.Context, args []string) error {
 		for i, category := range deps {
 			idx := i + 1
 
+			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s", idx, category.name))
 			for _, dep := range category.dependencies {
 				dep.Update(ctx)
 			}
+			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
 				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d. %s", idx, category.name))
@@ -88,6 +92,8 @@ func setup2Exec(ctx context.Context, args []string) error {
 
 		toFix := getNumber(1, len(deps))
 
+		out.ClearScreen()
+
 		// TODO: Check bounds
 		category := deps[toFix-1]
 
@@ -107,6 +113,9 @@ func setup2Exec(ctx context.Context, args []string) error {
 			}
 		}
 
+		// TODO: It doesn't make a lot of sense to give a choice here if
+		// there's only one dependency
+
 		// TODO: We need to refactor `getChoice` to allow passing in "choices" with custom text
 		// and here we have to ask the user:
 		//
@@ -122,8 +131,13 @@ func setup2Exec(ctx context.Context, args []string) error {
 			return err
 		}
 
+		out.ClearScreen()
+
 		switch choice {
 		case userChoiceManually:
+			//
+			// TODO: PULL ALL OF THIS IN HERE  OUT!!!!
+			//
 			// TODO: ask for confirmation
 			out.Write("")
 			out.Write("Let's work through the failures...")
@@ -165,6 +179,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 					return err
 				}
 
+				out.ClearScreen()
 				switch choice {
 				case userChoiceManually:
 					out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
@@ -359,11 +374,9 @@ func checkPostgresConnection() func(context.Context) (bool, error) {
 }
 
 func checkRedisConnection() func(context.Context) (bool, error) {
-	return func(ctx context.Context) (bool, error) {
-		out.Writef("redis dial")
-		conn, err := redis.Dial("tcp", "localhost:6379")
+	connectToRedis := func(ctx context.Context) (bool, error) {
+		conn, err := redis.Dial("tcp", "localhost:6379", redis.DialConnectTimeout(5*time.Second))
 		if err != nil {
-			out.Writef("err=%s", err)
 			return false, errors.Wrap(err, "failed to connect to Redis at localhost:6379")
 		}
 
@@ -377,6 +390,17 @@ func checkRedisConnection() func(context.Context) (bool, error) {
 		}
 
 		return retval == "was-here", nil
+	}
+
+	return func(ctx context.Context) (ok bool, err error) {
+		for i := 0; i < 5; i++ {
+			ok, err = connectToRedis(ctx)
+			if ok {
+				return true, nil
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+		return ok, err
 	}
 }
 
