@@ -2,7 +2,7 @@
 
 This guide documents how to spin up and develop Sourcegraph's monitoring stack locally.
 Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
-The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well, including background about the components listed here.
+The [developing observability page](../../dev/background-information/observability/index.md) contains relevant documentation as well, including background about the components listed here.
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
 
@@ -12,7 +12,7 @@ The [developing observability page](../background-information/observability/inde
 
 The monitoring stack is not included in `sg start` (or `sg start oss` and `sg start enterprise`) scripts.
 It needs to be started separately with `sg start monitoring`.
-Learn more about these in the [general development getting started guide](../getting-started/index.md).
+Learn more about these in the [general development getting started guide](../../dev/index.md).
 
 ### Without all services
 
@@ -94,11 +94,11 @@ You can spin it up by running:
 yarn docsite:serve
 ```
 
-Learn more about docsite development in the [product documentation implementation guide](./documentation_implementation.md).
+Learn more about docsite development in the [product documentation implementation guide](../../dev/how-to/documentation_implementation.md).
 
 ## Using the monitoring generator
 
-> NOTE: Looking to add monitoring first? Refer to the [how to add monitoring](./add_monitoring.md) guide!
+> NOTE: Looking to add monitoring first? Refer to the [how to add monitoring](../../dev/how-to/add_monitoring.md) guide!
 
 The dev startup scripts used in this guide all mount relevant configuration directories into each monitoring service.
 This means that you can:

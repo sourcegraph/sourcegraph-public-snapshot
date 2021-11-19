@@ -336,7 +336,7 @@ createdb --host=localhost --user=sourcegraph --owner=sourcegraph --encoding=UTF8
 
 You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
 
-This can also be spun up using [`sg run redis-postgres`](../background-information/sg/index.md), with the following `sg.config.override.yaml`:
+This can also be spun up using [`sg run redis-postgres`](../dev/background-information/sg/index.md), with the following `sg.config.override.yaml`:
 
 ```yaml
 env:
@@ -393,7 +393,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
 ### More info
 
-For more information about data storage, [read our full PostgreSQL page](../background-information/postgresql.md).
+For more information about data storage, [read our full PostgreSQL page](../dev/background-information/postgresql.md).
 
 Migrations are applied automatically.
 
@@ -489,7 +489,7 @@ This will continuously compile your code and live reload your locally running in
 
 Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
 
-If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](../how-to/troubleshooting_local_development.md) or ask in the `#dev-experience` Slack channel.
+If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](troubleshooting.md) or ask in the `#dev-experience` Slack channel.
 
 ### Running the server in different configurations
 
@@ -518,8 +518,8 @@ sg start monitoring
 Congratulations on making it to the end of the quickstart guide!
 Here are some additional resources to help you go further:
 
-- [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md)
-- [How-to guides](../how-to/index.md), particularly:
-  - [Troubleshooting local development](../how-to/troubleshooting_local_development.md)
-- [Background information](../background-information/index.md) for more context
+- [`sg`, the Sourcegraph developer tool](../dev/background-information/sg/index.md)
+- [How-to guides](how-to/index.md), particularly:
+  - [Troubleshooting local development](troubleshooting.md)
+- [Background information](../dev/background-information/index.md) for more context
 

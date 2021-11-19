@@ -1,13 +1,13 @@
-# Setting up languages
+# Alternative set up for languages
 
 The sourcegraph codebase requires a few languages to be installed in orde to run locally. We recommend and support a default approach that is suited for everyone, regardless of their familiarity with the topic. 
 
 It's totally possible to use alternative ways to install languages if you need to: `sg` checks will still perform correctly, but you're on your own for the installation process: see the [alternative instructions section](#alternative-instructions).
 
-## Recommended instructions 
+## MacOs
 
-### MacOs
-
+### Using `asdf` for everything
+ 
 Requirements: 
 
 - The `github.com/sourcegraph/sourcegraph` repository cloned in a folder of your choice.
@@ -39,14 +39,12 @@ Instructions:
   - this should print something similar to `go version go1.17.1 darwin/arm64`
   <!--- TODO replace this with `sg setup2 checks -->
 
-### Ubuntu
-
-## Alternative instructions 
-
-### Mac, Homebrew
+### Homebrew
 
 1. `brew install go yarn`
 1. `brew install nodejs`
+
+## Any OS
 
 ### Using `nvm` to install NodeJS
 

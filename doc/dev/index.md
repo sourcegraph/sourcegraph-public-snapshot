@@ -7,12 +7,6 @@ Sourcegraph development is open source at:
 - [GitHub repository](https://github.com/sourcegraph/sourcegraph)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 
-## [Getting started](getting-started/index.md)
-
-A hands-on introduction for setting up your local development environment.
-
-- [Quickstart](getting-started/index.md)
-
 ## [Background information](background-information/index.md)
 
 Clarification and discussion about key concepts, architecture, and development stack.
@@ -102,10 +96,6 @@ Clarification and discussion about key concepts, architecture, and development s
 
 Guides to help with troubleshooting, configuring test instances, debugging, and more.
 
-### Local development
-
-- See the [Quickstart](getting-started/quickstart.md) guide.
-
 ### New features
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
@@ -117,7 +107,6 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [Observability](background-information/observability/index.md)
   - [How to find monitoring](how-to/find_monitoring.md)
   - [How to add monitoring](how-to/add_monitoring.md)
-  - [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
 
 ### Testing Sourcegraph & CI
 
