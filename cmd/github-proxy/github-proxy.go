@@ -109,7 +109,7 @@ func main() {
 
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 		<-c
 
 		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)

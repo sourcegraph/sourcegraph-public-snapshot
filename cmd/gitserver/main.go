@@ -51,6 +51,13 @@ var (
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
+	gracefulShutdownTimeout      = func() time.Duration {
+		d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
+		if d == 0 {
+			d = 10 * time.Second
+		}
+		return d
+	}()
 )
 
 func main() {
@@ -176,15 +183,26 @@ func main() {
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
-	<-c
-	go func() {
-		<-c
-		os.Exit(0)
-	}()
 
-	// Stop accepting requests. In the future we should use graceful shutdown.
-	if err := srv.Close(); err != nil {
-		log15.Error("closing http server", "error", err)
+	termC := make(chan os.Signal, 1)
+	signal.Notify(termC, syscall.SIGTERM)
+
+	select {
+	case <-c:
+		go func() {
+			<-c
+			os.Exit(0)
+		}()
+	case <-termC:
+		log15.Info("Received SIGTERM, shutting down gracefully")
+	}
+
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel = context.WithTimeout(ctx, gracefulShutdownTimeout)
+	defer cancel()
+	// Stop accepting requests.
+	if err := srv.Shutdown(ctx); err != nil {
+		log15.Error("shutting down http server", "error", err)
 	}
 
 	// The most important thing this does is kill all our clones. If we just

@@ -47,7 +47,7 @@ type WaitableBackgroundRoutine interface {
 // immediately.
 func MonitorBackgroundRoutines(ctx context.Context, routines ...BackgroundRoutine) {
 	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT)
+	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
 	monitorBackgroundRoutines(ctx, signals, routines...)
 }
 

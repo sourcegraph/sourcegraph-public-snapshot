@@ -6,11 +6,21 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
+
+var gracefulShutdownTimeout = func() time.Duration {
+	d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
+	if d == 0 {
+		d = 10 * time.Second
+	}
+	return d
+}()
 
 type server struct {
 	server       *http.Server
@@ -49,7 +59,10 @@ func (s *server) Start() {
 
 func (s *server) Stop() {
 	s.once.Do(func() {
-		if err := s.server.Shutdown(context.Background()); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		defer cancel()
+
+		if err := s.server.Shutdown(ctx); err != nil {
 			log15.Error("Failed to shutdown server", "error", err)
 		}
 	})
