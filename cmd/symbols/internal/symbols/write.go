@@ -12,13 +12,12 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func writeDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args protocol.SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
+func writeDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
 	newest, err := findNewestFile(filepath.Join(cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 	if err != nil {
 		return err

@@ -10,7 +10,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
@@ -41,7 +40,7 @@ func NewHandler(
 }
 
 func (h *symbolsHandler) handleSearch(w http.ResponseWriter, r *http.Request) {
-	var args protocol.SearchArgs
+	var args SearchArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

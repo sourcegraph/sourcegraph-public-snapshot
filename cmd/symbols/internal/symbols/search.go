@@ -17,13 +17,12 @@ import (
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func doSearch(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args protocol.SearchArgs) (*result.Symbols, error) {
+func doSearch(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args SearchArgs) (*result.Symbols, error) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -77,7 +76,7 @@ const symbolsDBVersion = 4
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args protocol.SearchArgs) (string, error) {
+func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args SearchArgs) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
 		return writeDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args, fetcherCtx, tempDBFile)
 	})
@@ -89,7 +88,7 @@ func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cach
 	return diskcacheFile.File.Name(), err
 }
 
-func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []result.Symbol, err error) {
+func filterSymbols(ctx context.Context, db *sqlx.DB, args SearchArgs) (res []result.Symbol, err error) {
 	span, _ := ot.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
 		if err != nil {
