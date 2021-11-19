@@ -44,7 +44,7 @@ func init() {
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
 const maxFileSize = 1 << 19 // 512KB
 
-func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {
+func (s *service) handleSearch(w http.ResponseWriter, r *http.Request) {
 	var args protocol.SearchArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -67,7 +67,7 @@ func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result.Symbols, error) {
+func (s *service) search(ctx context.Context, args protocol.SearchArgs) (*result.Symbols, error) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -115,9 +115,9 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.Cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		newest, err := findNewestFile(filepath.Join(s.Cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
+func (s *service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
+	diskcacheFile, err := s.cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
+		newest, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 		if err != nil {
 			return err
 		}
@@ -315,7 +315,7 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
 
 // writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
-func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func (s *service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -408,7 +408,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 
 // updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
 // DB and the given commitID.
-func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func (s *service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -442,7 +442,7 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 	}
 
 	// git diff
-	changes, err := s.GitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
+	changes, err := s.gitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
 	if err != nil {
 		return err
 	}

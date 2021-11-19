@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
+func (s *service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -108,9 +108,9 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.
-func (s *Service) parse(ctx context.Context, req parseRequest) (entries []*ctags.Entry, err error) {
+func (s *service) parse(ctx context.Context, req parseRequest) (entries []*ctags.Entry, err error) {
 	parseQueueSize.Inc()
-	parser, err := s.ParserPool.Get(ctx)
+	parser, err := s.parserPool.Get(ctx)
 	parseQueueSize.Dec()
 
 	if err != nil {
@@ -127,14 +127,14 @@ func (s *Service) parse(ctx context.Context, req parseRequest) (entries []*ctags
 			}
 		}
 		if err == nil {
-			s.ParserPool.Done(parser)
+			s.parserPool.Done(parser)
 		} else {
 			// Close parser and return nil to pool, indicating that the next receiver should create a new
 			// parser.
 			log15.Error("Closing failed parser and creating a new one.", "path", req.path, "error", err)
 			parseFailed.Inc()
 			parser.Close()
-			s.ParserPool.Done(nil)
+			s.parserPool.Done(nil)
 		}
 	}()
 

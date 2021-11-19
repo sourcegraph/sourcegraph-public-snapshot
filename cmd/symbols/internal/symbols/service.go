@@ -8,16 +8,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
-// Service is the symbols service.
-type Service struct {
-	GitserverClient GitserverClient
-
-	// Cache is the disk backed Cache.
-	Cache *diskcache.Store
-
-	ParserPool ParserPool
-
-	fetchSem chan int
+type service struct {
+	gitserverClient GitserverClient
+	cache           *diskcache.Store
+	parserPool      ParserPool
+	fetchSem        chan int
 }
 
 type HandlerFactory interface {
@@ -38,17 +33,17 @@ func newService(
 	cache *diskcache.Store,
 	parserPool ParserPool,
 	maxConcurrentFetchTar int,
-) *Service {
-	return &Service{
-		GitserverClient: gitserverClient,
-		Cache:           cache,
-		ParserPool:      parserPool,
+) *service {
+	return &service{
+		gitserverClient: gitserverClient,
+		cache:           cache,
+		parserPool:      parserPool,
 		fetchSem:        make(chan int, maxConcurrentFetchTar),
 	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
-func (s *Service) Handler() http.Handler {
+func (s *service) Handler() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/search", s.handleSearch)
@@ -57,7 +52,7 @@ func (s *Service) Handler() http.Handler {
 	return mux
 }
 
-func (s *Service) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+func (s *service) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	_, err := w.Write([]byte("Ok"))
