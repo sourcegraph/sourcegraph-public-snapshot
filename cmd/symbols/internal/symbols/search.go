@@ -442,7 +442,7 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 	}
 
 	// git diff
-	changes, err := s.GitDiff(ctx, repoName, oldCommit, commitID)
+	changes, err := s.GitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
 	if err != nil {
 		return err
 	}

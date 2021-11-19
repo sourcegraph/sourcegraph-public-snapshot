@@ -2,8 +2,6 @@
 package symbols
 
 import (
-	"context"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -13,19 +11,12 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
 // Service is the symbols service.
 type Service struct {
-	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
-	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
-	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error)
-
-	// GitDiff returns the paths that have changed between two commits.
-	GitDiff func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*Changes, error)
+	GitserverClient GitserverClient
 
 	// MaxConcurrentFetchTar is the maximum number of concurrent calls allowed
 	// to FetchTar. It defaults to 15.

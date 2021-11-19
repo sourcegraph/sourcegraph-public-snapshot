@@ -64,10 +64,13 @@ func TestService(t *testing.T) {
 	defer func() { os.RemoveAll(tmpDir) }()
 
 	files := map[string]string{"a.js": "var x = 1"}
+	gitserverClient := NewMockGitserverClient()
+	gitserverClient.FetchTarFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+		return createTar(files)
+	})
+
 	service := Service{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-			return createTar(files)
-		},
+		GitserverClient: gitserverClient,
 		NewParser: func() (ctags.Parser, error) {
 			return mockParser{"x", "y"}, nil
 		},

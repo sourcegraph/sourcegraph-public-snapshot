@@ -16,10 +16,12 @@ import (
 func BenchmarkSearch(b *testing.B) {
 	log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 
+	gitserverClient := NewMockGitserverClient()
+	gitserverClient.FetchTarFunc.SetDefaultHook(testutil.FetchTarFromGithubWithPaths)
 	service := Service{
-		FetchTar:  testutil.FetchTarFromGithubWithPaths,
-		NewParser: NewParser,
-		Path:      "/tmp/symbols-cache",
+		GitserverClient: gitserverClient,
+		NewParser:       NewParser,
+		Path:            "/tmp/symbols-cache",
 	}
 	if err := service.Start(); err != nil {
 		b.Fatal(err)

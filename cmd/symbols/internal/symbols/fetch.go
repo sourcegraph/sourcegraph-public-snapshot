@@ -60,7 +60,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 		span.Finish()
 	}
 
-	r, err := s.FetchTar(ctx, repo, commitID, paths)
+	r, err := s.GitserverClient.FetchTar(ctx, repo, commitID, paths)
 	if err != nil {
 		return nil, nil, err
 	}
