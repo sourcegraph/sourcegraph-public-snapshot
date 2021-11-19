@@ -17,14 +17,15 @@ import (
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func Search(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs,
-	writeDBFile func(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error,
+func Search(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs,
+	writeDBFile func(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error,
 ) (*result.Symbols, error) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
@@ -53,7 +54,7 @@ func Search(ctx context.Context, gitserverClient parser.GitserverClient, cache *
 		tr.Finish()
 	}()
 
-	dbFile, err := getDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args, writeDBFile)
+	dbFile, err := getDBFile(ctx, gitserverClient, parser, cache, args, writeDBFile)
 	if err != nil {
 		return nil, err
 	}
@@ -79,11 +80,11 @@ const symbolsDBVersion = 4
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs,
-	writeDBFile func(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error,
+func getDBFile(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs,
+	writeDBFile func(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error,
 ) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		return writeDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args, fetcherCtx, tempDBFile)
+		return writeDBFile(ctx, gitserverClient, parser, cache, args, fetcherCtx, tempDBFile)
 	})
 	if err != nil {
 		return "", err

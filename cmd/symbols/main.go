@@ -74,15 +74,18 @@ func main() {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := parser.NewParserPool(parser.NewParser, config.ctagsProcesses)
+	parserPool, err := parser.NewParserPool(parser.NewCtagsParser, config.ctagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
+	gitserverClient := &gitserverClient{}
+	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
+
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(symbols.NewHandler(&gitserverClient{}, cache, parserPool, 15))),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(symbols.NewHandler(gitserverClient, parser, cache))),
 	})
 
 	evictionDuration := time.Second * 10
@@ -100,7 +103,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar", Paths: paths})
 }
 
-func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (*parser.Changes, error) {
+func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (*sqlite.Changes, error) {
 	command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
 	command.Repo = repo
 
@@ -119,7 +122,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	//
 	//     M NUL cmd/symbols/internal/symbols/fetch.go NUL
 
-	changes := parser.Changes{}
+	changes := sqlite.Changes{}
 	slices := bytes.Split(output, []byte{0})
 	for i := 0; i < len(slices)-1; i += 2 {
 		statusIdx := i

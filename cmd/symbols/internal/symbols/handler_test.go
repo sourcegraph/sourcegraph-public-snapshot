@@ -46,7 +46,8 @@ func TestHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	server := httptest.NewServer(NewHandler(gitserverClient, cache, parserPool, 15))
+	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
+	server := httptest.NewServer(NewHandler(gitserverClient, parser, cache))
 	defer server.Close()
 	client := symbolsclient.Client{
 		URL:        server.URL,

@@ -17,23 +17,20 @@ import (
 )
 
 type symbolsHandler struct {
-	gitserverClient parser.GitserverClient
+	gitserverClient sqlite.GitserverClient
+	parser          parser.Parser
 	cache           *diskcache.Store
-	parserPool      parser.ParserPool
-	fetchSem        chan int
 }
 
 func NewHandler(
-	gitserverClient parser.GitserverClient,
+	gitserverClient sqlite.GitserverClient,
+	parser parser.Parser,
 	cache *diskcache.Store,
-	parserPool parser.ParserPool,
-	maxConcurrentFetchTar int,
 ) http.Handler {
 	h := &symbolsHandler{
 		gitserverClient: gitserverClient,
+		parser:          parser,
 		cache:           cache,
-		parserPool:      parserPool,
-		fetchSem:        make(chan int, maxConcurrentFetchTar),
 	}
 
 	mux := http.NewServeMux()
@@ -49,7 +46,7 @@ func (h *symbolsHandler) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := search.Search(r.Context(), h.gitserverClient, h.cache, h.parserPool, h.fetchSem, args, sqlite.WriteDBFile)
+	result, err := search.Search(r.Context(), h.gitserverClient, h.parser, h.cache, args, sqlite.WriteDBFile)
 	if err != nil {
 		if err == context.Canceled && r.Context().Err() == context.Canceled {
 			return // client went away

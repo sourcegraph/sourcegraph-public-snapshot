@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func WriteDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
+func WriteDBFile(ctx context.Context, gitserverClient GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
 	newest, err := findNewestFile(filepath.Join(cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func WriteDBFile(ctx context.Context, gitserverClient parser.GitserverClient, ca
 
 	if newest == "" {
 		// There are no existing SQLite DBs to reuse, so write a completely new one.
-		err := WriteAllSymbolsToNewDB(fetcherCtx, gitserverClient, parserPool, fetchSem, tempDBFile, args.Repo, args.CommitID)
+		err := WriteAllSymbolsToNewDB(fetcherCtx, parser, tempDBFile, args.Repo, args.CommitID)
 		if err != nil {
 			if err == context.Canceled {
 				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
@@ -40,7 +40,7 @@ func WriteDBFile(ctx context.Context, gitserverClient parser.GitserverClient, ca
 			return err
 		}
 
-		err = updateSymbols(fetcherCtx, gitserverClient, parserPool, fetchSem, tempDBFile, args.Repo, args.CommitID)
+		err = updateSymbols(fetcherCtx, gitserverClient, parser, tempDBFile, args.Repo, args.CommitID)
 		if err != nil {
 			if err == context.Canceled {
 				log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
@@ -54,7 +54,7 @@ func WriteDBFile(ctx context.Context, gitserverClient parser.GitserverClient, ca
 
 // WriteAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
-func WriteAllSymbolsToNewDB(ctx context.Context, gitserverClient parser.GitserverClient, parserPool parser.ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func WriteAllSymbolsToNewDB(ctx context.Context, parser parser.Parser, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func WriteAllSymbolsToNewDB(ctx context.Context, gitserverClient parser.Gitserve
 		return err
 	}
 
-	return parser.Parse(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, []string{}, func(symbol result.Symbol) error {
+	return parser.Parse(ctx, repoName, commitID, []string{}, func(symbol result.Symbol) error {
 		symbolInDBValue := types.SymbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
@@ -147,7 +147,7 @@ func WriteAllSymbolsToNewDB(ctx context.Context, gitserverClient parser.Gitserve
 
 // updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
 // DB and the given commitID.
-func updateSymbols(ctx context.Context, gitserverClient parser.GitserverClient, parserPool parser.ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parser parser.Parser, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -201,7 +201,7 @@ func updateSymbols(ctx context.Context, gitserverClient parser.GitserverClient, 
 		return err
 	}
 
-	return parser.Parse(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
+	return parser.Parse(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
 		symbolInDBValue := types.SymbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err

@@ -1,40 +1,61 @@
 package types
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-// SearchArgs are the arguments to perform a search on the symbols service.
-type SearchArgs struct {
-	// Repo is the name of the repository to search in.
-	Repo api.RepoName `json:"repo"`
+// SymbolInDB is the same as `protocol.Symbol`, but with two additional columns:
+// namelowercase and pathlowercase, which enable indexed case insensitive
+// queries.
+type SymbolInDB struct {
+	Name          string
+	NameLowercase string // derived from `Name`
+	Path          string
+	PathLowercase string // derived from `Path`
+	Line          int
+	Kind          string
+	Language      string
+	Parent        string
+	ParentKind    string
+	Signature     string
+	Pattern       string
 
-	// CommitID is the commit to search in.
-	CommitID api.CommitID `json:"commitID"`
+	// Whether or not the symbol is local to the file.
+	FileLimited bool
+}
 
-	// Query is the search query.
-	Query string
+func SymbolToSymbolInDB(symbol result.Symbol) SymbolInDB {
+	return SymbolInDB{
+		Name:          symbol.Name,
+		NameLowercase: strings.ToLower(symbol.Name),
+		Path:          symbol.Path,
+		PathLowercase: strings.ToLower(symbol.Path),
+		Line:          symbol.Line,
+		Kind:          symbol.Kind,
+		Language:      symbol.Language,
+		Parent:        symbol.Parent,
+		ParentKind:    symbol.ParentKind,
+		Signature:     symbol.Signature,
+		Pattern:       symbol.Pattern,
 
-	// IsRegExp if true will treat the Pattern as a regular expression.
-	IsRegExp bool
+		FileLimited: symbol.FileLimited,
+	}
+}
 
-	// IsCaseSensitive if false will ignore the case of query and file pattern
-	// when finding matches.
-	IsCaseSensitive bool
+func SymbolInDBToSymbol(symbolInDB SymbolInDB) result.Symbol {
+	return result.Symbol{
+		Name:       symbolInDB.Name,
+		Path:       symbolInDB.Path,
+		Line:       symbolInDB.Line,
+		Kind:       symbolInDB.Kind,
+		Language:   symbolInDB.Language,
+		Parent:     symbolInDB.Parent,
+		ParentKind: symbolInDB.ParentKind,
+		Signature:  symbolInDB.Signature,
+		Pattern:    symbolInDB.Pattern,
 
-	// IncludePatterns is a list of regexes that symbol's file paths
-	// need to match to get included in the result
-	//
-	// The patterns are ANDed together; a file's path must match all patterns
-	// for it to be kept. That is also why it is a list (unlike the singular
-	// ExcludePattern); it is not possible in general to construct a single
-	// glob or Go regexp that represents multiple such patterns ANDed together.
-	IncludePatterns []string
-
-	// ExcludePattern is an optional regex that symbol's file paths
-	// need to match to get included in the result
-	ExcludePattern string
-
-	// First indicates that only the first n symbols should be returned.
-	First int
+		FileLimited: symbolInDB.FileLimited,
+	}
 }

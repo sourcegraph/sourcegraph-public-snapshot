@@ -21,7 +21,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-func Parse(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
+type Parser interface {
+	Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) error
+}
+
+type parser struct {
+	gitserverClient GitserverClient
+	parserPool      ParserPool
+	fetchSem        chan int
+}
+
+func NewParser(
+	gitserverClient GitserverClient,
+	parserPool ParserPool,
+	fetchSem chan int,
+) *parser {
+	return &parser{
+		gitserverClient: gitserverClient,
+		parserPool:      parserPool,
+		fetchSem:        fetchSem,
+	}
+}
+
+func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -47,7 +69,7 @@ func Parse(ctx context.Context, gitserverClient GitserverClient, parserPool Pars
 	}()
 
 	tr.LazyPrintf("fetch")
-	parseRequests, errChan, err := fetchRepositoryArchive(ctx, gitserverClient, fetchSem, repo, commitID, paths)
+	parseRequests, errChan, err := fetchRepositoryArchive(ctx, p.gitserverClient, p.fetchSem, repo, commitID, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
 		return err
@@ -80,7 +102,7 @@ func Parse(ctx context.Context, gitserverClient GitserverClient, parserPool Pars
 				wg.Done()
 				<-sem
 			}()
-			entries, parseErr := parse(ctx, parserPool, req)
+			entries, parseErr := parse(ctx, p.parserPool, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
 				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
