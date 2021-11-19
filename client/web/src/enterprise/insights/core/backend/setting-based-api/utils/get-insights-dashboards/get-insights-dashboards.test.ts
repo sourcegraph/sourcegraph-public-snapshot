@@ -1,6 +1,7 @@
 import { InsightsDashboardScope, InsightsDashboardType } from '../../../../types'
 
-import { ALL_INSIGHTS_DASHBOARD, getInsightsDashboards } from './get-insights-dashboards'
+import { getInsightsDashboards } from './get-insights-dashboards'
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../types/dashboard/virtual-dashboard';
 
 describe('getInsightsDashboards', () => {
     describe('should return empty custom list', () => {
