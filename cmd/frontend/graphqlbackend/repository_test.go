@@ -8,11 +8,11 @@ import (
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -25,16 +25,22 @@ import (
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
-	db := database.NewDB(nil)
 	resetMocks()
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "abc" {
-			t.Error("wrong arguments to ResolveRev")
-		}
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		assert.Equal(t, "abc", rev)
 		return exampleCommitSHA1, nil
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitapi.Commit{ID: exampleCommitSHA1})
+	defer func() {
+		backend.Mocks = backend.MockServices{}
+	}()
+
+	repos := dbmock.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	RunTests(t, []*Test{
 		{

@@ -617,6 +617,38 @@ func (codeIntelligence) NewGitserverClientGroup(containerName string) monitoring
 	})
 }
 
+// src_codeintel_repoupdater_total
+// src_codeintel_repoupdater_duration_seconds_bucket
+// src_codeintel_repoupdater_errors_total
+func (codeIntelligence) NewRepoUpdaterClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "repo-updater client",
+			Hidden:          true,
+
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_repoupdater",
+				MetricDescriptionRoot: "client",
+				By:                    []string{"op"},
+			},
+		},
+
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
 // src_codeintel_uploadstore_total
 // src_codeintel_uploadstore_duration_seconds_bucket
 // src_codeintel_uploadstore_errors_total

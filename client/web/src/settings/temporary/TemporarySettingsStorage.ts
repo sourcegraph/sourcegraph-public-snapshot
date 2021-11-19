@@ -216,12 +216,18 @@ class ServersideSettingsBackend implements SettingsBackend {
  * Static in memory setting backend for testing purposes
  */
 export class InMemoryMockSettingsBackend implements SettingsBackend {
-    constructor(private settings: TemporarySettings) {}
+    constructor(
+        private settings: TemporarySettings,
+        private onSettingsChanged?: (settings: TemporarySettings) => void
+    ) {}
     public load(): Observable<TemporarySettings> {
         return of(this.settings)
     }
     public edit(settings: TemporarySettings): Observable<void> {
         this.settings = { ...this.settings, ...settings }
+        if (this.onSettingsChanged) {
+            this.onSettingsChanged(this.settings)
+        }
         return of()
     }
 }

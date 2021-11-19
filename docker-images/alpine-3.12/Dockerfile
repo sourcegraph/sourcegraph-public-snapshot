@@ -23,4 +23,13 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # See https://github.com/sourcegraph/deploy-sourcegraph-docker/issues/1
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
 # hadolint ignore=DL3018
-RUN apk add --no-cache bind-tools ca-certificates curl mailcap tini wget
+RUN apk update && apk add --no-cache \
+    bind-tools \ 
+    # Requires the use of the edge repo for CVE-2021-28831 until a patched version is brought into the 3.12 mirror. 
+    'busybox=1.34.1-r2' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    ca-certificates \
+    curl \ 
+    mailcap \
+    tini \ 
+    # Required due to ssl_clent upgrade with busybox
+    'wget=1.21.1-r1' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main

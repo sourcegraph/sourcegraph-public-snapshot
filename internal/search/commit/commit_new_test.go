@@ -6,86 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func TestCheckSearchLimits(t *testing.T) {
-	cases := []struct {
-		name          string
-		resultType    string
-		numRepoRevs   int
-		hasTimeFilter bool
-		wantError     error
-	}{
-		{
-			name:        "diff_search_warns_on_repos_greater_than_search_limit",
-			resultType:  "diff",
-			numRepoRevs: 51,
-			wantError:   &RepoLimitError{ResultType: "diff", Max: 50},
-		},
-		{
-			name:        "commit_search_warns_on_repos_greater_than_search_limit",
-			resultType:  "commit",
-			numRepoRevs: 51,
-			wantError:   &RepoLimitError{ResultType: "commit", Max: 50},
-		},
-		{
-			name:          "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			hasTimeFilter: true,
-			resultType:    "commit",
-			numRepoRevs:   20000,
-			wantError:     &TimeLimitError{ResultType: "commit", Max: 10000},
-		},
-		{
-			name:        "no_warning_when_commit_search_within_search_limit",
-			resultType:  "commit",
-			numRepoRevs: 50,
-			wantError:   nil,
-		},
-		{
-			name:          "no_search_limit_on_queries_including_after_filter",
-			hasTimeFilter: true,
-			resultType:    "commit",
-			numRepoRevs:   200,
-			wantError:     nil,
-		},
-		{
-			name:          "no_search_limit_on_queries_including_before_filter",
-			hasTimeFilter: true,
-			resultType:    "commit",
-			numRepoRevs:   200,
-			wantError:     nil,
-		},
-	}
-
-	for _, test := range cases {
-		repoRevs := make([]*search.RepositoryRevisions, test.numRepoRevs)
-		for i := range repoRevs {
-			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: types.MinimalRepo{ID: api.RepoID(i)},
-			}
-		}
-
-		haveErr := CheckSearchLimits(
-			test.hasTimeFilter,
-			len(repoRevs),
-			test.resultType,
-		)
-
-		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
-			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)
-		}
-	}
-}
 
 func TestQueryToGitQuery(t *testing.T) {
 	type testCase struct {

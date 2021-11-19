@@ -24,7 +24,7 @@ type Operations struct {
 }
 
 func NewOperations(observationContext *observation.Context) *Operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"apiworker_command",
 		metrics.WithLabels("op"),

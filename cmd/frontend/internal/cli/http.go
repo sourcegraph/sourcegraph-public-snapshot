@@ -2,6 +2,7 @@ package cli
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
@@ -12,14 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	internalauth "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
@@ -50,8 +49,8 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	}
 	apiHandler = featureflag.Middleware(database.FeatureFlags(db), apiHandler)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
-	// X-Requested-With header). Doing so would open it up to CSRF attacks.
+	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
+	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
@@ -69,9 +68,6 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
 	appHandler = featureflag.Middleware(database.FeatureFlags(db), appHandler)
-	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
-		return globals.ExternalURL().Scheme == "https"
-	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
@@ -122,7 +118,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		withInternalActor(
+		withActor(
 			internalhttpapi.NewInternalHandler(
 				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
 				db,
@@ -139,14 +135,24 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	return h
 }
 
-// withInternalActor wraps an existing HTTP handler by setting an internal actor in the HTTP request
-// context.
+// withActor wraps an existing HTTP handler by setting an actor in the HTTP request context.
+// It takes a user ID from the X-Sourcegraph-User-ID request header and if that fails to parse,
+// defaults to an internal actor.
 //
 // 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e., only use
-// for the internal endpoint), because internal requests will bypass repository permissions checks.
-func withInternalActor(h http.Handler) http.Handler {
+// for the internal endpoint), because internal requests can bypass repository permissions checks.
+func withActor(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rWithActor := r.WithContext(actor.WithActor(r.Context(), &actor.Actor{Internal: true}))
+		var a actor.Actor
+
+		userID, err := strconv.ParseInt(r.Header.Get("X-Sourcegraph-User-ID"), 10, 32)
+		if err != nil || userID == 0 {
+			a.Internal = true
+		} else {
+			a.UID = int32(userID)
+		}
+
+		rWithActor := r.WithContext(actor.WithActor(r.Context(), &a))
 		h.ServeHTTP(w, rWithActor)
 	})
 }

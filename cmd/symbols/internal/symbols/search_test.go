@@ -17,7 +17,7 @@ func BenchmarkSearch(b *testing.B) {
 	log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
 
 	service := Service{
-		FetchTar:  testutil.FetchTarFromGithub,
+		FetchTar:  testutil.FetchTarFromGithubWithPaths,
 		NewParser: NewParser,
 		Path:      "/tmp/symbols-cache",
 	}

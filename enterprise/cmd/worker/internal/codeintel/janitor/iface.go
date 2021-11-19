@@ -32,8 +32,7 @@ type DBStore interface {
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
-	RepoIDsByGlobPattern(ctx context.Context, pattern string) ([]int, error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 }
 
 type DBStoreShim struct {

@@ -36,8 +36,8 @@ func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.H
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
-func (s *InsightStore) With(other *InsightStore) *InsightStore {
-	return &InsightStore{Store: s.Store.With(other.Store), Now: other.Now}
+func (s *InsightStore) With(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: s.Store.With(other), Now: s.Now}
 }
 
 func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
@@ -151,6 +151,15 @@ func visibleViewsQuery(userIDs, orgIDs []int) *sqlf.Query {
 
 func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
 	viewSeries, err := s.Get(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GroupByView(ctx, viewSeries), nil
+}
+
+func (s *InsightStore) GetAllMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.GetAll(ctx, args)
 	if err != nil {
 		return nil, err
 	}

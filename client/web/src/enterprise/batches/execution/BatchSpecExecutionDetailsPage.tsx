@@ -388,106 +388,124 @@ const PublishedValue: React.FunctionComponent<{ published: Scalars['PublishedVal
     if (published === 'draft') {
         return <>draft</>
     }
-    return <>String(published)</>
+    return <>{String(published)}</>
 }
 
 const WorkspaceStep: React.FunctionComponent<
     { step: BatchSpecWorkspaceStepFields; workspaceID: Scalars['ID']; stepIndex: number } & ThemeProps
-> = ({ step, stepIndex, isLightTheme, workspaceID }) => (
-    <Collapsible
-        className="card mb-2"
-        titleClassName="w-100"
-        title={
-            <div className="card-body">
-                <div className="d-flex justify-content-between">
-                    <div>
-                        <StepStateIcon step={step} /> <strong>Step {stepIndex + 1}</strong>{' '}
-                        <span className="text-monospace">{step.run.slice(0, 25)}...</span>
-                        <StepTimer step={step} />
-                    </div>
-                    <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
-                </div>
-            </div>
+> = ({ step, stepIndex, isLightTheme, workspaceID }) => {
+    const outputLines = step.outputLines
+    if (outputLines !== null) {
+        if (
+            outputLines.every(
+                line =>
+                    line
+                        .replaceAll(/'^std(out|err):'/g, '')
+                        .replaceAll('\n', '')
+                        .trim() === ''
+            )
+        ) {
+            outputLines.push('stderr: This command did not produce any logs')
         }
-    >
-        <div className="p-2">
-            {!step.skipped && (
-                <Tabs size="medium">
-                    <TabList>
-                        <Tab key="logs">Logs</Tab>
-                        <Tab key="output-variables">Output variables</Tab>
-                        <Tab key="diff">Diff</Tab>
-                        <Tab key="files-env">Files / Env</Tab>
-                        <Tab key="command-container">Commands / container</Tab>
-                    </TabList>
-                    <TabPanels>
-                        <TabPanel key="logs">
-                            <div className="p-2">
-                                {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                                {step.startedAt && step.outputLines && <LogOutput text={step.outputLines.join('\n')} />}
-                                {step.startedAt && !step.outputLines && <LogOutput text="_No logs.._" />}
-                            </div>
-                        </TabPanel>
-                        <TabPanel key="output-variables">
-                            <div className="p-2">
-                                {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                                {step.environment.length === 0 && (
-                                    <p className="text-muted mb-0">No output variables specified</p>
-                                )}
-                                <ul>
-                                    {step.outputVariables?.map(variable => (
-                                        <li key={variable.name}>
-                                            {variable.name}: {variable.value}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </TabPanel>
-                        <TabPanel key="diff">
-                            <div className="p-2">
-                                {!step.startedAt && <p className="text-muted">Step not started yet</p>}
-                                {step.startedAt && (
-                                    <WorkspaceStepFileDiffConnection
-                                        isLightTheme={isLightTheme}
-                                        step={stepIndex + 1}
-                                        workspaceID={workspaceID}
-                                    />
-                                )}
-                            </div>
-                        </TabPanel>
-                        <TabPanel key="files-env">
-                            <div className="p-2">
-                                {step.environment.length === 0 && (
-                                    <p className="text-muted mb-0">No environment variables specified</p>
-                                )}
-                                <ul>
-                                    {step.environment.map(variable => (
-                                        <li key={variable.name}>
-                                            {variable.name}: {variable.value}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </TabPanel>
-                        <TabPanel key="command-container">
-                            <div className="p-2 pb-0">
-                                <LogOutput text={step.run} className="mb-2" />
-                                <p className="mb-0">
-                                    Using container <span className="text-monospace">{step.container}</span>
-                                </p>
-                            </div>
-                        </TabPanel>
-                    </TabPanels>
-                </Tabs>
-            )}
-            {step.skipped && (
-                <p className="mb-0">
-                    <strong>Step has been skipped.</strong>
-                </p>
-            )}
-        </div>
-    </Collapsible>
-)
+        if (step.exitCode !== null) {
+            outputLines.push(`\nstdout: \nstdout: Command exited with status ${step.exitCode}`)
+        }
+    }
+    return (
+        <Collapsible
+            className="card mb-2"
+            titleClassName="w-100"
+            title={
+                <div className="card-body">
+                    <div className="d-flex justify-content-between">
+                        <div>
+                            <StepStateIcon step={step} /> <strong>Step {stepIndex + 1}</strong>{' '}
+                            <span className="text-monospace">{step.run.slice(0, 25)}...</span>
+                            <StepTimer step={step} />
+                        </div>
+                        <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
+                    </div>
+                </div>
+            }
+        >
+            <div className="p-2">
+                {!step.skipped && (
+                    <Tabs size="small">
+                        <TabList>
+                            <Tab key="logs">Logs</Tab>
+                            <Tab key="output-variables">Output variables</Tab>
+                            <Tab key="diff">Diff</Tab>
+                            <Tab key="files-env">Files / Env</Tab>
+                            <Tab key="command-container">Commands / container</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel key="logs">
+                                <div className="p-2">
+                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                    {step.startedAt && outputLines && <LogOutput text={outputLines.join('\n')} />}
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="output-variables">
+                                <div className="p-2">
+                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                    {step.environment.length === 0 && (
+                                        <p className="text-muted mb-0">No output variables specified</p>
+                                    )}
+                                    <ul>
+                                        {step.outputVariables?.map(variable => (
+                                            <li key={variable.name}>
+                                                {variable.name}: {variable.value}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="diff">
+                                <div className="p-2">
+                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                    {step.startedAt && (
+                                        <WorkspaceStepFileDiffConnection
+                                            isLightTheme={isLightTheme}
+                                            step={stepIndex + 1}
+                                            workspaceID={workspaceID}
+                                        />
+                                    )}
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="files-env">
+                                <div className="p-2">
+                                    {step.environment.length === 0 && (
+                                        <p className="text-muted mb-0">No environment variables specified</p>
+                                    )}
+                                    <ul>
+                                        {step.environment.map(variable => (
+                                            <li key={variable.name}>
+                                                {variable.name}: {variable.value}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="command-container">
+                                <div className="p-2 pb-0">
+                                    <LogOutput text={step.run} className="mb-2" />
+                                    <p className="mb-0">
+                                        Using container <span className="text-monospace">{step.container}</span>
+                                    </p>
+                                </div>
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                )}
+                {step.skipped && (
+                    <p className="mb-0">
+                        <strong>Step has been skipped.</strong>
+                    </p>
+                )}
+            </div>
+        </Collapsible>
+    )
+}
 
 const WorkspaceStateIcon: React.FunctionComponent<{ cachedResultFound: boolean; state: BatchSpecWorkspaceState }> = ({
     cachedResultFound,

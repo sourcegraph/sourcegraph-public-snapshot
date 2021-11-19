@@ -12,15 +12,17 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(queueOptionsMap map[string]QueueOptions, router *mux.Router) {
-	for name, queueOptions := range queueOptionsMap {
-		h := newHandler(queueOptions)
+func SetupRoutes(executorStore database.ExecutorStore, queueOptionsMap []QueueOptions, router *mux.Router) {
+	for _, queueOptions := range queueOptionsMap {
+		h := newHandler(executorStore, queueOptions)
 
-		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(queueOptions.Name))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
 			"dequeue":                 h.handleDequeue,
 			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
@@ -118,7 +120,19 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.HeartbeatRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		unknownIDs, err := h.heartbeat(r.Context(), payload.ExecutorName, payload.JobIDs)
+		executor := types.Executor{
+			Hostname:        payload.ExecutorName,
+			QueueName:       h.QueueOptions.Name,
+			OS:              payload.OS,
+			Architecture:    payload.Architecture,
+			DockerVersion:   payload.DockerVersion,
+			ExecutorVersion: payload.ExecutorVersion,
+			GitVersion:      payload.GitVersion,
+			IgniteVersion:   payload.IgniteVersion,
+			SrcCliVersion:   payload.SrcCliVersion,
+		}
+
+		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)
 		return http.StatusOK, unknownIDs, err
 	})
 }

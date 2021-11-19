@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
+import { ButtonDropdown, DropdownItem, DropdownMenu } from 'reactstrap'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -19,6 +19,8 @@ import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { ResolvedRevision } from './backend'
+import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
+import styles from './RepoHeader.module.scss'
 
 /**
  * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
@@ -217,9 +219,12 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
 
     return (
         <nav
-            className={classNames('repo-header navbar navbar-expand', {
-                'repo-header--alert': isAlertDisplayed,
-            })}
+            data-testid="repo-header"
+            className={classNames(
+                'navbar navbar-expand',
+                styles.repoHeader,
+                isAlertDisplayed && styles.repoHeaderAlert
+            )}
         >
             <div className="d-flex align-items-center flex-shrink-past-contents">
                 {/* Breadcrumb for the nav elements */}
@@ -232,14 +237,14 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                     </li>
                 ))}
             </ul>
-            <div className="repo-header__spacer" />
+            <div className={styles.spacer} />
             <ErrorBoundary
                 location={props.location}
                 // To be clear to users that this isn't an error reported by extensions
                 // about e.g. the code they're viewing.
                 render={error => (
                     <ul className="navbar-nav">
-                        <li className="nav-item repo-header__action-list-item">
+                        <li className={classNames('nav-item', styles.actionListItem)}>
                             <span>Component error: {error.message}</span>
                         </li>
                     </ul>
@@ -248,7 +253,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 {isLarge ? (
                     <ul className="navbar-nav">
                         {rightActions.map((a, index) => (
-                            <li className="nav-item repo-header__action-list-item" key={a.id || index}>
+                            <li className={classNames('nav-item', styles.actionListItem)} key={a.id || index}>
                                 {a.element}
                             </li>
                         ))}
@@ -262,9 +267,9 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                                 isOpen={isDropdownOpen}
                                 toggle={toggleDropdownOpen}
                             >
-                                <DropdownToggle className="btn btn-icon repo-header__action" nav={true}>
+                                <RepoHeaderActionDropdownToggle className="btn btn-icon" nav={true}>
                                     <DotsVerticalIcon className="icon-inline" />
-                                </DropdownToggle>
+                                </RepoHeaderActionDropdownToggle>
                                 <DropdownMenu>
                                     {rightActions.map((a, index) => (
                                         <DropdownItem className="p-0" key={a.id || index}>

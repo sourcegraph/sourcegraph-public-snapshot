@@ -273,6 +273,10 @@ export const SiteAdminPingsPage: React.FunctionComponent<Props> = props => {
                         </li>
                         <li>Total count of insights grouped by time interval (step size) in days</li>
                         <li>Total count of insights set organization visible grouped by insight type</li>
+                        <li>
+                            Total count of insight views grouped by presentation type, series type, and
+                            presentation-series type
+                        </li>
                     </ul>
                 </li>
                 <li>

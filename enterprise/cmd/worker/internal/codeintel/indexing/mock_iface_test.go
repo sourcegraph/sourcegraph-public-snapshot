@@ -89,7 +89,7 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
-			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
+			defaultHook: func(context.Context, time.Duration, bool, *int, int) ([]int, error) {
 				return nil, nil
 			},
 		},
@@ -811,24 +811,24 @@ func (c DBStoreReferencesForUploadFuncCall) Results() []interface{} {
 // SelectRepositoriesForIndexScan method of the parent MockDBStore instance
 // is invoked.
 type DBStoreSelectRepositoriesForIndexScanFunc struct {
-	defaultHook func(context.Context, time.Duration, int) ([]int, error)
-	hooks       []func(context.Context, time.Duration, int) ([]int, error)
+	defaultHook func(context.Context, time.Duration, bool, *int, int) ([]int, error)
+	hooks       []func(context.Context, time.Duration, bool, *int, int) ([]int, error)
 	history     []DBStoreSelectRepositoriesForIndexScanFuncCall
 	mutex       sync.Mutex
 }
 
 // SelectRepositoriesForIndexScan delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) SelectRepositoriesForIndexScan(v0 context.Context, v1 time.Duration, v2 int) ([]int, error) {
-	r0, r1 := m.SelectRepositoriesForIndexScanFunc.nextHook()(v0, v1, v2)
-	m.SelectRepositoriesForIndexScanFunc.appendCall(DBStoreSelectRepositoriesForIndexScanFuncCall{v0, v1, v2, r0, r1})
+func (m *MockDBStore) SelectRepositoriesForIndexScan(v0 context.Context, v1 time.Duration, v2 bool, v3 *int, v4 int) ([]int, error) {
+	r0, r1 := m.SelectRepositoriesForIndexScanFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.SelectRepositoriesForIndexScanFunc.appendCall(DBStoreSelectRepositoriesForIndexScanFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // SelectRepositoriesForIndexScan method of the parent MockDBStore instance
 // is invoked and the hook queue is empty.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) ([]int, error)) {
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultHook(hook func(context.Context, time.Duration, bool, *int, int) ([]int, error)) {
 	f.defaultHook = hook
 }
 
@@ -837,7 +837,7 @@ func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushHook(hook func(context.Context, time.Duration, int) ([]int, error)) {
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushHook(hook func(context.Context, time.Duration, bool, *int, int) ([]int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -846,7 +846,7 @@ func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, int) ([]int, error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, bool, *int, int) ([]int, error) {
 		return r0, r1
 	})
 }
@@ -854,12 +854,12 @@ func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultReturn(r0 []int, r
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, int) ([]int, error) {
+	f.PushHook(func(context.Context, time.Duration, bool, *int, int) ([]int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreSelectRepositoriesForIndexScanFunc) nextHook() func(context.Context, time.Duration, int) ([]int, error) {
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) nextHook() func(context.Context, time.Duration, bool, *int, int) ([]int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -902,7 +902,13 @@ type DBStoreSelectRepositoriesForIndexScanFuncCall struct {
 	Arg1 time.Duration
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 bool
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []int
@@ -914,7 +920,7 @@ type DBStoreSelectRepositoriesForIndexScanFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreSelectRepositoriesForIndexScanFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2923,7 +2929,7 @@ type MockRepoUpdaterClient struct {
 func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
 	return &MockRepoUpdaterClient{
 		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
-			defaultHook: func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+			defaultHook: func(context.Context, api.RepoName) (*protocol1.RepoInfo, error) {
 				return nil, nil
 			},
 		},
@@ -2945,15 +2951,15 @@ func NewMockRepoUpdaterClientFrom(i RepoUpdaterClient) *MockRepoUpdaterClient {
 // RepoLookup method of the parent MockRepoUpdaterClient instance is
 // invoked.
 type RepoUpdaterClientRepoLookupFunc struct {
-	defaultHook func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)
-	hooks       []func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)
+	defaultHook func(context.Context, api.RepoName) (*protocol1.RepoInfo, error)
+	hooks       []func(context.Context, api.RepoName) (*protocol1.RepoInfo, error)
 	history     []RepoUpdaterClientRepoLookupFuncCall
 	mutex       sync.Mutex
 }
 
 // RepoLookup delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 api.RepoName) (*protocol1.RepoInfo, error) {
 	r0, r1 := m.RepoLookupFunc.nextHook()(v0, v1)
 	m.RepoLookupFunc.appendCall(RepoUpdaterClientRepoLookupFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -2962,7 +2968,7 @@ func (m *MockRepoUpdaterClient) RepoLookup(v0 context.Context, v1 protocol1.Repo
 // SetDefaultHook sets function that is called when the RepoLookup method of
 // the parent MockRepoUpdaterClient instance is invoked and the hook queue
 // is empty.
-func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)) {
+func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*protocol1.RepoInfo, error)) {
 	f.defaultHook = hook
 }
 
@@ -2970,7 +2976,7 @@ func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultHook(hook func(context.Conte
 // RepoLookup method of the parent MockRepoUpdaterClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error)) {
+func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, api.RepoName) (*protocol1.RepoInfo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2978,21 +2984,21 @@ func (f *RepoUpdaterClientRepoLookupFunc) PushHook(hook func(context.Context, pr
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultReturn(r0 *protocol1.RepoLookupResult, r1 error) {
-	f.SetDefaultHook(func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+func (f *RepoUpdaterClientRepoLookupFunc) SetDefaultReturn(r0 *protocol1.RepoInfo, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*protocol1.RepoInfo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *RepoUpdaterClientRepoLookupFunc) PushReturn(r0 *protocol1.RepoLookupResult, r1 error) {
-	f.PushHook(func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+func (f *RepoUpdaterClientRepoLookupFunc) PushReturn(r0 *protocol1.RepoInfo, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*protocol1.RepoInfo, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoUpdaterClientRepoLookupFunc) nextHook() func(context.Context, protocol1.RepoLookupArgs) (*protocol1.RepoLookupResult, error) {
+func (f *RepoUpdaterClientRepoLookupFunc) nextHook() func(context.Context, api.RepoName) (*protocol1.RepoInfo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3030,10 +3036,10 @@ type RepoUpdaterClientRepoLookupFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 protocol1.RepoLookupArgs
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol1.RepoLookupResult
+	Result0 *protocol1.RepoInfo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

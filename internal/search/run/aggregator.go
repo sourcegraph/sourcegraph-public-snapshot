@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func NewAggregator(db dbutil.DB, stream streaming.Sender) *Aggregator {
@@ -48,6 +48,10 @@ func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Er
 	return a.results, a.stats, a.matchCount, a.errors
 }
 
+// Send propagates the given event to the Aggregator's parent stream, or
+// aggregates it within results.
+//
+// It currently also applies sub-repo permissions filtering (see inline docs).
 func (a *Aggregator) Send(event streaming.SearchEvent) {
 	if a.parentStream != nil {
 		a.parentStream.Send(event)
@@ -61,13 +65,13 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 		a.results = append(a.results, event.Results...)
 
 		if a.stats.Repos == nil {
-			a.stats.Repos = make(map[api.RepoID]types.MinimalRepo)
+			a.stats.Repos = make(map[api.RepoID]struct{})
 		}
 
 		for _, r := range event.Results {
 			repo := r.RepoName()
 			if _, ok := a.stats.Repos[repo.ID]; !ok {
-				a.stats.Repos[repo.ID] = repo
+				a.stats.Repos[repo.ID] = struct{}{}
 			}
 		}
 	}

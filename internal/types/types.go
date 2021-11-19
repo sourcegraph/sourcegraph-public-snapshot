@@ -1120,6 +1120,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyAggregatedUsage          []AggregatedPingStats
 	InsightTimeIntervals           []InsightTimeIntervalPing
 	InsightOrgVisible              []OrgVisibleInsightPing
+	InsightTotalCounts             InsightTotalCounts
 }
 
 // Usage statistics for a type of code insight
@@ -1150,6 +1151,28 @@ type InsightTimeIntervalPing struct {
 type OrgVisibleInsightPing struct {
 	Type       string
 	TotalCount int
+}
+
+type InsightViewsCountPing struct {
+	ViewType   string
+	TotalCount int
+}
+
+type InsightSeriesCountPing struct {
+	GenerationType string
+	TotalCount     int
+}
+
+type InsightViewSeriesCountPing struct {
+	GenerationType string
+	ViewType       string
+	TotalCount     int
+}
+
+type InsightTotalCounts struct {
+	ViewCounts       []InsightViewsCountPing
+	SeriesCounts     []InsightSeriesCountPing
+	ViewSeriesCounts []InsightViewSeriesCountPing
 }
 
 type CodeMonitoringUsageStatistics struct {

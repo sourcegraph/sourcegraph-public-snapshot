@@ -7,7 +7,7 @@ import { WebStory } from '../../../../../../../components/WebStory'
 import { Settings } from '../../../../../../../schema/settings.schema'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../../../../core/backend/code-insights-setting-cascade-backend'
-import { InsightsDashboardType, SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
 
@@ -19,8 +19,9 @@ const { add } = storiesOf('web/insights/AddInsightModal', module)
         },
     })
 
-const dashboard: SettingsBasedInsightDashboard = {
-    type: InsightsDashboardType.Personal,
+const dashboard: CustomInsightDashboard = {
+    type: InsightsDashboardType.Custom,
+    scope: InsightsDashboardScope.Personal,
     id: '001',
     settingsKey: 'testDashboard',
     title: 'Test dashboard',

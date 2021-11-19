@@ -5,7 +5,7 @@ exports[`ExtensionToggle extension disabled in settings 1`] = `
   <button
     aria-checked="false"
     class="toggle"
-    data-test="extension-toggle-x/y"
+    data-testid="extension-toggle-x/y"
     role="switch"
     title="Click to enable"
     type="button"
@@ -26,7 +26,7 @@ exports[`ExtensionToggle extension enabled in settings 1`] = `
   <button
     aria-checked="true"
     class="toggle"
-    data-test="extension-toggle-x/y"
+    data-testid="extension-toggle-x/y"
     role="switch"
     title="Click to disable"
     type="button"
@@ -47,7 +47,7 @@ exports[`ExtensionToggle extension not present in settings 1`] = `
   <button
     aria-checked="false"
     class="toggle"
-    data-test="extension-toggle-x/y"
+    data-testid="extension-toggle-x/y"
     role="switch"
     title="Click to enable"
     type="button"

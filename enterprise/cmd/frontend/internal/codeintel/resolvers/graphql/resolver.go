@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,8 +22,9 @@ import (
 )
 
 const (
-	DefaultUploadPageSize = 50
-	DefaultIndexPageSize  = 50
+	DefaultUploadPageSize                  = 50
+	DefaultIndexPageSize                   = 50
+	DefaultRepositoryFilterPreviewPageSize = 50
 )
 
 var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
@@ -418,8 +420,18 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) ([]*gql.RepositoryResolver, error) {
-	ids, err := r.resolver.PreviewRepositoryFilter(ctx, args.Pattern)
+func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) (gql.RepositoryFilterPreviewResolver, error) {
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	pageSize := DefaultRepositoryFilterPreviewPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	ids, totalCount, repositoryMatchLimit, err := r.resolver.PreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +446,18 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 		resolvers = append(resolvers, gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo))
 	}
 
-	return resolvers, nil
+	limitedCount := totalCount
+	if repositoryMatchLimit != nil && *repositoryMatchLimit < limitedCount {
+		limitedCount = *repositoryMatchLimit
+	}
+
+	return &repositoryFilterPreviewResolver{
+		repositoryResolvers: resolvers,
+		totalCount:          limitedCount,
+		offset:              offset,
+		totalMatches:        totalCount,
+		limit:               repositoryMatchLimit,
+	}, nil
 }
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {
@@ -489,7 +512,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		}
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -515,7 +538,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 		return store.GetIndexesOptions{}, err
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}

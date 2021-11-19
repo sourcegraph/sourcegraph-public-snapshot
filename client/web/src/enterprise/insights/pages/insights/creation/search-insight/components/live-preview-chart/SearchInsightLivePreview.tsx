@@ -65,6 +65,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         series: liveSeries,
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
+        disabled,
     })
 
     const liveDebouncedSettings = useDebounce(liveSettings, 500)
@@ -74,7 +75,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         setLoading(true)
         setDataOrError(undefined)
 
-        if (disabled) {
+        if (liveDebouncedSettings.disabled) {
             setLoading(false)
 
             return
@@ -88,7 +89,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         return () => {
             hasRequestCanceled = true
         }
-    }, [disabled, lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
+    }, [lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
 
     return (
         <LivePreviewContainer

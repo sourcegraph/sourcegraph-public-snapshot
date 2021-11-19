@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"sort"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
@@ -128,6 +130,47 @@ func (r *batchSpecWorkspaceCreator) process(
 		}
 
 		if err := tx.MarkUsedBatchSpecExecutionCacheEntry(ctx, entry.ID); err != nil {
+			return err
+		}
+	}
+
+	// If there are "importChangesets" statements in the spec we evaluate
+	// them now and create ChangesetSpecs for them.
+	reposStore := tx.Repos()
+	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, evaluatableSpec.ImportChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
+		if len(repoNames) == 0 {
+			return map[string]string{}, nil
+		}
+
+		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
+		// whether the user has access to the repository or not.
+		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
+		if err != nil {
+			return nil, err
+		}
+
+		repoNameIDs := make(map[string]string, len(repos))
+		for _, r := range repos {
+			repoNameIDs[string(r.Name)] = string(graphqlbackend.MarshalRepositoryID(r.ID))
+		}
+		return repoNameIDs, nil
+	})
+	if err != nil {
+		return err
+	}
+	for _, cs := range specs {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cs.BaseRepository))
+		if err != nil {
+			return err
+		}
+		changesetSpec := &btypes.ChangesetSpec{
+			UserID:      spec.UserID,
+			RepoID:      repoID,
+			Spec:        cs,
+			BatchSpecID: spec.ID,
+		}
+
+		if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 			return err
 		}
 	}

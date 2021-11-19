@@ -1,6 +1,7 @@
 .search-context-cta-prompt {
     width: 31rem;
-    padding: 0.75rem;
+    padding: 1rem;
+    border-top: 1px solid var(--border-color-2);
 
     &__title {
         display: flex;

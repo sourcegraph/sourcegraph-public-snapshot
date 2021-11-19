@@ -42,7 +42,11 @@
     }
 
     &__container {
-        overflow-y: visible;
+        // Hack!! Fixes some possible nested scrolling on diff searches
+        // due to size calculations on diff results. The parent will scroll
+        // instead so this doesn't really hide anything.
+        overflow-y: hidden;
+
         overflow-x: hidden;
         grid-column: 2;
         grid-row: 3;

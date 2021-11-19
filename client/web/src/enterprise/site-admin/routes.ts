@@ -2,6 +2,7 @@ import { siteAdminAreaRoutes } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { lazyComponent } from '../../util/lazyComponent'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     ...siteAdminAreaRoutes,
@@ -93,6 +94,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
+    {
+        path: '/batch-changes/webhook-logs',
+        exact: true,
+        render: lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage'),
+        condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
+            batchChangesEnabled && batchChangesWebhookLogsEnabled,
+    },
 
     // Code intelligence upload routes
     {
@@ -143,5 +151,16 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/lsif-uploads/:id',
         render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
         exact: true,
+    },
+
+    // Executor routes
+    {
+        path: '/executors',
+        render: lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
+            () => import('../executors/ExecutorsListPage'),
+            'ExecutorsListPage'
+        ),
+        exact: true,
+        condition: () => Boolean(window.context?.executorsEnabled),
     },
 ]

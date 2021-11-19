@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/csrf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -19,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -51,7 +50,6 @@ type JSContext struct {
 	AppRoot        string            `json:"appRoot,omitempty"`
 	ExternalURL    string            `json:"externalURL,omitempty"`
 	XHRHeaders     map[string]string `json:"xhrHeaders"`
-	CSRFToken      string            `json:"csrfToken"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
@@ -88,8 +86,11 @@ type JSContext struct {
 
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
+	ExecutorsEnabled                         bool `json:"executorsEnabled"`
+	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
@@ -111,9 +112,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
 		headers["Cache-Control"] = "no-cache"
 	}
-
-	csrfToken := csrf.Token(req)
-	headers["X-Csrf-Token"] = csrfToken
 
 	siteID := siteid.Get()
 
@@ -149,7 +147,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	return JSContext{
 		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
-		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             version.Version(),
@@ -187,8 +184,11 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), dbconn.Global) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
+		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
+		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
+		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 

@@ -258,6 +258,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     showSHAAndParentsRow={true}
                                     diffMode={this.state.diffMode}
                                     onHandleDiffMode={this.onHandleDiffMode}
+                                    className={styles.gitCommitNode}
                                 />
                             </div>
                         </div>

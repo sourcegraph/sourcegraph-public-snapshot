@@ -78,7 +78,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = toGitCommitResolver(r.repo, r.db, commit.ID, commit)
+		resolvers[i] = NewGitCommitResolver(r.db, r.repo, commit.ID, commit)
 	}
 
 	return resolvers, nil

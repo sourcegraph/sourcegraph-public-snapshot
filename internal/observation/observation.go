@@ -22,7 +22,7 @@
 //         prometheus.DefaultRegisterer,
 //     )
 //
-//     metrics := metrics.NewOperationMetrics(
+//     metrics := metrics.NewREDMetrics(
 //         observationContext.Registerer,
 //         "thing",
 //         metrics.WithLabels("op"),
@@ -88,7 +88,9 @@ const (
 
 // Op configures an Operation instance.
 type Op struct {
-	Metrics *metrics.OperationMetrics
+	// Metrics sets the RED metrics triplet used to monitor & track metrics for this operation.
+	// This field is optional, with `nil` meaning no metrics will be tracked for this.
+	Metrics *metrics.REDMetrics
 	// Name configures the trace and error log names. This string should be of the
 	// format {GroupName}.{OperationName}, where both sections are title cased
 	// (e.g. Store.GetRepoByID).
@@ -125,12 +127,12 @@ func (c *Context) Operation(args Op) *Operation {
 // Operation represents an interesting section of code that can be invoked.
 type Operation struct {
 	context      *Context
-	metrics      *metrics.OperationMetrics
+	metrics      *metrics.REDMetrics
+	errorFilter  func(err error) ErrorFilterBehaviour
 	name         string
 	kebabName    string
 	metricLabels []string
 	logFields    []log.Field
-	errorFilter  func(err error) ErrorFilterBehaviour
 }
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and

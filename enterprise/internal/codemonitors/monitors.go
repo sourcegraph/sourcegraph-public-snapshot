@@ -21,8 +21,7 @@ type Monitor struct {
 	ChangedAt       time.Time
 	Description     string
 	Enabled         bool
-	NamespaceUserID *int32
-	NamespaceOrgID  *int32
+	NamespaceUserID int32
 }
 
 var monitorColumns = []*sqlf.Query{
@@ -34,10 +33,9 @@ var monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.description"),
 	sqlf.Sprintf("cm_monitors.enabled"),
 	sqlf.Sprintf("cm_monitors.namespace_user_id"),
-	sqlf.Sprintf("cm_monitors.namespace_org_id"),
 }
 
-func (s *Store) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (m *Monitor, err error) {
+func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (m *Monitor, err error) {
 	var q *sqlf.Query
 	q, err = s.createCodeMonitorQuery(ctx, args)
 	if err != nil {
@@ -46,7 +44,7 @@ func (s *Store) CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMo
 	return s.runMonitorQuery(ctx, q)
 }
 
-func (s *Store) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m *Monitor, err error) {
+func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m *Monitor, err error) {
 	var q *sqlf.Query
 	q, err = s.updateCodeMonitorQuery(ctx, args)
 	if err != nil {
@@ -55,7 +53,7 @@ func (s *Store) UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCo
 	return s.runMonitorQuery(ctx, q)
 }
 
-func (s *Store) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (m *Monitor, err error) {
+func (s *codeMonitorStore) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (m *Monitor, err error) {
 	var q *sqlf.Query
 	q, err = s.toggleCodeMonitorQuery(ctx, args)
 	if err != nil {
@@ -64,7 +62,7 @@ func (s *Store) ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCo
 	return s.runMonitorQuery(ctx, q)
 }
 
-func (s *Store) DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (err error) {
+func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (err error) {
 	var q *sqlf.Query
 	q, err = s.deleteMonitorQuery(ctx, args)
 	if err != nil {
@@ -73,7 +71,7 @@ func (s *Store) DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCo
 	return s.Exec(ctx, q)
 }
 
-func (s *Store) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error) {
+func (s *codeMonitorStore) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error) {
 	q, err := monitorsQuery(userID, args)
 	if err != nil {
 		return nil, err
@@ -87,12 +85,12 @@ func (s *Store) Monitors(ctx context.Context, userID int32, args *graphqlbackend
 }
 
 const monitorByIDFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id
 FROM cm_monitors
 WHERE id = %s
 `
 
-func (s *Store) MonitorByIDInt64(ctx context.Context, monitorID int64) (m *Monitor, err error) {
+func (s *codeMonitorStore) MonitorByIDInt64(ctx context.Context, monitorID int64) (m *Monitor, err error) {
 	return s.runMonitorQuery(ctx, sqlf.Sprintf(monitorByIDFmtStr, monitorID))
 }
 
@@ -102,13 +100,13 @@ FROM cm_monitors
 WHERE namespace_user_id = %s;
 `
 
-func (s *Store) TotalCountMonitors(ctx context.Context, userID int32) (count int32, err error) {
+func (s *codeMonitorStore) TotalCountMonitors(ctx context.Context, userID int32) (count int32, err error) {
 	err = s.QueryRow(ctx, sqlf.Sprintf(totalCountMonitorsFmtStr, userID)).Scan(&count)
 	return count, err
 }
 
 const monitorsFmtStr = `
-SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id, namespace_org_id
+SELECT id, created_by, created_at, changed_by, changed_at, description, enabled, namespace_user_id
 FROM cm_monitors
 WHERE namespace_user_id = %s
 AND id > %s
@@ -139,7 +137,7 @@ WHERE id = %s
 RETURNING %s
 `
 
-func (s *Store) toggleCodeMonitorQuery(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*sqlf.Query, error) {
+func (s *codeMonitorStore) toggleCodeMonitorQuery(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*sqlf.Query, error) {
 	var monitorID int64
 	err := relay.UnmarshalSpec(args.Id, &monitorID)
 	if err != nil {
@@ -159,12 +157,12 @@ func (s *Store) toggleCodeMonitorQuery(ctx context.Context, args *graphqlbackend
 
 const insertCodeMonitorFmtStr = `
 INSERT INTO cm_monitors
-(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
-VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id)
+VALUES (%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *Store) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*sqlf.Query, error) {
+func (s *codeMonitorStore) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*sqlf.Query, error) {
 	var userID int32
 	var orgID int32
 	err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
@@ -182,7 +180,6 @@ func (s *Store) createCodeMonitorQuery(ctx context.Context, args *graphqlbackend
 		args.Description,
 		args.Enabled,
 		nilOrInt32(userID),
-		nilOrInt32(orgID),
 		sqlf.Join(monitorColumns, ", "),
 	), nil
 }
@@ -192,14 +189,13 @@ UPDATE cm_monitors
 SET description = %s,
 	enabled	= %s,
 	namespace_user_id = %s,
-	namespace_org_id = %s,
 	changed_by = %s,
 	changed_at = %s
 WHERE id = %s
 RETURNING %s;
 `
 
-func (s *Store) updateCodeMonitorQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*sqlf.Query, error) {
+func (s *codeMonitorStore) updateCodeMonitorQuery(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*sqlf.Query, error) {
 	var userID int32
 	var orgID int32
 	err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID)
@@ -218,7 +214,6 @@ func (s *Store) updateCodeMonitorQuery(ctx context.Context, args *graphqlbackend
 		args.Monitor.Update.Description,
 		args.Monitor.Update.Enabled,
 		nilOrInt32(userID),
-		nilOrInt32(orgID),
 		a.UID,
 		now,
 		monitorID,
@@ -228,7 +223,7 @@ func (s *Store) updateCodeMonitorQuery(ctx context.Context, args *graphqlbackend
 
 const deleteMonitorFmtStr = `DELETE FROM cm_monitors WHERE id = %s`
 
-func (s *Store) deleteMonitorQuery(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*sqlf.Query, error) {
+func (s *codeMonitorStore) deleteMonitorQuery(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*sqlf.Query, error) {
 	var monitorID int64
 	err := relay.UnmarshalSpec(args.Id, &monitorID)
 	if err != nil {
@@ -254,7 +249,6 @@ func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
 			&m.Description,
 			&m.Enabled,
 			&m.NamespaceUserID,
-			&m.NamespaceOrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -271,7 +265,7 @@ func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
 	return ms, nil
 }
 
-func (s *Store) runMonitorQuery(ctx context.Context, q *sqlf.Query) (*Monitor, error) {
+func (s *codeMonitorStore) runMonitorQuery(ctx context.Context, q *sqlf.Query) (*Monitor, error) {
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err

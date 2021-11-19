@@ -408,9 +408,9 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 			suggestions = append(suggestions, symbolSuggestionResolver{
 				symbol: symbolResolver{
 					db: r.db,
-					commit: toGitCommitResolver(
-						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+					commit: NewGitCommitResolver(
 						r.db,
+						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
 						fileMatch.CommitID,
 						nil,
 					),
@@ -465,6 +465,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 				for i, res := range results.Matches {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
+							db:           r.db,
 							FileMatch:    *fm,
 							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}
@@ -536,16 +537,6 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 type suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
-	// from "field:^foo$" to "field:^foo".
-	globbing := false
-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		globbing = true
-	}
-	if globbing {
-		r.Query = query.FuzzifyRegexPatterns(r.Query)
-	}
-
 	args.applyDefaultsAndConstraints()
 
 	if len(r.Query) == 0 {
