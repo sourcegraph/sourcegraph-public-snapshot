@@ -77,12 +77,10 @@ func main() {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
-	service := symbols.NewService(&gitserverClient{}, cache, parserPool, 15)
-
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(service.Handler())),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(symbols.NewHandler(&gitserverClient{}, cache, parserPool, 15))),
 	})
 
 	evictionDuration := time.Second * 10

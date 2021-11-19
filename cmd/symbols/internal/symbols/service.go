@@ -13,58 +13,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
-type service struct {
+type symbolsHandler struct {
 	gitserverClient GitserverClient
 	cache           *diskcache.Store
 	parserPool      ParserPool
 	fetchSem        chan int
 }
 
-type HandlerFactory interface {
-	Handler() http.Handler
-}
-
-func NewService(
+func NewHandler(
 	gitserverClient GitserverClient,
 	cache *diskcache.Store,
 	parserPool ParserPool,
 	maxConcurrentFetchTar int,
-) HandlerFactory {
-	return newService(gitserverClient, cache, parserPool, maxConcurrentFetchTar)
-}
-
-func newService(
-	gitserverClient GitserverClient,
-	cache *diskcache.Store,
-	parserPool ParserPool,
-	maxConcurrentFetchTar int,
-) *service {
-	return &service{
+) http.Handler {
+	h := &symbolsHandler{
 		gitserverClient: gitserverClient,
 		cache:           cache,
 		parserPool:      parserPool,
 		fetchSem:        make(chan int, maxConcurrentFetchTar),
 	}
-}
 
-// Handler returns the http.Handler that should be used to serve requests.
-func (s *service) Handler() http.Handler {
 	mux := http.NewServeMux()
-
-	mux.HandleFunc("/search", s.handleSearch)
-	mux.HandleFunc("/healthz", s.handleHealthCheck)
-
+	mux.HandleFunc("/search", h.handleSearch)
+	mux.HandleFunc("/healthz", h.handleHealthCheck)
 	return mux
 }
 
-func (s *service) handleSearch(w http.ResponseWriter, r *http.Request) {
+func (h *symbolsHandler) handleSearch(w http.ResponseWriter, r *http.Request) {
 	var args protocol.SearchArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	result, err := doSearch(r.Context(), s.gitserverClient, s.cache, s.parserPool, s.fetchSem, args)
+	result, err := doSearch(r.Context(), h.gitserverClient, h.cache, h.parserPool, h.fetchSem, args)
 	if err != nil {
 		if err == context.Canceled && r.Context().Err() == context.Canceled {
 			return // client went away
@@ -80,7 +62,7 @@ func (s *service) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *service) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+func (h *symbolsHandler) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	_, err := w.Write([]byte("Ok"))
