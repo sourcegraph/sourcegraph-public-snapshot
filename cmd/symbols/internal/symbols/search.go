@@ -3,14 +3,10 @@ package symbols
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"regexp/syntax"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 
 	"github.com/inconshreveable/log15"
@@ -82,37 +78,7 @@ const symbolsDBVersion = 4
 // it will create a new one and write all the symbols into it.
 func getDBFile(ctx context.Context, gitserverClient GitserverClient, cache *diskcache.Store, parserPool ParserPool, fetchSem chan int, args protocol.SearchArgs) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		newest, err := findNewestFile(filepath.Join(cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
-		if err != nil {
-			return err
-		}
-
-		if newest == "" {
-			// There are no existing SQLite DBs to reuse, so write a completely new one.
-			err := writeAllSymbolsToNewDB(fetcherCtx, gitserverClient, parserPool, fetchSem, tempDBFile, args.Repo, args.CommitID)
-			if err != nil {
-				if err == context.Canceled {
-					log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
-				}
-				return err
-			}
-		} else {
-			// Copy the existing DB to a new DB and update the new DB
-			err = copyFile(newest, tempDBFile)
-			if err != nil {
-				return err
-			}
-
-			err = updateSymbols(fetcherCtx, gitserverClient, parserPool, fetchSem, tempDBFile, args.Repo, args.CommitID)
-			if err != nil {
-				if err == context.Canceled {
-					log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
-				}
-				return err
-			}
-		}
-
-		return nil
+		return writeDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args, fetcherCtx, tempDBFile)
 	})
 	if err != nil {
 		return "", err
@@ -120,24 +86,6 @@ func getDBFile(ctx context.Context, gitserverClient GitserverClient, cache *disk
 	defer diskcacheFile.File.Close()
 
 	return diskcacheFile.File.Name(), err
-}
-
-// isLiteralEquality checks if the given regex matches literal strings exactly.
-// Returns whether or not the regex is exact, along with the literal string if
-// so.
-func isLiteralEquality(expr string) (ok bool, lit string, err error) {
-	r, err := syntax.Parse(expr, syntax.Perl)
-	if err != nil {
-		return false, "", err
-	}
-	// Want a Concat of size 3 which is [Begin, Literal, End]
-	if r.Op != syntax.OpConcat || len(r.Sub) != 3 || // size 3 concat
-		!(r.Sub[0].Op == syntax.OpBeginLine || r.Sub[0].Op == syntax.OpBeginText) || // Starts with ^
-		!(r.Sub[2].Op == syntax.OpEndLine || r.Sub[2].Op == syntax.OpEndText) || // Ends with $
-		r.Sub[1].Op != syntax.OpLiteral { // is a literal
-		return false, "", nil
-	}
-	return true, string(r.Sub[1].Rune), nil
 }
 
 func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []result.Symbol, err error) {
@@ -218,298 +166,20 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 	return res, nil
 }
 
-// symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
-// namelowercase and pathlowercase, which enable indexed case insensitive
-// queries.
-type symbolInDB struct {
-	Name          string
-	NameLowercase string // derived from `Name`
-	Path          string
-	PathLowercase string // derived from `Path`
-	Line          int
-	Kind          string
-	Language      string
-	Parent        string
-	ParentKind    string
-	Signature     string
-	Pattern       string
-
-	// Whether or not the symbol is local to the file.
-	FileLimited bool
-}
-
-func symbolToSymbolInDB(symbol result.Symbol) symbolInDB {
-	return symbolInDB{
-		Name:          symbol.Name,
-		NameLowercase: strings.ToLower(symbol.Name),
-		Path:          symbol.Path,
-		PathLowercase: strings.ToLower(symbol.Path),
-		Line:          symbol.Line,
-		Kind:          symbol.Kind,
-		Language:      symbol.Language,
-		Parent:        symbol.Parent,
-		ParentKind:    symbol.ParentKind,
-		Signature:     symbol.Signature,
-		Pattern:       symbol.Pattern,
-
-		FileLimited: symbol.FileLimited,
-	}
-}
-
-func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
-	return result.Symbol{
-		Name:       symbolInDB.Name,
-		Path:       symbolInDB.Path,
-		Line:       symbolInDB.Line,
-		Kind:       symbolInDB.Kind,
-		Language:   symbolInDB.Language,
-		Parent:     symbolInDB.Parent,
-		ParentKind: symbolInDB.ParentKind,
-		Signature:  symbolInDB.Signature,
-		Pattern:    symbolInDB.Pattern,
-
-		FileLimited: symbolInDB.FileLimited,
-	}
-}
-
-// writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
-// symbols, and writes them to the blank database file `dbFile`.
-func writeAllSymbolsToNewDB(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+// isLiteralEquality checks if the given regex matches literal strings exactly.
+// Returns whether or not the regex is exact, along with the literal string if
+// so.
+func isLiteralEquality(expr string) (ok bool, lit string, err error) {
+	r, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
-		return err
+		return false, "", err
 	}
-	defer db.Close()
-
-	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
-	tx, err := db.Beginx()
-	if err != nil {
-		return err
+	// Want a Concat of size 3 which is [Begin, Literal, End]
+	if r.Op != syntax.OpConcat || len(r.Sub) != 3 || // size 3 concat
+		!(r.Sub[0].Op == syntax.OpBeginLine || r.Sub[0].Op == syntax.OpBeginText) || // Starts with ^
+		!(r.Sub[2].Op == syntax.OpEndLine || r.Sub[2].Op == syntax.OpEndText) || // Ends with $
+		r.Sub[1].Op != syntax.OpLiteral { // is a literal
+		return false, "", nil
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
-
-	_, err = tx.Exec(
-		`CREATE TABLE IF NOT EXISTS meta (
-    		id INTEGER PRIMARY KEY CHECK (id = 0),
-			revision TEXT NOT NULL
-		)`)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(
-		`INSERT INTO meta (id, revision) VALUES (0, ?)`,
-		string(commitID))
-	if err != nil {
-		return err
-	}
-
-	// The column names are the lowercase version of fields in `symbolInDB`
-	// because sqlx lowercases struct fields by default. See
-	// http://jmoiron.github.io/sqlx/#query
-	_, err = tx.Exec(
-		`CREATE TABLE IF NOT EXISTS symbols (
-			name VARCHAR(256) NOT NULL,
-			namelowercase VARCHAR(256) NOT NULL,
-			path VARCHAR(4096) NOT NULL,
-			pathlowercase VARCHAR(4096) NOT NULL,
-			line INT NOT NULL,
-			kind VARCHAR(255) NOT NULL,
-			language VARCHAR(255) NOT NULL,
-			parent VARCHAR(255) NOT NULL,
-			parentkind VARCHAR(255) NOT NULL,
-			signature VARCHAR(255) NOT NULL,
-			pattern VARCHAR(255) NOT NULL,
-			filelimited BOOLEAN NOT NULL
-		)`)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(`CREATE INDEX name_index ON symbols(name);`)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(`CREATE INDEX path_index ON symbols(path);`)
-	if err != nil {
-		return err
-	}
-
-	// `*lowercase_index` enables indexed case insensitive queries.
-	_, err = tx.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
-	if err != nil {
-		return err
-	}
-
-	insertStatement, err := tx.PrepareNamed(insertQuery)
-	if err != nil {
-		return err
-	}
-
-	return parseUncached(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, []string{}, func(symbol result.Symbol) error {
-		symbolInDBValue := symbolToSymbolInDB(symbol)
-		_, err := insertStatement.Exec(&symbolInDBValue)
-		return err
-	})
-}
-
-// updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
-// DB and the given commitID.
-func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
-	tx, err := db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
-
-	// Read old commit
-	row := tx.QueryRow(`SELECT revision FROM meta`)
-	oldCommit := api.CommitID("")
-	if err = row.Scan(&oldCommit); err != nil {
-		return err
-	}
-
-	// Write new commit
-	_, err = tx.Exec(`UPDATE meta SET revision = ?`, string(commitID))
-	if err != nil {
-		return err
-	}
-
-	// git diff
-	changes, err := gitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
-	if err != nil {
-		return err
-	}
-
-	deleteStatement, err := tx.Prepare("DELETE FROM symbols WHERE path = ?")
-	if err != nil {
-		return err
-	}
-
-	insertStatement, err := tx.PrepareNamed(insertQuery)
-	if err != nil {
-		return err
-	}
-
-	for _, path := range append(changes.Deleted, changes.Modified...) {
-		_, err := deleteStatement.Exec(path)
-		return err
-	}
-
-	return parseUncached(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
-		symbolInDBValue := symbolToSymbolInDB(symbol)
-		_, err := insertStatement.Exec(&symbolInDBValue)
-		return err
-	})
-}
-
-const insertQuery = `
-	INSERT INTO symbols ( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)
-	VALUES              (:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)`
-
-// SanityCheck makes sure that go-sqlite3 was compiled with cgo by
-// seeing if we can actually create a table.
-func SanityCheck() error {
-	db, err := sqlx.Open("sqlite3_with_regexp", ":memory:")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-	_, err = db.Exec("CREATE TABLE test (col TEXT);")
-	if err != nil {
-		// If go-sqlite3 was not compiled with cgo, the error will be:
-		//
-		// > Binary was compiled with 'CGO_ENABLED=0', go-sqlite3 requires cgo to work. This is a stub
-		return err
-	}
-
-	return nil
-}
-
-// findNewestFile lists the directory and returns the newest file's path, prepended with dir.
-func findNewestFile(dir string) (string, error) {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return "", nil
-	}
-
-	var mostRecentTime time.Time
-	newest := ""
-	for _, fi := range files {
-		if fi.Type().IsRegular() {
-			if !strings.HasSuffix(fi.Name(), ".zip") {
-				continue
-			}
-
-			info, err := fi.Info()
-			if err != nil {
-				return "", err
-			}
-
-			if newest == "" || info.ModTime().After(mostRecentTime) {
-				mostRecentTime = info.ModTime()
-				newest = filepath.Join(dir, fi.Name())
-			}
-		}
-	}
-
-	return newest, nil
-}
-
-// copyFile is like the cp command.
-func copyFile(from string, to string) error {
-	fromFile, err := os.Open(from)
-	if err != nil {
-		return err
-	}
-	defer fromFile.Close()
-
-	toFile, err := os.OpenFile(to, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer toFile.Close()
-
-	_, err = io.Copy(toFile, fromFile)
-	return err
-}
-
-// Changes are added and deleted paths.
-type Changes struct {
-	Added    []string
-	Modified []string
-	Deleted  []string
-}
-
-func NewChanges() Changes {
-	return Changes{
-		Added:    []string{},
-		Modified: []string{},
-		Deleted:  []string{},
-	}
+	return true, string(r.Sub[1].Rune), nil
 }

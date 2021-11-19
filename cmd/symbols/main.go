@@ -117,7 +117,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	//
 	//     M NUL cmd/symbols/internal/symbols/fetch.go NUL
 
-	changes := symbols.NewChanges()
+	changes := symbols.Changes{}
 	slices := bytes.Split(output, []byte{0})
 	for i := 0; i < len(slices)-1; i += 2 {
 		statusIdx := i
