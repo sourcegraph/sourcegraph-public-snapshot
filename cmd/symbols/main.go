@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -34,14 +34,30 @@ import (
 const port = "3184"
 
 func main() {
-	var (
-		cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
-		cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
-		ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of ctags child processes to run")
-		sanityCheck    = env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not")
-	)
+	config.Load()
 
-	if sanityCheck == "true" {
+	// Set up Google Cloud Profiler when running in Cloud
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("Failed to start profiler: %v", err)
+	}
+
+	env.Lock()
+	env.HandleHelpFlag()
+	conf.Init()
+	logging.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
+
+	if err := config.Validate(); err != nil {
+		log.Fatalf("Failed to load configuration: %s", err)
+	}
+
+	oldMain(config)
+}
+
+func oldMain(config *Config) {
+	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
 		if err := symbols.SanityCheck(); err != nil {
 			fmt.Println("failed ❌", err)
@@ -51,15 +67,6 @@ func main() {
 		fmt.Println("passed ✅")
 		os.Exit(0)
 	}
-
-	env.Lock()
-	env.HandleHelpFlag()
-	log.SetFlags(0)
-	conf.Init()
-	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -115,15 +122,15 @@ func main() {
 			return &changes, nil
 		},
 		NewParser: symbols.NewParser,
-		Path:      cacheDir,
+		Path:      config.cacheDir,
 	}
-	if mb, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
+	if mb, err := strconv.ParseInt(config.cacheSizeMB, 10, 64); err != nil {
 		log.Fatalf("Invalid SYMBOLS_CACHE_SIZE_MB: %s", err)
 	} else {
 		service.MaxCacheSizeBytes = mb * 1000 * 1000
 	}
 	var err error
-	service.NumParserProcesses, err = strconv.Atoi(ctagsProcesses)
+	service.NumParserProcesses, err = strconv.Atoi(config.ctagsProcesses)
 	if err != nil {
 		log.Fatalf("Invalid CTAGS_PROCESSES: %s", err)
 	}
