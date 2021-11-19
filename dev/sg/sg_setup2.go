@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"flag"
 	"os"
@@ -54,7 +55,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 	pending := out.Pending(output.Linef("", output.StylePending, "Checking system..."))
 	for _, category := range deps {
 		for _, dep := range category.dependencies {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(20 * time.Millisecond)
 			dep.Update(ctx)
 		}
 
@@ -94,9 +95,27 @@ func checkCommandOutputContains(cmd, contains string) func(context.Context) (boo
 	}
 }
 
-func checkFileContains(file, content string) func(context.Context) (bool, error) {
+func checkFileContains(fileName, content string) func(context.Context) (bool, error) {
 	return func(ctx context.Context) (bool, error) {
-		return false, errors.New("todo: not implemented")
+		file, err := os.Open(fileName)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to check that %q contains %q", fileName, content)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.Contains(line, content) {
+				return true, nil
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			return false, err
+		}
+
+		return false, errors.Newf("file %q did not contain %q", fileName, content)
 	}
 }
 
@@ -117,6 +136,42 @@ func checkInMainRepoOrRepoInDirectory() func(context.Context) (bool, error) {
 			return pathExists("sourcegraph")
 		}
 		return true, nil
+	}
+}
+
+func checkCaddyTrusted() func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		var path string
+		repoRoot, err := root.RepositoryRoot()
+		if err != nil {
+			ok, err := pathExists("sourcegraph")
+			if err != nil {
+				return false, errors.Wrap(err, "failed to check whether we're in the sourcegraph repository or not")
+			}
+			if !ok {
+				return false, errors.New("cannot find sourcegraph repository. rerun this command inside the repository")
+			}
+
+			wd, err := os.Getwd()
+			if err != nil {
+				return false, errors.Wrap(err, "failed to get current working directory")
+			}
+			path = filepath.Join(wd, "sourcegraph")
+		} else {
+			path = repoRoot
+		}
+
+		// TODO: This will download caddy the first time it's run
+
+		cmd := exec.CommandContext(ctx, "dev/caddy.sh", "trust")
+		cmd.Dir = path
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return false, errors.Wrap(err, "running 'dev/caddy.sh trust' failed")
+		}
+
+		return strings.Contains(string(out), "is already trusted by system"), nil
 	}
 }
 
@@ -277,7 +332,7 @@ var macOSDependencies = []dependencyCategory{
 		name: "Setup proxy for local development",
 		dependencies: []*dependency{
 			{name: "/etc/hosts contains sourcegraph.test", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
-			{name: "is there a way to check whether root certificate is trusted?", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
+			{name: "is there a way to check whether root certificate is trusted?", check: checkCaddyTrusted()},
 		},
 	},
 }
