@@ -105,7 +105,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - Event Code: [InsightOrgVisible](https://sourcegraph.com/search?q=context:global+insightorgvisible+r:sourcegraph/sourcegraph%24&patternType=literal)
 - PRs: [#21671](https://github.com/sourcegraph/sourcegraph/pull/21671/files)
 - **Version Added:** 3.29
-- **Version(s) broken:** 3.31-3.32 ([fix PR](https://github.com/sourcegraph/sourcegraph/pull/26138))
+- **Version(s) broken:** 3.31+ (doesn't handle backend insights)
 
 ### First time insight creators count
 
