@@ -19,6 +19,10 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.34.0
+
+No changes; this is a re-release of 3.33.8 to align with the release of Sourcegraph 3.34.
+
 ## 3.33.8
 
 ### Fixed
