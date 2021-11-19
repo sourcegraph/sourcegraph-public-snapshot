@@ -60,4 +60,5 @@ var (
 
 	// Colors
 	StyleYellow = Fg256Color(220)
+	StyleOrange = Fg256Color(202)
 )

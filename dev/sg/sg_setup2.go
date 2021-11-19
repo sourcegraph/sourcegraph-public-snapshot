@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/garyburd/redigo/redis"
@@ -38,7 +39,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
-	out.WriteLine(output.Linef("", output.StyleLinesAdded, "Welcome to 'sg setup'!"))
+	out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "Welcome to sg setup!"))
 
 	currentOS := runtime.GOOS
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
@@ -52,36 +53,143 @@ func setup2Exec(ctx context.Context, args []string) error {
 		panic("unsupported os!")
 	}
 
-	pending := out.Pending(output.Linef("", output.StylePending, "Checking system..."))
-	for _, category := range deps {
-		for _, dep := range category.dependencies {
-			time.Sleep(20 * time.Millisecond)
-			dep.Update(ctx)
-		}
-
+	failed := []int{}
+	for i := range deps {
+		failed = append(failed, i)
 	}
 
-	pending.Destroy()
+	for len(failed) != 0 {
 
-	for i, category := range deps {
-		idx := i + 1
-		if combined := category.CombinedState(); combined {
-			out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d %s", idx, category.name))
-		} else {
-			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%d %s", idx, category.name))
+		for i, category := range deps {
+			idx := i + 1
+
+			// pending := out.Pending(output.Linef("", output.StylePending, "%d %s - Checking...", idx, category.name))
 			for _, dep := range category.dependencies {
-				if dep.err != nil {
-					out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
-				} else if !dep.state {
-					out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
-				} else {
-					out.WriteLine(output.Linef("  "+output.EmojiSuccess, output.StyleSuccess, "%s", dep.name))
+				dep.Update(ctx)
+			}
+			// pending.Destroy()
+
+			if combined := category.CombinedState(); combined {
+				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d %s", idx, category.name))
+				failed = removeEntry(failed, i)
+			} else {
+				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%d %s", idx, category.name))
+				// TODO: This is duplicate to below
+				for _, dep := range category.dependencies {
+					if dep.err != nil {
+						out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
+					} else if !dep.state {
+						out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
+					} else {
+						out.WriteLine(output.Linef("  "+output.EmojiSuccess, output.StyleSuccess, "%s", dep.name))
+					}
 				}
 			}
+		}
+
+		if len(failed) == 0 {
+			out.Write("")
+			out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
+			return nil
+		}
+
+		out.Write("")
+		out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Some checks failed. Which one do you want to fix?"))
+
+		toFix := getNumber(1, len(deps))
+
+		// TODO: Check bounds
+		category := deps[toFix-1]
+
+		out.Write("")
+		out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", toFix, category.name))
+		out.Write("")
+		out.Write("Dependencies:")
+
+		// TODO: This is duplicate from above
+		for _, dep := range category.dependencies {
+			if dep.err == nil || dep.state {
+				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s", dep.name))
+			} else if dep.err != nil {
+				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
+			} else if !dep.state {
+				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
+			}
+		}
+
+		out.Write("")
+		out.Write("Let's work through the failures...")
+		out.Write("")
+
+		for _, dep := range category.dependencies {
+			if dep.err == nil || dep.state {
+				continue
+			} else {
+			}
+
+			out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "------------------- %s ------------------", dep.name))
+			if dep.err != nil {
+				out.WriteLine(output.Linef("", output.StyleBold, "Error: %s%s", output.StyleReset, dep.err))
+			}
+			if dep.instructionsComment != "" {
+				out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+				out.Write("")
+				out.Write(dep.instructionsComment)
+			}
+
+			if dep.instructionsCommands != "" {
+				out.Write("")
+				out.Write("Run the following command(s):")
+				out.Write("")
+
+				out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+
+				out.Write("")
+			}
+
+			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
+			choice, err := getChoice()
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
+			}
+
+			switch choice {
+			case userChoiceManually:
+				out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
+				waitForReturn()
+			case userChoiceAutomatic:
+				if dep.instructionsCommands == "" {
+					out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "problem! not possible. exiting"))
+					return nil
+				}
+
+				pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
+				c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
+				cmdOut, err := c.CombinedOutput()
+				if err != nil {
+
+					pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
+					return err
+				}
+				pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+			}
+			// TODO: ask for confirmation
 		}
 	}
 
 	return nil
+}
+
+func removeEntry(s []int, val int) (result []int) {
+	for _, e := range s {
+		if e != val {
+			result = append(result, e)
+		}
+	}
+	return result
 }
 
 func checkCommandOutputContains(cmd, contains string) func(context.Context) (bool, error) {
@@ -162,7 +270,6 @@ func checkCaddyTrusted() func(context.Context) (bool, error) {
 		}
 
 		// TODO: This will download caddy the first time it's run
-
 		cmd := exec.CommandContext(ctx, "dev/caddy.sh", "trust")
 		cmd.Dir = path
 
@@ -253,12 +360,19 @@ type dependency struct {
 
 	state bool
 	err   error
+
+	instructionsComment  string
+	instructionsCommands string
 }
 
 func (d *dependency) Update(ctx context.Context) {
+	d.err = nil
+	d.state = false
+
 	ok, err := d.check(ctx)
 	if err != nil {
 		d.err = err
+		d.state = false
 		return
 	}
 
@@ -270,15 +384,15 @@ type dependencyCategory struct {
 	dependencies []*dependency
 }
 
-func (cat *dependencyCategory) CombinedState() (state bool) {
+func (cat *dependencyCategory) CombinedState() bool {
 	for _, dep := range cat.dependencies {
 		if dep.err != nil {
-			state = false
-		} else {
-			state = dep.state
+			return false
+		} else if !dep.state {
+			return false
 		}
 	}
-	return state
+	return true
 }
 
 var macOSDependencies = []dependencyCategory{
@@ -291,20 +405,34 @@ var macOSDependencies = []dependencyCategory{
 	{
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git")},
-			{name: "docker", check: checkInPath("docker")},
-			{name: "gnu-sed", check: checkInPath("gsed")},
-			{name: "comby", check: checkInPath("comby")},
-			{name: "pcre", check: checkInPath("pcregrep")},
-			{name: "sqlite", check: checkInPath("sqlite3")},
-			{name: "jq", check: checkInPath("jq")},
+			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
+			{name: "docker", check: checkInPath("docker"), instructionsCommands: `brew install --cask docker`},
+			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
+			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
+			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
+			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
+			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
 		},
 	},
 	{
 		name: "Clone repositories",
 		dependencies: []*dependency{
 			{name: "github.com/sourcegraph/sourcegraph", check: checkInMainRepoOrRepoInDirectory()},
-			{name: "github.com/sourcegraph/dev-private", check: checkDevPrivateInParentOrInCurrentDirectory(), onlyEmployees: true},
+			{
+				name:                 "github.com/sourcegraph/dev-private",
+				check:                checkDevPrivateInParentOrInCurrentDirectory(),
+				instructionsCommands: `git clone git@github.com:sourcegraph/dev-private.git`,
+				instructionsComment: `` +
+					`In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: github.com/sourcegraph/dev-private. It contains convenient preconfigured settings and code host connections.
+
+It needs to be cloned into the same folder as sourcegraph/sourcegraph, so they sit alongside each other.
+To illustrate:
+   /dir
+   |-- dev-private
+   +-- sourcegraph
+NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-private as the secrets are updated from time to time.`,
+				onlyEmployees: true,
+			},
 		},
 	},
 	{
@@ -325,7 +453,13 @@ var macOSDependencies = []dependencyCategory{
 	{
 		name: "Setup Redis database",
 		dependencies: []*dependency{
-			{name: "Connection to Redis", check: checkRedisConnection()},
+			{
+				name:  "Connection to Redis",
+				check: checkRedisConnection(),
+				instructionsComment: `` +
+					`Sourcegraph requires the Redis database to be running. We recommend installing it with Homebrew and starting it as a system service.`,
+				instructionsCommands: "brew install redis\nbrew services start redis",
+			},
 		},
 	},
 	{
@@ -335,4 +469,53 @@ var macOSDependencies = []dependencyCategory{
 			{name: "is there a way to check whether root certificate is trusted?", check: checkCaddyTrusted()},
 		},
 	},
+}
+
+func getNumber(min, max int) int {
+	var s int
+
+	fmt.Printf("[%d-%d]: ", min, max)
+	_, err := fmt.Scan(&s)
+	if err != nil {
+		panic(err)
+	}
+
+	return s
+}
+
+func waitForReturn() { fmt.Scanln() }
+
+type userChoice string
+
+const (
+	userChoiceManually  = "manually"
+	userChoiceAutomatic = "automatic"
+)
+
+func getChoice() (userChoice, error) {
+	var s string
+
+	choices := map[string]string{
+		"m": "I'll run the command manually",
+		"a": "You can run the command for me",
+	}
+
+	for letter, desc := range choices {
+		out.Writef("%s[%s]%s: %s", output.StyleBold, letter, output.StyleReset, desc)
+	}
+
+	fmt.Printf("Enter choice: ")
+
+	_, err := fmt.Scan(&s)
+	if err != nil {
+		return "", err
+	}
+
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+
+	if s == "m" {
+		return userChoiceManually, nil
+	}
+	return userChoiceAutomatic, nil
 }
