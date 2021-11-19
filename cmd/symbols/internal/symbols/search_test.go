@@ -6,10 +6,12 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -22,6 +24,11 @@ func BenchmarkSearch(b *testing.B) {
 		GitserverClient: gitserverClient,
 		NewParser:       NewParser,
 		Path:            "/tmp/symbols-cache",
+		Cache: &diskcache.Store{
+			Dir:               "/tmp/symbols-cache",
+			Component:         "symbols",
+			BackgroundTimeout: 20 * time.Minute,
+		},
 	}
 	if err := service.Init(); err != nil {
 		b.Fatal(err)

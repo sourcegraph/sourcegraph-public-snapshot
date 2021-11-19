@@ -116,8 +116,8 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		newest, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
+	diskcacheFile, err := s.Cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
+		newest, err := findNewestFile(filepath.Join(s.Cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 		if err != nil {
 			return err
 		}

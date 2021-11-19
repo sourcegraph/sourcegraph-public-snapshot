@@ -4,10 +4,6 @@ package symbols
 import (
 	"log"
 	"net/http"
-	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-ctags"
 
@@ -30,14 +26,8 @@ type Service struct {
 	// Path is the directory in which to store the cache.
 	Path string
 
-	// MaxCacheSizeBytes is the maximum size of the cache in bytes. Note:
-	// We can temporarily be larger than MaxCacheSizeBytes. When we go
-	// over MaxCacheSizeBytes we trigger delete files until we get below
-	// MaxCacheSizeBytes.
-	MaxCacheSizeBytes int64
-
-	// cache is the disk backed cache.
-	cache *diskcache.Store
+	// Cache is the disk backed Cache.
+	Cache *diskcache.Store
 
 	// fetchSem is a semaphore to limit concurrent calls to FetchTar. The
 	// semaphore size is controlled by MaxConcurrentFetchTar
@@ -54,21 +44,7 @@ func (s *Service) Init() error {
 	}
 	s.fetchSem = make(chan int, s.MaxConcurrentFetchTar)
 
-	s.cache = &diskcache.Store{
-		Dir:               s.Path,
-		Component:         "symbols",
-		BackgroundTimeout: 20 * time.Minute,
-	}
-
 	return s.startParsers()
-}
-
-func (s *Service) Start() {
-	s.watchAndEvict()
-}
-
-func (s *Service) Stop() {
-	// no-op
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -93,33 +69,3 @@ func (s *Service) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 		log.Printf("failed to write response to health check, err: %s", err)
 	}
 }
-
-// watchAndEvict is a loop which periodically checks the size of the cache and
-// evicts/deletes items if the store gets too large.
-func (s *Service) watchAndEvict() {
-	if s.MaxCacheSizeBytes == 0 {
-		return
-	}
-
-	for {
-		time.Sleep(10 * time.Second)
-		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
-		if err != nil {
-			log.Printf("failed to Evict: %s", err)
-			continue
-		}
-		cacheSizeBytes.Set(float64(stats.CacheSize))
-		evictions.Add(float64(stats.Evicted))
-	}
-}
-
-var (
-	cacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_cache_size_bytes",
-		Help: "The total size of items in the on disk cache.",
-	})
-	evictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "symbols_store_evictions",
-		Help: "The total number of items evicted from the cache.",
-	})
-)

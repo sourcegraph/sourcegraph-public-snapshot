@@ -9,10 +9,12 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/go-ctags"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -75,6 +77,11 @@ func TestService(t *testing.T) {
 			return mockParser{"x", "y"}, nil
 		},
 		Path: tmpDir,
+		Cache: &diskcache.Store{
+			Dir:               tmpDir,
+			Component:         "symbols",
+			BackgroundTimeout: 20 * time.Minute,
+		},
 	}
 
 	if err := service.Init(); err != nil {

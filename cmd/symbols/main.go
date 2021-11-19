@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -65,12 +66,18 @@ func main() {
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
+	cache := &diskcache.Store{
+		Dir:               config.cacheDir,
+		Component:         "symbols",
+		BackgroundTimeout: 20 * time.Minute,
+	}
+
 	service := &symbols.Service{
 		GitserverClient:    &gitserverClient{},
 		NewParser:          symbols.NewParser,
 		Path:               config.cacheDir,
-		MaxCacheSizeBytes:  int64(config.cacheSizeMB) * 1000 * 1000,
 		NumParserProcesses: config.ctagsProcesses,
+		Cache:              cache,
 	}
 
 	if err := service.Init(); err != nil {
@@ -83,10 +90,13 @@ func main() {
 		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(service.Handler())),
 	})
 
+	evictionDuration := time.Second * 10
+	cacheSizeBytes := int64(config.cacheSizeMB) * 1000 * 1000
+	cacheEvicter := symbols.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes)
+
 	// Mark health server as ready and go!
 	close(ready)
-	goroutine.MonitorBackgroundRoutines(context.Background(), service, server)
-
+	goroutine.MonitorBackgroundRoutines(context.Background(), server, cacheEvicter)
 }
 
 type gitserverClient struct{}
