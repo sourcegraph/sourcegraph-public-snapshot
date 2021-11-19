@@ -39,8 +39,6 @@ func setup2Exec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
-	out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "Welcome to sg setup!"))
-
 	currentOS := runtime.GOOS
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
 		currentOS = overridesOS
@@ -60,30 +58,22 @@ func setup2Exec(ctx context.Context, args []string) error {
 
 	for len(failed) != 0 {
 
+		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "-------------------------------------"))
+		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "|        Welcome to sg setup!       |"))
+		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "-------------------------------------"))
+
 		for i, category := range deps {
 			idx := i + 1
 
-			// pending := out.Pending(output.Linef("", output.StylePending, "%d %s - Checking...", idx, category.name))
 			for _, dep := range category.dependencies {
 				dep.Update(ctx)
 			}
-			// pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
-				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d %s", idx, category.name))
+				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d. %s", idx, category.name))
 				failed = removeEntry(failed, i)
 			} else {
-				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%d %s", idx, category.name))
-				// TODO: This is duplicate to below
-				for _, dep := range category.dependencies {
-					if dep.err != nil {
-						out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
-					} else if !dep.state {
-						out.WriteLine(output.Linef("  "+output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
-					} else {
-						out.WriteLine(output.Linef("  "+output.EmojiSuccess, output.StyleSuccess, "%s", dep.name))
-					}
-				}
+				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%d. %s", idx, category.name))
 			}
 		}
 
@@ -117,53 +107,90 @@ func setup2Exec(ctx context.Context, args []string) error {
 			}
 		}
 
-		out.Write("")
-		out.Write("Let's work through the failures...")
-		out.Write("")
-
-		for _, dep := range category.dependencies {
-			if dep.err == nil || dep.state {
-				continue
-			} else {
+		// TODO: We need to refactor `getChoice` to allow passing in "choices" with custom text
+		// and here we have to ask the user:
+		//
+		// [m]: I want to fix the steps one-by-one
+		// [l]: I'm feeling lucky. Try fixing all of it for me.
+		//
+		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
+		choice, err := getChoice()
+		if err != nil {
+			if err == io.EOF {
+				return nil
 			}
+			return err
+		}
 
-			out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "------------------- %s ------------------", dep.name))
-			if dep.err != nil {
-				out.WriteLine(output.Linef("", output.StyleBold, "Error: %s%s", output.StyleReset, dep.err))
-			}
-			if dep.instructionsComment != "" {
-				out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
-				out.Write("")
-				out.Write(dep.instructionsComment)
-			}
+		switch choice {
+		case userChoiceManually:
+			// TODO: ask for confirmation
+			out.Write("")
+			out.Write("Let's work through the failures...")
+			out.Write("")
 
-			if dep.instructionsCommands != "" {
-				out.Write("")
-				out.Write("Run the following command(s):")
-				out.Write("")
-
-				out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
-
-				out.Write("")
-			}
-
-			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
-			choice, err := getChoice()
-			if err != nil {
-				if err == io.EOF {
-					return nil
+			for _, dep := range category.dependencies {
+				if dep.err == nil || dep.state {
+					continue
 				}
-				return err
+
+				out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
+				out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "|               %s", dep.name))
+				out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
+				if dep.err != nil {
+					out.WriteLine(output.Linef("", output.StyleBold, "Error: %s%s", output.StyleReset, dep.err))
+				}
+				if dep.instructionsComment != "" {
+					out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+					out.Write("")
+					out.Write(dep.instructionsComment)
+				}
+
+				if dep.instructionsCommands != "" {
+					out.Write("")
+					out.Write("Run the following command(s):")
+					out.Write("")
+
+					out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+
+					out.Write("")
+				}
+
+				out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
+				choice, err := getChoice()
+				if err != nil {
+					if err == io.EOF {
+						return nil
+					}
+					return err
+				}
+
+				switch choice {
+				case userChoiceManually:
+					out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
+					waitForReturn()
+				case userChoiceAutomatic:
+					if dep.instructionsCommands == "" {
+						out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "problem! not possible. exiting"))
+						return nil
+					}
+
+					pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
+					c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
+					cmdOut, err := c.CombinedOutput()
+					if err != nil {
+
+						pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
+						return err
+					}
+					pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+				}
 			}
 
-			switch choice {
-			case userChoiceManually:
-				out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
-				waitForReturn()
-			case userChoiceAutomatic:
-				if dep.instructionsCommands == "" {
-					out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "problem! not possible. exiting"))
-					return nil
+		case userChoiceAutomatic:
+			for _, dep := range category.dependencies {
+				if dep.err == nil || dep.state {
+					continue
 				}
 
 				pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
@@ -176,7 +203,6 @@ func setup2Exec(ctx context.Context, args []string) error {
 				}
 				pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 			}
-			// TODO: ask for confirmation
 		}
 	}
 
@@ -334,8 +360,10 @@ func checkPostgresConnection() func(context.Context) (bool, error) {
 
 func checkRedisConnection() func(context.Context) (bool, error) {
 	return func(ctx context.Context) (bool, error) {
+		out.Writef("redis dial")
 		conn, err := redis.Dial("tcp", "localhost:6379")
 		if err != nil {
+			out.Writef("err=%s", err)
 			return false, errors.Wrap(err, "failed to connect to Redis at localhost:6379")
 		}
 
@@ -356,6 +384,7 @@ type dependency struct {
 	name  string
 	check func(context.Context) (bool, error)
 
+	// TODO: Still unused
 	onlyEmployees bool
 
 	state bool
@@ -363,6 +392,7 @@ type dependency struct {
 
 	instructionsComment  string
 	instructionsCommands string
+	automaticCommands    string
 }
 
 func (d *dependency) Update(ctx context.Context) {
@@ -382,6 +412,9 @@ func (d *dependency) Update(ctx context.Context) {
 type dependencyCategory struct {
 	name         string
 	dependencies []*dependency
+
+	// TODO: Rename this field
+	enableAllInOneCommand bool
 }
 
 func (cat *dependencyCategory) CombinedState() bool {
@@ -401,6 +434,7 @@ var macOSDependencies = []dependencyCategory{
 		dependencies: []*dependency{
 			{name: "brew", check: checkInPath("brew")},
 		},
+		// TODO: Do not enable all in one?
 	},
 	{
 		name: "Install base utilities (git, docker, ...)",
@@ -413,9 +447,12 @@ var macOSDependencies = []dependencyCategory{
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
 		},
+		enableAllInOneCommand: true,
+		// TODO: Enable all in one?
 	},
 	{
 		name: "Clone repositories",
+		// TODO: enableAllInOneCommand??
 		dependencies: []*dependency{
 			{name: "github.com/sourcegraph/sourcegraph", check: checkInMainRepoOrRepoInDirectory()},
 			{
@@ -437,15 +474,25 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 	},
 	{
 		name: "Programming languages & tooling",
+		// TODO: enableAllInOneCommand??
 		dependencies: []*dependency{
+			// TODO: install asdf
 			{name: "go", check: checkInPath("go")},
 			{name: "yarn", check: checkInPath("yarn")},
 			{name: "node", check: checkInPath("node")},
 		},
+		// todo: customAllInOnecommand
+		// - install asdf
+		// - reload asdf
+		// - check for sourcegraph repository
+		// - go into sourcegraph repository
+		// - run the other commands
+
 	},
 	{
 		name: "Setup PostgreSQL database",
 		dependencies: []*dependency{
+			// TODO: No instructions
 			{name: "Connection to 'sourcegraph' database", check: checkPostgresConnection()},
 			{name: "psql", check: checkInPath("psql")},
 		},
@@ -458,14 +505,16 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 				check: checkRedisConnection(),
 				instructionsComment: `` +
 					`Sourcegraph requires the Redis database to be running. We recommend installing it with Homebrew and starting it as a system service.`,
-				instructionsCommands: "brew install redis\nbrew services start redis",
+				instructionsCommands: "brew reinstall redis && brew services start redis",
 			},
 		},
 	},
 	{
 		name: "Setup proxy for local development",
 		dependencies: []*dependency{
+			// TODO: No instructions
 			{name: "/etc/hosts contains sourcegraph.test", check: checkFileContains("/etc/hosts", "sourcegraph.test")},
+			// TODO: No instructions
 			{name: "is there a way to check whether root certificate is trusted?", check: checkCaddyTrusted()},
 		},
 	},
