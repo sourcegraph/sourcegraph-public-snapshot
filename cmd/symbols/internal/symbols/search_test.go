@@ -32,7 +32,6 @@ func BenchmarkSearch(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	service := newService(gitserverClient, cache, parserPool, 15)
 	ctx := context.Background()
 	b.ResetTimer()
 
@@ -56,7 +55,7 @@ func BenchmarkSearch(b *testing.B) {
 					b.Fatal(err)
 				}
 				defer os.Remove(tempFile.Name())
-				err = service.writeAllSymbolsToNewDB(ctx, tempFile.Name(), test.Repo, test.CommitID)
+				err = writeAllSymbolsToNewDB(ctx, gitserverClient, parserPool, make(chan int, 15), tempFile.Name(), test.Repo, test.CommitID)
 				if err != nil {
 					b.Fatal(err)
 				}
@@ -66,13 +65,13 @@ func BenchmarkSearch(b *testing.B) {
 
 	runQueryTest := func(test protocol.SearchArgs) {
 		b.Run(fmt.Sprintf("searching %s@%s %s", path.Base(string(test.Repo)), test.CommitID[:3], test.Query), func(b *testing.B) {
-			_, err := service.search(ctx, test)
+			_, err := doSearch(ctx, gitserverClient, cache, parserPool, make(chan int, 15), test)
 			if err != nil {
 				b.Fatal(err)
 			}
 			b.ResetTimer()
 			for n := 0; n < b.N; n++ {
-				_, err := service.search(ctx, test)
+				_, err := doSearch(ctx, gitserverClient, cache, parserPool, make(chan int, 15), test)
 				if err != nil {
 					b.Fatal(err)
 				}

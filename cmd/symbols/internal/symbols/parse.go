@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-func (s *service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
+func parseUncached(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -47,7 +47,7 @@ func (s *service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	}()
 
 	tr.LazyPrintf("fetch")
-	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID, paths)
+	parseRequests, errChan, err := fetchRepositoryArchive(ctx, gitserverClient, fetchSem, repo, commitID, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
 		return err
@@ -80,7 +80,7 @@ func (s *service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 				wg.Done()
 				<-sem
 			}()
-			entries, parseErr := s.parse(ctx, req)
+			entries, parseErr := parse(ctx, parserPool, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
 				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
@@ -108,9 +108,9 @@ func (s *service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.
-func (s *service) parse(ctx context.Context, req parseRequest) (entries []*ctags.Entry, err error) {
+func parse(ctx context.Context, parserPool ParserPool, req parseRequest) (entries []*ctags.Entry, err error) {
 	parseQueueSize.Inc()
-	parser, err := s.parserPool.Get(ctx)
+	parser, err := parserPool.Get(ctx)
 	parseQueueSize.Dec()
 
 	if err != nil {
@@ -127,14 +127,14 @@ func (s *service) parse(ctx context.Context, req parseRequest) (entries []*ctags
 			}
 		}
 		if err == nil {
-			s.parserPool.Done(parser)
+			parserPool.Done(parser)
 		} else {
 			// Close parser and return nil to pool, indicating that the next receiver should create a new
 			// parser.
 			log15.Error("Closing failed parser and creating a new one.", "path", req.path, "error", err)
 			parseFailed.Inc()
 			parser.Close()
-			s.parserPool.Done(nil)
+			parserPool.Done(nil)
 		}
 	}()
 

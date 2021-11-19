@@ -3,10 +3,8 @@ package symbols
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -41,33 +39,7 @@ func init() {
 		})
 }
 
-// maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
-const maxFileSize = 1 << 19 // 512KB
-
-func (s *service) handleSearch(w http.ResponseWriter, r *http.Request) {
-	var args protocol.SearchArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	result, err := s.search(r.Context(), args)
-	if err != nil {
-		if err == context.Canceled && r.Context().Err() == context.Canceled {
-			return // client went away
-		}
-		log15.Error("Symbol search failed", "args", args, "error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (s *service) search(ctx context.Context, args protocol.SearchArgs) (*result.Symbols, error) {
+func doSearch(ctx context.Context, gitserverClient GitserverClient, cache *diskcache.Store, parserPool ParserPool, fetchSem chan int, args protocol.SearchArgs) (*result.Symbols, error) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -95,7 +67,7 @@ func (s *service) search(ctx context.Context, args protocol.SearchArgs) (*result
 		tr.Finish()
 	}()
 
-	dbFile, err := s.getDBFile(ctx, args)
+	dbFile, err := getDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args)
 	if err != nil {
 		return nil, err
 	}
@@ -112,19 +84,25 @@ func (s *service) search(ctx context.Context, args protocol.SearchArgs) (*result
 	return &result, nil
 }
 
+// The version of the symbols database schema. This is included in the database
+// filenames to prevent a newer version of the symbols service from attempting
+// to read from a database created by an older (and likely incompatible) symbols
+// service. Increment this when you change the database schema.
+const symbolsDBVersion = 4
+
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func (s *service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		newest, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
+func getDBFile(ctx context.Context, gitserverClient GitserverClient, cache *diskcache.Store, parserPool ParserPool, fetchSem chan int, args protocol.SearchArgs) (string, error) {
+	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
+		newest, err := findNewestFile(filepath.Join(cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 		if err != nil {
 			return err
 		}
 
 		if newest == "" {
 			// There are no existing SQLite DBs to reuse, so write a completely new one.
-			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+			err := writeAllSymbolsToNewDB(fetcherCtx, gitserverClient, parserPool, fetchSem, tempDBFile, args.Repo, args.CommitID)
 			if err != nil {
 				if err == context.Canceled {
 					log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
@@ -138,7 +116,7 @@ func (s *service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 				return err
 			}
 
-			err = s.updateSymbols(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+			err = updateSymbols(fetcherCtx, gitserverClient, parserPool, fetchSem, tempDBFile, args.Repo, args.CommitID)
 			if err != nil {
 				if err == context.Canceled {
 					log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
@@ -253,12 +231,6 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 	return res, nil
 }
 
-// The version of the symbols database schema. This is included in the database
-// filenames to prevent a newer version of the symbols service from attempting
-// to read from a database created by an older (and likely incompatible) symbols
-// service. Increment this when you change the database schema.
-const symbolsDBVersion = 4
-
 // symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
 // namelowercase and pathlowercase, which enable indexed case insensitive
 // queries.
@@ -315,7 +287,7 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
 
 // writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
-func (s *service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func writeAllSymbolsToNewDB(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -399,7 +371,7 @@ func (s *service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	return s.parseUncached(ctx, repoName, commitID, []string{}, func(symbol result.Symbol) error {
+	return parseUncached(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, []string{}, func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
@@ -408,7 +380,7 @@ func (s *service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 
 // updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
 // DB and the given commitID.
-func (s *service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -442,7 +414,7 @@ func (s *service) updateSymbols(ctx context.Context, dbFile string, repoName api
 	}
 
 	// git diff
-	changes, err := s.gitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
+	changes, err := gitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
 	if err != nil {
 		return err
 	}
@@ -462,7 +434,7 @@ func (s *service) updateSymbols(ctx context.Context, dbFile string, repoName api
 		return err
 	}
 
-	return s.parseUncached(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
+	return parseUncached(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err

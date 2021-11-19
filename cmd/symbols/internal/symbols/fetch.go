@@ -15,14 +15,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
+// maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
+const maxFileSize = 1 << 19 // 512KB
+
 type parseRequest struct {
 	path string
 	data []byte
 }
 
-func (s *service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (<-chan parseRequest, <-chan error, error) {
+func fetchRepositoryArchive(ctx context.Context, gitserverClient GitserverClient, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string) (<-chan parseRequest, <-chan error, error) {
 	fetchQueueSize.Inc()
-	s.fetchSem <- 1 // acquire concurrent fetches semaphore
+	fetchSem <- 1 // acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()
 
 	fetching.Inc()
@@ -47,7 +50,7 @@ func (s *service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 			errCh <- err
 		}
 
-		<-s.fetchSem // release concurrent fetches semaphore
+		<-fetchSem // release concurrent fetches semaphore
 		close(requestCh)
 		close(errCh)
 
@@ -60,7 +63,7 @@ func (s *service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 		span.Finish()
 	}
 
-	r, err := s.gitserverClient.FetchTar(ctx, repo, commitID, paths)
+	r, err := gitserverClient.FetchTar(ctx, repo, commitID, paths)
 	if err != nil {
 		return nil, nil, err
 	}
