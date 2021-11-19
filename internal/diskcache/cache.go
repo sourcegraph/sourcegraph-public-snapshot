@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -190,7 +189,6 @@ func doFetch(ctx context.Context, path string, fetcher FetcherWithPath) (file *F
 	// partially written file. We ensure the file is writeable and truncate
 	// it.
 	tmpPath := path + ".part"
-	fmt.Println("tmpPath => ", tmpPath)
 
 	f, err = os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {

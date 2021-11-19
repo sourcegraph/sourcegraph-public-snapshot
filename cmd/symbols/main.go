@@ -106,8 +106,6 @@ func main() {
 				}
 			}
 
-			fmt.Println("Changes A M D", len(changes.Added), len(changes.Modified), len(changes.Deleted))
-
 			return &changes, nil
 		},
 		NewParser: symbols.NewParser,
