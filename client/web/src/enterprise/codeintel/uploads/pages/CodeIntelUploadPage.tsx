@@ -29,11 +29,9 @@ import { CodeIntelUploadTimeline } from '../components/CodeIntelUploadTimeline'
 import { DependencyOrDependentNode } from '../components/DependencyOrDependentNode'
 import { EmptyDependencies } from '../components/EmptyDependencies'
 import { EmptyDependents } from '../components/EmptyDependents'
-import {
-    useDeleteLsifUpload,
-    queryLisfUploadFields as defaultQueryLisfUploadFields,
-    queryLsifUploadsList as defaultQueryLsifUploadsList,
-} from '../hooks/useLsifUpload'
+import { queryLisfUploadFields as defaultQueryLisfUploadFields } from '../hooks/queryLisfUploadFields'
+import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/queryLsifUploadsList'
+import { useDeleteLsifUpload } from '../hooks/useDeleteLsifUpload'
 
 import styles from './CodeIntelUploadPage.module.scss'
 

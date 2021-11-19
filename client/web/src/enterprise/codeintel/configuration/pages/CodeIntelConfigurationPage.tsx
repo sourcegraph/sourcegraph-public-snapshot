@@ -26,7 +26,7 @@ import { FlashMessage } from '../components/FlashMessage'
 import { IndexingPolicyDescription } from '../components/IndexingPolicyDescription'
 import { PolicyListActions } from '../components/PolicyListActions'
 import { RetentionPolicyDescription } from '../components/RetentionPolicyDescription'
-import { queryPolicies as defaultQueryPolicies } from '../hooks/usePolicies'
+import { queryPolicies as defaultQueryPolicies } from '../hooks/queryPolicies'
 
 import styles from './CodeIntelConfigurationPage.module.scss'
 

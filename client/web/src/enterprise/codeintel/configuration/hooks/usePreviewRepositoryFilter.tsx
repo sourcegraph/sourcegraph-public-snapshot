@@ -10,14 +10,14 @@ interface SearchRepositoriesResult {
     previewError: ApolloError | undefined
 }
 
-export interface RepositoryPreviewResult {
+interface RepositoryPreviewResult {
     repositoryNames: string[]
     totalCount: number
     totalMatches: number
     limit: number | null
 }
 
-export const PREVIEW_REPOSITORY_FILTER = gql`
+const PREVIEW_REPOSITORY_FILTER = gql`
     query PreviewRepositoryFilter($patterns: [String!]!) {
         previewRepositoryFilter(patterns: $patterns) {
             nodes {

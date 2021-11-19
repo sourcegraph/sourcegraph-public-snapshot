@@ -6,7 +6,7 @@ import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../../graphql-operations'
-import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/useSearchGit'
+import { GitObjectPreviewResult, usePreviewGitObjectFilter } from '../hooks/usePreviewGitObjectFilter'
 
 import styles from './GitObjectPreview.module.scss'
 

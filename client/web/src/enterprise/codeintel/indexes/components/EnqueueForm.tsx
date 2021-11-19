@@ -4,7 +4,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { useEnqueueIndexJob } from '../hooks/useLsifIndexList'
+import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
 export interface EnqueueFormProps {
     repoId: string

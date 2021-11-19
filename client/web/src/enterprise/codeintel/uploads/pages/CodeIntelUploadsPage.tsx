@@ -16,14 +16,12 @@ import {
 import { PageTitle } from '../../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
-import { queryCommitGraphMetadata as defaultQueryCommitGraphMetadata } from '../../indexes/hooks/useLsifIndexList'
+import { queryCommitGraphMetadata as defaultQueryCommitGraphMetadata } from '../../indexes/hooks/queryCommitGraphMetadata'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from '../components/CodeIntelUploadNode'
 import { CommitGraphMetadata } from '../components/CommitGraphMetadata'
 import { EmptyUploads } from '../components/EmptyUploads'
-import {
-    queryLsifUploadsByRepository as defaultQueryLsifUploadsByRepository,
-    queryLsifUploadsList as defaultQueryLsifUploadsList,
-} from '../hooks/useLsifUpload'
+import { queryLsifUploadsByRepository as defaultQueryLsifUploadsByRepository } from '../hooks/queryLsifUploadsByRepository'
+import { queryLsifUploadsList as defaultQueryLsifUploadsList } from '../hooks/queryLsifUploadsList'
 
 import styles from './CodeIntelUploadsPage.module.scss'
 
