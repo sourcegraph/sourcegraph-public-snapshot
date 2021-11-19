@@ -210,7 +210,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// fails in order to avoid e.g. failed saved queries from executing
 	// constantly and potentially causing harm to the system. We'll retry at
 	// our normal interval, regardless of errors.
-	v, execDuration, searchErr := performSearch(ctx, newQuery, query.UserID)
+	v, execDuration, searchErr := performSearch(ctx, newQuery)
 	if err := api.InternalClient.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
 		Query:        query.Query,
 		LastExecuted: time.Now(),
@@ -235,12 +235,12 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	return nil
 }
 
-func performSearch(ctx context.Context, query string, userID int32) (v *gqlSearchResponse, execDuration time.Duration, err error) {
+func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, execDuration time.Duration, err error) {
 	attempts := 0
 	for {
 		// Query for search results.
 		start := time.Now()
-		v, err := search(ctx, query, userID)
+		v, err := search(ctx, query)
 		execDuration := time.Since(start)
 		if err != nil {
 			return nil, execDuration, errors.Wrap(err, "search")

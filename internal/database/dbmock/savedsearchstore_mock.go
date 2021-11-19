@@ -35,6 +35,9 @@ type MockSavedSearchStore struct {
 	// ListAllFunc is an instance of a mock function object controlling the
 	// behavior of the method ListAll.
 	ListAllFunc *SavedSearchStoreListAllFunc
+	// ListSavedSearchesByOrgIDFunc is an instance of a mock function object
+	// controlling the behavior of the method ListSavedSearchesByOrgID.
+	ListSavedSearchesByOrgIDFunc *SavedSearchStoreListSavedSearchesByOrgIDFunc
 	// ListSavedSearchesByUserIDFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// ListSavedSearchesByUserID.
@@ -85,6 +88,11 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 				return nil, nil
 			},
 		},
+		ListSavedSearchesByOrgIDFunc: &SavedSearchStoreListSavedSearchesByOrgIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.SavedSearch, error) {
+				return nil, nil
+			},
+		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: func(context.Context, int32) ([]*types.SavedSearch, error) {
 				return nil, nil
@@ -130,6 +138,9 @@ func NewMockSavedSearchStoreFrom(i database.SavedSearchStore) *MockSavedSearchSt
 		},
 		ListAllFunc: &SavedSearchStoreListAllFunc{
 			defaultHook: i.ListAll,
+		},
+		ListSavedSearchesByOrgIDFunc: &SavedSearchStoreListSavedSearchesByOrgIDFunc{
+			defaultHook: i.ListSavedSearchesByOrgID,
 		},
 		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
 			defaultHook: i.ListSavedSearchesByUserID,
@@ -779,6 +790,119 @@ func (c SavedSearchStoreListAllFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SavedSearchStoreListAllFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SavedSearchStoreListSavedSearchesByOrgIDFunc describes the behavior when
+// the ListSavedSearchesByOrgID method of the parent MockSavedSearchStore
+// instance is invoked.
+type SavedSearchStoreListSavedSearchesByOrgIDFunc struct {
+	defaultHook func(context.Context, int32) ([]*types.SavedSearch, error)
+	hooks       []func(context.Context, int32) ([]*types.SavedSearch, error)
+	history     []SavedSearchStoreListSavedSearchesByOrgIDFuncCall
+	mutex       sync.Mutex
+}
+
+// ListSavedSearchesByOrgID delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockSavedSearchStore) ListSavedSearchesByOrgID(v0 context.Context, v1 int32) ([]*types.SavedSearch, error) {
+	r0, r1 := m.ListSavedSearchesByOrgIDFunc.nextHook()(v0, v1)
+	m.ListSavedSearchesByOrgIDFunc.appendCall(SavedSearchStoreListSavedSearchesByOrgIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListSavedSearchesByOrgID method of the parent MockSavedSearchStore
+// instance is invoked and the hook queue is empty.
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) SetDefaultHook(hook func(context.Context, int32) ([]*types.SavedSearch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListSavedSearchesByOrgID method of the parent MockSavedSearchStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) PushHook(hook func(context.Context, int32) ([]*types.SavedSearch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) SetDefaultReturn(r0 []*types.SavedSearch, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) ([]*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) PushReturn(r0 []*types.SavedSearch, r1 error) {
+	f.PushHook(func(context.Context, int32) ([]*types.SavedSearch, error) {
+		return r0, r1
+	})
+}
+
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) nextHook() func(context.Context, int32) ([]*types.SavedSearch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) appendCall(r0 SavedSearchStoreListSavedSearchesByOrgIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SavedSearchStoreListSavedSearchesByOrgIDFuncCall objects describing the
+// invocations of this function.
+func (f *SavedSearchStoreListSavedSearchesByOrgIDFunc) History() []SavedSearchStoreListSavedSearchesByOrgIDFuncCall {
+	f.mutex.Lock()
+	history := make([]SavedSearchStoreListSavedSearchesByOrgIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SavedSearchStoreListSavedSearchesByOrgIDFuncCall is an object that
+// describes an invocation of method ListSavedSearchesByOrgID on an instance
+// of MockSavedSearchStore.
+type SavedSearchStoreListSavedSearchesByOrgIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.SavedSearch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SavedSearchStoreListSavedSearchesByOrgIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SavedSearchStoreListSavedSearchesByOrgIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
