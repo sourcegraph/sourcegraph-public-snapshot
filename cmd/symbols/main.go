@@ -50,10 +50,6 @@ func main() {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
 
-	oldMain(config)
-}
-
-func oldMain(config *Config) {
 	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
 		if err := symbols.SanityCheck(); err != nil {
