@@ -37,3 +37,18 @@ export const lsifUploadFieldsFragment = gql`
         }
     }
 `
+
+export const lsifUploadConnectionFieldsFragment = gql`
+    fragment LsifUploadConnectionFields on LSIFUploadConnection {
+        nodes {
+            ...LsifUploadFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+
+    ${lsifUploadFieldsFragment}
+`

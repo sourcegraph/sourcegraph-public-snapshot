@@ -17,7 +17,7 @@ import { FlashMessage } from '../components/FlashMessage'
 import { IndexingSettings } from '../components/IndexSettings'
 import { RetentionSettings } from '../components/RetentionSettings'
 import { useDeletePolicies } from '../hooks/useDeletePolicies'
-import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationByID'
+import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationById'
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
 
 export interface CodeIntelConfigurationPolicyPageProps

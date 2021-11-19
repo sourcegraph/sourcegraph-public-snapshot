@@ -13,7 +13,7 @@ import {
     LsifUploadsVariables,
 } from '../../../../graphql-operations'
 
-import { lsifUploadFieldsFragment } from './types'
+import { lsifUploadConnectionFieldsFragment } from './types'
 
 const LSIF_UPLOAD_LIST_BY_REPO_ID = gql`
     query LsifUploadsForRepo(
@@ -38,20 +38,13 @@ const LSIF_UPLOAD_LIST_BY_REPO_ID = gql`
                     first: $first
                     after: $after
                 ) {
-                    nodes {
-                        ...LsifUploadFields
-                    }
-                    totalCount
-                    pageInfo {
-                        endCursor
-                        hasNextPage
-                    }
+                    ...LsifUploadConnectionFields
                 }
             }
         }
     }
 
-    ${lsifUploadFieldsFragment}
+    ${lsifUploadConnectionFieldsFragment}
 `
 
 export interface UploadListVariables {

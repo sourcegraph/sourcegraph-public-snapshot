@@ -7,9 +7,9 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import {
     LSIFUploadState,
-    LsifUploadConnectionFields,
     LsifUploadsVariables,
     LsifUploadsResult,
+    LsifUploadConnectionFields,
 } from '../../../../graphql-operations'
 
 import { lsifUploadFieldsFragment } from './types'
