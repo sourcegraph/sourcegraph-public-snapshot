@@ -1,4 +1,4 @@
-package symbols
+package types
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/api"

@@ -1,4 +1,4 @@
-package symbols
+package search
 
 import (
 	"context"
@@ -17,12 +17,15 @@ import (
 	nettrace "golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func doSearch(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args SearchArgs) (*result.Symbols, error) {
+func Search(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs,
+	writeDBFile func(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error,
+) (*result.Symbols, error) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
@@ -50,7 +53,7 @@ func doSearch(ctx context.Context, gitserverClient parser.GitserverClient, cache
 		tr.Finish()
 	}()
 
-	dbFile, err := getDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args)
+	dbFile, err := getDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args, writeDBFile)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +79,9 @@ const symbolsDBVersion = 4
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args SearchArgs) (string, error) {
+func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs,
+	writeDBFile func(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error,
+) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
 		return writeDBFile(ctx, gitserverClient, cache, parserPool, fetchSem, args, fetcherCtx, tempDBFile)
 	})
@@ -88,7 +93,7 @@ func getDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cach
 	return diskcacheFile.File.Name(), err
 }
 
-func filterSymbols(ctx context.Context, db *sqlx.DB, args SearchArgs) (res []result.Symbol, err error) {
+func filterSymbols(ctx context.Context, db *sqlx.DB, args types.SearchArgs) (res []result.Symbol, err error) {
 	span, _ := ot.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
 		if err != nil {
@@ -152,14 +157,14 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args SearchArgs) (res []res
 		sqlQuery = sqlf.Sprintf("SELECT * FROM symbols WHERE %s LIMIT %s", sqlf.Join(conditions, "AND"), args.First)
 	}
 
-	var symbolsInDB []symbolInDB
+	var symbolsInDB []types.SymbolInDB
 	err = db.Select(&symbolsInDB, sqlQuery.Query(sqlf.PostgresBindVar), sqlQuery.Args()...)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, symbolInDB := range symbolsInDB {
-		res = append(res, symbolInDBToSymbol(symbolInDB))
+		res = append(res, types.SymbolInDBToSymbol(symbolInDB))
 	}
 
 	span.SetTag("hits", len(res))

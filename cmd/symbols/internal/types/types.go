@@ -1,4 +1,4 @@
-package symbols
+package types
 
 import (
 	"strings"
@@ -6,10 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-// symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
+// SymbolInDB is the same as `protocol.Symbol`, but with two additional columns:
 // namelowercase and pathlowercase, which enable indexed case insensitive
 // queries.
-type symbolInDB struct {
+type SymbolInDB struct {
 	Name          string
 	NameLowercase string // derived from `Name`
 	Path          string
@@ -26,8 +26,8 @@ type symbolInDB struct {
 	FileLimited bool
 }
 
-func symbolToSymbolInDB(symbol result.Symbol) symbolInDB {
-	return symbolInDB{
+func SymbolToSymbolInDB(symbol result.Symbol) SymbolInDB {
+	return SymbolInDB{
 		Name:          symbol.Name,
 		NameLowercase: strings.ToLower(symbol.Name),
 		Path:          symbol.Path,
@@ -44,7 +44,7 @@ func symbolToSymbolInDB(symbol result.Symbol) symbolInDB {
 	}
 }
 
-func symbolInDBToSymbol(symbolInDB symbolInDB) result.Symbol {
+func SymbolInDBToSymbol(symbolInDB SymbolInDB) result.Symbol {
 	return result.Symbol{
 		Name:       symbolInDB.Name,
 		Path:       symbolInDB.Path,

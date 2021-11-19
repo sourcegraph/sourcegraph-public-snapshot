@@ -10,6 +10,9 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
@@ -40,13 +43,13 @@ func NewHandler(
 }
 
 func (h *symbolsHandler) handleSearch(w http.ResponseWriter, r *http.Request) {
-	var args SearchArgs
+	var args types.SearchArgs
 	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	result, err := doSearch(r.Context(), h.gitserverClient, h.cache, h.parserPool, h.fetchSem, args)
+	result, err := search.Search(r.Context(), h.gitserverClient, h.cache, h.parserPool, h.fetchSem, args, sqlite.WriteDBFile)
 	if err != nil {
 		if err == context.Canceled && r.Context().Err() == context.Canceled {
 			return // client went away

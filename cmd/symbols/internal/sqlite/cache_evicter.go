@@ -1,4 +1,4 @@
-package symbols
+package sqlite
 
 import (
 	"context"

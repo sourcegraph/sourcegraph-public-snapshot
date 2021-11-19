@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -54,7 +55,7 @@ func main() {
 
 	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
-		if err := symbols.SanityCheck(); err != nil {
+		if err := sqlite.SanityCheck(); err != nil {
 			fmt.Println("failed ❌", err)
 			os.Exit(1)
 		}
@@ -86,7 +87,7 @@ func main() {
 
 	evictionDuration := time.Second * 10
 	cacheSizeBytes := int64(config.cacheSizeMB) * 1000 * 1000
-	cacheEvicter := symbols.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes)
+	cacheEvicter := sqlite.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes)
 
 	// Mark health server as ready and go!
 	close(ready)
