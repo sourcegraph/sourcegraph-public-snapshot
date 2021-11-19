@@ -19,10 +19,8 @@ import { FlashMessage } from '../../configuration/components/FlashMessage'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from '../components/CodeIntelIndexNode'
 import { EmptyAutoIndex } from '../components/EmptyAutoIndex'
 import { EnqueueForm } from '../components/EnqueueForm'
-import {
-    queryLsifIndexListByRepository as defaultQueryLsifIndexListByRepository,
-    queryLsifIndexList as defaultQueryLsifIndexList,
-} from '../hooks/useLsifIndexList'
+import { queryLsifIndexList as defaultQueryLsifIndexList } from '../hooks/queryLsifIndexList'
+import { queryLsifIndexListByRepository as defaultQueryLsifIndexListByRepository } from '../hooks/queryLsifIndexListByRepository'
 
 import styles from './CodeIntelIndexesPage.module.scss'
 

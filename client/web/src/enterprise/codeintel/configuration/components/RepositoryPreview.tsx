@@ -4,7 +4,7 @@ import React, { FunctionComponent } from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
-import { usePreviewRepositoryFilter } from '../hooks/useSearchRepositories'
+import { usePreviewRepositoryFilter } from '../hooks/usePreviewRepositoryFilter'
 
 import styles from './RepositoryPreview.module.scss'
 

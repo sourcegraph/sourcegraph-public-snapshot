@@ -38,6 +38,7 @@ export const lsifIndexFieldsFragment = gql`
             placeInQueue
         }
     }
+
     fragment LsifIndexStepsFields on IndexSteps {
         setup {
             ...ExecutionLogEntryFields
@@ -64,6 +65,7 @@ export const lsifIndexFieldsFragment = gql`
             ...ExecutionLogEntryFields
         }
     }
+
     fragment ExecutionLogEntryFields on ExecutionLogEntry {
         key
         command

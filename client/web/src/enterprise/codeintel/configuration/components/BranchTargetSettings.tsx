@@ -3,7 +3,7 @@ import React, { FunctionComponent } from 'react'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
-import { nullPolicy } from '../hooks/usePolicies'
+import { nullPolicy } from '../hooks/types'
 
 import { GitTypeSelector } from './GitTypeSelector'
 import { ObjectsMatchingGitPattern } from './ObjectsMatchingGitPattern'

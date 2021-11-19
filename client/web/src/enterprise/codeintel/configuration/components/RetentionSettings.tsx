@@ -3,7 +3,7 @@ import React, { FunctionComponent } from 'react'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../../graphql-operations'
-import { nullPolicy } from '../hooks/usePolicies'
+import { nullPolicy } from '../hooks/types'
 
 import { DurationSelect } from './DurationSelect'
 

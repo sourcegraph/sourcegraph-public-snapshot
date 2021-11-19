@@ -16,7 +16,9 @@ import { BranchTargetSettings } from '../components/BranchTargetSettings'
 import { FlashMessage } from '../components/FlashMessage'
 import { IndexingSettings } from '../components/IndexSettings'
 import { RetentionSettings } from '../components/RetentionSettings'
-import { useDeletePolicies, usePolicyConfigurationByID, useSavePolicyConfiguration } from '../hooks/usePolicies'
+import { useDeletePolicies } from '../hooks/useDeletePolicies'
+import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationById'
+import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
 
 export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,

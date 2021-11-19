@@ -10,7 +10,7 @@ interface SearchRepositoriesResult {
     previewError: ApolloError | undefined
 }
 
-export interface RepositoryPreviewResult {
+interface RepositoryPreviewResult {
     repositoryNames: string[]
     totalCount: number
     totalMatches: number

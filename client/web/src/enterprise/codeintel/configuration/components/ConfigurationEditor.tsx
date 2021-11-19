@@ -10,7 +10,9 @@ import { SaveToolbarProps, SaveToolbarPropsGenerator } from '@sourcegraph/web/sr
 
 import { AuthenticatedUser } from '../../../../auth'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { useInferredConfig, useRepositoryConfig, useUpdateConfigurationForRepository } from '../hooks/usePolicies'
+import { useInferredConfig } from '../hooks/useInferredConfig'
+import { useRepositoryConfig } from '../hooks/useRepositoryConfig'
+import { useUpdateConfigurationForRepository } from '../hooks/useUpdateConfigurationForRepository'
 import allConfigSchema from '../schema.json'
 
 import { IndexConfigurationSaveToolbar, IndexConfigurationSaveToolbarProps } from './IndexConfigurationSaveToolbar'

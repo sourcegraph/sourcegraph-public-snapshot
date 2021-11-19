@@ -12,7 +12,9 @@ import {
     IndexConfigurationResult,
     InferredIndexConfigurationResult,
 } from '../../../../graphql-operations'
-import { POLICIES_CONFIGURATION, REPOSITORY_CONFIGURATION, INFERRED_CONFIGURATION } from '../hooks/usePolicies'
+import { POLICIES_CONFIGURATION } from '../hooks/queryPolicies'
+import { INFERRED_CONFIGURATION } from '../hooks/useInferredConfig'
+import { REPOSITORY_CONFIGURATION } from '../hooks/useRepositoryConfig'
 
 import { CodeIntelConfigurationPage, CodeIntelConfigurationPageProps } from './CodeIntelConfigurationPage'
 

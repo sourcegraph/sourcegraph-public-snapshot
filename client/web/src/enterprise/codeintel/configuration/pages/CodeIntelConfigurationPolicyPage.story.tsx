@@ -7,9 +7,9 @@ import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
-import { POLICY_CONFIGURATION_BY_ID } from '../hooks/usePolicies'
-import { PREVIEW_GIT_OBJECT_FILTER } from '../hooks/useSearchGit'
-import { PREVIEW_REPOSITORY_FILTER } from '../hooks/useSearchRepositories'
+import { POLICY_CONFIGURATION_BY_ID } from '../hooks/usePolicyConfigurationById'
+import { PREVIEW_GIT_OBJECT_FILTER } from '../hooks/usePreviewGitObjectFilter'
+import { PREVIEW_REPOSITORY_FILTER } from '../hooks/usePreviewRepositoryFilter'
 
 import {
     CodeIntelConfigurationPolicyPage,

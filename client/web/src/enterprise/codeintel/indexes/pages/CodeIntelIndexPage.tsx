@@ -19,7 +19,8 @@ import { CodeIntelAssociatedUpload } from '../components/CodeIntelAssociatedUplo
 import { CodeIntelDeleteIndex } from '../components/CodeIntelDeleteIndex'
 import { CodeIntelIndexMeta } from '../components/CodeIntelIndexMeta'
 import { CodeIntelIndexTimeline } from '../components/CodeIntelIndexTimeline'
-import { queryLisfIndex as defaultQueryLsifIndex, useDeleteLsifIndex } from '../hooks/useLsifIndex'
+import { queryLisfIndex as defaultQueryLsifIndex } from '../hooks/queryLisfIndex'
+import { useDeleteLsifIndex } from '../hooks/useDeleteLsifIndex'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
