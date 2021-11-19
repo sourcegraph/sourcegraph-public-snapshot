@@ -75,7 +75,7 @@ const realCommitSearch = `
             "commit": {
               "repository": {
                 "id": "UmVwb3NpdG9yeToxODM3Ng==",
-                "name": "ghe.sgdev.org/sourcegraph/Ocramius-PackageVersions"
+                "name": "codehost.org/sourcegraph/somerepo"
               }
             }
           },
@@ -93,7 +93,7 @@ const realCommitSearch = `
             "commit": {
               "repository": {
                 "id": "UmVwb3NpdG9yeToxODM3Ng==",
-                "name": "ghe.sgdev.org/sourcegraph/Ocramius-PackageVersions"
+                "name": "codehost.org/sourcegraph/somerepo"
               }
             }
           }
