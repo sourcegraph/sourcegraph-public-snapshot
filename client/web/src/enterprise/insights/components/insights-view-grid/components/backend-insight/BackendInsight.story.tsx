@@ -7,15 +7,14 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../../../views/mocks/charts-content'
-
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
+import { InsightStillProcessingError } from '../../../../core/backend/utils/errors'
 import { InsightExecutionType, InsightType } from '../../../../core/types'
 import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { BackendInsight } from './BackendInsight'
-import { InsightStillProcessingError } from '../../../../core/backend/utils/errors'
 
 const { add } = storiesOf('web/insights/BackendInsight', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>
