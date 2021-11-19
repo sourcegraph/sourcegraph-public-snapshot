@@ -8,7 +8,7 @@ import (
 	"time"
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // MockCommitStore is a mock implementation of the CommitStore interface
