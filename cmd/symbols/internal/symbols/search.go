@@ -469,7 +469,7 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 		}
 	}
 
-	return s.parseUncached(ctx, repoName, commitID, paths, func(symbol result.Symbol) error {
+	return s.parseUncached(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
