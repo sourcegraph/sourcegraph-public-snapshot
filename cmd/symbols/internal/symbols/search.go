@@ -127,10 +127,17 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 			return err
 		}
 
-		// Avoid sending more files than the server can handle
-		diffTooBig := len(changes.Added)+len(changes.Modified)+len(changes.Deleted) > MAX_FILES_CHANGED
+		// Avoid sending more files than will fit in HTTP headers.
+		totalPathsLength := 0
+		paths := []string{}
+		paths = append(paths, changes.Added...)
+		paths = append(paths, changes.Modified...)
+		paths = append(paths, changes.Deleted...)
+		for _, path := range paths {
+			totalPathsLength += len(path)
+		}
 
-		if newest == "" || diffTooBig {
+		if newest == "" || totalPathsLength > MAX_TOTAL_PATHS_LENGTH {
 			// There are no existing SQLite DBs to reuse, so write a completely new one.
 			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
 			if err != nil {
@@ -571,7 +578,9 @@ func NewChanges() Changes {
 	}
 }
 
-// The maximum number of files changed in a diff when doing incremental indexing. Diffs bigger than this
+// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
 // will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
-// could hit HTTP 431 (header fields too large) when sending the list of files `git archive files...`.
-const MAX_FILES_CHANGED = 10000
+// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
+// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that. 100KB seems
+// safe.
+const MAX_TOTAL_PATHS_LENGTH = 100000
