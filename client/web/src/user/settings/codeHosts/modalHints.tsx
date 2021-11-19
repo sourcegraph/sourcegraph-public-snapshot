@@ -36,7 +36,7 @@ export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> =
 }
 
 export const getMachineUserFragment = (serviceName: string): React.ReactFragment => (
-    <div className="p-2 bg-light border border-2 rounded">
+    <div className={styles.alertBodyBg + ' p-2 border border-2 rounded'}>
         <div className="px-2 py-1">
             <h4>
                 We recommend setting up a machine user on {serviceName} to provide restricted access to repositories.{' '}
