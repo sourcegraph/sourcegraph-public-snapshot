@@ -65,6 +65,11 @@ file:package.json type:diff after:"1 week ago" select:repo
 repo:^github\.com/sourcegraph/sourcegraph$ type:diff file:contains.content("golang\.org/x/sync/errgroup") .Go
 ```
 
+[Find private keys and GitHub access tokens checked in to code](https://sourcegraph.com/search?q=context:global+%28-----BEGIN+PRIVATE+KEY------%29%7C%28%5C%22gh%5Bpousr%5D_%5BA-Za-z0-9_%5D%7B16%2C%7D%29%7C%28%5C%27gh%5Bpousr%5D_%5BA-Za-z0-9_%5D%7B16%2C%7D%29&patternType=regexp&case=yes)
+```sgquery
+(-----BEGIN PRIVATE KEY------)|(\"gh[pousr]_[A-Za-z0-9_]{16,})|(\'gh[pousr]_[A-Za-z0-9_]{16,}) patternType:regexp case:yes
+```
+
 ## When to use regex search mode
 
 Sourcegraph's default literal search mode is line-based and will not match across lines, so regex can be useful when you wish to do so:
@@ -81,7 +86,6 @@ Regex searches are also useful when searching boundaries that are not delimited 
 ```sgquery
 repo:^github\.com/sourcegraph/sourcegraph$ \bbtn-secondary\b
 ```
-
 
 ## When to use structural search mode
 
