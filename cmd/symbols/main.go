@@ -79,21 +79,27 @@ func main() {
 				return nil, err
 			}
 
+			// The output is a a repeated sequence of:
+			//
+			//     <status> NUL <path> NUL
+			//
+			// where NUL is the 0 byte.
+			//
+			// Example:
+			//
+			//     M NUL cmd/symbols/internal/symbols/fetch.go NUL
+
 			changes := symbols.NewChanges()
-			// output is a sequence of: M NUL cmd/symbols/internal/symbols/fetch.go NUL
 			slices := bytes.Split(output, []byte{0})
 			for i := 0; i < len(slices)-1; i += 2 {
 				statusIdx := i
 				fileIdx := i + 1
 
 				if len(slices[statusIdx]) == 0 {
-					continue
+					return nil, fmt.Errorf("unrecognized git diff output (from repo %q, commitA %q, commitB %q): status was empty at index %d", repo, commitA, commitB, i)
 				}
-				status := slices[statusIdx][0]
 
-				if len(slices[fileIdx]) == 0 {
-					continue
-				}
+				status := slices[statusIdx][0]
 				path := string(slices[fileIdx])
 
 				switch status {
