@@ -1,5 +1,6 @@
 import { ApolloError } from '@apollo/client'
 import * as H from 'history'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
@@ -13,9 +14,10 @@ import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wild
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 
 import { BranchTargetSettings } from './BranchTargetSettings'
+import { FlashMessage } from './FlashMessage'
 import { IndexingSettings } from './IndexSettings'
 import { RetentionSettings } from './RetentionSettings'
-import { usePolicyConfigurationByID, useSavePolicyConfiguration } from './usePoliciesConfigurations'
+import { useDeletePolicies, usePolicyConfigurationByID, useSavePolicyConfiguration } from './usePolicies'
 
 export interface CodeIntelConfigurationPolicyPageProps
     extends RouteComponentProps<{ id: string }>,
@@ -42,6 +44,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     const [policy, setPolicy] = useState<CodeIntelligenceConfigurationPolicyFields | undefined>()
 
     const { savePolicyConfiguration, isSaving, savingError } = useSavePolicyConfiguration(policy?.id === '')
+    const { handleDeleteConfig, isDeleting, deleteError } = useDeletePolicies()
 
     useEffect(() => {
         setPolicy(policyConfig)
@@ -65,7 +68,6 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )
             .catch((error: ApolloError) =>
                 history.push({
-                    pathname: './',
                     state: {
                         modal: 'ERROR',
                         message: `There was an error while saving policy: ${policy.name}. See error: ${error.message}`,
@@ -73,6 +75,25 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 })
             )
     }, [policy, repo, savePolicyConfiguration, history])
+
+    const handleDelete = useCallback(
+        async (id: string, name: string) => {
+            if (!policy || !window.confirm(`Delete policy ${name}?`)) {
+                return
+            }
+
+            return handleDeleteConfig({
+                variables: { id },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            }).then(() =>
+                history.push({
+                    pathname: './',
+                    state: { modal: 'SUCCESS', message: `Configuration policy ${name} has been deleted.` },
+                })
+            )
+        },
+        [policy, handleDeleteConfig, history]
+    )
 
     if (loadingPolicyConfig) {
         return <LoadingSpinner className="icon-inline" />
@@ -98,15 +119,46 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 className="mb-3"
             />
 
-            {policy.protected && (
+            {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
+            {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
+
+            {history.location.state && (
+                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
+            )}
+
+            {policy.protected ? (
                 <div className="alert alert-info">
                     This configuration policy is protected. Protected configuration policies may not be deleted and only
                     the retention duration and indexing options are editable.
                 </div>
+            ) : (
+                policy.id !== '' && (
+                    <Container className="mb-3">
+                        <Button
+                            type="button"
+                            variant="danger"
+                            disabled={isSaving || isDeleting}
+                            onClick={() => handleDelete(policy.id, policy.name)}
+                            data-tooltip={`Deleting this policy may immediate affect data retention${
+                                indexingEnabled ? ' and auto-indexing' : ''
+                            }.`}
+                        >
+                            {!isDeleting && (
+                                <>
+                                    <DeleteIcon className="icon-inline" /> Delete policy
+                                </>
+                            )}
+                            {isDeleting && (
+                                <>
+                                    <LoadingSpinner className="icon-inline" /> Deleting...
+                                </>
+                            )}
+                        </Button>
+                    </Container>
+                )
             )}
 
             <Container className="container form mb-3">
-                {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
                 <BranchTargetSettings
                     repoId={repo?.id}
                     policy={policy}
@@ -124,7 +176,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     type="submit"
                     variant="primary"
                     onClick={savePolicyConfig}
-                    disabled={isSaving || !validatePolicy(policy) || comparePolicies(policy, saved)}
+                    disabled={isSaving || isDeleting || !validatePolicy(policy) || comparePolicies(policy, saved)}
                 >
                     {!isSaving && <>{policy.id === '' ? 'Create' : 'Update'} policy</>}
                     {isSaving && (

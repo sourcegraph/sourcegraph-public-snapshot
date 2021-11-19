@@ -13,6 +13,7 @@ import { RouteDescriptor } from '../../../util/contributions'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeIntelConfigurationPageProps } from '../configuration/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/CodeIntelConfigurationPolicyPage'
+import { RepositoryIndexConfigurationProps } from '../configuration/RepositoryIndexConfiguration'
 import { CodeIntelIndexPageProps } from '../detail/CodeIntelIndexPage'
 import { CodeIntelUploadPageProps } from '../detail/CodeIntelUploadPage'
 import { CodeIntelIndexesPageProps } from '../list/CodeIntelIndexesPage'
@@ -49,6 +50,11 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
     () => import('../../codeintel/configuration/CodeIntelConfigurationPage'),
     'CodeIntelConfigurationPage'
 )
+
+const RepositoryIndexConfigurationPage = lazyComponent<
+    RepositoryIndexConfigurationProps,
+    'RepositoryIndexConfiguration'
+>(() => import('../../codeintel/configuration/RepositoryIndexConfiguration'), 'RepositoryIndexConfiguration')
 
 const CodeIntelConfigurationPolicyPage = lazyComponent<
     CodeIntelConfigurationPolicyPageProps,
@@ -87,6 +93,11 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         path: '/configuration',
         exact: true,
         render: props => <CodeIntelConfigurationPage {...props} />,
+    },
+    {
+        path: '/index-configuration',
+        exact: true,
+        render: props => <RepositoryIndexConfigurationPage {...props} />,
     },
     {
         path: '/configuration/:id',
@@ -131,7 +142,12 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             },
             {
                 to: '/configuration',
-                label: 'Configuration',
+                label: 'Configuration policies',
+            },
+            {
+                to: '/index-configuration',
+                label: 'Auto-index configuration',
+                condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
             },
         ],
     },

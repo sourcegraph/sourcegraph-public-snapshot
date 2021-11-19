@@ -14,7 +14,7 @@ import {
 } from '../../../graphql-operations'
 
 import { CodeIntelConfigurationPage, CodeIntelConfigurationPageProps } from './CodeIntelConfigurationPage'
-import { POLICIES_CONFIGURATION, REPOSITORY_CONFIGURATION, INFERRED_CONFIGURATION } from './usePoliciesConfigurations'
+import { POLICIES_CONFIGURATION, REPOSITORY_CONFIGURATION, INFERRED_CONFIGURATION } from './usePolicies'
 
 const trim = (value: string) => {
     const firstSignificantLine = value
@@ -39,40 +39,47 @@ const localMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesResu
     },
     result: {
         data: {
-            codeIntelligenceConfigurationPolicies: [
-                {
-                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-                    id: 'id1',
-                    name: 'All branches created by Eric',
-                    type: GitObjectType.GIT_TREE,
-                    pattern: 'ef/',
-                    protected: false,
-                    retentionEnabled: true,
-                    retentionDurationHours: 8064,
-                    retainIntermediateCommits: true,
-                    indexingEnabled: true,
-                    indexCommitMaxAgeHours: 40320,
-                    indexIntermediateCommits: true,
-                    repository: null,
-                    repositoryPatterns: [],
+            codeIntelligenceConfigurationPolicies: {
+                nodes: [
+                    {
+                        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                        id: 'id1',
+                        name: 'All branches created by Eric',
+                        type: GitObjectType.GIT_TREE,
+                        pattern: 'ef/',
+                        protected: false,
+                        retentionEnabled: true,
+                        retentionDurationHours: 8064,
+                        retainIntermediateCommits: true,
+                        indexingEnabled: true,
+                        indexCommitMaxAgeHours: 40320,
+                        indexIntermediateCommits: true,
+                        repository: null,
+                        repositoryPatterns: [],
+                    },
+                    {
+                        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                        id: 'id2',
+                        name: 'All branches created by Erik',
+                        type: GitObjectType.GIT_TREE,
+                        pattern: 'es/',
+                        protected: false,
+                        retentionEnabled: true,
+                        retentionDurationHours: 8064,
+                        retainIntermediateCommits: true,
+                        indexingEnabled: true,
+                        indexCommitMaxAgeHours: 40320,
+                        indexIntermediateCommits: true,
+                        repository: null,
+                        repositoryPatterns: [],
+                    },
+                ],
+                totalCount: 2,
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
                 },
-                {
-                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-                    id: 'id2',
-                    name: 'All branches created by Erik',
-                    type: GitObjectType.GIT_TREE,
-                    pattern: 'es/',
-                    protected: false,
-                    retentionEnabled: true,
-                    retentionDurationHours: 8064,
-                    retainIntermediateCommits: true,
-                    indexingEnabled: true,
-                    indexCommitMaxAgeHours: 40320,
-                    indexIntermediateCommits: true,
-                    repository: null,
-                    repositoryPatterns: [],
-                },
-            ],
+            },
         },
     },
 }
@@ -83,40 +90,47 @@ const globalMockRequest: MockedResponse<CodeIntelligenceConfigurationPoliciesRes
     },
     result: {
         data: {
-            codeIntelligenceConfigurationPolicies: [
-                {
-                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-                    id: 'g1',
-                    name: 'Default major release retention',
-                    type: GitObjectType.GIT_TAG,
-                    pattern: '.0.0',
-                    protected: true,
-                    retentionEnabled: true,
-                    retentionDurationHours: 168,
-                    retainIntermediateCommits: false,
-                    indexingEnabled: false,
-                    indexCommitMaxAgeHours: 672,
-                    indexIntermediateCommits: false,
-                    repository: null,
-                    repositoryPatterns: [],
+            codeIntelligenceConfigurationPolicies: {
+                nodes: [
+                    {
+                        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                        id: 'g1',
+                        name: 'Default major release retention',
+                        type: GitObjectType.GIT_TAG,
+                        pattern: '.0.0',
+                        protected: true,
+                        retentionEnabled: true,
+                        retentionDurationHours: 168,
+                        retainIntermediateCommits: false,
+                        indexingEnabled: false,
+                        indexCommitMaxAgeHours: 672,
+                        indexIntermediateCommits: false,
+                        repository: null,
+                        repositoryPatterns: [],
+                    },
+                    {
+                        __typename: 'CodeIntelligenceConfigurationPolicy' as const,
+                        id: 'g2',
+                        name: 'Default brach retention',
+                        type: GitObjectType.GIT_TREE,
+                        pattern: '',
+                        protected: false,
+                        retentionEnabled: true,
+                        retentionDurationHours: 2016,
+                        retainIntermediateCommits: false,
+                        indexingEnabled: false,
+                        indexCommitMaxAgeHours: 4032,
+                        indexIntermediateCommits: false,
+                        repository: null,
+                        repositoryPatterns: [],
+                    },
+                ],
+                totalCount: 2,
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
                 },
-                {
-                    __typename: 'CodeIntelligenceConfigurationPolicy' as const,
-                    id: 'g2',
-                    name: 'Default brach retention',
-                    type: GitObjectType.GIT_TREE,
-                    pattern: '',
-                    protected: false,
-                    retentionEnabled: true,
-                    retentionDurationHours: 2016,
-                    retainIntermediateCommits: false,
-                    indexingEnabled: false,
-                    indexCommitMaxAgeHours: 4032,
-                    indexIntermediateCommits: false,
-                    repository: null,
-                    repositoryPatterns: [],
-                },
-            ],
+            },
         },
     },
 }
@@ -246,125 +260,8 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
     </WebStory>
 )
 
-export const EmptyGlobalPage = Template.bind({})
-EmptyGlobalPage.args = {
-    authenticatedUser: {
-        __typename: 'User',
-        id: 'string',
-        databaseID: 1,
-        username: 'string',
-        avatarURL: 'string',
-        email: 'string',
-        displayName: 'string',
-        siteAdmin: true,
-        tags: [],
-        url: 'string',
-        settingsURL: 'string',
-        viewerCanAdminister: true,
-        organizations: {
-            __typename: 'OrgConnection',
-            nodes: [
-                {
-                    __typename: 'Org',
-                    id: 'string',
-                    name: 'string',
-                    displayName: 'string',
-                    url: 'string',
-                    settingsURL: 'string',
-                },
-            ],
-        },
-        session: {
-            __typename: 'Session',
-            canSignOut: true,
-        },
-    },
-}
-
-export const GlobalPage = Template.bind({})
-GlobalPage.args = {
-    authenticatedUser: {
-        __typename: 'User',
-        id: 'string',
-        databaseID: 1,
-        username: 'string',
-        avatarURL: 'string',
-        email: 'string',
-        displayName: 'string',
-        siteAdmin: true,
-        tags: [],
-        url: 'string',
-        settingsURL: 'string',
-        viewerCanAdminister: true,
-        organizations: {
-            __typename: 'OrgConnection',
-            nodes: [
-                {
-                    __typename: 'Org',
-                    id: 'string',
-                    name: 'string',
-                    displayName: 'string',
-                    url: 'string',
-                    settingsURL: 'string',
-                },
-            ],
-        },
-        session: {
-            __typename: 'Session',
-            canSignOut: true,
-        },
-    },
-}
-
-export const EmptyRepositoryPage = Template.bind({})
-EmptyRepositoryPage.args = {
-    repo: { id: 'sourcegraph' },
-}
-
-export const EmptyRepositoryPageWithSiteAdmin = Template.bind({})
-EmptyRepositoryPageWithSiteAdmin.args = {
-    repo: { id: 'sourcegraph' },
-    authenticatedUser: {
-        __typename: 'User',
-        id: 'string',
-        databaseID: 1,
-        username: 'string',
-        avatarURL: 'string',
-        email: 'string',
-        displayName: 'string',
-        siteAdmin: true,
-        tags: [],
-        url: 'string',
-        settingsURL: 'string',
-        viewerCanAdminister: true,
-        organizations: {
-            __typename: 'OrgConnection',
-            nodes: [
-                {
-                    __typename: 'Org',
-                    id: 'string',
-                    name: 'string',
-                    displayName: 'string',
-                    url: 'string',
-                    settingsURL: 'string',
-                },
-            ],
-        },
-        session: {
-            __typename: 'Session',
-            canSignOut: true,
-        },
-    },
-}
-
-export const RepositoryPage = Template.bind({})
-RepositoryPage.args = {
-    repo: { id: 'sourcegraph' },
-}
-
-export const RepositoryPageWithSiteAdmin = Template.bind({})
-RepositoryPageWithSiteAdmin.args = {
-    repo: { id: 'sourcegraph' },
+export const Policies = Template.bind({})
+Policies.args = {
     authenticatedUser: {
         __typename: 'User',
         id: 'string',

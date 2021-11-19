@@ -38,7 +38,7 @@ type DBStore interface {
 	GetIndexesByIDs(ctx context.Context, ids ...int) ([]dbstore.Index, error)
 	GetIndexes(ctx context.Context, opts dbstore.GetIndexesOptions) ([]dbstore.Index, int, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
-	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error)
+	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, int, error)
 	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
 	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
 	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)

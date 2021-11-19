@@ -12,7 +12,7 @@ import {
     CodeIntelConfigurationPolicyPage,
     CodeIntelConfigurationPolicyPageProps,
 } from './CodeIntelConfigurationPolicyPage'
-import { POLICY_CONFIGURATION_BY_ID } from './usePoliciesConfigurations'
+import { POLICY_CONFIGURATION_BY_ID } from './usePolicies'
 import { PREVIEW_GIT_OBJECT_FILTER } from './useSearchGit'
 import { PREVIEW_REPOSITORY_FILTER } from './useSearchRepositories'
 
