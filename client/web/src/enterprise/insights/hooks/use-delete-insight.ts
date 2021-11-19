@@ -4,9 +4,9 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { eventLogger } from '../../../../tracking/eventLogger'
-import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
-import { Insight } from '../../core/types'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
+import { Insight } from '../core/types'
 
 export interface UseDeleteInsightProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {}
 
