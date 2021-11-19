@@ -410,8 +410,8 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 	})
 }
 
-// writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
-// symbols, and writes them to the blank database file `dbFile`.
+// updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
+// DB and the given commitID.
 func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
