@@ -9,11 +9,10 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
-import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { InsightTypePrefix } from '../../../../core/types'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
+import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
@@ -25,6 +24,7 @@ import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
+import { InsightStillProcessingError } from '../../../../core/backend/utils/errors';
 
 interface BackendInsightProps
     extends TelemetryProps,

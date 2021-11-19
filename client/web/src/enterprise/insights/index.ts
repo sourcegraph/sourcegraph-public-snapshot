@@ -1,5 +1,3 @@
-// Core insights exports
-export { InsightsApiContext } from './core/backend/api-provider'
 
 export * from '../../insights/analytics'
 
