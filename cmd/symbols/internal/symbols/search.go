@@ -394,11 +394,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	insertStatement, err := tx.PrepareNamed(
-		fmt.Sprintf(
-			"INSERT INTO symbols %s VALUES %s",
-			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
-			"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"))
+	insertStatement, err := tx.PrepareNamed(insertQuery)
 	if err != nil {
 		return err
 	}
@@ -440,9 +436,7 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 	}
 
 	// Write new commit
-	_, err = tx.Exec(
-		`UPDATE meta SET revision = ?`,
-		string(commitID))
+	_, err = tx.Exec(`UPDATE meta SET revision = ?`, string(commitID))
 	if err != nil {
 		return err
 	}
@@ -458,11 +452,7 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 		return err
 	}
 
-	insertStatement, err := tx.PrepareNamed(
-		fmt.Sprintf(
-			"INSERT INTO symbols %s VALUES %s",
-			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
-			"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"))
+	insertStatement, err := tx.PrepareNamed(insertQuery)
 	if err != nil {
 		return err
 	}
@@ -478,6 +468,10 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 		return err
 	})
 }
+
+const insertQuery = `
+	INSERT INTO symbols ( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)
+	VALUES              (:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)`
 
 // SanityCheck makes sure that go-sqlite3 was compiled with cgo by
 // seeing if we can actually create a table.
