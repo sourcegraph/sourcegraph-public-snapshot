@@ -154,12 +154,14 @@ func (e *uploadExpirer) handleRepository(
 // buildCommitMap will iterate the complete set of configuration policies that apply to a particular
 // repository and build a map from commits to the policies that apply to them.
 func (e *uploadExpirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policies.PolicyMatch, error) {
-	offset := 0
-	commitMap := map[string][]policies.PolicyMatch{}
+	var (
+		offset   int
+		policies []dbstore.ConfigurationPolicy
+	)
 
 	for {
-		// Retrieve the set of configuration policies that affect data retention for this repository
-		policies, totalCount, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+		// Retrieve the complete set of configuration policies that affect data retention for this repository
+		policyBatch, totalCount, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
 			Limit:            e.policyBatchSize,
@@ -168,25 +170,17 @@ func (e *uploadExpirer) buildCommitMap(ctx context.Context, repositoryID int, no
 		if err != nil {
 			return nil, errors.Wrap(err, "dbstore.GetConfigurationPolicies")
 		}
-		offset += len(policies)
 
-		// Get the set of commits within this repository that match a data retention policy
-		localCommitMap, err := e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
-		if err != nil {
-			return nil, errors.Wrap(err, "policies.CommitsDescribedByPolicy")
-		}
+		offset += len(policyBatch)
+		policies = append(policies, policyBatch...)
 
-		// Merge sets together
-		for k, vs := range localCommitMap {
-			commitMap[k] = append(commitMap[k], vs...)
-		}
-
-		if len(policies) == 0 || offset >= totalCount {
+		if len(policyBatch) == 0 || offset >= totalCount {
 			break
 		}
 	}
 
-	return commitMap, nil
+	// Get the set of commits within this repository that match a data retention policy
+	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
 func (e *uploadExpirer) handleUploads(
