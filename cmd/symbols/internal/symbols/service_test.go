@@ -77,7 +77,7 @@ func TestService(t *testing.T) {
 		Path: tmpDir,
 	}
 
-	if err := service.Start(); err != nil {
+	if err := service.Init(); err != nil {
 		t.Fatal(err)
 	}
 	server := httptest.NewServer(service.Handler())

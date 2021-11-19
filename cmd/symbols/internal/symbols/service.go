@@ -48,11 +48,7 @@ type Service struct {
 }
 
 // Start must be called before any requests are handled.
-func (s *Service) Start() error {
-	if err := s.startParsers(); err != nil {
-		return err
-	}
-
+func (s *Service) Init() error {
 	if s.MaxConcurrentFetchTar == 0 {
 		s.MaxConcurrentFetchTar = 15
 	}
@@ -63,9 +59,16 @@ func (s *Service) Start() error {
 		Component:         "symbols",
 		BackgroundTimeout: 20 * time.Minute,
 	}
-	go s.watchAndEvict()
 
-	return nil
+	return s.startParsers()
+}
+
+func (s *Service) Start() {
+	s.watchAndEvict()
+}
+
+func (s *Service) Stop() {
+	// no-op
 }
 
 // Handler returns the http.Handler that should be used to serve requests.

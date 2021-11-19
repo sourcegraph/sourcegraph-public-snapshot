@@ -23,7 +23,7 @@ func BenchmarkSearch(b *testing.B) {
 		NewParser:       NewParser,
 		Path:            "/tmp/symbols-cache",
 	}
-	if err := service.Start(); err != nil {
+	if err := service.Init(); err != nil {
 		b.Fatal(err)
 	}
 

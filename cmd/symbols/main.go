@@ -8,13 +8,9 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"time"
-
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
@@ -30,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
-const port = "3184"
+const addr = ":3184"
 
 func main() {
 	config.Load()
@@ -67,12 +65,11 @@ func oldMain(config *Config) {
 		os.Exit(0)
 	}
 
-	// Ready immediately
+	// Start debug server
 	ready := make(chan struct{})
-	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	service := symbols.Service{
+	service := &symbols.Service{
 		GitserverClient:    &gitserverClient{},
 		NewParser:          symbols.NewParser,
 		Path:               config.cacheDir,
@@ -80,42 +77,20 @@ func oldMain(config *Config) {
 		NumParserProcesses: config.ctagsProcesses,
 	}
 
-	if err := service.Start(); err != nil {
-		log.Fatalln("Start:", err)
+	if err := service.Init(); err != nil {
+		log.Fatalf("Failed to initialize service: %s", err)
 	}
 
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(service.Handler()))
-
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-	addr := net.JoinHostPort(host, port)
-	server := &http.Server{
+	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Addr:         addr,
-		Handler:      handler,
-	}
-	go shutdownOnSIGINT(server)
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(service.Handler())),
+	})
 
-	log15.Info("symbols: listening", "addr", addr)
-	err := server.ListenAndServe()
-	if err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
-}
+	// Mark health server as ready and go!
+	close(ready)
+	goroutine.MonitorBackgroundRoutines(context.Background(), service, server)
 
-func shutdownOnSIGINT(s *http.Server) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	err := s.Shutdown(ctx)
-	if err != nil {
-		log.Fatal("graceful server shutdown failed, will exit:", err)
-	}
 }
 
 type gitserverClient struct{}
