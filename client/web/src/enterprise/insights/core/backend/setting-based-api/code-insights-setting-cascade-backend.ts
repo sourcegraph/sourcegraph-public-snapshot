@@ -18,7 +18,7 @@ import { addDashboardToSettings, removeDashboardFromSettings } from '../../setti
 import { addInsight } from '../../settings-action/insights'
 import { Insight, InsightDashboard, InsightTypePrefix, isRealDashboard } from '../../types'
 import { isCustomInsightDashboard } from '../../types/dashboard/real-dashboard'
-import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard';
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../../types/subjects'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {

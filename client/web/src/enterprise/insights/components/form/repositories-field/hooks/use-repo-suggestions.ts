@@ -5,7 +5,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 
 import { memoizeAsync } from '../utils/memoize-async'
-import { RepositorySuggestionData } from '../../../../core/backend/code-insights-backend-types';
+import { RepositorySuggestionData } from '../../../../core/backend/code-insights-backend-types'
 
 interface UseRepoSuggestionsProps {
     search: string | null

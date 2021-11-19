@@ -15,7 +15,7 @@ import { SearchBackendBasedInsight } from '../../../../core/types/insight/search
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { BackendInsight } from './BackendInsight'
-import { InsightStillProcessingError } from '../../../../core/backend/utils/errors';
+import { InsightStillProcessingError } from '../../../../core/backend/utils/errors'
 
 const { add } = storiesOf('web/insights/BackendInsight', module).addDecorator(story => (
     <WebStory>{() => story()}</WebStory>

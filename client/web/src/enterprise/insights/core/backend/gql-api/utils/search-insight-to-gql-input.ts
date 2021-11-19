@@ -1,6 +1,9 @@
 import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 
-import { LineChartSearchInsightDataSeriesInput, LineChartSearchInsightInput } from '../../../../../../graphql-operations'
+import {
+    LineChartSearchInsightDataSeriesInput,
+    LineChartSearchInsightInput,
+} from '../../../../../../graphql-operations'
 import { InsightDashboard, isVirtualDashboard, SearchBasedInsight } from '../../../types'
 import { isSearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../types/insight/search-insight'
 

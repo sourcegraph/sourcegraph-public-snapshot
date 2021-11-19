@@ -1,11 +1,11 @@
-import { uniqBy } from 'lodash';
+import { uniqBy } from 'lodash'
 import { Observable, of, throwError } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql';
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { requestGraphQL } from '../../../../../../backend/graphql';
-import { InsightFields, InsightsResult } from '../../../../../../graphql-operations';
+import { requestGraphQL } from '../../../../../../backend/graphql'
+import { InsightFields, InsightsResult } from '../../../../../../graphql-operations'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../types/insight/search-insight'
 import { BackendInsightData } from '../../code-insights-backend-types'
 import { createLineChartContent } from '../../utils/create-line-chart-content'
@@ -56,10 +56,7 @@ const INSIGHT_FIELDS_FRAGMENT = gql`
     }
 `
 
-function fetchBackendInsights(
-    insightsIds: string[],
-    filters?: SearchBasedBackendFilters
-): Observable<InsightFields[]> {
+function fetchBackendInsights(insightsIds: string[], filters?: SearchBasedBackendFilters): Observable<InsightFields[]> {
     return requestGraphQL<InsightsResult>(
         gql`
             query Insights($ids: [ID!]!, $includeRepoRegex: String, $excludeRepoRegex: String) {

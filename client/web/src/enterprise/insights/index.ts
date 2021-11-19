@@ -1,4 +1,3 @@
-
 export * from '../../insights/analytics'
 
 // Public Insights components

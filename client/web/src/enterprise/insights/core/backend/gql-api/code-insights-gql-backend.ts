@@ -61,7 +61,7 @@ import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView } from './utils/insight-transformers'
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 import { prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
-import { InsightStillProcessingError } from '../utils/errors';
+import { InsightStillProcessingError } from '../utils/errors'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}

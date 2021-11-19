@@ -1,13 +1,13 @@
-import { map } from 'rxjs/operators';
+import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql';
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { requestGraphQL } from '../../../../../../backend/graphql';
+import { requestGraphQL } from '../../../../../../backend/graphql'
 import {
     RepositorySearchSuggestionsResult,
-    RepositorySearchSuggestionsVariables
-} from '../../../../../../graphql-operations';
-import { RepositorySuggestionData } from '../../code-insights-backend-types';
+    RepositorySearchSuggestionsVariables,
+} from '../../../../../../graphql-operations'
+import { RepositorySuggestionData } from '../../code-insights-backend-types'
 
 /**
  * Returns array of repository suggestions.
@@ -27,9 +27,10 @@ export const getRepositorySuggestions = (possibleRepositoryQuery: string): Promi
             }
         `,
         { query: possibleRepositoryQuery }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.repositories.nodes),
-        map(suggestions => suggestions.filter(suggestion => !!suggestion.name))
-    ).toPromise()
-
+    )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.repositories.nodes),
+            map(suggestions => suggestions.filter(suggestion => !!suggestion.name))
+        )
+        .toPromise()

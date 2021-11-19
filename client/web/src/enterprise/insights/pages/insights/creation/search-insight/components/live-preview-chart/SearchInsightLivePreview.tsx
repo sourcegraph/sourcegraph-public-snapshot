@@ -5,7 +5,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context';
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
@@ -83,7 +83,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
 
         getSearchInsightContent({
             insight: liveDebouncedSettings,
-            options: { where: 'insightsPage', context: {} }
+            options: { where: 'insightsPage', context: {} },
         })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))

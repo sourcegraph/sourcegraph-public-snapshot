@@ -1,10 +1,9 @@
-
 import { ConfiguredSubjectOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../../schema/settings.schema'
 import { InsightDashboard } from '../../../../types'
-import { ALL_INSIGHTS_DASHBOARD } from '../../../../types/dashboard/virtual-dashboard';
+import { ALL_INSIGHTS_DASHBOARD } from '../../../../types/dashboard/virtual-dashboard'
 import { isSubjectInsightSupported } from '../../../../types/subjects'
 
 import { getInsightIdsFromSettings, getSubjectDashboards } from './utils'
