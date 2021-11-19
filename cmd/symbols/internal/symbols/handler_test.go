@@ -58,7 +58,7 @@ func TestIsLiteralEquality(t *testing.T) {
 	}
 }
 
-func TestService(t *testing.T) {
+func TestHandler(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal(err)
