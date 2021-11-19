@@ -59,4 +59,4 @@ Hovering over a symbol results in a query for the definition. If the symbol is d
 
 ![Screen Shot 2021-11-15 at 1 10 16 AM](https://user-images.githubusercontent.com/13024338/141754063-2080c7c6-b5be-43c1-b9db-386e916d2968.png)
 
-Selecting the Show History button while viewing a file initiates a request to [fetch commits](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/repo/RepoRevisionSidebarCommits%5C.tsx+function+fetchCommits%28&patternType=literal) for the file. This request is ultimately [resolved by gitserver]() using functionality similar to git log. To improve performance allocate gitserver more CPU.
+Selecting the Show History button while viewing a file initiates a request to [fetch commits](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eclient/web/src/repo/RepoRevisionSidebarCommits%5C.tsx+function+fetchCommits%28&patternType=literal) for the file. This request is ultimately resolved by gitserver using functionality similar to git log. To improve performance allocate gitserver more CPU.
