@@ -1,4 +1,4 @@
-package symbols
+package parser
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-func parseUncached(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
+func Parse(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {

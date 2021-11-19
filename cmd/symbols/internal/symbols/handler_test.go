@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -77,7 +78,7 @@ func TestHandler(t *testing.T) {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := NewParserPool(func() (ctags.Parser, error) { return mockParser{"x", "y"}, nil }, 15)
+	parserPool, err := parser.NewParserPool(func() (ctags.Parser, error) { return mockParser{"x", "y"}, nil }, 15)
 	if err != nil {
 		t.Fatal(err)
 	}

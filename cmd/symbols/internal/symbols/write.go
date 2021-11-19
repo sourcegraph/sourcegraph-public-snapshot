@@ -11,13 +11,14 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func writeDBFile(ctx context.Context, gitserverClient GitserverClient, cache *diskcache.Store, parserPool ParserPool, fetchSem chan int, args protocol.SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
+func writeDBFile(ctx context.Context, gitserverClient parser.GitserverClient, cache *diskcache.Store, parserPool parser.ParserPool, fetchSem chan int, args protocol.SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
 	newest, err := findNewestFile(filepath.Join(cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 	if err != nil {
 		return err
@@ -53,7 +54,7 @@ func writeDBFile(ctx context.Context, gitserverClient GitserverClient, cache *di
 
 // writeAllSymbolsToNewDB fetches the repo@commit from gitserver, parses all the
 // symbols, and writes them to the blank database file `dbFile`.
-func writeAllSymbolsToNewDB(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func writeAllSymbolsToNewDB(ctx context.Context, gitserverClient parser.GitserverClient, parserPool parser.ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func writeAllSymbolsToNewDB(ctx context.Context, gitserverClient GitserverClient
 		return err
 	}
 
-	return parseUncached(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, []string{}, func(symbol result.Symbol) error {
+	return parser.Parse(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, []string{}, func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
@@ -146,7 +147,7 @@ func writeAllSymbolsToNewDB(ctx context.Context, gitserverClient GitserverClient
 
 // updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
 // DB and the given commitID.
-func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parserPool ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func updateSymbols(ctx context.Context, gitserverClient parser.GitserverClient, parserPool parser.ParserPool, fetchSem chan int, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -200,7 +201,7 @@ func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parserP
 		return err
 	}
 
-	return parseUncached(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
+	return parser.Parse(ctx, gitserverClient, parserPool, fetchSem, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err

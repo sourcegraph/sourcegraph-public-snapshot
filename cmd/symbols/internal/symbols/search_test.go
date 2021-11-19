@@ -10,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -27,7 +28,7 @@ func BenchmarkSearch(b *testing.B) {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := NewParserPool(NewParser, 15)
+	parserPool, err := parser.NewParserPool(parser.NewParser, 15)
 	if err != nil {
 		b.Fatal(err)
 	}

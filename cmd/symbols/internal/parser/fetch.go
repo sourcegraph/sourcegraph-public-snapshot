@@ -1,4 +1,4 @@
-package symbols
+package parser
 
 import (
 	"archive/tar"

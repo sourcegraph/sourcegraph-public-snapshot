@@ -9,21 +9,22 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
 
 type symbolsHandler struct {
-	gitserverClient GitserverClient
+	gitserverClient parser.GitserverClient
 	cache           *diskcache.Store
-	parserPool      ParserPool
+	parserPool      parser.ParserPool
 	fetchSem        chan int
 }
 
 func NewHandler(
-	gitserverClient GitserverClient,
+	gitserverClient parser.GitserverClient,
 	cache *diskcache.Store,
-	parserPool ParserPool,
+	parserPool parser.ParserPool,
 	maxConcurrentFetchTar int,
 ) http.Handler {
 	h := &symbolsHandler{
