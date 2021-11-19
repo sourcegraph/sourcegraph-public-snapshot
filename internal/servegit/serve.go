@@ -130,6 +130,33 @@ func (s *Serve) handler() http.Handler {
 	})
 }
 
+// Checks if git thinks the given path is a valid .git folder for a repository
+func isBareRepo(path string) bool {
+	c := exec.Command("git", "--git-dir", path, "rev-parse", "--is-bare-repository")
+	c.Dir = path
+	out, err := c.CombinedOutput()
+
+	if err != nil {
+		return false
+	}
+
+	return string(out) != "false\n"
+}
+
+// Check if git thinks the given path is a proper git checkout
+func isGitRepo(path string) bool {
+	// Executing git rev-parse --git-dir in the root of a worktree returns .git
+	c := exec.Command("git", "rev-parse", "--git-dir")
+	c.Dir = path
+	out, err := c.CombinedOutput()
+
+	if err != nil {
+		return false
+	}
+
+	return string(out) == ".git\n"
+}
+
 // Repos returns a slice of all the git repositories it finds.
 func (s *Serve) Repos() ([]Repo, error) {
 	var repos []Repo
@@ -158,10 +185,11 @@ func (s *Serve) Repos() ([]Repo, error) {
 
 		// Check whether a particular directory is a repository or not.
 		//
-		// A directory which also is a repository (have .git folder inside it)
-		// will contain nil error. If it does, proceed to configure.
-		gitdir := filepath.Join(path, ".git")
-		if fi, err := os.Stat(gitdir); err != nil || !fi.IsDir() {
+		// Valid paths are either bare repositories or git worktrees.
+		isBare := isBareRepo(path)
+		isGit := isGitRepo(path)
+
+		if !isGit && !isBare {
 			s.Debug.Printf("not a repository root: %s", path)
 			return nil
 		}
@@ -182,14 +210,9 @@ func (s *Serve) Repos() ([]Repo, error) {
 
 		// Check whether a repository is a bare repository or not.
 		//
-		// If it yields false, which means it is a non-bare repository,
-		// skip the directory so that it will not recurse to the subdirectories.
-		// If it is a bare repository, proceed to recurse.
-		c := exec.Command("git", "rev-parse", "--is-bare-repository")
-		c.Dir = gitdir
-		out, _ := c.CombinedOutput()
-
-		if string(out) == "false\n" {
+		// Bare repositories shouldn't have any further child
+		// repositories. Only regular git worktrees can have children.
+		if isBare {
 			return filepath.SkipDir
 		}
 
