@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -74,20 +73,13 @@ func oldMain(config *Config) {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	service := symbols.Service{
-		GitserverClient: &gitserverClient{},
-		NewParser:       symbols.NewParser,
-		Path:            config.cacheDir,
+		GitserverClient:    &gitserverClient{},
+		NewParser:          symbols.NewParser,
+		Path:               config.cacheDir,
+		MaxCacheSizeBytes:  int64(config.cacheSizeMB) * 1000 * 1000,
+		NumParserProcesses: config.ctagsProcesses,
 	}
-	if mb, err := strconv.ParseInt(config.cacheSizeMB, 10, 64); err != nil {
-		log.Fatalf("Invalid SYMBOLS_CACHE_SIZE_MB: %s", err)
-	} else {
-		service.MaxCacheSizeBytes = mb * 1000 * 1000
-	}
-	var err error
-	service.NumParserProcesses, err = strconv.Atoi(config.ctagsProcesses)
-	if err != nil {
-		log.Fatalf("Invalid CTAGS_PROCESSES: %s", err)
-	}
+
 	if err := service.Start(); err != nil {
 		log.Fatalln("Start:", err)
 	}
@@ -108,7 +100,7 @@ func oldMain(config *Config) {
 	go shutdownOnSIGINT(server)
 
 	log15.Info("symbols: listening", "addr", addr)
-	err = server.ListenAndServe()
+	err := server.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
