@@ -32,8 +32,7 @@ func BenchmarkSearch(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	service := newService("/tmp/symbols-cache", gitserverClient, cache, parserPool, 15)
-
+	service := newService(gitserverClient, cache, parserPool, 15)
 	ctx := context.Background()
 	b.ResetTimer()
 

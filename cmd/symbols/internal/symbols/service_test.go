@@ -82,7 +82,7 @@ func TestService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	service := NewService(tmpDir, gitserverClient, cache, parserPool, 15)
+	service := NewService(gitserverClient, cache, parserPool, 15)
 
 	server := httptest.NewServer(service.Handler())
 	defer server.Close()

@@ -22,7 +22,7 @@ type parseRequest struct {
 
 func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (<-chan parseRequest, <-chan error, error) {
 	fetchQueueSize.Inc()
-	s.FetchSem <- 1 // acquire concurrent fetches semaphore
+	s.fetchSem <- 1 // acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()
 
 	fetching.Inc()
@@ -47,7 +47,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 			errCh <- err
 		}
 
-		<-s.FetchSem // release concurrent fetches semaphore
+		<-s.fetchSem // release concurrent fetches semaphore
 		close(requestCh)
 		close(errCh)
 

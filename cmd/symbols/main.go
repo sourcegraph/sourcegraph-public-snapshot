@@ -77,7 +77,7 @@ func main() {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
-	service := symbols.NewService(config.cacheDir, &gitserverClient{}, cache, parserPool, 15)
+	service := symbols.NewService(&gitserverClient{}, cache, parserPool, 15)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,

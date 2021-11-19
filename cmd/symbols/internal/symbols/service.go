@@ -10,9 +10,6 @@ import (
 
 // Service is the symbols service.
 type Service struct {
-	// Path is the directory in which to store the cache.
-	Path string
-
 	GitserverClient GitserverClient
 
 	// Cache is the disk backed Cache.
@@ -28,24 +25,21 @@ type HandlerFactory interface {
 }
 
 func NewService(
-	path string,
 	gitserverClient GitserverClient,
 	cache *diskcache.Store,
 	parserPool ParserPool,
 	maxConcurrentFetchTar int,
 ) HandlerFactory {
-	return newService(path, gitserverClient, cache, parserPool, maxConcurrentFetchTar)
+	return newService(gitserverClient, cache, parserPool, maxConcurrentFetchTar)
 }
 
 func newService(
-	path string,
 	gitserverClient GitserverClient,
 	cache *diskcache.Store,
 	parserPool ParserPool,
 	maxConcurrentFetchTar int,
 ) *Service {
 	return &Service{
-		Path:            path,
 		GitserverClient: gitserverClient,
 		Cache:           cache,
 		ParserPool:      parserPool,
