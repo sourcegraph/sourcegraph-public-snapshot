@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,10 +11,13 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
+	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -83,40 +87,84 @@ func WriteAllSymbolsToNewDB(ctx context.Context, parser parser.Parser, dbFile st
 	}
 	defer db.Close()
 
-	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
-	tx, err := db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
+	store := basestore.NewWithDB(db, sql.TxOptions{})
 
-	_, err = tx.Exec(
-		`CREATE TABLE IF NOT EXISTS meta (
-    		id INTEGER PRIMARY KEY CHECK (id = 0),
-			revision TEXT NOT NULL
-		)`)
-	if err != nil {
+	if err := createSchema(ctx, commitID, store); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(
-		`INSERT INTO meta (id, revision) VALUES (0, ?)`,
-		string(commitID))
+	if err := writeSymbols(ctx, parser, repoName, commitID, nil, store); err != nil {
+		return err
+	}
+
+	if err := createIndexes(ctx, commitID, store); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
+// DB and the given commitID.
+func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parser parser.Parser, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	store := basestore.NewWithDB(db, sql.TxOptions{})
+
+	// Read old commit
+	metaQuery := `SELECT revision FROM meta`
+	oldCommit, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(metaQuery)))
+	if err != nil {
+		return err
+	}
+
+	// git diff
+	changes, err := gitserverClient.GitDiff(ctx, repoName, api.CommitID(oldCommit), commitID)
+	if err != nil {
+		return err
+	}
+
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Write new commit
+	updateMetaQuery := `UPDATE meta SET revision = %s`
+	if err := tx.Exec(ctx, sqlf.Sprintf(updateMetaQuery, commitID)); err != nil {
+		return err
+	}
+
+	paths := append(changes.Deleted, changes.Modified...)
+
+	deleteQuery := "DELETE FROM symbols WHERE path = ANY(%s)"
+	if err := tx.Exec(ctx, sqlf.Sprintf(deleteQuery, pq.Array(paths))); err != nil {
+		return err
+	}
+
+	return writeSymbols(ctx, parser, repoName, commitID, paths, tx)
+}
+
+func createSchema(ctx context.Context, commitID api.CommitID, tx *basestore.Store) error {
+	createMetaTableQuery := `
+		CREATE TABLE IF NOT EXISTS meta (
+		id INTEGER PRIMARY KEY CHECK (id = 0),
+		revision TEXT NOT NULL
+	)`
+	if err := tx.Exec(ctx, sqlf.Sprintf(createMetaTableQuery)); err != nil {
 		return err
 	}
 
 	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
 	// http://jmoiron.github.io/sqlx/#query
-	_, err = tx.Exec(
-		`CREATE TABLE IF NOT EXISTS symbols (
+	createSymbolsTableQuery := `
+		CREATE TABLE IF NOT EXISTS symbols (
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
 			path VARCHAR(4096) NOT NULL,
@@ -129,110 +177,99 @@ func WriteAllSymbolsToNewDB(ctx context.Context, parser parser.Parser, dbFile st
 			signature VARCHAR(255) NOT NULL,
 			pattern VARCHAR(255) NOT NULL,
 			filelimited BOOLEAN NOT NULL
-		)`)
-	if err != nil {
+		)
+	`
+	if err := tx.Exec(
+		ctx,
+		sqlf.Sprintf(createSymbolsTableQuery)); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`CREATE INDEX name_index ON symbols(name);`)
-	if err != nil {
+	insertMetaRowQuery := `
+		INSERT INTO meta (id, revision) VALUES (0, %s)
+	`
+	if err := tx.Exec(ctx, sqlf.Sprintf(insertMetaRowQuery, string(commitID))); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`CREATE INDEX path_index ON symbols(path);`)
-	if err != nil {
+	return nil
+}
+
+func createIndexes(ctx context.Context, commitID api.CommitID, tx *basestore.Store) error {
+	createIndexQuery1 := `CREATE INDEX name_index ON symbols(name);`
+	if err := tx.Exec(ctx, sqlf.Sprintf(createIndexQuery1)); err != nil {
+		return err
+	}
+
+	createIndexQuery2 := `CREATE INDEX path_index ON symbols(path);`
+	if err := tx.Exec(ctx, sqlf.Sprintf(createIndexQuery2)); err != nil {
 		return err
 	}
 
 	// `*lowercase_index` enables indexed case insensitive queries.
-	_, err = tx.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
-	if err != nil {
+	createIndexQuery3 := `CREATE INDEX namelowercase_index ON symbols(namelowercase);`
+	if err := tx.Exec(ctx, sqlf.Sprintf(createIndexQuery3)); err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
-	if err != nil {
+	createIndexQuery4 := `CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`
+	if err := tx.Exec(ctx, sqlf.Sprintf(createIndexQuery4)); err != nil {
 		return err
 	}
 
-	insertStatement, err := tx.PrepareNamed(insertQuery)
-	if err != nil {
-		return err
-	}
-
-	return parser.Parse(ctx, repoName, commitID, []string{}, func(symbol result.Symbol) error {
-		symbolInDBValue := types.SymbolToSymbolInDB(symbol)
-		_, err := insertStatement.Exec(&symbolInDBValue)
-		return err
-	})
+	return nil
 }
 
-// updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
-// DB and the given commitID.
-func updateSymbols(ctx context.Context, gitserverClient GitserverClient, parser parser.Parser, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoName, commitID api.CommitID, paths []string, store *basestore.Store) error {
+	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { err = tx.Done(err) }()
 
-	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
-	tx, err := db.Beginx()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
+	// TODO - use bulk loader instead
 
-	// Read old commit
-	row := tx.QueryRow(`SELECT revision FROM meta`)
-	oldCommit := api.CommitID("")
-	if err = row.Scan(&oldCommit); err != nil {
-		return err
-	}
-
-	// Write new commit
-	_, err = tx.Exec(`UPDATE meta SET revision = ?`, string(commitID))
-	if err != nil {
-		return err
-	}
-
-	// git diff
-	changes, err := gitserverClient.GitDiff(ctx, repoName, oldCommit, commitID)
-	if err != nil {
-		return err
-	}
-
-	deleteStatement, err := tx.Prepare("DELETE FROM symbols WHERE path = ?")
-	if err != nil {
-		return err
-	}
-
-	insertStatement, err := tx.PrepareNamed(insertQuery)
-	if err != nil {
-		return err
-	}
-
-	for _, path := range append(changes.Deleted, changes.Modified...) {
-		_, err := deleteStatement.Exec(path)
-		return err
-	}
-
-	return parser.Parse(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
+	callback := func(symbol result.Symbol) error {
 		symbolInDBValue := types.SymbolToSymbolInDB(symbol)
-		_, err := insertStatement.Exec(&symbolInDBValue)
-		return err
-	})
-}
 
-const insertQuery = `
-	INSERT INTO symbols ( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)
-	VALUES              (:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)`
+		insertQuery := `
+			INSERT INTO symbols (
+				name,
+				namelowercase,
+				path,
+				pathlowercase,
+				line,
+				kind,
+				language,
+				parent,
+				parentkind,
+				signature,
+				pattern,
+				filelimited
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+		`
+		return tx.Exec(
+			ctx,
+			sqlf.Sprintf(
+				insertQuery,
+				symbolInDBValue.Name,
+				symbolInDBValue.NameLowercase,
+				symbolInDBValue.Path,
+				symbolInDBValue.PathLowercase,
+				symbolInDBValue.Line,
+				symbolInDBValue.Kind,
+				symbolInDBValue.Language,
+				symbolInDBValue.Parent,
+				symbolInDBValue.ParentKind,
+				symbolInDBValue.Signature,
+				symbolInDBValue.Parent,
+				symbolInDBValue.FileLimited,
+			),
+		)
+	}
+
+	return parser.Parse(ctx, repoName, commitID, paths, callback)
+}
 
 // findNewestFile lists the directory and returns the newest file's path, prepended with dir.
 func findNewestFile(dir string) (string, error) {
