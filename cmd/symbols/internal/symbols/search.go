@@ -529,6 +529,10 @@ func findNewestFile(dir string) (string, api.CommitID, error) {
 		}
 	}
 
+	if newest == "" {
+		return "", "", nil
+	}
+
 	db, err := sqlx.Open("sqlite3_with_regexp", newest)
 	if err != nil {
 		return "", "", err
