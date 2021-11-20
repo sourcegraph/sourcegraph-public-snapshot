@@ -49,7 +49,8 @@ func TestHandler(t *testing.T) {
 	}
 
 	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	searcher := symbolsSearch.NewSearcher(gitserverClient, parser, cache, sqlite.WriteDBFile)
+	databaseWriter := sqlite.NewDatabaseWriter(gitserverClient, parser, cache)
+	searcher := symbolsSearch.NewSearcher(gitserverClient, parser, cache, databaseWriter)
 	server := httptest.NewServer(NewHandler(searcher))
 	defer server.Close()
 	client := symbolsclient.Client{

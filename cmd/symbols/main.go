@@ -82,7 +82,8 @@ func main() {
 
 	gitserverClient := &gitserverClient{}
 	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	searcher := search.NewSearcher(gitserverClient, parser, cache, sqlite.WriteDBFile)
+	databaseWriter := sqlite.NewDatabaseWriter(gitserverClient, parser, cache)
+	searcher := search.NewSearcher(gitserverClient, parser, cache, databaseWriter)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,

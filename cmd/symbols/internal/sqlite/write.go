@@ -18,15 +18,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-func WriteDBFile(ctx context.Context, gitserverClient GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error {
-	newest, err := findNewestFile(filepath.Join(cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
+type DatabaseWriter interface {
+	WriteDBFile(ctx context.Context, args types.SearchArgs, tempDBFile string) error
+}
+
+type databaseWriter struct {
+	gitserverClient GitserverClient
+	parser          parser.Parser
+	cache           *diskcache.Store
+}
+
+func NewDatabaseWriter(
+	gitserverClient GitserverClient,
+	parser parser.Parser,
+	cache *diskcache.Store,
+) DatabaseWriter {
+	return &databaseWriter{
+		gitserverClient: gitserverClient,
+		parser:          parser,
+		cache:           cache,
+	}
+}
+
+func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs, tempDBFile string) error {
+	newest, err := findNewestFile(filepath.Join(w.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 	if err != nil {
 		return err
 	}
 
 	if newest == "" {
 		// There are no existing SQLite DBs to reuse, so write a completely new one.
-		err := WriteAllSymbolsToNewDB(fetcherCtx, parser, tempDBFile, args.Repo, args.CommitID)
+		err := WriteAllSymbolsToNewDB(ctx, w.parser, tempDBFile, args.Repo, args.CommitID)
 		if err != nil {
 			if err == context.Canceled {
 				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
@@ -40,7 +62,7 @@ func WriteDBFile(ctx context.Context, gitserverClient GitserverClient, parser pa
 			return err
 		}
 
-		err = updateSymbols(fetcherCtx, gitserverClient, parser, tempDBFile, args.Repo, args.CommitID)
+		err = updateSymbols(ctx, w.gitserverClient, w.parser, tempDBFile, args.Repo, args.CommitID)
 		if err != nil {
 			if err == context.Canceled {
 				log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)

@@ -32,22 +32,20 @@ type searcher struct {
 	gitserverClient sqlite.GitserverClient
 	parser          parser.Parser
 	cache           *diskcache.Store
-	writeDBFile     WriteDBFile
+	databaseWriter  sqlite.DatabaseWriter
 }
-
-type WriteDBFile func(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, fetcherCtx context.Context, tempDBFile string) error
 
 func NewSearcher(
 	gitserverClient sqlite.GitserverClient,
 	parser parser.Parser,
 	cache *diskcache.Store,
-	writeDBFile WriteDBFile,
+	databaseWriter sqlite.DatabaseWriter,
 ) Searcher {
 	return &searcher{
 		gitserverClient: gitserverClient,
 		parser:          parser,
 		cache:           cache,
-		writeDBFile:     writeDBFile,
+		databaseWriter:  databaseWriter,
 	}
 }
 
@@ -79,7 +77,7 @@ func (s *searcher) Search(ctx context.Context, args types.SearchArgs) (*result.S
 		tr.Finish()
 	}()
 
-	dbFile, err := getDBFile(ctx, s.gitserverClient, s.parser, s.cache, args, s.writeDBFile)
+	dbFile, err := getDBFile(ctx, s.gitserverClient, s.parser, s.cache, args, s.databaseWriter)
 	if err != nil {
 		return nil, err
 	}
@@ -105,9 +103,9 @@ const symbolsDBVersion = 4
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func getDBFile(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, writeDBFile WriteDBFile) (string, error) {
+func getDBFile(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, databaseWriter sqlite.DatabaseWriter) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		return writeDBFile(ctx, gitserverClient, parser, cache, args, fetcherCtx, tempDBFile)
+		return databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile)
 	})
 	if err != nil {
 		return "", err

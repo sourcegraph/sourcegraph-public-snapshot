@@ -72,7 +72,8 @@ func BenchmarkSearch(b *testing.B) {
 	}
 
 	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	searcher := NewSearcher(gitserverClient, parser, cache, sqlite.WriteDBFile)
+	databaseWriter := sqlite.NewDatabaseWriter(gitserverClient, parser, cache)
+	searcher := NewSearcher(gitserverClient, parser, cache, databaseWriter)
 
 	ctx := context.Background()
 	b.ResetTimer()
