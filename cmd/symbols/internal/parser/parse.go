@@ -2,7 +2,6 @@ package parser
 
 import (
 	"context"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -79,9 +78,8 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	defer cancel()
 
 	var (
-		mu  sync.Mutex // protects symbols and err
-		wg  sync.WaitGroup
-		sem = make(chan struct{}, runtime.GOMAXPROCS(0))
+		mu sync.Mutex // protects symbols and err
+		wg sync.WaitGroup
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0
@@ -95,13 +93,9 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 			}()
 			return ctx.Err()
 		}
-		sem <- struct{}{}
 		wg.Add(1)
 		go func(req parseRequest) {
-			defer func() {
-				wg.Done()
-				<-sem
-			}()
+			defer wg.Done()
 			entries, parseErr := parse(ctx, p.parserPool, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
 				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
