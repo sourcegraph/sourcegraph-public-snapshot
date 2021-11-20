@@ -3,6 +3,7 @@ package background
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/lifecycle"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/scheduler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -22,8 +23,10 @@ func Routines(ctx context.Context, batchesStore *store.Store, cf *httpcli.Factor
 	batchSpecWorkspaceExecutionWorkerStore := NewBatchSpecWorkspaceExecutionWorkerStore(batchesStore.Handle(), observationContext)
 	batchSpecResolutionWorkerStore := newBatchSpecResolutionWorkerStore(batchesStore.Handle(), observationContext)
 
+	hookDispatcher := lifecycle.NewDispatcher(batchesStore)
+
 	routines := []goroutine.BackgroundRoutine{
-		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.DefaultClient, sourcer, metrics),
+		newReconcilerWorker(ctx, batchesStore, reconcilerWorkerStore, gitserver.DefaultClient, hookDispatcher, sourcer, metrics),
 		newReconcilerWorkerResetter(reconcilerWorkerStore, metrics),
 
 		newSpecExpireJob(ctx, batchesStore),

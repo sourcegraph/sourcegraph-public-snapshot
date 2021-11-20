@@ -212,6 +212,22 @@ type PublishChangesetsArgs struct {
 	Draft bool
 }
 
+type CreateBatchChangesLifecycleHookArgs struct {
+	ExpiresAt *DateTime
+	URL       string
+	Secret    string
+}
+
+type DeleteBatchChangesLifecycleHookArgs struct {
+	ID graphql.ID
+}
+
+type ListBatchChangesLifecycleHooksArgs struct {
+	First          int32
+	After          *string
+	IncludeExpired *bool
+}
+
 type ResolveWorkspacesForBatchSpecArgs struct {
 	BatchSpec        string
 	AllowIgnored     bool
@@ -262,6 +278,9 @@ type BatchChangesResolver interface {
 	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
 	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
 
+	CreateBatchChangesLifecycleHook(ctx context.Context, args *CreateBatchChangesLifecycleHookArgs) (BatchChangesLifecycleHookResolver, error)
+	DeleteBatchChangesLifecycleHook(ctx context.Context, args *DeleteBatchChangesLifecycleHookArgs) (*EmptyResponse, error)
+
 	// Queries
 	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
 	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
@@ -271,6 +290,8 @@ type BatchChangesResolver interface {
 	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
 
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+
+	BatchChangesLifecycleHooks(ctx context.Context, args *ListBatchChangesLifecycleHooksArgs) (BatchChangesLifecycleHookConnectionResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -819,4 +840,19 @@ type BatchSpecWorkspaceEnvironmentVariableResolver interface {
 type BatchSpecWorkspaceOutputVariableResolver interface {
 	Name() string
 	Value() JSONValue
+}
+
+type BatchChangesLifecycleHookResolver interface {
+	ID() graphql.ID
+	CreatedAt() DateTime
+	UpdatedAt() DateTime
+	ExpiresAt() *DateTime
+	URL() string
+	Secret() string
+}
+
+type BatchChangesLifecycleHookConnectionResolver interface {
+	Nodes(ctx context.Context) ([]BatchChangesLifecycleHookResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }

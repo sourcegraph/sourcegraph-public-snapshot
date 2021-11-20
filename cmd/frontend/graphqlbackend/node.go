@@ -249,4 +249,10 @@ func (r *NodeResolver) ToWebhookLog() (*webhookLogResolver, bool) {
 func (r *NodeResolver) ToExecutor() (*executorResolver, bool) {
 	n, ok := r.Node.(*executorResolver)
 	return n, ok
+
+}
+
+func (r *NodeResolver) ToBatchChangesLifecycleHook() (BatchChangesLifecycleHookResolver, bool) {
+	n, ok := r.Node.(BatchChangesLifecycleHookResolver)
+	return n, ok
 }

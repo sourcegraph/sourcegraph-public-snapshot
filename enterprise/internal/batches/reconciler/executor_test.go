@@ -504,6 +504,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			err := executePlan(
 				ctx,
 				gitClient,
+				nil,
 				sourcer,
 				// Don't actually sleep for the sake of testing.
 				true,
@@ -622,7 +623,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, nil, nil, sources.NewFakeSourcer(nil, &sources.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -656,7 +657,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		err := executePlan(ctx, nil, nil, sourcer, true, cstore, plan)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -669,7 +670,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		err := executePlan(ctx, nil, nil, sourcer, true, cstore, plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}
@@ -1016,6 +1017,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			err := executePlan(
 				context.Background(),
 				gitClient,
+				nil,
 				sourcer,
 				true,
 				cstore,

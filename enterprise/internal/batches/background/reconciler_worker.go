@@ -7,6 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/lifecycle"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -33,10 +34,11 @@ func newReconcilerWorker(
 	s *store.Store,
 	workerStore dbworkerstore.Store,
 	gitClient reconciler.GitserverClient,
+	hookDispatcher *lifecycle.Dispatcher,
 	sourcer sources.Sourcer,
 	metrics batchChangesMetrics,
 ) *workerutil.Worker {
-	r := reconciler.New(gitClient, sourcer, s)
+	r := reconciler.New(gitClient, hookDispatcher, sourcer, s)
 
 	options := workerutil.WorkerOptions{
 		Name:              "batches_reconciler_worker",

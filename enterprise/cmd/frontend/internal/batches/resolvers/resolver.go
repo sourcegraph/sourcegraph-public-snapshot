@@ -127,6 +127,9 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchSpecWorkspaceByID(ctx, id)
 		},
+		lifecycleHookIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.lifecycleHookByID(ctx, id)
+		},
 	}
 }
 
@@ -372,6 +375,33 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 	}
 
 	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex}, nil
+}
+
+func (r *Resolver) lifecycleHookByID(ctx context.Context, gqlID graphql.ID) (graphqlbackend.BatchChangesLifecycleHookResolver, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalLifecycleHookID(gqlID)
+	if err != nil {
+		return nil, err
+	}
+
+	if id == 0 {
+		return nil, ErrIDIsZero{}
+	}
+
+	hook, err := r.store.GetLifecycleHook(ctx, id)
+	if err == store.ErrNoResults {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &lifecycleHookResolver{
+		store: r.store,
+		hook:  hook,
+	}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/lifecycle"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -23,9 +24,18 @@ import (
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(
+	ctx context.Context,
+	gitserverClient GitserverClient,
+	hookDispatcher *lifecycle.Dispatcher,
+	sourcer sources.Sourcer,
+	noSleepBeforeSync bool,
+	tx *store.Store,
+	plan *Plan,
+) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
+		hookDispatcher:    hookDispatcher,
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
@@ -38,6 +48,7 @@ func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer s
 
 type executor struct {
 	gitserverClient   GitserverClient
+	hookDispatcher    *lifecycle.Dispatcher
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
@@ -218,6 +229,10 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 	}
 	// Set the changeset to published.
 	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
+
+	// Dispatch lifecycle hooks.
+	e.hookDispatcher.ChangesetPublished(ctx, e.ch)
+
 	return nil
 }
 

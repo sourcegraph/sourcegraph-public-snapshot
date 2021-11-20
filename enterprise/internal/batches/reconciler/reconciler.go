@@ -5,6 +5,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/lifecycle"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -21,6 +22,7 @@ type GitserverClient interface {
 // ChangesetSpec associated with the changeset.
 type Reconciler struct {
 	gitserverClient GitserverClient
+	hookDispatcher  *lifecycle.Dispatcher
 	sourcer         sources.Sourcer
 	store           *store.Store
 
@@ -29,9 +31,10 @@ type Reconciler struct {
 	noSleepBeforeSync bool
 }
 
-func New(gitClient GitserverClient, sourcer sources.Sourcer, store *store.Store) *Reconciler {
+func New(gitClient GitserverClient, hookDispatcher *lifecycle.Dispatcher, sourcer sources.Sourcer, store *store.Store) *Reconciler {
 	return &Reconciler{
 		gitserverClient: gitClient,
+		hookDispatcher:  hookDispatcher,
 		sourcer:         sourcer,
 		store:           store,
 	}
@@ -84,6 +87,7 @@ func (r *Reconciler) process(ctx context.Context, tx *store.Store, ch *btypes.Ch
 	return executePlan(
 		ctx,
 		r.gitserverClient,
+		r.hookDispatcher,
 		r.sourcer,
 		r.noSleepBeforeSync,
 		tx,

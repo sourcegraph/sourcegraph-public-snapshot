@@ -2988,3 +2988,31 @@ input ChangesetSpecPublicationStateInput {
     """
     publicationState: PublishedValue!
 }
+
+type BatchChangesLifecycleHook implements Node {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    expiresAt: DateTime
+    url: String!
+    secret: String!
+}
+
+type BatchChangesLifecycleHookConnection {
+    nodes: [BatchChangesLifecycleHook!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+extend type Mutation {
+    createBatchChangesLifecycleHook(expiresAt: DateTime, url: String!, secret: String!): BatchChangesLifecycleHook!
+    deleteBatchChangesLifecycleHook(id: ID!): EmptyResponse!
+}
+
+extend type Query {
+    batchChangesLifecycleHooks(
+        first: Int = 50
+        after: String
+        includeExpired: Boolean
+    ): BatchChangesLifecycleHookConnection!
+}

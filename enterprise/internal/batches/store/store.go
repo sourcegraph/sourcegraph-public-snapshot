@@ -272,6 +272,12 @@ type operations struct {
 	markUsedBatchSpecExecutionCacheEntry *observation.Operation
 	createBatchSpecExecutionCacheEntry   *observation.Operation
 	cleanBatchSpecExecutionCacheEntries  *observation.Operation
+
+	countLifecycleHooks *observation.Operation
+	createLifecycleHook *observation.Operation
+	getLifecycleHook    *observation.Operation
+	listLifecycleHooks  *observation.Operation
+	deleteLifecycleHook *observation.Operation
 }
 
 var (
