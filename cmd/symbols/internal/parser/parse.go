@@ -68,7 +68,7 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	}()
 
 	tr.LazyPrintf("fetch")
-	parseRequests, errChan, err := fetchRepositoryArchive(ctx, p.gitserverClient, p.fetchSem, repo, commitID, paths)
+	parseRequestOrErrors := fetchRepositoryArchive(ctx, p.gitserverClient, p.fetchSem, repo, commitID, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
 		return err
@@ -83,12 +83,16 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0
-	for req := range parseRequests {
+	for req := range parseRequestOrErrors {
+		if req.err != nil {
+			return req.err
+		}
+
 		totalParseRequests++
 		if ctx.Err() != nil {
 			// Drain parseRequests
 			go func() {
-				for range parseRequests {
+				for range parseRequestOrErrors {
 				}
 			}()
 			return ctx.Err()
@@ -115,12 +119,12 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 					}
 				}
 			}
-		}(req)
+		}(req.parseRequest)
 	}
 	wg.Wait()
 	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
 
-	return <-errChan
+	return nil
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.
