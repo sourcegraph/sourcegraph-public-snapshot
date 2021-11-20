@@ -37,32 +37,6 @@ func fetchRepositoryArchive(ctx context.Context, gitserverClient GitserverClient
 	requestCh := make(chan parseRequest)
 	errCh := make(chan error, 1)
 
-	// Done is called when the returned reader is closed, or if this function
-	// returns an error. It should always be called once.
-	doneCalled := false
-	done := func(err error) {
-		if doneCalled {
-			panic("Store.fetch.done called twice")
-		}
-		doneCalled = true
-
-		if err != nil {
-			errCh <- err
-		}
-
-		<-fetchSem // release concurrent fetches semaphore
-		close(requestCh)
-		close(errCh)
-
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			fetchFailed.Inc()
-		}
-		fetching.Dec()
-		span.Finish()
-	}
-
 	r, err := gitserverClient.FetchTar(ctx, repo, commitID, paths)
 	if err != nil {
 		return nil, nil, err
@@ -72,24 +46,40 @@ func fetchRepositoryArchive(ctx context.Context, gitserverClient GitserverClient
 	// return an error via the errChan we return. If you do want to update this
 	// code please ensure we still always call done once.
 
-	go func() {
-		defer r.Close()
+	go func() (err error) {
+		defer func() {
+			r.Close()
+
+			if err != nil {
+				errCh <- err
+			}
+
+			<-fetchSem // release concurrent fetches semaphore
+			close(requestCh)
+			close(errCh)
+
+			if err != nil {
+				ext.Error.Set(span, true)
+				span.SetTag("err", err.Error())
+				fetchFailed.Inc()
+			}
+			fetching.Dec()
+			span.Finish()
+		}()
+
 		buf := make([]byte, 32*1024) // 32*1024 is the same size used by io.Copy
 		tr := tar.NewReader(r)
 		for {
 			if ctx.Err() != nil {
-				done(ctx.Err())
-				return
+				return ctx.Err()
 			}
 
 			hdr, err := tr.Next()
 			if err == io.EOF {
-				done(nil)
-				return
+				return nil
 			}
 			if err != nil {
-				done(err)
-				return
+				return err
 			}
 
 			if path.Ext(hdr.Name) == ".json" {
@@ -116,8 +106,7 @@ func fetchRepositoryArchive(ctx context.Context, gitserverClient GitserverClient
 				}
 			case nil:
 			default:
-				done(err)
-				return
+				return err
 			}
 
 			// Read the file's contents.
@@ -126,8 +115,7 @@ func fetchRepositoryArchive(ctx context.Context, gitserverClient GitserverClient
 			if n < int(hdr.Size) {
 				_, err = io.ReadFull(tr, data[n:])
 				if err != nil {
-					done(err)
-					return
+					return err
 				}
 			}
 			requestCh <- parseRequest{path: hdr.Name, data: data}
