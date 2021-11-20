@@ -9,13 +9,16 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 )
 
 const (
@@ -48,6 +51,7 @@ type batchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
 	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
+	GetBatchSpecExecutionCacheEntry(ctx context.Context, opts store.GetBatchSpecExecutionCacheEntryOpts) (job *btypes.BatchSpecExecutionCacheEntry, err error)
 
 	DatabaseDB() database.DB
 }
@@ -123,9 +127,46 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 		return apiclient.Job{}, err
 	}
 
+	files := map[string]string{"input.json": string(marshaledInput)}
+
+	// We start at the back so that we can find the _last_ cached step,
+	// then restart execution on the following step.
+	taskKey := service.CacheKeyForWorkspace(batchSpec, &service.RepoWorkspace{
+		RepoRevision: &service.RepoRevision{
+			Repo:        repo,
+			Branch:      executionInput.Workspace.Branch.Name,
+			Commit:      api.CommitID(executionInput.Workspace.Branch.Target.OID),
+			FileMatches: executionInput.Workspace.SearchResultPaths,
+		},
+		Path:               executionInput.Workspace.Path,
+		Steps:              workspace.Steps,
+		OnlyFetchWorkspace: executionInput.Workspace.OnlyFetchWorkspace,
+	})
+	for i := len(workspace.Steps) - 1; i > -1; i-- {
+		key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
+		rawKey, err := key.Key()
+		if err != nil {
+			return apiclient.Job{}, nil
+		}
+		entry, err := s.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
+			Key: rawKey,
+		})
+		if err != nil && err != store.ErrNoResults {
+			return apiclient.Job{}, err
+		}
+		if err == store.ErrNoResults {
+			continue
+		}
+
+		// Add file to virtualMachineFiles.
+		files[rawKey+`.json`] = entry.Value
+		// And break after. src-cli only needs the most recent cache entry.
+		break
+	}
+
 	return apiclient.Job{
 		ID:                  int(job.ID),
-		VirtualMachineFiles: map[string]string{"input.json": string(marshaledInput)},
+		VirtualMachineFiles: files,
 		CliSteps: []apiclient.CliStep{
 			{
 				Commands: []string{"batch", "exec", "-f", "input.json"},
