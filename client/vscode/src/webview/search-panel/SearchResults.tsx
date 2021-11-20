@@ -12,81 +12,147 @@ import {
     SearchMatch,
     SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
+import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
+import { SourcegraphUri } from '../../file-system/SourcegraphUri'
 import { CommitSearchResultFields, FileMatchFields, RepositoryFields, SearchResult } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
 
 import { useQueryState } from '.'
 
-interface SearchResultsProps extends Pick<WebviewPageProps, 'platformContext' | 'theme'> {}
+interface SearchResultsProps extends WebviewPageProps {
+    settings: SettingsCascadeOrError<Settings>
+    instanceHostname: Promise<string>
+}
 
-// TODO(tj): just try to move the whole StreamingSearchResults file to shared and use THAT!
-// Only difference is "show more" button, which we can add here
-//  (refer to https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.27.4/-/blob/client/web/src/search/results/SearchResultsList.tsx?L442)
-// Also varies in that "location.search" is source of truth for search query in streaming search result.
-// can change prop to 'queriedSearch'/'executedQuery', pass location.search in webapp, pass zustand value in vsce?
-// also make location optional in streaming then.
+export const SearchResults = React.memo<SearchResultsProps>(
+    ({ platformContext, theme, sourcegraphVSCodeExtensionAPI, settings, instanceHostname }) => {
+        const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
+        const searchResults = useQueryState(({ state }) => state.searchResults)
 
-// Stremaing result footer also makes no sense here, figure out a way to use the same NoResultsPage and pass it as a child to the footer
-// optionally... maybe renderFooter: (children: JSX.Element) => JSX.Element
+        const fetchHighlightedFileLineRangesWithContext = useCallback(
+            (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
+            [platformContext]
+        )
 
-export const SearchResults = React.memo<SearchResultsProps>(({ platformContext, theme }) => {
-    // TODO handler search results changing. maybe pass search results prop from parent and don't render this while loading?
-    const executedQuery = useQueryState(({ state }) => state.queryToRun.query)
-    const searchResults = useQueryState(({ state }) => state.searchResults)
+        if (!searchResults) {
+            // TODO this component should only be rendered when there are results, update props.
+            return null
+        }
+        // TODO memoize (after above comment is resolved)
+        const matches = convertGQLSearchToSearchMatches(searchResults)
 
-    const fetchHighlightedFileLineRangesWithContext = useCallback(
-        (parameters: FetchFileParameters) => fetchHighlightedFileLineRanges({ ...parameters, platformContext }),
-        [platformContext]
-    )
+        // TODO error state
+        const results: AggregateStreamingSearchResults = {
+            state: 'complete',
+            results: matches,
+            filters: searchResults.search?.results.dynamicFilters ?? [],
+            progress: {
+                matchCount: searchResults.search?.results.matchCount ?? 0,
+                durationMs: searchResults.search?.results.elapsedMilliseconds ?? 0,
+                repositoriesCount: searchResults.search?.results.repositoriesCount ?? 0,
+                skipped: [],
+            },
+        }
 
-    // Convert GQL type to SearchMatch
+        /**
+         * Opens a SearchMatch in VS Code.
+         */
+        const onSelect = (result: SearchMatch): void => {
+            ;(async () => {
+                const host = await instanceHostname
 
-    if (!searchResults) {
-        // TODO loading state.. might not delegate to <StreamingSearchResultsList>
-        return null
+                switch (result.type) {
+                    case 'commit': {
+                        return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}${result.url}`)
+                    }
+                    // TODO ensure component always calls this for VSCE (usually a link)
+                    case 'path': {
+                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
+                            revision: result.commit,
+                            path: result.path,
+                        })
+                        return sourcegraphVSCodeExtensionAPI.openFile(sourcegraphUri.uri)
+                    }
+                    case 'repo': {
+                        return sourcegraphVSCodeExtensionAPI.openFile(`sourcegraph://${host}/${result.repository}`)
+                    }
+                    // TODO ensure component always calls this for VSCE (usually a link)
+                    case 'symbol': {
+                        // Incorporate commit OID in URI
+                        const commit = result.commit!
+                        const url = result.symbols[0].url
+
+                        const { path, position } = SourcegraphUri.parse(`https:/${url}`, window.URL)
+                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
+                            revision: commit,
+                            path,
+                            position,
+                        })
+                        return sourcegraphVSCodeExtensionAPI.openFile(
+                            sourcegraphUri.uri + sourcegraphUri.positionSuffix()
+                        )
+                    }
+                    case 'content': {
+                        // TODO we will have to pass SearchMatch to onSelect from within the FileMatchChildren component
+                        // to be able to determine which line match to open to.
+                        // For preview we open the first match.
+
+                        const { lineNumber, offsetAndLengths } = result.lineMatches[0]
+                        const [start] = offsetAndLengths[0]
+
+                        const sourcegraphUri = SourcegraphUri.fromParts(host, result.repository, {
+                            revision: result.commit,
+                            path: result.path,
+                            position: {
+                                line: lineNumber,
+                                character: start,
+                            },
+                        })
+                        return sourcegraphVSCodeExtensionAPI.openFile(
+                            sourcegraphUri.uri + sourcegraphUri.positionSuffix()
+                        )
+                    }
+                }
+            })().catch(error => {
+                console.log({ error })
+                // TODO error handling
+            })
+        }
+
+        return (
+            <>
+                <StreamingSearchResultsList
+                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
+                    isLightTheme={theme === 'theme-light'}
+                    executedQuery={executedQuery}
+                    settingsCascade={settings}
+                    telemetryService={platformContext.telemetryService}
+                    // Default to false until we implement <SearchResultsInfoBar>, which is where this value is set.
+                    allExpanded={false}
+                    isSourcegraphDotCom={false}
+                    searchContextsEnabled={true}
+                    showSearchContext={true}
+                    platformContext={platformContext}
+                    results={results}
+                    onSelect={onSelect}
+                    // TODO "no results" video thumbnail assets
+                    // In build, copy ui/assets/img folder to dist/
+                    assetsRoot={undefined}
+                />
+
+                {searchResults.search?.results.limitHit && (
+                    <div className="alert alert-info d-flex m-3">
+                        <p className="m-0">
+                            <strong>Result limit hit.</strong> Modify your search with <code>count:</code> to return
+                            additional items.
+                        </p>
+                    </div>
+                )}
+            </>
+        )
     }
-    // todo memoize
-    const matches = convertGQLSearchToSearchMatches(searchResults)
-
-    // TODO error state
-    const results: AggregateStreamingSearchResults = {
-        state: 'complete',
-        results: matches,
-        filters: searchResults.search?.results.dynamicFilters ?? [],
-        progress: {
-            matchCount: searchResults.search?.results.matchCount ?? 0,
-            durationMs: searchResults.search?.results.elapsedMilliseconds ?? 0,
-            repositoriesCount: searchResults.search?.results.repositoriesCount ?? 0,
-            skipped: [],
-        },
-    }
-
-    return (
-        <>
-            <StreamingSearchResultsList
-                fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
-                isLightTheme={theme === 'theme-light'}
-                executedQuery={executedQuery}
-                // TODO use real settings (getSettings() on comlink extension API)
-                settingsCascade={{ final: {}, subjects: [] }}
-                // TODO use real telemetry service
-                telemetryService={{
-                    log: () => {},
-                    logViewEvent: () => {},
-                }}
-                // Default to false until we implement <SearchResultsInfoBar>, which is where this value is set.
-                allExpanded={false}
-                isSourcegraphDotCom={false}
-                searchContextsEnabled={true}
-                showSearchContext={true}
-                platformContext={platformContext}
-                results={results}
-            />
-            {/* TODO show more button */}
-        </>
-    )
-})
+)
 
 export function convertGQLSearchToSearchMatches(searchResult: SearchResult): SearchMatch[] {
     return (
@@ -116,6 +182,7 @@ function convertFileMatch(
             repository: result.repository.name,
             symbols: result.symbols.map(symbol => ({ ...symbol, containerName: symbol.containerName ?? '' })),
             repoStars: result.repository.stars,
+            commit: result.file.commit.oid,
         }
         return symbolMatch
     }
@@ -133,7 +200,7 @@ function convertFileMatch(
 
         const contentMatch: ContentMatch = {
             type: 'content',
-            path: result.file.path, // TODO sourcegraph uri
+            path: result.file.path,
             repository: result.repository.name,
             lineMatches: lineMatchesWithLine,
             repoStars: result.repository.stars,

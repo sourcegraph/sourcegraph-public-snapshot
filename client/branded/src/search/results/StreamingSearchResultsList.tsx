@@ -47,6 +47,9 @@ export interface StreamingSearchResultsListProps
     assetsRoot?: string
     /** TODO EXPLAIN */
     executedQuery: string
+
+    /** TODO explain */
+    onSelect?: (result: SearchMatch) => void
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
@@ -64,6 +67,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     footerClassName,
     assetsRoot,
     executedQuery,
+    onSelect,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -87,6 +91,14 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 
     const renderResult = useCallback(
         (result: SearchMatch): JSX.Element => {
+            const onFileMatchClicked = (): void => {
+                logSearchResultClicked()
+                onSelect?.(result)
+            }
+            const onSearchResultClicked = (): void => {
+                onSelect?.(result)
+            }
+
             switch (result.type) {
                 case 'content':
                 case 'path':
@@ -97,7 +109,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
-                            onSelect={logSearchResultClicked}
+                            onSelect={onFileMatchClicked}
                             expanded={false}
                             showAllMatches={false}
                             allExpanded={allExpanded}
@@ -114,6 +126,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             telemetryService={telemetryService}
                             platformContext={platformContext}
+                            onSelect={onSearchResultClicked}
                         />
                     )
                 case 'repo':
@@ -124,6 +137,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             repoName={result.repository}
                             telemetryService={telemetryService}
                             platformContext={platformContext}
+                            onSelect={onSearchResultClicked}
                         />
                     )
             }
@@ -136,6 +150,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             fetchHighlightedFileLineRanges,
             settingsCascade,
             platformContext,
+            onSelect,
         ]
     )
     return (

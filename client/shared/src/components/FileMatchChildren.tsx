@@ -88,7 +88,6 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
             positionOrRangeQueryParameter
         )
     }
-
     return (
         <div className={styles.fileMatchChildren} data-testid="file-match-children">
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
@@ -106,6 +105,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                     className={classNames('test-file-match-children-item', styles.item)}
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     data-testid="file-match-children-item"
+                    onClick={props.onSelect}
                 >
                     <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
                     <code>

@@ -8,6 +8,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { WebviewPageProps } from '../platform/context'
 
+import { OpenSearchPanelCta } from './OpenSearchPanelCta'
 import styles from './SearchSidebar.module.scss'
 
 interface SearchSidebarProps extends Pick<WebviewPageProps, 'platformContext' | 'sourcegraphVSCodeExtensionAPI'> {}
@@ -75,8 +76,21 @@ export const SearchSidebar: React.FC<SearchSidebarProps> = ({ sourcegraphVSCodeE
     }, [activeQueryState, useQueryState])
 
     if (!activeQueryState) {
-        return null
+        // There's no ACTIVE search panel
+
+        // We need to add API to query all open search panels
+
+        // If no open, show button + CTA to open search panel (links to sign up etc.)
+
+        return (
+            <OpenSearchPanelCta
+                className={styles.sidebarContainer}
+                sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+            />
+        )
     }
+
+    // For v1: Add recent/saved searches/files panel(s)
 
     const { caseSensitive, patternType } = activeQueryState
 

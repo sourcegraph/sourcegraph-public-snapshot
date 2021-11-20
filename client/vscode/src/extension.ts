@@ -4,20 +4,87 @@ import { of, ReplaySubject } from 'rxjs'
 import vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { requestGraphQLFromVSCode } from './backend/requestGraphQl'
+import { invalidateClient, requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
+import { openSourcegraphUriCommand } from './commands.ts/openSourcegraphUriCommand'
+import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
+import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
+import { SourcegraphUri } from './file-system/SourcegraphUri'
+import { log } from './log'
+import { endpointHostnameSetting, endpointSetting } from './settings/endpointSetting'
 import { SourcegraphVSCodeExtensionAPI } from './webview/contract'
 import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './webview/initialize'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 
 export function activate(context: vscode.ExtensionContext): void {
-    // TODO: reload whole extension any time sourcegrap+h url or access token change
-    // (reduce risk of data leaks in logging)
-    // Only allow files from the current SG instance in the extension host. (query param in Sourcegraph URI?)
+    // TODO: Close all editors (search panel and remote files) and restart Sourcegraph extension host
+    // any time sourcegraph url or TODO access token change to reduce risk of data leaks in logging.
+    // Pass this to GraphQL client to avoid making requests to the new instance before restarting VS Code.
+    const initialSourcegraphUrl = endpointSetting()
+    const instanceHostname = endpointHostnameSetting()
 
-    const sourcegraphSettings = initializeSourcegraphSettings(requestGraphQLFromVSCode, context.subscriptions)
+    vscode.workspace.onDidChangeConfiguration(event => {
+        if (event.affectsConfiguration('sourcegraph.url')) {
+            const newSourcegraphUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
+            if (initialSourcegraphUrl !== newSourcegraphUrl) {
+                invalidateClient()
+
+                for (const subscription of context.subscriptions) {
+                    subscription.dispose()
+                }
+
+                vscode.window
+                    .showInformationMessage('Restart VS Code to use the Sourcegraph extension after URL change.')
+                    .then(
+                        () => {},
+                        () => {}
+                    )
+                // TODO close editors from different instance.
+                // fs.purge()
+                // TODO Also validate that the extension host only adds documents from the current instance (explicit check, less likely to
+                // be an issue but doesn't hurt to be safe).
+                // Close all search tabs!
+            }
+        }
+    })
+
+    // Register file-system related functionality.
+    const fs = new SourcegraphFileSystemProvider(initialSourcegraphUrl)
+    const files = new FilesTreeDataProvider(fs)
+
+    vscode.workspace.registerFileSystemProvider('sourcegraph', fs, { isReadonly: true })
+
+    const filesTreeView = vscode.window.createTreeView<string>('sourcegraph.files', {
+        treeDataProvider: files,
+        showCollapseAll: true,
+    })
+    files.setTreeView(filesTreeView)
+
+    context.subscriptions.push(filesTreeView)
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(editor => files.didFocus(editor?.document.uri))
+    )
+    files.didFocus(vscode.window.activeTextEditor?.document.uri).then(
+        () => {},
+        () => {}
+    )
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('extension.openFile', async uri => {
+            if (typeof uri === 'string') {
+                await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
+            } else {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                log.error(`extension.openFile(${uri}) argument is not a string`)
+            }
+        })
+    )
+
+    // TODO copy from existing extension.
+    // context.subscriptions.push(registerSourcegraphGitCommands())
+
+    const sourcegraphSettings = initializeSourcegraphSettings(context.subscriptions)
 
     // Create sidebar mediator to facilitate communication between search webviews and sidebar
     const searchSidebarMediator = createSearchSidebarMediator(context.subscriptions)
@@ -26,8 +93,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const initializedPanelIDs = new ReplaySubject<string>(7)
 
     const sourcegraphVSCodeExtensionAPI: SourcegraphVSCodeExtensionAPI = {
-        requestGraphQL: async (request: string, variables: any): Promise<GraphQLResult<any>> =>
-            requestGraphQLFromVSCode(request, variables),
+        requestGraphQL: requestGraphQLFromVSCode,
         getSettings: () => proxySubscribable(sourcegraphSettings.settings),
         ping: () => proxySubscribable(of('pong')),
 
@@ -36,7 +102,11 @@ export function activate(context: vscode.ExtensionContext): void {
         setActiveWebviewQueryState: searchSidebarMediator.setActiveWebviewQueryState,
         submitActiveWebviewSearch: searchSidebarMediator.submitActiveWebviewSearch,
 
+        getInstanceHostname: () => instanceHostname,
         panelInitialized: panelId => initializedPanelIDs.next(panelId),
+        openFile: (uri: string) => openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri)),
+
+        openSearchPanel: () => vscode.commands.executeCommand('sourcegraph.search'),
     }
 
     context.subscriptions.push(
@@ -104,8 +174,6 @@ export function activate(context: vscode.ExtensionContext): void {
                 </head>
                 <body>
                     <div id="root">
-                    <h1>Sourcegraph Extension host</h1>
-                    <p>Testing</p>
                     </div>
                 </body>
                 </html>`

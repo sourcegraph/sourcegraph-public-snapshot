@@ -3,10 +3,15 @@
   "name": "sourcegraph-preview",
   "displayName": "Sourcegraph - preview",
   "version": "0.0.1",
-  "description": "Sourcegraph VS Code extension",
+  "description": "Sourcegraph for VS Code",
   "publisher": "kandalatj",
   "sideEffects": false,
   "license": "Apache-2.0",
+  "icon": "images/logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/sourcegraph.git"
+  },
   "engines": {
     "vscode": "^1.61.0"
   },
@@ -15,6 +20,7 @@
   ],
   "activationEvents": [
     "onCommand:sourcegraph.search",
+    "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
     "onView:sourcegraph.searchSidebar"
   ],
@@ -23,7 +29,13 @@
     "commands": [
       {
         "command": "sourcegraph.search",
+        "category": "Sourcegraph",
         "title": "Sourcegraph: Open search tab"
+      },
+      {
+        "command": "extension.openFile",
+        "category": "Sourcegraph",
+        "title": "Open File"
       }
     ],
     "viewsContainers": {
@@ -43,12 +55,22 @@
           "name": "Sourcegraph Search Sidebar"
         },
         {
+          "id": "sourcegraph.files",
+          "name": "Files"
+        },
+        {
           "type": "webview",
           "id": "sourcegraph.extensionHost",
           "name": "Sourcegraph Extensions"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "sourcegraph.files",
+        "contents": "No open files."
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "Sourcegraph extension configuration",
@@ -68,9 +90,15 @@
           "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
         }
       }
-    }
+    },
+    "keybindings": [
+      {
+        "command": "sourcegraph.search",
+        "key": "ctrl+shift+8",
+        "mac": "cmd+shift+8"
+      }
+    ]
   },
-  "keybindings": [],
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "build": "webpack",

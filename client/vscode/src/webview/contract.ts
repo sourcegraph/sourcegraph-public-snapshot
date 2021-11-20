@@ -30,8 +30,13 @@ export interface SourcegraphVSCodeExtensionAPI
 
     // For search webview
     panelInitialized: (panelId: string) => void
+    /** TODO explain, we deliberately do not react to URL changes in webviews. */
+    getInstanceHostname: () => string
+    /** TODO document. sourcegraph://${host}/${uri} */
+    openFile: (sourcegraphUri: string) => void
 
     // For search sidebar
+    openSearchPanel: () => void
 
     // For extension host sidebar
     // mainThreadAPI methods

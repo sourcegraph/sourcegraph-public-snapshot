@@ -4,6 +4,8 @@
 :root {
     --border-color: rgba(0, 0, 0, 0.125);
     --mark-bg: #{$mark-bg-light};
+    // TODO for v1: redefine our CSS variables using VS Code's CSS variables
+    // instead of hackily overriding used class properties.
 }
 
 // stylelint-disable-next-line selector-max-id
@@ -27,10 +29,10 @@ body,
 // Adapt to VS Code appearance.
 body {
     background-color: transparent;
-    color: var(--vscode-textPreformat-foreground) !important;
-    font-family: var(--vscode-font-family) !important;
-    font-weight: var(--vscode-font-weight) !important;
-    font-size: var(--vscode-font-size) !important;
+    color: var(--vscode-textPreformat-foreground);
+    font-family: var(--vscode-font-family);
+    font-weight: var(--vscode-font-weight);
+    font-size: var(--vscode-font-size);
 }
 
 code {

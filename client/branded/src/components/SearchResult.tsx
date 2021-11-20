@@ -22,9 +22,10 @@ interface Props extends TelemetryProps, PlatformContextProps<'requestGraphQL'> {
     result: CommitMatch | RepositoryMatch
     repoName: string
     icon: React.ComponentType<{ className?: string }>
+    onSelect?: () => void
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, platformContext }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, platformContext, onSelect }) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
@@ -128,6 +129,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             defaultExpanded={true}
             title={renderTitle()}
             expandedChildren={renderBody()}
+            onResultClicked={onSelect}
         />
     )
 }

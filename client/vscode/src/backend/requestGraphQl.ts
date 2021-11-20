@@ -6,7 +6,25 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { accessTokenSetting, handleAccessTokenError } from '../settings/accessTokenSetting'
 import { endpointSetting } from '../settings/endpointSetting'
 
-export const requestGraphQLFromVSCode = async (request: string, variables: any): Promise<GraphQLResult<any>> => {
+let invalidated = false
+
+/**
+ * To be called when Sourcegraph URL changes.
+ */
+export function invalidateClient(): void {
+    invalidated = true
+}
+
+export const requestGraphQLFromVSCode = async <R, V = object>(
+    request: string,
+    variables: V
+): Promise<GraphQLResult<R>> => {
+    if (invalidated) {
+        throw new Error(
+            'Sourcegraph GraphQL Client has been invalidated due to instance URL change. Restart VS Code to fix.'
+        )
+    }
+
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
 
@@ -29,6 +47,7 @@ export const requestGraphQLFromVSCode = async (request: string, variables: any):
                 headers,
             })
         )
+        // TODO request cancellation w/ VS Code cancellation tokens.
 
         // eslint-disable-next-line @typescript-eslint/return-await
         return response.json() as Promise<GraphQLResult<any>>

@@ -55,6 +55,7 @@ export async function initializeSearchPanelWebview({
     Comlink.expose(sourcegraphVSCodeExtensionAPI, expose)
 
     // TODO(tj): SECURITY!!! temporary script-src unsafe-eval for development mode
+    // TODO dev vs prod csp, allow youtube videos (img src)
     panel.webview.html = `<!DOCTYPE html>
     <html lang="en" data-panel-id="${panelId}">
     <head>

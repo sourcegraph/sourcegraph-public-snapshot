@@ -8,6 +8,5 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: [__dirname + '/tsconfig.json'],
   },
-  rules: {},
   overrides: baseConfig.overrides,
 }

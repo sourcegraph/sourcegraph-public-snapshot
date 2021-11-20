@@ -1,9 +1,10 @@
 import classNames from 'classnames'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { getAvailableSearchContextSpecOrDefault } from '@sourcegraph/shared/src/search'
 import {
@@ -13,7 +14,9 @@ import {
 } from '@sourcegraph/shared/src/search/backend'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SearchResult, SearchVariables } from '../../graphql-operations'
 import { WebviewPageProps } from '../platform/context'
@@ -27,13 +30,7 @@ import { useQueryState } from '.'
 
 interface SearchPageProps extends WebviewPageProps {}
 
-// TODO(tj): move to separate file, implement as part of analytics project
-const noopTelemetryService: TelemetryService = {
-    log: () => {},
-    logViewEvent: () => {},
-}
-
-export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme }) => {
+export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme, sourcegraphVSCodeExtensionAPI }) => {
     const searchActions = useQueryState(({ actions }) => actions)
     const queryState = useQueryState(({ state }) => state.queryState)
     const queryToRun = useQueryState(({ state }) => state.queryToRun)
@@ -41,17 +38,18 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme }
     const patternType = useQueryState(({ state }) => state.patternType)
     const selectedSearchContextSpec = useQueryState(({ state }) => state.selectedSearchContextSpec)
 
-    // const currentAuthState = useObservable(
-    //     useMemo(
-    //         () =>
-    //             platformContext.requestGraphQL<CurrentAuthStateResult, CurrentAuthStateVariables>({
-    //                 request: currentAuthStateQuery,
-    //                 variables: {},
-    //                 mightContainPrivateInfo: false,
-    //             }),
-    //         [platformContext]
-    //     )
-    // )
+    const instanceHostname = useMemo(() => sourcegraphVSCodeExtensionAPI.getInstanceHostname(), [
+        sourcegraphVSCodeExtensionAPI,
+    ])
+
+    const sourcegraphSettings =
+        useObservable(
+            useMemo(() => wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()), [
+                sourcegraphVSCodeExtensionAPI,
+            ])
+        ) ?? EMPTY_SETTINGS_CASCADE
+
+    const globbing = useMemo(() => globbingEnabledFromSettings(sourcegraphSettings), [sourcegraphSettings])
 
     const [loading, setLoading] = useState(false)
 
@@ -116,7 +114,7 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme }
                 searchActions.setSelectedSearchContextSpec(availableSearchContextSpecOrDefault)
             })
             .catch(() => {
-                // TODO
+                // TODO error handling
             })
     }
 
@@ -128,16 +126,15 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme }
                     isSourcegraphDotCom={true}
                     // Platform context props
                     platformContext={platformContext}
-                    telemetryService={noopTelemetryService}
+                    telemetryService={platformContext.telemetryService}
                     // Search context props
                     searchContextsEnabled={true}
                     showSearchContext={true}
                     showSearchContextManagement={true}
                     hasUserAddedExternalServices={false}
-                    // TODO copy from web. doesn't matter if we never show Cta Prompt
-                    hasUserAddedRepositories={true} // TODO copy from web
+                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     defaultSearchContextSpec={DEFAULT_SEARCH_CONTEXT_SPEC}
-                    // TODO store in vs code settings
+                    // TODO store search context in vs code settings?
                     setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                     selectedSearchContextSpec={selectedSearchContextSpec}
                     fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
@@ -149,29 +146,32 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext, theme }
                     // Pattern type props
                     patternType={patternType}
                     setPatternType={searchActions.setPatternType}
-                    // MISC TODO
+                    // Misc.
                     isLightTheme={theme === 'theme-light'}
-                    // TODO: pass in real auth user. decide whether to block on auth
                     authenticatedUser={null} // Used for search context CTA, which we won't show here.
                     queryState={queryState}
                     onChange={searchActions.setQuery}
                     onSubmit={onSubmit}
                     autoFocus={true}
                     fetchSuggestions={fetchSuggestions}
-                    // TODO(tj) globbing from settings
-                    globbing={false}
-                    // TODO rebase on main!! latest doesn't need settings
-                    // TODO(tj) settings (used only for `acceptSearchSuggestionOnEnter`. may harcode as true?)
-                    settingsCascade={{
-                        subjects: [],
-                        final: {},
-                    }}
+                    settingsCascade={sourcegraphSettings}
+                    globbing={globbing}
                     // TODO(tj): instead of cssvar, can pipe in font settings from extension
                     // to be able to pass it to Monaco!
                     className={classNames(styles.withEditorFont, 'flex-grow-1 flex-shrink-past-contents')}
                 />
             </div>
-            {loading ? <p>Loading...</p> : <SearchResults platformContext={platformContext} theme={theme} />}
+            {loading ? (
+                <p>Loading...</p>
+            ) : (
+                <SearchResults
+                    platformContext={platformContext}
+                    theme={theme}
+                    sourcegraphVSCodeExtensionAPI={sourcegraphVSCodeExtensionAPI}
+                    settings={sourcegraphSettings}
+                    instanceHostname={instanceHostname}
+                />
+            )}
         </div>
     )
 }

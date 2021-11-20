@@ -52,6 +52,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/share
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -92,7 +93,6 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { UserSessionStores } from './UserSessionStores'
-import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
     SITE_SUBJECT_NO_ADMIN,

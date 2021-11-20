@@ -1,6 +1,7 @@
 .sidebar-container {
     padding: 0;
     margin-top: 0.125rem;
+    color: var(--vscode-sideBar-foreground);
 
     & [data-reach-tabs] {
         // Override our default background color.

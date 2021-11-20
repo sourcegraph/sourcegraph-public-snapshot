@@ -3,10 +3,15 @@ import { from } from 'rxjs'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { SourcegraphVSCodeExtensionAPI } from '../contract'
 
-export interface VSCodePlatformContext extends Pick<PlatformContext, 'requestGraphQL' | 'settings'> {}
+import { vscodeTelemetryService } from './telemetryService'
+
+export interface VSCodePlatformContext extends Pick<PlatformContext, 'requestGraphQL' | 'settings'> {
+    telemetryService: TelemetryService
+}
 
 export function createPlatformContext(
     sourcegraphVSCodeExtensionAPI: Comlink.Remote<SourcegraphVSCodeExtensionAPI>
@@ -17,6 +22,7 @@ export function createPlatformContext(
         },
         // TODO: refresh settings in extension every hour that a search panel is created.
         settings: wrapRemoteObservable(sourcegraphVSCodeExtensionAPI.getSettings()),
+        telemetryService: vscodeTelemetryService,
     }
 
     // Any state that needs to be shared between webview instances (search panels, search sidebar)
