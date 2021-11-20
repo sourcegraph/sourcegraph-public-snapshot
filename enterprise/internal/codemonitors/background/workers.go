@@ -152,11 +152,20 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	if err != nil {
 		return err
 	}
+
+	m, err := s.MonitorByIDInt64(ctx, q.Monitor)
+	if err != nil {
+		return err
+	}
+
 	newQuery := newQueryWithAfterFilter(q)
 
+	if m.NamespaceUserID == nil {
+		return errors.New("code monitors cannot be owned by orgs")
+	}
+
 	// Search.
-	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery)
+	results, err := search(ctx, newQuery, *m.NamespaceUserID)
 	if err != nil {
 		return err
 	}

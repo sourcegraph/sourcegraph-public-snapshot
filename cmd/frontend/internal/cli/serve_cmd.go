@@ -120,9 +120,50 @@ func InitDB() (*sql.DB, error) {
 			return nil, err
 		}
 
+		// Add a manual migration for the v3.33.1 patch release so we don't
+		// get conflicting migration numbers. If we ran this as a normal migration,
+		// upgrading from v3.33.1 to v3.34.0 would cause at least one migration
+		// to be skipped because there would be overlapping migration numbers.
+		if _, err := dbconn.Global.ExecContext(ctx, patchMigration); err != nil {
+			log.Printf("failed patch migration: %s", err)
+			return nil, err
+		}
+		log.Printf("completed patch migration")
+
 		migrate = false
 	}
+
 }
+
+const patchMigration = `
+BEGIN;
+
+DELETE FROM cm_monitors WHERE namespace_user_id IS NULL OR namespace_org_id IS NOT NULL;
+COMMENT ON COLUMN cm_monitors.namespace_org_id IS 'DEPRECATED: code monitors cannot be owned by an org';
+
+-- Drop the table first to make this transaction idempotent
+ALTER TABLE cm_monitors
+	DROP CONSTRAINT IF EXISTS cm_monitors_cannot_be_org_owned;
+ALTER TABLE cm_monitors
+	ALTER COLUMN namespace_user_id SET NOT NULL,
+	ADD CONSTRAINT cm_monitors_cannot_be_org_owned CHECK (
+		namespace_org_id IS NULL
+	);
+
+UPDATE saved_searches
+SET (notify_owner, notify_slack) = (false, false);
+
+-- Drop the table first to make this transaction idempotent
+ALTER TABLE saved_searches
+	DROP CONSTRAINT IF EXISTS saved_searches_notifications_disabled;
+ALTER TABLE saved_searches
+	ADD CONSTRAINT saved_searches_notifications_disabled CHECK (
+		notify_owner = false
+		AND notify_slack = false
+	);
+
+COMMIT;
+`
 
 // Main is the main entrypoint for the frontend server program.
 func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
