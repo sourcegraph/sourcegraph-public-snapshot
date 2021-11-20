@@ -122,23 +122,32 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 			return err
 		}
 
-		changes, err := s.GitDiff(ctx, args.Repo, commit, args.CommitID)
-		if err != nil {
-			return err
+		var changes *Changes
+		if commit != "" && s.GitDiff != nil {
+			var err error
+			changes, err = s.GitDiff(ctx, args.Repo, commit, args.CommitID)
+			if err != nil {
+				return err
+			}
+
+			// Avoid sending more files than will fit in HTTP headers.
+			totalPathsLength := 0
+			paths := []string{}
+			paths = append(paths, changes.Added...)
+			paths = append(paths, changes.Modified...)
+			paths = append(paths, changes.Deleted...)
+			for _, path := range paths {
+				totalPathsLength += len(path)
+			}
+
+			if totalPathsLength > MAX_TOTAL_PATHS_LENGTH {
+				changes = nil
+			}
 		}
 
-		// Avoid sending more files than will fit in HTTP headers.
-		totalPathsLength := 0
-		paths := []string{}
-		paths = append(paths, changes.Added...)
-		paths = append(paths, changes.Modified...)
-		paths = append(paths, changes.Deleted...)
-		for _, path := range paths {
-			totalPathsLength += len(path)
-		}
-
-		if newest == "" || totalPathsLength > MAX_TOTAL_PATHS_LENGTH {
-			// There are no existing SQLite DBs to reuse, so write a completely new one.
+		if changes == nil {
+			// There are no existing SQLite DBs to reuse, or the diff is too big, so write a completely
+			// new one.
 			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
 			if err != nil {
 				if err == context.Canceled {
