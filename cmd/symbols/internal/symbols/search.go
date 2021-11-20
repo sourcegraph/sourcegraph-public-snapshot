@@ -117,13 +117,37 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 // it will create a new one and write all the symbols into it.
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
 	diskcacheFile, err := s.cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
-		newest, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
+		newest, commit, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 		if err != nil {
 			return err
 		}
 
-		if newest == "" {
-			// There are no existing SQLite DBs to reuse, so write a completely new one.
+		var changes *Changes
+		if commit != "" && s.GitDiff != nil {
+			var err error
+			changes, err = s.GitDiff(ctx, args.Repo, commit, args.CommitID)
+			if err != nil {
+				return err
+			}
+
+			// Avoid sending more files than will fit in HTTP headers.
+			totalPathsLength := 0
+			paths := []string{}
+			paths = append(paths, changes.Added...)
+			paths = append(paths, changes.Modified...)
+			paths = append(paths, changes.Deleted...)
+			for _, path := range paths {
+				totalPathsLength += len(path)
+			}
+
+			if totalPathsLength > MAX_TOTAL_PATHS_LENGTH {
+				changes = nil
+			}
+		}
+
+		if changes == nil {
+			// There are no existing SQLite DBs to reuse, or the diff is too big, so write a completely
+			// new one.
 			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
 			if err != nil {
 				if err == context.Canceled {
@@ -138,7 +162,7 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 				return err
 			}
 
-			err = s.updateSymbols(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+			err = s.updateSymbols(fetcherCtx, tempDBFile, args.Repo, args.CommitID, *changes)
 			if err != nil {
 				if err == context.Canceled {
 					log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
@@ -408,7 +432,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 
 // updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
 // DB and the given commitID.
-func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) (err error) {
+func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID, changes Changes) (err error) {
 	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
 	if err != nil {
 		return err
@@ -428,21 +452,8 @@ func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api
 		err = tx.Commit()
 	}()
 
-	// Read old commit
-	row := tx.QueryRow(`SELECT revision FROM meta`)
-	oldCommit := api.CommitID("")
-	if err = row.Scan(&oldCommit); err != nil {
-		return err
-	}
-
 	// Write new commit
 	_, err = tx.Exec(`UPDATE meta SET revision = ?`, string(commitID))
-	if err != nil {
-		return err
-	}
-
-	// git diff
-	changes, err := s.GitDiff(ctx, repoName, oldCommit, commitID)
 	if err != nil {
 		return err
 	}
@@ -499,11 +510,12 @@ func SanityCheck() error {
 	return nil
 }
 
-// findNewestFile lists the directory and returns the newest file's path, prepended with dir.
-func findNewestFile(dir string) (string, error) {
+// findNewestFile lists the directory and returns the newest file's path (prepended with dir) and the
+// commit.
+func findNewestFile(dir string) (string, api.CommitID, error) {
 	files, err := os.ReadDir(dir)
 	if err != nil {
-		return "", nil
+		return "", "", nil
 	}
 
 	var mostRecentTime time.Time
@@ -516,7 +528,7 @@ func findNewestFile(dir string) (string, error) {
 
 			info, err := fi.Info()
 			if err != nil {
-				return "", err
+				return "", "", err
 			}
 
 			if newest == "" || info.ModTime().After(mostRecentTime) {
@@ -526,7 +538,24 @@ func findNewestFile(dir string) (string, error) {
 		}
 	}
 
-	return newest, nil
+	if newest == "" {
+		return "", "", nil
+	}
+
+	db, err := sqlx.Open("sqlite3_with_regexp", newest)
+	if err != nil {
+		return "", "", err
+	}
+	defer db.Close()
+
+	// Read old commit
+	row := db.QueryRow(`SELECT revision FROM meta`)
+	commit := api.CommitID("")
+	if err = row.Scan(&commit); err != nil {
+		return "", "", err
+	}
+
+	return newest, commit, nil
 }
 
 // copyFile is like the cp command.
@@ -561,3 +590,10 @@ func NewChanges() Changes {
 		Deleted:  []string{},
 	}
 }
+
+// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
+// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
+// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
+// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that. 100KB seems
+// safe.
+const MAX_TOTAL_PATHS_LENGTH = 100000
