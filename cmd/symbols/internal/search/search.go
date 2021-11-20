@@ -16,7 +16,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -29,23 +28,17 @@ type Searcher interface {
 }
 
 type searcher struct {
-	gitserverClient sqlite.GitserverClient
-	parser          parser.Parser
-	cache           *diskcache.Store
-	databaseWriter  sqlite.DatabaseWriter
+	cache          *diskcache.Store
+	databaseWriter sqlite.DatabaseWriter
 }
 
 func NewSearcher(
-	gitserverClient sqlite.GitserverClient,
-	parser parser.Parser,
 	cache *diskcache.Store,
 	databaseWriter sqlite.DatabaseWriter,
 ) Searcher {
 	return &searcher{
-		gitserverClient: gitserverClient,
-		parser:          parser,
-		cache:           cache,
-		databaseWriter:  databaseWriter,
+		cache:          cache,
+		databaseWriter: databaseWriter,
 	}
 }
 
@@ -77,7 +70,7 @@ func (s *searcher) Search(ctx context.Context, args types.SearchArgs) (*result.S
 		tr.Finish()
 	}()
 
-	dbFile, err := getDBFile(ctx, s.gitserverClient, s.parser, s.cache, args, s.databaseWriter)
+	dbFile, err := getDBFile(ctx, s.cache, args, s.databaseWriter)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +96,7 @@ const symbolsDBVersion = 4
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func getDBFile(ctx context.Context, gitserverClient sqlite.GitserverClient, parser parser.Parser, cache *diskcache.Store, args types.SearchArgs, databaseWriter sqlite.DatabaseWriter) (string, error) {
+func getDBFile(ctx context.Context, cache *diskcache.Store, args types.SearchArgs, databaseWriter sqlite.DatabaseWriter) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
 		return databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile)
 	})

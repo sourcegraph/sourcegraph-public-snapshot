@@ -37,20 +37,21 @@ func TestHandler(t *testing.T) {
 		return createTar(files)
 	})
 
+	parserPool, err := parser.NewParserPool(func() (ctags.Parser, error) { return mockParser{"x", "y"}, nil }, 15)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parser := parser.NewParser(gitserverClient, parserPool, 15)
+
 	cache := &diskcache.Store{
 		Dir:               tmpDir,
 		Component:         "symbols",
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := parser.NewParserPool(func() (ctags.Parser, error) { return mockParser{"x", "y"}, nil }, 15)
-	if err != nil {
-		t.Fatal(err)
-	}
+	databaseWriter := sqlite.NewDatabaseWriter(tmpDir, gitserverClient, parser)
+	searcher := symbolsSearch.NewSearcher(cache, databaseWriter)
 
-	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	databaseWriter := sqlite.NewDatabaseWriter(gitserverClient, parser, cache)
-	searcher := symbolsSearch.NewSearcher(gitserverClient, parser, cache, databaseWriter)
 	server := httptest.NewServer(NewHandler(searcher))
 	defer server.Close()
 	client := symbolsclient.Client{

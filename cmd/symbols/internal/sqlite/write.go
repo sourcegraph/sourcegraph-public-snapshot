@@ -23,25 +23,25 @@ type DatabaseWriter interface {
 }
 
 type databaseWriter struct {
+	path            string
 	gitserverClient GitserverClient
 	parser          parser.Parser
-	cache           *diskcache.Store
 }
 
 func NewDatabaseWriter(
+	path string,
 	gitserverClient GitserverClient,
 	parser parser.Parser,
-	cache *diskcache.Store,
 ) DatabaseWriter {
 	return &databaseWriter{
+		path:            path,
 		gitserverClient: gitserverClient,
 		parser:          parser,
-		cache:           cache,
 	}
 }
 
 func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs, tempDBFile string) error {
-	newest, err := findNewestFile(filepath.Join(w.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
+	newest, err := findNewestFile(filepath.Join(w.path, diskcache.EncodeKeyComponent(string(args.Repo))))
 	if err != nil {
 		return err
 	}

@@ -34,12 +34,12 @@ type parser struct {
 func NewParser(
 	gitserverClient GitserverClient,
 	parserPool ParserPool,
-	fetchSem chan int,
+	maximumConcurrentFetches int,
 ) *parser {
 	return &parser{
 		gitserverClient: gitserverClient,
 		parserPool:      parserPool,
-		fetchSem:        fetchSem,
+		fetchSem:        make(chan int, maximumConcurrentFetches),
 	}
 }
 

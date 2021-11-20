@@ -69,21 +69,21 @@ func main() {
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	cache := &diskcache.Store{
-		Dir:               config.cacheDir,
-		Component:         "symbols",
-		BackgroundTimeout: 20 * time.Minute,
-	}
-
 	parserPool, err := parser.NewParserPool(parser.NewCtagsParser, config.ctagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
 	gitserverClient := &gitserverClient{}
-	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	databaseWriter := sqlite.NewDatabaseWriter(gitserverClient, parser, cache)
-	searcher := search.NewSearcher(gitserverClient, parser, cache, databaseWriter)
+	parser := parser.NewParser(gitserverClient, parserPool, 15)
+
+	cache := &diskcache.Store{
+		Dir:               config.cacheDir,
+		Component:         "symbols",
+		BackgroundTimeout: 20 * time.Minute,
+	}
+	databaseWriter := sqlite.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
+	searcher := search.NewSearcher(cache, databaseWriter)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,

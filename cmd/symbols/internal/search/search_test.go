@@ -60,20 +60,20 @@ func BenchmarkSearch(b *testing.B) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(testutil.FetchTarFromGithubWithPaths)
 
+	parserPool, err := parser.NewParserPool(parser.NewCtagsParser, 15)
+	if err != nil {
+		b.Fatal(err)
+	}
+	parser := parser.NewParser(gitserverClient, parserPool, 15)
+
 	cache := &diskcache.Store{
 		Dir:               "/tmp/symbols-cache",
 		Component:         "symbols",
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := parser.NewParserPool(parser.NewCtagsParser, 15)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	parser := parser.NewParser(gitserverClient, parserPool, make(chan int, 15))
-	databaseWriter := sqlite.NewDatabaseWriter(gitserverClient, parser, cache)
-	searcher := NewSearcher(gitserverClient, parser, cache, databaseWriter)
+	databaseWriter := sqlite.NewDatabaseWriter("/tmp/symbols-cache", gitserverClient, parser)
+	searcher := NewSearcher(cache, databaseWriter)
 
 	ctx := context.Background()
 	b.ResetTimer()
