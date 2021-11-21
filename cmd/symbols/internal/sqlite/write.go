@@ -219,7 +219,7 @@ func createIndexes(ctx context.Context, commitID api.CommitID, tx *basestore.Sto
 	return nil
 }
 
-func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoName, commitID api.CommitID, paths []string, store *basestore.Store) error {
+func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoName, commitID api.CommitID, paths []string, store *basestore.Store) (err error) {
 	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err

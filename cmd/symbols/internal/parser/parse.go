@@ -59,7 +59,8 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 
 	totalSymbols := 0
 	defer func() {
-		tr.LazyPrintf("symbols=%d", totalSymbols)
+		// TODO - fix race
+		// tr.LazyPrintf("symbols=%d", totalSymbols)
 		if err != nil {
 			tr.LazyPrintf("error: %s", err)
 			tr.SetError()
@@ -73,9 +74,6 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	if err != nil {
 		return nil, err
 	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	var (
 		mu sync.Mutex // protects symbols and err
@@ -123,9 +121,9 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	}
 	go func() {
 		wg.Wait()
+		tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
 		close(symbols)
 	}()
-	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
 
 	return symbols, nil
 }
