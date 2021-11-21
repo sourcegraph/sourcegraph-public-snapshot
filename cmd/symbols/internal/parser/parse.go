@@ -21,7 +21,7 @@ import (
 )
 
 type Parser interface {
-	Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) error
+	Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (<-chan result.Symbol, error)
 }
 
 type parser struct {
@@ -42,7 +42,7 @@ func NewParser(
 	}
 }
 
-func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string, callback func(symbol result.Symbol) error) (err error) {
+func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (_ <-chan result.Symbol, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -71,7 +71,7 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	parseRequestOrErrors := fetchRepositoryArchive(ctx, p.gitserverClient, p.fetchSem, repo, commitID, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -83,9 +83,10 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0
+	symbols := make(chan result.Symbol)
 	for req := range parseRequestOrErrors {
 		if req.err != nil {
-			return req.err
+			return nil, req.err
 		}
 
 		totalParseRequests++
@@ -95,36 +96,38 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 				for range parseRequestOrErrors {
 				}
 			}()
-			return ctx.Err()
+			return nil, ctx.Err()
 		}
 		wg.Add(1)
 		go func(req parseRequest) {
 			defer wg.Done()
+
 			entries, parseErr := parse(ctx, p.parserPool, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
 				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
 			if len(entries) > 0 {
-				mu.Lock()
-				defer mu.Unlock()
 				for _, e := range entries {
 					if e.Name == "" || strings.HasPrefix(e.Name, "__anon") || strings.HasPrefix(e.Parent, "__anon") || strings.HasPrefix(e.Name, "AnonymousFunction") || strings.HasPrefix(e.Parent, "AnonymousFunction") {
 						continue
 					}
+
+					mu.Lock()
 					totalSymbols++
-					err = callback(entryToSymbol(e))
-					if err != nil {
-						log15.Error("Failed to add symbol", "symbol", e, "error", err)
-						return
-					}
+					mu.Unlock()
+
+					symbols <- entryToSymbol(e)
 				}
 			}
 		}(req.parseRequest)
 	}
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(symbols)
+	}()
 	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
 
-	return nil
+	return symbols, nil
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.

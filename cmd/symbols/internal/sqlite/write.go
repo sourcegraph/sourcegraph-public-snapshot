@@ -268,7 +268,18 @@ func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoNa
 		)
 	}
 
-	return parser.Parse(ctx, repoName, commitID, paths, callback)
+	symbols, err := parser.Parse(ctx, repoName, commitID, paths)
+	if err != nil {
+		return err
+	}
+
+	for symbol := range symbols {
+		if err := callback(symbol); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // findNewestFile lists the directory and returns the newest file's path, prepended with dir.
