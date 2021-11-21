@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type DatabaseWriter interface {
@@ -227,11 +226,15 @@ func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoNa
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// TODO - use bulk loader instead
+	symbols, err := parser.Parse(ctx, repoName, commitID, paths)
+	if err != nil {
+		return err
+	}
 
-	callback := func(symbol result.Symbol) error {
+	for symbol := range symbols {
 		symbolInDBValue := types.SymbolToSymbolInDB(symbol)
 
+		// TODO - use bulk loader instead
 		insertQuery := `
 			INSERT INTO symbols (
 				name,
@@ -248,7 +251,7 @@ func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoNa
 				filelimited
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`
-		return tx.Exec(
+		if err := tx.Exec(
 			ctx,
 			sqlf.Sprintf(
 				insertQuery,
@@ -265,16 +268,7 @@ func writeSymbols(ctx context.Context, parser parser.Parser, repoName api.RepoNa
 				symbolInDBValue.Parent,
 				symbolInDBValue.FileLimited,
 			),
-		)
-	}
-
-	symbols, err := parser.Parse(ctx, repoName, commitID, paths)
-	if err != nil {
-		return err
-	}
-
-	for symbol := range symbols {
-		if err := callback(symbol); err != nil {
+		); err != nil {
 			return err
 		}
 	}
