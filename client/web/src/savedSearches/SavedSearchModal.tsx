@@ -28,6 +28,8 @@ interface State {
     organization?: string
 }
 
+const MODAL_LABEL_ID = 'saved-search-modal-id'
+
 export class SavedSearchModal extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
@@ -49,9 +51,14 @@ export class SavedSearchModal extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (
-                <Dialog className={styles.savedSearchModalForm} onDismiss={this.props.onDidCancel}>
+                <Dialog
+                    aria-labelledby={MODAL_LABEL_ID}
+                    className={styles.savedSearchModalForm}
+                    onDismiss={this.props.onDidCancel}
+                    data-testid="saved-search-modal"
+                >
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
-                        <h3>Save search query to: </h3>
+                        <h3 id={MODAL_LABEL_ID}>Save search query to: </h3>
                         <div className="form-group">
                             <select
                                 onChange={this.onLocationChange}

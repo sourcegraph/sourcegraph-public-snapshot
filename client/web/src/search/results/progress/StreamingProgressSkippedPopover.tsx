@@ -146,6 +146,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                                             type="checkbox"
                                             value={skipped.suggested.queryExpression}
                                             onChange={checkboxHandler}
+                                            data-testid="streaming-progress-skipped-suggest-check"
                                         />{' '}
                                         {skipped.suggested.title} (
                                         <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)

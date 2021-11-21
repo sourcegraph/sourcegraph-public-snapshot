@@ -222,6 +222,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
                 onResultClicked: props.onSelect,
+                resultType: result.type,
             }
         } else {
             const hideCount = matchCount - limitedMatchCount
@@ -240,6 +241,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
                 onResultClicked: props.onSelect,
+                resultType: result.type,
             }
         }
     } else if (props.showAllMatches) {
@@ -255,6 +257,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
             onResultClicked: props.onSelect,
+            resultType: result.type,
         }
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
@@ -273,6 +276,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
             onResultClicked: props.onSelect,
+            resultType: result.type,
         }
     }
 
