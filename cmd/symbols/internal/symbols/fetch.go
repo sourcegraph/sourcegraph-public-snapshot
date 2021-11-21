@@ -62,6 +62,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 
 	r, err := s.FetchTar(ctx, repo, commitID, paths)
 	if err != nil {
+		done(err)
 		return nil, nil, err
 	}
 
