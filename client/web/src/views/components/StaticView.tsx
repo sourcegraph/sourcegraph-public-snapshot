@@ -28,8 +28,8 @@ export const StaticView: React.FunctionComponent<StaticView> = props => {
             subtitle={subtitle}
             className="insight-content-card"
             data-testid={`insight-card.${content.id}`}
-            {...otherProps}>
-
+            {...otherProps}
+        >
             {view === undefined ? (
                 <View.LoadingContent text="Loading code insight" description={content.id} icon={PuzzleIcon} />
             ) : isErrorLike(view) ? (

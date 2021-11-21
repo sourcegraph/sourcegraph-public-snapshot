@@ -1,24 +1,22 @@
-import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button';
+import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
 import { storiesOf } from '@storybook/react'
-import { noop } from 'lodash';
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon';
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon';
+import { noop } from 'lodash'
+import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
+import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
-import { LineChartContent } from 'sourcegraph';
+import { LineChartContent } from 'sourcegraph'
 
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService';
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
 
 import * as View from '.'
 
-const { add } = storiesOf('web/views', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
+const { add } = storiesOf('web/views', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
 
 const standardViewProps = {
-    style: { width: '400px', height: '400px' }
+    style: { width: '400px', height: '400px' },
 }
 
 const LINE_CHART_DATA: LineChartContent<any, string> = {
@@ -65,33 +63,26 @@ const LINE_CHART_DATA: LineChartContent<any, string> = {
     },
 }
 
-add('With title and empty content', () =>
-    <View.Root {...standardViewProps} title='Empty view' />
-)
+add('With title and empty content', () => <View.Root {...standardViewProps} title="Empty view" />)
 
-add('With chart content', () =>
-    <View.Root {...standardViewProps} title='Chart view' subtitle='Subtitle chart description'>
-
-        <View.Content
-            viewID='unique view id'
-            content={[LINE_CHART_DATA]}
-            telemetryService={NOOP_TELEMETRY_SERVICE}/>
+add('With chart content', () => (
+    <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
+        <View.Content viewID="unique view id" content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </View.Root>
-)
+))
 
 add('With loading content', () => (
-    <View.Root {...standardViewProps} title='Loading view'>
-
-        <View.LoadingContent
-            text="Loading insight"
-            description="searchInsights.insight.id"
-            icon={PuzzleIcon} />
+    <View.Root {...standardViewProps} title="Loading view">
+        <View.LoadingContent text="Loading insight" description="searchInsights.insight.id" icon={PuzzleIcon} />
     </View.Root>
 ))
 
 add('With error-like content', () => (
-    <View.Root style={{ width: '400px', height: '400px' }} title='Error view' subtitle='View with errored content example'>
-
+    <View.Root
+        style={{ width: '400px', height: '400px' }}
+        title="Error view"
+        subtitle="View with errored content example"
+    >
         <View.ErrorContent
             title="searchInsights.insight.id"
             error={new Error("We couldn't find code insight")}
@@ -103,45 +94,36 @@ add('With error-like content', () => (
 function ContextMenu() {
     return (
         <Menu>
-            <MenuButton className='btn btn-icon p-1'>
+            <MenuButton className="btn btn-icon p-1">
                 <DotsVerticalIcon size={16} />
             </MenuButton>
             <MenuPopover>
-                <MenuItems className='d-block position-static dropdown-menu'>
+                <MenuItems className="d-block position-static dropdown-menu">
+                    <MenuItem onSelect={noop}>Create</MenuItem>
 
-                    <MenuItem onSelect={noop}>
-                        Create
-                    </MenuItem>
+                    <MenuItem onSelect={noop}>Update</MenuItem>
 
-                    <MenuItem onSelect={noop}>
-                        Update
-                    </MenuItem>
-
-                    <MenuItem onSelect={noop}>
-                        Delete
-                    </MenuItem>
+                    <MenuItem onSelect={noop}>Delete</MenuItem>
                 </MenuItems>
             </MenuPopover>
         </Menu>
     )
 }
 
-add('With context menu in action panel', () =>
+add('With context menu in action panel', () => (
     <View.Root
         {...standardViewProps}
-        title='Chart view'
-        subtitle='Subtitle chart description'
-        actions={<>
-            <button className='btn btn-icon p-1'>
-                <FilterOutlineIcon size="1rem" />
-            </button>
-            <ContextMenu/>
-        </>}>
-
-        <View.Content
-            viewID='unique view id'
-            content={[LINE_CHART_DATA]}
-            telemetryService={NOOP_TELEMETRY_SERVICE}/>
+        title="Chart view"
+        subtitle="Subtitle chart description"
+        actions={
+            <>
+                <button className="btn btn-icon p-1">
+                    <FilterOutlineIcon size="1rem" />
+                </button>
+                <ContextMenu />
+            </>
+        }
+    >
+        <View.Content viewID="unique view id" content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </View.Root>
-)
-
+))

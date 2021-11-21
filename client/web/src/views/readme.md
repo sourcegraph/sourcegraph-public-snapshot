@@ -1,4 +1,3 @@
-
 ## Shared view like components for building view gallery
 
 This package provides standard low-level components for a view like
@@ -17,7 +16,7 @@ for rendering insights cards on the Code Insights dashboard page
 **Empty view card**
 
 ```tsx
-import * as View from './view';
+import * as View from './view'
 
 /**
  * ┌─────────────────────┐
@@ -33,12 +32,9 @@ import * as View from './view';
  * │░░░░░░░░░░░░░░░░░░░░░│
  * └─────────────────────┘
  */
-function InsightView () {
-
+function InsightView() {
   // Renders empty card component
-  return (
-    <View.Root title="View title" />
-  )
+  return <View.Root title="View title" />
 }
 ```
 
@@ -48,8 +44,8 @@ function InsightView () {
 import * as View from './view'
 
 /**
- * 
- * Renders view with chart content inside. Note that View.Content also support 
+ *
+ * Renders view with chart content inside. Note that View.Content also support
  * markdown content.
  * ┌─────────────────────┐
  * │Title text           │
@@ -65,11 +61,9 @@ import * as View from './view'
  * └─────────────────────┘
  */
 function ChartView() {
-	
   return (
     <View.Root>
-      
-      <View.Content view={VIEW_CHART_DATA}/>
+      <View.Content view={VIEW_CHART_DATA} />
     </View.Root>
   )
 }
@@ -95,32 +89,25 @@ import * as View from './View'
  * └─────────────────────┘
  */
 function LoadingView() {
-
   return (
-    <View.Root title='Title text'>
-      
+    <View.Root title="Title text">
       <View.LoadingContent />
     </View.Root>
   )
 }
 ```
 
-Usually, consumers mix these components above to build a rich view component with different states. 
+Usually, consumers mix these components above to build a rich view component with different states.
 For example, this is one of view like components that Code Insights pages use for insights rendering.
-
 
 ```tsx
 import * as View from './View'
 
 function RichView() {
-  
-  const {data, loading} = useObservable(getBuiltInInsightData())
-  
+  const { data, loading } = useObservable(getBuiltInInsightData())
+
   return (
-    <View.Root
-      title='title text'
-      className='extension-insight-card'
-    >
+    <View.Root title="title text" className="extension-insight-card">
       {!data || loading || isDeleting ? (
         <View.LoadingContent
           text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
@@ -128,14 +115,9 @@ function RichView() {
           icon={PuzzleIcon}
         />
       ) : isErrorLike(data.view) ? (
-        <View.ErrorContent error={data.view} icon={PuzzleIcon}/>
+        <View.ErrorContent error={data.view} icon={PuzzleIcon} />
       ) : (
-        data.view && (
-          <View.Content
-            viewContent={data.view.content}
-            viewID={insight.id}
-          />
-        )
+        data.view && <View.Content viewContent={data.view.content} viewID={insight.id} />
       )}
     </View.Root>
   )
@@ -175,27 +157,23 @@ library to implement a dynamic and responsive grid system.
 Simple example of usage `<ViewGrid />`
 
 ```tsx
-
 import ViewGrid from './view-grid'
 import * as View from '/view'
 
 function ChartView(props) {
-  
   return (
     <View.Root title={props.title}>
-      
-      <View.Content view={props.data}/>
+      <View.Content view={props.data} />
     </View.Root>
   )
 }
 
 function ViewGridExample() {
-	
   return (
     <ViewGrid>
-      <ChartView title='View #1' data={DATA_CHART}/>
-      <ChartView title='View #2/' data={DATA_CHART} />
-      <ChartView title='View #3' data={DATA_CHART}/>
+      <ChartView title="View #1" data={DATA_CHART} />
+      <ChartView title="View #2/" data={DATA_CHART} />
+      <ChartView title="View #3" data={DATA_CHART} />
     </ViewGrid>
   )
 }

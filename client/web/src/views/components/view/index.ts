@@ -1,4 +1,4 @@
-import { ViewContent, ViewErrorContent, ViewLoadingContent } from './content/ViewContent';
+import { ViewContent, ViewErrorContent, ViewLoadingContent } from './content/ViewContent'
 import { View } from './View'
 
 const Root = View
@@ -15,5 +15,5 @@ export {
     Root,
     Content,
     LoadingContent,
-    ErrorContent
+    ErrorContent,
 }

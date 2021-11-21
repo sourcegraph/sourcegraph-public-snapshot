@@ -54,6 +54,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     return (
         <View.Root
             {...otherProps}
+            data-testid={`insight-card.${insight.id}`}
             title={insight.title}
             className={classNames('extension-insight-card', otherProps.className)}
             actions={

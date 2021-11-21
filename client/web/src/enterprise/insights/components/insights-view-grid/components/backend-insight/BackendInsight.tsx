@@ -129,6 +129,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     return (
         <View.Root
             {...otherProps}
+            data-testid={`insight-card.${insight.id}`}
             title={insight.title}
             innerRef={insightCardReference}
             actions={
