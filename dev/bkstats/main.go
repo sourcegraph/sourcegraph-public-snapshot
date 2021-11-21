@@ -132,7 +132,7 @@ func main() {
 			report.details = append(report.details, fmt.Sprintf("Fixed on %s, %s", event.at.Format(longDateFormat), event.buildURL))
 		}
 	}
-	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s*", t.Format(shortDateFormat), red.String())
+	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s*", t.Format(shortDateFormat), red.Round(time.Minute).String())
 
 	if slack == "" {
 		// If we're meant to print the results on stdout.
