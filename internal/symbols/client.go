@@ -57,7 +57,12 @@ type Client struct {
 	endpoint *endpoint.Map
 }
 
-func (c *Client) url(repo api.RepoName) (string, error) {
+type key struct {
+	repo     api.RepoName
+	commitID api.CommitID
+}
+
+func (c *Client) url(key key) (string, error) {
 	c.once.Do(func() {
 		if len(strings.Fields(c.URL)) == 0 {
 			c.endpoint = endpoint.Empty(errors.New("a symbols service has not been configured"))
@@ -65,7 +70,7 @@ func (c *Client) url(repo api.RepoName) (string, error) {
 			c.endpoint = endpoint.New(c.URL)
 		}
 	})
-	return c.endpoint.Get(string(repo))
+	return c.endpoint.Get(string(key.repo) + ":" + string(key.commitID))
 }
 
 // Search performs a symbol search on the symbols service.
@@ -81,7 +86,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (res
 	span.SetTag("Repo", string(args.Repo))
 	span.SetTag("CommitID", string(args.CommitID))
 
-	resp, err := c.httpPost(ctx, "search", args.Repo, args)
+	resp, err := c.httpPost(ctx, "search", key{repo: args.Repo, commitID: args.CommitID}, args)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +110,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (res
 func (c *Client) httpPost(
 	ctx context.Context,
 	method string,
-	repo api.RepoName,
+	key key,
 	payload interface{},
 ) (resp *http.Response, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost")
@@ -117,7 +122,7 @@ func (c *Client) httpPost(
 		span.Finish()
 	}()
 
-	url, err := c.url(repo)
+	url, err := c.url(key)
 	if err != nil {
 		return nil, err
 	}
