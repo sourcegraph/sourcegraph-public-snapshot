@@ -138,7 +138,7 @@ func main() {
 		}
 	}
 	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s* - see the %s for more details.",
-		t.Format(shortDateFormat), red.Round(time.Minute).String(), slackLink("CI dashboard", ciDashboardURL(BoD(t), EoD(t))))
+		t.Format(shortDateFormat), red.Round(time.Second).String(), slackLink("CI dashboard", ciDashboardURL(BoD(t), EoD(t))))
 
 	if slack == "" {
 		// If we're meant to print the results on stdout.
