@@ -20,8 +20,13 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
 
     return (
         <div>
-            <div className={classNames('mb-5 card flex-lg-row align-items-start', styles.hero)}>
-                <div className="w-100">
+            <div className={classNames('mb-5 card flex-column flex-lg-row', styles.hero)}>
+                <img
+                    src={`${assetsRoot}/img/codemonitoring-illustration-${isLightTheme ? 'light' : 'dark'}.svg`}
+                    alt="A code monitor observes a depcreated library being used in code and sends an email alert."
+                    className={classNames('mr-lg-5', styles.heroImage)}
+                />
+                <div className="align-self-center">
                     <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
                     <p className={classNames('mb-4')}>
                         With code monitoring, you can automatically track changes made across multiple code hosts and
@@ -46,10 +51,6 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                         />
                     )}
                 </div>
-                <p className={classNames('alert alert-info mt-3 mt-lg-0 ml-lg-3 mb-0', styles.alert)}>
-                    We are currently working on increasing the performance and fidelity of Code Monitors to work with
-                    more sensitive workloads like a large number of repositories or auditing published code for secrets.
-                </p>
             </div>
             <div className={classNames('container', styles.startingPointsContainer)}>
                 <h3 className="mb-3">Starting points for your first monitor</h3>

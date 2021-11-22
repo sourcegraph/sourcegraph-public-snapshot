@@ -18,6 +18,7 @@ export interface TemporarySettingsSchema {
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
+    'codemonitor.info.visible': boolean
 }
 
 /**

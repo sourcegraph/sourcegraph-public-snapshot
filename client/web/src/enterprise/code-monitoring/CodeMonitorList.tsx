@@ -14,6 +14,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { CodeMonitorFields, ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 import { Settings } from '../../schema/settings.schema'
 
+import { CodeMonitorInfo } from './CodeMonitorInfo'
 import { CodeMonitorNode, CodeMonitorNodeProps } from './CodeMonitoringNode'
 import { CodeMonitoringPageProps } from './CodeMonitoringPage'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
@@ -96,6 +97,7 @@ export const CodeMonitorList: React.FunctionComponent<CodeMonitorListProps> = ({
                     </button>
                 </div>
                 <div className="d-flex flex-column w-100 col">
+                    <CodeMonitorInfo />
                     <h3 className="mb-2">
                         {`${monitorListFilter === 'all' ? 'All code monitors' : 'Your code monitors'}`}
                     </h3>
