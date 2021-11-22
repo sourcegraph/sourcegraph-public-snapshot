@@ -242,5 +242,5 @@ func (o *Output) writeStyle(style Style) {
 }
 
 func (o *Output) ClearScreen() {
-	fmt.Fprintf(o.w, "\033[2J")
+	fmt.Fprintf(o.w, "\033c")
 }
