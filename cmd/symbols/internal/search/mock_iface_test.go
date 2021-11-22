@@ -7,14 +7,14 @@ import (
 	"io"
 	"sync"
 
-	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
+	gitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search) used for
-// unit testing.
+// github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver) used
+// for unit testing.
 type MockGitserverClient struct {
 	// FetchTarFunc is an instance of a mock function object controlling the
 	// behavior of the method FetchTar.
@@ -35,7 +35,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 			},
 		},
 		GitDiffFunc: &GitserverClientGitDiffFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error) {
 				return nil, nil
 			},
 		},
@@ -45,7 +45,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
-func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
+func NewMockGitserverClientFrom(i gitserver.GitserverClient) *MockGitserverClient {
 	return &MockGitserverClient{
 		FetchTarFunc: &GitserverClientFetchTarFunc{
 			defaultHook: i.FetchTar,
@@ -174,15 +174,15 @@ func (c GitserverClientFetchTarFuncCall) Results() []interface{} {
 // GitserverClientGitDiffFunc describes the behavior when the GitDiff method
 // of the parent MockGitserverClient instance is invoked.
 type GitserverClientGitDiffFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error)
 	history     []GitserverClientGitDiffFuncCall
 	mutex       sync.Mutex
 }
 
 // GitDiff delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitserverClient) GitDiff(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (*sqlite.Changes, error) {
+func (m *MockGitserverClient) GitDiff(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 api.CommitID) (*gitserver.Changes, error) {
 	r0, r1 := m.GitDiffFunc.nextHook()(v0, v1, v2, v3)
 	m.GitDiffFunc.appendCall(GitserverClientGitDiffFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -191,7 +191,7 @@ func (m *MockGitserverClient) GitDiff(v0 context.Context, v1 api.RepoName, v2 ap
 // SetDefaultHook sets function that is called when the GitDiff method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientGitDiffFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error)) {
+func (f *GitserverClientGitDiffFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error)) {
 	f.defaultHook = hook
 }
 
@@ -199,7 +199,7 @@ func (f *GitserverClientGitDiffFunc) SetDefaultHook(hook func(context.Context, a
 // GitDiff method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientGitDiffFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error)) {
+func (f *GitserverClientGitDiffFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -207,21 +207,21 @@ func (f *GitserverClientGitDiffFunc) PushHook(hook func(context.Context, api.Rep
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientGitDiffFunc) SetDefaultReturn(r0 *sqlite.Changes, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error) {
+func (f *GitserverClientGitDiffFunc) SetDefaultReturn(r0 *gitserver.Changes, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientGitDiffFunc) PushReturn(r0 *sqlite.Changes, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error) {
+func (f *GitserverClientGitDiffFunc) PushReturn(r0 *gitserver.Changes, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverClientGitDiffFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*sqlite.Changes, error) {
+func (f *GitserverClientGitDiffFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, api.CommitID) (*gitserver.Changes, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -268,7 +268,7 @@ type GitserverClientGitDiffFuncCall struct {
 	Arg3 api.CommitID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *sqlite.Changes
+	Result0 *gitserver.Changes
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

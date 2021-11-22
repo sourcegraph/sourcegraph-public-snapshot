@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,13 +23,13 @@ type DatabaseWriter interface {
 
 type databaseWriter struct {
 	path            string
-	gitserverClient GitserverClient
+	gitserverClient gitserver.GitserverClient
 	parser          parser.Parser
 }
 
 func NewDatabaseWriter(
 	path string,
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.GitserverClient,
 	parser parser.Parser,
 ) DatabaseWriter {
 	return &databaseWriter{

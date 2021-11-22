@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -31,7 +32,7 @@ type parseRequestOrError struct {
 	err          error
 }
 
-func fetchRepositoryArchive(ctx context.Context, gitserverClient GitserverClient, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string) <-chan parseRequestOrError {
+func fetchRepositoryArchive(ctx context.Context, gitserverClient gitserver.GitserverClient, fetchSem chan int, repo api.RepoName, commitID api.CommitID, paths []string) <-chan parseRequestOrError {
 	fetchQueueSize.Inc()
 	fetchSem <- 1 // acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()

@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -25,13 +26,13 @@ type Parser interface {
 }
 
 type parser struct {
-	gitserverClient GitserverClient
+	gitserverClient gitserver.GitserverClient
 	parserPool      ParserPool
 	fetchSem        chan int
 }
 
 func NewParser(
-	gitserverClient GitserverClient,
+	gitserverClient gitserver.GitserverClient,
 	parserPool ParserPool,
 	maximumConcurrentFetches int,
 ) *parser {
