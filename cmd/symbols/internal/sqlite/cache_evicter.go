@@ -49,7 +49,7 @@ func (e *cacheEvicter) Handle(ctx context.Context) error {
 }
 
 func (e *cacheEvicter) HandleError(err error) {
-	// 	// TODO - add metric, logs
+	// TODO - add metric, logs
 }
 
 var (
