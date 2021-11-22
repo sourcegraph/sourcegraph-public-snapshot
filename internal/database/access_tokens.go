@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -34,6 +35,16 @@ type AccessToken struct {
 // ErrAccessTokenNotFound occurs when a database operation expects a specific access token to exist
 // but it does not exist.
 var ErrAccessTokenNotFound = errors.New("access token not found")
+
+// InvalidTokenError is returned when decoding the hex encoded token passed to any
+// of the methods on AccessTokenStore.
+type InvalidTokenError struct {
+	err error
+}
+
+func (e InvalidTokenError) Error() string {
+	return fmt.Sprintf("invalid token: %s", e.err)
+}
 
 type AccessTokenStore interface {
 	Count(context.Context, AccessTokensListOptions) (int, error)
@@ -156,7 +167,7 @@ func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, required
 		return 0, errors.New("no scope provided in access token lookup")
 	}
 
-	token, err := hex.DecodeString(tokenHexEncoded)
+	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
@@ -195,7 +206,7 @@ func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken,
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
 func (s *accessTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
-	token, err := hex.DecodeString(tokenHexEncoded)
+	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
 		return nil, errors.Wrap(err, "AccessTokens.GetByToken")
 	}
@@ -324,7 +335,7 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 // DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
 // that an API client would use to authenticate).
 func (s *accessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded string) error {
-	token, err := hex.DecodeString(tokenHexEncoded)
+	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
 		return errors.Wrap(err, "AccessTokens.DeleteByToken")
 	}
@@ -348,6 +359,14 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 		return ErrAccessTokenNotFound
 	}
 	return nil
+}
+
+func decodeToken(tokenHexEncoded string) ([]byte, error) {
+	token, err := hex.DecodeString(tokenHexEncoded)
+	if err != nil {
+		return nil, &InvalidTokenError{err}
+	}
+	return token, nil
 }
 
 func toSHA256Bytes(input []byte) []byte {
