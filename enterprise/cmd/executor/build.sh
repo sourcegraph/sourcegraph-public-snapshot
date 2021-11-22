@@ -36,6 +36,7 @@ git log -n1 >>info.txt
 mkdir linux-amd64
 # Copy binary into new folder
 cp "$bin_name" linux-amd64/executor
+sha256sum linux-amd64/executor >> linux-amd64/executor_SHA256SUM
 cd -
 # Duplicate folder as "latest"
 rm -rf executor/latest
