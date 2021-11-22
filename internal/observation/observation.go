@@ -54,15 +54,18 @@ package observation
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // Context carries context about where to send logs, trace spans, and register
@@ -192,18 +195,31 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	start := time.Now()
 	tr, ctx := op.trace(ctx, args)
 
-	var logFields TraceLogger
-	if tr != nil {
-		logFields = tr.LogFields
-	} else {
-		logFields = func(fields ...log.Field) {}
-	}
-
 	event := honey.NoopEvent()
 	if op.context.HoneyDataset != nil {
+		mem := &runtime.MemStats{}
+		runtime.ReadMemStats(mem)
 		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
-			"operation": op.name,
+			"operation":           op.name,
+			"meta.hostname":       hostname.Get(),
+			"meta.num_goroutines": runtime.NumGoroutine(),
+			"meta.version":        version.Version(),
+			"meta.mem_inuse":      mem.Alloc + mem.StackInuse,
 		})
+	}
+
+	var logFields TraceLogger
+	if tr != nil {
+		logFields = func(fields ...log.Field) {
+			for _, field := range fields {
+				event.AddField(fmt.Sprintf("%s.%s", op.name, field.Key()), field.Value())
+			}
+			tr.LogFields(fields...)
+		}
+	} else {
+		logFields = func(fields ...log.Field) {
+			event.AddLogFields(fields)
+		}
 	}
 
 	if traceID := trace.ID(ctx); traceID != "" {
