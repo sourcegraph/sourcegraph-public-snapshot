@@ -53,7 +53,8 @@ func (m *referenceCountMigrator) Up(ctx context.Context) (err error) {
 		return err
 	}
 
-	return m.store.UpdateReferenceCounts(ctx, ids, dbstore.DependencyReferenceCountUpdateTypeNone)
+	_, err = m.store.UpdateReferenceCounts(ctx, ids, dbstore.DependencyReferenceCountUpdateTypeNone)
+	return err
 }
 
 const referenceCountUpQuery = `
