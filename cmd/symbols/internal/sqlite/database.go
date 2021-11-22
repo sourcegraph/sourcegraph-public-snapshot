@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -216,28 +217,29 @@ func (w *database) deletePaths(ctx context.Context, paths []string) error {
 	return w.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path = ANY(%s)`, pq.Array(paths)))
 }
 
+var symbolsColumnNames = []string{
+	"name",
+	"namelowercase",
+	"path",
+	"pathlowercase",
+	"line",
+	"kind",
+	"language",
+	"parent",
+	"parentkind",
+	"signature",
+	"pattern",
+	"filelimited",
+}
+
 func (w *database) writeSymbols(ctx context.Context, symbols <-chan result.Symbol) (err error) {
-	// TODO - use bulk loader instead
-	for symbol := range symbols {
-		if err := w.Exec(
-			ctx,
-			sqlf.Sprintf(
-				`
-					INSERT INTO symbols (
-						name,
-						namelowercase,
-						path,
-						pathlowercase,
-						line,
-						kind,
-						language,
-						parent,
-						parentkind,
-						signature,
-						pattern,
-						filelimited
-					) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-				`,
+	rows := make(chan []interface{})
+
+	go func() {
+		defer close(rows)
+
+		for symbol := range symbols {
+			rows <- []interface{}{
 				symbol.Name,
 				strings.ToLower(symbol.Name),
 				symbol.Path,
@@ -248,13 +250,11 @@ func (w *database) writeSymbols(ctx context.Context, symbols <-chan result.Symbo
 				symbol.Parent,
 				symbol.ParentKind,
 				symbol.Signature,
-				symbol.Parent,
+				symbol.Pattern,
 				symbol.FileLimited,
-			),
-		); err != nil {
-			return err
+			}
 		}
-	}
+	}()
 
-	return nil
+	return batch.InsertValues(ctx, w.Handle().DB(), "symbols", symbolsColumnNames, rows)
 }
