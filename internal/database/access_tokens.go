@@ -364,7 +364,7 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 func decodeToken(tokenHexEncoded string) ([]byte, error) {
 	token, err := hex.DecodeString(tokenHexEncoded)
 	if err != nil {
-		return nil, &InvalidTokenError{err}
+		return nil, InvalidTokenError{err}
 	}
 	return token, nil
 }
