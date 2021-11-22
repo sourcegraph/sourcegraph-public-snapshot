@@ -107,9 +107,6 @@ func (s *userEmailsStore) GetInitialSiteAdminEmail(ctx context.Context) (email s
 // GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an
 // unverified email.
 func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
-	if Mocks.UserEmails.GetPrimaryEmail != nil {
-		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
-	}
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
@@ -122,9 +119,6 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 // The address must be verified.
 // All other addresses for the user will be set as not primary.
 func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
-	if Mocks.UserEmails.SetPrimaryEmail != nil {
-		return Mocks.UserEmails.SetPrimaryEmail(ctx, userID, email)
-	}
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -160,10 +154,6 @@ func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, ema
 
 // Get gets information about the user's associated email address.
 func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error) {
-	if Mocks.UserEmails.Get != nil {
-		return Mocks.UserEmails.Get(userID, email)
-	}
-
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
 		userID, email,
 	).Scan(&emailCanonicalCase, &verified); err != nil {
@@ -233,10 +223,6 @@ func (s *userEmailsStore) Verify(ctx context.Context, userID int32, email, code 
 // SetVerified bypasses the normal email verification code process and manually sets the verified
 // status for an email.
 func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	if Mocks.UserEmails.SetVerified != nil {
-		return Mocks.UserEmails.SetVerified(ctx, userID, email, verified)
-	}
-
 	var res sql.Result
 	var err error
 	if verified {
