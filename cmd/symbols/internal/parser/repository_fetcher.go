@@ -9,8 +9,6 @@ import (
 	"strings"
 
 	"github.com/opentracing/opentracing-go/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
@@ -77,8 +75,8 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 	defer onDefer()
 	traceLog(log.Event("acquired fetch semaphore"))
 
-	fetching.Inc()
-	defer fetching.Dec()
+	f.operations.fetching.Inc()
+	defer f.operations.fetching.Dec()
 
 	rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, paths)
 	if err != nil {
@@ -90,8 +88,8 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 }
 
 func (f *repositoryFetcher) limitConcurrentFetches(ctx context.Context) (func(), error) {
-	fetchQueueSize.Inc()
-	defer fetchQueueSize.Dec()
+	f.operations.fetchQueueSize.Inc()
+	defer f.operations.fetchQueueSize.Dec()
 
 	select {
 	case f.fetchSem <- 1:
@@ -195,18 +193,3 @@ func shouldParse(tarHeader *tar.Header) bool {
 
 	return true
 }
-
-var (
-	fetching = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_fetching",
-		Help: "The number of fetches currently running.",
-	})
-	fetchQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_fetch_queue_size",
-		Help: "The number of fetch jobs enqueued.",
-	})
-	fetchFailed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "symbols_store_fetch_failed",
-		Help: "The total number of archive fetches that failed.",
-	})
-)
