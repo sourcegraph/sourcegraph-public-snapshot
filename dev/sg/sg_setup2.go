@@ -119,36 +119,17 @@ func setup2Exec(ctx context.Context, args []string) error {
 }
 
 func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *dependencyCategory) error {
-	out.Write("")
-	out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
-	out.Write("")
-	out.Write("Dependencies:")
-
-	for _, dep := range category.dependencies {
-		if dep.err == nil || dep.state {
-			writeSuccessLine("%s", dep.name)
-		} else if dep.err != nil {
-			writeFailureLine("%s: %s", dep.name, dep.err)
-		} else if !dep.state {
-			writeFailureLine("%s: %s", dep.name, "check failed")
-		}
-	}
+	printCategoryHeaderAndDependencies(categoryIdx, category)
 
 	// TODO: It doesn't make a lot of sense to give a choice here if
 	// there's only one dependency
 
-	out.Write("")
-	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
-	choices := map[int]string{
+	choice, err := getChoice(map[int]string{
 		1: "I want to fix these one-by-one",
 		2: "I'm feeling lucky. You try fixing all of it for me.",
 		3: "Go back",
-	}
-	choice, err := getChoice(choices)
+	})
 	if err != nil {
-		if err == io.EOF {
-			return nil
-		}
 		return err
 	}
 
@@ -165,20 +146,36 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 	return err
 }
 
+func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCategory) {
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
+	out.Write("")
+	out.Write("Dependencies:")
+
+	for _, dep := range category.dependencies {
+		if dep.err == nil || dep.state {
+			writeSuccessLine("%s", dep.name)
+		} else if dep.err != nil {
+			writeFailureLine("%s: %s", dep.name, dep.err)
+		} else if !dep.state {
+			writeFailureLine("%s: %s", dep.name, "check failed")
+		}
+	}
+}
+
 func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory) error {
 	for _, dep := range category.dependencies {
 		if dep.err == nil || dep.state {
 			continue
 		}
 
-		pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
+		pending := out.Pending(output.Linef("", output.StylePending, "Trying my hardest to fix %q automatically...", dep.name))
 		c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
 		cmdOut, err := c.CombinedOutput()
 		if err != nil {
-			pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
+			pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Error: %s\n\nOutput: %s", err, cmdOut))
 			return err
 		}
-		pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+		pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done! %q should work now", dep.name))
 	}
 
 	return nil
@@ -191,35 +188,40 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 			continue
 		}
 
-		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
-		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleWarning, output.StyleBold), "|               %s", dep.name))
-		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
+		out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
+		out.Write("")
 
 		if dep.err != nil {
-			out.WriteLine(output.Linef("", output.StyleBold, "Error: %s%s", output.StyleReset, dep.err))
+			out.WriteLine(output.Linef("", output.StyleBold, "Encountered the following error:\n\n%s%s\n", output.StyleReset, dep.err))
 		}
+
+		out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+
 		if dep.instructionsComment != "" {
-			out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
 			out.Write("")
 			out.Write(dep.instructionsComment)
 		}
 
-		if dep.instructionsCommands != "" {
-			out.Write("")
-			out.Write("Run the following command(s):")
-			out.Write("")
-
-			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
-
-			out.Write("")
+		// If we don't have anything do run, we simply print instructions to
+		// the user
+		if dep.instructionsCommands == "" {
+			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
+			waitForReturn()
+			return nil
 		}
 
-		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
-		choices := map[int]string{
-			1: "I'll run the command manually",
+		// Otherwise we print the command(s) and ask the user whether we should run it or not
+		out.Write("")
+		out.Write("Run the following command(s):")
+		out.Write("")
+
+		out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+
+		choice, err := getChoice(map[int]string{
+			1: "I'll fix this manually (either by running the command or doing something else)",
 			2: "You can run the command for me",
-		}
-		choice, err := getChoice(choices)
+			3: "Go back",
+		})
 		if err != nil {
 			return err
 		}
@@ -230,19 +232,17 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
 			waitForReturn()
 		case 2:
-			if dep.instructionsCommands == "" {
-				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "problem! not possible. exiting"))
-				return nil
-			}
+			pending := out.Pending(output.Linef("", output.StylePending, "Trying my hardest to fix %q...", dep.name))
 
-			pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
-			c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
-			cmdOut, err := c.CombinedOutput()
+			cmdOut, err := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands).CombinedOutput()
 			if err != nil {
 				pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
 				return err
 			}
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+
+			pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done! %q should be fixed now!", dep.name))
+		case 3:
+			return nil
 		}
 	}
 
@@ -602,6 +602,9 @@ const (
 )
 
 func getChoice(choices map[int]string) (int, error) {
+	out.Write("")
+	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
+
 	for num, desc := range choices {
 		out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 	}
