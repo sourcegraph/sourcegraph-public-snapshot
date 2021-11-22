@@ -64,7 +64,12 @@ func NewConfig(now time.Time) Config {
 	var changedFiles []string
 	diffCommand := []string{"diff", "--name-only"}
 	if commit != "" {
-		diffCommand = append(diffCommand, "origin/main..."+commit)
+		if branch == "main" {
+			// On main, just look at the latest commit.
+			diffCommand = append(diffCommand, "@^")
+		} else {
+			diffCommand = append(diffCommand, "origin/main..."+commit)
+		}
 	} else {
 		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
