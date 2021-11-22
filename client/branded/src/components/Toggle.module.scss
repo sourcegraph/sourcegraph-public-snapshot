@@ -4,7 +4,7 @@
 
 .toggle {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 
     --toggle-bar-bg: var(--icon-color);
     --toggle-bar-bg-on: var(--primary);
@@ -16,13 +16,26 @@
     --toggle-bar-focus-box-shadow: 0 0 0 1px var(--body-bg), 0 0 0 0.1875rem var(--primary-2);
 
     button {
+        align-items: center;
         background: none;
         border: none;
-        display: inline-block;
+        display: flex;
+        flex-direction: row;
         outline: none !important;
         padding: 0;
         position: relative;
-        width: var(--toggle-width);
+        width: fit-content;
+
+        &:disabled {
+            --toggle-knob-bg: var(--icon-color);
+            --toggle-knob-bg-on: var(--icon-color);
+            --toggle-bar-bg: var(--input-disabled-bg);
+            --toggle-bar-bg-on: var(--input-disabled-bg);
+        }
+
+        &:disabled .knob {
+            opacity: var(--toggle-knob-disabled-opacity);
+        }
     }
 
     &:focus-visible {
@@ -30,27 +43,23 @@
         box-shadow: none;
     }
 
-    &:disabled {
-        --toggle-knob-bg: var(--icon-color);
-        --toggle-knob-bg-on: var(--icon-color);
-        --toggle-bar-bg: var(--input-disabled-bg);
-        --toggle-bar-bg-on: var(--input-disabled-bg);
-    }
-
     &:hover:enabled .bar {
         opacity: var(--toggle-bar-focus-opacity);
-    }
-
-    &:disabled .knob {
-        opacity: var(--toggle-knob-disabled-opacity);
     }
 
     &:focus-visible .bar {
         box-shadow: var(--toggle-bar-focus-box-shadow);
     }
 
-    .label {
+    .help-text {
+        margin-left: 0.5rem;
+        padding-left: var(--toggle-width);
+    }
+
+    label {
+        color: var(--body-color);
         cursor: pointer;
+        padding-left: 0.5rem;
     }
 }
 
@@ -59,8 +68,7 @@
     top: 2px;
     left: 0;
     height: 1rem;
-    width: 100%;
-    position: absolute;
+    width: var(--toggle-width);
     display: flex;
     align-items: center;
 

@@ -7,14 +7,15 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { Toggle } from './Toggle'
 
 const ToggleExample: typeof Toggle = ({ value, disabled, onToggle }) => (
-    <div className="d-flex align-items-baseline mb-2">
-        <Toggle value={value} onToggle={onToggle} disabled={disabled} title="Hello" className="mr-2" />
-        <div>
-            <label className="mb-0">
-                {disabled ? 'Disabled ' : ''}Toggle {value ? 'on' : 'off'}
-            </label>
-            <small className="field-message mt-0">This is helper text as needed</small>
-        </div>
+    <div className="mb-2">
+        <Toggle
+            value={value}
+            onToggle={onToggle}
+            disabled={disabled}
+            title="Hello"
+            label={(disabled ? "Disabled" : "") + " Toggle on"}
+            offLabel={(disabled ? "Disabled" : "") + " Toggle off"}
+            helpText="This is helper text as needed" />
     </div>
 )
 const onToggle = action('onToggle')

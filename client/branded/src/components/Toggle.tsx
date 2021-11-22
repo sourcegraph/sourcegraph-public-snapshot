@@ -15,7 +15,7 @@ interface Props {
      */
     onToggle?: (value: boolean) => void
 
-    onClick?: (event: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLDivElement>) => void
+    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
 
     /** The title attribute (tooltip). */
     title?: string
@@ -54,7 +54,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     'aria-describedby': ariaDescribedby,
     'data-testid': dataTestId,
 }) => {
-    function onButtonClick(event: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLDivElement>): void {
+    function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
         event.stopPropagation()
         if (!disabled && onToggle) {
             onToggle(!value)
@@ -68,7 +68,6 @@ export const Toggle: React.FunctionComponent<Props> = ({
         <div className={classNames(styles.toggle, className)}>
             <button
                 type="button"
-
                 id={id}
                 title={title}
                 value={value ? 1 : 0}
@@ -93,20 +92,17 @@ export const Toggle: React.FunctionComponent<Props> = ({
                         })}
                     />
                 </span>
+
+                {label &&
+                    <label className="mb-0">
+                        {offLabel ? (value ? label : offLabel) : label}
+                    </label>
+                }
             </button>
-            {(label || helpText) &&
-                <div>
-                    {label &&
-                        <div onClick={onButtonClick} className={classNames(styles.label, className)}>
-                            {offLabel ? (value ? label : offLabel) : label}
-                        </div>
-                    }
-                    {helpText &&
-                        <div className={classNames(className, "text-muted")}>
-                            {offHelpText ? (value ? helpText : offHelpText) : helpText}
-                        </div>
-                    }
-                </div>
+            {helpText &&
+                <small className={classNames(styles.helpText, "field-message mt-0", className)}>
+                    {offHelpText ? (value ? helpText : offHelpText) : helpText}
+                </small>
             }
         </div>
     )
