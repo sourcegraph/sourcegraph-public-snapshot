@@ -20,6 +20,8 @@
     }
 
     &__title {
+        // Truncation for multiple lines
+        // stylelint-disable-next-line value-no-vendor-prefix
         display: -webkit-box;
         overflow: hidden;
         text-overflow: ellipsis;
