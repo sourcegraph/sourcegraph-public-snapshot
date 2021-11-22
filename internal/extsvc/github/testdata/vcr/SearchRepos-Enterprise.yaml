@@ -1,0 +1,418 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://ghe.sgdev.org/api/meta
+    method: GET
+  response:
+    body: <html><body>You are being <a href="https://ghe.sgdev.org/login?return_to=https%3A%2F%2Fghe.sgdev.org%2Fapi%2Fmeta">redirected</a>.</body></html>
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'; base-uri 'self'; block-all-mixed-content; connect-src
+        'self' ghe.sgdev.org www.githubstatus.com wss://ghe.sgdev.org; font-src 'self';
+        form-action 'self' ghe.sgdev.org; frame-ancestors 'none'; frame-src 'self';
+        img-src * data:; manifest-src 'self'; media-src 'none'; script-src 'self';
+        style-src 'unsafe-inline' 'self'; worker-src ghe.sgdev.org/socket-worker.js
+      Content-Type:
+      - text/html; charset=utf-8
+      Date:
+      - Fri, 19 Nov 2021 15:33:20 GMT
+      Location:
+      - https://ghe.sgdev.org/login?return_to=https%3A%2F%2Fghe.sgdev.org%2Fapi%2Fmeta
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 302 Found
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - X-PJAX
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Request-Id:
+      - d0d47869-1a47-4fc8-92bf-1d38002c9768
+      X-Runtime:
+      - "0.094152"
+      X-Runtime-Rack:
+      - "0.097096"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 302 Found
+    code: 302
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+      Referer:
+      - https://ghe.sgdev.org/api/meta
+    url: https://ghe.sgdev.org/login?return_to=https%3A%2F%2Fghe.sgdev.org%2Fapi%2Fmeta
+    method: GET
+  response:
+    body: "\n\n\n\n<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"utf-8\">\n\n\n\n
+      \ <link crossorigin=\"use-credentials\" media=\"all\" integrity=\"sha512-jFUBCdWOA1Ov3xo3oFMBwsdP4Up2K1bRnP4QYI5WqvpaIYxWVek89k2M0oyTbNhYMViGtxJB3Vdwcw8ln8hGQw==\"
+      rel=\"stylesheet\" href=\"https://ghe.sgdev.org/assets/frameworks-8c550109d58e0353afdf1a37a05301c2.css\"
+      />\n  <link crossorigin=\"use-credentials\" media=\"all\" integrity=\"sha512-d8tnxebCP3jW0DJ3E/CIxAfZO2DHR3H4J+hsV7zj/WJ6Sgbb9kpbCwvcjO3mwjFcfB9zax/eM4AGVGnSN/voXw==\"
+      rel=\"stylesheet\" href=\"https://ghe.sgdev.org/assets/site-77cb67c5e6c23f78d6d0327713f088c4.css\"
+      />\n    <link crossorigin=\"use-credentials\" media=\"all\" integrity=\"sha512-bD23ylMqNMwsN738nmXqC7WKj68pszUlu8+ixC+x0IbvmB0H8N0HP2VGbBRiq7dsdk84QV0UGvmXSv/SrNqmyQ==\"
+      rel=\"stylesheet\" href=\"https://ghe.sgdev.org/assets/github-6c3db7ca532a34cc2c37bdfc9e65ea0b.css\"
+      />\n    \n    \n    \n    \n\n\n  <meta name=\"viewport\" content=\"width=device-width\">\n
+      \ \n  <title>Sign in to your account · GitHub</title>\n    <meta name=\"description\"
+      content=\"GitHub is where people build software. More than 50 million people
+      use GitHub to discover, fork, and contribute to over 100 million projects.\">\n
+      \   <link rel=\"search\" type=\"application/opensearchdescription+xml\" href=\"/opensearch.xml\"
+      title=\"GitHub\">\n  <link rel=\"fluid-icon\" href=\"https://ghe.sgdev.org/fluidicon.png\"
+      title=\"GitHub\">\n  <meta property=\"fb:app_id\" content=\"1401488693436528\">\n
+      \ <meta name=\"apple-itunes-app\" content=\"app-id=1477376905\">\n\n    <meta
+      property=\"og:url\" content=\"https://ghe.sgdev.org\">\n    <meta property=\"og:site_name\"
+      content=\"GitHub\">\n    <meta property=\"og:title\" content=\"Build software
+      better, together\">\n    <meta property=\"og:description\" content=\"GitHub
+      is where people build software. More than 50 million people use GitHub to discover,
+      fork, and contribute to over 100 million projects.\">\n    <meta property=\"og:image\"
+      content=\"https://ghe.sgdev.org/images/modules/open_graph/github-logo.png\">\n
+      \   <meta property=\"og:image:type\" content=\"image/png\">\n    <meta property=\"og:image:width\"
+      content=\"1200\">\n    <meta property=\"og:image:height\" content=\"1200\">\n
+      \   <meta property=\"og:image\" content=\"https://ghe.sgdev.org/images/modules/open_graph/github-mark.png\">\n
+      \   <meta property=\"og:image:type\" content=\"image/png\">\n    <meta property=\"og:image:width\"
+      content=\"1200\">\n    <meta property=\"og:image:height\" content=\"620\">\n
+      \   <meta property=\"og:image\" content=\"https://ghe.sgdev.org/images/modules/open_graph/github-octocat.png\">\n
+      \   <meta property=\"og:image:type\" content=\"image/png\">\n    <meta property=\"og:image:width\"
+      content=\"1200\">\n    <meta property=\"og:image:height\" content=\"620\">\n\n
+      \   <meta property=\"twitter:site\" content=\"github\">\n    <meta property=\"twitter:site:id\"
+      content=\"13334762\">\n    <meta property=\"twitter:creator\" content=\"github\">\n
+      \   <meta property=\"twitter:creator:id\" content=\"13334762\">\n    <meta property=\"twitter:card\"
+      content=\"summary_large_image\">\n    <meta property=\"twitter:title\" content=\"GitHub\">\n
+      \   <meta property=\"twitter:description\" content=\"GitHub is where people
+      build software. More than 50 million people use GitHub to discover, fork, and
+      contribute to over 100 million projects.\">\n    <meta property=\"twitter:image:src\"
+      content=\"https://ghe.sgdev.org/images/modules/open_graph/github-logo.png\">\n
+      \   <meta property=\"twitter:image:width\" content=\"1200\">\n    <meta property=\"twitter:image:height\"
+      content=\"1200\">\n\n  <link rel=\"assets\" href=\"https://ghe.sgdev.org/\">\n
+      \ \n\n  <meta name=\"request-id\" content=\"3548c318-be07-4b7f-afef-1e2b0f27c9e6\"
+      data-pjax-transient=\"true\" /><meta name=\"html-safe-nonce\" content=\"46023f9d9c4425ad2b1d2735c9672adba405df68\"
+      data-pjax-transient=\"true\" />\n\n\n\n  <meta name=\"github-keyboard-shortcuts\"
+      content=\"\" data-pjax-transient=\"true\" />\n\n  \n\n  <meta name=\"selected-link\"
+      value=\"/login\" data-pjax-transient>\n\n  \n\n\n\n\n\n\n\n\n<meta class=\"js-ga-set\"
+      name=\"dimension10\" content=\"Responsive\" data-pjax-transient>\n\n<meta class=\"js-ga-set\"
+      name=\"dimension1\" content=\"Logged Out\">\n\n\n\n  \n\n      <meta name=\"hostname\"
+      content=\"ghe.sgdev.org\">\n    <meta name=\"user-login\" content=\"\">\n\n
+      \   <meta name=\"codemirror-crossorigin-credentials\">\n\n    <meta name=\"robots\"
+      content=\"noindex\">\n\n\n  <meta http-equiv=\"x-pjax-version\" content=\"5de9b18525422d17d6d891a99e851082\">\n
+      \ \n\n\n    <link rel=\"canonical\" href=\"https://ghe.sgdev.org/login\" data-pjax-transient>\n\n\n\n
+      \ <link rel=\"mask-icon\" href=\"https://ghe.sgdev.org/pinned-octocat.svg\"
+      color=\"#000000\">\n  <link rel=\"alternate icon\" class=\"js-site-favicon\"
+      type=\"image/png\" href=\"https://ghe.sgdev.org/favicons/favicon-ent.png\">\n
+      \ <link rel=\"icon\" class=\"js-site-favicon\" type=\"image/svg+xml\" href=\"https://ghe.sgdev.org/favicons/favicon-ent.svg\">\n\n<meta
+      name=\"theme-color\" content=\"#1e2327\">\n\n\n  <link rel=\"manifest\" href=\"/manifest.json\"
+      crossOrigin=\"use-credentials\">\n\n  </head>\n\n  <body class=\"logged-out
+      enterprise env-production page-responsive session-authentication\">\n    \n\n
+      \   <div class=\"position-relative js-header-wrapper \">\n      <a href=\"#start-of-content\"
+      class=\"px-2 py-4 bg-blue text-white show-on-focus js-skip-to-content\">Skip
+      to content</a>\n      <span class=\"Progress progress-pjax-loader position-fixed
+      width-full js-pjax-loader-bar\">\n        <span class=\"progress-pjax-loader-bar
+      top-0 left-0\" style=\"width: 0%;\"></span>\n      </span>\n\n      \n      \n\n\n
+      \         <div id=\"unsupported-browser\" class=\"unsupported-browser\" hidden>\n
+      \ <div class=\"container-lg p-responsive clearfix d-flex flex-items-center py-2\">\n
+      \     <svg height=\"16\" class=\"octicon octicon-alert mr-2 color-gray-7 hide-sm\"
+      viewBox=\"0 0 16 16\" version=\"1.1\" width=\"16\" aria-hidden=\"true\"><path
+      fill-rule=\"evenodd\" d=\"M8.22 1.754a.25.25 0 00-.44 0L1.698 13.132a.25.25
+      0 00.22.368h12.164a.25.25 0 00.22-.368L8.22 1.754zm-1.763-.707c.659-1.234 2.427-1.234
+      3.086 0l6.082 11.378A1.75 1.75 0 0114.082 15H1.918a1.75 1.75 0 01-1.543-2.575L6.457
+      1.047zM9 11a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.25a.75.75 0 00-1.5 0v2.5a.75.75
+      0 001.5 0v-2.5z\"></path></svg>\n    <div class=\"d-flex flex-auto flex-column
+      flex-md-row\">\n      <div class=\"flex-auto min-width-0 mr-2\" style=\"padding-top:1px\">\n
+      \       <span>GitHub no longer supports this web browser.</span>\n        <a
+      href=\"https://docs.github.com/enterprise/2.22/user/articles/supported-browsers\">\n
+      \         Learn more about the browsers we support.\n        </a>\n      </div>\n
+      \   </div>\n  </div>\n</div>\n\n\n\n        <div class=\"header header-logged-out
+      width-full pt-5 pb-4\" role=\"banner\">\n  <div class=\"container clearfix width-full
+      text-center\">\n    <a class=\"header-logo\" href=\"https://ghe.sgdev.org/\"
+      aria-label=\"Homepage\">\n      <img alt=\"GitHub Enterprise logo\" src=\"https://ghe.sgdev.org/images/modules/enterprise/gh-enterprise-logo.svg\"
+      width=\"204\">\n    </a>\n  </div>\n</div>\n\n\n    </div>\n\n  <div id=\"start-of-content\"
+      class=\"show-on-focus\"></div>\n\n\n\n\n\n  \n\n  <include-fragment class=\"js-notification-shelf-include-fragment\"
+      data-base-src=\"https://ghe.sgdev.org/notifications/beta/shelf\"></include-fragment>\n\n\n\n
+      \ <div\n    class=\"application-main \"\n    data-commit-hovercards-enabled\n
+      \   data-discussion-hovercards-enabled\n    data-issue-and-pr-hovercards-enabled\n
+      \ >\n      <main id=\"js-pjax-container\" data-pjax-container>\n        \n\n\n\n<div
+      class=\"auth-form px-3\" id=\"login\">\n\n    <!-- '\"` --><!-- </textarea></xmp>
+      --></option></form><form action=\"/session\" accept-charset=\"UTF-8\" method=\"post\"><input
+      type=\"hidden\" name=\"authenticity_token\" value=\"Ua5Jji7WE4Daslov4ciMgEDlFblWN5fnpkziRBdGy7y86OUAuO+o8K7UQc/z9/uBomQATSwem43aXvTjmeW1fA==\"
+      />      <input type=\"hidden\" name=\"ga_id\" class=\"js-octo-ga-id-input\">\n
+      \     <div class=\"auth-form-header p-0\">\n        <h1>Sign in to your account</h1>\n
+      \     </div>\n\n      <div class=\"auth-form-message mb-3\">\n        <h1>\n<a
+      id=\"user-content-readme\" class=\"anchor\" href=\"#readme\" aria-hidden=\"true\"><span
+      aria-hidden=\"true\" class=\"octicon octicon-link\"></span></a>README</h1>\n<p>This
+      instance is for test purposes only. Do not put anything sensitive or private
+      on this instance. Additionally, the following namespaces are used in integration
+      testing - be wary of making changes to these:</p>\n<ul>\n<li>ghe.sgdev.org/sourcegraph</li>\n<li>ghe.sgdev.org/sgtest</li>\n<li>ghe.sgdev.org/beyang</li>\n</ul>\n\n
+      \     </div>\n\n      <div id=\"js-flash-container\">\n\n\n  <template class=\"js-flash-template\">\n
+      \   <div class=\"flash flash-full  js-flash-template-container\">\n  <div class=\"container-lg
+      px-2\" >\n    <button class=\"flash-close js-flash-close\" type=\"button\" aria-label=\"Dismiss
+      this message\">\n      <svg class=\"octicon octicon-x\" viewBox=\"0 0 16 16\"
+      version=\"1.1\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path fill-rule=\"evenodd\"
+      d=\"M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06
+      8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94
+      8 3.72 4.78a.75.75 0 010-1.06z\"></path></svg>\n    </button>\n    \n      <div
+      class=\"js-flash-template-message\"></div>\n\n  </div>\n</div>\n  </template>\n</div>\n\n\n
+      \     <div class=\"flash js-transform-notice\" hidden>\n        <button class=\"flash-close
+      js-flash-close\" type=\"button\" aria-label=\"Dismiss this message\">\n          <svg
+      class=\"octicon octicon-x\" viewBox=\"0 0 16 16\" version=\"1.1\" width=\"16\"
+      height=\"16\" aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M3.72 3.72a.75.75
+      0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06
+      1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z\"></path></svg>\n
+      \       </button>\n      </div>\n\n      <div class=\"auth-form-body mt-3\">\n\n
+      \       <label for=\"login_field\">\n          Username or email address\n        </label>\n
+      \       <input type=\"text\" name=\"login\" id=\"login_field\" class=\"form-control
+      input-block\" tabindex=\"1\" autocapitalize=\"off\" autocorrect=\"off\" autocomplete=\"username\"
+      autofocus=\"autofocus\" />\n\n        <label for=\"password\">\n          Password
+      <a class=\"label-link\" href=\"/password_reset\">Forgot password?</a>\n        </label>\n
+      \       <input type=\"password\" name=\"password\" id=\"password\" class=\"form-control
+      form-control input-block\" tabindex=\"2\" autocomplete=\"current-password\"
+      />\n        <input type=\"hidden\" class=\"js-webauthn-support\" name=\"webauthn-support\"
+      value=\"unknown\">\n<input type=\"hidden\" class=\"js-webauthn-iuvpaa-support\"
+      name=\"webauthn-iuvpaa-support\" value=\"unknown\">\n<input type=\"hidden\"
+      name=\"return_to\" id=\"return_to\" value=\"https://ghe.sgdev.org/api/meta\"
+      class=\"form-control\" />\n<input type=\"hidden\" name=\"allow_signup\" id=\"allow_signup\"
+      class=\"form-control\" />\n<input type=\"hidden\" name=\"client_id\" id=\"client_id\"
+      class=\"form-control\" />\n<input type=\"hidden\" name=\"integration\" id=\"integration\"
+      class=\"form-control\" />\n\n\n        <input type=\"submit\" name=\"commit\"
+      value=\"Sign in\" tabindex=\"3\" class=\"btn btn-primary btn-block\" data-disable-with=\"Signing
+      in…\" />\n      </div>\n</form>\n\n</div>\n\n      </main>\n  </div>\n\n        <div
+      class=\"footer container-lg p-responsive py-6 mt-6 f6\" role=\"contentinfo\">\n
+      \   <ul class=\"list-style-none d-flex flex-justify-center\">\n        <li class=\"mr-3\"><a
+      href=\"https://docs.github.com/enterprise/2.22\" class=\"link-gray\">Help</a></li>\n
+      \         <li class=\"mr-3\"><a href=\"/contact\" class=\"link-gray\">Support</a></li>\n
+      \   </ul>\n  </div>\n\n\n\n  <div id=\"ajax-error-message\" class=\"ajax-error-message
+      flash flash-error\">\n    <svg class=\"octicon octicon-alert\" viewBox=\"0 0
+      16 16\" version=\"1.1\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path
+      fill-rule=\"evenodd\" d=\"M8.22 1.754a.25.25 0 00-.44 0L1.698 13.132a.25.25
+      0 00.22.368h12.164a.25.25 0 00.22-.368L8.22 1.754zm-1.763-.707c.659-1.234 2.427-1.234
+      3.086 0l6.082 11.378A1.75 1.75 0 0114.082 15H1.918a1.75 1.75 0 01-1.543-2.575L6.457
+      1.047zM9 11a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.25a.75.75 0 00-1.5 0v2.5a.75.75
+      0 001.5 0v-2.5z\"></path></svg>\n    <button type=\"button\" class=\"flash-close
+      js-ajax-error-dismiss\" aria-label=\"Dismiss error\">\n      <svg class=\"octicon
+      octicon-x\" viewBox=\"0 0 16 16\" version=\"1.1\" width=\"16\" height=\"16\"
+      aria-hidden=\"true\"><path fill-rule=\"evenodd\" d=\"M3.72 3.72a.75.75 0 011.06
+      0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8
+      9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z\"></path></svg>\n
+      \   </button>\n    You can’t perform that action at this time.\n  </div>\n\n\n
+      \   <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-bn/3rKJzBl2H64K38R8KaVcT26vKK7BJQC59lwYc+9fjlHzmy0fwh+hzBtsgTdhIi13dxjzNKWhdSN8WTM9qUw==\"
+      type=\"application/javascript\" id=\"js-conditional-compat\" data-src=\"https://ghe.sgdev.org/assets/compat-bootstrap-6e7ff7ac.js\"></script>\n
+      \   <script crossorigin=\"use-credentials\" integrity=\"sha512-CxjaMepCmi+z0LTeztU2S8qGD25LyHD6j9t0RSPevy63trFWJVwUM6ipAVLgtpMBBgZ53wq8JPkSeQ6ruaZL2w==\"
+      type=\"application/javascript\" src=\"https://ghe.sgdev.org/assets/environment-bootstrap-0b18da31.js\"></script>\n
+      \   <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-DURBBx1AIPZssr7B45kUuFYOjAtsojmdc1vFWSm8dr8Sc/7qjNVGfZzY45VALO2YmdBIJ5ZrHeb7L8GqB3yJ4g==\"
+      type=\"application/javascript\" src=\"https://ghe.sgdev.org/assets/vendor-0d444107.js\"></script>\n
+      \   <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-hkL/Mw7ROWhiIv0HmCXydPVJ0cjtpenoRz4xLEOSA5JzEtbdJDYiw1jSPb2o1f5ONyDwEMZkqd1vGMNR72tbhw==\"
+      type=\"application/javascript\" src=\"https://ghe.sgdev.org/assets/frameworks-8642ff33.js\"></script>\n
+      \   \n    <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-3XiR0TtDN3ehHwZNedq5q6VPzYWLDQeeew18SX/FKLZa79S92I+4XxuL8jYkhpjeoUymREEXOFZf38UzCrCBCg==\"
+      type=\"application/javascript\" src=\"https://ghe.sgdev.org/assets/github-bootstrap-dd7891d1.js\"></script>\n
+      \   <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-KMEZmEtryngISLkl0TBkzH+dTviB71VK1LbhEimu47fk/Mff6vnt0PvR4WmHpc3va6m+vRAX6mkbWAcNt0QKPA==\"
+      type=\"application/javascript\" src=\"https://ghe.sgdev.org/assets/behaviors-bootstrap-28c11998.js\"></script>\n
+      \   \n      <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-ocwzJaQnkSGVuZ2TeJBtNSow+UD3TqsNQ6ktHKDAaF0GQFCKp4qsOjceWbf09CHI4FyvB6Xq+SMccbYTq6dPew==\"
+      type=\"application/javascript\" data-module-id=\"./tweetsodium.js\" data-src=\"https://ghe.sgdev.org/assets/tweetsodium-a1cc3325.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-qECv/jhsvLFN77eGNu0cjMR2+zvAlLyhQVTnmayJc5OLZoxMLjQZxZW1hK/dhcYro6Wec/aiF21HYf2N5OilYQ==\"
+      type=\"application/javascript\" data-module-id=\"./randomColor.js\" data-src=\"https://ghe.sgdev.org/assets/randomColor-a840affe.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-TjmDUfspgN28WRWfc01tOL0BFS8pI/TAi8TQ665TcA3jG1C3QgfFu0YKa32Z03rlEL8dukbsy+amwBzgGyjESQ==\"
+      type=\"application/javascript\" data-module-id=\"./Sortable.js\" data-src=\"https://ghe.sgdev.org/assets/Sortable-4e398351.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-WBFrLKOkVCeMfblm53oJMHvQXiyu09zQZZp/rFS2TXVm/qgijPkhd6RWXmRbBgTz90rQ0cD/G7QZbui+x0kHRg==\"
+      type=\"application/javascript\" data-module-id=\"./jump-to.js\" data-src=\"https://ghe.sgdev.org/assets/jump-to-58116b2c.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-mhgrd69OY1u/e6fnc6HL3TYqZ7l9qKfcX953g1r1eTmyaxe9q2WE1zNHk0eNiK5ZOXzo4nFRmkfwfWwvRCwVSg==\"
+      type=\"application/javascript\" data-module-id=\"./profile-pins-element.js\"
+      data-src=\"https://ghe.sgdev.org/assets/profile-pins-element-9a182b77.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-iLuC2weaJqL9mYAud2WDWjhd8cJe8dXVxw2KhCH2Rnj6WJvTzlZRmvTtL09wNWX6nRze/TDaQ7gq7BFLchaDYg==\"
+      type=\"application/javascript\" data-module-id=\"./image-crop-element-loader.js\"
+      data-src=\"https://ghe.sgdev.org/assets/image-crop-element-loader-88bb82db.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-zxLCMS441aYtvXqzAwhG9dByjFfxnE6VcURnkzZDlhxCYzvMmaOAWDCkcp0B2+VftSrRktNDFUtwKBi7nJk/hA==\"
+      type=\"application/javascript\" data-module-id=\"./user-status-submit.js\" data-src=\"https://ghe.sgdev.org/assets/user-status-submit-cf12c231.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-MttsTK6LRLl4AiQlvZ8MfNsDe0brgs9ubvDV/Ck6sVM+MnjEn+6tfF4hS8ENrXG1v+lBHFWmAS5j43gum0xsXw==\"
+      type=\"application/javascript\" data-module-id=\"./gist-vendor.js\" data-src=\"https://ghe.sgdev.org/assets/gist-vendor-32db6c4c.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-4GcSWGoe36+BoWho4gtJcByZe8j43w+lt2/PDe3rmBxRVSgD29YipDwuIywe8fvOd2b2CszBqaPGxSznUtE3Xg==\"
+      type=\"application/javascript\" data-module-id=\"./drag-drop.js\" data-src=\"https://ghe.sgdev.org/assets/drag-drop-e0671258.js\"></script>\n
+      \     <script crossorigin=\"use-credentials\" async=\"async\" integrity=\"sha512-SOPCtlkpsYIiiv0utjiUwpRmbrF6CURJhp85R9g+UT1j9mrE1Da0NsaRt7hkBMOp2eAFYuZRXmhN//ubNdehtg==\"
+      type=\"application/javascript\" src=\"https://ghe.sgdev.org/assets/unsupported-bootstrap-48e3c2b6.js\"></script>\n\n
+      \   \n  <div class=\"js-stale-session-flash flash flash-warn flash-banner\"
+      hidden\n    >\n    <svg class=\"octicon octicon-alert\" viewBox=\"0 0 16 16\"
+      version=\"1.1\" width=\"16\" height=\"16\" aria-hidden=\"true\"><path fill-rule=\"evenodd\"
+      d=\"M8.22 1.754a.25.25 0 00-.44 0L1.698 13.132a.25.25 0 00.22.368h12.164a.25.25
+      0 00.22-.368L8.22 1.754zm-1.763-.707c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75
+      1.75 0 0114.082 15H1.918a1.75 1.75 0 01-1.543-2.575L6.457 1.047zM9 11a1 1 0
+      11-2 0 1 1 0 012 0zm-.25-5.25a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5z\"></path></svg>\n
+      \   <span class=\"js-stale-session-flash-signed-in\" hidden>You signed in with
+      another tab or window. <a href=\"\">Reload</a> to refresh your session.</span>\n
+      \   <span class=\"js-stale-session-flash-signed-out\" hidden>You signed out
+      in another tab or window. <a href=\"\">Reload</a> to refresh your session.</span>\n
+      \ </div>\n  <template id=\"site-details-dialog\">\n  <details class=\"details-reset
+      details-overlay details-overlay-dark lh-default text-gray-dark hx_rsm\" open>\n
+      \   <summary role=\"button\" aria-label=\"Close dialog\"></summary>\n    <details-dialog
+      class=\"Box Box--overlay d-flex flex-column anim-fade-in fast hx_rsm-dialog
+      hx_rsm-modal\">\n      <button class=\"Box-btn-octicon m-0 btn-octicon position-absolute
+      right-0 top-0\" type=\"button\" aria-label=\"Close dialog\" data-close-dialog>\n
+      \       <svg class=\"octicon octicon-x\" viewBox=\"0 0 16 16\" version=\"1.1\"
+      width=\"16\" height=\"16\" aria-hidden=\"true\"><path fill-rule=\"evenodd\"
+      d=\"M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06
+      8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94
+      8 3.72 4.78a.75.75 0 010-1.06z\"></path></svg>\n      </button>\n      <div
+      class=\"octocat-spinner my-6 js-details-dialog-spinner\"></div>\n    </details-dialog>\n
+      \ </details>\n</template>\n\n  <div class=\"Popover js-hovercard-content position-absolute\"
+      style=\"display: none; outline: none;\" tabindex=\"0\">\n  <div class=\"Popover-message
+      Popover-message--bottom-left Popover-message--large Box box-shadow-large\" style=\"width:360px;\">\n
+      \ </div>\n</div>\n\n\n  </body>\n</html>\n\n"
+    headers:
+      Cache-Control:
+      - no-cache, no-store
+      Content-Security-Policy:
+      - default-src 'none'; base-uri 'self'; block-all-mixed-content; connect-src
+        'self' ghe.sgdev.org www.githubstatus.com wss://ghe.sgdev.org; font-src 'self';
+        form-action 'self' ghe.sgdev.org; frame-ancestors 'none'; frame-src 'self';
+        img-src * data:; manifest-src 'self'; media-src 'none'; script-src 'self';
+        style-src 'unsafe-inline' 'self'; worker-src ghe.sgdev.org/socket-worker.js
+      Content-Type:
+      - text/html; charset=utf-8
+      Date:
+      - Fri, 19 Nov 2021 15:33:20 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - X-PJAX
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Request-Id:
+      - 3548c318-be07-4b7f-afef-1e2b0f27c9e6
+      X-Runtime:
+      - "0.147454"
+      X-Runtime-Rack:
+      - "0.150513"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"\nfragment RepositoryFields on Repository {\n\tid\n\tdatabaseId\n\tnameWithOwner\n\tdescription\n\turl\n\tisPrivate\n\tisFork\n\tisArchived\n\tisLocked\n\tisDisabled\n\tforkCount\n\tvisibility\n\tstargazerCount\n}\n\t\nquery($query:
+      String!, $type: SearchType!, $after: String, $first: Int!) {\n\tsearch(query:
+      $query, type: $type, after: $after, first: $first) {\n\t\trepositoryCount\n\t\tpageInfo
+      { hasNextPage,  endCursor }\n\t\tnodes { ... on Repository { ...RepositoryFields
+      } }\n\t}\n}","variables":{"first":1,"query":"repo:admiring-austin-120/fluffy-enigma","type":"REPOSITORY"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://ghe.sgdev.org/graphql
+    method: POST
+  response:
+    body: <html><body>You are being <a href="https://ghe.sgdev.org/login?return_to=https%3A%2F%2Fghe.sgdev.org%2Fgraphql">redirected</a>.</body></html>
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'; base-uri 'self'; block-all-mixed-content; connect-src
+        'self' ghe.sgdev.org www.githubstatus.com wss://ghe.sgdev.org; font-src 'self';
+        form-action 'self' ghe.sgdev.org; frame-ancestors 'none'; frame-src 'self';
+        img-src * data:; manifest-src 'self'; media-src 'none'; script-src 'self';
+        style-src 'unsafe-inline' 'self'; worker-src ghe.sgdev.org/socket-worker.js
+      Content-Type:
+      - text/html; charset=utf-8
+      Date:
+      - Fri, 19 Nov 2021 15:33:21 GMT
+      Location:
+      - https://ghe.sgdev.org/login?return_to=https%3A%2F%2Fghe.sgdev.org%2Fgraphql
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 302 Found
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - X-PJAX
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Request-Id:
+      - 06a0e905-1fae-4882-96df-ec00b2ec40a0
+      X-Runtime:
+      - "0.008729"
+      X-Runtime-Rack:
+      - "0.011828"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 302 Found
+    code: 302
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.antiope-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+      Referer:
+      - https://ghe.sgdev.org/graphql
+    url: https://ghe.sgdev.org/login?return_to=https%3A%2F%2Fghe.sgdev.org%2Fgraphql
+    method: GET
+  response:
+    body: ""
+    headers:
+      Cache-Control:
+      - no-cache, no-store
+      Content-Security-Policy:
+      - default-src 'none'; base-uri 'self'; block-all-mixed-content; connect-src
+        'self' ghe.sgdev.org www.githubstatus.com wss://ghe.sgdev.org; font-src 'self';
+        form-action 'self' ghe.sgdev.org; frame-ancestors 'none'; frame-src 'self';
+        img-src * data:; manifest-src 'self'; media-src 'none'; script-src 'self';
+        style-src 'unsafe-inline' 'self'; worker-src ghe.sgdev.org/socket-worker.js
+      Content-Type:
+      - text/html
+      Date:
+      - Fri, 19 Nov 2021 15:33:21 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 406 Not Acceptable
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - X-PJAX
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Request-Id:
+      - 9889846b-c206-4dbb-953c-c03a819d2dd4
+      X-Runtime:
+      - "0.009591"
+      X-Runtime-Rack:
+      - "0.012863"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 406 Not Acceptable
+    code: 406
+    duration: ""

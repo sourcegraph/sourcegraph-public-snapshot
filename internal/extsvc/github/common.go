@@ -1080,7 +1080,7 @@ const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RE
 
 var (
 	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
-	ghe220PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.20.0")
+	ghe220PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
 	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
 	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
 )
