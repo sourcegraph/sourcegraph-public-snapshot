@@ -73,9 +73,11 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 
 	defer func() {
 		go func() {
-			defer endObservation(1, observation.Args{LogFields: []log.Field{
-				log.Int("numSymbols", int(totalSymbols)),
-			}})
+			defer func() {
+				endObservation(1, observation.Args{LogFields: []log.Field{
+					log.Int("numSymbols", int(totalSymbols)),
+				}})
+			}()
 
 			wg.Wait()
 			close(symbols)
