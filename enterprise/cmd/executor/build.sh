@@ -37,11 +37,11 @@ mkdir linux-amd64
 # Copy binary into new folder
 cp "$bin_name" linux-amd64/executor
 sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-cd -
+cd ..
 # Duplicate folder as "latest"
 rm -rf executor/latest
 cp -r "executor/$(git rev-parse HEAD)" executor/latest
-cd -
+cd ..
 
 echo "--- gcp secret"
 gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
