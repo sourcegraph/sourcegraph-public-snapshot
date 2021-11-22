@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -178,31 +179,24 @@ func TestRandomizeUserPassword(t *testing.T) {
 	t.Run("Does not return resetPasswordUrl when in Cloud", func(t *testing.T) {
 		envvar.MockSourcegraphDotComMode(true)
 
-		db := database.NewDB(nil)
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: true}, nil
-		}
-		database.Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit = func(ctx context.Context, userID int32) error {
-			return nil
-		}
-		database.Mocks.Users.RenewPasswordResetCode = func(ctx context.Context, id int32) (string, error) {
-			return "code", nil
-		}
-		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-			return &types.User{
-				Username: "alice",
-			}, nil
-		}
-		database.Mocks.UserEmails.GetPrimaryEmail = func(ctx context.Context, id int32) (email string, verified bool, err error) {
-			return "alice@foo.bar", false, nil
-		}
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
+		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
+
+		userEmails := dbmock.NewMockUserEmailsStore()
+		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
+
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
 			return nil
 		}
 
 		defer func() {
-			resetMocks()
 			envvar.MockSourcegraphDotComMode(false)
 			txemail.MockSend = nil
 		}()

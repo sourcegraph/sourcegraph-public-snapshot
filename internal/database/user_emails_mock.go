@@ -5,7 +5,6 @@ import (
 )
 
 type MockUserEmails struct {
-	GetPrimaryEmail                func(ctx context.Context, id int32) (email string, verified bool, err error)
 	Get                            func(userID int32, email string) (emailCanonicalCase string, verified bool, err error)
 	SetPrimaryEmail                func(ctx context.Context, userID int32, email string) error
 	SetVerified                    func(ctx context.Context, userID int32, email string, verified bool) error
