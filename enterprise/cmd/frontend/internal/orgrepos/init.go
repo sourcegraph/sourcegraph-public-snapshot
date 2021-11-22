@@ -12,6 +12,6 @@ import (
 )
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, _ *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.OrgRepositoryResolver = resolvers.NewResolver(database.NewDB(db))
+	enterpriseServices.OrgRepositoryResolver = resolvers.NewResolver(db)
 	return nil
 }

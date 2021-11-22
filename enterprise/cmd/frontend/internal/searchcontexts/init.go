@@ -12,6 +12,6 @@ import (
 )
 
 func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.SearchContextsResolver = resolvers.NewResolver(database.NewDB(db))
+	enterpriseServices.SearchContextsResolver = resolvers.NewResolver(db)
 	return nil
 }
