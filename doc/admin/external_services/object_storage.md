@@ -2,8 +2,8 @@
 
 By default, Sourcegraph will use a MinIO server bundled with the instance to store precise code intelligence indexes uploaded by users. MinIO shouldn’t be accessible outside of the cluster/docker-compose network so it shouldn’t need anything other than the default credentials. However, if you do want to change the default credentials, you can supply the following environment variables to the MinIO container in your deployment:
 
-- `MINIO_ACCESS_KEY=<access key>`
-- `MINIO_SECRET_KEY=<secret key>`
+- `MINIO_ROOT_USER=<access key>`
+- `MINIO_ROOT_PASSWORD=<secret key>`
 
 Note that the access and secret keys are expected to be 20 and 40 characters in length, respectively, to match the format of AWS-generated keys.
 

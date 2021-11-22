@@ -17,8 +17,8 @@ func maybeMinio() []string {
 	// Set default for MinIO auth and point at local MinIO endpoint
 	// All other variables will default to contacting a MinIO instance
 	// with our default credentials running in a sibling container.
-	SetDefaultEnv("MINIO_ACCESS_KEY", "AKIAIOSFODNN7EXAMPLE")
-	SetDefaultEnv("MINIO_SECRET_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+	SetDefaultEnv("MINIO_ROOT_USER", "AKIAIOSFODNN7EXAMPLE")
+	SetDefaultEnv("MINIO_ROOT_PASSWORD", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
 	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://127.0.0.1:9000")
 
 	// Configure MinIO service

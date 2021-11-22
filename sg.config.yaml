@@ -81,8 +81,8 @@ env:
   NODE_ENV: development
 
   # Required for codeintel uploadstore
-  MINIO_ACCESS_KEY: AKIAIOSFODNN7EXAMPLE
-  MINIO_SECRET_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  MINIO_ROOT_USER: AKIAIOSFODNN7EXAMPLE
+  MINIO_ROOT_PASSWORD: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
   PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:9000
 
   # Required for frontend and executor to communicate
@@ -477,8 +477,8 @@ commands:
         --cpus=1 \
         --memory=1g \
         -p 0.0.0.0:9000:9000 \
-        -e 'MINIO_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE' \
-        -e 'MINIO_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' \
+        -e 'MINIO_ROOT_USER=AKIAIOSFODNN7EXAMPLE' \
+        -e 'MINIO_ROOT_PASSWORD=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' \
         -v "$MINIO_DISK":/data \
         $IMAGE server /data >"$MINIO_LOG_FILE" 2>&1
     install: |
