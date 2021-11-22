@@ -206,10 +206,9 @@ export const Panel = React.memo<Props>(props => {
         extensionPanels,
     ])
 
-    const trackTabClick = useCallback(
-        (label: string) => props.telemetryService.log('ReferencePanelClicked', { action: 'click', label }),
-        [props.telemetryService]
-    )
+    const trackTabClick = useCallback((label: string) => props.telemetryService.log(`ReferencePanelClicked${label}`), [
+        props.telemetryService,
+    ])
 
     const items = useMemo(
         () =>
