@@ -6,7 +6,7 @@ var (
 	// Global is the global DB connection.
 	// Only use this after a call to SetupGlobalConnection.
 	//
-	// Deprecated: Pass on DB interface as an argument instead.
+	// Soon to be replaced: Pass on DB interface as an argument instead.
 	Global *sql.DB
 )
 
@@ -22,7 +22,7 @@ var (
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 //
-// Deprecated: Pass on DB interface as an argument instead.
+// Soon to be replaced: Pass on DB interface as an argument instead.
 func SetupGlobalConnection(opts Opts) (err error) {
 	Global, err = New(opts)
 	return err
