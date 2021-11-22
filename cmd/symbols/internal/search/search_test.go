@@ -10,7 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
@@ -37,7 +37,7 @@ func BenchmarkSearch(b *testing.B) {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	databaseWriter := sqlite.NewDatabaseWriter("/tmp/symbols-cache", gitserverClient, parser)
+	databaseWriter := writer.NewDatabaseWriter("/tmp/symbols-cache", gitserverClient, parser)
 	searcher := NewSearcher(cache, databaseWriter)
 
 	ctx := context.Background()
@@ -65,7 +65,7 @@ func BenchmarkSearch(b *testing.B) {
 				defer os.Remove(tempFile.Name())
 
 				// err = sqlite.WriteAllSymbolsToNewDB(ctx, parser, tempFile.Name(), test.Repo, test.CommitID)
-				err = sqlite.NewDatabaseWriter("", nil, parser).WriteDBFile(ctx, types.SearchArgs{Repo: test.Repo, CommitID: test.CommitID}, tempFile.Name())
+				err = writer.NewDatabaseWriter("", nil, parser).WriteDBFile(ctx, types.SearchArgs{Repo: test.Repo, CommitID: test.CommitID}, tempFile.Name())
 				if err != nil {
 					b.Fatal(err)
 				}

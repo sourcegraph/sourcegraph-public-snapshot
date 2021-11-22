@@ -13,7 +13,8 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	symbolsSearch "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
@@ -27,6 +28,7 @@ import (
 )
 
 func TestHandler(t *testing.T) {
+	database.Init()
 	tmpDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +53,7 @@ func TestHandler(t *testing.T) {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	databaseWriter := sqlite.NewDatabaseWriter(tmpDir, gitserverClient, parser)
+	databaseWriter := writer.NewDatabaseWriter(tmpDir, gitserverClient, parser)
 	searcher := symbolsSearch.NewSearcher(cache, databaseWriter)
 
 	server := httptest.NewServer(NewHandler(searcher))

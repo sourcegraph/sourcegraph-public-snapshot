@@ -14,8 +14,10 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
@@ -91,10 +93,11 @@ func main() {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
+	database.Init()
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, observationContext)
-	databaseWriter := sqlite.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
+	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
 	searcher := search.NewSearcher(cache, databaseWriter)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{

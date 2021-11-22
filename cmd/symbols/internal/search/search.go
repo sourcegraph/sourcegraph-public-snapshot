@@ -12,8 +12,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	nettrace "golang.org/x/net/trace"
 
-	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
@@ -26,12 +26,12 @@ type Searcher interface {
 
 type searcher struct {
 	cache          *diskcache.Store
-	databaseWriter sqlite.DatabaseWriter
+	databaseWriter writer.DatabaseWriter
 }
 
 func NewSearcher(
 	cache *diskcache.Store,
-	databaseWriter sqlite.DatabaseWriter,
+	databaseWriter writer.DatabaseWriter,
 ) Searcher {
 	return &searcher{
 		cache:          cache,
@@ -92,7 +92,7 @@ const symbolsDBVersion = 4
 // getDBFile returns the path to the sqlite3 database for the repo@commit
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
-func getDBFile(ctx context.Context, cache *diskcache.Store, args types.SearchArgs, databaseWriter sqlite.DatabaseWriter) (string, error) {
+func getDBFile(ctx context.Context, cache *diskcache.Store, args types.SearchArgs, databaseWriter writer.DatabaseWriter) (string, error) {
 	diskcacheFile, err := cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
 		return databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile)
 	})
