@@ -45,9 +45,7 @@ export function useScalesConfiguration<Datum>(props: UseScalesConfiguration<Datu
         }
 
         // Generate pseudo domain if all values of dataset are equal
-        [min, max] = min === max
-            ? [max - max/2, max + max/2]
-            : [min, max]
+        ;[min, max] = min === max ? [max - max / 2, max + max / 2] : [min, max]
 
         return {
             ...config,
