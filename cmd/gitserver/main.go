@@ -216,22 +216,22 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	fc.LookAhead = conn.FusionClient.LookAhead
 
 	// Optional
-	if fc.NetworkThreads > 0 {
+	if conn.FusionClient.NetworkThreads > 0 {
 		fc.NetworkThreads = conn.FusionClient.NetworkThreads
 	}
-	if fc.NetworkThreadsFetch > 0 {
+	if conn.FusionClient.NetworkThreadsFetch > 0 {
 		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
 	}
-	if fc.PrintBatch > 0 {
+	if conn.FusionClient.PrintBatch > 0 {
 		fc.PrintBatch = conn.FusionClient.PrintBatch
 	}
-	if fc.Refresh > 0 {
+	if conn.FusionClient.Refresh > 0 {
 		fc.Refresh = conn.FusionClient.Refresh
 	}
-	if fc.Retries > 0 {
+	if conn.FusionClient.Retries > 0 {
 		fc.Retries = conn.FusionClient.Retries
 	}
-	if fc.MaxChanges > 0 {
+	if conn.FusionClient.MaxChanges > 0 {
 		fc.MaxChanges = conn.FusionClient.MaxChanges
 	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
