@@ -142,7 +142,7 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Sourcegraph-UserID", strconv.FormatInt(int64(userID), 10))
+	req.Header.Set("X-Sourcegraph-User-ID", strconv.FormatInt(int64(userID), 10))
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")

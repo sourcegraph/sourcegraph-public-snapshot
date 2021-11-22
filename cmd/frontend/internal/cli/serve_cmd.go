@@ -141,7 +141,7 @@ BEGIN;
 DELETE FROM cm_monitors WHERE namespace_user_id IS NULL OR namespace_org_id IS NOT NULL;
 COMMENT ON COLUMN cm_monitors.namespace_org_id IS 'DEPRECATED: code monitors cannot be owned by an org';
 
--- Drop the table first to make this transaction idempotent
+-- Drop the constraint first to make this transaction idempotent
 ALTER TABLE cm_monitors
 	DROP CONSTRAINT IF EXISTS cm_monitors_cannot_be_org_owned;
 ALTER TABLE cm_monitors
@@ -153,7 +153,7 @@ ALTER TABLE cm_monitors
 UPDATE saved_searches
 SET (notify_owner, notify_slack) = (false, false);
 
--- Drop the table first to make this transaction idempotent
+-- Drop the constraint first to make this transaction idempotent
 ALTER TABLE saved_searches
 	DROP CONSTRAINT IF EXISTS saved_searches_notifications_disabled;
 ALTER TABLE saved_searches
