@@ -85,17 +85,17 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 	if err != nil {
 		return err
 	}
-	pathsToParse := append(changes.Deleted, changes.Modified...)
+	paths := append(changes.Added, append(changes.Modified, changes.Deleted...)...)
 
 	if err := copyFile(newestDBFile, dbFile); err != nil {
 		return err
 	}
 
-	return w.parseAndWriteInTransaction(ctx, args, pathsToParse, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
+	return w.parseAndWriteInTransaction(ctx, args, paths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
 		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
 			return err
 		}
-		if err := tx.DeletePaths(ctx, pathsToParse); err != nil {
+		if err := tx.DeletePaths(ctx, paths); err != nil {
 			return err
 		}
 		if err := tx.WriteSymbols(ctx, symbols); err != nil {
