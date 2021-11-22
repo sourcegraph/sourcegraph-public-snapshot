@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
@@ -21,8 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -88,7 +87,7 @@ func main() {
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := parser.NewParserPool(parser.NewCtagsParserFactory("universal-ctags", 250, false, false), config.ctagsProcesses)
+	parserPool, err := parser.NewParserPool(parser.NewCtagsParserFactory(config.ctagsCommand, config.ctagsPatternLengthLimit, config.ctagsLogErrors, config.ctagsDebugLogs), config.ctagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
@@ -98,12 +97,13 @@ func main() {
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
-	searcher := search.NewSearcher(cache, databaseWriter)
+	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
+	apiHandler := api.NewHandler(cachedDatabaseWriter, observationContext)
 
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(symbols.NewHandler(searcher))),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(apiHandler)),
 	})
 
 	evictionDuration := time.Second * 10

@@ -1,15 +1,13 @@
 package fetcher
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
-	"io"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,7 +36,7 @@ func TestRepositoryFetcher(t *testing.T) {
 	tarContents["payloads.txt"] = strings.Repeat("oversized load", maxFileSize)
 
 	gitserverClient := NewMockGitserverClient()
-	gitserverClient.FetchTarFunc.SetDefaultHook(createFetchTarFunc(tarContents))
+	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(tarContents))
 
 	repositoryFetcher := NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext)
 	args := types.SearchArgs{Repo: api.RepoName("foo"), CommitID: api.CommitID("deadbeef")}
@@ -81,43 +79,4 @@ func consumeParseRequests(t *testing.T, ch <-chan parseRequestOrError) map[strin
 	}
 
 	return parseRequests
-}
-
-func createFetchTarFunc(tarContents map[string]string) func(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error) {
-	return func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-		var buffer bytes.Buffer
-		tarWriter := tar.NewWriter(&buffer)
-
-		for name, content := range tarContents {
-			if paths != nil {
-				found := false
-				for _, path := range paths {
-					if path == name {
-						found = true
-					}
-				}
-				if !found {
-					continue
-				}
-			}
-
-			tarHeader := &tar.Header{
-				Name: name,
-				Mode: 0o600,
-				Size: int64(len(content)),
-			}
-			if err := tarWriter.WriteHeader(tarHeader); err != nil {
-				return nil, err
-			}
-			if _, err := tarWriter.Write([]byte(content)); err != nil {
-				return nil, err
-			}
-		}
-
-		if err := tarWriter.Close(); err != nil {
-			return nil, err
-		}
-
-		return io.NopCloser(bytes.NewReader(buffer.Bytes())), nil
-	}
 }
