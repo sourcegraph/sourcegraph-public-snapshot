@@ -485,9 +485,16 @@ var macOSDependencies = []dependencyCategory{
 	{
 		name: "Install homebrew",
 		dependencies: []*dependency{
-			{name: "brew", check: checkInPath("brew")},
+			{
+				name:  "brew",
+				check: checkInPath("brew"),
+				// instructionsCommands: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
+				instructionsComment: `We depend on having the Homebrew package manager available on macOS.
+
+Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.`,
+			},
 		},
-		// TODO: Do not enable all in one?
+		enableAutoFixing: false,
 	},
 	{
 		name: "Install base utilities (git, docker, ...)",
@@ -499,14 +506,20 @@ var macOSDependencies = []dependencyCategory{
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
+			{name: "bash", check: checkCommandOutputContains("sudo bash --version", "version 5"), instructionsCommands: `brew install bash`},
 		},
 		enableAutoFixing: true,
 	},
 	{
 		name: "Clone repositories",
-		// TODO: enableAllInOneCommand??
 		dependencies: []*dependency{
-			{name: "github.com/sourcegraph/sourcegraph", check: checkInMainRepoOrRepoInDirectory()},
+			{
+				name:                 "github.com/sourcegraph/sourcegraph",
+				check:                checkInMainRepoOrRepoInDirectory(),
+				instructionsCommands: `git clone git@github.com:sourcegraph/sourcegraph.git`,
+				instructionsComment: `` +
+					`The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
+			},
 			{
 				name:                 "github.com/sourcegraph/dev-private",
 				check:                checkDevPrivateInParentOrInCurrentDirectory(),
@@ -544,9 +557,29 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 	{
 		name: "Setup PostgreSQL database",
 		dependencies: []*dependency{
-			// TODO: No instructions
-			{name: "Connection to 'sourcegraph' database", check: checkPostgresConnection()},
-			{name: "psql", check: checkInPath("psql")},
+			{
+				name:  "Connection to 'sourcegraph' database",
+				check: checkPostgresConnection(),
+				instructionsComment: `` +
+					`Sourcegraph requires the PostgreSQL database to be running. We recommend installing it with Homebrew and starting it as a system service.
+
+If you know what you're doing, you can also install PostgreSQL another way.
+
+Alternative 1: Installing Postgres.app and following instructions at https://postgresapp.com/
+
+If you're not sure: use the recommended commands to install PostgreSQL and start it`,
+				instructionsCommands: "brew reinstall postgresql && brew services start postgresql",
+			},
+			{
+				name:  "psql",
+				check: checkInPath("psql"),
+				instructionsComment: `` +
+					`psql, the PostgreSQL CLI client, needs to be available in your $PATH.
+
+If you've installed PostgreSQL with Homebrew that should be the case.
+
+If you used another method, make sure psql is available.`,
+			},
 		},
 	},
 	{
