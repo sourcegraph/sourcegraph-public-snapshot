@@ -11,6 +11,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
+## 3.33.2
+
+### Fixed
+
+- Fixed: backported saved search and code monitor notification fixes from 3.34.0 [#28019](https://github.com/sourcegraph/sourcegraph/pull/28019)
+
 ## 3.33.1
 
 ### Fixed
