@@ -37,7 +37,7 @@ mkdir -p linux-amd64
 # Copy binary into new folder
 cp "$bin_name" linux-amd64/executor
 sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-cd ../../...
+cd ../../..
 # Upload the new release folder
 echo "--- upload binary artifacts"
 gsutil cp -r artifacts/executor gs://sourcegraph-artifacts
