@@ -5,8 +5,7 @@ import (
 )
 
 type MockUserEmails struct {
-	GetLatestVerificationSentEmail func(ctx context.Context, email string) (*UserEmail, error)
-	GetVerifiedEmails              func(ctx context.Context, emails ...string) ([]*UserEmail, error)
-	ListByUser                     func(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
-	Verify                         func(ctx context.Context, userID int32, email, code string) (bool, error)
+	GetVerifiedEmails func(ctx context.Context, emails ...string) ([]*UserEmail, error)
+	ListByUser        func(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
+	Verify            func(ctx context.Context, userID int32, email, code string) (bool, error)
 }

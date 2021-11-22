@@ -247,9 +247,6 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 
 // SetLastVerification sets the "last_verification_sent_at" column to now() and updates the verification code for given email of the user.
 func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32, email, code string) error {
-	if Mocks.UserEmails.SetLastVerification != nil {
-		return Mocks.UserEmails.SetLastVerification(ctx, userID, email, code)
-	}
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=now(), verification_code = $3 WHERE user_id=$1 AND email=$2", userID, email, code)
 	if err != nil {
 		return err
@@ -267,10 +264,6 @@ func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32,
 // GetLatestVerificationSentEmail returns the email with the lastest time of "last_verification_sent_at" column,
 // it excludes rows with "last_verification_sent_at IS NULL".
 func (s *userEmailsStore) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
-	if Mocks.UserEmails.GetLatestVerificationSentEmail != nil {
-		return Mocks.UserEmails.GetLatestVerificationSentEmail(ctx, email)
-	}
-
 	q := sqlf.Sprintf(`
 WHERE email=%s AND last_verification_sent_at IS NOT NULL
 ORDER BY last_verification_sent_at DESC
