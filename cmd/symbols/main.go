@@ -84,7 +84,7 @@ func main() {
 	}
 
 	gitserverClient := gitserver.NewClient(observationContext, nil)
-	parser := parser.NewParser(gitserverClient, parserPool, 15)
+	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15))
 
 	cache := &diskcache.Store{
 		Dir:               config.cacheDir,

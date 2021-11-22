@@ -41,7 +41,7 @@ func TestHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parser := parser.NewParser(gitserverClient, parserPool, 15)
+	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15))
 
 	cache := &diskcache.Store{
 		Dir:               tmpDir,

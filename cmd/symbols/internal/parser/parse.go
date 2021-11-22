@@ -15,7 +15,6 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -26,20 +25,17 @@ type Parser interface {
 }
 
 type parser struct {
-	gitserverClient gitserver.GitserverClient
-	parserPool      ParserPool
-	fetchSem        chan int
+	parserPool        ParserPool
+	repositoryFetcher RepositoryFetcher
 }
 
 func NewParser(
-	gitserverClient gitserver.GitserverClient,
 	parserPool ParserPool,
-	maximumConcurrentFetches int,
+	repositoryFetcher RepositoryFetcher,
 ) *parser {
 	return &parser{
-		gitserverClient: gitserverClient,
-		parserPool:      parserPool,
-		fetchSem:        make(chan int, maximumConcurrentFetches),
+		parserPool:        parserPool,
+		repositoryFetcher: repositoryFetcher,
 	}
 }
 
@@ -70,7 +66,7 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	}()
 
 	tr.LazyPrintf("fetch")
-	parseRequestOrErrors := fetchRepositoryArchive(ctx, p.gitserverClient, p.fetchSem, repo, commitID, paths)
+	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, repo, commitID, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
 		return nil, err

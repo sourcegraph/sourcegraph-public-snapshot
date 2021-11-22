@@ -27,7 +27,7 @@ func BenchmarkSearch(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	parser := parser.NewParser(gitserverClient, parserPool, 15)
+	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15))
 
 	cache := &diskcache.Store{
 		Dir:               "/tmp/symbols-cache",
