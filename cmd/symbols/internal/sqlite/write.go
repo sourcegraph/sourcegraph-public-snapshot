@@ -82,7 +82,7 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 }
 
 func (w *databaseWriter) getCommit(ctx context.Context, dbFile string) (commit string, ok bool, err error) {
-	err = withDatabase(dbFile, func(db Database) error {
+	err = WithDatabase(dbFile, func(db Database) error {
 		commit, ok, err = db.getCommit(ctx)
 		return err
 	})
@@ -91,7 +91,7 @@ func (w *databaseWriter) getCommit(ctx context.Context, dbFile string) (commit s
 }
 
 func (w *databaseWriter) writeSymbols(ctx context.Context, args types.SearchArgs, dbFile string, symbols <-chan result.Symbol) (err error) {
-	return withTransaction(ctx, dbFile, func(tx Database) error {
+	return WithTransaction(ctx, dbFile, func(tx Database) error {
 		if err := tx.createSchema(ctx); err != nil {
 			return err
 		}
@@ -110,7 +110,7 @@ func (w *databaseWriter) writeSymbols(ctx context.Context, args types.SearchArgs
 }
 
 func (w *databaseWriter) updateSymbols(ctx context.Context, args types.SearchArgs, dbFile string, symbols <-chan result.Symbol, paths []string) error {
-	return withTransaction(ctx, dbFile, func(tx Database) error {
+	return WithTransaction(ctx, dbFile, func(tx Database) error {
 		if err := tx.updateMeta(ctx, string(args.CommitID)); err != nil {
 			return err
 		}

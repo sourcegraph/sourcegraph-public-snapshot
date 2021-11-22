@@ -3,15 +3,11 @@ package search
 import (
 	"context"
 	"fmt"
-	"regexp/syntax"
-	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 
 	"github.com/inconshreveable/log15"
-	"github.com/jmoiron/sqlx"
-	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	nettrace "golang.org/x/net/trace"
@@ -74,16 +70,15 @@ func (s *searcher) Search(ctx context.Context, args types.SearchArgs) (*result.S
 	if err != nil {
 		return nil, err
 	}
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
-	if err != nil {
-		return nil, err
-	}
-	defer db.Close()
 
-	result, err := filterSymbols(ctx, db, args)
-	if err != nil {
+	var result []result.Symbol
+	if err := sqlite.WithDatabase(dbFile, func(db sqlite.Database) error {
+		result, err = filterSymbols(ctx, db, args)
+		return err
+	}); err != nil {
 		return nil, err
 	}
+
 	return &result, nil
 }
 
@@ -108,7 +103,7 @@ func getDBFile(ctx context.Context, cache *diskcache.Store, args types.SearchArg
 	return diskcacheFile.File.Name(), err
 }
 
-func filterSymbols(ctx context.Context, db *sqlx.DB, args types.SearchArgs) (res []result.Symbol, err error) {
+func filterSymbols(ctx context.Context, db sqlite.Database, args types.SearchArgs) (res []result.Symbol, err error) {
 	span, _ := ot.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
 		if err != nil {
@@ -123,83 +118,11 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args types.SearchArgs) (res
 		args.First = maxFirst
 	}
 
-	makeCondition := func(column string, regex string) []*sqlf.Query {
-		conditions := []*sqlf.Query{}
-
-		if regex == "" {
-			return conditions
-		}
-
-		if isExact, symbolName, err := isLiteralEquality(regex); isExact && err == nil {
-			// It looks like the user is asking for exact matches, so use `=` to
-			// get the speed boost from the index on the column.
-			if args.IsCaseSensitive {
-				conditions = append(conditions, sqlf.Sprintf(column+" = %s", symbolName))
-			} else {
-				conditions = append(conditions, sqlf.Sprintf(column+"lowercase = %s", strings.ToLower(symbolName)))
-			}
-		} else {
-			if !args.IsCaseSensitive {
-				regex = "(?i:" + regex + ")"
-			}
-			conditions = append(conditions, sqlf.Sprintf(column+" REGEXP %s", regex))
-		}
-
-		return conditions
-	}
-
-	negateAll := func(oldConditions []*sqlf.Query) []*sqlf.Query {
-		newConditions := []*sqlf.Query{}
-
-		for _, oldCondition := range oldConditions {
-			newConditions = append(newConditions, sqlf.Sprintf("NOT %s", oldCondition))
-		}
-
-		return newConditions
-	}
-
-	var conditions []*sqlf.Query
-	conditions = append(conditions, makeCondition("name", args.Query)...)
-	for _, includePattern := range args.IncludePatterns {
-		conditions = append(conditions, makeCondition("path", includePattern)...)
-	}
-	conditions = append(conditions, negateAll(makeCondition("path", args.ExcludePattern))...)
-
-	var sqlQuery *sqlf.Query
-	if len(conditions) == 0 {
-		sqlQuery = sqlf.Sprintf("SELECT * FROM symbols LIMIT %s", args.First)
-	} else {
-		sqlQuery = sqlf.Sprintf("SELECT * FROM symbols WHERE %s LIMIT %s", sqlf.Join(conditions, "AND"), args.First)
-	}
-
-	var symbolsInDB []types.SymbolInDB
-	err = db.Select(&symbolsInDB, sqlQuery.Query(sqlf.PostgresBindVar), sqlQuery.Args()...)
+	res, err = db.Search(ctx, args)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, symbolInDB := range symbolsInDB {
-		res = append(res, types.SymbolInDBToSymbol(symbolInDB))
-	}
-
 	span.SetTag("hits", len(res))
 	return res, nil
-}
-
-// isLiteralEquality checks if the given regex matches literal strings exactly.
-// Returns whether or not the regex is exact, along with the literal string if
-// so.
-func isLiteralEquality(expr string) (ok bool, lit string, err error) {
-	r, err := syntax.Parse(expr, syntax.Perl)
-	if err != nil {
-		return false, "", err
-	}
-	// Want a Concat of size 3 which is [Begin, Literal, End]
-	if r.Op != syntax.OpConcat || len(r.Sub) != 3 || // size 3 concat
-		!(r.Sub[0].Op == syntax.OpBeginLine || r.Sub[0].Op == syntax.OpBeginText) || // Starts with ^
-		!(r.Sub[2].Op == syntax.OpEndLine || r.Sub[2].Op == syntax.OpEndText) || // Ends with $
-		r.Sub[1].Op != syntax.OpLiteral { // is a literal
-		return false, "", nil
-	}
-	return true, string(r.Sub[1].Rune), nil
 }

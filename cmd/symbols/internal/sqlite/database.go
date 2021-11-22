@@ -18,6 +18,8 @@ type Database interface {
 	Transact(ctx context.Context) (Database, error)
 	Done(err error) error
 
+	Search(ctx context.Context, args types.SearchArgs) ([]result.Symbol, error)
+
 	getCommit(ctx context.Context) (string, bool, error)
 	createSchema(ctx context.Context) error
 	insertMeta(ctx context.Context, commitID string) error
@@ -32,7 +34,19 @@ type database struct {
 	*basestore.Store
 }
 
-func withDatabase(dbFile string, callback func(db Database) error) error {
+func NewDatabase(dbFile string) (Database, error) {
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &database{
+		db:    db,
+		Store: basestore.NewWithDB(db, sql.TxOptions{}),
+	}, nil
+}
+
+func WithDatabase(dbFile string, callback func(db Database) error) error {
 	db, err := NewDatabase(dbFile)
 	if err != nil {
 		return err
@@ -46,8 +60,8 @@ func withDatabase(dbFile string, callback func(db Database) error) error {
 	return callback(db)
 }
 
-func withTransaction(ctx context.Context, dbFile string, callback func(db Database) error) error {
-	return withDatabase(dbFile, func(db Database) (err error) {
+func WithTransaction(ctx context.Context, dbFile string, callback func(db Database) error) error {
+	return WithDatabase(dbFile, func(db Database) (err error) {
 		tx, err := db.Transact(ctx)
 		if err != nil {
 			return err
@@ -56,18 +70,6 @@ func withTransaction(ctx context.Context, dbFile string, callback func(db Databa
 
 		return callback(tx)
 	})
-}
-
-func NewDatabase(dbFile string) (Database, error) {
-	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return &database{
-		db:    db,
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-	}, nil
 }
 
 func (d *database) Close() error {
@@ -81,6 +83,73 @@ func (d *database) Transact(ctx context.Context) (Database, error) {
 	}
 
 	return &database{db: d.db, Store: tx}, nil
+}
+
+func (w *database) Search(ctx context.Context, args types.SearchArgs) (res []result.Symbol, err error) {
+	var conditions []*sqlf.Query
+	conditions = append(conditions, makeCondition("name", args.Query, args.IsCaseSensitive)...)
+	for _, includePattern := range args.IncludePatterns {
+		conditions = append(conditions, makeCondition("path", includePattern, args.IsCaseSensitive)...)
+	}
+	conditions = append(conditions, negateAll(makeCondition("path", args.ExcludePattern, args.IsCaseSensitive))...)
+
+	if len(conditions) == 0 {
+		conditions = append(conditions, sqlf.Sprintf("TRUE"))
+	}
+
+	sqlQuery := sqlf.Sprintf(`
+		SELECT
+			name,
+			namelowercase,
+			path,
+			pathlowercase,
+			line,
+			kind,
+			language,
+			parent,
+			parentkind,
+			signature,
+			pattern,
+			filelimited
+		FROM symbols
+		WHERE %s
+		LIMIT %s
+	`, sqlf.Join(conditions, "AND"), args.First)
+
+	rows, err := w.Query(ctx, sqlQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var symbolsInDB []types.SymbolInDB
+	for rows.Next() {
+		var symbol types.SymbolInDB
+		if err := rows.Scan(
+			&symbol.Name,
+			&symbol.NameLowercase,
+			&symbol.Path,
+			&symbol.PathLowercase,
+			&symbol.Line,
+			&symbol.Kind,
+			&symbol.Language,
+			&symbol.Parent,
+			&symbol.ParentKind,
+			&symbol.Signature,
+			&symbol.Pattern,
+			&symbol.FileLimited,
+		); err != nil {
+			return nil, err
+		}
+
+		symbolsInDB = append(symbolsInDB, symbol)
+	}
+
+	for _, symbolInDB := range symbolsInDB {
+		res = append(res, types.SymbolInDBToSymbol(symbolInDB))
+	}
+
+	return res, nil
 }
 
 func (w *database) getCommit(ctx context.Context) (string, bool, error) {
