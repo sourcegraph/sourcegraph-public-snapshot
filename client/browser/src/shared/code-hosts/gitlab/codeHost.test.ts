@@ -146,21 +146,21 @@ describe('isPrivateRepository', () => {
             window.location = location
         })
 
-        it('returns [true] on unsuccessful request', async () => {
+        it('returns [private=true] on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
 
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('returns [true] if empty response', async () => {
+        it('returns [private=true] if empty response', async () => {
             fetch.mockResponseOnce(JSON.stringify({}))
 
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('returns [true] if rate-limit exceeded', async () => {
+        it('returns [private=true] if rate-limit exceeded', async () => {
             fetch.mockResponseOnce(
                 JSON.stringify({
                     visibility: 'public',
@@ -174,23 +174,17 @@ describe('isPrivateRepository', () => {
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('returns [true] from response', async () => {
+        it('returns correctly from API response', async () => {
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'private' }))
-
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'internal' }))
-
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
-            expect(fetch).toHaveBeenCalledTimes(2)
-        })
-
-        it('returns [false] from response', async () => {
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'public' }))
-
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
-            expect(fetch).toHaveBeenCalledTimes(1)
+
+            expect(fetch).toHaveBeenCalledTimes(3)
         })
     })
 })

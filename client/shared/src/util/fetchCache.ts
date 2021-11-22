@@ -10,6 +10,7 @@ export interface FetchCacheReturnType<T> {
 }
 
 const cache = new Map<string, CacheItem>()
+// NOTE: try to use single promises cache
 const fetchesInProgress = new Map<string, Promise<FetchCacheReturnType<any>>>()
 
 let isEnabled = true

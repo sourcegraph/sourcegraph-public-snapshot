@@ -132,7 +132,10 @@ const notificationClassNames = {
 }
 
 /**
- * See https://docs.gitlab.com/ee/api/projects.html#get-single-project
+ * Checks whether repository is private or not using Gitlab API
+ *
+ * @description see https://docs.gitlab.com/ee/api/projects.html#get-single-project
+ * @description see rate limit https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers
  */
 export const isPrivateRepository = (projectId?: string, fetchCache = background.fetchCache): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !projectId) {
@@ -143,7 +146,6 @@ export const isPrivateRepository = (projectId?: string, fetchCache = background.
         cacheMaxAge: 60 * 60 * 1000, // 1 hour
     })
         .then(response => {
-            // See https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers TODO:
             const rateLimit = response.headers['ratelimit-remaining']
             if (Number(rateLimit) <= 0) {
                 throw new Error('Gitlab rate limit exceeded.')

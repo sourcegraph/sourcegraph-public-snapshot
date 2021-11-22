@@ -370,9 +370,16 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
 }
 
 /**
- * See https://docs.github.com/en/rest/reference/repos#get-a-repository
+ * Checks whether repository is private or not using Github API + fallback to DOM element check
+ *
+ * @description See https://docs.github.com/en/rest/reference/repos#get-a-repository
+ * @description see rate limit https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
  */
-export const isPrivateRepository = (repoName: string, fetchCache = background.fetchCache): Promise<boolean> => {
+export const isPrivateRepository = (
+    repoName: string,
+    fetchCache = background.fetchCache,
+    fallbackSelector = '#repository-container-header h1 span.Label'
+): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
@@ -381,18 +388,19 @@ export const isPrivateRepository = (repoName: string, fetchCache = background.fe
         cacheMaxAge: 60 * 60 * 1000, // 1 hour
     })
         .then(response => {
-            // See https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
             const rateLimit = response.headers['x-ratelimit-remaining']
             if (Number(rateLimit) <= 0) {
-                throw new Error('Github rate limit exceeded.')
+                const error = new Error('Github rate limit exceeded.')
+                Sentry.captureException(error)
+                throw error
             }
             return response
         })
         .then(({ data }) => typeof data.private !== 'boolean' || data.private)
         .catch(error => {
-            Sentry.captureException(error)
+            // If network error or rate-limit exceeded fallback to DOM check
             console.warn('Failed to fetch if the repository is private.', error)
-            return true
+            return document.querySelector(fallbackSelector)?.textContent?.toLowerCase().trim() !== 'public'
         })
 }
 
