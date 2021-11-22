@@ -66,22 +66,26 @@ exports[`ExtensionCard renders 1`] = `
           >
             Disabled by default for all
           </span>
-          <button
-            aria-checked="false"
+          <div
             class="toggle mx-2"
-            data-testid="extension-toggle-x/y"
-            role="switch"
-            title="Click to enable"
-            type="button"
-            value="0"
           >
-            <span
-              class="bar"
-            />
-            <span
-              class="knob"
-            />
-          </button>
+            <button
+              aria-checked="false"
+              data-testid="extension-toggle-x/y"
+              role="switch"
+              title="Click to enable"
+              type="button"
+              value="0"
+            >
+              <span
+                class="bar"
+              >
+                <span
+                  class="knob"
+                />
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

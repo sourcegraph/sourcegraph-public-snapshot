@@ -67,22 +67,26 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       class="d-flex align-items-center my-4"
     >
       <div>
-        <button
-          aria-checked="true"
-          aria-labelledby="code-monitoring-form-actions-enable-toggle"
+        <div
           class="toggle mr-2"
-          role="switch"
-          title="Enabled"
-          type="button"
-          value="1"
         >
-          <span
-            class="bar barOn"
-          />
-          <span
-            class="knob knobOn"
-          />
-        </button>
+          <button
+            aria-checked="true"
+            aria-labelledby="code-monitoring-form-actions-enable-toggle"
+            role="switch"
+            title="Enabled"
+            type="button"
+            value="1"
+          >
+            <span
+              class="bar barOn"
+            >
+              <span
+                class="knob knobOn"
+              />
+            </span>
+          </button>
+        </div>
       </div>
       <span
         id="code-monitoring-form-actions-enable-toggle"

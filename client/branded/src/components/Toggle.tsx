@@ -15,10 +15,15 @@ interface Props {
      */
     onToggle?: (value: boolean) => void
 
-    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void
+    onClick?: (event: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLDivElement>) => void
 
     /** The title attribute (tooltip). */
     title?: string
+
+    label?: string
+    offLabel?: string
+    helpText?: string
+    offHelpText?: string
 
     'aria-label'?: string
     'aria-labelledby'?: string
@@ -36,6 +41,10 @@ export const Toggle: React.FunctionComponent<Props> = ({
     className,
     id,
     title,
+    label,
+    offLabel,
+    helpText,
+    offHelpText,
     value,
     tabIndex,
     onToggle,
@@ -45,7 +54,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     'aria-describedby': ariaDescribedby,
     'data-testid': dataTestId,
 }) => {
-    function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
+    function onButtonClick(event: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLDivElement>): void {
         event.stopPropagation()
         if (!disabled && onToggle) {
             onToggle(!value)
@@ -56,32 +65,49 @@ export const Toggle: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <button
-            type="button"
-            className={classNames(styles.toggle, className)}
-            id={id}
-            title={title}
-            value={value ? 1 : 0}
-            onClick={onButtonClick}
-            tabIndex={tabIndex}
-            disabled={disabled}
-            role="switch"
-            aria-checked={value}
-            aria-label={ariaLabel}
-            aria-labelledby={ariaLabelledby}
-            aria-describedby={ariaDescribedby}
-            data-testid={dataTestId}
-        >
-            <span
-                className={classNames(styles.bar, {
-                    [styles.barOn]: value,
-                })}
-            />
-            <span
-                className={classNames(styles.knob, {
-                    [styles.knobOn]: value,
-                })}
-            />
-        </button>
+        <div className={classNames(styles.toggle, className)}>
+            <button
+                type="button"
+
+                id={id}
+                title={title}
+                value={value ? 1 : 0}
+                onClick={onButtonClick}
+                tabIndex={tabIndex}
+                disabled={disabled}
+                role="switch"
+                aria-checked={value}
+                aria-label={ariaLabel}
+                aria-labelledby={ariaLabelledby}
+                aria-describedby={ariaDescribedby}
+                data-testid={dataTestId}
+            >
+                <span
+                    className={classNames(styles.bar, {
+                        [styles.barOn]: value,
+                    })}
+                >
+                    <span
+                        className={classNames(styles.knob, {
+                            [styles.knobOn]: value,
+                        })}
+                    />
+                </span>
+            </button>
+            {(label || helpText) &&
+                <div>
+                    {label &&
+                        <div onClick={onButtonClick} className={classNames(styles.label, className)}>
+                            {offLabel ? (value ? label : offLabel) : label}
+                        </div>
+                    }
+                    {helpText &&
+                        <div className={classNames(className, "text-muted")}>
+                            {offHelpText ? (value ? helpText : offHelpText) : helpText}
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     )
 }

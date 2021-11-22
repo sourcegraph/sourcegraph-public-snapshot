@@ -6,23 +6,27 @@ exports[`Toggle aria 1`] = `
   aria-label="test toggle"
   aria-labelledby="test-id-2"
 >
-  <button
-    aria-describedby="test-id-1"
-    aria-label="test toggle"
-    aria-labelledby="test-id-2"
+  <div
     className="toggle"
-    onClick={[Function]}
-    role="switch"
-    type="button"
-    value={0}
   >
-    <span
-      className="bar"
-    />
-    <span
-      className="knob"
-    />
-  </button>
+    <button
+      aria-describedby="test-id-1"
+      aria-label="test toggle"
+      aria-labelledby="test-id-2"
+      onClick={[Function]}
+      role="switch"
+      type="button"
+      value={0}
+    >
+      <span
+        className="bar"
+      >
+        <span
+          className="knob"
+        />
+      </span>
+    </button>
+  </div>
 </Toggle>
 `;
 
@@ -30,20 +34,24 @@ exports[`Toggle className 1`] = `
 <Toggle
   className="c"
 >
-  <button
+  <div
     className="toggle c"
-    onClick={[Function]}
-    role="switch"
-    type="button"
-    value={0}
   >
-    <span
-      className="bar"
-    />
-    <span
-      className="knob"
-    />
-  </button>
+    <button
+      onClick={[Function]}
+      role="switch"
+      type="button"
+      value={0}
+    >
+      <span
+        className="bar"
+      >
+        <span
+          className="knob"
+        />
+      </span>
+    </button>
+  </div>
 </Toggle>
 `;
 
@@ -52,21 +60,25 @@ exports[`Toggle disabled 1`] = `
   disabled={true}
   onToggle={[Function]}
 >
-  <button
+  <div
     className="toggle"
-    disabled={true}
-    onClick={[Function]}
-    role="switch"
-    type="button"
-    value={0}
   >
-    <span
-      className="bar"
-    />
-    <span
-      className="knob"
-    />
-  </button>
+    <button
+      disabled={true}
+      onClick={[Function]}
+      role="switch"
+      type="button"
+      value={0}
+    >
+      <span
+        className="bar"
+      >
+        <span
+          className="knob"
+        />
+      </span>
+    </button>
+  </div>
 </Toggle>
 `;
 
@@ -74,21 +86,25 @@ exports[`Toggle value is false 1`] = `
 <Toggle
   value={false}
 >
-  <button
-    aria-checked={false}
+  <div
     className="toggle"
-    onClick={[Function]}
-    role="switch"
-    type="button"
-    value={0}
   >
-    <span
-      className="bar"
-    />
-    <span
-      className="knob"
-    />
-  </button>
+    <button
+      aria-checked={false}
+      onClick={[Function]}
+      role="switch"
+      type="button"
+      value={0}
+    >
+      <span
+        className="bar"
+      >
+        <span
+          className="knob"
+        />
+      </span>
+    </button>
+  </div>
 </Toggle>
 `;
 
@@ -96,20 +112,24 @@ exports[`Toggle value is true 1`] = `
 <Toggle
   value={true}
 >
-  <button
-    aria-checked={true}
+  <div
     className="toggle"
-    onClick={[Function]}
-    role="switch"
-    type="button"
-    value={1}
   >
-    <span
-      className="bar barOn"
-    />
-    <span
-      className="knob knobOn"
-    />
-  </button>
+    <button
+      aria-checked={true}
+      onClick={[Function]}
+      role="switch"
+      type="button"
+      value={1}
+    >
+      <span
+        className="bar barOn"
+      >
+        <span
+          className="knob knobOn"
+        />
+      </span>
+    </button>
+  </div>
 </Toggle>
 `;

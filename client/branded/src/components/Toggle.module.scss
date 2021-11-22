@@ -3,6 +3,9 @@
 }
 
 .toggle {
+    display: flex;
+    flex-direction: row;
+
     --toggle-bar-bg: var(--icon-color);
     --toggle-bar-bg-on: var(--primary);
     --toggle-knob-bg: var(--body-bg);
@@ -12,13 +15,15 @@
     --toggle-knob-disabled-opacity: 1;
     --toggle-bar-focus-box-shadow: 0 0 0 1px var(--body-bg), 0 0 0 0.1875rem var(--primary-2);
 
-    background: none;
-    border: none;
-    display: inline-block;
-    outline: none !important;
-    padding: 0;
-    position: relative;
-    width: var(--toggle-width);
+    button {
+        background: none;
+        border: none;
+        display: inline-block;
+        outline: none !important;
+        padding: 0;
+        position: relative;
+        width: var(--toggle-width);
+    }
 
     &:focus-visible {
         /* Move focus style to the rounded bar */
@@ -43,6 +48,10 @@
     &:focus-visible .bar {
         box-shadow: var(--toggle-bar-focus-box-shadow);
     }
+
+    .label {
+        cursor: pointer;
+    }
 }
 
 .bar {
@@ -52,6 +61,8 @@
     height: 1rem;
     width: 100%;
     position: absolute;
+    display: flex;
+    align-items: center;
 
     opacity: var(--toggle-bar-opacity);
     background-color: var(--toggle-bar-bg);
@@ -72,7 +83,6 @@
 
     height: 0.75rem;
     width: 0.75rem;
-    margin-top: 0.25rem;
     left: 0.125rem;
 
     position: relative;
