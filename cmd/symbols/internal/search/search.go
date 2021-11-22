@@ -12,7 +12,8 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	nettrace "golang.org/x/net/trace"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
+	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
@@ -72,7 +73,7 @@ func (s *searcher) Search(ctx context.Context, args types.SearchArgs) (*result.S
 	}
 
 	var result []result.Symbol
-	if err := sqlite.WithDatabase(dbFile, func(db sqlite.Database) error {
+	if err := store.WithSQLiteStore(dbFile, func(db store.Store) error {
 		result, err = filterSymbols(ctx, db, args)
 		return err
 	}); err != nil {
@@ -103,7 +104,7 @@ func getDBFile(ctx context.Context, cache *diskcache.Store, args types.SearchArg
 	return diskcacheFile.File.Name(), err
 }
 
-func filterSymbols(ctx context.Context, db sqlite.Database, args types.SearchArgs) (res []result.Symbol, err error) {
+func filterSymbols(ctx context.Context, db store.Store, args types.SearchArgs) (res []result.Symbol, err error) {
 	span, _ := ot.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
 		if err != nil {

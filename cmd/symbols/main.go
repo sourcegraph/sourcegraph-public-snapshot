@@ -14,11 +14,12 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -104,7 +105,7 @@ func main() {
 
 	evictionDuration := time.Second * 10
 	cacheSizeBytes := int64(config.cacheSizeMB) * 1000 * 1000
-	cacheEvicter := sqlite.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes)
+	cacheEvicter := janitor.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes)
 
 	// Mark health server as ready and go!
 	close(ready)

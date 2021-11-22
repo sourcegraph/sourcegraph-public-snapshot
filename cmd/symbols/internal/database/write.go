@@ -1,4 +1,4 @@
-package sqlite
+package database
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
@@ -83,8 +84,8 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 }
 
 func (w *databaseWriter) getCommit(ctx context.Context, dbFile string) (commit string, ok bool, err error) {
-	err = WithDatabase(dbFile, func(db Database) error {
-		commit, ok, err = db.getCommit(ctx)
+	err = store.WithSQLiteStore(dbFile, func(db store.Store) error {
+		commit, ok, err = db.GetCommit(ctx)
 		return err
 	})
 
@@ -92,17 +93,20 @@ func (w *databaseWriter) getCommit(ctx context.Context, dbFile string) (commit s
 }
 
 func (w *databaseWriter) writeSymbols(ctx context.Context, args types.SearchArgs, dbFile string, symbols <-chan result.Symbol) (err error) {
-	return WithTransaction(ctx, dbFile, func(tx Database) error {
-		if err := tx.createSchema(ctx); err != nil {
+	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
+		if err := tx.CreateMetaTable(ctx); err != nil {
 			return err
 		}
-		if err := tx.insertMeta(ctx, string(args.CommitID)); err != nil {
+		if err := tx.CreateSymbolsTable(ctx); err != nil {
 			return err
 		}
-		if err := tx.writeSymbols(ctx, symbols); err != nil {
+		if err := tx.InsertMeta(ctx, string(args.CommitID)); err != nil {
 			return err
 		}
-		if err := tx.createIndexes(ctx); err != nil {
+		if err := tx.WriteSymbols(ctx, symbols); err != nil {
+			return err
+		}
+		if err := tx.CreateSymbolIndexes(ctx); err != nil {
 			return err
 		}
 
@@ -111,14 +115,14 @@ func (w *databaseWriter) writeSymbols(ctx context.Context, args types.SearchArgs
 }
 
 func (w *databaseWriter) updateSymbols(ctx context.Context, args types.SearchArgs, dbFile string, symbols <-chan result.Symbol, paths []string) error {
-	return WithTransaction(ctx, dbFile, func(tx Database) error {
-		if err := tx.updateMeta(ctx, string(args.CommitID)); err != nil {
+	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
+		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
 			return err
 		}
-		if err := tx.deletePaths(ctx, paths); err != nil {
+		if err := tx.DeletePaths(ctx, paths); err != nil {
 			return err
 		}
-		if err := tx.writeSymbols(ctx, symbols); err != nil {
+		if err := tx.WriteSymbols(ctx, symbols); err != nil {
 			return err
 		}
 
