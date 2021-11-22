@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type randomizeUserPasswordResult struct {
@@ -28,13 +27,13 @@ func (r *randomizeUserPasswordResult) ResetPasswordURL() *string {
 	return &urlStr
 }
 
-func sendEmail(ctx context.Context, db dbutil.DB, userID int32, resetURL *url.URL) error {
-	user, err := database.Users(db).GetByID(ctx, userID)
+func sendEmail(ctx context.Context, db database.DB, userID int32, resetURL *url.URL) error {
+	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	email, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, userID)
+	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +64,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		return nil, errors.Wrap(err, "cannot parse user ID")
 	}
 
-	if err := database.Users(r.db).RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+	if err := r.db.Users().RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 
