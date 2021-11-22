@@ -176,20 +176,16 @@ func main() {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 
-	termC := make(chan os.Signal, 1)
-	signal.Notify(termC, syscall.SIGTERM)
-
-	select {
-	case <-c:
-		go func() {
-			<-c
-			os.Exit(0)
-		}()
-	case <-termC:
-		log15.Info("Received SIGTERM, shutting down gracefully")
-	}
+	// Once we receive one of the signals from above, continues with the shutdown
+	// process.
+	<-c
+	go func() {
+		// If a second signal is received, exit immediately.
+		<-c
+		os.Exit(0)
+	}()
 
 	// Wait for at most for the configured shutdown timeout.
 	ctx, cancel = context.WithTimeout(ctx, gracefulShutdownTimeout)
