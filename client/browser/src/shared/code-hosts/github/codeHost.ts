@@ -8,7 +8,6 @@ import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellif
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 import {
     FileSpec,
     RepoSpec,
@@ -18,6 +17,7 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 
 import LogoSVG from '../../../../assets/img/sourcegraph-mark.svg'
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
 import { CodeHost, MountGetter } from '../shared/codeHost'
@@ -372,16 +372,18 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
 /**
  * See https://docs.github.com/en/rest/reference/repos#get-a-repository
  */
-export const isPrivateRepository = (repoName: string): Promise<boolean> => {
-    const MAX_AGE_MILLIS = 60 * 1000 // 1 minute
+export const isPrivateRepository = (repoName: string, fetchCache = background.fetchCache): Promise<boolean> => {
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
-    return fetchCache<{ private?: boolean }>(MAX_AGE_MILLIS, `https://api.github.com/repos/${repoName}`)
+    return fetchCache<{ private?: boolean }>({
+        url: `https://api.github.com/repos/${repoName}`,
+        cacheMaxAge: 60 * 60 * 1000, // 1 hour
+    })
         .then(response => {
             // See https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
-            const rateLimit = response.headers.get('X-RateLimit-Remaining')
-            if (typeof rateLimit === 'number' && rateLimit === 0) {
+            const rateLimit = response.headers['x-ratelimit-remaining']
+            if (Number(rateLimit) <= 0) {
                 throw new Error('Github rate limit exceeded.')
             }
             return response

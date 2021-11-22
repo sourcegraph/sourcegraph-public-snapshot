@@ -21,6 +21,7 @@ import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { getHeaders } from '../../shared/backend/headers'
@@ -212,6 +213,8 @@ async function main(): Promise<void> {
         async checkPrivateCloudError(tabId: number): Promise<boolean> {
             return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
         },
+
+        fetchCache,
     }
 
     // Handle calls from other scripts

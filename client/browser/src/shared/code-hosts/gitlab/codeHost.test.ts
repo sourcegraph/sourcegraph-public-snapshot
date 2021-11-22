@@ -1,7 +1,7 @@
 import fetch from 'jest-fetch-mock'
 import { readFile } from 'mz/fs'
 
-import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
+import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
@@ -111,15 +111,15 @@ describe('gitlab/codeHost', () => {
 
 describe('isPrivateRepository', () => {
     beforeAll(() => {
-        fetchCache.disable()
+        disableFetchCache()
     })
 
     afterAll(() => {
-        fetchCache.enable()
+        enableFetchCache()
     })
 
     it('returns [true] if not on "gitlab.com"', async () => {
-        expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+        expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
     })
 
     describe('when on "gitlab.com"', () => {
@@ -149,25 +149,39 @@ describe('isPrivateRepository', () => {
         it('returns [true] on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
 
-            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
         it('returns [true] if empty response', async () => {
             fetch.mockResponseOnce(JSON.stringify({}))
 
-            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('returns [true] if rate-limit exceeded', async () => {
+            fetch.mockResponseOnce(
+                JSON.stringify({
+                    visibility: 'public',
+                }),
+                {
+                    headers: { 'ratelimit-remaining': '0' },
+                }
+            )
+
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
         it('returns [true] from response', async () => {
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'private' }))
 
-            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'internal' }))
 
-            expect(await isPrivateRepository('test-org/test-repo')).toBeTruthy()
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
 
             expect(fetch).toHaveBeenCalledTimes(2)
         })
@@ -175,7 +189,7 @@ describe('isPrivateRepository', () => {
         it('returns [false] from response', async () => {
             fetch.mockResponseOnce(JSON.stringify({ visibility: 'public' }))
 
-            expect(await isPrivateRepository('test-org/test-repo')).toBeFalsy()
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
     })

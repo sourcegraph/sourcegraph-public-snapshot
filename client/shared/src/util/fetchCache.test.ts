@@ -1,7 +1,7 @@
 import fetch from 'jest-fetch-mock'
 import MockDate from 'mockdate'
 
-import { fetchCache, FetchCacheReturnType } from './fetchCache'
+import { clearFetchCache, disableFetchCache, enableFetchCache, fetchCache, FetchCacheReturnType } from './fetchCache'
 
 const EXPECTED_DATA = { foo: { bar: 'baz' } }
 const TEST_URL = '/test/api'
@@ -20,7 +20,7 @@ describe('memoizedFetch', () => {
 
     beforeEach(() => {
         fetch.mockClear()
-        fetchCache.clear()
+        clearFetchCache()
         fetch.mockResponse(JSON.stringify(EXPECTED_DATA))
     })
 
@@ -29,48 +29,63 @@ describe('memoizedFetch', () => {
     })
 
     it('makes single request for similar [...args]', async () => {
-        const responses = await Promise.all([fetchCache(1, TEST_URL), fetchCache(1, TEST_URL)])
+        const responses = await Promise.all([
+            fetchCache({ cacheMaxAge: 1, url: TEST_URL }),
+            fetchCache({ cacheMaxAge: 1, url: TEST_URL }),
+        ])
 
         expectResponses(responses)
         expect(fetch).toHaveBeenCalledTimes(1)
     })
 
     it('makes single request for similar [...args] with different maxAge', async () => {
-        const responses = await Promise.all([fetchCache(100, TEST_URL), fetchCache(1, TEST_URL)])
+        const responses = await Promise.all([
+            fetchCache({ cacheMaxAge: 100, url: TEST_URL }),
+            fetchCache({ cacheMaxAge: 1, url: TEST_URL }),
+        ])
 
         expectResponses(responses)
         expect(fetch).toHaveBeenCalledTimes(1)
     })
 
     it('makes multiple requests when cache item is expired', async () => {
-        const responseOne = await fetchCache(1, TEST_URL)
+        const responseOne = await fetchCache({ cacheMaxAge: 1, url: TEST_URL })
         await new Promise(resolve => setTimeout(resolve, 3))
-        const responseTwo = await fetchCache(1, TEST_URL)
+        const responseTwo = await fetchCache({ cacheMaxAge: 1, url: TEST_URL })
 
         expectResponses([responseOne, responseTwo])
         expect(fetch).toHaveBeenCalledTimes(2)
     })
 
     it('makes multiple requests for different [...args]', async () => {
-        const responses = await Promise.all([fetchCache(1, '/test/api-1'), fetchCache(1, '/test/api-2')])
+        const responses = await Promise.all([
+            fetchCache({ cacheMaxAge: 1, url: '/test/api-1' }),
+            fetchCache({ cacheMaxAge: 1, url: '/test/api-2' }),
+        ])
 
         expectResponses(responses)
         expect(fetch).toHaveBeenCalledTimes(2)
     })
 
     it('makes multiple requests when (timeout = 0)', async () => {
-        const responses = await Promise.all([fetchCache(0, TEST_URL), fetchCache(0, TEST_URL)])
+        const responses = await Promise.all([
+            fetchCache({ cacheMaxAge: 0, url: TEST_URL }),
+            fetchCache({ cacheMaxAge: 0, url: TEST_URL }),
+        ])
 
         expectResponses(responses)
         expect(fetch).toHaveBeenCalledTimes(2)
     })
 
     it('makes multiple requests when caching is disabled', async () => {
-        fetchCache.disable()
-        const responses = await Promise.all([fetchCache(1, TEST_URL), fetchCache(1, TEST_URL)])
+        disableFetchCache()
+        const responses = await Promise.all([
+            fetchCache({ cacheMaxAge: 1, url: TEST_URL }),
+            fetchCache({ cacheMaxAge: 1, url: TEST_URL }),
+        ])
 
         expectResponses(responses)
         expect(fetch).toHaveBeenCalledTimes(2)
-        fetchCache.enable()
+        enableFetchCache()
     })
 })

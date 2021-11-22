@@ -2,10 +2,10 @@ import * as Sentry from '@sentry/browser'
 import { Omit } from 'utility-types'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -134,19 +134,18 @@ const notificationClassNames = {
 /**
  * See https://docs.gitlab.com/ee/api/projects.html#get-single-project
  */
-export const isPrivateRepository = (projectId?: string): Promise<boolean> => {
-    const MAX_AGE_MILLIS = 60 * 1000 // 1 minute
+export const isPrivateRepository = (projectId?: string, fetchCache = background.fetchCache): Promise<boolean> => {
     if (window.location.hostname !== 'gitlab.com' || !projectId) {
         return Promise.resolve(true)
     }
-    return fetchCache<{ visibility?: 'public' | 'private' | 'internal' }>(
-        MAX_AGE_MILLIS,
-        `https://gitlab.com/api/v4/projects/${projectId}`
-    )
+    return fetchCache<{ visibility?: 'public' | 'private' | 'internal' }>({
+        url: `https://gitlab.com/api/v4/projects/${projectId}`,
+        cacheMaxAge: 60 * 60 * 1000, // 1 hour
+    })
         .then(response => {
             // See https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers TODO:
-            const rateLimit = response.headers.get('ratelimit-remaining')
-            if (typeof rateLimit === 'number' && rateLimit === 0) {
+            const rateLimit = response.headers['ratelimit-remaining']
+            if (Number(rateLimit) <= 0) {
                 throw new Error('Gitlab rate limit exceeded.')
             }
             return response
