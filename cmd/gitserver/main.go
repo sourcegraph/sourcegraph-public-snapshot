@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -51,7 +52,6 @@ var (
 	syncRepoStateInterval        = env.MustGetDuration("SRC_REPOS_SYNC_STATE_INTERVAL", 10*time.Minute, "Interval between state syncs")
 	syncRepoStateBatchSize       = env.MustGetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", 500, "Number of upserts to perform per batch")
 	syncRepoStateUpsertPerSecond = env.MustGetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", 500, "The number of upserted rows allowed per second across all gitserver instances")
-	gracefulShutdownTimeout      = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 )
 
 func main() {
@@ -188,7 +188,7 @@ func main() {
 	}()
 
 	// Wait for at most for the configured shutdown timeout.
-	ctx, cancel = context.WithTimeout(ctx, gracefulShutdownTimeout)
+	ctx, cancel = context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
 	defer cancel()
 	// Stop accepting requests.
 	if err := srv.Shutdown(ctx); err != nil {

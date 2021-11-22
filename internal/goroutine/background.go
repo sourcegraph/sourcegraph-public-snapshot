@@ -6,7 +6,12 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
+
+var GracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 
 // StartableRoutine represents a component of a binary that consists of a long
 // running process.

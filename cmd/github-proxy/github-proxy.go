@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -33,7 +34,6 @@ import (
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-var gracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 
 const port = "3180"
 
@@ -105,7 +105,7 @@ func main() {
 		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
 		<-c
 
-		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
 		if err := s.Shutdown(ctx); err != nil {
 			log15.Error("graceful termination timeout", "error", err)
 		}

@@ -6,15 +6,11 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
-
-var gracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 
 type server struct {
 	server       *http.Server
@@ -53,7 +49,7 @@ func (s *server) Start() {
 
 func (s *server) Stop() {
 	s.once.Do(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), gracefulShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
 		defer cancel()
 
 		if err := s.server.Shutdown(ctx); err != nil {
