@@ -7,7 +7,7 @@ import { useTemporarySetting } from '../../settings/temporary/useTemporarySettin
 import styles from './CodeMonitorInfo.module.scss'
 
 export const CodeMonitorInfo: React.FunctionComponent<{ className?: string }> = React.memo(({ className }) => {
-    const [visible, setVisible] = useTemporarySetting('codemonitor.info')
+    const [visible, setVisible] = useTemporarySetting('codemonitor.info.visible')
 
     if (visible === false) {
         return null
