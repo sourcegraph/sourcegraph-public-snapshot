@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
@@ -97,24 +98,7 @@ func (w *database) Search(ctx context.Context, args types.SearchArgs) (res []res
 		conditions = append(conditions, sqlf.Sprintf("TRUE"))
 	}
 
-	sqlQuery := sqlf.Sprintf(`
-		SELECT
-			name,
-			namelowercase,
-			path,
-			pathlowercase,
-			line,
-			kind,
-			language,
-			parent,
-			parentkind,
-			signature,
-			pattern,
-			filelimited
-		FROM symbols
-		WHERE %s
-		LIMIT %s
-	`, sqlf.Join(conditions, "AND"), args.First)
+	sqlQuery := sqlf.Sprintf(searchQuery, sqlf.Join(conditions, "AND"), args.First)
 
 	rows, err := w.Query(ctx, sqlQuery)
 	if err != nil {
@@ -122,14 +106,11 @@ func (w *database) Search(ctx context.Context, args types.SearchArgs) (res []res
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	var symbolsInDB []types.SymbolInDB
 	for rows.Next() {
-		var symbol types.SymbolInDB
+		var symbol result.Symbol
 		if err := rows.Scan(
 			&symbol.Name,
-			&symbol.NameLowercase,
 			&symbol.Path,
-			&symbol.PathLowercase,
 			&symbol.Line,
 			&symbol.Kind,
 			&symbol.Language,
@@ -142,15 +123,28 @@ func (w *database) Search(ctx context.Context, args types.SearchArgs) (res []res
 			return nil, err
 		}
 
-		symbolsInDB = append(symbolsInDB, symbol)
-	}
-
-	for _, symbolInDB := range symbolsInDB {
-		res = append(res, types.SymbolInDBToSymbol(symbolInDB))
+		res = append(res, symbol)
 	}
 
 	return res, nil
 }
+
+const searchQuery = `
+SELECT
+	name,
+	path,
+	line,
+	kind,
+	language,
+	parent,
+	parentkind,
+	signature,
+	pattern,
+	filelimited
+FROM symbols
+WHERE %s
+LIMIT %s
+`
 
 func (w *database) getCommit(ctx context.Context) (string, bool, error) {
 	return basestore.ScanFirstString(w.Query(ctx, sqlf.Sprintf(`SELECT revision FROM meta`)))
@@ -225,8 +219,6 @@ func (w *database) deletePaths(ctx context.Context, paths []string) error {
 func (w *database) writeSymbols(ctx context.Context, symbols <-chan result.Symbol) (err error) {
 	// TODO - use bulk loader instead
 	for symbol := range symbols {
-		symbolInDBValue := types.SymbolToSymbolInDB(symbol)
-
 		if err := w.Exec(
 			ctx,
 			sqlf.Sprintf(
@@ -246,18 +238,18 @@ func (w *database) writeSymbols(ctx context.Context, symbols <-chan result.Symbo
 						filelimited
 					) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 				`,
-				symbolInDBValue.Name,
-				symbolInDBValue.NameLowercase,
-				symbolInDBValue.Path,
-				symbolInDBValue.PathLowercase,
-				symbolInDBValue.Line,
-				symbolInDBValue.Kind,
-				symbolInDBValue.Language,
-				symbolInDBValue.Parent,
-				symbolInDBValue.ParentKind,
-				symbolInDBValue.Signature,
-				symbolInDBValue.Parent,
-				symbolInDBValue.FileLimited,
+				symbol.Name,
+				strings.ToLower(symbol.Name),
+				symbol.Path,
+				strings.ToLower(symbol.Path),
+				symbol.Line,
+				symbol.Kind,
+				symbol.Language,
+				symbol.Parent,
+				symbol.ParentKind,
+				symbol.Signature,
+				symbol.Parent,
+				symbol.FileLimited,
 			),
 		); err != nil {
 			return err
