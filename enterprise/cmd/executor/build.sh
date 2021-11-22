@@ -43,25 +43,25 @@ echo "--- upload binary artifacts"
 gsutil cp -r artifacts/executor gs://sourcegraph-artifacts
 gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts
 
-# echo "--- gcp secret"
-# gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
+echo "--- gcp secret"
+gcloud secrets versions access latest --secret=e2e-builder-sa-key --quiet --project=sourcegraph-ci >"$OUTPUT/builder-sa-key.json"
 
-# echo "--- packer build"
+echo "--- packer build"
 
-# # Copy files into workspace.
-# cp -R ./image/* "$OUTPUT"
-# cp ../../../.tool-versions "$OUTPUT"
+# Copy files into workspace.
+cp -R ./image/* "$OUTPUT"
+cp ../../../.tool-versions "$OUTPUT"
 
-# export NAME
-# NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}
-# export SRC_CLI_VERSION=${SRC_CLI_VERSION}
-# export AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
-# export AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
-# # This should prevent some occurrences of Failed waiting for AMI failures:
-# # https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
-# export AWS_MAX_ATTEMPTS=240
-# export AWS_POLL_DELAY_SECONDS=5
+export NAME
+NAME=executor-$(git log -n1 --pretty=format:%h)-${BUILDKITE_BUILD_NUMBER}
+export SRC_CLI_VERSION=${SRC_CLI_VERSION}
+export AWS_EXECUTOR_AMI_ACCESS_KEY=${AWS_EXECUTOR_AMI_ACCESS_KEY}
+export AWS_EXECUTOR_AMI_SECRET_KEY=${AWS_EXECUTOR_AMI_SECRET_KEY}
+# This should prevent some occurrences of Failed waiting for AMI failures:
+# https://austincloud.guru/2020/05/14/long-running-packer-builds-failing/
+export AWS_MAX_ATTEMPTS=240
+export AWS_POLL_DELAY_SECONDS=5
 
-# pushd "$OUTPUT" 1>/dev/null
-# packer build -force executor.json
-# popd 1>/dev/null
+pushd "$OUTPUT" 1>/dev/null
+packer build -force executor.json
+popd 1>/dev/null
