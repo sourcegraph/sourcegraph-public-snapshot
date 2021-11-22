@@ -8,12 +8,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -201,7 +202,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			skipped++
 			continue
 		}
-		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{ UniqueID: d.ID, WithoutAuthorization: true})
+		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
 		if err != nil {
 			skipped++
 			continue
@@ -231,7 +232,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 			skipped++
 			continue
 		}
-		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{ UniqueID: d.ID, WithoutAuthorization: true})
+		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
 		if err != nil {
 			skipped++
 			continue
@@ -330,17 +331,35 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			temp.SampleIntervalValue = 1
 			temp.NextRecordingAfter = insights.NextRecording(time.Now())
 			temp.NextSnapshotAfter = insights.NextSnapshot(time.Now())
-			temp.SeriesID = discovery.Encode(timeSeries)
+			temp.SeriesID = ksuid.New().String()
 		}
 
 		var series types.InsightSeries
 		// first check if this data series already exists (somebody already created an insight of this query), in which case we just need to attach the view to this data series
-		existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: temp.SeriesID})
+		// existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: temp.SeriesID})
+		matched, exists, err := tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+			Query:             temp.Query,
+			StepIntervalUnit:  temp.SampleIntervalUnit,
+			StepIntervalValue: temp.SampleIntervalValue,
+		})
 		if err != nil {
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
-		} else if len(existing) > 0 {
-			series = existing[0]
-			log15.Info("insights migration: existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
+		} else if exists {
+			oldId := discovery.Encode(timeSeries)
+			series = matched
+			log15.Info("insights migration: existing data series identified, attempting to preserve time series", "series_id", series.SeriesID, "unique_id", from.ID)
+			silentErr := updateSeriesId(tx, ctx, oldId, temp.SeriesID)
+			if silentErr != nil {
+				// it failed - not a big deal. This will get solved if / when this series is ever updated, it will just require a recalculation.
+				log15.Error("error updating series_id", "series_id", temp.SeriesID, "err", silentErr)
+			} else {
+				silentErr = updateTimeSeriesReferences(tx.Handle().DB(), ctx, oldId, temp.SeriesID)
+				if silentErr != nil {
+					// we will skip this, we can always recalculate the time series. It's okay if we had a partial failure with the
+					// definition updated at the time seres not, worst case scenario we just recalculate.
+					log15.Error("error migrating time series", "series_id", temp.SeriesID, "err", silentErr)
+				}
+			}
 		} else {
 			series, err = tx.CreateSeries(ctx, temp)
 			if err != nil {
