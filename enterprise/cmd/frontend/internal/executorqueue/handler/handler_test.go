@@ -238,8 +238,8 @@ func TestMarkCompleteStoreError(t *testing.T) {
 	executorStore := NewMockExecutorStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
-	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != internalErr {
-		t.Fatalf("unexpected error. want=%q have=%q", internalErr, err)
+	if err := handler.markComplete(context.Background(), "deadbeef", 42); err == nil || errors.UnwrapAll(err).Error() != internalErr.Error() {
+		t.Fatalf("unexpected error. want=%q have=%q", internalErr, errors.UnwrapAll(err))
 	}
 }
 
@@ -297,8 +297,8 @@ func TestMarkErroredStoreError(t *testing.T) {
 	executorStore := NewMockExecutorStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
-	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != storeErr {
-		t.Fatalf("unexpected error. want=%q have=%q", storeErr, err)
+	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
+		t.Fatalf("unexpected error. want=%q have=%q", storeErr, errors.UnwrapAll(err))
 	}
 }
 
@@ -356,8 +356,8 @@ func TestMarkFailedStoreError(t *testing.T) {
 	executorStore := NewMockExecutorStore()
 	handler := newHandler(executorStore, QueueOptions{Store: store})
 
-	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != storeErr {
-		t.Fatalf("unexpected error. want=%q have=%q", storeErr, err)
+	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err == nil || errors.UnwrapAll(err).Error() != storeErr.Error() {
+		t.Fatalf("unexpected error. want=%q have=%q", storeErr, errors.UnwrapAll(err))
 	}
 }
 

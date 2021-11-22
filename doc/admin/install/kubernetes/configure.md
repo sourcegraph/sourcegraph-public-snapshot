@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.33.0"
+  export SOURCEGRAPH_VERSION="v3.34.0"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
@@ -231,6 +231,8 @@ kubectl -n ns-sourcegraph apply --prune -l deploy=sourcegraph -f generated-clust
 kubectl -n ns-sourcegraph expose deployment sourcegraph-frontend --type=NodePort --name sourcegraph --port=3080 --target-port=3080
 minikube service list
 ```
+
+> NOTE: For Mac Users, run `minikube service sourcegraph -n ns-sourcegraph` to open the newly deployed Sourcegraph in your browser
 
 To tear it down:
 

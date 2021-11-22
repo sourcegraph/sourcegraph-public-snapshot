@@ -173,7 +173,9 @@ export const OrgInvitationPage = withAuthenticatedUser(
                             </Form>
                         </ModalPage>
                     ) : (
-                        <div className="alert alert-danger">No pending invitation found.</div>
+                        <div className="alert alert-danger align-self-start mt-4 mx-auto">
+                            No pending invitation found.
+                        </div>
                     )}
                 </>
             )

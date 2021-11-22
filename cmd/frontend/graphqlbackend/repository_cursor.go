@@ -4,6 +4,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -11,13 +12,13 @@ import (
 // cursor from other types of cursors in the system.
 const repositoryCursorKind = "RepositoryCursor"
 
-// marshalRepositoryCursor marshals a repository pagination cursor.
-func marshalRepositoryCursor(cursor *types.Cursor) string {
+// MarshalRepositoryCursor marshals a repository pagination cursor.
+func MarshalRepositoryCursor(cursor *types.Cursor) string {
 	return string(relay.MarshalID(repositoryCursorKind, cursor))
 }
 
-// unmarshalRepositoryCursor unmarshals a repository pagination cursor.
-func unmarshalRepositoryCursor(cursor *string) (*types.Cursor, error) {
+// UnmarshalRepositoryCursor unmarshals a repository pagination cursor.
+func UnmarshalRepositoryCursor(cursor *string) (*types.Cursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}

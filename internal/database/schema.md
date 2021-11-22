@@ -461,7 +461,7 @@ Referenced by:
  changed_at        | timestamp with time zone |           | not null | now()
  changed_by        | integer                  |           | not null | 
  enabled           | boolean                  |           | not null | true
- namespace_user_id | integer                  |           |          | 
+ namespace_user_id | integer                  |           | not null | 
  namespace_org_id  | integer                  |           |          | 
 Indexes:
     "cm_monitors_pkey" PRIMARY KEY, btree (id)
@@ -477,6 +477,8 @@ Referenced by:
     TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 
 ```
+
+**namespace_org_id**: DEPRECATED: code monitors cannot be owned by an org
 
 # Table "public.cm_queries"
 ```
@@ -1938,6 +1940,7 @@ Indexes:
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Check constraints:
+    "saved_searches_notifications_disabled" CHECK (notify_owner = false AND notify_slack = false)
     "user_or_org_id_not_null" CHECK (user_id IS NOT NULL AND org_id IS NULL OR org_id IS NOT NULL AND user_id IS NULL)
 Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)

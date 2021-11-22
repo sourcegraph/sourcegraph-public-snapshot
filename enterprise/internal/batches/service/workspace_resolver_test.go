@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -52,15 +53,19 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	db := dbtest.NewDB(t)
 	s := store.New(db, &observation.TestContext, nil)
 
-	rs, _ := ct.CreateTestRepos(t, ctx, db, 4)
+	u := ct.CreateTestUser(t, db, false)
 
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 5)
 	unsupported, _ := ct.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
+	// Allow access to all repos but rs[4].
+	ct.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, unsupported[0].ID)
 
 	defaultBranches := map[api.RepoName]defaultBranch{
 		rs[0].Name:          {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},
 		rs[1].Name:          {branch: "branch-2", commit: api.CommitID("2840a42c7809c22b16fda7099c725d1ef197961c")},
 		rs[2].Name:          {branch: "branch-3", commit: api.CommitID("aead85d33485e115b33ec4045c55bac97e03fd26")},
 		rs[3].Name:          {branch: "branch-4", commit: api.CommitID("26ac0350471daac3401a9314fd64e714370837a6")},
+		rs[4].Name:          {branch: "branch-6", commit: api.CommitID("010b133ece7a79187cad209b27099232485a5476")},
 		unsupported[0].Name: {branch: "branch-5", commit: api.CommitID("c167bd633e2868585b86ef129d07f63dee46b84a")},
 	}
 	steps := []batcheslib.Step{{Run: "echo 1"}}
@@ -154,7 +159,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			buildRepoWorkspace(rs[3], "", "", []string{"repo-3/readme"}),
 			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{"unsupported/path"}),
 		}
-		resolveWorkspacesAndCompare(t, s, searchMatches, batchSpec, want)
+		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
 	})
 
 	t.Run("repositories", func(t *testing.T) {
@@ -195,7 +200,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
 		}
 
-		resolveWorkspacesAndCompare(t, s, searchMatches, batchSpec, want)
+		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
 	})
 
 	t.Run("repositoriesMatchingQuery and repositories", func(t *testing.T) {
@@ -257,7 +262,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
 		}
 
-		resolveWorkspacesAndCompare(t, s, searchMatches, batchSpec, want)
+		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
 	})
 
 	t.Run("workspaces without steps", func(t *testing.T) {
@@ -292,18 +297,19 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		ws1.Steps = conditionalSteps
 
 		want := []*RepoWorkspace{ws0, ws1}
-		resolveWorkspacesAndCompare(t, s, searchMatches, batchSpec, want)
+		resolveWorkspacesAndCompare(t, s, u, searchMatches, batchSpec, want)
 	})
 }
 
-func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
+func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, u *types.User, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
 	t.Helper()
 
 	wr := &workspaceResolver{
 		store:               s,
 		frontendInternalURL: newStreamSearchTestServer(t, matches),
 	}
-	have, err := wr.ResolveWorkspacesForBatchSpec(context.Background(), spec)
+	ctx := actor.WithActor(context.Background(), actor.FromUser(u.ID))
+	have, err := wr.ResolveWorkspacesForBatchSpec(ctx, spec)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}

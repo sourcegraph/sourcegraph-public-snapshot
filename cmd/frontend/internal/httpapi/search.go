@@ -242,20 +242,16 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 	// 1. Changing the schema from object of arrays to array of objects.
 	// 2. Stream out each object marshalled rather than marshall the full list in memory.
 
-	names := make([]string, 0, len(indexable))
 	ids := make([]api.RepoID, 0, len(indexable))
 
 	for _, r := range indexable {
-		names = append(names, string(r.Name))
 		ids = append(ids, r.ID)
 	}
 
 	data := struct {
-		RepoNames []string
-		RepoIDs   []api.RepoID
+		RepoIDs []api.RepoID
 	}{
-		RepoNames: names,
-		RepoIDs:   ids,
+		RepoIDs: ids,
 	}
 
 	return json.NewEncoder(w).Encode(&data)

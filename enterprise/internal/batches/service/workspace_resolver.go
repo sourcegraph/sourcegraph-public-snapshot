@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -338,7 +339,8 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 	}
 
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
-	// the repositories or not.
+	// the repositories or not. We also impersonate on the internal search request to
+	// properly respect these permissions.
 	accessibleRepos, err := wr.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
 	if err != nil {
 		return nil, err
@@ -370,10 +372,15 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	}
 	req = req.WithContext(ctx)
 
-	// We don't set an auth token here and don't authenticate on the users
-	// behalf in any way, because we will fetch the repositories from the
-	// database later and check for repository permissions that way.
 	req.Header.Set("User-Agent", internalSearchClientUserAgent)
+
+	// We impersonate as the user who initiated this search. This is to properly
+	// scope repository permissions while running the search.
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return errors.New("no user set in workspaceResolver.runSearch")
+	}
+	req.Header.Set("X-Sourcegraph-User-ID", a.UIDString())
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {

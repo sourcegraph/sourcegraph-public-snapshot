@@ -12,12 +12,17 @@ import {
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
     BatchSpecWorkspaceFields,
+    BatchSpecWorkspacesResult,
     BatchSpecWorkspaceStepFileDiffsResult,
+    BatchSpecWorkspacesConnectionFields,
     BatchSpecWorkspaceStepFileDiffsVariables,
+    BatchSpecWorkspacesVariables,
     CancelBatchSpecExecutionResult,
     CancelBatchSpecExecutionVariables,
     Scalars,
     WorkspaceStepFileDiffConnectionFields,
+    RetryWorkspaceExecutionResult,
+    RetryWorkspaceExecutionVariables,
 } from '../../../graphql-operations'
 
 const batchSpecWorkspaceFieldsFragment = gql`
@@ -47,7 +52,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             url
         }
         branch {
-            name
+            abbrevName
         }
         path
         onlyFetchWorkspace
@@ -133,6 +138,9 @@ const batchSpecExecutionFieldsFragment = gql`
         id
         originalInput
         state
+        description {
+            name
+        }
         createdAt
         startedAt
         finishedAt
@@ -149,39 +157,16 @@ const batchSpecExecutionFieldsFragment = gql`
             namespaceName
         }
         workspaceResolution {
-            workspaces(first: 10000) {
-                totalCount
-                pageInfo {
-                    endCursor
-                    hasNextPage
-                }
-                nodes {
-                    ...BatchSpecWorkspaceListFields
+            workspaces {
+                stats {
+                    errored
+                    completed
+                    processing
+                    queued
+                    ignored
                 }
             }
         }
-    }
-
-    fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
-        id
-        state
-        diffStat {
-            added
-            changed
-            deleted
-        }
-        placeInQueue
-        repository {
-            name
-            url
-        }
-        branch {
-            name
-        }
-        path
-        ignored
-        unsupported
-        cachedResultFound
     }
 `
 
@@ -312,3 +297,90 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
             return node.step.diff.fileDiffs
         })
     )
+
+export const queryBatchSpecWorkspaces = ({
+    node: nodeID,
+    first,
+    after,
+}: BatchSpecWorkspacesVariables): Observable<BatchSpecWorkspacesConnectionFields> =>
+    requestGraphQL<BatchSpecWorkspacesResult, BatchSpecWorkspacesVariables>(
+        gql`
+            query BatchSpecWorkspaces($node: ID!, $first: Int, $after: String) {
+                node(id: $node) {
+                    __typename
+                    ... on BatchSpec {
+                        workspaceResolution {
+                            workspaces(first: $first, after: $after) {
+                                ...BatchSpecWorkspacesConnectionFields
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment BatchSpecWorkspacesConnectionFields on BatchSpecWorkspaceConnection {
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    ...BatchSpecWorkspaceListFields
+                }
+            }
+
+            fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
+                id
+                state
+                diffStat {
+                    added
+                    changed
+                    deleted
+                }
+                placeInQueue
+                repository {
+                    name
+                    url
+                    defaultBranch {
+                        abbrevName
+                    }
+                }
+                branch {
+                    abbrevName
+                }
+                path
+                ignored
+                unsupported
+                cachedResultFound
+            }
+        `,
+        { node: nodeID, first, after }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`BatchSpec with ID ${nodeID} does not exist`)
+            }
+            if (node.__typename !== 'BatchSpec') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpec`)
+            }
+            if (!node.workspaceResolution) {
+                throw new Error('No workspace resolution in batch spec')
+            }
+            return node.workspaceResolution.workspaces
+        })
+    )
+
+export async function retryWorkspaceExecution(id: Scalars['ID']): Promise<void> {
+    const result = await requestGraphQL<RetryWorkspaceExecutionResult, RetryWorkspaceExecutionVariables>(
+        gql`
+            mutation RetryWorkspaceExecution($id: ID!) {
+                retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [$id]) {
+                    alwaysNil
+                }
+            }
+        `,
+        { id }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
