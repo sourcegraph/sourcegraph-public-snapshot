@@ -33,14 +33,7 @@ import (
 )
 
 var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-
-var gracefulShutdownTimeout = func() time.Duration {
-	d, _ := time.ParseDuration(env.Get("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", "10s", "Graceful shutdown timeout"))
-	if d == 0 {
-		d = 10 * time.Second
-	}
-	return d
-}()
+var gracefulShutdownTimeout = env.MustGetDuration("SRC_GRACEFUL_SHUTDOWN_TIMEOUT", 10*time.Second, "Graceful shutdown timeout")
 
 const port = "3180"
 
