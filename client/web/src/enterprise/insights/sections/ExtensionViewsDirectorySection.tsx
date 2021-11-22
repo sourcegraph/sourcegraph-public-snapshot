@@ -31,9 +31,10 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
 
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { directory: true })
 
-    const api = useMemo(() => {
-        return new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade])
+    const api = useMemo(() => new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext), [
+        platformContext,
+        settingsCascade,
+    ])
 
     if (!showCodeInsights) {
         return null

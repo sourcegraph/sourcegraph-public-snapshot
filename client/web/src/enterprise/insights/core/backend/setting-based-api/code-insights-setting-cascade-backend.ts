@@ -13,7 +13,6 @@ import { Settings, InsightDashboard as InsightDashboardConfiguration } from '../
 import { createSanitizedDashboard } from '../../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../../pages/dashboards/dashboard-page/components/add-insight-modal/utils/get-reachable-insights'
 import { findDashboardByUrlId } from '../../../pages/dashboards/dashboard-page/components/dashboards-content/utils/find-dashboard-by-url-id'
-import { getUpdatedSubjectSettings } from './utils/get-updated-subject-settings'
 import { addDashboardToSettings, removeDashboardFromSettings } from '../../settings-action/dashboards'
 import { addInsight } from '../../settings-action/insights'
 import { Insight, InsightDashboard, InsightTypePrefix, isRealDashboard } from '../../types'
@@ -46,6 +45,7 @@ import { getDeleteInsightEditOperations } from './utils/delete-helpers'
 import { findInsightById } from './utils/find-insight-by-id'
 import { getInsightsDashboards } from './utils/get-insights-dashboards/get-insights-dashboards'
 import { getInsightIdsFromSettings } from './utils/get-insights-dashboards/utils'
+import { getUpdatedSubjectSettings } from './utils/get-updated-subject-settings'
 import { persistChanges } from './utils/persist-changes'
 
 export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {

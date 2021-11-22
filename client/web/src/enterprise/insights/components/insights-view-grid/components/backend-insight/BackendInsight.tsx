@@ -10,6 +10,7 @@ import { useDebounce } from '@sourcegraph/wildcard'
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { InsightStillProcessingError } from '../../../../core/backend/utils/errors'
 import { InsightTypePrefix } from '../../../../core/types'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
@@ -24,7 +25,6 @@ import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
-import { InsightStillProcessingError } from '../../../../core/backend/utils/errors'
 
 interface BackendInsightProps
     extends TelemetryProps,

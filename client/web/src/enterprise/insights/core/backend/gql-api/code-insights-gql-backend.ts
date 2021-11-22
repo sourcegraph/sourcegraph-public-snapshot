@@ -2,10 +2,6 @@ import { ApolloCache, ApolloClient, gql } from '@apollo/client'
 import { from, Observable, of, throwError } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
-
-import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
-import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import {
     AddInsightViewToDashboardResult,
     CreateDashboardResult,
@@ -25,11 +21,14 @@ import {
     UpdateLineChartSearchInsightResult,
 } from 'src/graphql-operations'
 
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
+
 import { Insight, InsightDashboard, InsightsDashboardScope, InsightsDashboardType, InsightType } from '../../types'
 import { ALL_INSIGHTS_DASHBOARD_ID } from '../../types/dashboard/virtual-dashboard'
 import { SearchBackendBasedInsight } from '../../types/insight/search-insight'
 import { SupportedInsightSubject } from '../../types/subjects'
-
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     BackendInsightData,
@@ -44,24 +43,24 @@ import {
     InsightUpdateInput,
     ReachableInsight,
 } from '../code-insights-backend-types'
-
 import { getBuiltInInsight } from '../core/api/get-built-in-insight'
 import { getLangStatsInsightContent } from '../core/api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 import { getSearchInsightContent } from '../core/api/get-search-insight-content/get-search-insight-content'
+import { createLineChartContent } from '../utils/create-line-chart-content'
+import { InsightStillProcessingError } from '../utils/errors'
+import { parseDashboardScope } from '../utils/parse-dashboard-scope'
+
+import { createInsight } from './gql-handlers/create-insight'
 import { GET_DASHBOARD_INSIGHTS_GQL } from './gql/GetDashboardInsights'
 import { GET_INSIGHTS_GQL, INSIGHT_VIEW_FRAGMENT } from './gql/GetInsights'
 import { GET_INSIGHTS_DASHBOARDS_GQL } from './gql/GetInsightsDashboards'
 import { GET_INSIGHTS_SUBJECTS_GQL } from './gql/GetInsightSubjects'
 import { GET_INSIGHT_VIEW_GQL } from './gql/GetInsightView'
-import { createInsight } from './gql-handlers/create-insight'
-import { createLineChartContent } from '../utils/create-line-chart-content'
 import { createDashboardGrants } from './utils/get-dashboard-grants'
 import { getInsightView } from './utils/insight-transformers'
-import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 import { prepareSearchInsightUpdateInput } from './utils/search-insight-to-gql-input'
-import { InsightStillProcessingError } from '../utils/errors'
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}

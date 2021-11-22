@@ -31,9 +31,10 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
 
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { homepage: true })
 
-    const api = useMemo(() => {
-        return new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade])
+    const api = useMemo(() => new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext), [
+        platformContext,
+        settingsCascade,
+    ])
 
     if (!showCodeInsights) {
         return null

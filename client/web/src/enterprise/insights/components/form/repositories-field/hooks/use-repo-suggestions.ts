@@ -3,9 +3,8 @@ import { useContext, useEffect, useMemo, useState } from 'react'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-
-import { memoizeAsync } from '../utils/memoize-async'
 import { RepositorySuggestionData } from '../../../../core/backend/code-insights-backend-types'
+import { memoizeAsync } from '../utils/memoize-async'
 
 interface UseRepoSuggestionsProps {
     search: string | null
