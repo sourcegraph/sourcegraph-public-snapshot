@@ -23,3 +23,4 @@ set -eu
 # Copy uploaded binary to 'latest'
 gsutil rm -rf gs://sourcegraph-artifacts/executor/latest || true
 gsutil cp -r gs://sourcegraph-artifacts/executor/$(git rev-parse HEAD) gs://sourcegraph-artifacts/executor/latest
+gsutil iam ch allUsers:objectViewer gs://sourcegraph-artifacts/executor/latest
