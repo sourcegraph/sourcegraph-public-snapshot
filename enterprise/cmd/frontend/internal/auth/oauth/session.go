@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type SessionData struct {
@@ -34,7 +33,7 @@ type SessionIssuerHelper interface {
 	SessionData(token *oauth2.Token) SessionData
 }
 
-func SessionIssuer(db dbutil.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
+func SessionIssuer(db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -99,7 +98,7 @@ func SessionIssuer(db dbutil.DB, s SessionIssuerHelper, sessionKey string) http.
 			return
 		}
 
-		user, err := database.Users(db).GetByID(r.Context(), actr.UID)
+		user, err := db.Users().GetByID(r.Context(), actr.UID)
 		if err != nil {
 			log15.Error("OAuth failed: error retrieving user from database.", "error", err)
 			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
