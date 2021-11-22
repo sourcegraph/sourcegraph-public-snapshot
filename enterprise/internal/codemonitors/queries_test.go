@@ -12,8 +12,8 @@ func TestQueryByRecordID(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
@@ -48,8 +48,8 @@ func TestTriggerQueryNextRun(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
@@ -92,8 +92,8 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
