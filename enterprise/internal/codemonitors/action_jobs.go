@@ -12,10 +12,10 @@ import (
 )
 
 type ActionJob struct {
-	Id           int
-	Email        *int
-	Webhook      *int
-	SlackWebhook *int
+	ID           int32
+	Email        *int64
+	Webhook      *int64
+	SlackWebhook *int64
 	TriggerEvent int
 
 	// Fields demanded by any dbworker.
@@ -30,7 +30,7 @@ type ActionJob struct {
 }
 
 func (a *ActionJob) RecordID() int {
-	return a.Id
+	return int(a.ID)
 }
 
 type ActionJobMetadata struct {
@@ -66,7 +66,7 @@ type ListActionJobsOpts struct {
 	// TriggerEventID, if set, will filter to only action jobs that were
 	// created in response to the provided trigger event.  Refers to
 	// cm_trigger_jobs(id)
-	TriggerEventID *int
+	TriggerEventID *int32
 
 	// EmailID, if set, will filter to only actions jobs that are executing the
 	// given email action. Refers to cm_emails(id)
@@ -178,8 +178,9 @@ INSERT INTO cm_action_jobs (email, trigger_event)
 SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
 `
 
-// TODO(camdencheek): could we enqueue based on monitor ID rather than query ID? Would avoid joins above.
-func (s *codeMonitorStore) EnqueueActionEmailsForQueryIDInt64(ctx context.Context, queryID int64, triggerEventID int) (err error) {
+// TODO(camdencheek): could/should we enqueue based on monitor ID rather than query ID? Would avoid joins above.
+func (s *codeMonitorStore) EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerEventID int) (err error) {
+	// TODO(camdencheek): Enqueue actions other than emails here
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerEventID, triggerEventID))
 }
 
@@ -208,7 +209,7 @@ FROM cm_action_jobs
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) ActionJobForIDInt(ctx context.Context, recordID int) (*ActionJob, error) {
+func (s *codeMonitorStore) GetActionJob(ctx context.Context, recordID int) (*ActionJob, error) {
 	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), recordID)
 	row := s.QueryRow(ctx, q)
 	return scanActionJob(row)
@@ -217,13 +218,13 @@ func (s *codeMonitorStore) ActionJobForIDInt(ctx context.Context, recordID int) 
 // ScanActionJobRecord implements the worker RecordScanFn
 func ScanActionJobRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
-		return &TriggerJobs{}, false, err
+		return &TriggerJob{}, false, err
 	}
 	defer rows.Close()
 
 	records, err := scanActionJobs(rows)
 	if err != nil || len(records) == 0 {
-		return &TriggerJobs{}, false, err
+		return &TriggerJob{}, false, err
 	}
 	return records[0], true, nil
 }
@@ -243,7 +244,7 @@ func scanActionJobs(rows *sql.Rows) ([]*ActionJob, error) {
 func scanActionJob(row dbutil.Scanner) (*ActionJob, error) {
 	aj := &ActionJob{}
 	return aj, row.Scan(
-		&aj.Id,
+		&aj.ID,
 		&aj.Email,
 		&aj.Webhook,
 		&aj.SlackWebhook,

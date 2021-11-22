@@ -29,7 +29,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	}
 
 	// Add 1 job and date it back to a long time ago.
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	}
 
 	// Add second job.
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = s.DeleteOldJobLogs(ctx, retentionInDays)
+	err = s.DeleteOldTriggerJobs(ctx, retentionInDays)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -83,19 +83,19 @@ func TestActionRunner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueTriggerQueries(ctx)
+			err = ts.EnqueueQueryTriggerJobs(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.LogSearch(ctx, testQuery, tt.numResults, triggerEvent)
+			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueActionEmailsForQueryIDInt64(ctx, queryID, triggerEvent)
+			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEvent)
 			if err != nil {
 				t.Fatal(err)
 			}
-			record, err = ts.ActionJobForIDInt(ctx, 1)
+			record, err = ts.GetActionJob(ctx, 1)
 			if err != nil {
 				t.Fatal(err)
 			}

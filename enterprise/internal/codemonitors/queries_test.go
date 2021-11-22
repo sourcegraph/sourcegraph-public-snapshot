@@ -18,17 +18,17 @@ func TestQueryByRecordID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.GetQueryByRecordID(ctx, 1)
+	got, err := s.GetQueryTriggerForJob(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	now := s.Now()
-	want := &MonitorQuery{
-		Id:           1,
+	want := &QueryTrigger{
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
@@ -54,7 +54,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,16 +62,16 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
 
-	err = s.SetTriggerQueryNextRun(ctx, 1, wantNextRun, wantLatestResult)
+	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.GetQueryByRecordID(ctx, 1)
+	got, err := s.GetQueryTriggerForJob(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := &MonitorQuery{
-		Id:           1,
+	want := &QueryTrigger{
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      wantNextRun,
@@ -99,8 +99,8 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		t.Fatal(err)
 	}
 	now := s.Now()
-	want := &MonitorQuery{
-		Id:           1,
+	want := &QueryTrigger{
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
@@ -118,7 +118,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		t.Fatalf("diff: %s", diff)
 	}
 
-	err = s.ResetTriggerQueryTimestamps(ctx, 1)
+	err = s.ResetQueryTriggerTimestamps(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,8 +127,8 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want = &MonitorQuery{
-		Id:           1,
+	want = &QueryTrigger{
+		ID:           1,
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,

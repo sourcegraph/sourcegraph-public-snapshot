@@ -73,7 +73,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = r.store.MonitorByIDInt64(ctx, got.(*monitor).Monitor.ID)
+	_, err = r.store.GetMonitor(ctx, got.(*monitor).Monitor.ID)
 	if err == nil {
 		t.Fatalf("monitor should have been deleted")
 	}
@@ -356,12 +356,12 @@ func TestQueryMonitor(t *testing.T) {
 	// in the database. After we create the monitor they fill the job tables and
 	// update the job status.
 	postHookOpt := WithPostHooks([]hook{
-		func() error { return r.store.EnqueueTriggerQueries(ctx) },
-		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error { return r.store.EnqueueQueryTriggerJobs(ctx) },
+		func() error { return r.store.EnqueueActionJobsForQuery(ctx, 1, 1) },
 		func() error {
 			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
-		func() error { return r.store.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1) },
+		func() error { return r.store.EnqueueActionJobsForQuery(ctx, 1, 1) },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
 		// created another monitor, there is still a second trigger job (id = 2) which
 		// remains in status queued.
@@ -381,10 +381,10 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		// 3   1	 queued
-		func() error { return r.store.EnqueueTriggerQueries(ctx) },
+		func() error { return r.store.EnqueueQueryTriggerJobs(ctx) },
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
-		func() error { return r.store.LogSearch(ctx, "", 1, 1) },
+		func() error { return r.store.UpdateTriggerJobWithResults(ctx, "", 1, 1) },
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	if err != nil {
