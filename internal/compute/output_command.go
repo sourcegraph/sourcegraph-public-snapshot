@@ -52,11 +52,15 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func (c *Output) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
-	lines := make([]string, 0, len(fm.LineMatches))
-	for _, line := range fm.LineMatches {
-		lines = append(lines, line.Preview)
+func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
+	switch m := r.(type) {
+	case *result.FileMatch:
+		lines := make([]string, 0, len(m.LineMatches))
+		for _, line := range m.LineMatches {
+			lines = append(lines, line.Preview)
+		}
+		fragment := strings.Join(lines, "\n")
+		return output(ctx, fragment, c.MatchPattern, c.OutputPattern, c.Separator)
 	}
-	fragment := strings.Join(lines, "\n")
-	return output(ctx, fragment, c.MatchPattern, c.OutputPattern, c.Separator)
+	return nil, nil
 }

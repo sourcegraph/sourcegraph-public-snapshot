@@ -44,10 +44,14 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "replace-in-place"}, nil
 }
 
-func (c *Replace) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
-	content, err := git.ReadFile(ctx, fm.Repo.Name, fm.CommitID, fm.Path, 0)
-	if err != nil {
-		return nil, err
+func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
+	switch m := r.(type) {
+	case *result.FileMatch:
+		content, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0)
+		if err != nil {
+			return nil, err
+		}
+		return replace(ctx, content, c.MatchPattern, c.ReplacePattern)
 	}
-	return replace(ctx, content, c.MatchPattern, c.ReplacePattern)
+	return nil, nil
 }
