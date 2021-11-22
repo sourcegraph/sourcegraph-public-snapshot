@@ -15,7 +15,6 @@ import (
 	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/stream"
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -159,11 +158,8 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	metricReorderQueueSize.WithLabelValues().Observe(float64(resultQueueMaxLength))
-	if len(resultQueue) > 0 {
-		log15.Warn("HorizontalSearcher.Streamsearch: results not sent in core loop", "resultQueue", len(resultQueue))
-		for len(resultQueue) > 0 {
-			streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
-		}
+	for len(resultQueue) > 0 {
+		streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
 	}
 	return nil
 }
