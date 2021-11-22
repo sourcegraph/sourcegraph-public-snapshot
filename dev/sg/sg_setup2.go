@@ -72,7 +72,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 		for i, category := range categories {
 			idx := i + 1
 
-			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s", idx, category.name))
+			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
 			for _, dep := range category.dependencies {
 				dep.Update(ctx)
 			}
@@ -124,11 +124,15 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 	// TODO: It doesn't make a lot of sense to give a choice here if
 	// there's only one dependency
 
-	choice, err := getChoice(map[int]string{
-		1: "I want to fix these one-by-one",
-		2: "I'm feeling lucky. You try fixing all of it for me.",
-		3: "Go back",
-	})
+	choices := map[int]string{1: "I want to fix these one-by-one"}
+	if category.enableAutoFixing {
+		choices[2] = "I'm feeling lucky. You try fixing all of it for me."
+		choices[3] = "Go back"
+	} else {
+		choices[2] = "Go back"
+	}
+
+	choice, err := getChoice(choices)
 	if err != nil {
 		return err
 	}
@@ -463,7 +467,7 @@ type dependencyCategory struct {
 	dependencies []*dependency
 
 	// TODO: Rename this field
-	enableAllInOneCommand bool
+	enableAutoFixing bool
 }
 
 func (cat *dependencyCategory) CombinedState() bool {
@@ -496,8 +500,7 @@ var macOSDependencies = []dependencyCategory{
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
 		},
-		enableAllInOneCommand: true,
-		// TODO: Enable all in one?
+		enableAutoFixing: true,
 	},
 	{
 		name: "Clone repositories",
@@ -593,13 +596,6 @@ func getNumberOutOf(numbers []int) (int, error) {
 }
 
 func waitForReturn() { fmt.Scanln() }
-
-type userChoice string
-
-const (
-	userChoiceManually  = "manually"
-	userChoiceAutomatic = "automatic"
-)
 
 func getChoice(choices map[int]string) (int, error) {
 	out.Write("")
