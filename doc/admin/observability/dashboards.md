@@ -2149,7 +2149,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101600`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(src_cloudkms_cryptographic_total[1m])) * 60`
+Query: `sum(increase(src_cloudkms_cryptographic_total[1m]))`
 
 </details>
 
