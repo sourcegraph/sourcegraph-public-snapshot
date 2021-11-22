@@ -113,7 +113,7 @@ function ContextMenu() {
 add('With context menu in action panel', () => (
     <View.Root
         {...standardViewProps}
-        title="Chart view"
+        title="Chart view and looooooong loooooooooooooooong name of insight card block"
         subtitle="Subtitle chart description"
         actions={
             <>

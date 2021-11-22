@@ -39,7 +39,9 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
                 {hasHeader && (
                     <header className={styles.viewHeader}>
                         <div className={styles.viewHeaderContent}>
-                            <h4 className={styles.viewTitle}>{title}</h4>
+                            <h4 title={title} className={styles.viewTitle}>
+                                {title}
+                            </h4>
                             {subtitle}
                         </div>
 
