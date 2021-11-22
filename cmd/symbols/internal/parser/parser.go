@@ -32,7 +32,7 @@ func NewParser(
 	parserPool ParserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
 	observationContext *observation.Context,
-) *parser {
+) Parser {
 	return &parser{
 		parserPool:        parserPool,
 		repositoryFetcher: repositoryFetcher,
