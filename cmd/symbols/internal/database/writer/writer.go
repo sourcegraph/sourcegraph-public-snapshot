@@ -39,7 +39,9 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 	if newestDBFile, oldCommit, ok, err := w.getNewestCommit(ctx, args); err != nil {
 		return err
 	} else if ok {
-		return w.writeFileIncrementally(ctx, args, dbFile, newestDBFile, oldCommit)
+		if ok, err := w.writeFileIncrementally(ctx, args, dbFile, newestDBFile, oldCommit); err != nil || ok {
+			return err
+		}
 	}
 
 	return w.writeDBFile(ctx, args, dbFile)
@@ -80,18 +82,33 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
-func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) error {
+// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
+// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
+// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
+// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that.
+// 100KB seems safe.
+const maxTotalPathsLength = 100000
+
+func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	changes, err := w.gitserverClient.GitDiff(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
 	if err != nil {
-		return err
+		return false, err
 	}
 	paths := append(changes.Added, append(changes.Modified, changes.Deleted...)...)
 
-	if err := copyFile(newestDBFile, dbFile); err != nil {
-		return err
+	totalPathsLength := 0
+	for _, path := range paths {
+		totalPathsLength += len(path)
+	}
+	if totalPathsLength > maxTotalPathsLength {
+		return false, nil
 	}
 
-	return w.parseAndWriteInTransaction(ctx, args, paths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
+	if err := copyFile(newestDBFile, dbFile); err != nil {
+		return false, err
+	}
+
+	return true, w.parseAndWriteInTransaction(ctx, args, paths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
 		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
 			return err
 		}
