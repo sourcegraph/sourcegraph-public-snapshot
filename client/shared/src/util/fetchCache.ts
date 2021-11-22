@@ -1,73 +1,78 @@
 interface CacheItem {
     createdAt: number
-    result: FetchCacheReturnType<any>
+    request: Promise<FetchCacheResponse<any>>
 }
 
-export interface FetchCacheReturnType<T> {
+export interface FetchCacheResponse<T> {
     data: T
     status: number
     headers: Record<string, string>
 }
 
+interface FetchCacheRequest extends RequestInit {
+    /**
+     * URL to fetch
+     */
+    url: string
+    /**
+     * maximum allowed cached item age in milliseconds
+     *
+     * @example "60000" will allow using cached item within last minute
+     */
+    cacheMaxAge: number
+}
+
 const cache = new Map<string, CacheItem>()
-// NOTE: try to use single promises cache
-const fetchesInProgress = new Map<string, Promise<FetchCacheReturnType<any>>>()
-
 let isEnabled = true
-
-const fetchData = <T>(url: string, requestInit: RequestInit): Promise<FetchCacheReturnType<T>> =>
-    fetch(url, requestInit).then(async response => {
-        const data = (await response.json()) as T
-        return { status: response.status, data, headers: Object.fromEntries(response.headers.entries()) }
-    })
 
 /**
  * fetch API with cache
  *
- * @param maxAge maximum allowed age in milliseconds for cached result
- * @param args fetch API parameters
  * @description Caches same argument requests for 1 minute
  */
 export const fetchCache = async <T = any>({
     cacheMaxAge,
     url,
     ...requestInit
-}: RequestInit & { url: string; cacheMaxAge: number }): Promise<FetchCacheReturnType<T>> => {
+}: FetchCacheRequest): Promise<FetchCacheResponse<T>> => {
+    const fetchData = (): Promise<FetchCacheResponse<T>> =>
+        fetch(url, requestInit).then(async response => {
+            const data = (await response.json()) as T
+            return { status: response.status, data, headers: Object.fromEntries(response.headers.entries()) }
+        })
+
     if (!isEnabled || cacheMaxAge <= 0) {
-        return fetchData<T>(url, requestInit)
+        return fetchData()
     }
 
     const key = JSON.stringify({ url, ...requestInit })
     const minCreatedAt = Date.now() - cacheMaxAge
 
-    if (cache.has(key) && cache.get(key)!.createdAt >= minCreatedAt) {
-        return cache.get(key)!.result as FetchCacheReturnType<T>
-    }
-
-    if (fetchesInProgress.has(key)) {
-        return (await fetchesInProgress.get(key)) as FetchCacheReturnType<T>
-    }
-
-    const request = fetchData<T>(url, requestInit)
-        .then(result => {
-            cache.set(key, { result, createdAt: Date.now() })
-            return result
+    if (!cache.has(key) || cache.get(key)!.createdAt < minCreatedAt) {
+        const request = fetchData().catch(error => {
+            cache.delete(key)
+            throw error
         })
-        .finally(() => fetchesInProgress.delete(key))
+        cache.set(key, { createdAt: Date.now(), request })
+    }
 
-    fetchesInProgress.set(key, request)
-
-    return request
+    return cache.get(key)!.request as Promise<FetchCacheResponse<T>>
 }
 /**
- * For unit testing purposes
+ * For unit testing purposes only
  */
 export const enableFetchCache = (): void => {
     isEnabled = true
 }
 
+/**
+ * For unit testing purposes only
+ */
 export const disableFetchCache = (): void => {
     isEnabled = false
 }
 
+/**
+ * For unit testing purposes only
+ */
 export const clearFetchCache = (): void => cache.clear()
