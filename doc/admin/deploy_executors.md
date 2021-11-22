@@ -6,8 +6,6 @@
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-
-<p>It's available in Sourcegraph 3.34 with <a href="https://github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23.0 and later.</p>
 </aside>
 
 Executors provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
