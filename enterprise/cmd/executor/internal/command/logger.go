@@ -167,7 +167,7 @@ func (l *Logger) writeEntries() {
 
 			continue
 		}
-		log15.Info("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
+		log15.Debug("Writing log entry", "jobID", l.job.ID, "entryID", entryID, "repositoryName", l.job.RepositoryName, "commit", l.job.Commit)
 
 		wg.Add(1)
 		go func(handle *entryHandle, entryID int, initialLogEntry workerutil.ExecutionLogEntry) {
@@ -214,7 +214,7 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 			logArgs = append(logArgs, "durationMs", current.DurationMs)
 		}
 
-		log15.Info("Updating executor log entry", logArgs...)
+		log15.Debug("Updating executor log entry", logArgs...)
 
 		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.recordID, entryID, current); err != nil {
 			logMethod := log15.Warn

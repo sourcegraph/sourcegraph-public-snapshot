@@ -1174,14 +1174,16 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		return err
 	}
 
-	// Delete the old jobs
+	// Delete the old execution jobs.
 	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
 		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
 	}
 
-	// Delete the changeset specs they have created
-	if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
-		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	// Delete the changeset specs they have created.
+	if len(changesetSpecIDs) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
+			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+		}
 	}
 
 	// Create new jobs
