@@ -33,11 +33,11 @@ cd "executor/$(git rev-parse HEAD)"
 echo "executor built from https://github.com/sourcegraph/sourcegraph" >info.txt
 echo >>info.txt
 git log -n1 >>info.txt
-mkdir linux-amd64
+mkdir -p linux-amd64
 # Copy binary into new folder
 cp "$bin_name" linux-amd64/executor
 sha256sum linux-amd64/executor >>linux-amd64/executor_SHA256SUM
-cd ..
+cd ../..
 # Duplicate folder as "latest"
 rm -rf executor/latest
 cp -r "executor/$(git rev-parse HEAD)" executor/latest
