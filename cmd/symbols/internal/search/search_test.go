@@ -99,7 +99,8 @@ func BenchmarkSearch(b *testing.B) {
 				}
 				defer os.Remove(tempFile.Name())
 
-				err = sqlite.WriteAllSymbolsToNewDB(ctx, parser, tempFile.Name(), test.Repo, test.CommitID)
+				// err = sqlite.WriteAllSymbolsToNewDB(ctx, parser, tempFile.Name(), test.Repo, test.CommitID)
+				err = sqlite.NewDatabaseWriter("", nil, parser).WriteDBFile(ctx, types.SearchArgs{Repo: test.Repo, CommitID: test.CommitID}, tempFile.Name())
 				if err != nil {
 					b.Fatal(err)
 				}
