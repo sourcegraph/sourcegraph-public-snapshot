@@ -44,28 +44,26 @@ func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err e
 
 func (s *store) Search(ctx context.Context, args types.SearchArgs) ([]result.Symbol, error) {
 	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
-		searchQuery,
+		`
+			SELECT
+				name,
+				path,
+				line,
+				kind,
+				language,
+				parent,
+				parentkind,
+				signature,
+				pattern,
+				filelimited
+			FROM symbols
+			WHERE %s
+			LIMIT %s
+		`,
 		sqlf.Join(makeSearchConditions(args), "AND"),
 		args.First,
 	)))
 }
-
-const searchQuery = `
-SELECT
-	name,
-	path,
-	line,
-	kind,
-	language,
-	parent,
-	parentkind,
-	signature,
-	pattern,
-	filelimited
-FROM symbols
-WHERE %s
-LIMIT %s
-`
 
 func makeSearchConditions(args types.SearchArgs) []*sqlf.Query {
 	conditions := make([]*sqlf.Query, 0, 2+len(args.IncludePatterns))

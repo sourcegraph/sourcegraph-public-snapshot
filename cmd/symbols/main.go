@@ -105,7 +105,7 @@ func main() {
 
 	evictionDuration := time.Second * 10
 	cacheSizeBytes := int64(config.cacheSizeMB) * 1000 * 1000
-	cacheEvicter := janitor.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes)
+	cacheEvicter := janitor.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes, janitor.NewMetrics(observationContext))
 
 	// Mark health server as ready and go!
 	close(ready)

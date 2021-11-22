@@ -9,14 +9,12 @@ import (
 )
 
 func (w *store) CreateMetaTable(ctx context.Context) error {
-	query := `
+	return w.Exec(ctx, sqlf.Sprintf(`
 		CREATE TABLE IF NOT EXISTS meta (
-		id INTEGER PRIMARY KEY CHECK (id = 0),
-		revision TEXT NOT NULL
+			id INTEGER PRIMARY KEY CHECK (id = 0),
+			revision TEXT NOT NULL
 		)
-		`
-
-	return w.Exec(ctx, sqlf.Sprintf(query))
+	`))
 }
 
 func (s *store) GetCommit(ctx context.Context) (string, bool, error) {

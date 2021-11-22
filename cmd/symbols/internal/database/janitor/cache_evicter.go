@@ -4,8 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -20,15 +19,18 @@ type cacheEvicter struct {
 	// When we go over maxCacheSizeBytes we trigger delete files until we get below
 	// maxCacheSizeBytes.
 	maxCacheSizeBytes int64
+
+	metrics *Metrics
 }
 
 var _ goroutine.Handler = &cacheEvicter{}
 var _ goroutine.ErrorHandler = &cacheEvicter{}
 
-func NewCacheEvicter(interval time.Duration, cache *diskcache.Store, maxCacheSizeBytes int64) goroutine.BackgroundRoutine {
+func NewCacheEvicter(interval time.Duration, cache *diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &cacheEvicter{
 		cache:             cache,
 		maxCacheSizeBytes: maxCacheSizeBytes,
+		metrics:           metrics,
 	})
 }
 
@@ -43,22 +45,12 @@ func (e *cacheEvicter) Handle(ctx context.Context) error {
 		return err
 	}
 
-	cacheSizeBytes.Set(float64(stats.CacheSize))
-	evictions.Add(float64(stats.Evicted))
+	e.metrics.cacheSizeBytes.Set(float64(stats.CacheSize))
+	e.metrics.evictions.Add(float64(stats.Evicted))
 	return nil
 }
 
 func (e *cacheEvicter) HandleError(err error) {
-	// TODO - add metric, logs
+	e.metrics.errors.Inc()
+	log15.Error("Failed to evict items from cache", "error", err)
 }
-
-var (
-	cacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_cache_size_bytes",
-		Help: "The total size of items in the on disk cache.",
-	})
-	evictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "symbols_store_evictions",
-		Help: "The total number of items evicted from the cache.",
-	})
-)

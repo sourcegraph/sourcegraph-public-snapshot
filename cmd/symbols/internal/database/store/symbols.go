@@ -12,7 +12,7 @@ import (
 )
 
 func (s *store) CreateSymbolsTable(ctx context.Context) error {
-	query := `
+	return s.Exec(ctx, sqlf.Sprintf(`
 		CREATE TABLE IF NOT EXISTS symbols (
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
@@ -27,8 +27,7 @@ func (s *store) CreateSymbolsTable(ctx context.Context) error {
 			pattern VARCHAR(255) NOT NULL,
 			filelimited BOOLEAN NOT NULL
 		)
-	`
-	return s.Exec(ctx, sqlf.Sprintf(query))
+	`))
 }
 
 func (s *store) CreateSymbolIndexes(ctx context.Context) error {
