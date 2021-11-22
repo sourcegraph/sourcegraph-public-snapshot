@@ -72,12 +72,12 @@ func AccessTokenAuthMiddleware(db database.DB, next http.Handler) http.Handler {
 			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
-					log15.Error("Invalid access token.", "token", token, "err", err)
+					log15.Error("AccessTokenAuthMiddleware.invalidAccessToken", "token", token, "error", err)
 					http.Error(w, "Invalid access token.", http.StatusUnauthorized)
 					return
 				}
 
-				log15.Error("Looking up access token.", "token", token, "err", err)
+				log15.Error("AccessTokenAuthMiddleware.lookingUpAccessToken.", "token", token, "error", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
