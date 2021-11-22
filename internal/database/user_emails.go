@@ -199,9 +199,6 @@ func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string
 // correct (not the one originally used when creating the user or adding the user email), then it
 // returns false.
 func (s *userEmailsStore) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
-	if Mocks.UserEmails.Verify != nil {
-		return Mocks.UserEmails.Verify(ctx, userID, email, code)
-	}
 	var dbCode sql.NullString
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
 		return false, err
