@@ -11,8 +11,6 @@ type ParserPool interface {
 	Done(parser ctags.Parser)
 }
 
-type ParserFactory func() (ctags.Parser, error)
-
 type parserPool struct {
 	newParser ParserFactory
 	pool      chan ctags.Parser

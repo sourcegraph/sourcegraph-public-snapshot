@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
@@ -78,13 +79,13 @@ func main() {
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	parserPool, err := parser.NewParserPool(parser.NewCtagsParser, config.ctagsProcesses)
+	parserPool, err := parser.NewParserPool(parser.NewCtagsParserFactory("universal-ctags", 250, false, false), config.ctagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
 	gitserverClient := gitserver.NewClient(observationContext)
-	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15, observationContext))
+	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext), observationContext)
 
 	cache := &diskcache.Store{
 		Dir:               config.cacheDir,

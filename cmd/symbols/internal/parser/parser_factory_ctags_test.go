@@ -10,13 +10,13 @@ import (
 	"github.com/sourcegraph/go-ctags"
 )
 
-func TestParser(t *testing.T) {
+func TestCtagsParser(t *testing.T) {
 	// TODO(sqs): find a way to make it easy to run these tests in local dev (w/o needing to install universal-ctags) and CI
-	if _, err := exec.LookPath(ctagsCommand); err != nil {
+	if _, err := exec.LookPath("universal-ctags"); err != nil {
 		t.Skip("command not in PATH: universal-ctags")
 	}
 
-	p, err := NewCtagsParser()
+	p, err := NewCtagsParserFactory("universal-ctags", 250, false, false)()
 	if err != nil {
 		t.Fatal(err)
 	}

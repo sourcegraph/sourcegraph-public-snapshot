@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	symbolsSearch "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
@@ -42,7 +43,7 @@ func TestHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext))
+	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext), &observation.TestContext)
 
 	cache := &diskcache.Store{
 		Dir:               tmpDir,

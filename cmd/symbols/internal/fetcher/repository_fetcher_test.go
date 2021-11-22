@@ -1,4 +1,4 @@
-package parser
+package fetcher
 
 import (
 	"archive/tar"
@@ -73,11 +73,11 @@ func TestRepositoryFetcher(t *testing.T) {
 func consumeParseRequests(t *testing.T, ch <-chan parseRequestOrError) map[string]string {
 	parseRequests := map[string]string{}
 	for v := range ch {
-		if v.err != nil {
-			t.Fatalf("unexpected fetch error: %s", v.err)
+		if v.Err != nil {
+			t.Fatalf("unexpected fetch error: %s", v.Err)
 		}
 
-		parseRequests[v.parseRequest.path] = string(v.parseRequest.data)
+		parseRequests[v.ParseRequest.Path] = string(v.ParseRequest.Data)
 	}
 
 	return parseRequests

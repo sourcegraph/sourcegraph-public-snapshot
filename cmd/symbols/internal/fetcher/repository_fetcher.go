@@ -1,4 +1,4 @@
-package parser
+package fetcher
 
 import (
 	"archive/tar"
@@ -25,14 +25,14 @@ type repositoryFetcher struct {
 	operations      *operations
 }
 
-type parseRequest struct {
-	path string
-	data []byte
+type ParseRequest struct {
+	Path string
+	Data []byte
 }
 
 type parseRequestOrError struct {
-	parseRequest parseRequest
-	err          error
+	ParseRequest ParseRequest
+	Err          error
 }
 
 func NewRepositoryFetcher(gitserverClient gitserver.GitserverClient, maximumConcurrentFetches int, observationContext *observation.Context) RepositoryFetcher {
@@ -49,22 +49,22 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, args typ
 	go func() {
 		defer close(requestCh)
 
-		if err := f.fetchRepositoryArchive(ctx, args, paths, func(request parseRequest) {
-			requestCh <- parseRequestOrError{parseRequest: request}
+		if err := f.fetchRepositoryArchive(ctx, args, paths, func(request ParseRequest) {
+			requestCh <- parseRequestOrError{ParseRequest: request}
 		}); err != nil {
-			requestCh <- parseRequestOrError{err: err}
+			requestCh <- parseRequestOrError{Err: err}
 		}
 	}()
 
 	return requestCh
 }
 
-func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string, callback func(request parseRequest)) (err error) {
+func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args types.SearchArgs, paths []string, callback func(request ParseRequest)) (err error) {
 	ctx, traceLog, endObservation := f.operations.fetchRepositoryArchive.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(args.Repo)),
 		log.String("commitID", string(args.CommitID)),
-		log.Int("numPaths", len(paths)),
-		log.String("paths", strings.Join(paths, ", ")),
+		log.Int("paths", len(paths)),
+		log.String("paths", strings.Join(paths, ":")),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -100,7 +100,7 @@ func (f *repositoryFetcher) limitConcurrentFetches(ctx context.Context) (func(),
 	}
 }
 
-func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request parseRequest), traceLog observation.TraceLogger) error {
+func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -119,7 +119,7 @@ func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request p
 	}
 }
 
-func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(request parseRequest), traceLog observation.TraceLogger) error {
+func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(request ParseRequest), traceLog observation.TraceLogger) error {
 	if !shouldParse(tarHeader) {
 		return nil
 	}
@@ -167,7 +167,7 @@ func readTarHeader(tarReader *tar.Reader, tarHeader *tar.Header, callback func(r
 		traceLog(log.Int("n", int(tarHeader.Size)-n))
 	}
 
-	request := parseRequest{path: tarHeader.Name, data: data}
+	request := ParseRequest{Path: tarHeader.Name, Data: data}
 	callback(request)
 	return nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
@@ -24,11 +25,11 @@ func BenchmarkSearch(b *testing.B) {
 	gitserverClient := NewMockGitserverClient()
 	gitserverClient.FetchTarFunc.SetDefaultHook(testutil.FetchTarFromGithubWithPaths)
 
-	parserPool, err := parser.NewParserPool(parser.NewCtagsParser, 15)
+	parserPool, err := parser.NewParserPool(parser.NewCtagsParserFactory("universal-ctags", 250, false, false), 15)
 	if err != nil {
 		b.Fatal(err)
 	}
-	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext))
+	parser := parser.NewParser(parserPool, fetcher.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext), &observation.TestContext)
 
 	cache := &diskcache.Store{
 		Dir:               "/tmp/symbols-cache",

@@ -10,23 +10,38 @@ import (
 )
 
 type operations struct {
-	fetching               prometheus.Gauge
-	fetchQueueSize         prometheus.Gauge
-	fetchRepositoryArchive *observation.Operation
+	parsing            prometheus.Gauge
+	parseQueueSize     prometheus.Gauge
+	parseQueueTimeouts prometheus.Counter
+	parseFailed        prometheus.Counter
+	parse              *observation.Operation
+	handleParseRequest *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	fetching := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_fetching",
-		Help: "The number of fetches currently running.",
+	parsing := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "symbols_parse_parsing",
+		Help: "The number of parse jobs currently running.",
 	})
-	observationContext.Registerer.MustRegister(fetching)
+	observationContext.Registerer.MustRegister(parsing)
 
-	fetchQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_fetch_queue_size",
-		Help: "The number of fetch jobs enqueued.",
+	parseQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "symbols_parse_parse_queue_size",
+		Help: "The number of parse jobs enqueued.",
 	})
-	observationContext.Registerer.MustRegister(fetchQueueSize)
+	observationContext.Registerer.MustRegister(parseQueueSize)
+
+	parseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "symbols_parse_parse_queue_timeouts",
+		Help: "The total number of parse jobs that timed out while enqueued.",
+	})
+	observationContext.Registerer.MustRegister(parseQueueTimeouts)
+
+	parseFailed := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "symbols_parse_parse_failed",
+		Help: "The total number of parse jobs that failed.",
+	})
+	observationContext.Registerer.MustRegister(parseFailed)
 
 	operationMetrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
@@ -44,8 +59,11 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		fetching:               fetching,
-		fetchQueueSize:         fetchQueueSize,
-		fetchRepositoryArchive: op("FetchRepositoryArchive"),
+		parsing:            parsing,
+		parseQueueSize:     parseQueueSize,
+		parseQueueTimeouts: parseQueueTimeouts,
+		parseFailed:        parseFailed,
+		parse:              op("Parse"),
+		handleParseRequest: op("HandleParseRequest"),
 	}
 }
