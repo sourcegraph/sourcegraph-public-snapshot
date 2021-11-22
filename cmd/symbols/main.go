@@ -83,8 +83,8 @@ func main() {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
-	gitserverClient := gitserver.NewClient(observationContext, nil)
-	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15))
+	gitserverClient := gitserver.NewClient(observationContext)
+	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15, observationContext))
 
 	cache := &diskcache.Store{
 		Dir:               config.cacheDir,

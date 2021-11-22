@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
@@ -41,7 +42,7 @@ func TestHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15))
+	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext))
 
 	cache := &diskcache.Store{
 		Dir:               tmpDir,

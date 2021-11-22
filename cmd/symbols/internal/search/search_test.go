@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqlite"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -27,7 +28,7 @@ func BenchmarkSearch(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15))
+	parser := parser.NewParser(parserPool, parser.NewRepositoryFetcher(gitserverClient, 15, &observation.TestContext))
 
 	cache := &diskcache.Store{
 		Dir:               "/tmp/symbols-cache",

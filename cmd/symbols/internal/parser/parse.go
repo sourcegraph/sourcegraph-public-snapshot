@@ -15,13 +15,13 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type Parser interface {
-	Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (<-chan result.Symbol, error)
+	Parse(ctx context.Context, args types.SearchArgs, paths []string) (<-chan result.Symbol, error)
 }
 
 type parser struct {
@@ -39,7 +39,7 @@ func NewParser(
 	}
 }
 
-func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (_ <-chan result.Symbol, err error) {
+func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []string) (_ <-chan result.Symbol, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -48,11 +48,11 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 		}
 		span.Finish()
 	}()
-	span.SetTag("repo", string(repo))
-	span.SetTag("commit", string(commitID))
+	span.SetTag("repo", string(args.Repo))
+	span.SetTag("commit", string(args.CommitID))
 
-	tr := nettrace.New("parseUncached", string(repo))
-	tr.LazyPrintf("commitID: %s", commitID)
+	tr := nettrace.New("parseUncached", string(args.Repo))
+	tr.LazyPrintf("commitID: %s", args.CommitID)
 
 	totalSymbols := 0
 	defer func() {
@@ -66,7 +66,7 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 	}()
 
 	tr.LazyPrintf("fetch")
-	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, repo, commitID, paths)
+	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, args, paths)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func (p *parser) Parse(ctx context.Context, repo api.RepoName, commitID api.Comm
 
 			entries, parseErr := parse(ctx, p.parserPool, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
-				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
+				log15.Error("Error parsing symbols.", "repo", args.Repo, "commitID", args.CommitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
 			if len(entries) > 0 {
 				for _, e := range entries {

@@ -46,7 +46,7 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 	}
 
 	if newest == "" {
-		symbols, err := w.parser.Parse(ctx, args.Repo, args.CommitID, nil)
+		symbols, err := w.parser.Parse(ctx, args, nil)
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ func (w *databaseWriter) WriteDBFile(ctx context.Context, args types.SearchArgs,
 	}
 	paths := append(changes.Deleted, changes.Modified...)
 
-	symbols, err := w.parser.Parse(ctx, args.Repo, args.CommitID, paths)
+	symbols, err := w.parser.Parse(ctx, args, paths)
 	if err != nil {
 		return err
 	}

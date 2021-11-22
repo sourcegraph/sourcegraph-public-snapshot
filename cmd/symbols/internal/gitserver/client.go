@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -37,7 +36,7 @@ type gitserverClient struct {
 	operations *operations
 }
 
-func NewClient(observationContext *observation.Context, metrics *metrics.REDMetrics) GitserverClient {
+func NewClient(observationContext *observation.Context) GitserverClient {
 	return &gitserverClient{
 		operations: newOperations(observationContext),
 	}
