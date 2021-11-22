@@ -96,6 +96,12 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
                 render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
                 exact={true}
             />
+            <Route
+                path={`${match.url}/executions/:batchSpecID`}
+                render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
+                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} batchSpecID={match.params.batchSpecID} />
+                )}
+            />
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
     </div>
@@ -114,12 +120,6 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 path={`${match.url}/apply/:specID`}
                 render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
                     <BatchChangePreviewPage {...outerProps} {...props} batchSpecID={match.params.specID} />
-                )}
-            />
-            <Route
-                path={`${match.url}/executions/:batchSpecID`}
-                render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
-                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} batchSpecID={match.params.batchSpecID} />
                 )}
             />
             <Route
