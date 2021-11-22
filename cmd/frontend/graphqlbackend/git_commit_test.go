@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -113,24 +113,29 @@ func TestGitCommitResolver(t *testing.T) {
 }
 
 func TestGitCommitFileNames(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return nil, nil
-	}
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.ListFunc.SetDefaultReturn(nil, nil)
+
+	repos := dbmock.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefaultReturn(repos)
+
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != exampleCommitSHA1 {
-			t.Error("wrong arguments to Repos.ResolveRev")
-		}
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		assert.Equal(t, exampleCommitSHA1, rev)
 		return exampleCommitSHA1, nil
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitapi.Commit{ID: exampleCommitSHA1})
 	git.Mocks.LsFiles = func(repo api.RepoName, commit api.CommitID) ([]string, error) {
 		return []string{"a", "b"}, nil
 	}
-
-	defer git.ResetMocks()
+	defer func() {
+		backend.Mocks = backend.MockServices{}
+		git.ResetMocks()
+	}()
 
 	RunTests(t, []*Test{
 		{
