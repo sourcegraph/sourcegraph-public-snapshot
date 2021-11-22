@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/browser'
 import { trimStart } from 'lodash'
 import { defer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -372,12 +373,22 @@ const searchEnhancement: CodeHost['searchEnhancement'] = {
  * See https://docs.github.com/en/rest/reference/repos#get-a-repository
  */
 export const isPrivateRepository = (repoName: string): Promise<boolean> => {
+    const MAX_AGE_MILLIS = 60 * 1000 // 1 minute
     if (window.location.hostname !== 'github.com') {
         return Promise.resolve(true)
     }
-    return fetchCache<{ private?: boolean }>(`https://api.github.com/repos/${repoName}`)
+    return fetchCache<{ private?: boolean }>(MAX_AGE_MILLIS, `https://api.github.com/repos/${repoName}`)
+        .then(response => {
+            // See https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting
+            const rateLimit = response.headers.get('X-RateLimit-Remaining')
+            if (typeof rateLimit === 'number' && rateLimit === 0) {
+                throw new Error('Github rate limit exceeded.')
+            }
+            return response
+        })
         .then(({ data }) => typeof data.private !== 'boolean' || data.private)
         .catch(error => {
+            Sentry.captureException(error)
             console.warn('Failed to fetch if the repository is private.', error)
             return true
         })

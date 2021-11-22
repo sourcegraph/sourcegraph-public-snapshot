@@ -200,11 +200,11 @@ describe('github/codeHost', () => {
 
 describe('isPrivateRepository', () => {
     beforeAll(() => {
-        fetchCache.disableCache()
+        fetchCache.disable()
     })
 
     afterAll(() => {
-        fetchCache.enableCache()
+        fetchCache.enable()
     })
 
     it('returns [true] if not on "github.com"', async () => {

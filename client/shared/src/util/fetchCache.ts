@@ -1,60 +1,70 @@
-const cache = new Map<string, FetchCacheReturnType<any>>()
-const runningRequests = new Map<string, Promise<FetchCacheReturnType<any>>>()
-const INVALIDATE_TIMEOUT = 60 * 1000 // 1 minute
+interface CacheItem {
+    createdAt: number
+    result: FetchCacheReturnType<any>
+}
 
-let isEnabled = true
-
-interface FetchCacheReturnType<T> {
+export interface FetchCacheReturnType<T> {
     data: T
     status: number
+    headers: Headers
 }
+
+const cache = new Map<string, CacheItem>()
+const fetchesInProgress = new Map<string, Promise<FetchCacheReturnType<any>>>()
+
+let isEnabled = true
 
 /**
  * fetch API with cache
  *
+ * @param maxAge maximum allowed age in milliseconds for cached result
+ * @param args fetch API parameters
  * @description Caches same argument requests for 1 minute
  */
-export const fetchCache = async <T = any>(...args: Parameters<typeof fetch>): Promise<FetchCacheReturnType<T>> => {
-    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-    const doRequest = () =>
+export const fetchCache = async <T = any>(
+    maxAge: number,
+    ...args: Parameters<typeof fetch>
+): Promise<FetchCacheReturnType<T>> => {
+    const fetchData = (): Promise<FetchCacheReturnType<T>> =>
         fetch(...args).then(async response => {
             const data = (await response.json()) as T
-            return { status: response.status, data }
+            return { status: response.status, data, headers: response.headers }
         })
 
-    if (!isEnabled) {
-        return doRequest()
+    if (!isEnabled || maxAge <= 0) {
+        return fetchData()
     }
 
     const key = JSON.stringify(args)
-    if (cache.has(key)) {
-        return cache.get(key) as FetchCacheReturnType<T>
+    const minCreatedAt = Date.now() - maxAge
+    if (cache.has(key) && cache.get(key)!.createdAt > minCreatedAt) {
+        return cache.get(key)!.result as FetchCacheReturnType<T>
     }
 
-    if (runningRequests.has(key)) {
-        return (await runningRequests.get(key)) as FetchCacheReturnType<T>
+    if (fetchesInProgress.has(key)) {
+        return (await fetchesInProgress.get(key)) as FetchCacheReturnType<T>
     }
 
-    const request = doRequest()
+    const request = fetchData()
         .then(result => {
-            cache.set(key, result)
-            setTimeout(() => cache.delete(key), INVALIDATE_TIMEOUT)
-
+            cache.set(key, { result, createdAt: Date.now() })
             return result
         })
-        .finally(() => runningRequests.delete(key))
+        .finally(() => fetchesInProgress.delete(key))
 
-    runningRequests.set(key, request)
+    fetchesInProgress.set(key, request)
 
     return request
 }
 /**
  * For unit testing purposes
  */
-fetchCache.enableCache = (): void => {
+fetchCache.enable = (): void => {
     isEnabled = true
 }
 
-fetchCache.disableCache = (): void => {
+fetchCache.disable = (): void => {
     isEnabled = false
 }
+
+fetchCache.clear = (): void => cache.clear()
