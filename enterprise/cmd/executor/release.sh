@@ -21,5 +21,5 @@ set -eu
 # aws ec2 modify-image-attribute --image-id "${AWS_AMI_ID}" --launch-permission "Add=[{Group=all}]"
 
 # Copy uploaded binary to 'latest'
-gsutil rm -r gs://sourcegraph-artifacts/executor/latest
+gsutil rm -rf gs://sourcegraph-artifacts/executor/latest
 gsutil cp -r gs://sourcegraph-artifacts/executor/$(git rev-parse HEAD) gs://sourcegraph-artifacts/executor/latest
