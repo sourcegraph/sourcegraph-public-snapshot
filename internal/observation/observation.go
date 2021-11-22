@@ -245,7 +245,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, logFields, elapsedMs)
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
-		op.emitSentryError(sentryErr)
+		op.emitSentryError(sentryErr, logFields)
 	}
 }
 
@@ -296,7 +296,7 @@ func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event
 }
 
 // emitSentryError will send errors to Sentry.
-func (op *Operation) emitSentryError(err *error) {
+func (op *Operation) emitSentryError(err *error, logFields []log.Field) {
 	if err == nil || *err == nil {
 		return
 	}
@@ -305,7 +305,12 @@ func (op *Operation) emitSentryError(err *error) {
 		return
 	}
 
-	op.context.Sentry.CaptureError(*err, nil)
+	logs := make(map[string]string)
+	for _, field := range logFields {
+		logs[field.Key()] = field.String()
+	}
+
+	op.context.Sentry.CaptureError(*err, logs)
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics
