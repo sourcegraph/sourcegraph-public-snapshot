@@ -45,28 +45,31 @@ func setup2Exec(ctx context.Context, args []string) error {
 		currentOS = overridesOS
 	}
 
-	var deps []dependencyCategory
+	var categories []dependencyCategory
 	if currentOS == "darwin" {
-		deps = macOSDependencies
+		categories = macOSDependencies
 	} else {
+		// TODO: Support Linux
 		panic("unsupported os!")
 	}
 
 	// TODO: Check whether we are in the repository or not
 
 	failed := []int{}
-	for i := range deps {
+	all := []int{}
+	for i := range categories {
 		failed = append(failed, i)
+		all = append(all, i)
 	}
 
 	for len(failed) != 0 {
-
 		out.ClearScreen()
-		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "-------------------------------------"))
-		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "|        Welcome to sg setup!       |"))
-		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleBold, output.StyleOrange), "-------------------------------------"))
 
-		for i, category := range deps {
+		writeOrangeLine("-------------------------------------")
+		writeOrangeLine("|        Welcome to sg setup!       |")
+		writeOrangeLine("-------------------------------------")
+
+		for i, category := range categories {
 			idx := i + 1
 
 			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s", idx, category.name))
@@ -76,10 +79,10 @@ func setup2Exec(ctx context.Context, args []string) error {
 			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
-				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%d. %s", idx, category.name))
+				writeSuccessLine("%d. %s", idx, category.name)
 				failed = removeEntry(failed, i)
 			} else {
-				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%d. %s", idx, category.name))
+				writeFailureLine("%d. %s", idx, category.name)
 			}
 		}
 
@@ -92,134 +95,154 @@ func setup2Exec(ctx context.Context, args []string) error {
 		out.Write("")
 		out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Some checks failed. Which one do you want to fix?"))
 
-		toFix := getNumber(1, len(deps))
-
-		out.ClearScreen()
-
-		// TODO: Check bounds
-		category := deps[toFix-1]
-
-		out.Write("")
-		out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", toFix, category.name))
-		out.Write("")
-		out.Write("Dependencies:")
-
-		// TODO: This is duplicate from above
-		for _, dep := range category.dependencies {
-			if dep.err == nil || dep.state {
-				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s", dep.name))
-			} else if dep.err != nil {
-				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, dep.err))
-			} else if !dep.state {
-				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "%s: %s", dep.name, "check failed"))
-			}
-		}
-
-		// TODO: It doesn't make a lot of sense to give a choice here if
-		// there's only one dependency
-
-		// TODO: We need to refactor `getChoice` to allow passing in "choices" with custom text
-		// and here we have to ask the user:
-		//
-		// [m]: I want to fix the steps one-by-one
-		// [l]: I'm feeling lucky. Try fixing all of it for me.
-		//
-		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
-		choice, err := getChoice()
+		idx, err := getNumberOutOf(all)
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
 			return err
 		}
+		selectedCategory := categories[idx]
 
 		out.ClearScreen()
 
+		err = presentFailedCategoryWithOptions(ctx, idx, &selectedCategory)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *dependencyCategory) error {
+	out.Write("")
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
+	out.Write("")
+	out.Write("Dependencies:")
+
+	for _, dep := range category.dependencies {
+		if dep.err == nil || dep.state {
+			writeSuccessLine("%s", dep.name)
+		} else if dep.err != nil {
+			writeFailureLine("%s: %s", dep.name, dep.err)
+		} else if !dep.state {
+			writeFailureLine("%s: %s", dep.name, "check failed")
+		}
+	}
+
+	// TODO: It doesn't make a lot of sense to give a choice here if
+	// there's only one dependency
+
+	out.Write("")
+	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
+	choices := map[int]string{
+		1: "I want to fix these one-by-one",
+		2: "I'm feeling lucky. You try fixing all of it for me.",
+		3: "Go back",
+	}
+	choice, err := getChoice(choices)
+	if err != nil {
+		if err == io.EOF {
+			return nil
+		}
+		return err
+	}
+
+	out.ClearScreen()
+
+	switch choice {
+	case 1:
+		err = fixCategoryManually(ctx, category)
+	case 2:
+		err = fixCategoryAutomatically(ctx, category)
+	case 3:
+		return nil
+	}
+	return err
+}
+
+func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory) error {
+	for _, dep := range category.dependencies {
+		if dep.err == nil || dep.state {
+			continue
+		}
+
+		pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
+		c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
+		cmdOut, err := c.CombinedOutput()
+		if err != nil {
+			pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
+			return err
+		}
+		pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+	}
+
+	return nil
+}
+
+func fixCategoryManually(ctx context.Context, category *dependencyCategory) error {
+	// TODO: ask for confirmation
+	for _, dep := range category.dependencies {
+		if dep.err == nil || dep.state {
+			continue
+		}
+
+		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
+		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleWarning, output.StyleBold), "|               %s", dep.name))
+		out.WriteLine(output.Linef("", output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
+
+		if dep.err != nil {
+			out.WriteLine(output.Linef("", output.StyleBold, "Error: %s%s", output.StyleReset, dep.err))
+		}
+		if dep.instructionsComment != "" {
+			out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
+			out.Write("")
+			out.Write(dep.instructionsComment)
+		}
+
+		if dep.instructionsCommands != "" {
+			out.Write("")
+			out.Write("Run the following command(s):")
+			out.Write("")
+
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+
+			out.Write("")
+		}
+
+		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
+		choices := map[int]string{
+			1: "I'll run the command manually",
+			2: "You can run the command for me",
+		}
+		choice, err := getChoice(choices)
+		if err != nil {
+			return err
+		}
+
+		out.ClearScreen()
 		switch choice {
-		case userChoiceManually:
-			//
-			// TODO: PULL ALL OF THIS IN HERE  OUT!!!!
-			//
-			// TODO: ask for confirmation
-			out.Write("")
-			out.Write("Let's work through the failures...")
-			out.Write("")
-
-			for _, dep := range category.dependencies {
-				if dep.err == nil || dep.state {
-					continue
-				}
-
-				out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
-				out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "|               %s", dep.name))
-				out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "---------------------------------------"))
-				if dep.err != nil {
-					out.WriteLine(output.Linef("", output.StyleBold, "Error: %s%s", output.StyleReset, dep.err))
-				}
-				if dep.instructionsComment != "" {
-					out.WriteLine(output.Linef("", output.StyleBold, "How to fix:"))
-					out.Write("")
-					out.Write(dep.instructionsComment)
-				}
-
-				if dep.instructionsCommands != "" {
-					out.Write("")
-					out.Write("Run the following command(s):")
-					out.Write("")
-
-					out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
-
-					out.Write("")
-				}
-
-				out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
-				choice, err := getChoice()
-				if err != nil {
-					if err == io.EOF {
-						return nil
-					}
-					return err
-				}
-
-				out.ClearScreen()
-				switch choice {
-				case userChoiceManually:
-					out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
-					waitForReturn()
-				case userChoiceAutomatic:
-					if dep.instructionsCommands == "" {
-						out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "problem! not possible. exiting"))
-						return nil
-					}
-
-					pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
-					c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
-					cmdOut, err := c.CombinedOutput()
-					if err != nil {
-
-						pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
-						return err
-					}
-					pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
-				}
+		case 1:
+			out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "Hit return once you're done"))
+			waitForReturn()
+		case 2:
+			if dep.instructionsCommands == "" {
+				out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "problem! not possible. exiting"))
+				return nil
 			}
 
-		case userChoiceAutomatic:
-			for _, dep := range category.dependencies {
-				if dep.err == nil || dep.state {
-					continue
-				}
-
-				pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
-				c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
-				cmdOut, err := c.CombinedOutput()
-				if err != nil {
-
-					pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
-					return err
-				}
-				pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+			pending := out.Pending(output.Line("", output.StylePending, "Running command..."))
+			c := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
+			cmdOut, err := c.CombinedOutput()
+			if err != nil {
+				pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
+				return err
 			}
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 		}
 	}
 
@@ -546,16 +569,27 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 	},
 }
 
-func getNumber(min, max int) int {
-	var s int
-
-	fmt.Printf("[%d-%d]: ", min, max)
-	_, err := fmt.Scan(&s)
-	if err != nil {
-		panic(err)
+func getNumberOutOf(numbers []int) (int, error) {
+	var strs []string
+	var idx = make(map[int]struct{})
+	for _, num := range numbers {
+		strs = append(strs, fmt.Sprintf("%d", num+1))
+		idx[num+1] = struct{}{}
 	}
 
-	return s
+	for {
+		fmt.Printf("[%s]: ", strings.Join(strs, ","))
+		var num int
+		_, err := fmt.Scan(&num)
+		if err != nil {
+			return 0, err
+		}
+
+		if _, ok := idx[num]; ok {
+			return num - 1, nil
+		}
+		fmt.Printf("%d is an invalid choice :( Let's try again?\n", num)
+	}
 }
 
 func waitForReturn() { fmt.Scanln() }
@@ -567,30 +601,18 @@ const (
 	userChoiceAutomatic = "automatic"
 )
 
-func getChoice() (userChoice, error) {
-	var s string
-
-	choices := map[string]string{
-		"m": "I'll run the command manually",
-		"a": "You can run the command for me",
-	}
-
-	for letter, desc := range choices {
-		out.Writef("%s[%s]%s: %s", output.StyleBold, letter, output.StyleReset, desc)
+func getChoice(choices map[int]string) (int, error) {
+	for num, desc := range choices {
+		out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 	}
 
 	fmt.Printf("Enter choice: ")
 
+	var s int
 	_, err := fmt.Scan(&s)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	s = strings.TrimSpace(s)
-	s = strings.ToLower(s)
-
-	if s == "m" {
-		return userChoiceManually, nil
-	}
-	return userChoiceAutomatic, nil
+	return s, nil
 }
