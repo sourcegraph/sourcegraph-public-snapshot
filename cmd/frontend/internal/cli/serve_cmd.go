@@ -143,10 +143,10 @@ COMMENT ON COLUMN cm_monitors.namespace_org_id IS 'DEPRECATED: code monitors can
 
 -- Drop the constraint first to make this transaction idempotent
 ALTER TABLE cm_monitors
-	DROP CONSTRAINT IF EXISTS cm_monitors_cannot_be_org_owned;
+	DROP CONSTRAINT IF EXISTS cm_monitors_cannot_be_org_owned_backport;
 ALTER TABLE cm_monitors
 	ALTER COLUMN namespace_user_id SET NOT NULL,
-	ADD CONSTRAINT cm_monitors_cannot_be_org_owned CHECK (
+	ADD CONSTRAINT cm_monitors_cannot_be_org_owned_backport CHECK (
 		namespace_org_id IS NULL
 	);
 
@@ -155,9 +155,9 @@ SET (notify_owner, notify_slack) = (false, false);
 
 -- Drop the constraint first to make this transaction idempotent
 ALTER TABLE saved_searches
-	DROP CONSTRAINT IF EXISTS saved_searches_notifications_disabled;
+	DROP CONSTRAINT IF EXISTS saved_searches_notifications_disabled_backport;
 ALTER TABLE saved_searches
-	ADD CONSTRAINT saved_searches_notifications_disabled CHECK (
+	ADD CONSTRAINT saved_searches_notifications_disabled_backport CHECK (
 		notify_owner = false
 		AND notify_slack = false
 	);
