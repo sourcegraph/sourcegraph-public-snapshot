@@ -81,8 +81,8 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
         const baseUrl = props.sourcegraphURL
-        const url = `${baseUrl}/${props.repoName}`
-        const urlToCommit = `${url}/-/compare/${props.commit.baseRev}...${
+        const url = new URL(`/${props.repoName}`, baseUrl)
+        const urlToCommit = `${url.href}/-/compare/${props.commit.baseRev}...${
             props.commit.headRev
         }?utm_source=${getPlatformName()}`
 
