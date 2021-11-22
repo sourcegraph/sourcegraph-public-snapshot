@@ -3,9 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
