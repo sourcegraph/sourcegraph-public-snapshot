@@ -2,7 +2,6 @@ package honey
 
 import (
 	"github.com/honeycombio/libhoney-go"
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 )
 
@@ -41,6 +40,7 @@ func (w eventWrapper) Dataset() string {
 }
 
 func (w eventWrapper) AddField(name string, val interface{}) {
+	name = toSnakeCase(name)
 	w.event.AddField(name, val)
 }
 
@@ -63,7 +63,6 @@ func (w eventWrapper) SetSampleRate(rate uint) {
 }
 
 func (w eventWrapper) Send() error {
-	log15.Info("sending event")
 	return w.event.Send()
 }
 
