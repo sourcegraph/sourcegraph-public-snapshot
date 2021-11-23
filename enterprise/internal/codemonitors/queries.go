@@ -4,10 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -45,13 +43,13 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error {
+func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		createTriggerQueryFmtStr,
 		monitorID,
-		args.Query,
+		query,
 		a.UID,
 		now,
 		a.UID,
@@ -70,34 +68,19 @@ SET query = %s,
 	changed_at = %s,
 	latest_result = %s
 WHERE id = %s
-AND monitor = %s
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error {
-
-	var triggerID int64
-	err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID)
-	if err != nil {
-		return err
-	}
-
-	var monitorID int64
-	err = relay.UnmarshalSpec(args.Monitor.Id, &monitorID)
-	if err != nil {
-		return err
-	}
-
+func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, query string) error {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		updateTriggerQueryFmtStr,
-		args.Trigger.Update.Query,
+		query,
 		a.UID,
 		now,
 		now,
-		triggerID,
-		monitorID,
+		id,
 		sqlf.Join(queryColumns, ", "),
 	)
 	return s.Exec(ctx, q)
