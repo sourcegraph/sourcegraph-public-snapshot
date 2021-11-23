@@ -71,7 +71,7 @@ Using the variables [`min-replicas`](https://sourcegraph.com/search?q=context:gl
 For auto scaling to work, you need a credential to set on the `worker` service. Therefor, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. Using them, you get properly configured credentials in the terraform outputs.
 
 ```terraform
-module "gcp-credentials" {
+module "credentials" {
   source  = "sourcegraph/executors/<cloud>//modules/credentials"
   version = "<version>"
 
