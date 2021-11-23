@@ -1,6 +1,6 @@
 import { Position } from '@sourcegraph/extension-api-types'
 
-import { convertNode } from '../token_position'
+import { convertNode } from '../tokenPosition'
 
 import { CodeViewProps } from './dom'
 

@@ -52,7 +52,7 @@ import {
     getTokenAtPositionOrRange,
     HoveredToken,
     shouldTokenize,
-} from './token_position'
+} from './tokenPosition'
 import { HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange, DocumentHighlight } from './types'
 
 export { HoveredToken }

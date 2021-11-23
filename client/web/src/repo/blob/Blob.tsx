@@ -40,7 +40,7 @@ import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/ap
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/shared/src/codeintellify/src'
-import { getCodeElementsInRange, locateTarget } from '@sourcegraph/shared/src/codeintellify/src/token_position'
+import { getCodeElementsInRange, locateTarget } from '@sourcegraph/shared/src/codeintellify/src/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'

@@ -8,7 +8,7 @@ import { propertyIsDefined } from './helpers'
 import { findPositionsFromEvents } from './positions'
 import { CodeViewProps, DOM } from './testutils/dom'
 import { createMouseEvent, dispatchMouseEventAtPositionImpure } from './testutils/mouse'
-import { HoveredToken } from './token_position'
+import { HoveredToken } from './tokenPosition'
 
 describe('positions', () => {
     const dom = new DOM()

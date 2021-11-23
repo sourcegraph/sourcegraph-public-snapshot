@@ -11,7 +11,7 @@ import {
     getTokenAtPositionOrRange,
     HoveredToken,
     locateTarget,
-} from './token_position'
+} from './tokenPosition'
 
 const { expect } = chai
 

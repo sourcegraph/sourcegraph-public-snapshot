@@ -2,7 +2,7 @@ import { Position, Range } from '@sourcegraph/extension-api-types'
 
 import { ErrorLike } from './errors'
 import { LOADING } from './loading'
-import { HoveredToken } from './token_position'
+import { HoveredToken } from './tokenPosition'
 
 /**
  * @template C Extra context for the hovered token.

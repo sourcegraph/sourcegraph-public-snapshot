@@ -1,6 +1,6 @@
 import githubCode from '../../testdata/generated/github.html'
 import sourcegraphCode from '../../testdata/generated/sourcegraph.html'
-import { DOMFunctions } from '../token_position'
+import { DOMFunctions } from '../tokenPosition'
 
 import { TEST_DATA_REVSPEC } from './rev'
 
