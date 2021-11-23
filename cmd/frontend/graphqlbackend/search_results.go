@@ -713,6 +713,20 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 			}
 		}
 
+		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
+			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+
+			diff := args.ResultTypes.Has(result.TypeDiff)
+			jobs = append(jobs, &commit.CommitSearch{
+				Query:         commit.QueryToGitQuery(args.Query, diff),
+				RepoOpts:      repoOptions,
+				Diff:          diff,
+				HasTimeFilter: commit.HasTimeFilter(args.Query),
+				Limit:         int(args.PatternInfo.FileMatchLimit),
+				Db:            r.db,
+			})
+		}
+
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
@@ -1692,29 +1706,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			Args:  args,
 			Limit: limit,
 		})
-	}
-
-	addCommitSearch := func(diff bool) {
-		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit), args.RepoOptions)
-		if err != nil {
-			agg.Error(err)
-			return
-		}
-
-		if err := j.ExpandUsernames(ctx, r.db); err != nil {
-			agg.Error(err)
-			return
-		}
-
-		jobs = append(jobs, j)
-	}
-
-	if args.ResultTypes.Has(result.TypeCommit) {
-		addCommitSearch(false)
-	}
-
-	if args.ResultTypes.Has(result.TypeDiff) {
-		addCommitSearch(true)
 	}
 
 	wgForJob := func(job run.Job) *sync.WaitGroup {
