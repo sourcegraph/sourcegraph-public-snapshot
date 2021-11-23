@@ -16,12 +16,9 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var requestCounter = metrics.NewRequestMeter("pagure", "Total number of requests sent to the Pagure API.")
 
 const (
 	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
