@@ -68,7 +68,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 
 	ms, err := r.store.ListMonitors(ctx, cm.ListMonitorsOpts{
 		NamespaceUserID: &userID,
-		First:           intPtr(int(args.First)),
+		First:           intPtr(int(newArgs.First)),
 		After:           intPtrToInt64Ptr(after),
 	})
 	if err != nil {
@@ -659,7 +659,15 @@ func (q *monitorQuery) Query() string {
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
-	es, err := q.store.ListQueryTriggerJobs(ctx, q.QueryTrigger.ID, args)
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+	es, err := q.store.ListQueryTriggerJobs(ctx, cm.ListTriggerJobsOpts{
+		QueryID: &q.QueryTrigger.ID,
+		First:   intPtr(int(args.First)),
+		After:   intPtrToInt64Ptr(after),
+	})
 	if err != nil {
 		return nil, err
 	}

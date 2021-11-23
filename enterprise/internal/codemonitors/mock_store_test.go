@@ -8,7 +8,6 @@ import (
 	"time"
 
 	sqlf "github.com/keegancsmith/sqlf"
-	graphqlbackend "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -295,7 +294,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		ListQueryTriggerJobsFunc: &CodeMonitorStoreListQueryTriggerJobsFunc{
-			defaultHook: func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
+			defaultHook: func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
 				return nil, nil
 			},
 		},
@@ -3674,24 +3673,24 @@ func (c CodeMonitorStoreListMonitorsFuncCall) Results() []interface{} {
 // ListQueryTriggerJobs method of the parent MockCodeMonitorStore instance
 // is invoked.
 type CodeMonitorStoreListQueryTriggerJobsFunc struct {
-	defaultHook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
-	hooks       []func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
+	defaultHook func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
+	hooks       []func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	history     []CodeMonitorStoreListQueryTriggerJobsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListQueryTriggerJobs delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) ListQueryTriggerJobs(v0 context.Context, v1 int64, v2 *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
-	r0, r1 := m.ListQueryTriggerJobsFunc.nextHook()(v0, v1, v2)
-	m.ListQueryTriggerJobsFunc.appendCall(CodeMonitorStoreListQueryTriggerJobsFuncCall{v0, v1, v2, r0, r1})
+func (m *MockCodeMonitorStore) ListQueryTriggerJobs(v0 context.Context, v1 ListTriggerJobsOpts) ([]*TriggerJob, error) {
+	r0, r1 := m.ListQueryTriggerJobsFunc.nextHook()(v0, v1)
+	m.ListQueryTriggerJobsFunc.appendCall(CodeMonitorStoreListQueryTriggerJobsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ListQueryTriggerJobs
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultHook(hook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)) {
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultHook(hook func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)) {
 	f.defaultHook = hook
 }
 
@@ -3700,7 +3699,7 @@ func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreListQueryTriggerJobsFunc) PushHook(hook func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)) {
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) PushHook(hook func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3709,7 +3708,7 @@ func (f *CodeMonitorStoreListQueryTriggerJobsFunc) PushHook(hook func(context.Co
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultReturn(r0 []*TriggerJob, r1 error) {
-	f.SetDefaultHook(func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
+	f.SetDefaultHook(func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
 		return r0, r1
 	})
 }
@@ -3717,12 +3716,12 @@ func (f *CodeMonitorStoreListQueryTriggerJobsFunc) SetDefaultReturn(r0 []*Trigge
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreListQueryTriggerJobsFunc) PushReturn(r0 []*TriggerJob, r1 error) {
-	f.PushHook(func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
+	f.PushHook(func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreListQueryTriggerJobsFunc) nextHook() func(context.Context, int64, *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
+func (f *CodeMonitorStoreListQueryTriggerJobsFunc) nextHook() func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3762,10 +3761,7 @@ type CodeMonitorStoreListQueryTriggerJobsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int64
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *graphqlbackend.ListEventsArgs
+	Arg1 ListTriggerJobsOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*TriggerJob
@@ -3777,7 +3773,7 @@ type CodeMonitorStoreListQueryTriggerJobsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c CodeMonitorStoreListQueryTriggerJobsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
