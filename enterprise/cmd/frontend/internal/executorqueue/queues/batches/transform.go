@@ -21,33 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 )
 
-const (
-	accessTokenNote  = "batch-spec-execution"
-	accessTokenScope = "user:all"
-)
-
-func createAndAttachInternalAccessToken(ctx context.Context, s batchesStore, jobID int64, userID int32) (string, error) {
-	tokenID, token, err := s.DatabaseDB().AccessTokens().CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
-	if err != nil {
-		return "", err
-	}
-	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobID, tokenID); err != nil {
-		return "", err
-	}
-	return token, nil
-}
-
-func makeURL(base, password string) (string, error) {
-	u, err := url.Parse(base)
-	if err != nil {
-		return "", err
-	}
-
-	u.User = url.UserPassword("sourcegraph", password)
-	return u.String(), nil
-}
-
-type batchesStore interface {
+type BatchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
 	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
@@ -57,7 +31,7 @@ type batchesStore interface {
 }
 
 // transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
+func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.
@@ -194,4 +168,30 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 			token: "SRC_ACCESS_TOKEN_REMOVED",
 		},
 	}, nil
+}
+
+const (
+	accessTokenNote  = "batch-spec-execution"
+	accessTokenScope = "user:all"
+)
+
+func createAndAttachInternalAccessToken(ctx context.Context, s BatchesStore, jobID int64, userID int32) (string, error) {
+	tokenID, token, err := s.DatabaseDB().AccessTokens().CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+	if err != nil {
+		return "", err
+	}
+	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobID, tokenID); err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func makeURL(base, password string) (string, error) {
+	u, err := url.Parse(base)
+	if err != nil {
+		return "", err
+	}
+
+	u.User = url.UserPassword("sourcegraph", password)
+	return u.String(), nil
 }
