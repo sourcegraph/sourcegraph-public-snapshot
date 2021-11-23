@@ -655,12 +655,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="timeout:2m"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="timeout:2m"
@@ -706,12 +708,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="forked:yes"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="forked:yes"
@@ -751,12 +755,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="archived:yes"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="archived:yes"
@@ -802,12 +808,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="archived:yes"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="archived:yes"

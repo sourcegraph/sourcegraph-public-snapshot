@@ -1,19 +1,17 @@
-import { mount } from 'enzyme'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createBrowserHistory } from 'history'
 import React from 'react'
-import { act } from 'react-dom/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
-import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
+    COLLAPSABLE_SEARCH_RESULT,
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     MULTIPLE_SEARCH_RESULT,
@@ -21,13 +19,10 @@ import {
     RESULT,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
-import { SearchResult } from '../../components/SearchResult'
+import { AuthenticatedUser } from '../../auth'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
-import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import * as helpers from '../helpers'
 
-import { StreamingProgress } from './progress/StreamingProgress'
-import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
 import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
 
@@ -68,18 +63,26 @@ describe('StreamingSearchResults', () => {
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
 
-    function render(component: React.ReactElement<StreamingSearchResultsProps>) {
-        return mount(
+    function renderWrapper(component: React.ReactElement<StreamingSearchResultsProps>) {
+        return render(
             <BrowserRouter>
                 <MockedTestProvider mocks={revisionsMockResponses}>{component}</MockedTestProvider>
             </BrowserRouter>
         )
     }
 
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+    const mockUser = {
+        id: 'userID',
+        username: 'username',
+        email: 'user@me.com',
+        siteAdmin: true,
+    } as AuthenticatedUser
+
     it('should call streaming search API with the right parameters from URL', async () => {
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
-        const element = render(
+        renderWrapper(
             <StreamingSearchResults
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis"
@@ -102,44 +105,41 @@ describe('StreamingSearchResults', () => {
             caseSensitive: true,
             trace: undefined,
         })
-
-        element.unmount()
     })
 
     it('should render progress with data from API', () => {
-        const element = render(<StreamingSearchResults {...defaultProps} />)
+        renderWrapper(<StreamingSearchResults {...defaultProps} />)
 
-        const progress = element.find(StreamingProgress)
-        expect(progress.prop('progress')).toEqual(streamingSearchResult.progress)
-
-        element.unmount()
+        // Dropdown not in doc for progress.skipped === []
+        expect(screen.queryByTestId('streaming-progress-dropdown')).not.toBeInTheDocument()
+        const expectedString = `${streamingSearchResult.progress.matchCount} results in ${(
+            streamingSearchResult.progress.durationMs / 1000
+        ).toFixed(2)}s`
+        expect(screen.getAllByTestId('streaming-progress-count')[0]).toHaveTextContent(expectedString)
     })
 
     it('should expand and collapse results when event from infobar is triggered', () => {
-        const element = render(<StreamingSearchResults {...defaultProps} />)
+        renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
-        let infobar = element.find(SearchResultsInfoBar)
-        expect(infobar.prop('allExpanded')).toBe(false)
-        let results = element.find(FileMatch)
-        expect(results.map(result => result.prop('allExpanded'))).not.toContain(true)
+        expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
+            'data-tooltip',
+            'Show more matches on all results'
+        )
 
-        act(() => infobar.prop('onExpandAllResultsToggle')())
-        element.update()
+        screen.getAllByTestId('result-container').map(element => {
+            expect(element).toHaveAttribute('data-expanded', 'false')
+        })
 
-        infobar = element.find(SearchResultsInfoBar)
-        expect(infobar.prop('allExpanded')).toBe(true)
-        results = element.find(FileMatch)
-        expect(results.map(result => result.prop('allExpanded'))).not.toContain(false)
+        userEvent.click(screen.getByTestId('search-result-expand-btn'))
 
-        act(() => infobar.prop('onExpandAllResultsToggle')())
-        element.update()
+        expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
+            'data-tooltip',
+            'Hide more matches on all results'
+        )
 
-        infobar = element.find(SearchResultsInfoBar)
-        expect(infobar.prop('allExpanded')).toBe(false)
-        results = element.find(FileMatch)
-        expect(results.map(result => result.prop('allExpanded'))).not.toContain(true)
-
-        element.unmount()
+        screen
+            .getAllByTestId('result-container')
+            .map(element => expect(element).toHaveAttribute('data-expanded', 'true'))
     })
 
     it('should render correct components for file match and repository match', () => {
@@ -147,15 +147,12 @@ describe('StreamingSearchResults', () => {
             ...streamingSearchResult,
             results: [RESULT, REPO_MATCH_RESULT],
         }
-        const element = render(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
+        renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(results)} />)
+        expect(screen.getAllByTestId('result-container').length).toBe(2)
+        expect(screen.getByTestId('search-repo-result')).toBeVisible()
 
-        const listComponent = element.find<VirtualList<GQL.SearchResult>>(VirtualList)
-        const renderedResultsList = listComponent.prop('items')
-        expect(renderedResultsList.length).toBe(2)
-        expect(listComponent.prop('renderItem')(renderedResultsList[0], undefined).type).toBe(FileMatch)
-        expect(listComponent.prop('renderItem')(renderedResultsList[1], undefined).type).toBe(SearchResult)
-
-        element.unmount()
+        expect(screen.getAllByTestId('result-container')[0]).toHaveAttribute('data-result-type', 'content')
+        expect(screen.getAllByTestId('result-container')[1]).toHaveAttribute('data-result-type', 'repo')
     })
 
     it('should log view, query, and results fetched events', () => {
@@ -167,13 +164,11 @@ describe('StreamingSearchResults', () => {
             logViewEvent: logViewEventSpy,
         }
 
-        const element = render(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
+        renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
         sinon.assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
         sinon.assert.calledWith(logSpy, 'SearchResultsQueried')
         sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
-
-        element.unmount()
     })
 
     it('should log event when clicking on search result', () => {
@@ -183,76 +178,108 @@ describe('StreamingSearchResults', () => {
             log: logSpy,
         }
 
-        const element = render(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
+        renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
-        const item = element.find(FileMatch).first()
-        act(() => item.prop('onSelect')())
-
+        userEvent.click(screen.getAllByTestId('result-container')[0])
         sinon.assert.calledWith(logSpy, 'SearchResultClicked')
-
-        element.unmount()
     })
 
     it('should not show saved search modal on first load', () => {
-        const element = render(<StreamingSearchResults {...defaultProps} />)
-
-        const modal = element.find(SavedSearchModal)
-        expect(modal.length).toBe(0)
+        renderWrapper(<StreamingSearchResults {...defaultProps} />)
+        expect(screen.queryByTestId('saved-search-modal')).not.toBeInTheDocument()
     })
 
     it('should open saved search modal when triggering event from infobar', () => {
-        const element = render(<StreamingSearchResults {...defaultProps} />)
+        renderWrapper(<StreamingSearchResults {...defaultProps} authenticatedUser={mockUser} />)
+        const savedSearchButton = screen.getByRole('button', { name: 'Save search' })
 
-        const infobar = element.find(SearchResultsInfoBar)
-        act(() => infobar.prop('onSaveQueryClick')())
-        element.update()
-
-        const modal = element.find(SavedSearchModal)
-        expect(modal.length).toBe(1)
+        expect(savedSearchButton).toHaveAttribute('href', '')
+        userEvent.click(savedSearchButton)
+        expect(screen.getByTestId('saved-search-modal')).toBeInTheDocument()
     })
 
-    it('should close saved search modal if close event triggers', () => {
-        const element = render(<StreamingSearchResults {...defaultProps} />)
+    it('should close saved search modal if close event triggers', async () => {
+        renderWrapper(<StreamingSearchResults {...defaultProps} authenticatedUser={mockUser} />)
+        userEvent.click(await screen.findByText(/save search/i, { selector: 'a' }))
 
-        const infobar = element.find(SearchResultsInfoBar)
-        act(() => infobar.prop('onSaveQueryClick')())
-        element.update()
+        fireEvent.keyDown(screen.getByText(/save search query to:/i), {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            charCode: 27,
+        })
 
-        let modal = element.find(SavedSearchModal)
-        act(() => modal.prop('onDidCancel')())
-        element.update()
-
-        modal = element.find(SavedSearchModal)
-        expect(modal.length).toBe(0)
+        expect(screen.queryByText(/save search query to:/i)).not.toBeInTheDocument()
     })
 
-    it('should start a new search with added params when onSearchAgain event is triggered', () => {
+    it('should start a new search with added params when onSearchAgain event is triggered', async () => {
         const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
         const tests = [
             {
                 parsedSearchQuery: 'r:golang/oauth2 test f:travis',
+                skipReason: ['document-match-limit', 'excluded-archive', 'shard-timedout'] as Skipped['reason'][],
                 additionalProperties: ['count:1000', 'archived:yes', 'timeout:2m'],
                 want: 'r:golang/oauth2 test f:travis count:1000 archived:yes timeout:2m',
             },
             {
                 parsedSearchQuery: 'r:golang/oauth2 test f:travis count:50',
+                skipReason: ['document-match-limit', 'excluded-archive', 'shard-timedout'] as Skipped['reason'][],
                 additionalProperties: ['count:1000', 'archived:yes', 'timeout:2m'],
                 want: 'r:golang/oauth2 test f:travis count:1000 archived:yes timeout:2m',
             },
             {
                 parsedSearchQuery: 'r:golang/oauth2 (foo count:1) or (bar count:2)',
+                skipReason: ['document-match-limit', 'excluded-fork'] as Skipped['reason'][],
                 additionalProperties: ['count:1000', 'fork:yes'],
                 want: 'r:golang/oauth2 (foo count:1000) or (bar count:1000) fork:yes',
             },
         ]
+
+        ;(global as any).document.createRange = () => ({
+            setStart: () => {},
+            setEnd: () => {},
+            commonAncestorContainer: {
+                nodeName: 'BODY',
+                ownerDocument: document,
+            },
+        })
+
         for (const [index, test] of tests.entries()) {
-            const element = render(
-                <StreamingSearchResults {...defaultProps} parsedSearchQuery={test.parsedSearchQuery} />
+            await cleanup()
+
+            const results: AggregateStreamingSearchResults = {
+                ...streamingSearchResult,
+                progress: {
+                    ...streamingSearchResult.progress,
+                    skipped: test.additionalProperties.map((property, propertyIndex) => ({
+                        reason: test.skipReason[propertyIndex],
+                        message: property,
+                        severity: 'info',
+                        title: property,
+                        suggested: {
+                            title: property,
+                            queryExpression: property,
+                        },
+                    })),
+                },
+            }
+
+            renderWrapper(
+                <StreamingSearchResults
+                    {...defaultProps}
+                    parsedSearchQuery={test.parsedSearchQuery}
+                    streamSearch={() => of(results)}
+                />
             )
 
-            const progress = element.find(StreamingProgress)
-            act(() => progress.prop('onSearchAgain')(test.additionalProperties))
-            element.update()
+            userEvent.click(await screen.findByText(/some results excluded/i))
+            const allChecks = await screen.findAllByTestId('streaming-progress-skipped-suggest-check')
+
+            for (const check of allChecks) {
+                userEvent.click(check)
+            }
+
+            userEvent.click(await screen.findByText(/search again/i, { selector: 'button[type=submit]' }))
 
             expect(helpers.submitSearch).toBeCalledTimes(index + 1)
             const args = submitSearchMock.mock.calls[index][0]
