@@ -52,7 +52,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 
 	var requeued bool
 
-	ctx, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
+	ctx, logger, endObservation := h.handleOp.WithAndLogger(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{
 			LogFields: append(
@@ -62,7 +62,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 		})
 	}()
 
-	requeued, err = h.handle(ctx, upload)
+	requeued, err = h.handle(ctx, upload, logger)
 
 	return err
 }
@@ -98,7 +98,7 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued bool, err error) {
+func (h *handler) handle(ctx context.Context, upload store.Upload, traceLog observation.TraceLogger) (requeued bool, err error) {
 	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
@@ -114,6 +114,8 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
 
+	traceLog(log.Bool("defaultBranch", isDefaultBranch))
+
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		directoryChildren, err := h.gitserverClient.DirectoryChildren(ctx, upload.RepositoryID, upload.Commit, dirnames)
 		if err != nil {
@@ -122,7 +124,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, h.uploadStore, upload.ID, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, h.uploadStore, upload.ID, traceLog, func(r io.Reader) (err error) {
 		groupedBundleData, err := conversion.Correlate(ctx, r, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
@@ -130,13 +132,14 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeData(ctx, h.lsifStore, upload, repo, isDefaultBranch, groupedBundleData); err != nil {
+		if err := writeData(ctx, h.lsifStore, upload, repo, isDefaultBranch, groupedBundleData, traceLog); err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
 				// safely assume that the entire index's data is in the codeintel database, as it's
 				// parsed determinstically and written atomically.
 				log15.Warn("LSIF data already exists for upload record")
+				traceLog(log.Bool("rewriting", true))
 			} else {
 				return err
 			}
@@ -164,14 +167,18 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			if !revisionExists {
 				return errCommitDoesNotExist
 			}
+			traceLog(log.String("commitDate", commitDate.String()))
+
 			if err := tx.UpdateCommitedAt(ctx, upload.ID, commitDate); err != nil {
 				return errors.Wrap(err, "store.CommitDate")
 			}
 
+			traceLog(log.Int("packages", len(groupedBundleData.Packages)))
 			// Update package and package reference data to support cross-repo queries.
 			if err := tx.UpdatePackages(ctx, upload.ID, groupedBundleData.Packages); err != nil {
 				return errors.Wrap(err, "store.UpdatePackages")
 			}
+			traceLog(log.Int("packageReferences", len(groupedBundleData.Packages)))
 			if err := tx.UpdatePackageReferences(ctx, upload.ID, groupedBundleData.PackageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
@@ -180,9 +187,11 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
 			// We always keep this value up to date - we also decrement reference counts of dependencies
 			// on upload deletion or when the set of uploads providing an existing package change.
-			if err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, store.DependencyReferenceCountUpdateTypeAdd); err != nil {
+			updated, err := tx.UpdateReferenceCounts(ctx, []int{upload.ID}, store.DependencyReferenceCountUpdateTypeAdd)
+			if err != nil {
 				return errors.Wrap(err, "store.UpdateReferenceCount")
 			}
+			traceLog(log.Int("updatedReferencingUploads", updated))
 
 			// Insert a companion record to this upload that will asynchronously trigger other workers to
 			// sync/create referenced dependency repositories and queue auto-index records for the monikers
@@ -240,8 +249,10 @@ func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, uplo
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, fn func(r io.Reader) error) error {
+func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, traceLog observation.TraceLogger, fn func(r io.Reader) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
+
+	traceLog(log.String("uploadFilename", uploadFilename))
 
 	// Pull raw uploaded data from bucket
 	rc, err := uploadStore.Get(ctx, uploadFilename)
@@ -268,7 +279,7 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans, traceLog observation.TraceLogger) (err error) {
 	// Upsert values used for documentation search that have high contention. We do this with the raw LSIF store
 	// instead of in the transaction below because the rows being upserted tend to have heavy contention.
 	repositoryNameID, languageNameID, err := lsifStore.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)
@@ -285,30 +296,53 @@ func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, re
 	if err := tx.WriteMeta(ctx, upload.ID, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := tx.WriteDocuments(ctx, upload.ID, groupedBundleData.Documents); err != nil {
+	count, err := tx.WriteDocuments(ctx, upload.ID, groupedBundleData.Documents)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks); err != nil {
+	traceLog(log.Uint32("numDocuments", count))
+
+	count, err = tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	if err := tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions); err != nil {
+	traceLog(log.Uint32("numResultChunks", count))
+
+	count, err = tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := tx.WriteReferences(ctx, upload.ID, groupedBundleData.References); err != nil {
+	traceLog(log.Uint32("numDefinitions", count))
+
+	count, err = tx.WriteReferences(ctx, upload.ID, groupedBundleData.References)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	if err := tx.WriteImplementations(ctx, upload.ID, groupedBundleData.Implementations); err != nil {
+	traceLog(log.Uint32("numReferences", count))
+
+	count, err = tx.WriteImplementations(ctx, upload.ID, groupedBundleData.Implementations)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteImplementations")
 	}
-	if err := tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages, repositoryNameID, languageNameID); err != nil {
+	traceLog(log.Uint32("numImplementations", count))
+
+	count, err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages, repositoryNameID, languageNameID)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
-	if err := tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo); err != nil {
+	traceLog(log.Uint32("numDocPages", count))
+
+	count, err = tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
 	}
-	if err := tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings); err != nil {
+	traceLog(log.Uint32("numDocPathInfo", count))
+
+	count, err = tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings)
+	if err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationMappings")
 	}
+	traceLog(log.Uint32("numDocMappings", count))
 
 	return nil
 }

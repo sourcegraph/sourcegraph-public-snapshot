@@ -780,7 +780,7 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 	// Before deleting the record, ensure that we decrease the number of existant references
 	// to all of this upload's dependencies. This also selects a new upload to canonically provide
 	// the same package as the deleted upload, if such an upload exists.
-	if err := tx.UpdateReferenceCounts(ctx, ids, DependencyReferenceCountUpdateTypeRemove); err != nil {
+	if _, err := tx.UpdateReferenceCounts(ctx, ids, DependencyReferenceCountUpdateTypeRemove); err != nil {
 		return err
 	}
 
@@ -1033,27 +1033,27 @@ var deltaMap = map[DependencyReferenceCountUpdateType]int{
 //
 // To keep reference counts consistent, this method should be called directly after insertion and directly
 // before deletion of each upload record.
-func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType DependencyReferenceCountUpdateType) (err error) {
+func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType DependencyReferenceCountUpdateType) (updated int, err error) {
 	ctx, endObservation := s.operations.updateReferenceCounts.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numIDs", len(ids)),
 		log.String("ids", intsToString(ids)),
 		log.Int("dependencyUpdateType", int(dependencyUpdateType)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer func() { endObservation(1, observation.Args{}) }()
 
 	if len(ids) == 0 {
-		return nil
+		return 0, nil
 	}
 
 	// Just in case
 	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
 		log15.Warn("Reference count operations are currently disabled")
-		return nil
+		return 0, nil
 	}
 
 	tx, err := s.transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -1064,18 +1064,20 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 		excludeCondition = sqlf.Sprintf("NOT (u.id = ANY (%s))", idArray)
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(
+	result, err := tx.ExecResult(ctx, sqlf.Sprintf(
 		updateReferenceCountsQuery,
 		idArray,
 		idArray,
 		excludeCondition,
 		idArray,
 		deltaMap[dependencyUpdateType],
-	)); err != nil {
-		return err
+	))
+	if err != nil {
+		return 0, err
 	}
 
-	return nil
+	affected, _ := result.RowsAffected()
+	return int(affected), nil
 }
 
 var updateReferenceCountsQuery = `
