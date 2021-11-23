@@ -159,7 +159,7 @@ func makePayload(size int) string {
 func testInsert(t testing.TB, db *sql.DB, expectedValues [][]interface{}) {
 	ctx := context.Background()
 
-	inserter := NewInserter(ctx, db, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
+	inserter := NewInserter(ctx, db, "batch_inserter_test", MaxNumPostgresParameters, "col1", "col2", "col3", "col4", "col5")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
