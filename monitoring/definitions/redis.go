@@ -29,8 +29,8 @@ func Redis() *monitoring.Container {
 							Description:   "redis-store availability",
 							Owner:         monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-store"}`,
-							DataMustExist: true,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
+							DataMustExist: false, // not deployed on docker-compose
 							Critical:      monitoring.Alert().Less(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
 								- Ensure redis-store is running
@@ -51,8 +51,9 @@ func Redis() *monitoring.Container {
 							Owner:         monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-cache"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
-							DataMustExist: true,
-							Critical:      monitoring.Alert().Less(1, nil).For(10 * time.Second),
+							DataMustExist: false, // not deployed on docker-compose
+
+							Critical: monitoring.Alert().Less(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
 								- Ensure redis-cache is running
 							`,
