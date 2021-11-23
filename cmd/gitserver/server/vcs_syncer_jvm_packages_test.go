@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -115,6 +117,17 @@ func (s JVMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string
 	assert.Nil(t, cmd.Run())
 }
 
+var maliciousPaths []string = []string{
+	// Absolute paths
+	"/sh", "/usr/bin/sh",
+	// Paths into .git which may trigger when git runs a hook
+	".git/blah", ".git/hooks/pre-commit",
+	// Relative paths which stray outside
+	"../foo/../bar", "../../../usr/bin/sh",
+}
+
+const harmlessPath = "src/harmless.java"
+
 func TestNoMaliciousFiles(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
@@ -136,9 +149,16 @@ func TestNoMaliciousFiles(t *testing.T) {
 	err = s.commitJar(ctx, reposource.MavenDependency{}, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
 	assert.NotNil(t, err)
 
-	files, err := os.ReadDir(extractPath)
+	dirEntries, err := os.ReadDir(extractPath)
+	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(files))
+	paths := map[string]int{}
+	for _, dirEntry := range dirEntries {
+		paths[dirEntry.Name()] = 0
+	}
+	if !reflect.DeepEqual(baseline, paths) {
+		t.Errorf("expected paths: %v\n   found paths:%v", baseline, paths)
+	}
 }
 
 func createMaliciousJar(t *testing.T, name string) {
@@ -148,17 +168,11 @@ func createMaliciousJar(t *testing.T, name string) {
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
-	_, err = writer.Create("/")
-	assert.Nil(t, err)
-	_, err = writer.Create("/hello/burger")
-	assert.Nil(t, err)
-	_, err = writer.Create("/hello/../../burger")
-	assert.Nil(t, err)
-	_, err = writer.Create("sample/burger")
-	assert.Nil(t, err)
-	_, err = writer.Create(".git/test")
-	assert.Nil(t, err)
-	_, err = writer.Create("../../../usr/bin/sh")
+	for _, filepath := range maliciousPaths {
+		_, err = writer.Create(filepath)
+		assert.Nil(t, err)
+	}
+	_, err = writer.Create(harmlessPath)
 	assert.Nil(t, err)
 }
 
