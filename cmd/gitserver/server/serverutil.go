@@ -190,9 +190,6 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
 
-	// Identify HTTP requests with a user agent.
-	cmd.Env = append(cmd.Env, "GIT_HTTP_USER_AGENT=Sourcegraph-Bot")
-
 	if tlsConf.SSLNoVerify {
 		cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
 	}
