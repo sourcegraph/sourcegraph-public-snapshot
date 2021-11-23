@@ -12,14 +12,14 @@ import (
 )
 
 type Monitor struct {
-	ID              int64
-	CreatedBy       int32
-	CreatedAt       time.Time
-	ChangedBy       int32
-	ChangedAt       time.Time
-	Description     string
-	Enabled         bool
-	NamespaceUserID int32
+	ID          int64
+	CreatedBy   int32
+	CreatedAt   time.Time
+	ChangedBy   int32
+	ChangedAt   time.Time
+	Description string
+	Enabled     bool
+	UserID      int32
 }
 
 // monitorColumns are the columns needed to fill out a Monitor.
@@ -135,15 +135,15 @@ func (s *codeMonitorStore) DeleteMonitor(ctx context.Context, monitorID int64) e
 }
 
 type ListMonitorsOpts struct {
-	NamespaceUserID *int32
-	After           *int64
-	First           *int
+	UserID *int32
+	After  *int64
+	First  *int
 }
 
 func (o ListMonitorsOpts) Conds() *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if o.NamespaceUserID != nil {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", *o.NamespaceUserID))
+	if o.UserID != nil {
+		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", *o.UserID))
 	}
 	if o.After != nil {
 		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
@@ -235,7 +235,7 @@ func scanMonitor(scanner dbutil.Scanner) (*Monitor, error) {
 		&m.ChangedAt,
 		&m.Description,
 		&m.Enabled,
-		&m.NamespaceUserID,
+		&m.UserID,
 	)
 	return m, err
 }

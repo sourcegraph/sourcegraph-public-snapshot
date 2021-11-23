@@ -161,7 +161,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 
 	// Search.
 	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery, m.NamespaceUserID)
+	results, err = search(ctx, newQuery, m.UserID)
 	if err != nil {
 		return err
 	}

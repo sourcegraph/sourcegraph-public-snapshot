@@ -67,9 +67,9 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	}
 
 	ms, err := r.store.ListMonitors(ctx, cm.ListMonitorsOpts{
-		NamespaceUserID: &userID,
-		First:           intPtr(int(newArgs.First)),
-		After:           intPtrToInt64Ptr(after),
+		UserID: &userID,
+		First:  intPtr(int(newArgs.First)),
+		After:  intPtrToInt64Ptr(after),
 	})
 	if err != nil {
 		return nil, err
@@ -516,7 +516,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner gra
 		return "", err
 	}
 
-	return graphqlbackend.MarshalUserID(monitor.NamespaceUserID), nil
+	return graphqlbackend.MarshalUserID(monitor.UserID), nil
 }
 
 //
@@ -582,7 +582,7 @@ func (m *monitor) Enabled() bool {
 }
 
 func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.NamespaceUserID)
+	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.UserID)
 	return n, err
 }
 
