@@ -13,12 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// TODO - test
-// List returns a set of executor activity records matching the given options.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-// (e.g., a site-admin).
-func (s *ExecutorStore) List(ctx context.Context, opts store.ExecutorStoreListOptions) ([]types.Executor, int, error) {
+func (s *ExecutorStore) List(ctx context.Context, opts store.ExecutorStoreListOptions) (_ []types.Executor, _ int, err error) {
+	return s.list(ctx, opts, timeutil.Now())
+}
+
+func (s *ExecutorStore) list(ctx context.Context, opts store.ExecutorStoreListOptions, now time.Time) (_ []types.Executor, _ int, err error) {
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -30,7 +29,7 @@ func (s *ExecutorStore) List(ctx context.Context, opts store.ExecutorStoreListOp
 		conds = append(conds, makeExecutorSearchCondition(opts.Query))
 	}
 	if opts.Active {
-		conds = append(conds, sqlf.Sprintf("NOW() - h.last_seen_at < '15 minutes'::interval"))
+		conds = append(conds, sqlf.Sprintf("%s - h.last_seen_at <= '15 minutes'::interval", now))
 	}
 
 	whereConditions := sqlf.Sprintf("TRUE")
@@ -66,11 +65,11 @@ SELECT
 	h.queue_name,
 	h.os,
 	h.architecture,
-	h.executor_version,
-	h.src_cli_version,
-	h.git_version,
 	h.docker_version,
+	h.executor_version,
+	h.git_version,
 	h.ignite_version,
+	h.src_cli_version,
 	h.first_seen_at,
 	h.last_seen_at
 FROM executor_heartbeats h
@@ -79,34 +78,6 @@ ORDER BY h.first_seen_at DESC, h.id
 LIMIT %s OFFSET %s
 `
 
-// makeExecutorSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an executor.
-func makeExecutorSearchCondition(term string) *sqlf.Query {
-	searchableColumns := []string{
-		"h.hostname",
-		"h.queue_name",
-		"h.os",
-		"h.architecture",
-		"h.executor_version",
-		"h.src_cli_version",
-		"h.git_version",
-		"h.docker_version",
-		"h.ignite_version",
-	}
-
-	var termConds []*sqlf.Query
-	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
-	}
-
-	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
-}
-
-// TODO - test
-// GetByID returns an executor activity record by identifier. If no such record exists, a
-// false-valued flag is returned.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-// (e.g., a site-admin).
 func (s *ExecutorStore) GetByID(ctx context.Context, id int) (types.Executor, bool, error) {
 	return scanFirstExecutor(s.db.Query(ctx, sqlf.Sprintf(executorStoreGetByIDQuery, id)))
 }
@@ -119,11 +90,11 @@ SELECT
 	h.queue_name,
 	h.os,
 	h.architecture,
-	h.executor_version,
-	h.src_cli_version,
-	h.git_version,
 	h.docker_version,
+	h.executor_version,
+	h.git_version,
 	h.ignite_version,
+	h.src_cli_version,
 	h.first_seen_at,
 	h.last_seen_at
 FROM executor_heartbeats h
@@ -131,47 +102,104 @@ WHERE h.id = %s
 `
 
 // Heartbeat updates or creates an executor activity record for a particular executor instance.
-func (s *ExecutorStore) Heartbeat(ctx context.Context, executor types.Executor) error {
-	return s.heartbeat(ctx, executor, timeutil.Now())
+func (s *ExecutorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
+	return s.upsertHeartbeat(ctx, executor, timeutil.Now())
 }
 
-// TODO - test
-func (s *ExecutorStore) heartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
+func (s *ExecutorStore) upsertHeartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
 	return s.db.Exec(ctx, sqlf.Sprintf(
-		executorStoryHeartbeatQuery,
+		executorStoreUpsertHeartbeatQuery,
+
+		// insert
 		executor.Hostname,
 		executor.QueueName,
 		executor.OS,
 		executor.Architecture,
-		executor.ExecutorVersion,
-		executor.SrcCliVersion,
-		executor.GitVersion,
 		executor.DockerVersion,
+		executor.ExecutorVersion,
+		executor.GitVersion,
 		executor.IgniteVersion,
+		executor.SrcCliVersion,
 		now,
 		now,
+
+		// update
+		executor.QueueName,
+		executor.OS,
+		executor.Architecture,
+		executor.DockerVersion,
+		executor.ExecutorVersion,
+		executor.GitVersion,
+		executor.IgniteVersion,
+		executor.SrcCliVersion,
 		now,
 	))
 }
 
-const executorStoryHeartbeatQuery = `
+const executorStoreUpsertHeartbeatQuery = `
 -- source: internal/database/executors.go:HeartbeatHeartbeat
 INSERT INTO executor_heartbeats (
 	hostname,
 	queue_name,
 	os,
 	architecture,
-	executor_version,
-	src_cli_version,
-	git_version,
 	docker_version,
+	executor_version,
+	git_version,
 	ignite_version,
+	src_cli_version,
 	first_seen_at,
 	last_seen_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (hostname) DO UPDATE SET last_seen_at = %s
+ON CONFLICT (hostname) DO UPDATE
+SET
+	queue_name = %s,
+	os = %s,
+	architecture = %s,
+	docker_version = %s,
+	executor_version = %s,
+	git_version = %s,
+	ignite_version = %s,
+	src_cli_version = %s,
+	last_seen_at = %s
 `
+
+func (s *ExecutorStore) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
+	return s.deleteInactiveHeartbeats(ctx, minAge, timeutil.Now())
+}
+
+func (s *ExecutorStore) deleteInactiveHeartbeats(ctx context.Context, minAge time.Duration, now time.Time) error {
+	return s.db.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInactiveHeartbeatsQuery, now, minAge/time.Second))
+}
+
+const executorStoreDeleteInactiveHeartbeatsQuery = `
+-- source: internal/database/executors.go:DeleteInactiveHeartbeats
+DELETE FROM executor_heartbeats
+WHERE %s - last_seen_at >= %s * interval '1 second'
+`
+
+// makeExecutorSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an executor.
+func makeExecutorSearchCondition(term string) *sqlf.Query {
+	searchableColumns := []string{
+		"h.hostname",
+		"h.queue_name",
+		"h.os",
+		"h.architecture",
+		"h.docker_version",
+		"h.executor_version",
+		"h.git_version",
+		"h.ignite_version",
+		"h.src_cli_version",
+	}
+
+	var termConds []*sqlf.Query
+	for _, column := range searchableColumns {
+		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
+	}
+
+	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
+}
 
 // scanExecutors reads executor objects from the given row object.
 func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err error) {
@@ -189,11 +217,11 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 			&executor.QueueName,
 			&executor.OS,
 			&executor.Architecture,
-			&executor.ExecutorVersion,
-			&executor.SrcCliVersion,
-			&executor.GitVersion,
 			&executor.DockerVersion,
+			&executor.ExecutorVersion,
+			&executor.GitVersion,
 			&executor.IgniteVersion,
+			&executor.SrcCliVersion,
 			&executor.FirstSeenAt,
 			&executor.LastSeenAt,
 		); err != nil {

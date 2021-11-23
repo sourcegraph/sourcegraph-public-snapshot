@@ -48,7 +48,7 @@ func (s *executorService) GetByID(ctx context.Context, gqlID graphql.ID) (types.
 }
 
 func (s *executorService) Heartbeat(ctx context.Context, executor types.Executor) error {
-	return s.store.Heartbeat(ctx, executor)
+	return s.store.UpsertHeartbeat(ctx, executor)
 }
 
 func unmarshalExecutorID(id graphql.ID) (executorID int64, err error) {

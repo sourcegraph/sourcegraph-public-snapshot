@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"sync"
 
+	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/store"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 )
@@ -131,7 +132,7 @@ func NewMockDB() *MockDB {
 			},
 		},
 		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: func() database.ExecutorStore {
+			defaultHook: func() executor.ExecutorStore {
 				return nil
 			},
 		},
@@ -859,15 +860,15 @@ func (c DBExecContextFuncCall) Results() []interface{} {
 // DBExecutorsFunc describes the behavior when the Executors method of the
 // parent MockDB instance is invoked.
 type DBExecutorsFunc struct {
-	defaultHook func() database.ExecutorStore
-	hooks       []func() database.ExecutorStore
+	defaultHook func() executor.ExecutorStore
+	hooks       []func() executor.ExecutorStore
 	history     []DBExecutorsFuncCall
 	mutex       sync.Mutex
 }
 
 // Executors delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Executors() database.ExecutorStore {
+func (m *MockDB) Executors() executor.ExecutorStore {
 	r0 := m.ExecutorsFunc.nextHook()()
 	m.ExecutorsFunc.appendCall(DBExecutorsFuncCall{r0})
 	return r0
@@ -875,7 +876,7 @@ func (m *MockDB) Executors() database.ExecutorStore {
 
 // SetDefaultHook sets function that is called when the Executors method of
 // the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBExecutorsFunc) SetDefaultHook(hook func() database.ExecutorStore) {
+func (f *DBExecutorsFunc) SetDefaultHook(hook func() executor.ExecutorStore) {
 	f.defaultHook = hook
 }
 
@@ -883,7 +884,7 @@ func (f *DBExecutorsFunc) SetDefaultHook(hook func() database.ExecutorStore) {
 // Executors method of the parent MockDB instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *DBExecutorsFunc) PushHook(hook func() database.ExecutorStore) {
+func (f *DBExecutorsFunc) PushHook(hook func() executor.ExecutorStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -891,21 +892,21 @@ func (f *DBExecutorsFunc) PushHook(hook func() database.ExecutorStore) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBExecutorsFunc) SetDefaultReturn(r0 database.ExecutorStore) {
-	f.SetDefaultHook(func() database.ExecutorStore {
+func (f *DBExecutorsFunc) SetDefaultReturn(r0 executor.ExecutorStore) {
+	f.SetDefaultHook(func() executor.ExecutorStore {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBExecutorsFunc) PushReturn(r0 database.ExecutorStore) {
-	f.PushHook(func() database.ExecutorStore {
+func (f *DBExecutorsFunc) PushReturn(r0 executor.ExecutorStore) {
+	f.PushHook(func() executor.ExecutorStore {
 		return r0
 	})
 }
 
-func (f *DBExecutorsFunc) nextHook() func() database.ExecutorStore {
+func (f *DBExecutorsFunc) nextHook() func() executor.ExecutorStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -940,7 +941,7 @@ func (f *DBExecutorsFunc) History() []DBExecutorsFuncCall {
 type DBExecutorsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 database.ExecutorStore
+	Result0 executor.ExecutorStore
 }
 
 // Args returns an interface slice containing the arguments of this
