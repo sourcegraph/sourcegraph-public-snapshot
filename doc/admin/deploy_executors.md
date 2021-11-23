@@ -64,11 +64,11 @@ The following are complete examples of provisioning _multiple_ executor types us
 
 ## Configuring auto scaling
 
-Auto scaling of executor instances can help having high concurrency of jobs while only paying for it when it's required. With auto scaling, you can scale down to 0 instances when no workloads exist, and dynamically scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
+Auto scaling of executor instances can help to increase concurrency of jobs, without paying for unused resources. With auto scaling, you can scale down to 0 instances when no workload exist and scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
 
-Using the variables [`min-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22max_replicas%22&patternType=literal), you can configure the minimum and maximum number of compute machines to be run at a given time. `min-replicas` must be `>= 0`.
+With the Terraform variables [`min-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22max_replicas%22&patternType=literal) in the Terraform modules linked to above, you can configure the minimum and maximum number of compute machines to be run at a given time. `min-replicas` must be `>= 0`.
 
-For auto scaling to work, you need a credential to set on the `worker` service. Therefor, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. Using them, you get properly configured credentials in the terraform outputs.
+For auto scaling to work, you need a credential to set on the `worker` service. Therefor, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. Using them, you get properly configured credentials in the Terraform outputs.
 
 ```terraform
 module "credentials" {
@@ -80,7 +80,7 @@ module "credentials" {
 }
 ```
 
-Will yield something like
+When applied, this will yield something like
 
 ```
 metric_writer_access_key_id = <THE_ACCESS_KEY_TO_CONFIGURE>
