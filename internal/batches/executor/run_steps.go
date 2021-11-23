@@ -73,11 +73,11 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		// Set the Outputs to the cached outputs
 		execResult.Outputs = opts.task.CachedResult.Outputs
 
-		startStep = opts.task.CachedResult.StepIndex + 1
+		lastStep := opts.task.CachedResult.StepIndex
 
 		// If we have cached results and don't need to execute any more steps,
 		// we can quit
-		if startStep == len(opts.task.Steps) {
+		if lastStep == len(opts.task.Steps)-1 {
 			changes, err := git.ChangesInDiff(opts.task.CachedResult.Diff)
 			if err != nil {
 				return execResult, nil, errors.Wrap(err, "parsing cached step diff")
@@ -90,7 +90,12 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			return execResult, stepResults, nil
 		}
 
-		opts.ui.SkippingStepsUpto(startStep)
+		startStep = lastStep + 1
+
+		opts.ui.SkippingStepsUpto(
+			// UI is 1-indexed.
+			startStep + 1,
+		)
 	}
 
 	for i := startStep; i < len(opts.task.Steps); i++ {
