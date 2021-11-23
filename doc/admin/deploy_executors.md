@@ -1,10 +1,14 @@
 # Deploying Sourcegraph executors
 
->NOTE: **Sourcegraph executors are currently experimental.** We're exploring this feature set. 
->Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
->with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
 
-Executors are an experimental service that can run resource-intensive tasks on behalf of the Sourcegraph instance, such as:
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+</aside>
+
+Executors provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
 - [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
 - [computing batch changes](../batch_changes/explanations/server_side.md)
