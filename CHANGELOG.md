@@ -19,6 +19,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.34.1
+
+### Added
+
+- For internal use only: Allow exec mode to read step cache files from the current working directory.
+
+### Fixed
+
+- For internal use only: Fix an off-by-one error in the JSON log UI.
+
 ## 3.34.0
 
 ### Added
