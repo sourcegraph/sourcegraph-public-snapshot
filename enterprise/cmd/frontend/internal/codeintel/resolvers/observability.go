@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -121,7 +120,7 @@ func createHoneyEvent(
 	observationArgs observation.Args,
 	err *error,
 	duration time.Duration,
-) *libhoney.Event {
+) honey.Event {
 	fields := map[string]interface{}{
 		"type":        name,
 		"duration_ms": duration.Milliseconds(),
@@ -130,13 +129,14 @@ func createHoneyEvent(
 	if err != nil && *err != nil {
 		fields["error"] = (*err).Error()
 	}
-	for key, value := range observationArgs.LogFieldMap() {
-		fields[key] = value
-	}
 	if traceID := trace.ID(ctx); traceID != "" {
 		fields["trace"] = trace.URL(traceID)
 		fields["traceID"] = traceID
 	}
 
-	return honey.EventWithFields("codeintel", fields)
+	event := honey.NewEventWithFields("codeintel", fields)
+
+	event.AddLogFields(observationArgs.LogFields)
+
+	return event
 }

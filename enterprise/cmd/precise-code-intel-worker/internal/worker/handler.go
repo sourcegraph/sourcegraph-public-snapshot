@@ -9,18 +9,17 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -34,8 +33,9 @@ type handler struct {
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
 	gitserverClient GitserverClient
-	enableBudget    bool
+	handleOp        *observation.Operation
 	budgetRemaining int64
+	enableBudget    bool
 }
 
 var (
@@ -47,8 +47,23 @@ var (
 // errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
 var errCommitDoesNotExist = errors.Errorf("commit does not exist")
 
-func (h *handler) Handle(ctx context.Context, record workerutil.Record) error {
-	_, err := h.handle(ctx, record.(store.Upload))
+func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+	upload := record.(store.Upload)
+
+	var requeued bool
+
+	ctx, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{
+			LogFields: append(
+				createLogFields(upload),
+				log.Bool("requeued", requeued),
+			),
+		})
+	}()
+
+	requeued, err = h.handle(ctx, upload)
+
 	return err
 }
 
@@ -84,13 +99,6 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
 func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued bool, err error) {
-	start := time.Now()
-	defer func() {
-		if honey.Enabled() {
-			_ = createHoneyEvent(ctx, upload, err, time.Since(start)).Send()
-		}
-	}()
-
 	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
 	if err != nil {
 		return false, errors.Wrap(err, "Repos.Get")
@@ -310,27 +318,18 @@ func isUniqueConstraintViolation(err error) bool {
 	return errors.As(err, &e) && e.Code == "23505"
 }
 
-func createHoneyEvent(ctx context.Context, upload store.Upload, err error, duration time.Duration) *libhoney.Event {
-	fields := map[string]interface{}{
-		"duration_ms":    duration.Milliseconds(),
-		"uploadID":       upload.ID,
-		"repositoryID":   upload.RepositoryID,
-		"repositoryName": upload.RepositoryName,
-		"commit":         upload.Commit,
-		"root":           upload.Root,
-		"indexer":        upload.Indexer,
+func createLogFields(upload store.Upload) []log.Field {
+	fields := []log.Field{
+		log.Int("uploadID", upload.ID),
+		log.Int("repositoryID", upload.RepositoryID),
+		log.String("commit", upload.Commit),
+		log.String("root", upload.Root),
+		log.String("indexer", upload.Indexer),
 	}
 
-	if err != nil {
-		fields["error"] = err.Error()
-	}
 	if upload.UploadSize != nil {
-		fields["uploadSize"] = upload.UploadSize
-	}
-	if traceID := trace.ID(ctx); traceID != "" {
-		fields["trace"] = trace.URL(traceID)
-		fields["traceID"] = traceID
+		fields = append(fields, log.Int64("uploadSize", *upload.UploadSize))
 	}
 
-	return honey.EventWithFields("codeintel-worker", fields)
+	return fields
 }

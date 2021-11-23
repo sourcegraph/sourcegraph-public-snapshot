@@ -299,7 +299,7 @@ func newOperations(observationContext *observation.Context) *operations {
 					if errors.Is(err, ErrNoResults) {
 						return observation.EmitForNone
 					}
-					return observation.EmitForAll
+					return observation.EmitForDefault
 				},
 			})
 		}
