@@ -228,13 +228,15 @@ describe('Search contexts', () => {
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
-        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
+        await driver.page.waitForSelector(
+            '[data-testid="repositories-config-button"] [data-testid="repositories-config-success"]'
+        )
 
         // Click create
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
-        await driver.page.waitForSelector('.search-contexts-list-page')
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
     test('Edit search context', async () => {
@@ -331,13 +333,15 @@ describe('Search contexts', () => {
 
         // Test configuration
         await driver.page.click('[data-testid="repositories-config-button"]')
-        await driver.page.waitForSelector('[data-testid="repositories-config-button"] .text-success')
+        await driver.page.waitForSelector(
+            '[data-testid="repositories-config-button"] [data-testid="repositories-config-success"]'
+        )
 
         // Click save
         await driver.page.click('[data-testid="search-context-submit-button"]')
 
         // Wait for submit request to finish and redirect to list page
-        await driver.page.waitForSelector('.search-contexts-list-page')
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
     test('Cannot edit search context without necessary permissions', async () => {
@@ -362,8 +366,10 @@ describe('Search contexts', () => {
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/context-1/edit')
 
-        await driver.page.waitForSelector('.alert-danger')
-        const errorText = await driver.page.evaluate(() => document.querySelector('.alert-danger')?.textContent)
+        await driver.page.waitForSelector('[data-testid="search-contexts-alert-danger"]')
+        const errorText = await driver.page.evaluate(
+            () => document.querySelector('[data-testid="search-contexts-alert-danger"]')?.textContent
+        )
         expect(errorText).toContain('You do not have sufficient permissions to edit this context.')
     })
 
@@ -414,7 +420,7 @@ describe('Search contexts', () => {
         await driver.page.click('[data-testid="confirm-delete-search-context"]')
 
         // Wait for delete request to finish and redirect to list page
-        await driver.page.waitForSelector('.search-contexts-list-page')
+        await driver.page.waitForSelector('[data-testid="search-contexts-list-page"]')
     })
 
     test('Infinite scrolling in dropdown menu', async () => {
