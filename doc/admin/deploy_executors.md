@@ -85,8 +85,12 @@ module "credentials" {
 When applied, this will yield something like
 
 ```
+# For AWS:
 metric_writer_access_key_id = <THE_ACCESS_KEY_TO_CONFIGURE>
 metric_writer_secret_key    = <THE_SECRET_KEY_TO_CONFIGURE>
+
+# For Google:
+metric_writer_credentials_file = <THE_CREDENTIALS_FILE_CONTENT>
 ```
 
 Use these credentials in the following way for the different cloud providers:
@@ -127,11 +131,75 @@ Next, you can test whether the number of executors rises and shrinks as load spi
 
 ## Configuring observability
 
-Sourcegraph ships with dashboards to display executor metrics. To populate these dashboards, the target Prometheus instance must be able to scrape the executor metrics endpoint.
+Sourcegraph ships with dashboards to display executor metrics. To populate these dashboards, the Prometheus instance instance bundled with your Sourcegraph deployment must be able to scrape the executor metrics endpoint. We highly encourage setting this up to help make
+informed decisions on scaling and to make debugging of issues easier.
+
+In order to set this up, we add additional scrape jobs to the prometheus instance to discover the running executor machines. To do so,
+we need to provide the prometheus instance with service account credentials to talk to the cloud providers to get the list of active
+compute instances. Therefore, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. As for auto scaling, using them you get properly configured credentials in the Terraform outputs.
+
+```terraform
+module "credentials" {
+  source  = "sourcegraph/executors/<cloud>//modules/credentials"
+  version = "<version>"
+
+  region          = <region>
+  resource_prefix = ""
+}
+```
+
+When applied, this will yield something like
+
+```
+# For AWS:
+instance_scraper_access_key_id     = <THE_ACCESS_KEY_TO_CONFIGURE>
+instance_scraper_access_secret_key = <THE_SECRET_KEY_TO_CONFIGURE>
+
+# For Google:
+instance_scraper_credentials_file = <THE_CREDENTIALS_FILE_CONTENT>
+```
+
+Use these credentials in the following way for the different cloud providers:
 
 ### Google
 
-The Prometheus configuration must add the following scraping job that uses [GCE service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#gce_sd_config):
+First, you have to add the credentials to the Prometheus container of your Sourcegraph deployment.
+In kubernetes deployments, this will look like the following:
+Mount the credentials file obtained from the `credentials` module, and point to it through an environment variable.
+First, create a secret called `prometheus-secrets` containing the credentials file content:
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: prometheus-secrets
+data:
+  GCP_ACCOUNT_JSON: <THE_CREDENTIALS_FILE_CONTENT>
+```
+
+Then, modify the Prometheus deployment manifest.
+
+```yaml
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /credentials/google_application_credentials.json
+      volumeMounts:
+        - mountPath: /credentials/google_application_credentials.json
+          name: credentials
+          subPath: google_application_credentials.json
+          readOnly: true
+    volumes:
+      - secret:
+          secretName: prometheus-secrets
+          items:
+          - key: GCP_ACCOUNT_JSON
+            path: google_application_credentials.json
+        name: credentials
+
+```
+
+Next, the Prometheus configuration must add the following scraping job that uses [GCE service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#gce_sd_config). Therefore, you can edit the Prometheus ConfigMap and modify the contents of the `prometheus.yml` file. Under [`scrape_configs:`](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@0938b6686f0c94d80e8331e36f5ddac4659027b1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L43:5) add the following and make sure to replace `{GCP_PROJECT}`, `{GCP_ZONE}` and `{INSTANCE_TAG}`. The `{INSTANCE_TAG}` value must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
 
 ```yaml
 - job_name: 'sourcegraph-executors'
@@ -183,11 +251,22 @@ The Prometheus configuration must add the following scraping job that uses [GCE 
   relabel_configs: *executor_relabel_config
 ```
 
-The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22instance_tag%22&patternType=literal).
+Then, restart your Prometheus instance. If you currently have any executors or docker registry mirrors running, you should start seeing metrics on the _Executors_ dashboard in Grafana. Alternatively, you can check if the executors can be scraped, by port-forwarding the Prometheus UI to your local machine and checkin in the UI.
 
 ### AWS
 
-The Prometheus configuration must add the following scraping job that uses [EC2 service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#ec2_sd_config).
+First, you have to add the credentials to the Prometheus container of your Sourcegraph deployment.
+This is done by setting the two secrets obtained from the `credentials` module as environment variables. In kubernetes deployments,
+this will look like the following:
+
+```yaml
+        - name: AWS_ACCESS_KEY_ID
+          value: <THE_ACCESS_KEY_TO_CONFIGURE>
+        - name: AWS_SECRET_ACCESS_KEY
+          value: <THE_SECRET_KEY_TO_CONFIGURE>
+```
+
+Next, the Prometheus configuration must add the following scraping job that uses [EC2 service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#ec2_sd_config). Therefore, you can edit the Prometheus ConfigMap and modify the contents of the `prometheus.yml` file. Under [`scrape_configs:`](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L43:5) add the following and make sure to replace `{AWS_REGION}` and `{INSTANCE_TAG}`. The `{INSTANCE_TAG}` value must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
 
 ```yaml
 - job_name: 'sourcegraph-executors'
@@ -239,4 +318,4 @@ The Prometheus configuration must add the following scraping job that uses [EC2 
   relabel_configs: *executor_relabel_config
 ```
 
-The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
+Then, restart your Prometheus instance. If you currently have any executors or docker registry mirrors running, you should start seeing metrics on the _Executors_ dashboard in Grafana. Alternatively, you can check if the executors can be scraped, by port-forwarding the Prometheus UI to your local machine and checkin in the UI.
