@@ -9,7 +9,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -52,7 +51,6 @@ func TestIntegration(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db := dbtest.NewFromDSN(t, *dsn)
-			dbconn.Global = db
 
 			store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelReadCommitted})
 
@@ -62,8 +60,6 @@ func TestIntegration(t *testing.T) {
 			store.Log = lg
 			store.Metrics = repos.NewStoreMetrics()
 			store.Tracer = trace.Tracer{Tracer: opentracing.GlobalTracer()}
-
-			t.Cleanup(func() { dbconn.Global = nil })
 
 			tc.test(store)(t)
 		})
