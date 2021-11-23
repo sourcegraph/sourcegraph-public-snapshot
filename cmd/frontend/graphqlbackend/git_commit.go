@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -51,7 +51,7 @@ type GitCommitResolver struct {
 
 	// commit should not be accessed directly since it might not be initialized.
 	// Use the resolver methods instead.
-	commit     *gitapi.Commit
+	commit     *gitdomain.Commit
 	commitOnce sync.Once
 	commitErr  error
 }
@@ -59,7 +59,7 @@ type GitCommitResolver struct {
 // NewGitCommitResolver returns a new CommitResulover. When commit is set to nil,
 // commit will be loaded lazily as needed by the resolver. Pass in a commit when
 // you have batch-loaded a bunch of them and already have them at hand.
-func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
+func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -70,7 +70,7 @@ func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.Commi
 	}
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitapi.Commit, error) {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
 	r.commitOnce.Do(func() {
 		if r.commit != nil {
 			return

@@ -12,25 +12,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
 	db := dbmock.NewMockDB()
 
-	commit := &gitapi.Commit{
+	commit := &gitdomain.Commit{
 		ID:      "c1",
 		Message: "subject: Changes things\nBody of changes",
 		Parents: []api.CommitID{"p1", "p2"},
-		Author: gitapi.Signature{
+		Author: gitdomain.Signature{
 			Name:  "Bob",
 			Email: "bob@alice.com",
 			Date:  time.Now(),
 		},
-		Committer: &gitapi.Signature{
+		Committer: &gitdomain.Signature{
 			Name:  "Alice",
 			Email: "alice@bob.com",
 			Date:  time.Now(),
@@ -38,7 +38,7 @@ func TestGitCommitResolver(t *testing.T) {
 	}
 
 	t.Run("Lazy loading", func(t *testing.T) {
-		git.Mocks.GetCommit = func(api.CommitID) (*gitapi.Commit, error) {
+		git.Mocks.GetCommit = func(api.CommitID) (*gitdomain.Commit, error) {
 			return commit, nil
 		}
 		t.Cleanup(func() {
@@ -128,7 +128,7 @@ func TestGitCommitFileNames(t *testing.T) {
 		assert.Equal(t, exampleCommitSHA1, rev)
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitapi.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 	git.Mocks.LsFiles = func(repo api.RepoName, commit api.CommitID) ([]string, error) {
 		return []string{"a", "b"}, nil
 	}

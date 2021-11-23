@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -15,14 +14,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type CommitSearch struct {
@@ -325,19 +325,19 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 	}
 
 	return &result.CommitMatch{
-		Commit: gitapi.Commit{
+		Commit: gitdomain.Commit{
 			ID: in.Oid,
-			Author: gitapi.Signature{
+			Author: gitdomain.Signature{
 				Name:  in.Author.Name,
 				Email: in.Author.Email,
 				Date:  in.Author.Date,
 			},
-			Committer: &gitapi.Signature{
+			Committer: &gitdomain.Signature{
 				Name:  in.Committer.Name,
 				Email: in.Committer.Email,
 				Date:  in.Committer.Date,
 			},
-			Message: gitapi.Message(in.Message.Content),
+			Message: gitdomain.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
 		Repo:           repo,
