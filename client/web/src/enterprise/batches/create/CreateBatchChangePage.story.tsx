@@ -10,7 +10,6 @@ import {
 import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
-import styles from './NewCreateBatchChangePage.module.scss'
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
@@ -41,7 +40,7 @@ const FIXTURE_USER: SettingsUserSubject = {
 add('experimental execution enabled', () => (
     <WebStory>
         {props => (
-            <div className={styles.storybookContainer}>
+            <div style={{ height: '95vh', width: '100%' }}>
                 <CreateBatchChangePage
                     headingElement="h1"
                     {...props}
