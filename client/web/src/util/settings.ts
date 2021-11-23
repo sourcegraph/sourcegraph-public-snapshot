@@ -10,7 +10,7 @@ import { parseSearchURLPatternType } from '../search'
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
-    id: window.context.siteGQLID,
+    id: window.context?.siteGQLID ?? '',
     viewerCanAdminister: false,
 }
 

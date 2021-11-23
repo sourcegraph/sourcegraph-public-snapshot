@@ -13,6 +13,7 @@ import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared
 
 import { SearchPatternType } from '../graphql-operations'
 import { ThemePreference } from '../stores/themeState'
+import { useGlobalStore } from '../stores/global'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -33,8 +34,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     parsedSearchQuery: 'r:golang/oauth2 test f:travis',
     patternType: SearchPatternType.literal,
     setPatternType: () => undefined,
-    caseSensitive: false,
-    setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
@@ -66,6 +65,9 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 describe('GlobalNavbar', () => {
     setLinkComponent(({ children, ...props }) => <a {...props}>{children}</a>)
     afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
+    beforeEach(() => {
+        useGlobalStore.setState({ searchCaseSensitivity: false })
+    })
 
     test('default', () => {
         const { asFragment } = render(

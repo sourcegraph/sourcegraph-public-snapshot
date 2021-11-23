@@ -13,6 +13,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { SearchPatternType } from '../../graphql-operations'
 import { ThemePreference } from '../../stores/themeState'
+import { useGlobalStore } from '../../stores/global'
 import { authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'
@@ -53,8 +54,6 @@ describe('SearchPage', () => {
         parsedSearchQuery: 'r:golang/oauth2 test f:travis',
         patternType: SearchPatternType.literal,
         setPatternType: () => undefined,
-        caseSensitive: false,
-        setCaseSensitivity: () => undefined,
         platformContext: {} as any,
         keyboardShortcuts: [],
         searchContextsEnabled: true,
@@ -77,6 +76,10 @@ describe('SearchPage', () => {
         featureFlags: new Map(),
         extensionViews: () => null,
     }
+
+    beforeEach(() => {
+        useGlobalStore.setState({ searchCaseSensitivity: false })
+    })
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container

@@ -52,7 +52,6 @@ import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
     PatternTypeProps,
-    CaseSensitivityProps,
     OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
@@ -64,6 +63,7 @@ import {
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useThemeProps } from './theme'
+import { useGlobalStore } from './stores/global'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -81,7 +81,6 @@ export interface LayoutProps
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
@@ -146,16 +145,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         history,
         parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
-        caseSensitive: currentCaseSensitive,
         selectedSearchContextSpec,
         location,
         setParsedSearchQuery,
         setPatternType,
-        setCaseSensitivity,
         setSelectedSearchContextSpec,
     } = props
 
-    const { query = '', patternType, caseSensitive } = useMemo(() => parseSearchURL(location.search), [location.search])
+    const setQueryStateFromURL = useGlobalStore(state => state.setQueryStateFromURL)
+    useEffect(() => setQueryStateFromURL(location.search), [setQueryStateFromURL, location.search])
+
+    const { query = '', patternType } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
@@ -170,24 +170,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 setPatternType(patternType)
             }
 
-            if (caseSensitive !== currentCaseSensitive) {
-                setCaseSensitivity(caseSensitive)
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
         }
     }, [
         history,
-        caseSensitive,
-        currentCaseSensitive,
         currentPatternType,
         currentQuery,
         selectedSearchContextSpec,
         patternType,
         query,
-        setCaseSensitivity,
         setParsedSearchQuery,
         setPatternType,
         setSelectedSearchContextSpec,

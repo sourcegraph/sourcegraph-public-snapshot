@@ -1,6 +1,7 @@
 import * as H from 'history'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Form } from 'reactstrap'
+import shallow from 'zustand/shallow'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -10,15 +11,16 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import {
     PatternTypeProps,
-    CaseSensitivityProps,
     OnboardingTourProps,
     ParsedSearchQueryProps,
     SearchContextInputProps,
+    CaseSensitivityProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
+import { GlobalStore, useGlobalStore } from '../../stores/global'
 import { ThemePreferenceProps } from '../../theme'
 import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
@@ -33,7 +35,6 @@ interface Props
         ThemePreferenceProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps,
         KeyboardShortcutsProps,
         TelemetryProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
@@ -54,11 +55,17 @@ interface Props
     autoFocus?: boolean
 }
 
+const queryStateSelector = (state: GlobalStore): CaseSensitivityProps => ({
+    caseSensitive: state.searchCaseSensitivity,
+    setCaseSensitivity: state.setSearchCaseSensitivity,
+})
+
 export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) => {
     /** The value entered by the user in the query input */
     const [userQueryState, setUserQueryState] = useState({
         query: props.queryPrefix ? props.queryPrefix : '',
     })
+    const { caseSensitive, setCaseSensitivity } = useGlobalStore(queryStateSelector, shallow)
 
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })
@@ -97,7 +104,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     query,
                     history: props.history,
                     patternType: props.patternType,
-                    caseSensitive: props.caseSensitive,
+                    caseSensitive,
                     activation: props.activation,
                     selectedSearchContextSpec: props.selectedSearchContextSpec,
                     ...parameters,
@@ -107,7 +114,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         [
             props.history,
             props.patternType,
-            props.caseSensitive,
+            caseSensitive,
             props.activation,
             props.selectedSearchContextSpec,
             props.hiddenQueryPrefix,
@@ -133,6 +140,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
+                        caseSensitive={caseSensitive}
+                        setCaseSensitivity={setCaseSensitivity}
                         submitSearchOnToggle={submitSearchOnChange}
                         queryState={userQueryState}
                         onChange={setUserQueryState}
