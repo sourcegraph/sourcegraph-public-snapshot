@@ -17,7 +17,7 @@ import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import helloWorldSample from './examples/hello-world.batch.yaml'
+import helloWorldSample from './library/hello-world.batch.yaml'
 import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { useBatchSpecCode } from './useBatchSpecCode'
