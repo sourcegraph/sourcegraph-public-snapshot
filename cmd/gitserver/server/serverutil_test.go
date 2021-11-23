@@ -16,6 +16,7 @@ import (
 func TestConfigureRemoteGitCommand(t *testing.T) {
 	expectedEnv := []string{
 		"GIT_ASKPASS=true",
+		"GIT_HTTP_USER_AGENT=Sourcegraph-Bot",
 		"GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30",
 	}
 	tests := []struct {
