@@ -1151,6 +1151,8 @@ WHERE
 	(
 		repo.stars >= %s
 		OR
+		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
+		OR
 		repo.id IN (
 			SELECT
 				repo_id
