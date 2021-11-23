@@ -20,8 +20,13 @@ func NewExecutorResolver(executor Executor) *ExecutorResolver {
 func (e *ExecutorResolver) ID() graphql.ID {
 	return relay.MarshalID("Executor", (int64(e.executor.ID)))
 }
-func (e *ExecutorResolver) Hostname() string        { return e.executor.Hostname }
-func (e *ExecutorResolver) QueueName() string       { return e.executor.QueueName }
+func (e *ExecutorResolver) Hostname() string  { return e.executor.Hostname }
+func (e *ExecutorResolver) QueueName() string { return e.executor.QueueName }
+func (e *ExecutorResolver) Active() bool {
+	// TODO: Read the value of the executor worker heartbeat interval in here.
+	heartbeatInterval := 5 * time.Second
+	return time.Since(e.executor.LastSeenAt) <= 3*heartbeatInterval
+}
 func (e *ExecutorResolver) Os() string              { return e.executor.OS }
 func (e *ExecutorResolver) Architecture() string    { return e.executor.Architecture }
 func (e *ExecutorResolver) ExecutorVersion() string { return e.executor.ExecutorVersion }
