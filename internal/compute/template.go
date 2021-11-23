@@ -6,6 +6,8 @@ import (
 	"strings"
 	"text/template"
 	"unicode/utf8"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // Template is just a list of Atom, where an Atom is either a Variable or a Constant string.
@@ -179,12 +181,24 @@ func toJSONString(template *Template) string {
 	return string(json)
 }
 
+type MetaEnvironment struct {
+	Repo    string
+	Path    string
+	Content string
+	Commit  string
+	Author  string
+	Date    string
+	Email   string
+}
+
 var builtinVariables = []string{
 	"repo",
 	"path",
 	"content",
 	"commit",
 	"author",
+	"date",
+	"email",
 }
 
 func isBuiltinVariable(str string) bool {
@@ -220,7 +234,7 @@ func templatize(pattern string) (string, error) {
 	return strings.Join(templatized, ""), nil
 }
 
-func substituteMetaVariables(pattern string, value interface{}) (string, error) {
+func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, error) {
 	templated, err := templatize(pattern)
 	if err != nil {
 		return "", err
@@ -230,8 +244,38 @@ func substituteMetaVariables(pattern string, value interface{}) (string, error) 
 		return "", err
 	}
 	var result bytes.Buffer
-	if err := t.Execute(&result, value); err != nil {
+	if err := t.Execute(&result, env); err != nil {
 		return "", err
 	}
 	return result.String(), nil
+}
+
+// NewMetaEnvironment maps results to a metavariable:value environment where
+// metavariables can be referenced and substituted for in an output template.
+func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
+	switch m := r.(type) {
+	case *result.FileMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Path:    m.Path,
+			Commit:  string(m.CommitID),
+			Content: content,
+		}
+	case *result.CommitMatch:
+		var content string
+		if m.DiffPreview != nil {
+			content = m.DiffPreview.Value
+		} else {
+			content = string(m.Commit.Message)
+		}
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.Commit.ID),
+			Author:  m.Commit.Author.Name,
+			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Email:   m.Commit.Author.Email,
+			Content: content,
+		}
+	}
+	return &MetaEnvironment{}
 }

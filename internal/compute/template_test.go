@@ -83,8 +83,8 @@ func Test_templatize(t *testing.T) {
 }
 
 func Test_substituteMetaVariables(t *testing.T) {
-	test := func(input string, value interface{}) string {
-		t, err := substituteMetaVariables(input, value)
+	test := func(input string, env *MetaEnvironment) string {
+		t, err := substituteMetaVariables(input, env)
 		if err != nil {
 			return fmt.Sprintf("Error: %s", err)
 		}
@@ -96,6 +96,6 @@ func Test_substituteMetaVariables(t *testing.T) {
 		"artifcats: $1 $foo hi").
 		Equal(t, test(
 			"artifcats: $1 $foo $author",
-			struct{ Author string }{Author: "hi"},
+			&MetaEnvironment{Author: "hi"},
 		))
 }
