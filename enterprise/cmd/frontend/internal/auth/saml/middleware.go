@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // All SAML endpoints are under this path prefix.
@@ -26,7 +25,7 @@ const authPrefix = auth.AuthURLPrefix + "/saml"
 // enable the login flow an requiring login for all other endpoints.
 //
 // 🚨 SECURITY
-func Middleware(db dbutil.DB) *auth.Middleware {
+func Middleware(db database.DB) *auth.Middleware {
 	return &auth.Middleware{
 		API: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +44,7 @@ func Middleware(db dbutil.DB) *auth.Middleware {
 //
 // It uses github.com/russelhaering/gosaml2 and (unlike authHandler1) makes it possible to support
 // multiple auth providers with SAML and expose more SAML functionality.
-func authHandler(db dbutil.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
+func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Delegate to SAML ACS and metadata endpoint handlers.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
 		samlSPHandler(db)(w, r)
@@ -73,7 +72,7 @@ func authHandler(db dbutil.DB, w http.ResponseWriter, r *http.Request, next http
 	next.ServeHTTP(w, r)
 }
 
-func samlSPHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestPath := strings.TrimPrefix(r.URL.Path, authPrefix)
 

@@ -6,13 +6,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const PkgName = "gitlaboauth"
 
-func Init(db dbutil.DB) {
+func Init(db database.DB) {
 	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		_, problems := parseConfig(cfg, db)
 		return problems
@@ -33,7 +33,7 @@ func Init(db dbutil.DB) {
 	}()
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier, db dbutil.DB) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
+func parseConfig(cfg conftypes.SiteConfigQuerier, db database.DB) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
