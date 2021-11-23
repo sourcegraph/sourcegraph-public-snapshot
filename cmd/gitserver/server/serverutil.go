@@ -190,6 +190,10 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	// And set a timeout to avoid indefinite hangs if the server is unreachable.
 	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
 
+	// Identify HTTP requests with a user agent. Please keep the git/ prefix because GitHub breaks the protocol v2
+	// negotiation of clone URLs without a `.git` suffix (which we use) without it. Don't ask.
+	cmd.Env = append(cmd.Env, "GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot")
+
 	if tlsConf.SSLNoVerify {
 		cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
 	}
