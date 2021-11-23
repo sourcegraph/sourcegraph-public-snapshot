@@ -18,6 +18,7 @@ type DB interface {
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
+	Conf() ConfStore
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
@@ -87,6 +88,10 @@ func (d *db) AccessTokens() AccessTokenStore {
 
 func (d *db) Authz() AuthzStore {
 	return AuthzWith(d.Store)
+}
+
+func (d *db) Conf() ConfStore {
+	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
 }
 
 func (d *db) EventLogs() EventLogStore {
