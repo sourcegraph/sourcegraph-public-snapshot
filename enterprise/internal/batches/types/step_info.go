@@ -69,7 +69,7 @@ func ParseLogLines(entry workerutil.ExecutionLogEntry, lines []*batcheslib.LogEv
 		switch m := l.Metadata.(type) {
 		case *batcheslib.TaskSkippingStepsMetadata:
 			// Set all steps up until i as skipped.
-			for i := 1; i <= m.StartStep; i++ {
+			for i := 1; i < m.StartStep; i++ {
 				setSafe(i, func(si *StepInfo) {
 					si.Skipped = true
 				})
