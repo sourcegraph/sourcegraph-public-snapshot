@@ -48,6 +48,8 @@ func NewConfig(now time.Time) Config {
 		commit = os.Getenv("BUILDKITE_COMMIT")
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
+		// evaluates what type of pipeline run this is
+		runType = computeRunType(tag, branch)
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 	)
@@ -64,8 +66,8 @@ func NewConfig(now time.Time) Config {
 	var changedFiles []string
 	diffCommand := []string{"diff", "--name-only"}
 	if commit != "" {
-		if branch == "main" {
-			// On main, just look at the latest commit.
+		if runType.Is(MainBranch) {
+			// We run builds on every commit in main, so on main, just look at the diff of the current commit.
 			diffCommand = append(diffCommand, "@^")
 		} else {
 			diffCommand = append(diffCommand, "origin/main..."+commit)
@@ -80,9 +82,6 @@ func NewConfig(now time.Time) Config {
 	} else {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
-
-	// evaluates what type of pipeline run this is
-	runType := computeRunType(tag, branch)
 
 	// special tag adjustments based on run type
 	switch {
