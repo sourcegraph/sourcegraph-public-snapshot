@@ -5,7 +5,7 @@ import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription
 import { distinctUntilKeyChanged, filter, first, map, switchMap, tap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
+import { findPositionsFromEvents } from '@sourcegraph/shared/src/codeintellify/src'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'

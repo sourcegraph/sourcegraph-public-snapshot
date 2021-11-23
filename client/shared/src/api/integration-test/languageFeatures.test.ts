@@ -3,7 +3,7 @@ import { asyncScheduler, Observable, of } from 'rxjs'
 import { observeOn, take, toArray, map, first } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
 

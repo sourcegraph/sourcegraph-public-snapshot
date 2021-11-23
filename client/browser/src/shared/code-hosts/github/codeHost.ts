@@ -4,7 +4,7 @@ import { defer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/shared/src/codeintellify/src'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/theme'

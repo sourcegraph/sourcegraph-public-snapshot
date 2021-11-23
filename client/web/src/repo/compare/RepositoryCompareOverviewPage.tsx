@@ -3,7 +3,7 @@ import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import { Hoverifier } from '@sourcegraph/codeintellify'
+import { Hoverifier } from '@sourcegraph/shared/src/codeintellify/src'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'

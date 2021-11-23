@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useEffect } from 'react'
 import { Subject } from 'rxjs'
 import { repeatWhen, withLatestFrom, filter, map, delay } from 'rxjs/operators'
 
-import { createHoverifier } from '@sourcegraph/codeintellify'
+import { createHoverifier } from '@sourcegraph/shared/src/codeintellify/src'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

@@ -3,7 +3,7 @@ import { isObject } from 'lodash'
 import { NextObserver, Observable, Subscribable, Subscription } from 'rxjs'
 import { InputBoxOptions } from 'sourcegraph'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/src'
 
 import { SettingsEdit } from '../api/client/services/settings'
 import { ExecutableExtension } from '../api/extension/activation'

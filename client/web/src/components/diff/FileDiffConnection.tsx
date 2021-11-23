@@ -4,7 +4,7 @@ import { concatMap, distinctUntilChanged, filter, map, mapTo, switchMap } from '
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 import { Omit } from 'utility-types'
 
-import { Hoverifier } from '@sourcegraph/codeintellify'
+import { Hoverifier } from '@sourcegraph/shared/src/codeintellify/src'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { TextDocumentData, ViewerData, ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'

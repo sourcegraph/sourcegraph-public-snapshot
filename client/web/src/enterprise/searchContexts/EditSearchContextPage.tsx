@@ -4,7 +4,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/src/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import {
     Scalars,

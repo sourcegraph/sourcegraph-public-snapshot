@@ -5,7 +5,7 @@ import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import React, { useState, useCallback, useEffect } from 'react'
 
-import { Hoverifier } from '@sourcegraph/codeintellify'
+import { Hoverifier } from '@sourcegraph/shared/src/codeintellify/src'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

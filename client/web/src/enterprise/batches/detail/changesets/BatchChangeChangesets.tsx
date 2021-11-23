@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo, useEffect, useContext } from 're
 import { Subject } from 'rxjs'
 import { withLatestFrom, map, filter } from 'rxjs/operators'
 
-import { createHoverifier } from '@sourcegraph/codeintellify'
+import { createHoverifier } from '@sourcegraph/shared/src/codeintellify/src'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
