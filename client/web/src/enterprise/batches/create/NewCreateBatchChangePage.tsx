@@ -18,6 +18,7 @@ import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import helloWorldSample from './library/hello-world.batch.yaml'
+import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { useBatchSpecCode } from './useBatchSpecCode'
@@ -211,6 +212,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                 </div>
             </div>
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
+                <LibraryPane onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <MonacoBatchSpecEditor
                         isLightTheme={isLightTheme}

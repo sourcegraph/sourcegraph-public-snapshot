@@ -10,7 +10,6 @@ import {
 import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
-
 import styles from './NewCreateBatchChangePage.module.scss'
 
 const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecorator(story => (
