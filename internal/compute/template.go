@@ -262,12 +262,6 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Content: content,
 		}
 	case *result.CommitMatch:
-		var content string
-		if m.DiffPreview != nil {
-			content = m.DiffPreview.Value
-		} else {
-			content = string(m.Commit.Message)
-		}
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),

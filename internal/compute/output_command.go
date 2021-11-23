@@ -53,14 +53,39 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
+func resultContent(ctx context.Context, r result.Match) (string, bool, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0)
+		contentBytes, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0)
 		if err != nil {
-			return nil, err
+			return "", false, err
 		}
-		return output(ctx, string(content), c.MatchPattern, c.OutputPattern, c.Separator)
+		return string(contentBytes), true, nil
+	case *result.CommitMatch:
+		var content string
+		if m.DiffPreview != nil {
+			content = m.DiffPreview.Value
+		} else {
+			content = string(m.Commit.Message)
+		}
+		return content, true, nil
+	default:
+		return "", false, nil
 	}
-	return nil, nil
+}
+
+func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
+	content, ok, err := resultContent(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	env := NewMetaEnvironment(r, content)
+	outputPattern, err := substituteMetaVariables(c.OutputPattern, env)
+	if err != nil {
+		return nil, err
+	}
+	return output(ctx, content, c.MatchPattern, outputPattern, c.Separator)
 }
