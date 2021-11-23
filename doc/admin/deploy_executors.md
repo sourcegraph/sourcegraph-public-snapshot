@@ -1,10 +1,17 @@
 # Deploying Sourcegraph executors
 
->NOTE: **Sourcegraph executors are currently experimental.** We're exploring this feature set. 
->Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
->with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
 
-Executors are an experimental service that powers automatically indexing a repository for precise code intelligence.
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+</aside>
+
+Executors provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
+
+- [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
+- [computing batch changes](../batch_changes/explanations/server_side.md)
 
 ## Installation
 
@@ -39,7 +46,9 @@ Additional values may need to be supplied for a specific cloud provider. Refer t
 
 To deploy executor compute resources defined in the Terraform file above, simply run `terraform apply`.
 
-<!-- TODO: Write docs on how to validate it's up -->
+If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
+
+![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
 
 ### Examples
 
@@ -55,27 +64,66 @@ The following are complete examples of provisioning _multiple_ executor types us
 
 ## Configuring auto scaling
 
+Auto scaling of executor instances can help to increase concurrency of jobs, without paying for unused resources. With auto scaling, you can scale down to 0 instances when no workload exist and scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
+
+Auto scaling makes use of the auto-scaling capabilities of the respective cloud provider (AutoScalingGroups on AWS and Instance Groups on GCP). Sourcegraph's `worker` service publishes a scaling metric (that is, the number of jobs in queue) to the cloud providers. Then, based on that reported value, the auto scalers add and remove compute resources to match the required amount of compute.
+
+With the Terraform variables [`min-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22max_replicas%22&patternType=literal) in the Terraform modules linked to above, you can configure the minimum and maximum number of compute machines to be run at a given time. `min-replicas` must be `>= 0`.
+
+For auto scaling to work, the Sourcegraph instance (its `worker` service, specifically) needs to be configured to have credentials to publish a scaling metric to the cloud provider used. Therefore, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. Using them, you get properly configured credentials in the Terraform outputs.
+
+```terraform
+module "credentials" {
+  source  = "sourcegraph/executors/<cloud>//modules/credentials"
+  version = "<version>"
+
+  region          = <region>
+  resource_prefix = ""
+}
+```
+
+When applied, this will yield something like
+
+```
+metric_writer_access_key_id = <THE_ACCESS_KEY_TO_CONFIGURE>
+metric_writer_secret_key    = <THE_SECRET_KEY_TO_CONFIGURE>
+```
+
+Use these credentials in the following way for the different cloud providers:
+
 ### Google
 
-The GCE auto-scaling groups configured by the Sourcegraph Terraform module to respond to changes in metric values written to Cloud Monitoring. The target Sourcegraph instance is expected to continuously write these values.
+The GCE auto-scaling groups configured by the Sourcegraph Terraform module respond to changes in metric values written to Cloud Monitoring. The target Sourcegraph instance is expected to continuously write these values.
 
-To write the metric to Cloud Monitoring, the `worker` service must define the following environment variables:
+To write the scaling metric to Cloud Monitoring, the `worker` service must have defined the following environment variables:
 
-- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
+- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use the same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
 - `EXECUTOR_METRIC_GCP_PROJECT_ID`
 - `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE`
 
 ### AWS
 
-The EC2 auto-scaling groups configured by the Sourcegraph Terraform module to respond to changes in metric values written to CloudWatch. The target Sourcegraph instance is expected to continuously write these values.
+The EC2 auto-scaling groups configured by the Sourcegraph Terraform module respond to changes in metric values written to CloudWatch. The target Sourcegraph instance is expected to continuously write these values.
 
-To write the metric to CloudWatch, the `worker` service must define the following environment variables:
+To write the scaling metric to CloudWatch, the `worker` service must have defined the following environment variables:
 
-- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
+- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use the same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
 - `EXECUTOR_METRIC_AWS_NAMESPACE`: Must be set to `sourcegraph-executor`
 - `EXECUTOR_METRIC_AWS_REGION`
 - `EXECUTOR_METRIC_AWS_ACCESS_KEY_ID`
 - `EXECUTOR_METRIC_AWS_SECRET_ACCESS_KEY`
+
+### Testing auto scaling
+
+Once these are set, and the worker service has been restarted, you should be able to find the scaling metrics in your cloud providers dashboards.
+
+To test if the metric is correctly reported into the Cloud provider:
+
+- On Google Cloud, this can be found in the Metrics explorer. Select Resource type = "Global" and then Metric = "custom/executors/queue/size". You should see some values reported here, 0 is also an indicator that it works correct.
+
+- On AWS, this can be found in the CloudWatch metrics section. Under "All metrics", select the namespace "sourcegraph-executor" and then the metric "environment, queueName". Make sure there are entries returned.
+
+Next, you can test whether the number of executors rises and shrinks as load spikes occur. Keep in mind that auto-scaling is not a real-time operation on most cloud providers and usually takes a short moment and can have some delays between the metric going down and the desired machine count adjusting.
 
 ## Configuring observability
 

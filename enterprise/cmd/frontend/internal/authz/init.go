@@ -33,7 +33,7 @@ import (
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db dbutil.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ExternalServices = edb.NewExternalServicesStore
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)
@@ -134,7 +134,7 @@ func Init(ctx context.Context, db dbutil.DB, _ conftypes.UnifiedWatchable, outOf
 			}
 
 			siteadminOrHandler := func(handler func()) {
-				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), database.NewDB(db))
+				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
 				if err == nil {
 					// User is site admin, let them proceed.
 					next.ServeHTTP(w, r)

@@ -13,7 +13,7 @@ import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPromp
 import { CodeInsightsIcon } from '../../../components'
 import { flipRightPosition } from '../../../components/context-menu/utils'
 import { Popover } from '../../../components/popover/Popover'
-import { InsightsDashboardType } from '../../../core/types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../../../core/types/dashboard/virtual-dashboard'
 
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 import styles from './DashboardPage.module.scss'
@@ -46,7 +46,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
     if (!dashboardID) {
         // In case if url doesn't have a dashboard id we should fallback on
         // built-in "All insights" dashboard
-        return <Redirect to={`${url}/${InsightsDashboardType.All}`} />
+        return <Redirect to={`${url}/${ALL_INSIGHTS_DASHBOARD_ID}`} />
     }
 
     return (

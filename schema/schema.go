@@ -571,12 +571,12 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
-	// EnableSubRepoPermissions description: Enables sub-repo permission checking
-	EnableSubRepoPermissions bool `json:"enableSubRepoPermissions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
+	// Pagure description: Allow adding Pagure code host connections
+	Pagure string `json:"pagure,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
 	// Ranking description: Experimental search result ranking options.
@@ -588,7 +588,8 @@ type ExperimentalFeatures struct {
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
-	StructuralSearch string `json:"structuralSearch,omitempty"`
+	StructuralSearch   string              `json:"structuralSearch,omitempty"`
+	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
 	// VersionContexts description: DEPRECATED: Use search contexts instead.
@@ -621,7 +622,7 @@ type ExternalIdentity struct {
 // FusionClient description: Configuration for the experimental p4-fusion client
 type FusionClient struct {
 	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled"`
 	// IncludeBinaries description: Whether to include binary files
 	IncludeBinaries bool `json:"includeBinaries,omitempty"`
 	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
@@ -1189,6 +1190,32 @@ type Overrides struct {
 	Limit interface{} `json:"limit,omitempty"`
 }
 
+// PagureConnection description: Configuration for a connection to Pagure.
+type PagureConnection struct {
+	// Forks description: If true, it includes forks in the returned projects.
+	Forks bool `json:"forks,omitempty"`
+	// Namespace description: Filters projects by namespace.
+	Namespace string `json:"namespace,omitempty"`
+	// Pattern description: Filters projects by pattern string.
+	Pattern string `json:"pattern,omitempty"`
+	// RateLimit description: Rate limit applied when making API requests to Pagure.
+	RateLimit *PagureRateLimit `json:"rateLimit,omitempty"`
+	// Tags description: Filters the projects returned by their tags.
+	Tags []string `json:"tags,omitempty"`
+	// Token description: API token for the Pagure instance.
+	Token string `json:"token,omitempty"`
+	// Url description: URL of a Pagure instance, such as https://pagure.example.com
+	Url string `json:"url,omitempty"`
+}
+
+// PagureRateLimit description: Rate limit applied when making API requests to Pagure.
+type PagureRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 500, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 500 requests immediately, provided that the complexity cost of each request is 1.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
+
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
@@ -1226,8 +1253,6 @@ type PerforceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// UseFusionClient description: EXPERIMENTAL: Use the p4-fusion client to clone and fetch repos
-	UseFusionClient bool `json:"useFusionClient,omitempty"`
 }
 
 // PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
@@ -1429,7 +1454,7 @@ type Settings struct {
 	SearchDefaultCaseSensitive bool `json:"search.defaultCaseSensitive,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
-	// SearchGlobbing description: Enables globbing for supported field values
+	// SearchGlobbing description: REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.
 	SearchGlobbing *bool `json:"search.globbing,omitempty"`
 	// SearchHideSuggestions description: Disable search suggestions below the search bar when constructing queries. Defaults to false.
 	SearchHideSuggestions *bool `json:"search.hideSuggestions,omitempty"`
@@ -1553,8 +1578,12 @@ type SiteConfiguration struct {
 	CampaignsRestrictToAdmins *bool `json:"campaigns.restrictToAdmins,omitempty"`
 	// CloneProgressLog description: Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.
 	CloneProgressLog bool `json:"cloneProgress.log,omitempty"`
-	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto-indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.
+	// CodeIntelAutoIndexingAllowGlobalPolicies description: Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.
+	CodeIntelAutoIndexingAllowGlobalPolicies *bool `json:"codeIntelAutoIndexing.allowGlobalPolicies,omitempty"`
+	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto-indexing feature. Currently experimental.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
+	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
+	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
 	// CorsOrigin description: Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.
 	CorsOrigin string `json:"corsOrigin,omitempty"`
 	// DebugSearchSymbolsParallelism description: (debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.
@@ -1687,6 +1716,14 @@ type Step struct {
 	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
+}
+type SubRepoPermissions struct {
+	// Enabled description: Enables sub-repo permission checking
+	Enabled bool `json:"enabled,omitempty"`
+	// UserCacheSize description: The number of user permissions to cache
+	UserCacheSize int `json:"userCacheSize,omitempty"`
+	// UserCacheTTLSeconds description: The TTL in seconds for cached user permissions
+	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.

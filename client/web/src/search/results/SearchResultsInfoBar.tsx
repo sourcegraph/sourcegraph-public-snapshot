@@ -352,6 +352,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                                     data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
                                     aria-live="polite"
+                                    data-testid="search-result-expand-btn"
                                 >
                                     {props.allExpanded ? (
                                         <ArrowCollapseUpIcon className="icon-inline mr-0" />

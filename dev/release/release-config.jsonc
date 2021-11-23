@@ -10,17 +10,17 @@
  */
 {
     // Captain information
-    "captainSlackUsername": "Crystal Augustus",
-    "captainGitHubUsername": "caugustus-sourcegraph",
+    "captainSlackUsername": "Kevin Wojkovich",
+    "captainGitHubUsername": "kevinwojo",
     // Release versions
-    "previousRelease": "3.33.0",
-    "upcomingRelease": "3.34.0",
+    "previousRelease": "3.34.0",
+    "upcomingRelease": "3.35.0",
     // Release dates
-    "oneWorkingDayBeforeRelease": "19 November 2021 10:00 PST",
-    "releaseDate": "22 November 2021 10:00 PST",
-    "oneWorkingDayAfterRelease": "23 November 2021 10:00 PST",
+    "oneWorkingDayBeforeRelease": "17 December 2021 10:00 PST",
+    "releaseDate": "20 December 2021 10:00 PST",
+    "oneWorkingDayAfterRelease": "21 December 2021 10:00 PST",
     // Channel where messages from the tooling are posted
-    "slackAnnounceChannel": "dev-announce",
+    "slackAnnounceChannel": "prod-eng-announce",
     // Email for preparing calendar events
     "teamEmail": "team@sourcegraph.com",
     // Enable dry-running for certain features - useful for testing or sanity-checking.

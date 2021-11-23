@@ -51,7 +51,8 @@ export class SearchCommand {
 
     public action = async (
         query: string,
-        disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab'
+        disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab',
+        currentTabId?: number
     ): Promise<void> => {
         const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
@@ -67,23 +68,27 @@ export class SearchCommand {
                   )}&utm_source=omnibox`,
         }
 
-        if (disposition === 'newForegroundTab') {
-            await browser.tabs.create(props)
-            return
-        }
-        if (disposition === 'newBackgroundTab') {
-            await browser.tabs.create({ ...props, active: false })
-            return
-        }
+        switch (disposition) {
+            case 'currentTab':
+                if (currentTabId) {
+                    // Note: this is done in order to blur browser omnibox and set focus on page
+                    await browser.tabs
+                        .get(currentTabId)
+                        .then(currentTab => currentTab.index)
+                        .then(currentTabIndex => browser.tabs.create({ ...props, index: currentTabIndex }))
+                        .then(() => browser.tabs.remove(currentTabId))
+                    break
+                }
 
-        const [currentTab] = await browser.tabs.query({ active: true, currentWindow: true })
-        if (!currentTab.id) {
-            await browser.tabs.update(props)
-            return
+                await browser.tabs.update(props)
+                break
+            case 'newForegroundTab':
+                await browser.tabs.create(props)
+                break
+            case 'newBackgroundTab':
+                await browser.tabs.create({ ...props, active: false })
+                break
         }
-
-        // Note: this is done in order to blur browser omnibox and set focus on page
-        await Promise.all([browser.tabs.create(props), browser.tabs.remove(currentTab.id)])
     }
 
     private lastSourcegraphUrl = ''

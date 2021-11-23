@@ -1,9 +1,11 @@
 import { useApolloClient } from '@apollo/client'
+import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
+import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -74,9 +76,29 @@ export const ExecutorsListPage: FunctionComponent<ExecutorsListPageProps> = ({
                 className="mb-3"
             />
 
+            <Container className="mb-3">
+                <h3>Setting up executors</h3>
+                <p className="mb-0">
+                    Executors enable{' '}
+                    <a href="https://docs.sourcegraph.com/code_intelligence/explanations/auto_indexing" rel="noopener">
+                        auto-indexing for Code Intelligence
+                    </a>{' '}
+                    and {/* TODO: Adjust this link */}
+                    <a href="https://docs.sourcegraph.com/batches/server_side" rel="noopener">
+                        server-side Batch Changes
+                    </a>
+                    . In order to use those features,{' '}
+                    <a href="https://docs.sourcegraph.com/admin/deploy_executors" rel="noopener">
+                        set them up
+                    </a>
+                    .
+                </p>
+            </Container>
             <Container>
                 <FilteredConnection<ExecutorFields, {}>
-                    listComponent="div"
+                    listComponent="ul"
+                    listClassName="list-group mb-2"
+                    showMoreClassName="mb-0"
                     noun="executor"
                     pluralNoun="executors"
                     querySubject={querySubject}
@@ -98,50 +120,99 @@ export interface ExecutorNodeProps {
     node: ExecutorFields
 }
 
-// TODO: style
 export const ExecutorNode: FunctionComponent<ExecutorNodeProps> = ({ node }) => (
-    <div className="p-2">
-        <hr />
+    <li className="list-group-item">
+        <Collapsible
+            wholeTitleClickable={false}
+            titleClassName="flex-grow-1"
+            title={
+                <div className="d-flex justify-content-between">
+                    <div>
+                        <h4 className="mb-0">
+                            {node.active ? (
+                                <CheckboxBlankCircleIcon className="icon-inline text-success mr-2" />
+                            ) : (
+                                <CheckboxBlankCircleIcon
+                                    className="icon-inline text-warning mr-2"
+                                    data-tooltip="This executor missed at least three heartbeats."
+                                />
+                            )}
+                            {node.hostname}{' '}
+                            <span
+                                className="badge badge-secondary"
+                                data-tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                            >
+                                {node.queueName}
+                            </span>
+                        </h4>
+                    </div>
+                    <span>
+                        last seen <Timestamp date={node.lastSeenAt} />
+                    </span>
+                </div>
+            }
+        >
+            <dl className="mt-2 mb-0">
+                <div className="d-flex w-100">
+                    <div className="flex-grow-1">
+                        <dt>OS</dt>
+                        <dd>
+                            <TelemetryData data={node.os} />
+                        </dd>
 
-        <dl>
-            <dt>ID</dt>
-            <dd>{node.id}</dd>
-            <dt>Hostname</dt>
-            <dd>{node.hostname}</dd>
-            <dt>Queue Name</dt>
-            <dd>{node.queueName}</dd>
-            <dt>OS</dt>
-            <dd>{node.os}</dd>
-            <dt>Architecture</dt>
-            <dd>{node.architecture}</dd>
-            <dt>Executor version</dt>
-            <dd>{node.executorVersion}</dd>
-            <dt>src-cli version</dt>
-            <dd>{node.srcCliVersion}</dd>
-            <dt>Docker version</dt>
-            <dd>{node.dockerVersion}</dd>
-            <dt>Git version</dt>
-            <dd>{node.gitVersion}</dd>
-            <dt>Ignite version</dt>
-            <dd>{node.igniteVersion}</dd>
-            <dt>First seen at</dt>
-            <dd>
-                <Timestamp date={node.firstSeenAt} />
-            </dd>
-            <dt>Last seen at</dt>
-            <dd>
-                <Timestamp date={node.lastSeenAt} />
-            </dd>
-        </dl>
+                        <dt>Architecture</dt>
+                        <dd>
+                            <TelemetryData data={node.architecture} />
+                        </dd>
 
-        <hr />
-    </div>
+                        <dt>Executor version</dt>
+                        <dd>
+                            <TelemetryData data={node.executorVersion} />
+                        </dd>
+
+                        <dt>Docker version</dt>
+                        <dd>
+                            <TelemetryData data={node.dockerVersion} />
+                        </dd>
+                    </div>
+                    <div className="flex-grow-1">
+                        <dt>Git version</dt>
+                        <dd>
+                            <TelemetryData data={node.gitVersion} />
+                        </dd>
+
+                        <dt>Ignite version</dt>
+                        <dd>
+                            <TelemetryData data={node.igniteVersion} />
+                        </dd>
+
+                        <dt>src-cli version</dt>
+                        <dd>
+                            <TelemetryData data={node.srcCliVersion} />
+                        </dd>
+
+                        <dt>First seen at</dt>
+                        <dd>
+                            <Timestamp date={node.firstSeenAt} />
+                        </dd>
+                    </div>
+                </div>
+            </dl>
+        </Collapsible>
+    </li>
 )
 
 export const NoExecutors: React.FunctionComponent = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1" data-testid="summary">
+    <p className="text-muted text-center w-100 mb-0 mt-1">
         <MapSearchIcon className="mb-2" />
         <br />
-        No executors yet.
+        No executors found.
     </p>
 )
+
+const TelemetryData: React.FunctionComponent<{ data: string }> = ({ data }) => {
+    if (data) {
+        return <>{data}</>
+    }
+    return <>n/a</>
+}

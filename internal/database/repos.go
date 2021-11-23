@@ -19,6 +19,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -499,6 +500,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(perforce.Depot)
 	case extsvc.TypePhabricator:
 		r.Metadata = new(phabricator.Repo)
+	case extsvc.TypePagure:
+		r.Metadata = new(pagure.Project)
 	case extsvc.TypeOther:
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
@@ -1147,6 +1150,8 @@ FROM repo
 WHERE
 	(
 		repo.stars >= %s
+		OR
+		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
 		OR
 		repo.id IN (
 			SELECT

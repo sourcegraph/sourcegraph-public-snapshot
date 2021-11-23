@@ -11,8 +11,8 @@ func TestAllRecipientsForEmailIDInt64(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, id, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
@@ -21,7 +21,7 @@ func TestAllRecipientsForEmailIDInt64(t *testing.T) {
 		wantEmailID     int64 = 1
 		wantRecipientID int64 = 1
 	)
-	rs, err := s.AllRecipientsForEmailIDInt64(ctx, wantEmailID)
+	rs, err := s.ListAllRecipientsForEmailAction(ctx, wantEmailID)
 	if err != nil {
 		t.Fatal(err)
 	}

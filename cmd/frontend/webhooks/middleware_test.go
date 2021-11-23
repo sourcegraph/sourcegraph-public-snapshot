@@ -171,7 +171,7 @@ func TestLoggingEnabled(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, loggingEnabled(tc.c))
+			assert.Equal(t, tc.want, LoggingEnabled(tc.c))
 		})
 	}
 }

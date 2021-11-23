@@ -32,11 +32,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             to: '/site-admin/executors',
             label: 'Executors',
-            // TODO - expand this to executors enabled when SSBC need this page
-            // as well. Right now we don't have an easy way to check if the
-            // executor accessToken is set in site-config, but that should be
-            // the condition of showing this.
-            condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+            condition: () => Boolean(window.context?.executorsEnabled),
         },
     ],
 }
@@ -68,6 +64,11 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             label: 'Batch specs',
             to: '/site-admin/batch-changes/specs',
             condition: props => props.batchChangesExecutionEnabled,
+        },
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/batch-changes/webhook-logs',
+            condition: props => props.batchChangesWebhookLogsEnabled,
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,

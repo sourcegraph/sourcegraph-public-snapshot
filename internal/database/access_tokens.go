@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -35,23 +36,94 @@ type AccessToken struct {
 // but it does not exist.
 var ErrAccessTokenNotFound = errors.New("access token not found")
 
+// InvalidTokenError is returned when decoding the hex encoded token passed to any
+// of the methods on AccessTokenStore.
+type InvalidTokenError struct {
+	err error
+}
+
+func (e InvalidTokenError) Error() string {
+	return fmt.Sprintf("invalid token: %s", e.err)
+}
+
+// accessTokenStore implements autocert.Cache
 type AccessTokenStore interface {
+	// Count counts all access tokens, except internal tokens, that satisfy the options (ignoring limit and offset).
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to count the tokens.
 	Count(context.Context, AccessTokensListOptions) (int, error)
+
+	// Create creates an access token for the specified user. The secret token value itself is
+	// returned. The caller is responsible for presenting this value to the end user; Sourcegraph does
+	// not retain it (only a hash of it).
+	//
+	// The secret token value is a long random string; it is what API clients must provide to
+	// authenticate their requests. We store the SHA-256 hash of the secret token value in the
+	// database. This lets us verify a token's validity (in the (*accessTokens).Lookup method) quickly,
+	// while still ensuring that an attacker who obtains the access_tokens DB table would not be able to
+	// impersonate a token holder. We don't use bcrypt because the original secret is a randomly
+	// generated string (not a password), so it's implausible for an attacker to brute-force the input
+	// space; also bcrypt is slow and would add noticeable latency to each request that supplied a
+	// token.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
+	// specified user (i.e., that the actor is either the user or a site admin).
 	Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
+
+	// CreateInternal creates an *internal* access token for the specified user. An
+	// internal access token will be used by Sourcegraph to talk to its API from
+	// other services, i.e. executor jobs. Internal tokens do not show up in the UI.
+	//
+	// See the documentation for Create for more details.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
+	// specified user (i.e., that the actor is either the user or a site admin).
 	CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
+
+	// DeleteByID deletes an access token given its ID.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
 	DeleteByID(context.Context, int64) error
+
+	// DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
+	// that an API client would use to authenticate).
 	DeleteByToken(ctx context.Context, tokenHexEncoded string) error
+
+	// GetByID retrieves the access token (if any) given its ID.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
 	GetByID(context.Context, int64) (*AccessToken, error)
+
+	// GetByToken retrieves the access token (if any) given its hex encoded string.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
 	GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error)
+
+	// HardDeleteByID hard-deletes an access token given its ID.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
 	HardDeleteByID(context.Context, int64) error
+
+	// List lists all access tokens that satisfy the options, except internal tokens.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
+	// options.
 	List(context.Context, AccessTokensListOptions) ([]*AccessToken, error)
+
+	// Lookup looks up the access token. If it's valid and contains the required scope, it returns the
+	// subject's user ID. Otherwise ErrAccessTokenNotFound is returned.
+	//
+	// Calling Lookup also updates the access token's last-used-at date.
+	//
+	// 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
+	// non-deleted access token.
 	Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
+
 	Transact(context.Context) (AccessTokenStore, error)
 	With(basestore.ShareableStore) AccessTokenStore
 	basestore.ShareableStore
 }
 
-// accessTokenStore implements autocert.Cache
 type accessTokenStore struct {
 	*basestore.Store
 }
@@ -77,42 +149,11 @@ func (s *accessTokenStore) Transact(ctx context.Context) (AccessTokenStore, erro
 	return &accessTokenStore{Store: txBase}, err
 }
 
-// Create creates an access token for the specified user. The secret token value itself is
-// returned. The caller is responsible for presenting this value to the end user; Sourcegraph does
-// not retain it (only a hash of it).
-//
-// The secret token value is a long random string; it is what API clients must provide to
-// authenticate their requests. We store the SHA-256 hash of the secret token value in the
-// database. This lets us verify a token's validity (in the (*accessTokens).Lookup method) quickly,
-// while still ensuring that an attacker who obtains the access_tokens DB table would not be able to
-// impersonate a token holder. We don't use bcrypt because the original secret is a randomly
-// generated string (not a password), so it's implausible for an attacker to brute-force the input
-// space; also bcrypt is slow and would add noticeable latency to each request that supplied a
-// token.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
-// specified user (i.e., that the actor is either the user or a site admin).
 func (s *accessTokenStore) Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	if Mocks.AccessTokens.Create != nil {
-		return Mocks.AccessTokens.Create(subjectUserID, scopes, note, creatorUserID)
-	}
-
 	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, false)
 }
 
-// CreateInternal creates an *internal* access token for the specified user. An
-// internal access token will be used by Sourcegraph to talk to its API from
-// other services, i.e. executor jobs. Internal tokens do not show up in the UI.
-//
-// See the documentation for Create for more details.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
-// specified user (i.e., that the actor is either the user or a site admin).
 func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	if Mocks.AccessTokens.CreateInternal != nil {
-		return Mocks.AccessTokens.CreateInternal(subjectUserID, scopes, note, creatorUserID)
-	}
-
 	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
 }
 
@@ -152,23 +193,12 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 	return id, token, nil
 }
 
-// Lookup looks up the access token. If it's valid and contains the required scope, it returns the
-// subject's user ID. Otherwise ErrAccessTokenNotFound is returned.
-//
-// Calling Lookup also updates the access token's last-used-at date.
-//
-// 🚨 SECURITY: This returns a user ID if and only if the tokenHexEncoded corresponds to a valid,
-// non-deleted access token.
 func (s *accessTokenStore) Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
-	if Mocks.AccessTokens.Lookup != nil {
-		return Mocks.AccessTokens.Lookup(tokenHexEncoded, requiredScope)
-	}
-
 	if requiredScope == "" {
 		return 0, errors.New("no scope provided in access token lookup")
 	}
 
-	token, err := hex.DecodeString(tokenHexEncoded)
+	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
@@ -196,22 +226,12 @@ RETURNING t.subject_user_id
 	return subjectUserID, nil
 }
 
-// GetByID retrieves the access token (if any) given its ID.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
 func (s *accessTokenStore) GetByID(ctx context.Context, id int64) (*AccessToken, error) {
-	if Mocks.AccessTokens.GetByID != nil {
-		return Mocks.AccessTokens.GetByID(id)
-	}
-
 	return s.get(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)})
 }
 
-// GetByToken retrieves the access token (if any) given its hex encoded string.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view this access token.
 func (s *accessTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error) {
-	token, err := hex.DecodeString(tokenHexEncoded)
+	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
 		return nil, errors.Wrap(err, "AccessTokens.GetByToken")
 	}
@@ -256,10 +276,6 @@ func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-// List lists all access tokens that satisfy the options, except internal tokens.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
-// options.
 func (s *accessTokenStore) List(ctx context.Context, opt AccessTokensListOptions) ([]*AccessToken, error) {
 	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
 }
@@ -297,9 +313,6 @@ created_at DESC
 	return results, nil
 }
 
-// Count counts all access tokens, except internal tokens, that satisfy the options (ignoring limit and offset).
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to count the tokens.
 func (s *accessTokenStore) Count(ctx context.Context, opt AccessTokensListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_tokens WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
@@ -309,19 +322,10 @@ func (s *accessTokenStore) Count(ctx context.Context, opt AccessTokensListOption
 	return count, nil
 }
 
-// DeleteByID deletes an access token given its ID.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
 func (s *accessTokenStore) DeleteByID(ctx context.Context, id int64) error {
-	if Mocks.AccessTokens.DeleteByID != nil {
-		return Mocks.AccessTokens.DeleteByID(id)
-	}
 	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
 }
 
-// HardDeleteByID hard-deletes an access token given its ID.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
 func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 	if Mocks.AccessTokens.HardDeleteByID != nil {
 		return Mocks.AccessTokens.HardDeleteByID(id)
@@ -340,10 +344,8 @@ func (s *accessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
 	return nil
 }
 
-// DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
-// that an API client would use to authenticate).
 func (s *accessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded string) error {
-	token, err := hex.DecodeString(tokenHexEncoded)
+	token, err := decodeToken(tokenHexEncoded)
 	if err != nil {
 		return errors.Wrap(err, "AccessTokens.DeleteByToken")
 	}
@@ -369,16 +371,19 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 	return nil
 }
 
+func decodeToken(tokenHexEncoded string) ([]byte, error) {
+	token, err := hex.DecodeString(tokenHexEncoded)
+	if err != nil {
+		return nil, InvalidTokenError{err}
+	}
+	return token, nil
+}
+
 func toSHA256Bytes(input []byte) []byte {
 	b := sha256.Sum256(input)
 	return b[:]
 }
 
 type MockAccessTokens struct {
-	Create         func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
-	CreateInternal func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
-	DeleteByID     func(id int64) error
 	HardDeleteByID func(id int64) error
-	Lookup         func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
-	GetByID        func(id int64) (*AccessToken, error)
 }

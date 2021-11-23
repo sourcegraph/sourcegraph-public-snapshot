@@ -9,11 +9,11 @@ type Executor struct {
 	QueueName       string
 	OS              string
 	Architecture    string
-	ExecutorVersion string
-	SrcCliVersion   string
-	GitVersion      string
 	DockerVersion   string
+	ExecutorVersion string
+	GitVersion      string
 	IgniteVersion   string
+	SrcCliVersion   string
 	FirstSeenAt     time.Time
 	LastSeenAt      time.Time
 }

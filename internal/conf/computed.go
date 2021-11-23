@@ -222,11 +222,31 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+func ExecutorsEnabled() bool {
+	return Get().ExecutorsAccessToken != ""
+}
+
 func CodeIntelAutoIndexingEnabled() bool {
 	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
 		return *enabled
 	}
 	return false
+}
+
+func CodeIntelAutoIndexingAllowGlobalPolicies() bool {
+	if enabled := Get().CodeIntelAutoIndexingAllowGlobalPolicies; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
+	val := Get().CodeIntelAutoIndexingPolicyRepositoryMatchLimit
+	if val == nil || *val < -1 {
+		return -1
+	}
+
+	return *val
 }
 
 func ProductResearchPageEnabled() bool {

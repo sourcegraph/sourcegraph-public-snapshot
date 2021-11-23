@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback } from 'react'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -5,6 +6,8 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { UsernameInput } from '../../../auth/SignInSignUpCommon'
 import { UserAvatar } from '../../UserAvatar'
+
+import styles from './UserProfileFormFields.module.scss'
 
 export type UserProfileFormFieldsValue = Pick<GQL.IUser, 'username' | 'displayName' | 'avatarURL'>
 
@@ -35,7 +38,7 @@ export const UserProfileFormFields: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="user-profile-form-fields">
+        <div data-testid="user-profile-form-fields">
             <div className="form-group">
                 <label htmlFor="UserProfileFormFields__username">Username</label>
                 <UsernameInput
@@ -80,7 +83,7 @@ export const UserProfileFormFields: React.FunctionComponent<Props> = ({
                         placeholder="URL to avatar photo"
                     />
                 </div>
-                {value.avatarURL && <UserAvatar user={value} className="user-profile-form-fields__avatar ml-2" />}
+                {value.avatarURL && <UserAvatar user={value} className={classNames('ml-2', styles.avatar)} />}
             </div>
         </div>
     )

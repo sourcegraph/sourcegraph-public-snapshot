@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -148,7 +147,7 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 	// that the repos are visible to the Sourcegraph instance, else skip them
 	if job.ExternalServiceKind == "" {
 		for _, repo := range repoNames {
-			if _, err := h.repoUpdater.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: repo}); errcode.IsNotFound(err) {
+			if _, err := h.repoUpdater.RepoLookup(ctx, repo); errcode.IsNotFound(err) {
 				delete(repoToPackages, repo)
 			} else if err != nil {
 				return errors.Wrapf(err, "repoUpdater.RepoLookup", "repo", repo)

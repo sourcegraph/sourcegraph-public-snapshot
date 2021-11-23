@@ -343,6 +343,8 @@ export class FilteredConnection<
                                 this.props.history.replace({
                                     search: searchFragment,
                                     hash: this.props.location.hash,
+                                    // Do not throw away flash messages
+                                    state: this.props.location.state,
                                 })
                             }
                         }

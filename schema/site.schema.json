@@ -125,10 +125,34 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "enableSubRepoPermissions": {
-          "description": "Enables sub-repo permission checking",
-          "type": "boolean",
-          "default": false
+        "pagure": {
+          "description": "Allow adding Pagure code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "subRepoPermissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables sub-repo permission checking",
+              "type": "boolean",
+              "default": false
+            },
+            "userCacheSize": {
+              "description": "The number of user permissions to cache",
+              "type": "integer",
+              "default": 1000,
+              "minimum": 1
+            },
+            "userCacheTTLSeconds": {
+              "description": "The TTL in seconds for cached user permissions",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          }
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
@@ -393,7 +417,21 @@
       "default": false
     },
     "codeIntelAutoIndexing.enabled": {
-      "description": "Enables/disables the code intel auto-indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
+      "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
+      "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
+      "type": "integer",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": -1
+    },
+    "codeIntelAutoIndexing.allowGlobalPolicies": {
+      "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",

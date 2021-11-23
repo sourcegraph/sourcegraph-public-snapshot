@@ -2,7 +2,6 @@ package codemonitors
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -12,8 +11,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 const (
@@ -21,7 +20,7 @@ const (
 	testDescription = "test description"
 )
 
-func (s *Store) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
+func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
 	t.Helper()
 
 	owner := relay.MarshalID("User", actor.FromContext(ctx).UID)
@@ -54,28 +53,28 @@ func (s *Store) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, 
 	return s.CreateCodeMonitor(ctx, args)
 }
 
-func newTestStore(t *testing.T) (context.Context, *Store) {
+func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := dbtesting.GetDB(t)
 	now := time.Now().Truncate(time.Microsecond)
-	return ctx, NewStoreWithClock(db, func() time.Time { return now })
+	return ctx, db, NewStoreWithClock(db, func() time.Time { return now })
 }
 
-func newTestUser(ctx context.Context, t *testing.T) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
 	t.Helper()
 
 	name = "cm-user1"
-	id = insertTestUser(t, dbconn.Global, name, true)
+	id = insertTestUser(ctx, t, db, name, true)
 	namespace = relay.MarshalID("User", id)
 	ctx = actor.WithActor(ctx, actor.FromUser(id))
 	return name, id, namespace, ctx
 }
 
-func insertTestUser(t *testing.T, db *sql.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
 	if err != nil {
 		t.Fatal(err)
 	}

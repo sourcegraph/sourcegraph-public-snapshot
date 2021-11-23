@@ -140,7 +140,7 @@ describe('codeHost', () => {
     describe('createGlobalDebugMount()', () => {
         it('should create the debug menu mount', () => {
             createGlobalDebugMount()
-            const mount = document.body.querySelector('.global-debug')
+            const mount = document.body.querySelector('[data-global-debug]')
             expect(mount).toBeDefined()
         })
     })
@@ -198,7 +198,7 @@ describe('codeHost', () => {
             expect(renderedCommandPalette).not.toBeUndefined()
         })
 
-        test('creates a .global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
+        test('creates a data-global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
@@ -214,7 +214,7 @@ describe('codeHost', () => {
                     showGlobalDebug: true,
                 })
             )
-            const globalDebugMount = document.body.querySelector('.global-debug')
+            const globalDebugMount = document.body.querySelector('[data-global-debug]')
             expect(globalDebugMount).toBeDefined()
             const renderedDebugElement = elementRenderedAtMount(globalDebugMount!)
             expect(renderedDebugElement).toBeDefined()

@@ -20,7 +20,7 @@ type parseRequest struct {
 	data []byte
 }
 
-func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commitID api.CommitID) (<-chan parseRequest, <-chan error, error) {
+func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commitID api.CommitID, paths []string) (<-chan parseRequest, <-chan error, error) {
 	fetchQueueSize.Inc()
 	s.fetchSem <- 1 // acquire concurrent fetches semaphore
 	fetchQueueSize.Dec()
@@ -60,8 +60,9 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 		span.Finish()
 	}
 
-	r, err := s.FetchTar(ctx, repo, commitID)
+	r, err := s.FetchTar(ctx, repo, commitID, paths)
 	if err != nil {
+		done(err)
 		return nil, nil, err
 	}
 

@@ -1,12 +1,12 @@
-import { ExtendedInsightDashboard } from './core'
+import { InsightDashboard, InsightDashboardOwner, InsightsDashboardType } from './core'
 
 /**
  * Derived dashboard from the setting cascade subject.
  */
-export interface BuiltInInsightDashboard extends ExtendedInsightDashboard {
+export interface BuiltInInsightDashboard extends InsightDashboard {
     /**
-     * Property to distinguish between real user-created dashboard and virtual
-     * built-in dashboard. Currently we support 3 types of user built-in dashboard.
+     * Property to distinguish between real user-created dashboards and
+     * built-in dashboards. Currently we support 3 types of user built-in dashboard.
      *
      * "Personal" - all personal insights from personal settings (all users
      * have it by default)
@@ -15,28 +15,42 @@ export interface BuiltInInsightDashboard extends ExtendedInsightDashboard {
      *
      * "Global level" - all insights from site (global) setting subject.
      */
-    builtIn?: true
+    type: InsightsDashboardType.BuiltIn
+
+    /**
+     * Subject that has a particular dashboard, it can be personal setting
+     * or organization setting subject.
+     */
+    owner: InsightDashboardOwner
 }
 
 /**
  * Explicitly created in the settings cascade insights dashboard.
  */
-export interface SettingsBasedInsightDashboard extends ExtendedInsightDashboard {
+export interface CustomInsightDashboard extends InsightDashboard {
+    type: InsightsDashboardType.Custom
+
     /**
      * Value of dashboard key in the settings for which the dashboard data is available.
      * Dashboard already has an id property but this id is UUID and will be used for further
      * BE migration.
      */
-    settingsKey?: string
+    settingsKey: string | null
+
+    /**
+     * Subject that has a particular dashboard, it can be personal setting
+     * or organization setting subject.
+     */
+    owner?: InsightDashboardOwner
 }
 
 /**
  * Insights dashboards that were created in a user/org settings.
  */
-export type RealInsightDashboard = SettingsBasedInsightDashboard | BuiltInInsightDashboard
+export type RealInsightDashboard = CustomInsightDashboard | BuiltInInsightDashboard
 
-export function isSettingsBasedInsightsDashboard(
-    dashboard: RealInsightDashboard | undefined | null
-): dashboard is SettingsBasedInsightDashboard {
-    return !!dashboard?.settingsKey
-}
+export const isBuiltInInsightDashboard = (dashboard: RealInsightDashboard): dashboard is BuiltInInsightDashboard =>
+    dashboard.type === InsightsDashboardType.BuiltIn
+
+export const isCustomInsightDashboard = (dashboard: RealInsightDashboard): dashboard is CustomInsightDashboard =>
+    dashboard.type === InsightsDashboardType.Custom

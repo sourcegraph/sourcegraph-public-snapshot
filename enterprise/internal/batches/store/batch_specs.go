@@ -423,6 +423,9 @@ ON
 
 // DeleteExpiredBatchSpecs deletes BatchSpecs that have not been attached
 // to a Batch change within BatchSpecTTL.
+// TODO: A more sophisticated cleanup process for SSBC-created batch specs.
+// - We could: Add execution_started_at to the batch_specs table and delete
+// all that are older than TIME_PERIOD and never started executing.
 func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
 	ctx, endObservation := s.operations.deleteExpiredBatchSpecs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -509,6 +512,8 @@ WHERE
 AND NOT EXISTS (
   SELECT 1 FROM batch_changes WHERE batch_spec_id = batch_specs.id
 )
+-- Only delete expired batch specs that have been created by src-cli
+AND NOT created_from_raw
 AND NOT EXISTS (
   SELECT 1 FROM changeset_specs WHERE batch_spec_id = batch_specs.id
 )

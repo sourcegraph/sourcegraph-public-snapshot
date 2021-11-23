@@ -12,7 +12,7 @@ import (
 
 // registerMigrations registers all out-of-band migration instances that should run for
 // the current version of Sourcegraph.
-func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) error {
+func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, services *Services) error {
 	if err := outOfBandMigrationRunner.Register(
 		lsifmigrations.DiagnosticsCountMigrationID, // 1
 		lsifmigrations.NewDiagnosticsCountMigrator(services.lsifStore, config.DiagnosticsCountMigrationBatchSize),

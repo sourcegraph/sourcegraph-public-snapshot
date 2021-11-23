@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func newExecutorQueueHandler(executorStore database.ExecutorStore, queueOptions map[string]handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
+func newExecutorQueueHandler(executorStore database.ExecutorStore, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
 	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))

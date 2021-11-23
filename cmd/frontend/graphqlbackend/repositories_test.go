@@ -9,44 +9,45 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestRepositories(t *testing.T) {
-	resetMocks()
-	repos := []*types.Repo{
+	mockRepos := []*types.Repo{
 		{Name: "repo1"},
 		{Name: "repo2"},
 		{
 			Name: "repo3",
 		},
 	}
-	database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
+
+	repos := dbmock.NewMockRepoStore()
+	repos.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		if opt.NoCloned {
-			return repos[0:2], nil
+			return mockRepos[0:2], nil
 		}
 		if opt.OnlyCloned {
-			return repos[2:], nil
+			return mockRepos[2:], nil
 		}
 
-		return repos, nil
-	}
+		return mockRepos, nil
+	})
+	repos.CountFunc.SetDefaultReturn(3, nil)
 
-	database.Mocks.Repos.Count = func(context.Context, database.ReposListOptions) (int, error) { return 3, nil }
+	users := dbmock.NewMockUserStore()
 
-	// Test as non site admin first
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{
-			ID:        1,
-			SiteAdmin: false,
-		}, nil
-	}
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefaultReturn(users)
 
-	db := database.NewDB(nil)
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	t.Run("not as a site admin", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					repositories {
 						nodes { name }
@@ -55,7 +56,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -68,28 +69,24 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Path:          []interface{}{"repositories", "totalCount"},
-					Message:       backend.ErrMustBeSiteAdmin.Error(),
-					ResolverError: backend.ErrMustBeSiteAdmin,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:          []interface{}{"repositories", "totalCount"},
+						Message:       backend.ErrMustBeSiteAdmin.Error(),
+						ResolverError: backend.ErrMustBeSiteAdmin,
+					},
 				},
 			},
-		},
+		})
 	})
 
-	// Then test as site admin
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{
-			ID:        1,
-			SiteAdmin: true,
-		}, nil
-	}
+	t.Run("as a site admin", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+		RunTests(t, []*Test{
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					repositories {
 						nodes { name }
@@ -98,7 +95,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -111,13 +108,13 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-		},
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			// cloned and notCloned are true by default
-			// this test ensures the behavior is the same
-			// when setting them explicitly
-			Query: `
+			},
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				// cloned and notCloned are true by default
+				// this test ensures the behavior is the same
+				// when setting them explicitly
+				Query: `
 				{
 					repositories(cloned: true, notCloned: true) {
 						nodes { name }
@@ -126,7 +123,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -139,10 +136,10 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-		},
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+			},
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					repositories(first: 2) {
 						nodes { name }
@@ -150,7 +147,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -161,10 +158,10 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-		},
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+			},
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					repositories(cloned: false) {
 						nodes { name }
@@ -172,7 +169,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -183,10 +180,10 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-		},
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+			},
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					repositories(notCloned: false) {
 						nodes { name }
@@ -194,7 +191,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -204,10 +201,10 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-		},
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+			},
+			{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
 				{
 					repositories(notCloned: false, cloned: false) {
 						nodes { name }
@@ -215,7 +212,7 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+				ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [
@@ -226,25 +223,24 @@ func TestRepositories(t *testing.T) {
 					}
 				}
 			`,
-		},
+			},
+		})
 	})
 }
 
 func TestRepositories_CursorPagination(t *testing.T) {
-	resetMocks()
-
-	repos := []*types.Repo{
+	mockRepos := []*types.Repo{
 		{ID: 0, Name: "repo1"},
 		{ID: 1, Name: "repo2"},
 		{ID: 2, Name: "repo3"},
 	}
 
+	repos := dbmock.NewMockRepoStore()
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-			return repos[0:2], nil
-		}
-		defer func() { database.Mocks.Repos.List = nil }()
+		repos.ListFunc.SetDefaultReturn(mockRepos[0:2], nil)
 
 		RunTests(t, []*Test{
 			{
@@ -278,11 +274,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Second page in ascending order", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-			return repos[1:], nil
-		}
-		defer func() { database.Mocks.Repos.List = nil }()
+		repos.ListFunc.SetDefaultReturn(mockRepos[1:], nil)
 
 		RunTests(t, []*Test{
 			{
@@ -316,11 +308,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Second page in descending order", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-			return repos[1:], nil
-		}
-		defer func() { database.Mocks.Repos.List = nil }()
+		repos.ListFunc.SetDefaultReturn(mockRepos[1:], nil)
 
 		RunTests(t, []*Test{
 			{
@@ -354,11 +342,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-			return repos, nil
-		}
-		defer func() { database.Mocks.Repos.List = nil }()
+		repos.ListFunc.SetDefaultReturn(mockRepos, nil)
 
 		RunTests(t, []*Test{
 			{
@@ -396,11 +380,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With no repositories present", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-			return nil, nil
-		}
-		defer func() { database.Mocks.Repos.List = nil }()
+		repos.ListFunc.SetDefaultReturn(nil, nil)
 
 		RunTests(t, []*Test{
 			{
@@ -432,11 +412,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With an invalid cursor provided", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-			return nil, nil
-		}
-		defer func() { database.Mocks.Repos.List = nil }()
+		repos.ListFunc.SetDefaultReturn(nil, nil)
 
 		RunTests(t, []*Test{
 			{

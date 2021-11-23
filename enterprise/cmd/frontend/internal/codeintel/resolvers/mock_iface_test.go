@@ -95,9 +95,9 @@ type MockDBStore struct {
 	// ReferenceIDsAndFiltersFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferenceIDsAndFilters.
 	ReferenceIDsAndFiltersFunc *DBStoreReferenceIDsAndFiltersFunc
-	// RepoIDsByGlobPatternFunc is an instance of a mock function object
-	// controlling the behavior of the method RepoIDsByGlobPattern.
-	RepoIDsByGlobPatternFunc *DBStoreRepoIDsByGlobPatternFunc
+	// RepoIDsByGlobPatternsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoIDsByGlobPatterns.
+	RepoIDsByGlobPatternsFunc *DBStoreRepoIDsByGlobPatternsFunc
 	// RepoNameFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoName.
 	RepoNameFunc *DBStoreRepoNameFunc
@@ -156,8 +156,8 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-				return nil, nil
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				return nil, 0, nil
 			},
 		},
 		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
@@ -225,9 +225,9 @@ func NewMockDBStore() *MockDBStore {
 				return nil, 0, nil
 			},
 		},
-		RepoIDsByGlobPatternFunc: &DBStoreRepoIDsByGlobPatternFunc{
-			defaultHook: func(context.Context, string) ([]int, error) {
-				return nil, nil
+		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
+			defaultHook: func(context.Context, []string, int, int) ([]int, int, error) {
+				return nil, 0, nil
 			},
 		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
@@ -318,8 +318,8 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
 			defaultHook: i.ReferenceIDsAndFilters,
 		},
-		RepoIDsByGlobPatternFunc: &DBStoreRepoIDsByGlobPatternFunc{
-			defaultHook: i.RepoIDsByGlobPattern,
+		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
+			defaultHook: i.RepoIDsByGlobPatterns,
 		},
 		RepoNameFunc: &DBStoreRepoNameFunc{
 			defaultHook: i.RepoName,
@@ -1247,24 +1247,24 @@ func (c DBStoreFindClosestDumpsFromGraphFragmentFuncCall) Results() []interface{
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked.
 type DBStoreGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
-	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	history     []DBStoreGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
-	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1273,7 +1273,7 @@ func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1281,21 +1281,21 @@ func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1340,7 +1340,10 @@ type DBStoreGetConfigurationPoliciesFuncCall struct {
 	Result0 []dbstore.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1352,7 +1355,7 @@ func (c DBStoreGetConfigurationPoliciesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreGetConfigurationPolicyByIDFunc describes the behavior when the
@@ -2827,36 +2830,36 @@ func (c DBStoreReferenceIDsAndFiltersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// DBStoreRepoIDsByGlobPatternFunc describes the behavior when the
-// RepoIDsByGlobPattern method of the parent MockDBStore instance is
+// DBStoreRepoIDsByGlobPatternsFunc describes the behavior when the
+// RepoIDsByGlobPatterns method of the parent MockDBStore instance is
 // invoked.
-type DBStoreRepoIDsByGlobPatternFunc struct {
-	defaultHook func(context.Context, string) ([]int, error)
-	hooks       []func(context.Context, string) ([]int, error)
-	history     []DBStoreRepoIDsByGlobPatternFuncCall
+type DBStoreRepoIDsByGlobPatternsFunc struct {
+	defaultHook func(context.Context, []string, int, int) ([]int, int, error)
+	hooks       []func(context.Context, []string, int, int) ([]int, int, error)
+	history     []DBStoreRepoIDsByGlobPatternsFuncCall
 	mutex       sync.Mutex
 }
 
-// RepoIDsByGlobPattern delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDBStore) RepoIDsByGlobPattern(v0 context.Context, v1 string) ([]int, error) {
-	r0, r1 := m.RepoIDsByGlobPatternFunc.nextHook()(v0, v1)
-	m.RepoIDsByGlobPatternFunc.appendCall(DBStoreRepoIDsByGlobPatternFuncCall{v0, v1, r0, r1})
-	return r0, r1
+// RepoIDsByGlobPatterns delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) RepoIDsByGlobPatterns(v0 context.Context, v1 []string, v2 int, v3 int) ([]int, int, error) {
+	r0, r1, r2 := m.RepoIDsByGlobPatternsFunc.nextHook()(v0, v1, v2, v3)
+	m.RepoIDsByGlobPatternsFunc.appendCall(DBStoreRepoIDsByGlobPatternsFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
 }
 
-// SetDefaultHook sets function that is called when the RepoIDsByGlobPattern
-// method of the parent MockDBStore instance is invoked and the hook queue
-// is empty.
-func (f *DBStoreRepoIDsByGlobPatternFunc) SetDefaultHook(hook func(context.Context, string) ([]int, error)) {
+// SetDefaultHook sets function that is called when the
+// RepoIDsByGlobPatterns method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) SetDefaultHook(hook func(context.Context, []string, int, int) ([]int, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoIDsByGlobPattern method of the parent MockDBStore instance invokes
+// RepoIDsByGlobPatterns method of the parent MockDBStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBStoreRepoIDsByGlobPatternFunc) PushHook(hook func(context.Context, string) ([]int, error)) {
+func (f *DBStoreRepoIDsByGlobPatternsFunc) PushHook(hook func(context.Context, []string, int, int) ([]int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2864,21 +2867,21 @@ func (f *DBStoreRepoIDsByGlobPatternFunc) PushHook(hook func(context.Context, st
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreRepoIDsByGlobPatternFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) ([]int, error) {
-		return r0, r1
+func (f *DBStoreRepoIDsByGlobPatternsFunc) SetDefaultReturn(r0 []int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, []string, int, int) ([]int, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreRepoIDsByGlobPatternFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context, string) ([]int, error) {
-		return r0, r1
+func (f *DBStoreRepoIDsByGlobPatternsFunc) PushReturn(r0 []int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, []string, int, int) ([]int, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreRepoIDsByGlobPatternFunc) nextHook() func(context.Context, string) ([]int, error) {
+func (f *DBStoreRepoIDsByGlobPatternsFunc) nextHook() func(context.Context, []string, int, int) ([]int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2891,50 +2894,59 @@ func (f *DBStoreRepoIDsByGlobPatternFunc) nextHook() func(context.Context, strin
 	return hook
 }
 
-func (f *DBStoreRepoIDsByGlobPatternFunc) appendCall(r0 DBStoreRepoIDsByGlobPatternFuncCall) {
+func (f *DBStoreRepoIDsByGlobPatternsFunc) appendCall(r0 DBStoreRepoIDsByGlobPatternsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBStoreRepoIDsByGlobPatternFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreRepoIDsByGlobPatternFunc) History() []DBStoreRepoIDsByGlobPatternFuncCall {
+// History returns a sequence of DBStoreRepoIDsByGlobPatternsFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreRepoIDsByGlobPatternsFunc) History() []DBStoreRepoIDsByGlobPatternsFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreRepoIDsByGlobPatternFuncCall, len(f.history))
+	history := make([]DBStoreRepoIDsByGlobPatternsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreRepoIDsByGlobPatternFuncCall is an object that describes an
-// invocation of method RepoIDsByGlobPattern on an instance of MockDBStore.
-type DBStoreRepoIDsByGlobPatternFuncCall struct {
+// DBStoreRepoIDsByGlobPatternsFuncCall is an object that describes an
+// invocation of method RepoIDsByGlobPatterns on an instance of MockDBStore.
+type DBStoreRepoIDsByGlobPatternsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 string
+	Arg1 []string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreRepoIDsByGlobPatternFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c DBStoreRepoIDsByGlobPatternsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreRepoIDsByGlobPatternFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c DBStoreRepoIDsByGlobPatternsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreRepoNameFunc describes the behavior when the RepoName method of

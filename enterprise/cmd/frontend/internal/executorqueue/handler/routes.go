@@ -18,11 +18,11 @@ import (
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore database.ExecutorStore, queueOptionsMap map[string]QueueOptions, router *mux.Router) {
-	for name, queueOptions := range queueOptionsMap {
+func SetupRoutes(executorStore database.ExecutorStore, queueOptionsMap []QueueOptions, router *mux.Router) {
+	for _, queueOptions := range queueOptionsMap {
 		h := newHandler(executorStore, queueOptions)
 
-		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(name))).Subrouter()
+		subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}/", regexp.QuoteMeta(queueOptions.Name))).Subrouter()
 		routes := map[string]func(w http.ResponseWriter, r *http.Request){
 			"dequeue":                 h.handleDequeue,
 			"addExecutionLogEntry":    h.handleAddExecutionLogEntry,
@@ -44,7 +44,7 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.DequeueRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		job, dequeued, err := h.dequeue(r.Context(), payload.ExecutorName, payload.ExecutorHostname)
+		job, dequeued, err := h.dequeue(r.Context(), payload.ExecutorName)
 		if !dequeued {
 			return http.StatusNoContent, nil, err
 		}
@@ -122,14 +122,14 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
 		executor := types.Executor{
 			Hostname:        payload.ExecutorName,
-			QueueName:       payload.QueueName,
+			QueueName:       h.QueueOptions.Name,
 			OS:              payload.OS,
 			Architecture:    payload.Architecture,
-			ExecutorVersion: payload.ExecutorVersion,
-			SrcCliVersion:   payload.SrcCliVersion,
-			GitVersion:      payload.GitVersion,
 			DockerVersion:   payload.DockerVersion,
+			ExecutorVersion: payload.ExecutorVersion,
+			GitVersion:      payload.GitVersion,
 			IgniteVersion:   payload.IgniteVersion,
+			SrcCliVersion:   payload.SrcCliVersion,
 		}
 
 		unknownIDs, err := h.heartbeat(r.Context(), executor, payload.JobIDs)

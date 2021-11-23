@@ -234,6 +234,7 @@ export class OrgArea extends React.Component<Props> {
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
+            batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,

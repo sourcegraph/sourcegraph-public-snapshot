@@ -94,29 +94,36 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },
+    {
+        path: '/batch-changes/webhook-logs',
+        exact: true,
+        render: lazyComponent(() => import('../../site-admin/webhooks/WebhookLogPage'), 'WebhookLogPage'),
+        condition: ({ batchChangesEnabled, batchChangesWebhookLogsEnabled }) =>
+            batchChangesEnabled && batchChangesWebhookLogsEnabled,
+    },
 
     // Code intelligence upload routes
     {
         path: '/code-intelligence/uploads',
-        render: lazyComponent(() => import('../codeintel/list/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
+        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
         exact: true,
     },
     {
         path: '/code-intelligence/uploads/:id',
-        render: lazyComponent(() => import('../codeintel/detail/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
+        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
         exact: true,
     },
 
     // Auto-indexing routes
     {
         path: '/code-intelligence/indexes',
-        render: lazyComponent(() => import('../codeintel/list/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
+        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
     {
         path: '/code-intelligence/indexes/:id',
-        render: lazyComponent(() => import('../codeintel/detail/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
+        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
@@ -125,7 +132,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/configuration',
         render: lazyComponent(
-            () => import('../codeintel/configuration/CodeIntelConfigurationPage'),
+            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
             'CodeIntelConfigurationPage'
         ),
         exact: true,
@@ -133,7 +140,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/configuration/:id',
         render: lazyComponent(
-            () => import('../codeintel/configuration/CodeIntelConfigurationPolicyPage'),
+            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
             'CodeIntelConfigurationPolicyPage'
         ),
         exact: true,
@@ -154,10 +161,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             'ExecutorsListPage'
         ),
         exact: true,
-        // TODO - expand this to executors enabled when SSBC need this page
-        // as well. Right now we don't have an easy way to check if the
-        // executor accessToken is set in site-config, but that should be
-        // the condition of showing this.
-        condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
+        condition: () => Boolean(window.context?.executorsEnabled),
     },
 ]

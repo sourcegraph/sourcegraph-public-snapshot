@@ -144,12 +144,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="message text-left py-1"
+              className="message markdown text-left py-1"
               dangerousInnerHTML="<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
 "
             >
               <div
-                className="message text-left py-1 markdown"
+                className="message markdown text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>There was a network error retrieving search results. Check your Internet connection and try again.</p>
@@ -256,12 +256,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="message text-left py-1"
+              className="message markdown text-left py-1"
               dangerousInnerHTML="<p>Search timed out</p>
 "
             >
               <div
-                className="message text-left py-1 markdown"
+                className="message markdown text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>Search timed out</p>
@@ -368,12 +368,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="message text-left py-1"
+              className="message markdown text-left py-1"
               dangerousInnerHTML="<p>10k forked repositories excluded</p>
 "
             >
               <div
-                className="message text-left py-1 markdown"
+                className="message markdown text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>10k forked repositories excluded</p>
@@ -480,12 +480,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="message text-left py-1"
+              className="message markdown text-left py-1"
               dangerousInnerHTML="<p>60k archived repositories excluded</p>
 "
             >
               <div
-                className="message text-left py-1 markdown"
+                className="message markdown text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>60k archived repositories excluded</p>
@@ -592,12 +592,12 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             style={Object {}}
           >
             <Markdown
-              className="message text-left py-1"
+              className="message markdown text-left py-1"
               dangerousInnerHTML="<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
 "
             >
               <div
-                className="message text-left py-1 markdown"
+                className="message markdown text-left py-1 markdown"
                 dangerouslySetInnerHTML={
                   Object {
                     "__html": "<p>By default we exclude archived repositories. Include them with <code>archived:yes</code> in your query.</p>
@@ -655,12 +655,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="timeout:2m"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="timeout:2m"
@@ -706,12 +708,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="forked:yes"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="forked:yes"
@@ -751,12 +755,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="archived:yes"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="archived:yes"
@@ -802,12 +808,14 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
               className="mb-1 d-block form-check-label"
             >
               <Input
+                data-testid="streaming-progress-skipped-suggest-check"
                 onChange={[Function]}
                 type="checkbox"
                 value="archived:yes"
               >
                 <input
                   className="form-check-input"
+                  data-testid="streaming-progress-skipped-suggest-check"
                   onChange={[Function]}
                   type="checkbox"
                   value="archived:yes"

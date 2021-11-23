@@ -1,129 +1,88 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`FormActionArea Error is shown if code monitor has empty description 1`] = `
-<FormActionArea
-  actions={
-    Object {
-      "nodes": Array [
-        Object {
-          "enabled": true,
-          "id": "id1",
-          "recipients": Object {
-            "nodes": Array [
-              Object {
-                "id": "foobar",
-              },
-            ],
-          },
-        },
-      ],
-    }
-  }
-  actionsCompleted={true}
-  authenticatedUser={
-    Object {
-      "email": "alice@alice.com",
-      "id": "foobar",
-      "username": "alice",
-    }
-  }
-  description=""
-  disabled={false}
-  onActionsChange={[Function]}
-  setActionsCompleted={[Function]}
->
+<DocumentFragment>
   <h3
-    className="mb-1"
+    class="mb-1"
   >
     Actions
   </h3>
   <span
-    className="text-muted"
+    class="text-muted"
   >
     Run any number of actions in response to an event
   </span>
   <div
-    className="card p-3"
+    class="card p-3"
   >
     <div
-      className="font-weight-bold"
+      class="font-weight-bold"
     >
       Send email notifications
     </div>
     <span
-      className="text-muted"
+      class="text-muted"
     >
       Deliver email notifications to specified recipients.
     </span>
     <div
-      className="form-group mt-4 test-action-form"
+      class="form-group mt-4 test-action-form"
     >
       <label
-        htmlFor="code-monitoring-form-actions-recipients"
+        for="code-monitoring-form-actions-recipients"
       >
         Recipients
       </label>
       <input
-        autoFocus={true}
-        className="form-control mb-2"
-        disabled={true}
+        class="form-control mb-2"
+        disabled=""
         id="code-monitoring-form-actions-recipients"
-        required={true}
+        required=""
         type="text"
         value="alice@alice.com (you)"
       />
       <small
-        className="text-muted"
+        class="text-muted"
       >
         Code monitors are currently limited to sending emails to your primary email address.
       </small>
     </div>
     <div
-      className="flex mt-1"
+      class="flex mt-1"
     >
       <button
-        className="btn btn-sm mr-2 btn-secondary"
-        disabled={true}
-        onClick={[Function]}
+        class="btn btn-sm mr-2 btn-secondary"
+        disabled=""
         type="button"
       >
         Send test email
       </button>
       <div
-        className="mt-2 testActionError"
+        class="mt-2 testActionError"
       >
         Please provide a name for the code monitor before sending a test
       </div>
     </div>
     <div
-      className="d-flex align-items-center my-4"
+      class="d-flex align-items-center my-4"
     >
       <div>
-        <Toggle
+        <button
+          aria-checked="true"
           aria-labelledby="code-monitoring-form-actions-enable-toggle"
-          className="mr-2"
-          onToggle={[Function]}
+          class="toggle mr-2"
+          role="switch"
           title="Enabled"
-          value={true}
+          type="button"
+          value="1"
         >
-          <button
-            aria-checked={true}
-            aria-labelledby="code-monitoring-form-actions-enable-toggle"
-            className="toggle mr-2"
-            onClick={[Function]}
-            role="switch"
-            title="Enabled"
-            type="button"
-            value={1}
-          >
-            <span
-              className="bar barOn"
-            />
-            <span
-              className="knob knobOn"
-            />
-          </button>
-        </Toggle>
+          <span
+            class="bar barOn"
+          />
+          <span
+            class="knob knobOn"
+          />
+        </button>
       </div>
       <span
         id="code-monitoring-form-actions-enable-toggle"
@@ -133,16 +92,13 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     </div>
     <div>
       <button
-        className="btn btn-secondary mr-1 test-submit-action"
-        onClick={[Function]}
-        onSubmit={[Function]}
+        class="btn btn-secondary mr-1 test-submit-action"
         type="submit"
       >
         Continue
       </button>
       <button
-        className="btn btn-outline-secondary"
-        onClick={[Function]}
+        class="btn btn-outline-secondary"
         type="button"
       >
         Cancel
@@ -150,10 +106,9 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     </div>
   </div>
   <small
-    className="text-muted"
+    class="text-muted"
   >
-    What other actions would you like to take?
-     
+    What other actions would you like to take? 
     <a
       href="mailto:feedback@sourcegraph.com"
       rel="noopener"
@@ -162,5 +117,5 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
       Share feedback.
     </a>
   </small>
-</FormActionArea>
+</DocumentFragment>
 `;

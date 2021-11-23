@@ -1,5 +1,6 @@
+import { camelCase } from 'lodash'
 import { Observable, of } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -20,7 +21,7 @@ import { getUpdatedSubjectSettings } from '../../pages/insights/edit-insight/hoo
 import { addDashboardToSettings, removeDashboardFromSettings } from '../settings-action/dashboards'
 import { addInsight } from '../settings-action/insights'
 import { Insight, InsightDashboard, InsightTypePrefix, isRealDashboard } from '../types'
-import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
+import { isCustomInsightDashboard } from '../types/dashboard/real-dashboard'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/subjects'
 
 import { getBackendInsight } from './api/get-backend-insight'
@@ -33,8 +34,10 @@ import { getSubjectSettings, updateSubjectSettings } from './api/subject-setting
 import { CodeInsightsBackend } from './code-insights-backend'
 import {
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
@@ -151,9 +154,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         return of(getInsightsDashboards(subjects, final))
     }
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
         this.getDashboards().pipe(
-            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? 'all') ?? undefined))
+            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? 'all') ?? null))
         )
 
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> =>
@@ -161,20 +164,24 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
             switchMap(dashboards => {
                 const possibleDashboard = dashboards
                     .filter(isRealDashboard)
-                    .filter(isSettingsBasedInsightsDashboard)
+                    .filter(isCustomInsightDashboard)
                     .find(dashboard => dashboard.title === name)
 
                 return of(possibleDashboard ?? null)
             })
         )
 
-    public createDashboard = (input: DashboardCreateInput): Observable<void> =>
+    public getDashboardSubjects = (): Observable<SupportedInsightSubject[]> => this.getInsightSubjects()
+
+    public createDashboard = (input: DashboardCreateInput): Observable<DashboardCreateResult> =>
         getSubjectSettings(input.visibility).pipe(
             switchMap(settings => {
                 const dashboard = createSanitizedDashboard(input)
                 const editedSettings = addDashboardToSettings(settings.contents, dashboard)
 
-                return updateSubjectSettings(this.platformContext, input.visibility, editedSettings)
+                return updateSubjectSettings(this.platformContext, input.visibility, editedSettings).pipe(
+                    mapTo({ id: camelCase(dashboard.title) })
+                )
             })
         )
 
@@ -190,7 +197,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         )
     }
 
-    public updateDashboard = (input: DashboardUpdateInput): Observable<void> => {
+    public updateDashboard = (input: DashboardUpdateInput): Observable<DashboardUpdateResult> => {
         const { previousDashboard, nextDashboardInput } = input
 
         if (!previousDashboard.owner || !previousDashboard.settingsKey) {
@@ -239,10 +246,14 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
 
                 settingsContent = addDashboardToSettings(settingsContent, updatedDashboard)
 
-                return updateSubjectSettings(this.platformContext, nextDashboardInput.visibility, settingsContent)
+                return updateSubjectSettings(this.platformContext, nextDashboardInput.visibility, settingsContent).pipe(
+                    map(() => ({ id: camelCase(updatedDashboard.title) }))
+                )
             })
         )
     }
+
+    public assignInsightsToDashboard = (input: DashboardUpdateInput): Observable<unknown> => this.updateDashboard(input)
 
     // Live preview fetchers
     public getSearchInsightContent = <D extends keyof ViewContexts>(

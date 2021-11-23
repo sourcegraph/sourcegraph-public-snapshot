@@ -244,7 +244,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -333,7 +333,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			}
 		}
 	}
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: insightViewId}, nil
 }
 
 func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -389,7 +389,7 @@ func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphq
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -438,7 +438,7 @@ func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphq
 		return nil, errors.Wrap(err, "UpdateSeries")
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: r.permissionsValidator, viewId: view.UniqueID}, nil
 }
 
 type pieChartInsightViewPresentation struct {
@@ -458,17 +458,25 @@ func (p *pieChartInsightViewPresentation) OtherThreshold(ctx context.Context) (f
 }
 
 type insightPayloadResolver struct {
-	viewId string
+	viewId    string
+	validator *InsightPermissionsValidator
 	baseInsightResolver
 }
 
 func (c *insightPayloadResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
-	mapped, err := c.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: []int{int(actor.FromContext(ctx).UID)}})
+	if !c.validator.loaded {
+		err := c.validator.loadUserContext(ctx)
+		if err != nil {
+			return nil, errors.Wrap(err, "InsightPayloadResolver.LoadUserContext")
+		}
+	}
+
+	mapped, err := c.insightStore.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: c.validator.userIds, OrgID: c.validator.orgIds})
 	if err != nil {
 		return nil, err
 	}
 	if len(mapped) < 1 {
-		return nil, err
+		return nil, errors.New("insight not found")
 	}
 	return &insightViewResolver{view: &mapped[0], baseInsightResolver: c.baseInsightResolver}, nil
 }

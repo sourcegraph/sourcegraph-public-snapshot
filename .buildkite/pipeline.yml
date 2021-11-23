@@ -4,10 +4,10 @@ env:
   MUST_INCLUDE_COMMIT: '0cc1214d277f3f1bc16e7d01dd6dfb81f0ef07ee,39465014d9d84e54c9ac40406f8c9ca6ca6c9bc6,183ce8bd36202e9dea8e7808ed780775fab74c63'
 
 steps:
-  - label: ':pipeline: Generating pipeline from pipeline.yml'
+  - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
     command: |
       echo "--- generate pipeline"
       go run ./enterprise/dev/ci/gen-pipeline.go | tee generated-pipeline.yml
-      # cd ./enterprise/dev/ci/ && go run . | tee generated-pipeline.yml
-      echo "\n--- upload pipeline"
+      echo ""
+      echo "--- upload pipeline"
       buildkite-agent pipeline upload generated-pipeline.yml

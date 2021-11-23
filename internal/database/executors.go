@@ -14,12 +14,29 @@ import (
 )
 
 type ExecutorStore interface {
+	// List returns a set of executor activity records matching the given options.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
+	// (e.g., a site-admin).
 	List(ctx context.Context, args ExecutorStoreListOptions) ([]types.Executor, int, error)
+
+	// GetByID returns an executor activity record by identifier. If no such record exists, a
+	// false-valued flag is returned.
+	//
+	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
+	// (e.g., a site-admin).
 	GetByID(ctx context.Context, id int) (types.Executor, bool, error)
-	Heartbeat(ctx context.Context, executor types.Executor) error
+
+	// UpsertHeartbeat updates or creates an executor activity record for a particular executor instance.
+	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
+
+	// DeleteInactiveHeartbeats deletes heartbeat records belonging to executor instances that have not pinged
+	// the Sourcegraph instance in at least the given duration.
+	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
+
+	With(store basestore.ShareableStore) ExecutorStore
 	Transact(ctx context.Context) (ExecutorStore, error)
 	Done(err error) error
-	With(store basestore.ShareableStore) ExecutorStore
 	basestore.ShareableStore
 }
 
@@ -31,6 +48,10 @@ var _ ExecutorStore = (*executorStore)(nil)
 
 // Executors instantiates and returns a new ExecutorStore with prepared statements.
 func Executors(db dbutil.DB) ExecutorStore {
+	return executors(db)
+}
+
+func executors(db dbutil.DB) *executorStore {
 	return &executorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
@@ -42,14 +63,13 @@ func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
 func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {
 	return &executorStore{Store: s.Store.With(other)}
 }
-
-func (s *executorStore) Done(err error) error {
-	return s.Store.Done(err)
-}
-
 func (s *executorStore) Transact(ctx context.Context) (ExecutorStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &executorStore{Store: txBase}, err
+}
+
+func (s *executorStore) Done(err error) error {
+	return s.Store.Done(err)
 }
 
 // scanExecutors reads executor objects from the given row object.
@@ -68,11 +88,11 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 			&executor.QueueName,
 			&executor.OS,
 			&executor.Architecture,
-			&executor.ExecutorVersion,
-			&executor.SrcCliVersion,
-			&executor.GitVersion,
 			&executor.DockerVersion,
+			&executor.ExecutorVersion,
+			&executor.GitVersion,
 			&executor.IgniteVersion,
+			&executor.SrcCliVersion,
 			&executor.FirstSeenAt,
 			&executor.LastSeenAt,
 		); err != nil {
@@ -101,12 +121,11 @@ type ExecutorStoreListOptions struct {
 	Limit  int
 }
 
-// TODO - test
-// List returns a set of executor activity records matching the given options.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-// (e.g., a site-admin).
 func (s *executorStore) List(ctx context.Context, opts ExecutorStoreListOptions) (_ []types.Executor, _ int, err error) {
+	return s.list(ctx, opts, timeutil.Now())
+}
+
+func (s *executorStore) list(ctx context.Context, opts ExecutorStoreListOptions, now time.Time) (_ []types.Executor, _ int, err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -118,7 +137,7 @@ func (s *executorStore) List(ctx context.Context, opts ExecutorStoreListOptions)
 		conds = append(conds, makeExecutorSearchCondition(opts.Query))
 	}
 	if opts.Active {
-		conds = append(conds, sqlf.Sprintf("NOW() - h.last_seen_at < '15 minutes'::interval"))
+		conds = append(conds, sqlf.Sprintf("%s - h.last_seen_at <= '15 minutes'::interval", now))
 	}
 
 	whereConditions := sqlf.Sprintf("TRUE")
@@ -154,11 +173,11 @@ SELECT
 	h.queue_name,
 	h.os,
 	h.architecture,
-	h.executor_version,
-	h.src_cli_version,
-	h.git_version,
 	h.docker_version,
+	h.executor_version,
+	h.git_version,
 	h.ignite_version,
+	h.src_cli_version,
 	h.first_seen_at,
 	h.last_seen_at
 FROM executor_heartbeats h
@@ -174,11 +193,11 @@ func makeExecutorSearchCondition(term string) *sqlf.Query {
 		"h.queue_name",
 		"h.os",
 		"h.architecture",
-		"h.executor_version",
-		"h.src_cli_version",
-		"h.git_version",
 		"h.docker_version",
+		"h.executor_version",
+		"h.git_version",
 		"h.ignite_version",
+		"h.src_cli_version",
 	}
 
 	var termConds []*sqlf.Query
@@ -189,12 +208,6 @@ func makeExecutorSearchCondition(term string) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
 }
 
-// TODO - test
-// GetByID returns an executor activity record by identifier. If no such record exists, a
-// false-valued flag is returned.
-//
-// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-// (e.g., a site-admin).
 func (s *executorStore) GetByID(ctx context.Context, id int) (types.Executor, bool, error) {
 	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetByIDQuery, id)))
 }
@@ -207,56 +220,90 @@ SELECT
 	h.queue_name,
 	h.os,
 	h.architecture,
-	h.executor_version,
-	h.src_cli_version,
-	h.git_version,
 	h.docker_version,
+	h.executor_version,
+	h.git_version,
 	h.ignite_version,
+	h.src_cli_version,
 	h.first_seen_at,
 	h.last_seen_at
 FROM executor_heartbeats h
 WHERE h.id = %s
 `
 
-// Heartbeat updates or creates an executor activity record for a particular executor instance.
-func (s *executorStore) Heartbeat(ctx context.Context, executor types.Executor) error {
-	return s.heartbeat(ctx, executor, timeutil.Now())
+func (s *executorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
+	return s.upsertHeartbeat(ctx, executor, timeutil.Now())
 }
 
-// TODO - test
-func (s *executorStore) heartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
+func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
 	return s.Exec(ctx, sqlf.Sprintf(
-		executorStoryHeartbeatQuery,
+		executorStoreUpsertHeartbeatQuery,
+
+		// insert
 		executor.Hostname,
 		executor.QueueName,
 		executor.OS,
 		executor.Architecture,
-		executor.ExecutorVersion,
-		executor.SrcCliVersion,
-		executor.GitVersion,
 		executor.DockerVersion,
+		executor.ExecutorVersion,
+		executor.GitVersion,
 		executor.IgniteVersion,
+		executor.SrcCliVersion,
 		now,
 		now,
+
+		// update
+		executor.QueueName,
+		executor.OS,
+		executor.Architecture,
+		executor.DockerVersion,
+		executor.ExecutorVersion,
+		executor.GitVersion,
+		executor.IgniteVersion,
+		executor.SrcCliVersion,
 		now,
 	))
 }
 
-const executorStoryHeartbeatQuery = `
+const executorStoreUpsertHeartbeatQuery = `
 -- source: internal/database/executors.go:HeartbeatHeartbeat
 INSERT INTO executor_heartbeats (
 	hostname,
 	queue_name,
 	os,
 	architecture,
-	executor_version,
-	src_cli_version,
-	git_version,
 	docker_version,
+	executor_version,
+	git_version,
 	ignite_version,
+	src_cli_version,
 	first_seen_at,
 	last_seen_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (hostname) DO UPDATE SET last_seen_at = %s
+ON CONFLICT (hostname) DO UPDATE
+SET
+	queue_name = %s,
+	os = %s,
+	architecture = %s,
+	docker_version = %s,
+	executor_version = %s,
+	git_version = %s,
+	ignite_version = %s,
+	src_cli_version = %s,
+	last_seen_at = %s
+`
+
+func (s *executorStore) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
+	return s.deleteInactiveHeartbeats(ctx, minAge, timeutil.Now())
+}
+
+func (s *executorStore) deleteInactiveHeartbeats(ctx context.Context, minAge time.Duration, now time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInactiveHeartbeatsQuery, now, minAge/time.Second))
+}
+
+const executorStoreDeleteInactiveHeartbeatsQuery = `
+-- source: internal/database/executors.go:DeleteInactiveHeartbeats
+DELETE FROM executor_heartbeats
+WHERE %s - last_seen_at >= %s * interval '1 second'
 `

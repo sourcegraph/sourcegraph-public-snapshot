@@ -10,12 +10,34 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
-func (r *TriggerJobs) RecordID() int {
-	return r.Id
+type TriggerJob struct {
+	ID    int32
+	Query int64
+
+	// The query we ran including after: filter.
+	QueryString *string
+
+	// Whether we got any results.
+	Results    *bool
+	NumResults *int32
+
+	// Fields demanded for any dbworker.
+	State          string
+	FailureMessage *string
+	StartedAt      *time.Time
+	FinishedAt     *time.Time
+	ProcessAfter   *time.Time
+	NumResets      int32
+	NumFailures    int32
+	LogContents    *string
+}
+
+func (r *TriggerJob) RecordID() int {
+	return int(r.ID)
 }
 
 const enqueueTriggerQueryFmtStr = `
@@ -34,7 +56,7 @@ INSERT INTO cm_trigger_jobs (query)
 SELECT id from due EXCEPT SELECT id from busy ORDER BY id
 `
 
-func (s *Store) EnqueueTriggerQueries(ctx context.Context) (err error) {
+func (s *codeMonitorStore) EnqueueQueryTriggerJobs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
 }
 
@@ -46,7 +68,7 @@ SET query_string = %s,
 WHERE id = %s
 `
 
-func (s *Store) LogSearch(ctx context.Context, queryString string, numResults int, recordID int) error {
+func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
 }
 
@@ -56,9 +78,9 @@ WHERE results IS NOT TRUE
 AND state = 'completed'
 `
 
-// DeleteObsoleteJobLogs deletes all runs which are marked as completed and did
+// DeleteObsoleteTriggerJobs deletes all runs which are marked as completed and did
 // not return results.
-func (s *Store) DeleteObsoleteJobLogs(ctx context.Context) error {
+func (s *codeMonitorStore) DeleteObsoleteTriggerJobs(ctx context.Context) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteObsoleteJobLogsFmtStr))
 }
 
@@ -67,9 +89,9 @@ DELETE FROM cm_trigger_jobs
 WHERE finished_at < (NOW() - (%s * '1 day'::interval));
 `
 
-// DeleteOldJobLogs deletes trigger jobs which have finished and are older than
+// DeleteOldTriggerJobs deletes trigger jobs which have finished and are older than
 // 'retention' days. Due to cascading, action jobs will be deleted as well.
-func (s *Store) DeleteOldJobLogs(ctx context.Context, retentionInDays int) error {
+func (s *codeMonitorStore) DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error {
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOldJobLogsFmtStr, retentionInDays))
 }
 
@@ -83,7 +105,7 @@ ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJobs, error) {
+func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
 	after, err := unmarshalAfter(args.After)
 	if err != nil {
 		return nil, err
@@ -94,9 +116,12 @@ func (s *Store) GetEventsForQueryIDInt64(ctx context.Context, queryID int64, arg
 		after,
 		args.First,
 	)
-	var rows *sql.Rows
-	rows, err = s.Store.Query(ctx, q)
-	return scanTriggerJobs(rows, err)
+	rows, err := s.Store.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanTriggerJobs(rows)
 }
 
 const totalCountEventsForQueryIDInt64FmtStr = `
@@ -106,83 +131,57 @@ WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
 AND query = %s
 `
 
-func (s *Store) TotalCountEventsForQueryIDInt64(ctx context.Context, queryID int64) (totalCount int32, err error) {
+func (s *codeMonitorStore) CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error) {
 	q := sqlf.Sprintf(
 		totalCountEventsForQueryIDInt64FmtStr,
 		queryID,
 	)
-	err = s.Store.QueryRow(ctx, q).Scan(&totalCount)
+	var count int32
+	err := s.Store.QueryRow(ctx, q).Scan(&count)
+	return count, err
+}
+
+func ScanTriggerJobsRecord(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
-		return -1, err
+		return nil, false, err
 	}
-	return totalCount, nil
-}
-
-type TriggerJobs struct {
-	Id    int
-	Query int64
-
-	// The query we ran including after: filter.
-	QueryString *string
-
-	// Whether we got any results.
-	Results    *bool
-	NumResults *int
-
-	// Fields demanded for any dbworker.
-	State          string
-	FailureMessage *string
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	ProcessAfter   *time.Time
-	NumResets      int32
-	NumFailures    int32
-	LogContents    *string
-}
-
-func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	records, err := scanTriggerJobs(rows, err)
+	records, err := scanTriggerJobs(rows)
 	if err != nil || len(records) == 0 {
-		return &TriggerJobs{}, false, err
+		return &TriggerJob{}, false, err
 	}
 	return records[0], true, nil
 }
 
-func scanTriggerJobs(rows *sql.Rows, err error) ([]*TriggerJobs, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-	var ms []*TriggerJobs
+func scanTriggerJobs(rows *sql.Rows) ([]*TriggerJob, error) {
+	var js []*TriggerJob
 	for rows.Next() {
-		m := &TriggerJobs{}
-		if err := rows.Scan(
-			&m.Id,
-			&m.Query,
-			&m.QueryString,
-			&m.Results,
-			&m.NumResults,
-			&m.State,
-			&m.FailureMessage,
-			&m.StartedAt,
-			&m.FinishedAt,
-			&m.ProcessAfter,
-			&m.NumResets,
-			&m.NumFailures,
-			&m.LogContents,
-		); err != nil {
+		j, err := scanTriggerJob(rows)
+		if err != nil {
 			return nil, err
 		}
-		ms = append(ms, m)
+		js = append(js, j)
 	}
-	if err != nil {
-		return nil, err
-	}
-	// Rows.Err will report the last error encountered by Rows.Scan.
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return ms, nil
+	return js, rows.Err()
+}
+
+func scanTriggerJob(scanner dbutil.Scanner) (*TriggerJob, error) {
+	m := &TriggerJob{}
+	err := scanner.Scan(
+		&m.ID,
+		&m.Query,
+		&m.QueryString,
+		&m.Results,
+		&m.NumResults,
+		&m.State,
+		&m.FailureMessage,
+		&m.StartedAt,
+		&m.FinishedAt,
+		&m.ProcessAfter,
+		&m.NumResets,
+		&m.NumFailures,
+		&m.LogContents,
+	)
+	return m, err
 }
 
 var TriggerJobsColumns = []*sqlf.Query{
@@ -201,15 +200,12 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
 }
 
-func unmarshalAfter(after *string) (int64, error) {
-	var a int64
+func unmarshalAfter(after *string) (int, error) {
 	if after == nil {
-		a = 0
-	} else {
-		err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-		if err != nil {
-			return -1, err
-		}
+		return 0, nil
 	}
-	return a, nil
+
+	var a int
+	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
+	return a, err
 }

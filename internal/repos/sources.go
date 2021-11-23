@@ -60,6 +60,8 @@ func NewSource(svc *types.ExternalService, cf *httpcli.Factory) (Source, error) 
 		return NewPerforceSource(svc)
 	case extsvc.KindJVMPackages:
 		return NewJVMPackagesSource(svc)
+	case extsvc.KindPagure:
+		return NewPagureSource(svc, cf)
 	case extsvc.KindOther:
 		return NewOtherSource(svc, cf)
 	default:

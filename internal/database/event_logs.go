@@ -28,37 +28,98 @@ const (
 )
 
 type EventLogStore interface {
+	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
 	AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error)
+
+	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
+
 	BulkInsert(ctx context.Context, events []*Event) error
+
+	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
 	CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error)
+
+	// CodeIntelligencePreciseCrossRepositoryWAUs returns the WAU (current week) with precise-based cross-repository code intelligence events.
 	CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error)
+
+	// CodeIntelligencePreciseWAUs returns the WAU (current week) with precise-based code intelligence events.
 	CodeIntelligencePreciseWAUs(ctx context.Context) (int, error)
+
+	// CodeIntelligenceRepositoryCounts returns the counts of repositories with code intelligence
+	// properties (number of repositories with intel, with automatic/manual index configuration, etc).
 	CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error)
+
+	// CodeIntelligenceRepositoryCountsByLanguage returns the counts of repositories with code intelligence
+	// properties (number of repositories with intel, with automatic/manual index configuration, etc), grouped
+	// by language.
 	CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error)
+
+	// CodeIntelligenceSearchBasedCrossRepositoryWAUs returns the WAU (current week) with searched-base cross-repository code intelligence events.
 	CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error)
+
+	// CodeIntelligenceSearchBasedWAUs returns the WAU (current week) with searched-base code intelligence events.
 	CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error)
+
+	// CodeIntelligenceSettingsPageViewCount returns the number of view of pages related code intelligence
+	// administration (upload, index records, index configuration, etc) in the past week.
 	CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error)
+
+	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
+
+	// CountByUserID gets a count of events logged by a given user.
 	CountByUserID(ctx context.Context, userID int32) (int, error)
+
+	// CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
 	CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error)
+
+	// CountByUserIDAndEventNamePrefix gets a count of events logged by a given user and with a given event name prefix.
 	CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error)
+
+	// CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
 	CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error)
+
+	// CountUniqueUsersAll provides a count of unique active users in a given time span.
 	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error)
+
+	// CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
 	CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error)
+
+	// CountUniqueUsersByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
 	CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error)
+
+	// CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
 	CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error)
+
+	// CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
+	// a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
+	// entry for each period in the time span.
 	CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error)
-	Done(error) error
+
 	Insert(ctx context.Context, e *Event) error
+
+	// LatestPing returns the most recently recorded ping event.
 	LatestPing(ctx context.Context) (*types.Event, error)
+
+	// ListAll gets all event logs in descending order of timestamp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error)
+
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
+
+	// MaxTimestampByUserID gets the max timestamp among event logs for a given user.
 	MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error)
+
+	// MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
 	MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error)
+
 	SiteUsage(ctx context.Context) (types.SiteUsageSummary, error)
-	Transact(ctx context.Context) (EventLogStore, error)
+
+	// UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
+	// '%codeintel%' events in the event_logs table.
 	UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error)
+
+	Transact(ctx context.Context) (EventLogStore, error)
+	Done(error) error
 	With(other basestore.ShareableStore) EventLogStore
 	basestore.ShareableStore
 }
@@ -214,7 +275,6 @@ type EventLogsListOptions struct {
 	EventName *string
 }
 
-// ListAll gets all event logs in descending order of timestamp.
 func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.UserID != 0 {
@@ -226,7 +286,6 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
-// LatestPing returns the most recently recorded ping event.
 func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
 	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE name='ping' ORDER BY id DESC LIMIT 1`))
 	if err != nil {
@@ -238,22 +297,18 @@ func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
 	return rows[0], err
 }
 
-// CountByUserID gets a count of events logged by a given user.
 func (l *eventLogStore) CountByUserID(ctx context.Context, userID int32) (int, error) {
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
-// CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
 func (l *eventLogStore) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
 }
 
-// CountByUserIDAndEventNamePrefix gets a count of events logged by a given user and with a given event name prefix.
 func (l *eventLogStore) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
 }
 
-// CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
 func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
@@ -271,12 +326,10 @@ func (l *eventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query)
 	return count, err
 }
 
-// MaxTimestampByUserID gets the max timestamp among event logs for a given user.
 func (l *eventLogStore) MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error) {
 	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
-// MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
 func (l *eventLogStore) MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
 	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND source = %s", userID, source))
 }
@@ -401,9 +454,6 @@ type PercentileValue struct {
 	Values []float64
 }
 
-// CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
-// a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
-// entry for each period in the time span.
 func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
@@ -483,22 +533,18 @@ func (l *eventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, inte
 	return counts, nil
 }
 
-// CountUniqueUsersAll provides a count of unique active users in a given time span.
 func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, nil)
 }
 
-// CountUniqueUsersByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
 func (l *eventLogStore) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
 }
 
-// CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
 func (l *eventLogStore) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
 }
 
-// CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
 func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
@@ -544,8 +590,6 @@ func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDa
 	return users, nil
 }
 
-// UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
-// '%codeintel%' events in the event_logs table.
 func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
 	rows, err := l.Handle().DB().QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
@@ -715,7 +759,6 @@ FROM (
 GROUP BY current_month, current_week, current_day
 `
 
-// CodeIntelligencePreciseWAUs returns the WAU (current week) with precise-based code intelligence events.
 func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifHover",
@@ -726,7 +769,6 @@ func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, e
 	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-// CodeIntelligenceSearchBasedWAUs returns the WAU (current week) with searched-base code intelligence events.
 func (l *eventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.searchHover",
@@ -737,7 +779,6 @@ func (l *eventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (in
 	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 func (l *eventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifHover",
@@ -751,7 +792,6 @@ func (l *eventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
 	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
 func (l *eventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifDefinitions.xrepo",
@@ -763,7 +803,6 @@ func (l *eventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context)
 	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-// CodeIntelligencePreciseCrossRepositoryWAUs returns the WAU (current week) with precise-based cross-repository code intelligence events.
 func (l *eventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifDefinitions.xrepo",
@@ -773,7 +812,6 @@ func (l *eventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.C
 	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-// CodeIntelligenceSearchBasedCrossRepositoryWAUs returns the WAU (current week) with searched-base cross-repository code intelligence events.
 func (l *eventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.searchDefinitions.xrepo",
@@ -814,8 +852,6 @@ type CodeIntelligenceRepositoryCounts struct {
 	NumRepositoriesWithAutoIndexConfigurationRecords int
 }
 
-// CodeIntelligenceRepositoryCounts returns the counts of repositories with code intelligence
-// properties (number of repositories with intel, with automatic/manual index configuration, etc).
 func (l *eventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error) {
 	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsQuery))
 	if err != nil {
@@ -866,9 +902,6 @@ type CodeIntelligenceRepositoryCountsForLanguage struct {
 	NumRepositoriesWithFreshIndexRecords  int
 }
 
-// CodeIntelligenceRepositoryCountsByLanguage returns the counts of repositories with code intelligence
-// properties (number of repositories with intel, with automatic/manual index configuration, etc), grouped
-// by language.
 func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error) {
 	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsByLanguageQuery))
 	if err != nil {
@@ -951,8 +984,6 @@ UNION
 GROUP BY REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegraph/', ''), ':\w+$', '')
 `
 
-// CodeIntelligenceSettingsPageViewCount returns the number of view of pages related code intelligence
-// administration (upload, index records, index configuration, etc) in the past week.
 func (l *eventLogStore) CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error) {
 	return l.codeIntelligenceSettingsPageViewCount(ctx, time.Now().UTC())
 }
@@ -980,7 +1011,6 @@ var codeIntelligenceSettingsPageViewCountQuery = `
 -- source: internal/database/event_logs.go:CodeIntelligenceSettingsPageViewCount
 SELECT COUNT(*) FROM event_logs WHERE name IN (%s) AND timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp")
 
-// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
 func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
@@ -1057,7 +1087,6 @@ SELECT
 FROM events GROUP BY name, current_week, language_id;
 `
 
-// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
 	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
 	if err != nil {

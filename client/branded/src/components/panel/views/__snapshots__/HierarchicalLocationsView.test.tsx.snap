@@ -16,6 +16,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         <div>
           <div
             class="test-search-result result-container"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
@@ -81,18 +82,20 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               </small>
             </div>
             <div
-              class="file-match-children"
+              class="fileMatchChildren"
+              data-testid="file-match-children"
             >
               <div>
                 <div
-                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="test-file-match-children-item item itemClickable"
+                    data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
                     <code
-                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -235,6 +238,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         <div>
           <div
             class="test-search-result result-container"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
@@ -302,18 +306,20 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               </small>
             </div>
             <div
-              class="file-match-children"
+              class="fileMatchChildren"
+              data-testid="file-match-children"
             >
               <div>
                 <div
-                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="test-file-match-children-item item itemClickable"
+                    data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
                   >
                     <code
-                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>
@@ -409,6 +415,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         <div>
           <div
             class="test-search-result result-container"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
@@ -474,18 +481,20 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               </small>
             </div>
             <div
-              class="file-match-children"
+              class="fileMatchChildren"
+              data-testid="file-match-children"
             >
               <div>
                 <div
-                  class="file-match-children__item-code-wrapper test-file-match-children-item-wrapper"
+                  class="test-file-match-children-item-wrapper itemCodeWrapper"
                 >
                   <a
-                    class="file-match-children__item file-match-children__item-clickable test-file-match-children-item"
+                    class="test-file-match-children-item item itemClickable"
+                    data-testid="file-match-children-item"
                     href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
                   >
                     <code
-                      class="codeExcerpt file-match-children__item-code-excerpt"
+                      class="codeExcerpt"
                       data-testid="code-excerpt"
                     >
                       <table>

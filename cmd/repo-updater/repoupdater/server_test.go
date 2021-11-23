@@ -385,6 +385,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			},
 			stored: []*types.Repo{githubRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID: 1,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
@@ -408,6 +409,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			},
 			stored: []*types.Repo{awsCodeCommitRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID: 2,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: extsvc.TypeAWSCodeCommit,
@@ -432,6 +434,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			stored: []*types.Repo{},
 			src:    repos.NewFakeSource(&githubSource, nil, githubRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID: 3,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
@@ -457,6 +460,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			stored: []*types.Repo{githubRepository},
 			src:    repos.NewFakeSource(&githubSource, nil, githubRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID: 4,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
@@ -513,6 +517,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			stored: []*types.Repo{},
 			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID:          5,
 				Name:        "gitlab.com/gitlab-org/gitaly",
 				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
 				Fork:        false,
@@ -536,6 +541,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			stored: []*types.Repo{gitlabRepository},
 			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID:          6,
 				Name:        "gitlab.com/gitlab-org/gitaly",
 				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
 				Fork:        false,
@@ -573,6 +579,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				r.UpdatedAt = r.UpdatedAt.Add(-time.Hour)
 			})},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ID: 7,
 				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
@@ -747,7 +754,6 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 }
 
 func TestServer_handleExternalServiceSync(t *testing.T) {
-
 	tests := []struct {
 		name        string
 		err         error

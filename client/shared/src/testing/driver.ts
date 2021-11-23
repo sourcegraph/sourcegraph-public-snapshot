@@ -475,7 +475,7 @@ export class Driver {
             "//*[contains(@class, 'panel')]//*[contains(@tabindex, '0')]//*[contains(text(), 'References')]"
         )
         // verify there are some references
-        await this.page.waitForSelector('[data-testid="panel-tabs-content"] .file-match-children__item', {
+        await this.page.waitForSelector('[data-testid="panel-tabs-content"] [data-testid="file-match-children-item"]', {
             visible: true,
         })
     }

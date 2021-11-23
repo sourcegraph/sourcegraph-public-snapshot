@@ -210,7 +210,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
     TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_workspaces" CONSTRAINT "batch_spec_workspaces_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    TABLE "changeset_specs" CONSTRAINT "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -298,7 +298,7 @@ Indexes:
     "changeset_specs_rand_id" btree (rand_id)
     "changeset_specs_title" btree (title)
 Foreign-key constraints:
-    "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
+    "changeset_specs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
     "changeset_specs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
@@ -461,7 +461,7 @@ Referenced by:
  changed_at        | timestamp with time zone |           | not null | now()
  changed_by        | integer                  |           | not null | 
  enabled           | boolean                  |           | not null | true
- namespace_user_id | integer                  |           |          | 
+ namespace_user_id | integer                  |           | not null | 
  namespace_org_id  | integer                  |           |          | 
 Indexes:
     "cm_monitors_pkey" PRIMARY KEY, btree (id)
@@ -477,6 +477,8 @@ Referenced by:
     TABLE "cm_webhooks" CONSTRAINT "cm_webhooks_monitor_fkey" FOREIGN KEY (monitor) REFERENCES cm_monitors(id) ON DELETE CASCADE
 
 ```
+
+**namespace_org_id**: DEPRECATED: code monitors cannot be owned by an org
 
 # Table "public.cm_queries"
 ```
@@ -759,11 +761,11 @@ Check constraints:
  queue_name       | text                     |           | not null | 
  os               | text                     |           | not null | 
  architecture     | text                     |           | not null | 
- executor_version | text                     |           | not null | 
- src_cli_version  | text                     |           | not null | 
- git_version      | text                     |           | not null | 
  docker_version   | text                     |           | not null | 
+ executor_version | text                     |           | not null | 
+ git_version      | text                     |           | not null | 
  ignite_version   | text                     |           | not null | 
+ src_cli_version  | text                     |           | not null | 
  first_seen_at    | timestamp with time zone |           | not null | now()
  last_seen_at     | timestamp with time zone |           | not null | now()
 Indexes:
@@ -1938,6 +1940,7 @@ Indexes:
 Indexes:
     "saved_searches_pkey" PRIMARY KEY, btree (id)
 Check constraints:
+    "saved_searches_notifications_disabled" CHECK (notify_owner = false AND notify_slack = false)
     "user_or_org_id_not_null" CHECK (user_id IS NOT NULL AND org_id IS NULL OR org_id IS NOT NULL AND user_id IS NULL)
 Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)

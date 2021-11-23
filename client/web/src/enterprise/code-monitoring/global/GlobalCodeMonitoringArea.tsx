@@ -43,11 +43,6 @@ export const GlobalCodeMonitoringArea: React.FunctionComponent<Props> = ({ match
                     exact={true}
                 />
                 <Route
-                    path={`${match.url}/getting-started`}
-                    render={props => <CodeMonitoringPage {...outerProps} {...props} showGettingStarted={true} />}
-                    exact={true}
-                />
-                <Route
                     path={`${match.url}/new`}
                     render={props => <CreateCodeMonitorPage {...outerProps} {...props} />}
                     exact={true}

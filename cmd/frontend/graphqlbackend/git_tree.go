@@ -7,14 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-
-	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -48,25 +42,8 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	span, ctx := ot.StartSpanFromContext(ctx, "tree.entries")
 	defer span.Finish()
 
-	srp := subRepoPermsClient(r.db)
-	// First check if we are able to view the tree at all, if not we can return early
-	// and don't need to hit gitserver.
-	perms, err := authz.CurrentUserPermissions(ctx, srp, authz.RepoContent{
-		Repo: r.commit.repoResolver.RepoName(),
-		Path: r.Path(),
-	})
-	if err != nil {
-		log15.Error("checking sub-repo permissions", "error", err)
-		return nil, errors.New("checking sub-repo permissions")
-	}
-	// No access
-	if !perms.Include(authz.Read) {
-		return nil, nil
-	}
-
-	entries, err := gitReadDir(
+	entries, err := git.ReadDir(
 		ctx,
-		srp,
 		r.commit.repoResolver.RepoName(),
 		api.CommitID(r.commit.OID()),
 		r.Path(),
@@ -90,11 +67,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	for _, entry := range entries {
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, &GitTreeEntryResolver{
-				db:     r.db,
-				commit: r.commit,
-				stat:   entry,
-			})
+			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
 		}
 	}
 
@@ -135,39 +108,4 @@ func (s byDirectory) Less(i, j int) bool {
 	}
 
 	return s[i].Name() < s[j].Name()
-}
-
-// gitReadDir call git.ReadDir but applies sub-repo filtering to the returned entries.
-func gitReadDir(ctx context.Context, srp authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	entries, err := git.ReadDir(ctx, repo, commit, path, recurse)
-	if err != nil {
-		return nil, err
-	}
-
-	if !srp.Enabled() {
-		return entries, nil
-	}
-
-	// Filter in place
-	n := 0
-	a := actor.FromContext(ctx)
-	for _, entry := range entries {
-		// Check whether to filter out this entry due to sub-repo permissions
-		perms, err := authz.ActorPermissions(ctx, srp, a, authz.RepoContent{
-			Repo: repo,
-			Path: entry.Name(),
-		})
-		if err != nil {
-			log15.Error("checking sub-repo permissions", "error", err)
-			continue
-		}
-		// No access
-		if perms.Include(authz.Read) {
-			entries[n] = entry
-			n++
-		}
-	}
-	entries = entries[:n]
-
-	return entries, nil
 }
