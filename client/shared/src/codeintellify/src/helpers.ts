@@ -49,7 +49,8 @@ export const scrollIntoCenterIfNeeded = (container: HTMLElement, content: HTMLEl
         const containerRectangle = container.getBoundingClientRect()
         const contentRectangle = content.getBoundingClientRect()
         const rowRectangle_ = target.getBoundingClientRect()
-        const scrollTop = rowRectangle_.top - contentRectangle.top - containerRectangle.height / 2 + rowRectangle_.height / 2
+        const scrollTop =
+            rowRectangle_.top - contentRectangle.top - containerRectangle.height / 2 + rowRectangle_.height / 2
         container.scrollTop = scrollTop
     }
 }
@@ -57,13 +58,13 @@ export const scrollIntoCenterIfNeeded = (container: HTMLElement, content: HTMLEl
 /**
  * Returns a curried function that returns `true` if `e1` and `e2` overlap.
  */
-export const elementOverlaps = (e1: HTMLElement) => (e2: HTMLElement): boolean => {
-    const e1Rect = e1.getBoundingClientRect()
-    const e2Rect = e2.getBoundingClientRect()
+export const elementOverlaps = (element1: HTMLElement) => (element2: HTMLElement): boolean => {
+    const rectangle1 = element1.getBoundingClientRect()
+    const rectangle2 = element2.getBoundingClientRect()
     return !(
-        e1Rect.right < e2Rect.left ||
-        e1Rect.left > e2Rect.right ||
-        e1Rect.bottom < e2Rect.top ||
-        e1Rect.top > e2Rect.bottom
+        rectangle1.right < rectangle2.left ||
+        rectangle1.left > rectangle2.right ||
+        rectangle1.bottom < rectangle2.top ||
+        rectangle1.top > rectangle2.bottom
     )
 }

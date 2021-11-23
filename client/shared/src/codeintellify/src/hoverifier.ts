@@ -1,5 +1,6 @@
 import { isEqual } from 'lodash'
 import {
+    // eslint-disable-next-line no-restricted-imports
     animationFrameScheduler,
     combineLatest,
     concat,
@@ -41,7 +42,7 @@ import { Position, Range } from '@sourcegraph/extension-api-types'
 import { asError, ErrorLike, isErrorLike } from './errors'
 import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
 import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
-import { calculateOverlayPosition } from './overlay_position'
+import { calculateOverlayPosition } from './overlayPosition'
 import { DiffPart, PositionEvent, SupportedMouseEvent } from './positions'
 import { createObservableStateContainer } from './state'
 import {
@@ -441,18 +442,19 @@ export function createHoverifier<C extends object, D, A>({
     const allPositionsFromEvents = new Subject<MouseEventTrigger>()
 
     // This keeps the overlay open while the mouse moves over another token on the way to the overlay
-    const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => o =>
-        o.pipe(
+    // eslint-disable-next-line unicorn/consistent-function-scoping
+    const suppressWhileOverlayShown = <T>(): MonoTypeOperatorFunction<T> => observable =>
+        observable.pipe(
             withLatestFrom(from(hoverOverlayElements).pipe(startWith(null))),
-            switchMap(([t, overlayElement]) =>
+            switchMap(([value, overlayElement]) =>
                 overlayElement === null
-                    ? of(t)
+                    ? of(value)
                     : race(
                           fromEvent(overlayElement, 'mouseover').pipe(mapTo('suppress')),
                           of('emit').pipe(delay(MOUSEOVER_DELAY))
                       ).pipe(
                           filter(action => action === 'emit'),
-                          mapTo(t)
+                          mapTo(value)
                       )
             )
         )
@@ -595,7 +597,7 @@ export function createHoverifier<C extends object, D, A>({
                               shouldTokenize({ tokenize, overrideTokenize })
                           )
                           if (target) {
-                              part = dom.getDiffCodePart && dom.getDiffCodePart(target)
+                              part = dom.getDiffCodePart?.(target)
                           } else {
                               console.warn('Could not find target for position in file', position)
                           }
@@ -781,19 +783,20 @@ export function createHoverifier<C extends object, D, A>({
      * For every position, emits an Observable with new values for the `hoverOrError` state.
      * This is a higher-order Observable (Observable that emits Observables).
      */
-    const hoverObservables: Observable<Observable<{
-        eventType: SupportedMouseEvent | 'jump'
-        dom: DOMFunctions
-        overrideTokenize?: boolean
-        target: HTMLElement
-        adjustPosition?: PositionAdjuster<C>
-        codeView: HTMLElement
-        codeViewId: symbol
-        scrollBoundaries?: HTMLElement[]
-        hoverOrError?: typeof LOADING | (HoverAttachment & D) | ErrorLike | null
-        position?: HoveredToken & C
-        part?: DiffPart
-    }>> = resolvedPositions.pipe(
+    const hoverObservables: Observable<
+        Observable<{
+            eventType: SupportedMouseEvent | 'jump'
+            dom: DOMFunctions
+            overrideTokenize?: boolean
+            adjustPosition?: PositionAdjuster<C>
+            codeView: HTMLElement
+            codeViewId: symbol
+            scrollBoundaries?: HTMLElement[]
+            hoverOrError?: typeof LOADING | (HoverAttachment & D) | ErrorLike | null
+            position?: HoveredToken & C
+            part?: DiffPart
+        }>
+    > = resolvedPositions.pipe(
         map(({ position, codeViewId, ...rest }) => {
             if (!position) {
                 return of({ hoverOrError: null, position: undefined, part: undefined, codeViewId, ...rest })
@@ -906,19 +909,20 @@ export function createHoverifier<C extends object, D, A>({
      * For every position, emits an Observable with new values for the `documentHighlights` state.
      * This is a higher-order Observable (Observable that emits Observables).
      */
-    const documentHighlightObservables: Observable<Observable<{
-        eventType: SupportedMouseEvent | 'jump'
-        dom: DOMFunctions
-        overrideTokenize?: boolean
-        target: HTMLElement
-        adjustPosition?: PositionAdjuster<C>
-        codeView: HTMLElement
-        codeViewId: symbol
-        scrollBoundaries?: HTMLElement[]
-        documentHighlights?: DocumentHighlight[]
-        position?: HoveredToken & C
-        part?: DiffPart
-    }>> = resolvedPositions.pipe(
+    const documentHighlightObservables: Observable<
+        Observable<{
+            eventType: SupportedMouseEvent | 'jump'
+            dom: DOMFunctions
+            overrideTokenize?: boolean
+            adjustPosition?: PositionAdjuster<C>
+            codeView: HTMLElement
+            codeViewId: symbol
+            scrollBoundaries?: HTMLElement[]
+            documentHighlights?: DocumentHighlight[]
+            position?: HoveredToken & C
+            part?: DiffPart
+        }>
+    > = resolvedPositions.pipe(
         map(({ position, codeViewId, ...rest }) => {
             if (!position) {
                 return of({

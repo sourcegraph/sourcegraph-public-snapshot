@@ -1,13 +1,13 @@
 import * as assert from 'assert'
 
-import { calculateOverlayPosition, CSSOffsets } from './overlay_position'
+import { calculateOverlayPosition, CSSOffsets } from './overlayPosition'
 
 describe('overlay_position', () => {
     describe('calculateOverlayPosition()', () => {
         /** Positions an element at the given px offsets */
         const applyOffsets = (element: HTMLElement, { left, top }: CSSOffsets): void => {
-            element.style.left = left + 'px'
-            element.style.top = top + 'px'
+            element.style.left = `${left}px`
+            element.style.top = `${top}px`
         }
 
         let relativeElement: HTMLElement

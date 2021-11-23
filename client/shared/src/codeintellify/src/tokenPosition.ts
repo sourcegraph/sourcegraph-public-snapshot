@@ -152,7 +152,7 @@ export function convertNode(parentNode: HTMLElement): void {
             }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             const elementNode = node as HTMLElement
-            if (elementNode.children.length > 0 || (elementNode.textContent && elementNode.textContent.trim().length)) {
+            if (elementNode.children.length > 0 || elementNode.textContent?.trim().length) {
                 convertNode(elementNode)
             }
         }
@@ -359,13 +359,13 @@ export function findElementWithOffset(
          * @param delta the direction we are walking
          */
         const findTokenEdgeIndex = (index: number, delta: -1 | 1): number => {
-            let at = index
+            let current = index
 
-            while (textNodes[at + delta] && isSameTokenType(tokenType, textNodes[at + delta])) {
-                at += delta
+            while (textNodes[current + delta] && isSameTokenType(tokenType, textNodes[current + delta])) {
+                current += delta
             }
 
-            return at
+            return current
         }
 
         startNode = textNodes[findTokenEdgeIndex(nodeIndex, -1)]

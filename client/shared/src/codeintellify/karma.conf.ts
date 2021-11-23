@@ -1,8 +1,10 @@
+/* eslint-disable unicorn/prevent-abbreviations */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 import { Config, ConfigOptions } from 'karma'
 
 import webpackConfig from './webpack.test.config'
 
+// eslint-disable-next-line import/no-default-export
 export default (config: Config): void => {
     config.set({
         frameworks: ['mocha', 'chai', 'sinon'],

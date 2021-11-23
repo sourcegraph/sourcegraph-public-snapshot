@@ -316,7 +316,7 @@ describe('Hoverifier', () => {
                 )
 
                 const hoverAndDefinitionUpdates = hoverifier.hoverStateUpdates.pipe(
-                    map(hoverState => hoverState.hoveredTokenElement && hoverState.hoveredTokenElement.textContent),
+                    map(hoverState => hoverState.hoveredTokenElement?.textContent),
                     distinctUntilChanged(isEqual)
                 )
 
@@ -385,8 +385,8 @@ describe('Hoverifier', () => {
 
             const selected = codeViewProps.codeView.querySelectorAll('.test-highlight')
             assert.equal(selected.length, 3)
-            for (const e of selected) {
-                assert.equal(e.textContent, 'Router')
+            for (const element of selected) {
+                assert.equal(element.textContent, 'Router')
             }
         }
     })
