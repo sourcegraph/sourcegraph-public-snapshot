@@ -251,12 +251,7 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 
 func CodeInsightsGQLApiEnabled() bool {
 	enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
-
-	if enabled == false {
-		return false
-	}
-
-	return true
+	return !enabled
 }
 
 func ProductResearchPageEnabled() bool {
