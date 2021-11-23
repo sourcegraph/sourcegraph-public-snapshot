@@ -347,13 +347,13 @@ type RepoUniverseTextSearch struct {
 
 	// TODO(team/search-core): Pass the private repositories resolved at
 	// runtime via the third argument in the Run function. The pager needs
-	// to unify []types.MinimalRepo with []*search.RepositoryRevisions for
-	// this to be possible, and it should expose <private repositories> as
-	// another kind of repo data that parameterizes searches.
+	// to unify []types.MinimalRepo with repos.Resolved for this to be
+	// possible, and it should expose <private repositories> as another kind
+	// of repo data that parameterizes a search.
 	UserPrivateRepos []types.MinimalRepo
 }
 
-func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender, _ []*search.RepositoryRevisions) error {
+func (t *RepoUniverseTextSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
 	defer cleanup()
 

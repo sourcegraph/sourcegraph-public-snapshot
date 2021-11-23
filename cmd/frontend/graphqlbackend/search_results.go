@@ -651,7 +651,48 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
 		if globalSearch {
+			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+			if err != nil {
+				return nil, nil, err
+			}
+			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
 
+			if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+				typ := search.TextRequest // TODO add typ for symbols
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+				zoektArgs := &search.ZoektParameters{
+					Query:          nil, // XXX set later.
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				searcherArgs := &search.SearcherParameters{
+					SearcherURLs:    args.SearcherURLs,
+					PatternInfo:     args.PatternInfo,
+					UseFullDeadline: args.UseFullDeadline,
+				}
+
+				// check use index
+				// check containsrefglobs
+				// check/dismiss onmissingreporevs?
+				jobs = append(jobs, &unindexed.RepoUniverseTextSearch{
+					GlobalZoektQuery: globalZoektQuery,
+					ZoektArgs:        zoektArgs,
+					SearcherArgs:     searcherArgs,
+					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
+					NotSearcherOnly:  !searcherOnly,
+					UserPrivateRepos: nil, // XXX set later.
+				})
+			}
 		}
 
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {

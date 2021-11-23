@@ -439,3 +439,5 @@ func (s *SymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 func (*SymbolSearch) Name() string {
 	return "Symbol"
 }
+
+// TODO symbol universe job
