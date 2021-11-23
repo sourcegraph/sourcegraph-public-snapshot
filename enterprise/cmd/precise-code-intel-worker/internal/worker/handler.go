@@ -300,49 +300,49 @@ func writeData(ctx context.Context, lsifStore LSIFStore, upload store.Upload, re
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	traceLog(log.Int64("numDocuments", count))
+	traceLog(log.Uint32("numDocuments", count))
 
 	count, err = tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	traceLog(log.Int64("numResultChunks", count))
+	traceLog(log.Uint32("numResultChunks", count))
 
 	count, err = tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	traceLog(log.Int64("numDefinitions", count))
+	traceLog(log.Uint32("numDefinitions", count))
 
 	count, err = tx.WriteReferences(ctx, upload.ID, groupedBundleData.References)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	traceLog(log.Int64("numReferences", count))
+	traceLog(log.Uint32("numReferences", count))
 
 	count, err = tx.WriteImplementations(ctx, upload.ID, groupedBundleData.Implementations)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteImplementations")
 	}
-	traceLog(log.Int64("numImplementations", count))
+	traceLog(log.Uint32("numImplementations", count))
 
 	count, err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages, repositoryNameID, languageNameID)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
-	traceLog(log.Int64("numDocPages", count))
+	traceLog(log.Uint32("numDocPages", count))
 
 	count, err = tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
 	}
-	traceLog(log.Int64("numDocPathInfo", count))
+	traceLog(log.Uint32("numDocPathInfo", count))
 
 	count, err = tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings)
 	if err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationMappings")
 	}
-	traceLog(log.Int64("numDocMappings", count))
+	traceLog(log.Uint32("numDocMappings", count))
 
 	return nil
 }

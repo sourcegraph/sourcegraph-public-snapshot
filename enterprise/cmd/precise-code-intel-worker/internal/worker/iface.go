@@ -52,14 +52,14 @@ type LSIFStore interface {
 	Done(err error) error
 
 	WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) error
-	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count int64, err error)
-	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count int64, err error)
-	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count int64, err error)
-	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count int64, err error)
-	WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count int64, err error)
-	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData, repositoryNameID int, languageNameID int) (count int64, err error)
-	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) (count int64, err error)
-	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count int64, err error)
+	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) (count uint32, err error)
+	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) (count uint32, err error)
+	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+	WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) (count uint32, err error)
+	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData, repositoryNameID int, languageNameID int) (count uint32, err error)
+	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) (count uint32, err error)
+	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count uint32, err error)
 	WriteDocumentationSearchPrework(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool) (int, int, error)
 }
 

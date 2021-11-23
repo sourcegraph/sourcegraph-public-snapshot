@@ -41,7 +41,7 @@ func (s *Store) WriteDocumentationPages(
 	documentationPages chan *precise.DocumentationPageData,
 	repositoryNameID int,
 	languageNameID int,
-) (count int64, err error) {
+) (count uint32, err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
 		log.String("repo", upload.RepositoryName),
@@ -77,7 +77,7 @@ func (s *Store) WriteDocumentationPages(
 				return err
 			}
 
-			atomic.AddInt64(&count, 1)
+			atomic.AddUint32(&count, 1)
 		}
 		return nil
 	}
@@ -124,7 +124,7 @@ FROM t_lsif_data_documentation_pages source
 `
 
 // WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (count int64, err error) {
+func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (count uint32, err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -152,7 +152,7 @@ func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, do
 				return err
 			}
 
-			atomic.AddInt64(&count, 1)
+			atomic.AddUint32(&count, 1)
 		}
 		return nil
 	}
@@ -190,7 +190,7 @@ FROM t_lsif_data_documentation_path_info source
 `
 
 // WriteDocumentationMappings is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count int64, err error) {
+func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count uint32, err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -212,7 +212,7 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 			if err := inserter.Insert(ctx, mapping.PathID, mapping.ResultID, mapping.FilePath); err != nil {
 				return err
 			}
-			atomic.AddInt64(&count, 1)
+			atomic.AddUint32(&count, 1)
 		}
 		return nil
 	}
