@@ -3,7 +3,6 @@ package amplitude
 // DenyList is a list of events we do not want to send to Amplitude.
 // We will normally add events to the deny list if they are high frequency and low signal.
 var DenyList = map[string]struct{}{
-	"codeintel.searchDefinitions":       {},
 	"search.latencies.regexp":           {},
 	"codeintel.searchHover":             {},
 	"codeintel.lsifDocumentHighlight":   {},
