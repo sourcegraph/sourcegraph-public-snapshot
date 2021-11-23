@@ -74,6 +74,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
             <SourcegraphIconButton
                 {...this.props}
                 className={classNames('open-on-sourcegraph', this.props.className)}
+                dataTestId="open-on-sourcegraph"
                 href={url}
             />
         )

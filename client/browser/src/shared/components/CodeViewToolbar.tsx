@@ -57,7 +57,7 @@ export interface CodeViewToolbarProps
 }
 
 export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
-    <ul className={classNames('code-view-toolbar', props.className)}>
+    <ul className={classNames('code-view-toolbar', props.className)} data-testid="code-view-toolbar">
         {!props.hideActions && (
             <ActionsNavItems
                 {...props}
