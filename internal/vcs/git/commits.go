@@ -57,8 +57,8 @@ func getCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt Reso
 
 	if honey.Enabled() && recordGetCommitQueries {
 		defer func() {
-			ev := honey.Event("getCommit")
-			ev.SampleRate = 10 // 1 in 10
+			ev := honey.NewEvent("getCommit")
+			ev.SetSampleRate(10) // 1 in 10
 			ev.AddField("repo", repo)
 			ev.AddField("commit", id)
 			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)

@@ -1054,9 +1054,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			Error:         err,
 		})
 
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
+		_ = ev.Send()
 
 		if isSlow {
 			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
