@@ -1,4 +1,5 @@
 import * as assert from 'assert'
+
 import { calculateOverlayPosition, CSSOffsets } from './overlay_position'
 
 describe('overlay_position', () => {
@@ -18,7 +19,7 @@ describe('overlay_position', () => {
             target.className = 'target'
             target.textContent = 'target'
             applyOffsets(target, position)
-            relativeElement.appendChild(target)
+            relativeElement.append(target)
             return target
         }
 
@@ -47,17 +48,17 @@ describe('overlay_position', () => {
                     position: absolute;
                 }
             `
-            document.head.appendChild(style)
+            document.head.append(style)
 
             relativeElement = document.createElement('div')
             relativeElement.className = 'relative-element'
             relativeElement.textContent = 'relativeElement'
-            document.body.appendChild(relativeElement)
+            document.body.append(relativeElement)
 
             hoverOverlayElement = document.createElement('div')
             hoverOverlayElement.className = 'hover-overlay-element'
             hoverOverlayElement.textContent = 'hoverOverlayElement'
-            relativeElement.appendChild(hoverOverlayElement)
+            relativeElement.append(hoverOverlayElement)
         })
         afterEach(() => {
             relativeElement.remove()
@@ -116,7 +117,7 @@ describe('overlay_position', () => {
                     const content = document.createElement('div')
                     content.style.height = '500px'
                     content.style.width = '700px'
-                    relativeElement.appendChild(content)
+                    relativeElement.append(content)
                 })
 
                 it('should return a position above the given target if the overlay fits above', () => {
@@ -138,7 +139,7 @@ describe('overlay_position', () => {
                     const content = document.createElement('div')
                     content.style.height = '3000px'
                     content.style.width = '3000px'
-                    relativeElement.appendChild(content)
+                    relativeElement.append(content)
 
                     relativeElement.scrollTop = 400
                     relativeElement.scrollLeft = 200

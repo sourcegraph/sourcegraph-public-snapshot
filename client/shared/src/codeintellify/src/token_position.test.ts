@@ -1,5 +1,7 @@
-import { Position, Range } from '@sourcegraph/extension-api-types'
 import * as assert from 'assert'
+
+import { Position, Range } from '@sourcegraph/extension-api-types'
+
 import { CodeViewProps, DOM } from './testutils/dom'
 import {
     convertNode,
@@ -64,27 +66,27 @@ describe('token_positions', () => {
             ]
 
             for (const { content, nodeValues } of elems) {
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
-                convertNode(elem)
+                convertNode(element)
 
-                const nodes = getTextNodes(elem)
+                const nodes = getTextNodes(element)
 
                 expect(nodes.length).to.equal(nodeValues.length)
 
-                for (const [i, val] of nodeValues.entries()) {
-                    expect(nodes[i].nodeValue).to.equal(val)
+                for (const [index, value] of nodeValues.entries()) {
+                    expect(nodes[index].nodeValue).to.equal(value)
                 }
             }
         })
 
         it('does not change the text', () => {
             const text = 'fmt.Sprintf("%5d", someVar)'
-            const elem = dom.createElementFromString(text)
+            const element = dom.createElementFromString(text)
 
-            convertNode(elem)
+            convertNode(element)
 
-            expect(elem.textContent).to.equal(text)
+            expect(element.textContent).to.equal(text)
         })
     })
 
@@ -113,14 +115,14 @@ describe('token_positions', () => {
                     },
                 ]
 
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
                 for (const { offsetStart, token } of elems) {
-                    const tokenElem = findElementWithOffset(elem, { offsetStart })
+                    const tokenElement = findElementWithOffset(element, { offsetStart })
 
-                    expect(tokenElem).to.not.equal(undefined)
+                    expect(tokenElement).to.not.equal(undefined)
 
-                    expect(tokenElem!.textContent).to.equal(token)
+                    expect(tokenElement!.textContent).to.equal(token)
                 }
             })
 
@@ -148,14 +150,14 @@ describe('token_positions', () => {
                     },
                 ]
 
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
                 for (const { offsetStart, token } of elems) {
-                    const tokenElem = findElementWithOffset(elem, { offsetStart }, false)
+                    const tokenElement = findElementWithOffset(element, { offsetStart }, false)
 
-                    expect(tokenElem).to.not.equal(undefined)
+                    expect(tokenElement).to.not.equal(undefined)
 
-                    expect(tokenElem!.textContent).to.equal(token)
+                    expect(tokenElement!.textContent).to.equal(token)
                 }
             })
 
@@ -164,12 +166,12 @@ describe('token_positions', () => {
 
                 const offsets = [content.length + 1, 0]
 
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
                 for (const offset of offsets) {
-                    const tokenElem = findElementWithOffset(elem, { offsetStart: offset })
+                    const tokenElement = findElementWithOffset(element, { offsetStart: offset })
 
-                    expect(tokenElem).to.equal(undefined)
+                    expect(tokenElement).to.equal(undefined)
                 }
             })
         })
@@ -191,14 +193,14 @@ describe('token_positions', () => {
                     { offsetStart: 11, offsetEnd: 4, textContent: 'contextGet' },
                 ]
 
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
                 for (const { offsetStart, offsetEnd, textContent } of ranges) {
-                    const tokenElem = findElementWithOffset(elem, { offsetStart, offsetEnd })
+                    const tokenElement = findElementWithOffset(element, { offsetStart, offsetEnd })
 
-                    expect(tokenElem).to.not.equal(undefined)
+                    expect(tokenElement).to.not.equal(undefined)
 
-                    expect(tokenElem!.textContent).to.equal(textContent)
+                    expect(tokenElement!.textContent).to.equal(textContent)
                 }
             })
 
@@ -228,14 +230,14 @@ describe('token_positions', () => {
                     },
                 ]
 
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
                 for (const { offsetStart, offsetEnd, textContent } of elems) {
-                    const tokenElem = findElementWithOffset(elem, { offsetStart, offsetEnd }, false)
+                    const tokenElement = findElementWithOffset(element, { offsetStart, offsetEnd }, false)
 
-                    expect(tokenElem).to.not.equal(undefined)
+                    expect(tokenElement).to.not.equal(undefined)
 
-                    expect(tokenElem!.textContent).to.equal(textContent)
+                    expect(tokenElement!.textContent).to.equal(textContent)
                 }
             })
 
@@ -247,12 +249,12 @@ describe('token_positions', () => {
                     { offsetStart: 1, offsetEnd: content.length + 2 },
                 ]
 
-                const elem = dom.createElementFromString(content)
+                const element = dom.createElementFromString(content)
 
                 for (const offset of offsets) {
-                    const tokenElem = findElementWithOffset(elem, offset)
+                    const tokenElement = findElementWithOffset(element, offset)
 
-                    expect(tokenElem).to.equal(undefined)
+                    expect(tokenElement).to.equal(undefined)
                 }
             })
         })

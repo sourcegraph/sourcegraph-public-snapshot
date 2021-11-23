@@ -15,13 +15,13 @@ describe('can create dom elements from generated code tables', () => {
                 getLineNumberFromCodeElement,
             } = codeViewProps
 
-            for (let i = 1; i < 10; i++) {
-                const cellFromLine = getCodeElementFromLineNumber(codeView, i)
+            for (let index = 1; index < 10; index++) {
+                const cellFromLine = getCodeElementFromLineNumber(codeView, index)
                 expect(cellFromLine).to.not.equal(null)
                 const cellFromTarget = getCodeElementFromTarget(cellFromLine!)
                 expect(cellFromTarget).to.equal(cellFromLine)
                 const line = getLineNumberFromCodeElement(cellFromTarget!)
-                expect(line).to.equal(i)
+                expect(line).to.equal(index)
             }
         }
     })

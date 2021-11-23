@@ -1,4 +1,5 @@
 import { TestScheduler } from 'rxjs/testing'
+
 import { emitLoading, LOADING, MaybeLoadingResult } from './loading'
 
 const deepStrictEqual = chai.assert.deepStrictEqual.bind(chai.assert)

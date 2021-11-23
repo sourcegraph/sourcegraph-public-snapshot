@@ -4,9 +4,9 @@ import * as path from 'path'
 export function generateGithubCodeTable(lines: string[]): string {
     const code = lines
         .map(
-            (line, i) => `<tr>
-         <td id="L${i + 1}" class="blob-num js-line-number" data-line-number="${i + 1}"></td>
-        <td id="LC${i + 1}" class="blob-code blob-code-inner js-file-line">${line}</td>
+            (line, index) => `<tr>
+         <td id="L${index + 1}" class="blob-num js-line-number" data-line-number="${index + 1}"></td>
+        <td id="LC${index + 1}" class="blob-code blob-code-inner js-file-line">${line}</td>
       </tr>`
         )
         .join('\n')

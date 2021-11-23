@@ -1,8 +1,10 @@
-import { Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import { EMPTY, NEVER, Observable, of, Subject, Subscription } from 'rxjs'
 import { delay, distinctUntilChanged, filter, first, map, takeWhile } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
+
+import { Range } from '@sourcegraph/extension-api-types'
+
 import { ErrorLike } from './errors'
 import { isDefined, propertyIsDefined } from './helpers'
 import {
@@ -14,6 +16,7 @@ import {
     PositionJump,
     TOOLTIP_DISPLAY_DELAY,
 } from './hoverifier'
+import { LOADING } from './loading'
 import { findPositionsFromEvents, SupportedMouseEvent } from './positions'
 import { CodeViewProps, DOM } from './testutils/dom'
 import {
@@ -24,7 +27,6 @@ import {
 } from './testutils/fixtures'
 import { dispatchMouseEventAtPositionImpure } from './testutils/mouse'
 import { HoverAttachment } from './types'
-import { LOADING } from './loading'
 
 const { assert } = chai
 

@@ -4,14 +4,14 @@ import * as path from 'path'
 import { generateGithubCodeTable } from './github/generate'
 import { generateSourcegraphCodeTable } from './sourcegraph/generate'
 
-const generatedDir = path.join(__dirname, 'generated')
+const generatedDirectory = path.join(__dirname, 'generated')
 
-if (fs.existsSync(generatedDir)) {
-    fs.rmdirSync(generatedDir, { recursive: true })
+if (fs.existsSync(generatedDirectory)) {
+    fs.rmdirSync(generatedDirectory, { recursive: true })
 }
-fs.mkdirSync(generatedDir, { recursive: true })
+fs.mkdirSync(generatedDirectory, { recursive: true })
 
 const code = fs.readFileSync(path.join(__dirname, 'mux.go.txt'), 'utf-8').split('\n')
 
-fs.writeFileSync(path.join(generatedDir, 'github.html'), generateGithubCodeTable(code))
-fs.writeFileSync(path.join(generatedDir, 'sourcegraph.html'), generateSourcegraphCodeTable(code))
+fs.writeFileSync(path.join(generatedDirectory, 'github.html'), generateGithubCodeTable(code))
+fs.writeFileSync(path.join(generatedDirectory, 'sourcegraph.html'), generateSourcegraphCodeTable(code))

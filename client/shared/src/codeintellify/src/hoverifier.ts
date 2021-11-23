@@ -1,4 +1,3 @@
-import { Position, Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
 import {
     animationFrameScheduler,
@@ -36,8 +35,12 @@ import {
     startWith,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+
+import { Position, Range } from '@sourcegraph/extension-api-types'
+
 import { asError, ErrorLike, isErrorLike } from './errors'
 import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
+import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlay_position'
 import { DiffPart, PositionEvent, SupportedMouseEvent } from './positions'
 import { createObservableStateContainer } from './state'
@@ -51,7 +54,6 @@ import {
     shouldTokenize,
 } from './token_position'
 import { HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange, DocumentHighlight } from './types'
-import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
 
 export { HoveredToken }
 
@@ -813,7 +815,7 @@ export function createHoverifier<C extends object, D, A>({
             .pipe(
                 switchMap(hoverObservable => hoverObservable),
                 switchMap(({ hoverOrError, position, adjustPosition, codeView, part, ...rest }) => {
-                    const pos =
+                    const position_ =
                         hoverOrError &&
                         hoverOrError !== LOADING &&
                         !isErrorLike(hoverOrError) &&
@@ -822,7 +824,7 @@ export function createHoverifier<C extends object, D, A>({
                             ? { ...hoverOrError.range.start, ...position }
                             : position
 
-                    if (!pos) {
+                    if (!position_) {
                         return of({
                             hoverOrError,
                             codeView,
@@ -838,12 +840,12 @@ export function createHoverifier<C extends object, D, A>({
                                   codeView,
                                   direction: AdjustmentDirection.ActualToCodeView,
                                   position: {
-                                      ...pos,
+                                      ...position_,
                                       part,
                                   },
                               })
                           )
-                        : of(pos)
+                        : of(position_)
 
                     return adjustingPosition.pipe(
                         map(position => ({ position, hoverOrError, codeView, part, ...rest }))
@@ -969,11 +971,11 @@ export function createHoverifier<C extends object, D, A>({
                               // between the range start and end positions.
                               positions: combineLatest(
                                   documentHighlights.map(({ range }) => {
-                                      let pos = { ...position, ...range.start }
+                                      let position_ = { ...position, ...range.start }
 
                                       // The requested position is is 0-indexed; the code here is currently 1-indexed
-                                      const { line, character } = pos
-                                      pos = { ...pos, line: line + 1, character: character + 1 }
+                                      const { line, character } = position_
+                                      position_ = { ...position_, line: line + 1, character: character + 1 }
 
                                       return adjustPosition
                                           ? from(
@@ -981,12 +983,12 @@ export function createHoverifier<C extends object, D, A>({
                                                     codeView,
                                                     direction: AdjustmentDirection.ActualToCodeView,
                                                     position: {
-                                                        ...pos,
+                                                        ...position_,
                                                         part,
                                                     },
                                                 })
                                             )
-                                          : of(pos)
+                                          : of(position_)
                                   })
                               ),
                           }

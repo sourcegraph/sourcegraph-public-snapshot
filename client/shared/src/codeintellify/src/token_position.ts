@@ -1,5 +1,7 @@
-import { Position, Range } from '@sourcegraph/extension-api-types'
 import { isEqual } from 'lodash'
+
+import { Position, Range } from '@sourcegraph/extension-api-types'
+
 import { isPosition, LineOrPositionOrRange } from './types'
 
 /**
@@ -120,17 +122,17 @@ export function shouldTokenize({
  * @param parentNode The node to convert.
  */
 export function convertNode(parentNode: HTMLElement): void {
-    for (let i = 0; i < parentNode.childNodes.length; ++i) {
-        const node = parentNode.childNodes[i]
-        const isLastNode = i === parentNode.childNodes.length - 1
+    for (let index = 0; index < parentNode.childNodes.length; ++index) {
+        const node = parentNode.childNodes[index]
+        const isLastNode = index === parentNode.childNodes.length - 1
 
         if (node.nodeType === Node.TEXT_NODE) {
             let nodeText = node.textContent ?? ''
             if (nodeText === '') {
                 continue
             }
-            parentNode.removeChild(node)
-            let insertBefore = i
+            node.remove()
+            let insertBefore = index
 
             while (true) {
                 const nextToken = consumeNextToken(nodeText)
@@ -139,14 +141,14 @@ export function convertNode(parentNode: HTMLElement): void {
                 }
                 const newTextNode = document.createTextNode(nextToken)
                 const newTextNodeWrapper = document.createElement('SPAN')
-                newTextNodeWrapper.appendChild(newTextNode)
+                newTextNodeWrapper.append(newTextNode)
                 if (isLastNode) {
-                    parentNode.appendChild(newTextNodeWrapper)
+                    parentNode.append(newTextNodeWrapper)
                 } else {
                     // increment insertBefore as new span-wrapped text nodes are added
                     parentNode.insertBefore(newTextNodeWrapper, parentNode.childNodes[insertBefore++])
                 }
-                nodeText = nodeText.substr(nextToken.length)
+                nodeText = nodeText.slice(nextToken.length)
             }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             const elementNode = node as HTMLElement
@@ -158,8 +160,8 @@ export function convertNode(parentNode: HTMLElement): void {
 }
 
 const VARIABLE_TOKENIZER = /(^\w+)/
-const ASCII_CHARACTER_TOKENIZER = /(^[\x21-\x2F|\x3A-\x40|\x5B-\x60|\x7B-\x7E])/
-const NONVARIABLE_TOKENIZER = /(^[^\x21-\x7E]+)/
+const ASCII_CHARACTER_TOKENIZER = /(^[\u0021-\u002F\u003A-\u0040\u005B-\u0060\u007B-\u007E])/
+const NONVARIABLE_TOKENIZER = /(^[^\u0021-\u007E]+)/
 
 enum TokenType {
     /** Tokens that are alphanumeric, i.e. variable names, keywords */
@@ -328,11 +330,11 @@ export function findElementWithOffset(
 
         // Find the text node that is at the given offset.
         let targetNode: Node | undefined
-        for (const [i, node] of textNodes.entries()) {
+        for (const [index, node] of textNodes.entries()) {
             const text = node.textContent ?? ''
             if (offsetStep <= offsetStart && offsetStep + text.length > offsetStart) {
                 targetNode = node
-                nodeIndex = i
+                nodeIndex = index
                 break
             }
 
@@ -356,8 +358,8 @@ export function findElementWithOffset(
          * @param idx the index to start at
          * @param delta the direction we are walking
          */
-        const findTokenEdgeIndex = (idx: number, delta: -1 | 1): number => {
-            let at = idx
+        const findTokenEdgeIndex = (index: number, delta: -1 | 1): number => {
+            let at = index
 
             while (textNodes[at + delta] && isSameTokenType(tokenType, textNodes[at + delta])) {
                 at += delta
@@ -391,7 +393,7 @@ export function findElementWithOffset(
     // An exception will be thrown, however, if the Range splits a non-Text node with only one of its
     // boundary points. That is, unlike the alternative above, if there are partially selected nodes,
     // they will not be cloned and instead the operation will fail.
-    wrapper.appendChild(tokenRange.extractContents())
+    wrapper.append(tokenRange.extractContents())
     tokenRange.insertNode(wrapper)
 
     return wrapper

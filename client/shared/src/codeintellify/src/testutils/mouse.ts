@@ -1,5 +1,7 @@
 import { Position } from '@sourcegraph/extension-api-types'
+
 import { convertNode } from '../token_position'
+
 import { CodeViewProps } from './dom'
 
 interface Coordinates {
@@ -51,8 +53,8 @@ export const dispatchMouseEventAtPositionImpure = (
         }
 
         if (characterOffset <= position.character && characterOffset + value.length >= position.character) {
-            const rect = line.getBoundingClientRect()
-            const { top, height, left, width } = rect
+            const rectangle = line.getBoundingClientRect()
+            const { top, height, left, width } = rectangle
 
             const event = createMouseEvent(eventType, {
                 x: left + width / 2,

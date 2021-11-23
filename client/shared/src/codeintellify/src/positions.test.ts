@@ -1,13 +1,13 @@
-import { Position } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 
-import { CodeViewProps, DOM } from './testutils/dom'
-import { createMouseEvent, dispatchMouseEventAtPositionImpure } from './testutils/mouse'
+import { Position } from '@sourcegraph/extension-api-types'
 
 import { propertyIsDefined } from './helpers'
 import { findPositionsFromEvents } from './positions'
+import { CodeViewProps, DOM } from './testutils/dom'
+import { createMouseEvent, dispatchMouseEventAtPositionImpure } from './testutils/mouse'
 import { HoveredToken } from './token_position'
 
 describe('positions', () => {

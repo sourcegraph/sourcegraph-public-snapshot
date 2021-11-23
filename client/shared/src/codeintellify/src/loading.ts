@@ -1,6 +1,6 @@
+import { isEqual } from 'lodash'
 import { OperatorFunction, merge, combineLatest, of } from 'rxjs'
 import { share, startWith, map, filter, mapTo, delay, endWith, scan, takeUntil, last } from 'rxjs/operators'
-import { isEqual } from 'lodash'
 
 export const LOADING = 'loading' as const
 

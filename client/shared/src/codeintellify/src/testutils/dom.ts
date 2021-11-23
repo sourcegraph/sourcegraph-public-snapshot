@@ -1,20 +1,21 @@
 import githubCode from '../../testdata/generated/github.html'
 import sourcegraphCode from '../../testdata/generated/sourcegraph.html'
 import { DOMFunctions } from '../token_position'
+
 import { TEST_DATA_REVSPEC } from './rev'
 
 const createElementFromString = (html: string): HTMLDivElement => {
-    const elem = document.createElement('div')
+    const element = document.createElement('div')
 
-    elem.innerHTML = html
-    elem.style.height = 'auto'
-    elem.style.width = 'auto'
-    elem.style.whiteSpace = 'pre'
-    elem.style.cssFloat = 'left'
-    elem.style.display = 'block'
-    elem.style.clear = 'both'
+    element.innerHTML = html
+    element.style.height = 'auto'
+    element.style.width = 'auto'
+    element.style.whiteSpace = 'pre'
+    element.style.cssFloat = 'left'
+    element.style.display = 'block'
+    element.style.clear = 'both'
 
-    return elem
+    return element
 }
 
 /** Gets all of the text nodes within a given node. Used for testing. */
@@ -25,7 +26,7 @@ export const getTextNodes = (node: Node): Node[] => {
 
     const nodes: Node[] = []
 
-    for (const child of Array.from(node.childNodes)) {
+    for (const child of [...node.childNodes]) {
         nodes.push(...getTextNodes(child))
     }
 
@@ -81,12 +82,12 @@ const createGitHubCodeView = (): CodeViewProps => {
     }
 
     const getCodeElementFromLineNumber = (b: HTMLElement, line: number): HTMLElement | null => {
-        const numCell = b.querySelector(`[data-line-number="${line}"]`)
-        if (!numCell) {
+        const numberCell = b.querySelector(`[data-line-number="${line}"]`)
+        if (!numberCell) {
             return null
         }
 
-        const row = numCell.closest('tr') as HTMLElement
+        const row = numberCell.closest('tr') as HTMLElement
         if (!row) {
             return row
         }
@@ -99,12 +100,12 @@ const createGitHubCodeView = (): CodeViewProps => {
         if (!row) {
             return -1
         }
-        const numCell = row.children.item(0) as HTMLElement
-        if (!numCell || (numCell && !numCell.dataset.lineNumber)) {
+        const numberCell = row.children.item(0) as HTMLElement
+        if (!numberCell || (numberCell && !numberCell.dataset.lineNumber)) {
             return -1
         }
 
-        return parseInt(numCell.dataset.lineNumber as string, 10)
+        return parseInt(numberCell.dataset.lineNumber as string, 10)
     }
 
     return {
@@ -141,12 +142,12 @@ const createSourcegraphCodeView = (): CodeViewProps => {
     }
 
     const getCodeElementFromLineNumber = (b: HTMLElement, line: number): HTMLElement | null => {
-        const numCell = b.querySelector(`[data-line="${line}"]`)
-        if (!numCell) {
+        const numberCell = b.querySelector(`[data-line="${line}"]`)
+        if (!numberCell) {
             return null
         }
 
-        const row = numCell.closest('tr') as HTMLElement
+        const row = numberCell.closest('tr') as HTMLElement
         if (!row) {
             return row
         }
@@ -160,12 +161,12 @@ const createSourcegraphCodeView = (): CodeViewProps => {
             return -1
         }
 
-        const numCell = row.children.item(0) as HTMLElement
-        if (!numCell || (numCell && !numCell.dataset.line)) {
+        const numberCell = row.children.item(0) as HTMLElement
+        if (!numberCell || (numberCell && !numberCell.dataset.line)) {
             return -1
         }
 
-        return parseInt(numCell.dataset.line as string, 10)
+        return parseInt(numberCell.dataset.line as string, 10)
     }
 
     return {
@@ -221,13 +222,13 @@ export class DOM {
      */
     public cleanup = (): void => {
         for (const node of this.nodes) {
-            document.body.removeChild(node)
+            node.remove()
         }
     }
 
     /** The funnel for inserting elements into the DOM so that we know to remove it in `cleanup()`. */
     private insert(node: Element): void {
-        document.body.appendChild(node)
+        document.body.append(node)
 
         this.nodes.add(node)
     }

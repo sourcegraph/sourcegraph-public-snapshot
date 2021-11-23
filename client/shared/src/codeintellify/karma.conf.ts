@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 import { Config, ConfigOptions } from 'karma'
+
 import webpackConfig from './webpack.test.config'
 
 export default (config: Config): void => {

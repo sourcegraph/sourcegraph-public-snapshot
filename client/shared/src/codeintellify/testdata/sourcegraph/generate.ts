@@ -4,8 +4,8 @@ import * as path from 'path'
 export function generateSourcegraphCodeTable(lines: string[]): string {
     const code = lines
         .map(
-            (line, i) => `<tr>
-                <td class="line" data-line="${i + 1}"></td>
+            (line, index) => `<tr>
+                <td class="line" data-line="${index + 1}"></td>
                 <td class="code">${line}</td>
             </tr>`
         )
