@@ -43,12 +43,12 @@ func (c ExecutionDiskCache) Get(ctx context.Context, key cache.Keyer) (execution
 		return result, false, err
 	}
 
-	found, err := c.readCacheFile(path, &result)
+	found, err := readCacheFile(path, &result)
 
 	return result, found, err
 }
 
-func (c ExecutionDiskCache) readCacheFile(path string, result interface{}) (bool, error) {
+func readCacheFile(path string, result interface{}) (bool, error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false, nil
 	}
@@ -111,7 +111,7 @@ func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key cache.Keyer) 
 		return result, false, err
 	}
 
-	found, err := c.readCacheFile(path, &result)
+	found, err := readCacheFile(path, &result)
 	if err != nil {
 		return result, false, err
 	}
@@ -157,16 +157,16 @@ type JSONCacheWriter interface {
 	WriteAfterStepResult(key string, value execution.AfterStepResult)
 }
 
-type JSONLinesCache struct {
+type ServerSideCache struct {
 	Writer JSONCacheWriter
 }
 
-func (c *JSONLinesCache) Get(ctx context.Context, key cache.Keyer) (result execution.Result, found bool, err error) {
+func (c *ServerSideCache) Get(ctx context.Context, key cache.Keyer) (result execution.Result, found bool, err error) {
 	// noop
 	return execution.Result{}, false, nil
 }
 
-func (c *JSONLinesCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
+func (c *ServerSideCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -177,7 +177,7 @@ func (c *JSONLinesCache) Set(ctx context.Context, key cache.Keyer, result execut
 	return nil
 }
 
-func (c *JSONLinesCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
+func (c *ServerSideCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -188,12 +188,21 @@ func (c *JSONLinesCache) SetStepResult(ctx context.Context, key cache.Keyer, res
 	return nil
 }
 
-func (c *JSONLinesCache) GetStepResult(ctx context.Context, key cache.Keyer) (result execution.AfterStepResult, found bool, err error) {
-	// noop
-	return execution.AfterStepResult{}, false, nil
+func (c *ServerSideCache) GetStepResult(ctx context.Context, key cache.Keyer) (result execution.AfterStepResult, found bool, err error) {
+	rawKey, err := key.Key()
+	if err != nil {
+		return result, false, err
+	}
+
+	found, err = readCacheFile(rawKey+cacheFileExt, &result)
+	if err != nil {
+		return result, false, err
+	}
+
+	return result, found, nil
 }
 
-func (c *JSONLinesCache) Clear(ctx context.Context, key cache.Keyer) error {
+func (c *ServerSideCache) Clear(ctx context.Context, key cache.Keyer) error {
 	// noop
 	return nil
 }

@@ -150,7 +150,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
 		Creator:       workspaceCreator,
 		CacheDir:      opts.flags.cacheDir,
-		Cache:         &executor.JSONLinesCache{Writer: ui},
+		Cache:         &executor.ServerSideCache{Writer: ui},
 		SkipErrors:    opts.flags.skipErrors,
 		CleanArchives: opts.flags.cleanArchives,
 		Parallelism:   opts.flags.parallelism,
