@@ -657,7 +657,7 @@ const WorkspaceStateIcon: React.FunctionComponent<{
 
 const StepStateIcon: React.FunctionComponent<{ step: BatchSpecWorkspaceStepFields }> = ({ step }) => {
     if (step.cachedResultFound) {
-        return <ContentSaveIcon className="icon-inline text-muted" />
+        return <ContentSaveIcon className="icon-inline text-success" />
     }
     if (step.skipped) {
         return <LinkVariantRemoveIcon className="icon-inline text-muted" />
