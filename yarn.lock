@@ -3425,18 +3425,6 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^7.3.0":
-  version "7.4.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.4.0.tgz#9a7392494c5b3a16305c9d51d09f3f85c8ac2d9f"
-  integrity sha512-8I6Bi889i8M2kn3Z6B56VGKs4CoXHn1wr0ULzPIUu7uIluYr9tGQBYSSjmEh6BcHNtFE6ibxnF0Y0sQ339oT8Q==
-  dependencies:
-    "@sourcegraph/event-positions" "^1.0.4"
-    "@sourcegraph/extension-api-types" "^2.1.0"
-    lodash "^4.17.10"
-    rxjs "6.6.3"
-    sourcegraph "^24.0.0 || ^25.0.0 || ^25.0.0"
-    ts-key-enum "^2.0.0"
-
 "@sourcegraph/eslint-config@^0.26.0":
   version "0.26.0"
   resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.26.0.tgz#73371fe4019d9311ec7fa422e70d92129d57c2bf"
@@ -3457,15 +3445,6 @@
     eslint-plugin-rxjs "^2.1.5"
     eslint-plugin-unicorn "^21.0.0"
     eslint-plugin-unused-imports "^1.1.5"
-
-"@sourcegraph/event-positions@^1.0.4":
-  version "1.0.4"
-  resolved "https://registry.npmjs.org/@sourcegraph/event-positions/-/event-positions-1.0.4.tgz#031541374b725cfb0cbefaa07add020b1a119a60"
-  integrity sha512-mrWIEpC9UuAZwExMQlRfLaLLwC9x8WQMAOEYFHGEdXCzXEHqaZu22aR8PtrQEMtwia6eIzvZl6uYp0gDDGLo2g==
-  dependencies:
-    "@sourcegraph/extension-api-types" "^2.0.0"
-    lodash "^4.17.10"
-    rxjs "^6.3.2"
 
 "@sourcegraph/extension-api-classes@^1.1.0":
   version "1.1.0"
@@ -20750,7 +20729,7 @@ rxjs-report-usage@^1.0.4:
     glob "~7.1.6"
     prompts "~2.3.2"
 
-rxjs@6.6.3, rxjs@^6.3.2, rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.6.0, rxjs@^6.6.3:
+rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.6.0, rxjs@^6.6.3:
   version "6.6.3"
   resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.6.3.tgz#8ca84635c4daa900c0d3967a6ee7ac60271ee552"
   integrity sha512-trsQc+xYYXZ3urjOiJOuCOa5N3jAZ3eiSpQB5hIT8zGlL2QfnHLJ2r7GMkBGuIausdJN1OneaI6gQlsqNHHmZQ==
@@ -22828,7 +22807,7 @@ ts-invariant@^0.9.0:
   dependencies:
     tslib "^2.1.0"
 
-ts-key-enum@^2.0.0, ts-key-enum@^2.0.7:
+ts-key-enum@^2.0.7:
   version "2.0.8"
   resolved "https://registry.npmjs.org/ts-key-enum/-/ts-key-enum-2.0.8.tgz#ff83012837e3e7f999eee84dba1a1dcb8c66fbeb"
   integrity sha512-ccRzCVr98faP5pKYpX0IlrPvf2VcepEFSH115CWti0eM1anh774ndXf0RlBOFecTuM103gMwaHSo0tDPlQnyNQ==
