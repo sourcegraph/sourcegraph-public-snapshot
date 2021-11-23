@@ -1,0 +1,11 @@
+{
+  "extends": ["github>sourcegraph/renovate-config"],
+  "semanticCommits": true,
+  "reviewers": ["team:web"],
+  "packageRules": [
+    {
+      "depTypeList": ["dependencies"],
+      "rangeStrategy": "widen"
+    }
+  ]
+}

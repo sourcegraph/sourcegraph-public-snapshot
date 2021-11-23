@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+  },
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts", "src/testutils"],
+}

@@ -1,0 +1,20 @@
+{
+  "extends": "@sourcegraph/eslint-config",
+  "parserOptions": {
+    "project": "tsconfig.json"
+  },
+  "overrides": [
+    {
+      "files": ["testdata/**"],
+      "rules": {
+        "no-sync": "warn"
+      }
+    },
+    {
+      "files": ["*.test.*", "src/testutils/**"],
+      "rules": {
+        "import/extensions": ["error", "never", { "html": "always" }]
+      }
+    }
+  ]
+}
