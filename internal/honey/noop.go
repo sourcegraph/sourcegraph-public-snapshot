@@ -2,9 +2,7 @@ package honey
 
 import "github.com/opentracing/opentracing-go/log"
 
-type noopEvent struct {
-	parent Event
-}
+type noopEvent struct{}
 
 var _ Event = noopEvent{}
 

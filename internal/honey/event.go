@@ -29,8 +29,7 @@ type Event interface {
 }
 
 type eventWrapper struct {
-	parent Event
-	event  *libhoney.Event
+	event *libhoney.Event
 }
 
 var _ Event = eventWrapper{}
@@ -40,7 +39,6 @@ func (w eventWrapper) Dataset() string {
 }
 
 func (w eventWrapper) AddField(name string, val interface{}) {
-	name = toSnakeCase(name)
 	w.event.AddField(name, val)
 }
 

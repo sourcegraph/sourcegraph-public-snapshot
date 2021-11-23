@@ -53,8 +53,6 @@ package observation
 
 import (
 	"context"
-	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -196,15 +194,12 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	tr, ctx := op.trace(ctx, args)
 
 	event := honey.NoopEvent()
+	snakecaseOpName := toSnakeCase(op.name)
 	if op.context.HoneyDataset != nil {
-		mem := &runtime.MemStats{}
-		runtime.ReadMemStats(mem)
 		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
-			"operation":           op.name,
-			"meta.hostname":       hostname.Get(),
-			"meta.num_goroutines": runtime.NumGoroutine(),
-			"meta.version":        version.Version(),
-			"meta.mem_inuse":      mem.Alloc + mem.StackInuse,
+			"operation":     snakecaseOpName,
+			"meta.hostname": hostname.Get(),
+			"meta.version":  version.Version(),
 		})
 	}
 
@@ -212,13 +207,15 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	if tr != nil {
 		logFields = func(fields ...log.Field) {
 			for _, field := range fields {
-				event.AddField(fmt.Sprintf("%s.%s", op.name, field.Key()), field.Value())
+				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
 			}
 			tr.LogFields(fields...)
 		}
 	} else {
 		logFields = func(fields ...log.Field) {
-			event.AddLogFields(fields)
+			for _, field := range fields {
+				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
+			}
 		}
 	}
 
@@ -242,7 +239,7 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
 		)
 		op.emitErrorLogs(logErr, logFields)
-		op.emitHoneyEvent(honeyErr, event, logFields, elapsedMs)
+		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, logFields, elapsedMs)
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
 	}
@@ -280,7 +277,7 @@ func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
 	logging.Log(op.context.Logger, op.name, err, kvs...)
 }
 
-func (op *Operation) emitHoneyEvent(err *error, event honey.Event, logFields []log.Field, duration int64) {
+func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []log.Field, duration int64) {
 	if err != nil && *err != nil {
 		event.AddField("error", (*err).Error())
 	}
@@ -288,7 +285,7 @@ func (op *Operation) emitHoneyEvent(err *error, event honey.Event, logFields []l
 	event.AddField("duration_ms", duration)
 
 	for _, field := range logFields {
-		event.AddField(fmt.Sprintf("%s.%s", op.name, field.Key()), field.Value())
+		event.AddField(opName+"."+toSnakeCase(field.Key()), field.Value())
 	}
 
 	event.Send()

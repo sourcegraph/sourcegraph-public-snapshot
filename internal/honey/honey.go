@@ -28,7 +28,6 @@ func init() {
 	}
 	err := libhoney.Init(libhoney.Config{
 		APIKey: apiKey,
-		Logger: &libhoney.DefaultLogger{},
 	})
 	if err != nil {
 		log.Println("Failed to init libhoney:", err)
