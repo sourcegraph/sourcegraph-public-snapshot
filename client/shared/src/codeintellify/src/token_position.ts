@@ -161,7 +161,7 @@ const VARIABLE_TOKENIZER = /(^\w+)/
 const ASCII_CHARACTER_TOKENIZER = /(^[\x21-\x2F|\x3A-\x40|\x5B-\x60|\x7B-\x7E])/
 const NONVARIABLE_TOKENIZER = /(^[^\x21-\x7E]+)/
 
-const enum TokenType {
+enum TokenType {
     /** Tokens that are alphanumeric, i.e. variable names, keywords */
     Alphanumeric,
     /** Tokens that are ascii characters but aren't in identies (i.e. {, }, [, ], |, ;,  etc) */
