@@ -4,9 +4,14 @@ import { of, ReplaySubject } from 'rxjs'
 import vscode from 'vscode'
 
 import { proxySubscribable } from '@sourcegraph/shared/src/api/extension/api/common'
+import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { invalidateClient, requestGraphQLFromVSCode } from './backend/requestGraphQl'
 import { initializeSourcegraphSettings } from './backend/settings'
+import { toSourcegraphLanguage } from './code-intel/languages'
+import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
+import { SourcegraphHoverProvider } from './code-intel/SourcegraphHoverProvider'
+import { SourcegraphReferenceProvider } from './code-intel/SourcegraphReferenceProvider'
 import { openSourcegraphUriCommand } from './commands.ts/openSourcegraphUriCommand'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
@@ -14,7 +19,11 @@ import { SourcegraphUri } from './file-system/SourcegraphUri'
 import { log } from './log'
 import { endpointHostnameSetting, endpointSetting } from './settings/endpointSetting'
 import { SourcegraphVSCodeExtensionAPI } from './webview/contract'
-import { initializeSearchPanelWebview, initializeSearchSidebarWebview } from './webview/initialize'
+import {
+    initializeExtensionHostWebview,
+    initializeSearchPanelWebview,
+    initializeSearchSidebarWebview,
+} from './webview/initialize'
 import { createSearchSidebarMediator } from './webview/search-sidebar/mediator'
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -139,14 +148,14 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.registerWebviewViewProvider(
             'sourcegraph.searchSidebar',
             {
-                resolveWebviewView: (webview, _context, _token) => {
+                resolveWebviewView: (webviewView, _context, _token) => {
                     const { sourcegraphVSCodeSearchSidebarAPI } = initializeSearchSidebarWebview({
                         extensionPath: context.extensionPath,
                         sourcegraphVSCodeExtensionAPI,
-                        webviewView: webview,
+                        webviewView,
                     })
 
-                    webview.onDidDispose(() => {
+                    webviewView.onDidDispose(() => {
                         sourcegraphVSCodeSearchSidebarAPI[releaseProxy]()
                     })
                 },
@@ -155,28 +164,72 @@ export function activate(context: vscode.ExtensionContext): void {
         )
     )
 
-    // TODO Sourcegraph extensions
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             'sourcegraph.extensionHost',
             {
                 resolveWebviewView: (webviewView, _context, _token) => {
-                    webviewView.webview.options = {
-                        enableScripts: true,
-                    }
+                    const { sourcegraphVSCodeExtensionHostAPI } = initializeExtensionHostWebview({
+                        extensionPath: context.extensionPath,
+                        sourcegraphVSCodeExtensionAPI,
+                        webviewView,
+                    })
 
-                    webviewView.webview.html = `<!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Sourcegraph Extension host</title>
-                </head>
-                <body>
-                    <div id="root">
-                    </div>
-                </body>
-                </html>`
+                    // TODO: send message to Sourcegraph extension host when instance URL changes to shut it down.
+
+                    // Register language-related features (they depend on Sourcegraph extensions).
+                    context.subscriptions.push(
+                        vscode.languages.registerDefinitionProvider(
+                            { scheme: 'sourcegraph' },
+                            new SourcegraphDefinitionProvider(fs, sourcegraphVSCodeExtensionHostAPI)
+                        )
+                    )
+                    context.subscriptions.push(
+                        vscode.languages.registerReferenceProvider(
+                            { scheme: 'sourcegraph' },
+                            new SourcegraphReferenceProvider(fs, sourcegraphVSCodeExtensionHostAPI)
+                        )
+                    )
+                    context.subscriptions.push(
+                        vscode.languages.registerHoverProvider(
+                            { scheme: 'sourcegraph' },
+                            new SourcegraphHoverProvider(fs, sourcegraphVSCodeExtensionHostAPI)
+                        )
+                    )
+
+                    // TODO remove closed editors/documents
+
+                    vscode.window.onDidChangeActiveTextEditor(editor => {
+                        // TODO store previously active editor -> SG viewer so we can remove on change
+                        if (editor?.document.uri.scheme === 'sourcegraph') {
+                            const text = editor.document.getText()
+                            const sourcegraphUri = fs.sourcegraphUri(editor.document.uri)
+                            const languageId = toSourcegraphLanguage(editor.document.languageId)
+
+                            const extensionHostUri = makeRepoURI({
+                                repoName: sourcegraphUri.repositoryName,
+                                revision: sourcegraphUri.revision,
+                                filePath: sourcegraphUri.path,
+                            })
+
+                            // We'll use the viewerId return value to remove viewer, get/set text decorations.
+                            sourcegraphVSCodeExtensionHostAPI
+                                .addTextDocumentIfNotExists({
+                                    text,
+                                    uri: extensionHostUri,
+                                    languageId,
+                                })
+                                .then(() =>
+                                    sourcegraphVSCodeExtensionHostAPI.addViewerIfNotExists({
+                                        type: 'CodeEditor',
+                                        resource: extensionHostUri,
+                                        selections: [],
+                                        isActive: true,
+                                    })
+                                )
+                                .catch(error => console.error(error))
+                        }
+                    })
                 },
             },
             {

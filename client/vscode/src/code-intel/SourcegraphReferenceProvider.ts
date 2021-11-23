@@ -1,6 +1,6 @@
 import * as Comlink from 'comlink'
 import { EMPTY, of } from 'rxjs'
-import { first, switchMap } from 'rxjs/operators'
+import { debounceTime, first, switchMap } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -9,16 +9,17 @@ import { makeRepoURI, parseRepoURI } from '@sourcegraph/shared/src/util/url'
 import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SourcegraphVSCodeExtensionHostAPI } from '../webview/contract'
 
-export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider {
+export class SourcegraphReferenceProvider implements vscode.ReferenceProvider {
     constructor(
         private readonly fs: SourcegraphFileSystemProvider,
         private readonly sourcegraphExtensionHostAPI: Comlink.Remote<SourcegraphVSCodeExtensionHostAPI>
     ) {}
-    public async provideDefinition(
+    public async provideReferences(
         document: vscode.TextDocument,
         position: vscode.Position,
+        referenceContext: vscode.ReferenceContext,
         token: vscode.CancellationToken
-    ): Promise<vscode.Definition | undefined> {
+    ): Promise<vscode.Location[] | undefined> {
         const uri = this.fs.sourcegraphUri(document.uri)
         const extensionHostUri = makeRepoURI({
             repoName: uri.repositoryName,
@@ -27,23 +28,28 @@ export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider 
         })
 
         const definitions = wrapRemoteObservable(
-            this.sourcegraphExtensionHostAPI.getDefinition({
-                textDocument: {
-                    uri: extensionHostUri,
+            this.sourcegraphExtensionHostAPI.getReferences(
+                {
+                    textDocument: {
+                        uri: extensionHostUri,
+                    },
+                    position: {
+                        line: position.line,
+                        character: position.character,
+                    },
                 },
-                position: {
-                    line: position.line,
-                    character: position.character,
-                },
-            })
+                referenceContext
+            )
         )
             .pipe(
+                // TODO can share this code w/ definition provider.
                 switchMap(({ isLoading, result }) => {
                     if (isLoading) {
                         return EMPTY
                     }
 
                     const locations = result.map(location => {
+                        // Create a sourcegraph URI from this git URI (so we need both fromGitURI and toGitURI.)`
                         const uri = parseRepoURI(location.uri)
 
                         return this.fs.toVscodeLocation({
@@ -58,6 +64,8 @@ export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider 
 
                     return of(locations)
                 }),
+                // TODO validate that this is OK, and actually unsubscribe when token emits event.
+                debounceTime(1000),
                 first()
             )
             .toPromise()

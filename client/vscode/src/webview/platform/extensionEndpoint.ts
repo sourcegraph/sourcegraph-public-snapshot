@@ -1,27 +1,17 @@
 import * as Comlink from 'comlink'
-import { isObject } from 'lodash'
 import vscode from 'vscode'
 
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
-import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
-import { generateUUID } from './proxyTransferHandler'
+import {
+    generateUUID,
+    isNestedConnection,
+    isProxyMarked,
+    NestedConnectionData,
+    RelationshipType,
+} from './proxyTransferHandler'
 
 let nextPanelId = 1
-
-function isProxyMarked(value: unknown): value is Comlink.ProxyMarked {
-    return isObject(value) && (value as Comlink.ProxyMarked)[Comlink.proxyMarker]
-}
-
-interface NestedConnectionData {
-    nestedConnectionId: string
-    proxyMarkedValue?: object
-    panelId: string
-}
-
-function isNestedConnection(value: unknown): value is NestedConnectionData {
-    return isObject(value) && hasProperty('nestedConnectionId')(value) && hasProperty('proxyMarkedValue')(value)
-}
 
 // TODO explain, panelId -> factory, remove when panel is destroyed
 const endpointFactories = new Map<string, ((connectionId: string) => Comlink.Endpoint) | undefined>()
@@ -32,14 +22,14 @@ const vscodeExtensionProxyTransferHandler: Comlink.TransferHandler<
     // Receive panelId (in deserialize), no need to send it.
     // Return proxyMarkedValue in serialize so we can expose it in postMessage, but
     // only end up sending the nestedConnectionId
-    { nestedConnectionId: string; proxyMarkedValue?: object; panelId?: string }
+    { nestedConnectionId: string; proxyMarkedValue?: object; panelId?: string; relationshipType: RelationshipType }
 > = {
     canHandle: isProxyMarked,
     serialize: proxyMarkedValue => {
         const nestedConnectionId = generateUUID()
         // Defer endpoint creation/object exposition to `postMessage` (to scope it to panel)
 
-        return [{ nestedConnectionId, proxyMarkedValue }, []]
+        return [{ nestedConnectionId, proxyMarkedValue, relationshipType: 'webToNode' }, []]
     },
     deserialize: serialized => {
         // Create endpoint, return wrapped proxy.
@@ -61,20 +51,20 @@ export function createEndpointsForWebview(
     nextPanelId++
     let disposed = false
 
+    /**
+     * Handles values sent to webviews that are marked to be proxied.
+     */
+    function toWireValue(value: NestedConnectionData): void {
+        const proxyMarkedValue = value.proxyMarkedValue!
+        // The proxyMarkedValue is probably not cloneable, so don't
+        // send it "over the wire"
+        delete value.proxyMarkedValue
+
+        const endpoint = createEndpoint(value.nestedConnectionId)
+        Comlink.expose(proxyMarkedValue, endpoint)
+    }
+
     function createEndpoint(connectionId: string): Comlink.Endpoint {
-        /**
-         * Handles values send to webviews that are marked to be proxied.
-         */
-        function toWireValue(value: NestedConnectionData): void {
-            const proxyMarkedValue = value.proxyMarkedValue!
-            // The proxyMarkedValue is probably not cloneable, so don't
-            // send it "over the wire"
-            delete value.proxyMarkedValue
-
-            const endpoint = createEndpoint(value.nestedConnectionId)
-            Comlink.expose(proxyMarkedValue, endpoint)
-        }
-
         return {
             postMessage: (message: any) => {
                 const value = message.value

@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
 import { BehaviorSubject, combineLatest, from, Observable, Subscription } from 'rxjs'
-import { catchError, concatMap, distinctUntilChanged, map, tap } from 'rxjs/operators'
+import { catchError, concatMap, distinctUntilChanged, first, map, switchMap, tap } from 'rxjs/operators'
 import sourcegraph from 'sourcegraph'
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
@@ -17,13 +17,19 @@ import { parseContributionExpressions } from './api/contribution'
 import { ExtensionHostState } from './extensionHostState'
 
 export function observeActiveExtensions(
-    mainAPI: Remote<MainThreadAPI>
+    mainAPI: Remote<MainThreadAPI>,
+    mainThreadAPIInitializations: Observable<boolean>
 ): {
     activeLanguages: ExtensionHostState['activeLanguages']
     activeExtensions: ExtensionHostState['activeExtensions']
 } {
     const activeLanguages = new BehaviorSubject<ReadonlySet<string>>(new Set())
-    const enabledExtensions = wrapRemoteObservable(mainAPI.getEnabledExtensions())
+    // Wait until the main thread API has initialized since this runs during extension host init.
+    const enabledExtensions = mainThreadAPIInitializations.pipe(
+        first(initialized => initialized),
+        switchMap(() => wrapRemoteObservable(mainAPI.getEnabledExtensions()))
+    )
+
     const activatedExtensionIDs = new Set<string>()
 
     const activeExtensions: Observable<(ConfiguredExtension | ExecutableExtension)[]> = combineLatest([
@@ -37,6 +43,7 @@ export function observeActiveExtensions(
                     activatedExtensionIDs.add(extension.id)
                 }
             }
+            console.log({ activeLanguages, activateExtensions, activatedExtensionIDs })
         }),
         map(([, extensions]) =>
             extensions ? extensions.filter(extension => activatedExtensionIDs.has(extension.id)) : []
@@ -60,6 +67,7 @@ export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
     createExtensionAPI: (extensionID: string) => typeof sourcegraph,
+    mainThreadAPIInitializations: Observable<boolean>,
     /**
      * Function that activates an extension.
      * Returns a promise that resolves once the extension is activated.
@@ -73,14 +81,19 @@ export function activateExtensions(
 ): Subscription {
     const getScriptURLs = memoizeObservable(
         () =>
-            from(mainAPI.getScriptURLForExtension()).pipe(
-                map(getScriptURL => {
-                    function getBundleURLs(urls: string[]): Promise<(string | ErrorLike)[]> {
-                        return getScriptURL ? getScriptURL(urls) : Promise.resolve(urls)
-                    }
+            mainThreadAPIInitializations.pipe(
+                first(initialized => initialized),
+                switchMap(() =>
+                    from(mainAPI.getScriptURLForExtension()).pipe(
+                        map(getScriptURL => {
+                            function getBundleURLs(urls: string[]): Promise<(string | ErrorLike)[]> {
+                                return getScriptURL ? getScriptURL(urls) : Promise.resolve(urls)
+                            }
 
-                    return getBundleURLs
-                })
+                            return getBundleURLs
+                        })
+                    )
+                )
             ),
         () => 'getScriptURL'
     )
@@ -116,6 +129,7 @@ export function activateExtensions(
                     }
                 }
 
+                console.log({ toActivate, activeExtensionIDs, getScriptURLs })
                 return from(
                     getScriptURLs(
                         [...toActivate.values()].map(extension => {

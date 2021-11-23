@@ -109,9 +109,11 @@ export const SearchResults = React.memo<SearchResultsProps>(
                                 character: start,
                             },
                         })
-                        return sourcegraphVSCodeExtensionAPI.openFile(
-                            sourcegraphUri.uri + sourcegraphUri.positionSuffix()
-                        )
+                        const uriToOpen = sourcegraphUri.uri + sourcegraphUri.positionSuffix()
+
+                        console.log({ uriToOpen, result })
+
+                        return sourcegraphVSCodeExtensionAPI.openFile(uriToOpen)
                     }
                 }
             })().catch(error => {
@@ -204,6 +206,7 @@ function convertFileMatch(
             repository: result.repository.name,
             lineMatches: lineMatchesWithLine,
             repoStars: result.repository.stars,
+            commit: result.file.commit.oid,
         }
 
         return contentMatch
@@ -214,6 +217,7 @@ function convertFileMatch(
         path: result.file.path,
         repository: result.repository.name,
         repoStars: result.repository.stars,
+        commit: result.file.commit.oid,
     }
     return pathMatch
 }

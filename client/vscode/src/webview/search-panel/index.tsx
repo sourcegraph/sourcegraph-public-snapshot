@@ -1,3 +1,5 @@
+import '../platform/polyfills'
+
 import * as Comlink from 'comlink'
 import React from 'react'
 import { render } from 'react-dom'
@@ -10,7 +12,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { QueryStateWithInputProps, SourcegraphVSCodeExtensionAPI, SourcegraphVSCodeSearchWebviewAPI } from '../contract'
 import { createPlatformContext, WebviewPageProps } from '../platform/context'
-import { createEndpoints } from '../platform/webviewEndpoint'
+import { createEndpointsForWebToNode } from '../platform/webviewEndpoint'
 import { adaptToEditorTheme } from '../theme'
 
 import { SearchPage } from './SearchPage'
@@ -77,7 +79,7 @@ const webviewAPI: SourcegraphVSCodeSearchWebviewAPI = {
     },
 }
 
-const { proxy, expose } = createEndpoints(vsCodeApi)
+const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
 Comlink.expose(webviewAPI, expose)
 
@@ -102,7 +104,6 @@ const Main: React.FC = () => {
         theme,
     }
 
-    // TODO react to theme. ALSO need to add that to the body
     return <SearchPage {...commonPageProps} />
 }
 render(<Main />, document.querySelector('#root'))

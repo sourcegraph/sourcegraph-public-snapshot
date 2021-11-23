@@ -4,21 +4,21 @@ import { first, switchMap } from 'rxjs/operators'
 import * as vscode from 'vscode'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { makeRepoURI, parseRepoURI } from '@sourcegraph/shared/src/util/url'
+import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { SourcegraphFileSystemProvider } from '../file-system/SourcegraphFileSystemProvider'
 import { SourcegraphVSCodeExtensionHostAPI } from '../webview/contract'
 
-export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider {
+export class SourcegraphHoverProvider implements vscode.HoverProvider {
     constructor(
         private readonly fs: SourcegraphFileSystemProvider,
         private readonly sourcegraphExtensionHostAPI: Comlink.Remote<SourcegraphVSCodeExtensionHostAPI>
     ) {}
-    public async provideDefinition(
+    public async provideHover(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken
-    ): Promise<vscode.Definition | undefined> {
+    ): Promise<vscode.Hover | undefined> {
         const uri = this.fs.sourcegraphUri(document.uri)
         const extensionHostUri = makeRepoURI({
             repoName: uri.repositoryName,
@@ -27,7 +27,7 @@ export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider 
         })
 
         const definitions = wrapRemoteObservable(
-            this.sourcegraphExtensionHostAPI.getDefinition({
+            this.sourcegraphExtensionHostAPI.getHover({
                 textDocument: {
                     uri: extensionHostUri,
                 },
@@ -43,20 +43,19 @@ export class SourcegraphDefinitionProvider implements vscode.DefinitionProvider 
                         return EMPTY
                     }
 
-                    const locations = result.map(location => {
-                        const uri = parseRepoURI(location.uri)
+                    const prefix = result?.aggregatedBadges?.reduce((prefix, badge) => {
+                        if (badge.linkURL) {
+                            return prefix + `[${badge.text}](${badge.linkURL})\n`
+                        }
+                        return prefix + `${badge.text}\n`
+                    }, '')
 
-                        return this.fs.toVscodeLocation({
-                            resource: {
-                                path: uri.filePath ?? '',
-                                repositoryName: uri.repoName,
-                                revision: uri.commitID ?? uri.revision ?? '',
-                            },
-                            range: location.range,
-                        })
+                    return of<vscode.Hover>({
+                        contents: [
+                            new vscode.MarkdownString(prefix),
+                            ...(result?.contents ?? []).map(content => new vscode.MarkdownString(content.value)),
+                        ],
                     })
-
-                    return of(locations)
                 }),
                 first()
             )

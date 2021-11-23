@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { getBlobContent } from '../backend/blobContent'
 import { getFiles } from '../backend/files'
 import { getRepositoryMetadata, RepositoryMetadata } from '../backend/repositoryMetadata'
-import { LocationNode } from '../code-intel/SourcegraphDefinitionProvider'
+import { LocationNode } from '../code-intel/location'
 import { log } from '../log'
 import { endpointHostnameSetting } from '../settings/endpointSetting'
 
@@ -146,25 +146,31 @@ export class SourcegraphFileSystemProvider implements vscode.FileSystemProvider 
         return promises
     }
 
-    // Will be used by definition and reference providers.
-    // The URI should be provided as the argument I think.
     public toVscodeLocation(node: LocationNode): vscode.Location {
-        const metadata = this.metadata.get(node.resource.repository.name)
-        let revision = node.resource.commit.oid
+        const metadata = this.metadata.get(node.resource.repositoryName)
+        let revision = node.resource.revision
         if (metadata?.defaultBranch && revision === metadata?.defaultOID) {
             revision = metadata.defaultBranch
         }
+
+        let rangeOrPosition: vscode.Range | vscode.Position
+        if (node.range) {
+            rangeOrPosition = new vscode.Range(
+                new vscode.Position(node.range.start.line, node.range.start.character),
+                new vscode.Position(node.range.end.line, node.range.end.character)
+            )
+        } else {
+            rangeOrPosition = new vscode.Position(0, 0)
+        }
+
         return new vscode.Location(
             vscode.Uri.parse(
-                SourcegraphUri.fromParts(endpointHostnameSetting(), node.resource.repository.name, {
+                SourcegraphUri.fromParts(endpointHostnameSetting(), node.resource.repositoryName, {
                     revision,
                     path: node.resource.path,
                 }).uri
             ),
-            new vscode.Range(
-                new vscode.Position(node.range.start.line, node.range.start.character),
-                new vscode.Position(node.range.end.line, node.range.end.character)
-            )
+            rangeOrPosition
         )
     }
 

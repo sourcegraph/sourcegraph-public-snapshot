@@ -67,6 +67,9 @@ const getCSSLoaders = (...loaders) => [
 
 const searchPanelWebviewPath = path.resolve(webviewSourcePath, 'search-panel')
 const searchSidebarWebviewPath = path.resolve(webviewSourcePath, 'search-sidebar')
+const extensionHostWebviewPath = path.resolve(webviewSourcePath, 'extension-host')
+
+const extensionHostWorker = /main\.worker\.ts$/
 
 /** @type {import('webpack').Configuration}*/
 const webviewConfig = {
@@ -74,6 +77,7 @@ const webviewConfig = {
   entry: {
     searchPanel: [path.resolve(searchPanelWebviewPath, 'index.tsx')],
     searchSidebar: [path.resolve(searchSidebarWebviewPath, 'index.tsx')],
+    extensionHost: [path.resolve(extensionHostWebviewPath, 'index.tsx')],
     style: path.join(webviewSourcePath, 'index.scss'),
   },
   output: {
@@ -84,12 +88,15 @@ const webviewConfig = {
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
+    alias: {
+      path: require.resolve('path-browserify'),
+    },
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        exclude: /node_modules/,
+        exclude: [/node_modules/, extensionHostWorker],
         use: [
           {
             loader: 'ts-loader',
@@ -117,6 +124,16 @@ const webviewConfig = {
             url: false,
           },
         }),
+      },
+      {
+        test: extensionHostWorker,
+        use: [
+          {
+            loader: 'worker-loader',
+            options: { inline: 'no-fallback' },
+          },
+          'ts-loader',
+        ],
       },
     ],
   },

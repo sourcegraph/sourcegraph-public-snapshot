@@ -5,8 +5,10 @@ import { Observable } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import vscode from 'vscode'
 
+import { endpointSetting } from '../settings/endpointSetting'
 import {
     SourcegraphVSCodeExtensionAPI,
+    SourcegraphVSCodeExtensionHostAPI,
     SourcegraphVSCodeSearchSidebarAPI,
     SourcegraphVSCodeSearchWebviewAPI,
 } from './contract'
@@ -129,4 +131,53 @@ export function initializeSearchSidebarWebview({
     return {
         sourcegraphVSCodeSearchSidebarAPI,
     }
+}
+
+export function initializeExtensionHostWebview({
+    extensionPath,
+    webviewView,
+    sourcegraphVSCodeExtensionAPI,
+}: SourcegraphWebviewConfig & {
+    webviewView: vscode.WebviewView
+}): {
+    sourcegraphVSCodeExtensionHostAPI: Comlink.Remote<SourcegraphVSCodeExtensionHostAPI>
+} {
+    webviewView.webview.options = {
+        enableScripts: true,
+    }
+
+    const webviewPath = path.join(extensionPath, 'dist', 'webview')
+
+    const scriptSource = webviewView.webview.asWebviewUri(vscode.Uri.file(path.join(webviewPath, 'extensionHost.js')))
+    // const cssModuleSource = webviewView.webview.asWebviewUri(
+    //     vscode.Uri.file(path.join(webviewPath, 'extensionHost.css'))
+    // )
+    const styleSource = webviewView.webview.asWebviewUri(vscode.Uri.file(path.join(webviewPath, 'style.css')))
+
+    const { proxy, expose, panelId } = createEndpointsForWebview(webviewView)
+
+    // Get a proxy for the Sourcegraph Webview API to communicate with the Webview.
+    const sourcegraphVSCodeExtensionHostAPI = Comlink.wrap<SourcegraphVSCodeExtensionHostAPI>(proxy)
+
+    // Expose the Sourcegraph VS Code Extension API to the Webview.
+    Comlink.expose(sourcegraphVSCodeExtensionAPI, expose)
+
+    // TODO(tj): SECURITY!!! temporary script-src unsafe-eval for development mode
+    webviewView.webview.html = `<!DOCTYPE html>
+       <html lang="en" data-panel-id="${panelId}" data-instance-url=${endpointSetting()}>
+       <head>
+           <meta charset="UTF-8">
+           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+           <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src https: 'unsafe-eval' 'self' blob: vscode-resource:;style-src vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:;">
+           <title>Sourcegraph Extension Host</title>
+           <link rel="stylesheet" href="${styleSource.toString()}" />
+
+       </head>
+       <body>
+           <div id="root" />
+           <script src="${scriptSource.toString()}"></script>
+       </body>
+       </html>`
+
+    return { sourcegraphVSCodeExtensionHostAPI }
 }

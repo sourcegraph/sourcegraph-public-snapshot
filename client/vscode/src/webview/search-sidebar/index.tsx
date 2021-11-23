@@ -1,3 +1,5 @@
+import '../platform/polyfills'
+
 import * as Comlink from 'comlink'
 import React from 'react'
 import { render } from 'react-dom'
@@ -6,14 +8,14 @@ import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components
 
 import { SourcegraphVSCodeExtensionAPI, SourcegraphVSCodeSearchSidebarAPI } from '../contract'
 import { createPlatformContext } from '../platform/context'
-import { createEndpoints } from '../platform/webviewEndpoint'
+import { createEndpointsForWebToNode } from '../platform/webviewEndpoint'
 import { adaptToEditorTheme } from '../theme'
 
 import { SearchSidebar } from './SearchSidebar'
 
 const vsCodeApi = window.acquireVsCodeApi()
 
-const { proxy, expose } = createEndpoints(vsCodeApi)
+const { proxy, expose } = createEndpointsForWebToNode(vsCodeApi)
 
 const webviewAPI: SourcegraphVSCodeSearchSidebarAPI = {}
 

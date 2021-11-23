@@ -147,7 +147,7 @@ export class SourcegraphUri {
         return typeof this.position === 'undefined' ? '' : `?L${this.position.line}:${this.position.character}`
     }
 
-    // TODO refactor and use shared functions
+    // TODO refactor and use shared functions. below is parseBrowserRepoURL
 
     // NOTE: The code below is copy-pasted from the sourcegraph/sourcegraph repository
     // https://sourcegraph.com/github.com/sourcegraph/sourcegraph@56dfaaa3e3172f9afd4a29a4780a7f1a34198238/-/blob/client/shared/src/util/url.ts?L287

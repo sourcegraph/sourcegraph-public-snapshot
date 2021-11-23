@@ -25,9 +25,11 @@ import {
 
 export function createExtensionHostState(
     initData: Pick<InitData, 'initialSettings' | 'clientApplication'>,
-    mainAPI: comlink.Remote<MainThreadAPI>
+    mainAPI: comlink.Remote<MainThreadAPI>,
+    mainThreadAPIInitializations: Observable<boolean>
 ): ExtensionHostState {
-    const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI)
+    console.log('calling createexthoststate')
+    const { activeLanguages, activeExtensions } = observeActiveExtensions(mainAPI, mainThreadAPIInitializations)
 
     return {
         haveInitialExtensionsLoaded: new BehaviorSubject<boolean>(false),

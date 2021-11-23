@@ -49,6 +49,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
     const getTextDocument = (uri: string): ExtensionDocument => {
         const textDocument = state.textDocuments.get(uri)
         if (!textDocument) {
+            console.log({ uri, allDocs: state.textDocuments })
             throw new Error(`Text document does not exist with URI ${uri}`)
         }
         return textDocument
@@ -162,6 +163,8 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         getDefinition: (textParameters: TextDocumentPositionParameters) => {
             const document = getTextDocument(textParameters.textDocument.uri)
             const position = toPosition(textParameters.position)
+
+            console.log({ textParameters, document, position })
 
             return proxySubscribable(
                 callProviders(
@@ -294,6 +297,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
+            console.log(textDocumentData)
             if (state.textDocuments.has(textDocumentData.uri)) {
                 return
             }
