@@ -17,13 +17,13 @@ type operations struct {
 
 func newOperations(observationContext *observation.Context) *operations {
 	fetching := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_fetching",
+		Name: "codeintel_symbols_fetching",
 		Help: "The number of fetches currently running.",
 	})
 	observationContext.Registerer.MustRegister(fetching)
 
 	fetchQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "symbols_store_fetch_queue_size",
+		Name: "codeintel_symbols_fetch_queue_size",
 		Help: "The number of fetch jobs enqueued.",
 	})
 	observationContext.Registerer.MustRegister(fetchQueueSize)

@@ -16,10 +16,10 @@ type Config struct {
 	ctagsLogErrors          bool
 	ctagsDebugLogs          bool
 
-	sanityCheck    bool
-	cacheDir       string
-	cacheSizeMB    int
-	ctagsProcesses int
+	sanityCheck       bool
+	cacheDir          string
+	cacheSizeMB       int
+	numCtagsProcesses int
 }
 
 var config = &Config{}
@@ -34,5 +34,5 @@ func (c *Config) Load() {
 	c.sanityCheck = c.GetBool("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not")
 	c.cacheDir = c.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols")
 	c.cacheSizeMB = c.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)")
-	c.ctagsProcesses = c.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run")
+	c.numCtagsProcesses = c.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run")
 }

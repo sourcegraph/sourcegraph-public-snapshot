@@ -81,13 +81,20 @@ func main() {
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
+	ctagsParserFactory := parser.NewCtagsParserFactory(
+		config.ctagsCommand,
+		config.ctagsPatternLengthLimit,
+		config.ctagsLogErrors,
+		config.ctagsDebugLogs,
+	)
+
 	cache := &diskcache.Store{
 		Dir:               config.cacheDir,
 		Component:         "symbols",
 		BackgroundTimeout: 20 * time.Minute,
 	}
 
-	parserPool, err := parser.NewParserPool(parser.NewCtagsParserFactory(config.ctagsCommand, config.ctagsPatternLengthLimit, config.ctagsLogErrors, config.ctagsDebugLogs), config.ctagsProcesses)
+	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.numCtagsProcesses)
 	if err != nil {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
@@ -106,9 +113,9 @@ func main() {
 		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(apiHandler)),
 	})
 
-	evictionDuration := time.Second * 10
+	evictionInterval := time.Second * 10
 	cacheSizeBytes := int64(config.cacheSizeMB) * 1000 * 1000
-	cacheEvicter := janitor.NewCacheEvicter(evictionDuration, cache, cacheSizeBytes, janitor.NewMetrics(observationContext))
+	cacheEvicter := janitor.NewCacheEvicter(evictionInterval, cache, cacheSizeBytes, janitor.NewMetrics(observationContext))
 
 	// Mark health server as ready and go!
 	close(ready)
