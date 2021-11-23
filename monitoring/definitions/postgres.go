@@ -31,6 +31,7 @@ func Postgres() *monitoring.Container {
 						Name:              "connections",
 						Description:       "active connections",
 						Owner:             monitoring.ObservableOwnerCoreApplication,
+						DataMustExist:     false, // not deployed on docker-compose
 						Query:             `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}"),
 						Warning:           monitoring.Alert().LessOrEqual(5, nil).For(5 * time.Minute),
@@ -40,6 +41,7 @@ func Postgres() *monitoring.Container {
 						Name:              "transaction_durations",
 						Description:       "maximum transaction durations",
 						Owner:             monitoring.ObservableOwnerCoreApplication,
+						DataMustExist:     false, // not deployed on docker-compose
 						Query:             `sum by (datname) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin"})`,
 						Panel:             monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
 						Warning:           monitoring.Alert().GreaterOrEqual(0.3, nil).For(5 * time.Minute),
@@ -58,6 +60,7 @@ func Postgres() *monitoring.Container {
 							Name:              "postgres_up",
 							Description:       "database availability",
 							Owner:             monitoring.ObservableOwnerCoreApplication,
+							DataMustExist:     false, // not deployed on docker-compose
 							Query:             "pg_up",
 							Panel:             monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:          monitoring.Alert().LessOrEqual(0, nil).For(5 * time.Minute),
@@ -65,12 +68,13 @@ func Postgres() *monitoring.Container {
 							Interpretation:    "A non-zero value indicates the database is online.",
 						},
 						monitoring.Observable{
-							Name:        "invalid_indexes",
-							Description: "invalid indexes (unusable by the query planner)",
-							Owner:       monitoring.ObservableOwnerCoreApplication,
-							Query:       "max by (relname)(pg_invalid_index_count)",
-							Panel:       monitoring.Panel().LegendFormat("{{relname}}"),
-							Critical:    monitoring.Alert().GreaterOrEqual(1, &sumAggregator).For(0),
+							Name:          "invalid_indexes",
+							Description:   "invalid indexes (unusable by the query planner)",
+							Owner:         monitoring.ObservableOwnerCoreApplication,
+							DataMustExist: false, // not deployed on docker-compose
+							Query:         "max by (relname)(pg_invalid_index_count)",
+							Panel:         monitoring.Panel().LegendFormat("{{relname}}"),
+							Critical:      monitoring.Alert().GreaterOrEqual(1, &sumAggregator).For(0),
 							PossibleSolutions: `
 								- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
 							`,
@@ -79,12 +83,13 @@ func Postgres() *monitoring.Container {
 					},
 					{
 						monitoring.Observable{
-							Name:        "pg_exporter_err",
-							Description: "errors scraping postgres exporter",
-							Owner:       monitoring.ObservableOwnerCoreApplication,
-							Query:       "pg_exporter_last_scrape_error",
-							Panel:       monitoring.Panel().LegendFormat("{{app}}"),
-							Warning:     monitoring.Alert().GreaterOrEqual(1, nil).For(5 * time.Minute),
+							Name:          "pg_exporter_err",
+							Description:   "errors scraping postgres exporter",
+							Owner:         monitoring.ObservableOwnerCoreApplication,
+							DataMustExist: false, // not deployed on docker-compose
+							Query:         "pg_exporter_last_scrape_error",
+							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
+							Warning:       monitoring.Alert().GreaterOrEqual(1, nil).For(5 * time.Minute),
 							PossibleSolutions: `
 								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
 							`,
@@ -94,6 +99,7 @@ func Postgres() *monitoring.Container {
 							Name:           "migration_in_progress",
 							Description:    "active schema migration",
 							Owner:          monitoring.ObservableOwnerCoreApplication,
+							DataMustExist:  false, // not deployed on docker-compose
 							Query:          "pg_sg_migration_status",
 							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:       monitoring.Alert().GreaterOrEqual(1, nil).For(5 * time.Minute),
