@@ -28,8 +28,6 @@ This step will control the scheduling of indexing jobs which are made available 
 
 Once auto-indexing has been enabled, [create auto-indexing policies](configure_auto_indexing.md) to control the set of repositories and commits that are eligible for indexing.
 
-> NOTE: If you are running Sourcegraph 3.33, then only the repositories that exist within one or more [search contexts](../../../../code_search/how-to/search_contexts.md) are eligible for auto-indexing. This is a temporary and vestigial artifact of auto-indexing being developed on our Cloud instance, which has an extremely large corpus of repositories. We advise you to create a `code-intel-indexing-corpus` search context and add the set of repositories you wish to have indexed. This is not required post-Sourcegraph 3.33.
-
 ## Tune the index scheduler
 
 The frequency of index job scheduling can be tuned via the following environment variables read by `worker` service containers running the [`codeintel-auto-indexing`](../../../admin/workers.md#codeintel-auto-indexing) task.
