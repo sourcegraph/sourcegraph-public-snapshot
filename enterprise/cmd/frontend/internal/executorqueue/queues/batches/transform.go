@@ -129,39 +129,41 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 
 	files := map[string]string{"input.json": string(marshaledInput)}
 
-	// We start at the back so that we can find the _last_ cached step,
-	// then restart execution on the following step.
-	taskKey := service.CacheKeyForWorkspace(batchSpec, &service.RepoWorkspace{
-		RepoRevision: &service.RepoRevision{
-			Repo:        repo,
-			Branch:      executionInput.Workspace.Branch.Name,
-			Commit:      api.CommitID(executionInput.Workspace.Branch.Target.OID),
-			FileMatches: executionInput.Workspace.SearchResultPaths,
-		},
-		Path:               executionInput.Workspace.Path,
-		Steps:              workspace.Steps,
-		OnlyFetchWorkspace: executionInput.Workspace.OnlyFetchWorkspace,
-	})
-	for i := len(workspace.Steps) - 1; i > -1; i-- {
-		key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
-		rawKey, err := key.Key()
-		if err != nil {
-			return apiclient.Job{}, nil
-		}
-		entry, err := s.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
-			Key: rawKey,
+	if !batchSpec.NoCache {
+		// We start at the back so that we can find the _last_ cached step,
+		// then restart execution on the following step.
+		taskKey := service.CacheKeyForWorkspace(batchSpec, &service.RepoWorkspace{
+			RepoRevision: &service.RepoRevision{
+				Repo:        repo,
+				Branch:      executionInput.Workspace.Branch.Name,
+				Commit:      api.CommitID(executionInput.Workspace.Branch.Target.OID),
+				FileMatches: executionInput.Workspace.SearchResultPaths,
+			},
+			Path:               executionInput.Workspace.Path,
+			Steps:              workspace.Steps,
+			OnlyFetchWorkspace: executionInput.Workspace.OnlyFetchWorkspace,
 		})
-		if err != nil && err != store.ErrNoResults {
-			return apiclient.Job{}, err
-		}
-		if err == store.ErrNoResults {
-			continue
-		}
+		for i := len(workspace.Steps) - 1; i > -1; i-- {
+			key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
+			rawKey, err := key.Key()
+			if err != nil {
+				return apiclient.Job{}, nil
+			}
+			entry, err := s.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
+				Key: rawKey,
+			})
+			if err != nil && err != store.ErrNoResults {
+				return apiclient.Job{}, err
+			}
+			if err == store.ErrNoResults {
+				continue
+			}
 
-		// Add file to virtualMachineFiles.
-		files[rawKey+`.json`] = entry.Value
-		// And break after. src-cli only needs the most recent cache entry.
-		break
+			// Add file to virtualMachineFiles.
+			files[rawKey+`.json`] = entry.Value
+			// And break after. src-cli only needs the most recent cache entry.
+			break
+		}
 	}
 
 	return apiclient.Job{
