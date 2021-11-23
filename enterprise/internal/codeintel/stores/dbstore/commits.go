@@ -423,6 +423,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads",
+			batch.MaxNumPostgresParameters,
 			[]string{"commit_bytea", "uploads"},
 			sanitizedInput.nearestUploadsRowValues,
 		)
@@ -436,6 +437,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads_links",
+			batch.MaxNumPostgresParameters,
 			[]string{"commit_bytea", "ancestor_commit_bytea", "distance"},
 			sanitizedInput.nearestUploadsLinksRowValues,
 		)
@@ -448,6 +450,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_uploads_visible_at_tip",
+			batch.MaxNumPostgresParameters,
 			[]string{"upload_id", "branch_or_tag_name", "is_default_branch"},
 			sanitizedInput.uploadsVisibleAtTipRowValues,
 		)

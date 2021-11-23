@@ -437,6 +437,7 @@ func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix strin
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_data_docs_search_tags_"+tableSuffix,
+		batch.MaxNumPostgresParameters,
 		[]string{"tags", "tsv"},
 		inserter,
 	); err != nil {
@@ -569,6 +570,7 @@ func (s *Store) replaceSearchRecords(
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_data_docs_search_"+tableSuffix,
+		batch.MaxNumPostgresParameters,
 		[]string{
 			"path_id",
 			"detail",

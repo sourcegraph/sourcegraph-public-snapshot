@@ -95,7 +95,8 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 
 		go func(parseRequest fetcher.ParseRequest) {
 			defer wg.Done()
-			p.handleParseRequest(ctx, symbols, parseRequest, &totalSymbols)
+
+			_ = p.handleParseRequest(ctx, symbols, parseRequest, &totalSymbols)
 		}(v.ParseRequest)
 	}
 	traceLog(log.Int("numRequests", totalRequests))
@@ -147,9 +148,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.S
 			continue
 		}
 
-		atomic.AddUint32(totalSymbols, 1)
-
-		symbols <- result.Symbol{
+		symbol := result.Symbol{
 			Name:        e.Name,
 			Path:        e.Path,
 			Line:        e.Line,
@@ -160,6 +159,14 @@ func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.S
 			Signature:   e.Signature,
 			Pattern:     e.Pattern,
 			FileLimited: e.FileLimited,
+		}
+
+		select {
+		case symbols <- symbol:
+			atomic.AddUint32(totalSymbols, 1)
+
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
 

@@ -51,21 +51,6 @@ func (s *store) DeletePaths(ctx context.Context, paths []string) error {
 	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path = ANY(%s)`, pq.Array(paths)))
 }
 
-var symbolsTableColumnNames = []string{
-	"name",
-	"namelowercase",
-	"path",
-	"pathlowercase",
-	"line",
-	"kind",
-	"language",
-	"parent",
-	"parentkind",
-	"signature",
-	"pattern",
-	"filelimited",
-}
-
 func (s *store) WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) (err error) {
 	rows := make(chan []interface{})
 
@@ -90,5 +75,25 @@ func (s *store) WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) 
 		}
 	}()
 
-	return batch.InsertValues(ctx, s.Handle().DB(), "symbols", symbolsTableColumnNames, rows)
+	return batch.InsertValues(
+		ctx,
+		s.Handle().DB(),
+		"symbols",
+		batch.MaxNumSQLiteParameters,
+		[]string{
+			"name",
+			"namelowercase",
+			"path",
+			"pathlowercase",
+			"line",
+			"kind",
+			"language",
+			"parent",
+			"parentkind",
+			"signature",
+			"pattern",
+			"filelimited",
+		},
+		rows,
+	)
 }
