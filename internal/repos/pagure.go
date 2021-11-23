@@ -7,10 +7,10 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/goware/urlx"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
