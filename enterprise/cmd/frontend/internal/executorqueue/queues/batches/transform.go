@@ -149,6 +149,7 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 			if err != nil {
 				return apiclient.Job{}, nil
 			}
+			// TODO: Once implemented, enforce ownership of cache entries here.
 			entry, err := s.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
 				Key: rawKey,
 			})
