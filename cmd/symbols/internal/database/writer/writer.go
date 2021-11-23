@@ -53,7 +53,7 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 		return "", "", false, err
 	}
 
-	err = store.WithSQLiteStore(dbFile, func(db store.Store) error {
+	err = store.WithSQLiteStore(newest, func(db store.Store) error {
 		commit, ok, err = db.GetCommit(ctx)
 		return err
 	})
@@ -82,6 +82,10 @@ func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs,
 	})
 }
 
+// The maximum number of paths when doing incremental indexing. Diffs with more paths than this will
+// not be incrementally indexed, and instead we will process all symbols.
+const maxTotalPaths = 999
+
 // The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
 // will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
 // could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
@@ -95,6 +99,10 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 		return false, err
 	}
 	paths := append(changes.Added, append(changes.Modified, changes.Deleted...)...)
+
+	if len(paths) > maxTotalPaths {
+		return false, nil
+	}
 
 	totalPathsLength := 0
 	for _, path := range paths {

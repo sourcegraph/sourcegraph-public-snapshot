@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -48,7 +47,16 @@ func (s *store) CreateSymbolIndexes(ctx context.Context) error {
 }
 
 func (s *store) DeletePaths(ctx context.Context, paths []string) error {
-	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path = ANY(%s)`, pq.Array(paths)))
+	if len(paths) == 0 {
+		return nil
+	}
+
+	pathQueries := make([]*sqlf.Query, 0, len(paths))
+	for _, path := range paths {
+		pathQueries = append(pathQueries, sqlf.Sprintf("%s", path))
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(`DELETE FROM symbols WHERE path IN (%s)`, sqlf.Join(pathQueries, ",")))
 }
 
 func (s *store) WriteSymbols(ctx context.Context, symbols <-chan result.Symbol) (err error) {
