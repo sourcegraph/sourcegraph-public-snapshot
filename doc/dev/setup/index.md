@@ -1,20 +1,16 @@
-# Local Development Environment
+# Local Environment Setup
 
 <style>
-
 .markdown-body h2 {
   margin-top: 2em;
 }
-
 .markdown-body ul {
   list-style:none;
   padding-left: 1em;
 }
-
 .markdown-body ul li {
   margin: 0.5em 0;
 }
-
 .markdown-body ul li:before {
   content: '';
   display: inline-block;
@@ -26,17 +22,16 @@
   margin-right: 0.5em;
   margin-bottom: -0.29em;
 }
-
 body.theme-dark .markdown-body ul li:before {
   filter: invert(50%);
 }
-
 </style>
 
 <p class="subtitle">Working on Sourcegraph code on your local machine</p>
 
 <div class="cta-group">
-<a class="btn btn-primary" href="#quickstart">★ Quickstart with <code>sg</code></a>
+<a class="btn btn-primary" href="quickstart">★ Quickstart with <code>sg</code></a>
+<a class="btn" href="how-to/m1_mac_local_dev">M1 Mac workarounds</a>
 <a class="btn" href="#how-tos">How-tos</a>
 <a class="btn" href="#troubleshooting">Troubleshooting</a>
 </div>

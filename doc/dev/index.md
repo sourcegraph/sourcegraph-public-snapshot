@@ -1,11 +1,71 @@
 # Developing Sourcegraph
 
-This documentation is for developers contributing to the Sourcegraph code base.
+<style>
+.markdown-body h2 {
+  margin-top: 2em;
+}
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+.markdown-body ul li:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(../batch_changes/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
+}
+body.theme-dark .markdown-body ul li:before {
+  filter: invert(50%);
+}
+</style>
 
-Sourcegraph development is open source at:
+> This documentation is for *developers contributing to the Sourcegraph code base*.
+> Sourcegraph development is open source at:
 
-- [GitHub repository](https://github.com/sourcegraph/sourcegraph)
-- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+> - [GitHub repository](https://github.com/sourcegraph/sourcegraph)
+> - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+
+## [Local enviroment setup](setup/index.md)
+
+<p class="subtitle">Working on Sourcegraph code on your local machine.</p>
+
+<!-- <div class="cta-group"> -->
+<!-- <a class="btn btn-primary" href="setup/quickstart">★ Quickstart</a> -->
+<!-- <a class="btn" href="setup/how-to">How-tos</a> -->
+<!-- <a class="btn" href="setup/troubleshooting">Troubleshooting</a> -->
+<!-- </div> -->
+
+<div class="getting-started">
+  <a href="setup/quickstart" class="btn" alt="Run through the Quickstart guide">
+   <span>★ Quickstart</span>
+   </br>
+   Run through the <b>step by step guide</b> and get your local environment ready.
+  </a>
+
+  <a href="setup/how-to" class="btn" alt="TODO">
+   <span>How-to guides</span>
+   </br>
+  <b>Context specific</b> guides: debugging live code, m1 mac workarounds, ...
+  </a>
+
+  <a href="setup/troubleshooting" class="btn" alt="TODO">
+   <span>Troubleshooting</span>
+   </br>
+  List of the <b>most common</b> local environment problems and their solutions.
+  </a>
+</div>
+
+<br/>
+
+---
 
 ## [Background information](background-information/index.md)
 

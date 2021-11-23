@@ -1,4 +1,4 @@
-# Development quickstart
+# Quickstart for setting up the local enviroment
 
 This is the quickstart guide for [developing Sourcegraph](../index.md).
 
@@ -12,6 +12,8 @@ This is the quickstart guide for [developing Sourcegraph](../index.md).
 <span class="virtual-br"></span>
 
 > NOTE: Looking for how to deploy or use Sourcegraph? See our [getting started](../../index.md#getting-started) options.
+
+<span class="virtual-br"></span>
 
 ## Install `sg`
 
