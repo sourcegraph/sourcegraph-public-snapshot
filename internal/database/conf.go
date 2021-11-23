@@ -14,6 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
+// ConfStore is a store that interacts with the config tables.
+//
+// Only the frontend should use this store.  All other users should go through
+// the conf package and NOT interact with the database on their own.
 type ConfStore interface {
 	// SiteCreateIfUpToDate saves the given site config "contents" to the database iff the
 	// supplied "lastID" is equal to the one that was most recently saved to the database.

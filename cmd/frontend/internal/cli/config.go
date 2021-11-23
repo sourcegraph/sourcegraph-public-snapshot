@@ -402,7 +402,7 @@ type configurationSource struct {
 func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
-		return conftypes.RawUnified{}, errors.Wrap(err, "confdb.SiteGetLatest")
+		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 
 	return conftypes.RawUnified{
@@ -415,11 +415,11 @@ func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnifi
 	// TODO(slimsag): future: pass lastID through for race prevention
 	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
-		return errors.Wrap(err, "confdb.SiteGetLatest")
+		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
 	if err != nil {
-		return errors.Wrap(err, "confdb.SiteCreateIfUpToDate")
+		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil
 }
