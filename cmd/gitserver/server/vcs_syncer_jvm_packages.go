@@ -108,7 +108,7 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 }
 
 // Fetch adds git tags for newly added dependency versions and removes git tags
-// for deleted deleted versions.
+// for deleted versions.
 func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
 	dependencies, err := s.packageDependencies(ctx, remoteURL.Path)
 	if err != nil {
