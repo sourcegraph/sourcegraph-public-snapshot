@@ -199,7 +199,7 @@ Then, modify the Prometheus deployment manifest.
 
 ```
 
-Next, the Prometheus configuration must add the following scraping job that uses [GCE service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#gce_sd_config). Therefore, you can edit the Prometheus ConfigMap and modify the contents of the `prometheus.yml` file. Under [`scrape_configs:`](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L43:5) add the following and make sure to replace `{GCP_PROJECT}`, `{GCP_ZONE}` and `{INSTANCE_TAG}`. The `{INSTANCE_TAG}` value must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
+Next, the Prometheus configuration must add the following scraping job that uses [GCE service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#gce_sd_config). Therefore, you can edit the Prometheus ConfigMap and modify the contents of the `prometheus.yml` file. Under [`scrape_configs:`](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@0938b6686f0c94d80e8331e36f5ddac4659027b1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L43:5) add the following and make sure to replace `{GCP_PROJECT}`, `{GCP_ZONE}` and `{INSTANCE_TAG}`. The `{INSTANCE_TAG}` value must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
 
 ```yaml
 - job_name: 'sourcegraph-executors'
