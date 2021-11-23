@@ -125,6 +125,12 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "pagure": {
+          "description": "Allow adding Pagure code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "subRepoPermissions": {
           "type": "object",
           "additionalProperties": false,
