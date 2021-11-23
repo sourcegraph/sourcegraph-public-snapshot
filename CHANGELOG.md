@@ -33,7 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-  - Fixed Redis alerting for docker-compose deployments [#28099](https://github.com/sourcegraph/sourcegraph/issues/28099)
+- Fixed Redis alerting for docker-compose deployments [#28099](https://github.com/sourcegraph/sourcegraph/issues/28099)
 
 ## 3.34.0
 
