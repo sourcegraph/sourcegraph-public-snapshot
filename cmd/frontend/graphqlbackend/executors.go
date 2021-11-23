@@ -52,12 +52,6 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*gql.E
 		return nil, err
 	}
 
-	// id, err := unmarshalExecutorID(gqlID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// executor, ok, err := db.Executors().GetByID(ctx, int(id))
 	executorService := executors.New(db)
 	executor, ok, err := executorService.GetByID(ctx, gqlID)
 	if err != nil {
@@ -67,7 +61,6 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*gql.E
 		return nil, nil
 	}
 
-	// return &executorResolver{executor: executor}, nil
 	return gql.NewExecutorResolver(executor), nil
 }
 
