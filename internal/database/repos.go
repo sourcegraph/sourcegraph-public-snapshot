@@ -906,7 +906,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged),
-			sqlf.Sprintf("repo.updated_at >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
 			sqlf.Sprintf("repo.id IN (SELECT scr.repo_id FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE sc.updated_at >= %s)", opt.MinLastChanged),
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
