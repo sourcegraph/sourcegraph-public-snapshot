@@ -43,10 +43,11 @@ import { asError, ErrorLike, isErrorLike } from './errors'
 import { elementOverlaps, scrollIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
 import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'
-import { DiffPart, PositionEvent, SupportedMouseEvent } from './positions'
+import { PositionEvent, SupportedMouseEvent } from './positions'
 import { createObservableStateContainer } from './state'
 import {
     convertNode,
+    DiffPart,
     DOMFunctions,
     findElementWithOffset,
     getCodeElementsInRange,
@@ -55,8 +56,6 @@ import {
     shouldTokenize,
 } from './tokenPosition'
 import { HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange, DocumentHighlight } from './types'
-
-export { HoveredToken }
 
 const defaultSelectionHighlightClassName = 'selection-highlight'
 const defaultDocumentHighlightClassName = 'sourcegraph-document-highlight'

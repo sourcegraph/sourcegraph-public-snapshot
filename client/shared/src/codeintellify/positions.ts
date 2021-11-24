@@ -1,7 +1,7 @@
 import { from, fromEvent, merge, Observable, Subscribable } from 'rxjs'
 import { filter, map, switchMap, tap } from 'rxjs/operators'
 
-import { convertCodeElementIdempotent, DiffPart, DOMFunctions, HoveredToken, locateTarget } from './tokenPosition'
+import { convertCodeElementIdempotent, DOMFunctions, HoveredToken, locateTarget } from './tokenPosition'
 import { isPosition } from './types'
 
 export type SupportedMouseEvent = 'click' | 'mousemove' | 'mouseover'
@@ -26,7 +26,6 @@ export interface PositionEvent {
     codeView: HTMLElement
 }
 
-export { DOMFunctions, DiffPart }
 export const findPositionsFromEvents = ({
     domFunctions,
     tokenize = true,
