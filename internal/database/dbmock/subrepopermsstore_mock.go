@@ -83,6 +83,49 @@ func NewMockSubRepoPermsStore() *MockSubRepoPermsStore {
 	}
 }
 
+// NewStrictMockSubRepoPermsStore creates a new mock of the
+// SubRepoPermsStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockSubRepoPermsStore() *MockSubRepoPermsStore {
+	return &MockSubRepoPermsStore{
+		DoneFunc: &SubRepoPermsStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockSubRepoPermsStore.Done")
+			},
+		},
+		GetFunc: &SubRepoPermsStoreGetFunc{
+			defaultHook: func(context.Context, int32, api.RepoID) (*authz.SubRepoPermissions, error) {
+				panic("unexpected invocation of MockSubRepoPermsStore.Get")
+			},
+		},
+		GetByUserFunc: &SubRepoPermsStoreGetByUserFunc{
+			defaultHook: func(context.Context, int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+				panic("unexpected invocation of MockSubRepoPermsStore.GetByUser")
+			},
+		},
+		TransactFunc: &SubRepoPermsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.SubRepoPermsStore, error) {
+				panic("unexpected invocation of MockSubRepoPermsStore.Transact")
+			},
+		},
+		UpsertFunc: &SubRepoPermsStoreUpsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, authz.SubRepoPermissions) error {
+				panic("unexpected invocation of MockSubRepoPermsStore.Upsert")
+			},
+		},
+		UpsertWithSpecFunc: &SubRepoPermsStoreUpsertWithSpecFunc{
+			defaultHook: func(context.Context, int32, api.ExternalRepoSpec, authz.SubRepoPermissions) error {
+				panic("unexpected invocation of MockSubRepoPermsStore.UpsertWithSpec")
+			},
+		},
+		WithFunc: &SubRepoPermsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.SubRepoPermsStore {
+				panic("unexpected invocation of MockSubRepoPermsStore.With")
+			},
+		},
+	}
+}
+
 // NewMockSubRepoPermsStoreFrom creates a new mock of the
 // MockSubRepoPermsStore interface. All methods delegate to the given
 // implementation, unless overwritten.

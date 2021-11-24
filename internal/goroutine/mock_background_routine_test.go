@@ -35,6 +35,24 @@ func NewMockBackgroundRoutine() *MockBackgroundRoutine {
 	}
 }
 
+// NewStrictMockBackgroundRoutine creates a new mock of the
+// BackgroundRoutine interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockBackgroundRoutine() *MockBackgroundRoutine {
+	return &MockBackgroundRoutine{
+		StartFunc: &BackgroundRoutineStartFunc{
+			defaultHook: func() {
+				panic("unexpected invocation of MockBackgroundRoutine.Start")
+			},
+		},
+		StopFunc: &BackgroundRoutineStopFunc{
+			defaultHook: func() {
+				panic("unexpected invocation of MockBackgroundRoutine.Stop")
+			},
+		},
+	}
+}
+
 // NewMockBackgroundRoutineFrom creates a new mock of the
 // MockBackgroundRoutine interface. All methods delegate to the given
 // implementation, unless overwritten.
