@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -168,7 +169,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Site:              publicSiteConfiguration(),
 		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
-		DeployType:        conf.DeployType(),
+		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 

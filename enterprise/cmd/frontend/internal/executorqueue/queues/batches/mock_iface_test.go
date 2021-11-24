@@ -81,14 +81,14 @@ func NewStrictMockBatchesStore() *MockBatchesStore {
 				panic("unexpected invocation of MockBatchesStore.GetBatchSpec")
 			},
 		},
-		GetBatchSpecExecutionCacheEntryFunc: &BatchesStoreGetBatchSpecExecutionCacheEntryFunc{
-			defaultHook: func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
-				panic("unexpected invocation of MockBatchesStore.GetBatchSpecExecutionCacheEntry")
-			},
-		},
 		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
 			defaultHook: func(context.Context, store.GetBatchSpecWorkspaceOpts) (*types.BatchSpecWorkspace, error) {
 				panic("unexpected invocation of MockBatchesStore.GetBatchSpecWorkspace")
+			},
+		},
+		ListBatchSpecExecutionCacheEntriesFunc: &BatchesStoreListBatchSpecExecutionCacheEntriesFunc{
+			defaultHook: func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error) {
+				panic("unexpected invocation of MockBatchesStore.ListBatchSpecExecutionCacheEntries")
 			},
 		},
 		SetBatchSpecWorkspaceExecutionJobAccessTokenFunc: &BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc{
