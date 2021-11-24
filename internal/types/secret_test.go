@@ -129,6 +129,7 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			editField: func(cfg interface{}) *string { return &cfg.(*schema.JVMPackagesConnection).Maven.Dependencies[0] },
 		},
 		{
+			// Unlike the other test cases, this test covers skipping redaction of missing optional fields.
 			kind:      extsvc.KindPagure,
 			config:    &pagureConfig,
 			editField: func(cfg interface{}) *string { return &cfg.(*schema.PagureConnection).Pattern },
