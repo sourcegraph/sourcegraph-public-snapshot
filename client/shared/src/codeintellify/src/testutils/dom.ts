@@ -1,5 +1,4 @@
-import githubCode from '../../testdata/generated/github.html'
-import sourcegraphCode from '../../testdata/generated/sourcegraph.html'
+import { GITHUB_CODE_TABLE, SOURCEGRAPH_CODE_TABLE } from '../../testdata/generate'
 import { DOMFunctions } from '../tokenPosition'
 
 import { TEST_DATA_REVSPEC } from './revision'
@@ -62,7 +61,7 @@ export interface CodeViewProps extends DOMFunctions {
 const createGitHubCodeView = (): CodeViewProps => {
     const codeView = document.createElement('div')
 
-    codeView.innerHTML = githubCode
+    codeView.innerHTML = GITHUB_CODE_TABLE
     codeView.style.clear = 'both'
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
@@ -125,7 +124,7 @@ const createGitHubCodeView = (): CodeViewProps => {
 const createSourcegraphCodeView = (): CodeViewProps => {
     const codeView = document.createElement('div')
 
-    codeView.innerHTML = sourcegraphCode
+    codeView.innerHTML = SOURCEGRAPH_CODE_TABLE
     codeView.style.clear = 'both'
 
     // eslint-disable-next-line unicorn/consistent-function-scoping
