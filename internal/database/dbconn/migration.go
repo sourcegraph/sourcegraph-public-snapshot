@@ -55,14 +55,21 @@ var (
 )
 
 func MigrateDB(db *sql.DB, database *Database) error {
+	_, err := DoMigrateDB(db, database)
+	return err
+}
+
+func DoMigrateDB(db *sql.DB, database *Database) (func(), error) {
 	m, err := NewMigrate(db, database)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
 	if err := DoMigrate(m); err != nil {
-		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
+		return nil, errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
-	return nil
+
+	return func() { m.Close() }, nil
 }
 
 // NewMigrate returns a new configured migration object for the given database. The migration can
