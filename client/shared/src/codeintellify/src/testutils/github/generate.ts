@@ -11,6 +11,7 @@ export function generateGithubCodeTable(lines: string[]): string {
         )
         .join('\n')
 
+    // eslint-disable-next-line no-sync
     const styles = fs.readFileSync(path.join(__dirname, 'styles.css'), 'utf-8')
 
     return `<div class="github-testcase">
