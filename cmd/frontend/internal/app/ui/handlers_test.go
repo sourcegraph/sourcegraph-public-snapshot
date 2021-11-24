@@ -37,7 +37,13 @@ func TestRedirects(t *testing.T) {
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
 		t.Helper()
 
-		InitRouter(dbmock.NewMockDB(), nil)
+		gss := dbmock.NewMockGlobalStateStore()
+		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+		db := dbmock.NewMockDB()
+		db.GlobalStateFunc.SetDefaultReturn(gss)
+
+		InitRouter(db, nil)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -172,7 +178,13 @@ func TestNewCommon_repo_error(t *testing.T) {
 				code = statusCode
 			}
 
-			_, err = newCommon(httptest.NewRecorder(), req, dbmock.NewMockDB(), "test", index, serveError)
+			gss := dbmock.NewMockGlobalStateStore()
+			gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+			db := dbmock.NewMockDB()
+			db.GlobalStateFunc.SetDefaultReturn(gss)
+
+			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
 			if err != nil {
 				if got != "" || code != 200 {
 					t.Fatal("serveError called and error returned from newCommon")
