@@ -1,5 +1,6 @@
-import { mount } from 'enzyme'
-import React, { ChangeEvent } from 'react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import React from 'react'
 import { act } from 'react-dom/test-utils'
 import { DropdownMenu, UncontrolledDropdown } from 'reactstrap'
 import { Observable, of, throwError } from 'rxjs'
@@ -11,7 +12,7 @@ import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockInter
 
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
 
-import { SearchContextMenu, SearchContextMenuItem, SearchContextMenuProps } from './SearchContextMenu'
+import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
 const mockFetchAutoDefinedSearchContexts = () =>
     of([
@@ -125,7 +126,7 @@ describe('SearchContextMenu', () => {
     it('should select item when clicking on it', () => {
         const selectSearchContextSpec = sinon.spy()
 
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu {...defaultProps} selectSearchContextSpec={selectSearchContextSpec} />
@@ -137,10 +138,9 @@ describe('SearchContextMenu', () => {
             // Wait for debounce
             clock.tick(50)
         })
-        root.update()
 
-        const item = root.find(SearchContextMenuItem).at(1)
-        item.simulate('click')
+        const item = screen.getAllByTestId('search-context-menu-item')[1]
+        userEvent.click(item)
 
         sinon.assert.calledOnce(selectSearchContextSpec)
         sinon.assert.calledWithExactly(selectSearchContextSpec, '@username')
@@ -150,7 +150,7 @@ describe('SearchContextMenu', () => {
         const selectSearchContextSpec = sinon.spy()
         const closeMenu = sinon.spy()
 
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu
@@ -163,13 +163,13 @@ describe('SearchContextMenu', () => {
             </UncontrolledDropdown>
         )
 
-        const button = root.find('[data-testid="search-context-menu-header-input"]').at(0)
-        button.simulate('keydown', { key: 'Escape' })
+        const button = screen.getAllByTestId('search-context-menu-header-input')[0]
+        userEvent.type(button, '{esc}')
         sinon.assert.calledOnce(closeMenu)
     })
 
     it('should filter list by spec when searching', () => {
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu {...defaultProps} />
@@ -177,28 +177,24 @@ describe('SearchContextMenu', () => {
             </UncontrolledDropdown>
         )
 
-        const searchInput = root.find('input')
+        const searchInput = screen.getByTestId('search-context-menu-header-input')
+        // Search by spec
+        userEvent.type(searchInput, 'ser')
         act(() => {
-            // Search by spec
-            searchInput.invoke('onInput')?.({
-                currentTarget: { value: 'ser' },
-            } as ChangeEvent<HTMLInputElement>)
             // Wait for debounce
             clock.tick(500)
         })
 
-        root.update()
-
-        const items = root.find(SearchContextMenuItem)
+        const items = screen.getAllByTestId('search-context-menu-item')
         expect(items.length).toBe(2)
-        expect(items.at(0).text()).toBe('@username Your repositories on Sourcegraph')
-        expect(items.at(1).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
+        expect(items[0]).toHaveTextContent('@username Your repositories on Sourcegraph')
+        expect(items[1]).toHaveTextContent('@username/test-version-1.5 Only code in version 1.5')
 
         expect(items).toMatchSnapshot()
     })
 
     it('should show message if search does not find anything', () => {
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu {...defaultProps} />
@@ -206,26 +202,20 @@ describe('SearchContextMenu', () => {
             </UncontrolledDropdown>
         )
 
-        const searchInput = root.find('input')
-
+        const searchInput = screen.getByTestId('search-context-menu-header-input')
+        // Search by spec
+        userEvent.type(searchInput, 'nothing')
         act(() => {
-            // Search by spec
-            searchInput.invoke('onInput')?.({
-                currentTarget: { value: 'nothing' },
-            } as ChangeEvent<HTMLInputElement>)
-
             // Wait for debounce
             clock.tick(500)
         })
 
-        root.update()
-
-        const items = root.find('[data-testid="search-context-menu-item"]')
-        expect(items.at(0).text()).toBe('No contexts found')
+        const items = screen.getAllByTestId('search-context-menu-item')
+        expect(items[0]).toHaveTextContent('No contexts found')
     })
 
     it('should not search by description', () => {
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu {...defaultProps} />
@@ -233,27 +223,22 @@ describe('SearchContextMenu', () => {
             </UncontrolledDropdown>
         )
 
-        const searchInput = root.find('input')
-
+        const searchInput = screen.getByTestId('search-context-menu-header-input')
+        userEvent.type(searchInput, 'version 1.5')
         act(() => {
-            searchInput.invoke('onInput')?.({
-                currentTarget: { value: 'version 1.5' },
-            } as ChangeEvent<HTMLInputElement>)
             // Wait for debounce
             clock.tick(500)
         })
 
-        root.update()
-
-        const items = root.find('[data-testid="search-context-menu-item"]')
-        expect(items.at(0).text()).toBe('No contexts found')
+        const items = screen.getAllByTestId('search-context-menu-item')
+        expect(items[0]).toHaveTextContent('No contexts found')
     })
 
     it('should show error on failed next page load', () => {
         const errorFetchSearchContexts = () => {
             throw new Error('unknown error')
         }
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu {...defaultProps} fetchSearchContexts={errorFetchSearchContexts} />
@@ -265,17 +250,16 @@ describe('SearchContextMenu', () => {
             // Wait for debounce
             clock.tick(50)
         })
-        root.update()
 
-        const items = root.find('[data-testid="search-context-menu-item"]')
-        expect(items.at(items.length - 1).text()).toBe('Error occured while loading search contexts')
+        const items = screen.getAllByTestId('search-context-menu-item')
+        expect(items[items.length - 1]).toHaveTextContent('Error occured while loading search contexts')
     })
 
     it('should default to empty array if fetching auto-defined contexts fails', () => {
         const errorFetchAutoDefinedSearchContexts: () => Observable<ISearchContext[]> = () =>
             throwError(new Error('unknown error'))
 
-        const root = mount(
+        render(
             <UncontrolledDropdown>
                 <DropdownMenu>
                     <SearchContextMenu
@@ -290,10 +274,9 @@ describe('SearchContextMenu', () => {
             // Wait for debounce
             clock.tick(50)
         })
-        root.update()
 
-        const items = root.find(SearchContextMenuItem)
+        const items = screen.getAllByTestId('search-context-menu-item')
         // With no auto-defined contexts, the first context should be a user-defined context
-        expect(items.at(0).text()).toBe('@username/test-version-1.5 Only code in version 1.5')
+        expect(items[0]).toHaveTextContent('@username/test-version-1.5 Only code in version 1.5')
     })
 })

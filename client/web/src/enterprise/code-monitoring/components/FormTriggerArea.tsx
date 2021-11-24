@@ -300,6 +300,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                     </div>
                     <div>
                         <button
+                            data-testid="submit-trigger"
                             className="btn btn-secondary mr-1 test-submit-trigger"
                             onClick={completeForm}
                             type="submit"
@@ -316,6 +317,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
             {!showQueryForm && (
                 <button
                     type="button"
+                    data-testid="trigger-button"
                     className={classNames('btn card test-trigger-button', cardBtnClassName)}
                     aria-label="Edit trigger: When there are new search results"
                     onClick={toggleQueryForm}

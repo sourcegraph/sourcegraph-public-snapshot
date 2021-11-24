@@ -168,9 +168,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                     ))}
                 </tbody>
             </table>
-            {recentSearches?.pageInfo.hasNextPage && (
-                <ShowMoreButton onClick={loadMoreItems} className="test-recent-searches-panel-show-more" />
-            )}
+            {recentSearches?.pageInfo.hasNextPage && <ShowMoreButton onClick={loadMoreItems} />}
         </>
     )
 
