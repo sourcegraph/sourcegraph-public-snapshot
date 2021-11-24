@@ -49,7 +49,7 @@ import { getRepositorySuggestions } from '../core/api/get-repository-suggestions
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 import { getSearchInsightContent } from '../core/api/get-search-insight-content/get-search-insight-content'
 import { createLineChartContent } from '../utils/create-line-chart-content'
-import { InsightStillProcessingError } from '../utils/errors'
+import { InsightInProcessError } from '../utils/errors'
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
 import { createInsight } from './gql-handlers/create-insight'
@@ -151,7 +151,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             map(({ data }) => data.insightViews.nodes[0]),
             switchMap(data => {
                 if (!data) {
-                    return throwError(new InsightStillProcessingError())
+                    return throwError(new InsightInProcessError())
                 }
 
                 return of(data)

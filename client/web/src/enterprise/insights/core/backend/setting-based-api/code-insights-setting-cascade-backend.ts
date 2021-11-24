@@ -43,8 +43,7 @@ import { getSubjectSettings, updateSubjectSettings } from '../core/api/subject-s
 import { getBackendInsight } from './gql-handlers/get-backend-insight'
 import { getDeleteInsightEditOperations } from './utils/delete-helpers'
 import { findInsightById } from './utils/find-insight-by-id'
-import { getInsightsDashboards } from './utils/get-insights-dashboards/get-insights-dashboards'
-import { getInsightIdsFromSettings } from './utils/get-insights-dashboards/utils'
+import { getInsightsDashboards, getInsightIdsFromSettings } from './utils/get-insights-dashboards'
 import { getUpdatedSubjectSettings } from './utils/get-updated-subject-settings'
 import { persistChanges } from './utils/persist-changes'
 

@@ -9,7 +9,7 @@ import { InsightFields, InsightsResult } from '../../../../../../graphql-operati
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../types/insight/search-insight'
 import { BackendInsightData } from '../../code-insights-backend-types'
 import { createLineChartContent } from '../../utils/create-line-chart-content'
-import { InsightStillProcessingError } from '../../utils/errors'
+import { InsightInProcessError } from '../../utils/errors'
 
 export function getBackendInsight(insight: SearchBackendBasedInsight): Observable<BackendInsightData> {
     const { id, filters, series } = insight
@@ -17,7 +17,7 @@ export function getBackendInsight(insight: SearchBackendBasedInsight): Observabl
     return fetchBackendInsights([id], filters).pipe(
         switchMap(backendInsights => {
             if (backendInsights.length === 0) {
-                return throwError(new InsightStillProcessingError())
+                return throwError(new InsightInProcessError())
             }
 
             return of(backendInsights[0])
