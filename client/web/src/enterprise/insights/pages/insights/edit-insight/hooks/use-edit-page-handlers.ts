@@ -29,7 +29,7 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
     const history = useHistory()
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
         if (!originalInsight) {

@@ -184,6 +184,108 @@ func NewMockDBStore() *MockDBStore {
 	}
 }
 
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CommitsVisibleToUploadFunc: &DBStoreCommitsVisibleToUploadFunc{
+			defaultHook: func(context.Context, int, int, *string) ([]string, *string, error) {
+				panic("unexpected invocation of MockDBStore.CommitsVisibleToUpload")
+			},
+		},
+		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
+			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteIndexesWithoutRepository")
+			},
+		},
+		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteSourcedCommits")
+			},
+		},
+		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
+			defaultHook: func(context.Context, time.Time) (int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteUploadsStuckUploading")
+			},
+		},
+		DeleteUploadsWithoutRepositoryFunc: &DBStoreDeleteUploadsWithoutRepositoryFunc{
+			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteUploadsWithoutRepository")
+			},
+		},
+		DirtyRepositoriesFunc: &DBStoreDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DirtyRepositories")
+			},
+		},
+		DoneFunc: &DBStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockDBStore.Done")
+			},
+		},
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicies")
+			},
+		},
+		GetUploadsFunc: &DBStoreGetUploadsFunc{
+			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
+				panic("unexpected invocation of MockDBStore.GetUploads")
+			},
+		},
+		HandleFunc: &DBStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockDBStore.Handle")
+			},
+		},
+		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, ...int) error {
+				panic("unexpected invocation of MockDBStore.HardDeleteUploadByID")
+			},
+		},
+		SelectPoliciesForRepositoryMembershipUpdateFunc: &DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.ConfigurationPolicy, error) {
+				panic("unexpected invocation of MockDBStore.SelectPoliciesForRepositoryMembershipUpdate")
+			},
+		},
+		SelectRepositoriesForRetentionScanFunc: &DBStoreSelectRepositoriesForRetentionScanFunc{
+			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
+				panic("unexpected invocation of MockDBStore.SelectRepositoriesForRetentionScan")
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockDBStore.SoftDeleteExpiredUploads")
+			},
+		},
+		StaleSourcedCommitsFunc: &DBStoreStaleSourcedCommitsFunc{
+			defaultHook: func(context.Context, time.Duration, int, time.Time) ([]dbstore.SourcedCommits, error) {
+				panic("unexpected invocation of MockDBStore.StaleSourcedCommits")
+			},
+		},
+		TransactFunc: &DBStoreTransactFunc{
+			defaultHook: func(context.Context) (DBStore, error) {
+				panic("unexpected invocation of MockDBStore.Transact")
+			},
+		},
+		UpdateReposMatchingPatternsFunc: &DBStoreUpdateReposMatchingPatternsFunc{
+			defaultHook: func(context.Context, []string, int, *int) error {
+				panic("unexpected invocation of MockDBStore.UpdateReposMatchingPatterns")
+			},
+		},
+		UpdateSourcedCommitsFunc: &DBStoreUpdateSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+				panic("unexpected invocation of MockDBStore.UpdateSourcedCommits")
+			},
+		},
+		UpdateUploadRetentionFunc: &DBStoreUpdateUploadRetentionFunc{
+			defaultHook: func(context.Context, []int, []int) error {
+				panic("unexpected invocation of MockDBStore.UpdateUploadRetention")
+			},
+		},
+	}
+}
+
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
@@ -2432,6 +2534,38 @@ func NewMockLSIFStore() *MockLSIFStore {
 	}
 }
 
+// NewStrictMockLSIFStore creates a new mock of the LSIFStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLSIFStore() *MockLSIFStore {
+	return &MockLSIFStore{
+		ClearFunc: &LSIFStoreClearFunc{
+			defaultHook: func(context.Context, ...int) error {
+				panic("unexpected invocation of MockLSIFStore.Clear")
+			},
+		},
+		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
+			defaultHook: func(context.Context, time.Duration, int) (int, error) {
+				panic("unexpected invocation of MockLSIFStore.DeleteOldPrivateSearchRecords")
+			},
+		},
+		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
+			defaultHook: func(context.Context, time.Duration, int) (int, error) {
+				panic("unexpected invocation of MockLSIFStore.DeleteOldPublicSearchRecords")
+			},
+		},
+		DoneFunc: &LSIFStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockLSIFStore.Done")
+			},
+		},
+		TransactFunc: &LSIFStoreTransactFunc{
+			defaultHook: func(context.Context) (LSIFStore, error) {
+				panic("unexpected invocation of MockLSIFStore.Transact")
+			},
+		},
+	}
+}
+
 // NewMockLSIFStoreFrom creates a new mock of the MockLSIFStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
@@ -3022,6 +3156,18 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
 			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockPolicyMatcher creates a new mock of the PolicyMatcher
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
+			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
 	}

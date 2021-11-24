@@ -12,7 +12,7 @@
  */
 const { TextEncoder } = require('util')
 
-const { JestFakeTimers } = require('@jest/fake-timers')
+const { ModernFakeTimers } = require('@jest/fake-timers')
 const { Crypto } = require('@peculiar/webcrypto')
 const { ModuleMocker } = require('jest-mock')
 const { installCommonGlobals } = require('jest-util')
@@ -81,7 +81,7 @@ class JSDOMEnvironment {
       idToRef: id => id,
       refToId: reference => reference,
     }
-    this.fakeTimers = new JestFakeTimers({
+    this.fakeTimers = new ModernFakeTimers({
       config,
       global,
       moduleMocker: this.moduleMocker,

@@ -295,6 +295,178 @@ func NewMockUserStore() *MockUserStore {
 	}
 }
 
+// NewStrictMockUserStore creates a new mock of the UserStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockUserStore() *MockUserStore {
+	return &MockUserStore{
+		CheckAndDecrementInviteQuotaFunc: &UserStoreCheckAndDecrementInviteQuotaFunc{
+			defaultHook: func(context.Context, int32) (bool, error) {
+				panic("unexpected invocation of MockUserStore.CheckAndDecrementInviteQuota")
+			},
+		},
+		CountFunc: &UserStoreCountFunc{
+			defaultHook: func(context.Context, *database.UsersListOptions) (int, error) {
+				panic("unexpected invocation of MockUserStore.Count")
+			},
+		},
+		CreateFunc: &UserStoreCreateFunc{
+			defaultHook: func(context.Context, database.NewUser) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.Create")
+			},
+		},
+		CreateInTransactionFunc: &UserStoreCreateInTransactionFunc{
+			defaultHook: func(context.Context, database.NewUser) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.CreateInTransaction")
+			},
+		},
+		CreatePasswordFunc: &UserStoreCreatePasswordFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserStore.CreatePassword")
+			},
+		},
+		CurrentUserAllowedExternalServicesFunc: &UserStoreCurrentUserAllowedExternalServicesFunc{
+			defaultHook: func(context.Context) (conf.ExternalServiceMode, error) {
+				panic("unexpected invocation of MockUserStore.CurrentUserAllowedExternalServices")
+			},
+		},
+		DeleteFunc: &UserStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserStore.Delete")
+			},
+		},
+		DeletePasswordResetCodeFunc: &UserStoreDeletePasswordResetCodeFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserStore.DeletePasswordResetCode")
+			},
+		},
+		DoneFunc: &UserStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockUserStore.Done")
+			},
+		},
+		ExecFunc: &UserStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) error {
+				panic("unexpected invocation of MockUserStore.Exec")
+			},
+		},
+		ExecResultFunc: &UserStoreExecResultFunc{
+			defaultHook: func(context.Context, *sqlf.Query) (sql.Result, error) {
+				panic("unexpected invocation of MockUserStore.ExecResult")
+			},
+		},
+		GetByCurrentAuthUserFunc: &UserStoreGetByCurrentAuthUserFunc{
+			defaultHook: func(context.Context) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.GetByCurrentAuthUser")
+			},
+		},
+		GetByIDFunc: &UserStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.GetByID")
+			},
+		},
+		GetByUsernameFunc: &UserStoreGetByUsernameFunc{
+			defaultHook: func(context.Context, string) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.GetByUsername")
+			},
+		},
+		GetByUsernamesFunc: &UserStoreGetByUsernamesFunc{
+			defaultHook: func(context.Context, ...string) ([]*types.User, error) {
+				panic("unexpected invocation of MockUserStore.GetByUsernames")
+			},
+		},
+		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
+			defaultHook: func(context.Context, string) (*types.User, error) {
+				panic("unexpected invocation of MockUserStore.GetByVerifiedEmail")
+			},
+		},
+		HardDeleteFunc: &UserStoreHardDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserStore.HardDelete")
+			},
+		},
+		HasTagFunc: &UserStoreHasTagFunc{
+			defaultHook: func(context.Context, int32, string) (bool, error) {
+				panic("unexpected invocation of MockUserStore.HasTag")
+			},
+		},
+		InvalidateSessionsByIDFunc: &UserStoreInvalidateSessionsByIDFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserStore.InvalidateSessionsByID")
+			},
+		},
+		IsPasswordFunc: &UserStoreIsPasswordFunc{
+			defaultHook: func(context.Context, int32, string) (bool, error) {
+				panic("unexpected invocation of MockUserStore.IsPassword")
+			},
+		},
+		ListFunc: &UserStoreListFunc{
+			defaultHook: func(context.Context, *database.UsersListOptions) ([]*types.User, error) {
+				panic("unexpected invocation of MockUserStore.List")
+			},
+		},
+		ListDatesFunc: &UserStoreListDatesFunc{
+			defaultHook: func(context.Context) ([]types.UserDates, error) {
+				panic("unexpected invocation of MockUserStore.ListDates")
+			},
+		},
+		RandomizePasswordAndClearPasswordResetRateLimitFunc: &UserStoreRandomizePasswordAndClearPasswordResetRateLimitFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockUserStore.RandomizePasswordAndClearPasswordResetRateLimit")
+			},
+		},
+		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
+			defaultHook: func(context.Context, int32) (string, error) {
+				panic("unexpected invocation of MockUserStore.RenewPasswordResetCode")
+			},
+		},
+		SetIsSiteAdminFunc: &UserStoreSetIsSiteAdminFunc{
+			defaultHook: func(context.Context, int32, bool) error {
+				panic("unexpected invocation of MockUserStore.SetIsSiteAdmin")
+			},
+		},
+		SetPasswordFunc: &UserStoreSetPasswordFunc{
+			defaultHook: func(context.Context, int32, string, string) (bool, error) {
+				panic("unexpected invocation of MockUserStore.SetPassword")
+			},
+		},
+		SetTagFunc: &UserStoreSetTagFunc{
+			defaultHook: func(context.Context, int32, string, bool) error {
+				panic("unexpected invocation of MockUserStore.SetTag")
+			},
+		},
+		TagsFunc: &UserStoreTagsFunc{
+			defaultHook: func(context.Context, int32) (map[string]bool, error) {
+				panic("unexpected invocation of MockUserStore.Tags")
+			},
+		},
+		TransactFunc: &UserStoreTransactFunc{
+			defaultHook: func(context.Context) (database.UserStore, error) {
+				panic("unexpected invocation of MockUserStore.Transact")
+			},
+		},
+		UpdateFunc: &UserStoreUpdateFunc{
+			defaultHook: func(context.Context, int32, database.UserUpdate) error {
+				panic("unexpected invocation of MockUserStore.Update")
+			},
+		},
+		UpdatePasswordFunc: &UserStoreUpdatePasswordFunc{
+			defaultHook: func(context.Context, int32, string, string) error {
+				panic("unexpected invocation of MockUserStore.UpdatePassword")
+			},
+		},
+		UserAllowedExternalServicesFunc: &UserStoreUserAllowedExternalServicesFunc{
+			defaultHook: func(context.Context, int32) (conf.ExternalServiceMode, error) {
+				panic("unexpected invocation of MockUserStore.UserAllowedExternalServices")
+			},
+		},
+		WithFunc: &UserStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.UserStore {
+				panic("unexpected invocation of MockUserStore.With")
+			},
+		},
+	}
+}
+
 // NewMockUserStoreFrom creates a new mock of the MockUserStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockUserStoreFrom(i database.UserStore) *MockUserStore {

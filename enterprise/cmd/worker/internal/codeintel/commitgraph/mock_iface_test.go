@@ -49,6 +49,28 @@ func NewMockDBStore() *MockDBStore {
 	}
 }
 
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CalculateVisibleUploadsFunc: &DBStoreCalculateVisibleUploadsFunc{
+			defaultHook: func(context.Context, int, *gitserver.CommitGraph, map[string][]gitserver.RefDescription, time.Duration, time.Duration, int, time.Time) error {
+				panic("unexpected invocation of MockDBStore.CalculateVisibleUploads")
+			},
+		},
+		DirtyRepositoriesFunc: &DBStoreDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DirtyRepositories")
+			},
+		},
+		GetOldestCommitDateFunc: &DBStoreGetOldestCommitDateFunc{
+			defaultHook: func(context.Context, int) (time.Time, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetOldestCommitDate")
+			},
+		},
+	}
+}
+
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
@@ -440,6 +462,23 @@ func NewMockGitserverClient() *MockGitserverClient {
 	}
 }
 
+// NewStrictMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{
+		CommitGraphFunc: &GitserverClientCommitGraphFunc{
+			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitGraph")
+			},
+		},
+		RefDescriptionsFunc: &GitserverClientRefDescriptionsFunc{
+			defaultHook: func(context.Context, int) (map[string][]gitserver.RefDescription, error) {
+				panic("unexpected invocation of MockGitserverClient.RefDescriptions")
+			},
+		},
+	}
+}
+
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
@@ -694,6 +733,18 @@ func NewMockLocker() *MockLocker {
 		LockFunc: &LockerLockFunc{
 			defaultHook: func(context.Context, int32, bool) (bool, locker.UnlockFunc, error) {
 				return false, nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockLocker creates a new mock of the Locker interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLocker() *MockLocker {
+	return &MockLocker{
+		LockFunc: &LockerLockFunc{
+			defaultHook: func(context.Context, int32, bool) (bool, locker.UnlockFunc, error) {
+				panic("unexpected invocation of MockLocker.Lock")
 			},
 		},
 	}

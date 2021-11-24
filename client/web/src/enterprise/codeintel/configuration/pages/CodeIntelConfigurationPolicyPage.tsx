@@ -38,7 +38,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     history,
     telemetryService,
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicyPageProps'), [telemetryService])
+    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
 
     const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id)
     const [saved, setSaved] = useState<CodeIntelligenceConfigurationPolicyFields>()

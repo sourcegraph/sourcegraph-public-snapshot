@@ -104,7 +104,10 @@ func redactionInfo(cfg interface{}) ([]jsonStringField, error) {
 	case *schema.JVMPackagesConnection:
 		return []jsonStringField{{[]string{"maven", "credentials"}, &cfg.Maven.Credentials}}, nil
 	case *schema.PagureConnection:
-		return []jsonStringField{{[]string{"token"}, &cfg.Token}}, nil
+		if cfg.Token != "" {
+			return []jsonStringField{{[]string{"token"}, &cfg.Token}}, nil
+		}
+		return []jsonStringField{}, nil
 	case *schema.OtherExternalServiceConnection:
 		return []jsonStringField{{[]string{"url"}, &cfg.Url}}, nil
 	default:
@@ -166,7 +169,8 @@ func unredactFields(old, new string, cfg interface{}) (string, error) {
 	for _, field := range jsonStringFields {
 		v, err := jsonc.ReadProperty(new, field.path...)
 		if err != nil {
-			return new, err
+			// This field was deleted, so we skip any edits to it.
+			continue
 		}
 		stringValue, ok := v.(string)
 		if !ok {

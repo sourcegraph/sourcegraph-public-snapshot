@@ -40,6 +40,24 @@ func NewMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
 	}
 }
 
+// NewStrictMockExecutionLogEntryStore creates a new mock of the
+// ExecutionLogEntryStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockExecutionLogEntryStore() *MockExecutionLogEntryStore {
+	return &MockExecutionLogEntryStore{
+		AddExecutionLogEntryFunc: &ExecutionLogEntryStoreAddExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry) (int, error) {
+				panic("unexpected invocation of MockExecutionLogEntryStore.AddExecutionLogEntry")
+			},
+		},
+		UpdateExecutionLogEntryFunc: &ExecutionLogEntryStoreUpdateExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry) error {
+				panic("unexpected invocation of MockExecutionLogEntryStore.UpdateExecutionLogEntry")
+			},
+		},
+	}
+}
+
 // NewMockExecutionLogEntryStoreFrom creates a new mock of the
 // MockExecutionLogEntryStore interface. All methods delegate to the given
 // implementation, unless overwritten.

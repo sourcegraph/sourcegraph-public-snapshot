@@ -165,7 +165,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * Basic contextual information for the current code host.
      */
-    getContext?: () => CodeHostContext
+    getContext?: () => Promise<CodeHostContext>
 
     /**
      * An Observable for whether the code host is in light theme (vs dark theme).
@@ -681,11 +681,11 @@ export function handleCodeHost({
      * is a private repository that hasn't been added to Sourcegraph Cloud
      * (no side effects, doesn't notify `privateCloudErrors`)
      * */
-    const checkPrivateCloudError = (error: any): boolean =>
+    const checkPrivateCloudError = async (error: any): Promise<boolean> =>
         !!(
             isRepoNotFoundErrorLike(error) &&
             sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
-            codeHost.getContext?.().privateRepository
+            (await codeHost.getContext?.())?.privateRepository
         )
 
     if (codeHost.nativeTooltipResolvers) {
@@ -766,16 +766,14 @@ export function handleCodeHost({
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
-        const repoExistsOrErrors = signInCloses.pipe(
-            startWith(null),
-            switchMap(() => {
-                const { rawRepoName, revision } = getContext()
-                return resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
+        const repoExistsOrErrors = combineLatest([signInCloses.pipe(startWith(null)), from(getContext())]).pipe(
+            switchMap(([, { rawRepoName, revision }]) =>
+                resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
                     mapTo(true),
                     startWith(undefined)
                 )
-            }),
+            ),
             catchError(error => {
                 if (isRepoNotFoundErrorLike(error) || error instanceof RepoURLParseError) {
                     return [false]
@@ -811,12 +809,13 @@ export function handleCodeHost({
                     map(count => count === 0),
                     distinctUntilChanged()
                 ),
-            ]).subscribe(([repoExistsOrError, mount, showSignInButton]) => {
+                from(getContext()),
+            ]).subscribe(([repoExistsOrError, mount, showSignInButton, context]) => {
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
                         codeHostType={codeHost.type}
-                        getContext={getContext}
+                        context={context}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
@@ -893,13 +892,15 @@ export function handleCodeHost({
                         }))
                     )
                 ),
-                catchError(error => {
+                catchError(error =>
                     // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
-                    if (checkPrivateCloudError(error)) {
-                        return EMPTY
-                    }
-                    throw error
-                }),
+                    from(checkPrivateCloudError(error)).pipe(hasPrivateCloudError => {
+                        if (hasPrivateCloudError) {
+                            return EMPTY
+                        }
+                        throw error
+                    })
+                ),
                 tap({
                     error: error => {
                         if (codeViewEvent.getToolbarMount) {

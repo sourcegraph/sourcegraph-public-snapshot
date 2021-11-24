@@ -628,6 +628,7 @@ exports[`FormTriggerArea Correct checkboxes shown when query does not fulfill re
     <div>
       <button
         className="btn btn-secondary mr-1 test-submit-trigger"
+        data-testid="submit-trigger"
         disabled={true}
         onClick={[Function]}
         type="submit"

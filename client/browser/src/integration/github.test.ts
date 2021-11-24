@@ -38,6 +38,13 @@ describe('GitHub', () => {
             response.sendStatus(200)
         })
 
+        testContext.server.any('https://api.github.com/repos/*').intercept((request, response) => {
+            response
+                .status(200)
+                .setHeader('Access-Control-Allow-Origin', 'https://github.com')
+                .send(JSON.stringify({ visibility: 'private' }))
+        })
+
         testContext.overrideGraphQL({
             ViewerConfiguration: () => ({
                 viewerConfiguration: {

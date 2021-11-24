@@ -164,10 +164,14 @@ stdout: {"operation":"UPLOADING_CHANGESET_SPECS","timestamp":"2021-09-09T13:20:3
 		}
 
 		for _, wantKey := range cacheEntryKeys {
-			entry, err := s.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{Key: wantKey})
+			entries, err := s.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{wantKey}})
 			if err != nil {
 				t.Fatal(err)
 			}
+			if len(entries) != 1 {
+				t.Fatal("cache entry not found")
+			}
+			entry := entries[0]
 
 			var cachedExecutionResult *execution.Result
 			if err := json.Unmarshal([]byte(entry.Value), &cachedExecutionResult); err != nil {

@@ -3,34 +3,34 @@ package conf
 import (
 	"context"
 	"log"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
-	deployType := DeployType()
-	if !IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q. Got: %q", DeployKubernetes, DeployDockerCompose, DeployPureDocker, DeploySingleDocker, DeployDev, deployType)
+	deployType := deploy.Type()
+	if !deploy.IsValidDeployType(deployType) {
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
 }
 
 func defaultConfigForDeployment() conftypes.RawUnified {
-	deployType := DeployType()
+	deployType := deploy.Type()
 	switch {
-	case IsDev(deployType):
+	case deploy.IsDev(deployType):
 		return confdefaults.DevAndTesting
-	case IsDeployTypeSingleDockerContainer(deployType):
+	case deploy.IsDeployTypeSingleDockerContainer(deployType):
 		return confdefaults.DockerContainer
-	case IsDeployTypeKubernetes(deployType), IsDeployTypeDockerCompose(deployType), IsDeployTypePureDocker(deployType):
+	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
 	default:
 		panic("deploy type did not register default configuration")
@@ -123,71 +123,6 @@ func EmailVerificationRequired() bool {
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
-}
-
-// Deploy type constants. Any changes here should be reflected in the DeployType type declared in web/src/globals.d.ts:
-// https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
-const (
-	DeployKubernetes    = "kubernetes"
-	DeploySingleDocker  = "docker-container"
-	DeployDockerCompose = "docker-compose"
-	DeployPureDocker    = "pure-docker"
-	DeployDev           = "dev"
-)
-
-// DeployType tells the deployment type.
-func DeployType() string {
-	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
-		return e
-	}
-	// Default to Kubernetes cluster so that every Kubernetes
-	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
-	return DeployKubernetes
-}
-
-// IsDeployTypeKubernetes tells if the given deployment type is a Kubernetes
-// cluster (and non-dev, not docker-compose, not pure-docker, and non-single Docker image).
-func IsDeployTypeKubernetes(deployType string) bool {
-	switch deployType {
-	// includes older Kubernetes aliases for backwards compatibility
-	case "k8s", "cluster", DeployKubernetes:
-		return true
-	}
-
-	return false
-}
-
-// IsDeployTypeDockerCompose tells if the given deployment type is the Docker Compose
-// deployment (and non-dev, not pure-docker, non-cluster, and non-single Docker image).
-func IsDeployTypeDockerCompose(deployType string) bool {
-	return deployType == DeployDockerCompose
-}
-
-// IsDeployTypePureDocker tells if the given deployment type is the pure Docker
-// deployment (and non-dev, not docker-compose, non-cluster, and non-single Docker image).
-func IsDeployTypePureDocker(deployType string) bool {
-	return deployType == DeployPureDocker
-}
-
-// IsDeployTypeSingleDockerContainer tells if the given deployment type is Docker sourcegraph/server
-// single-container (non-Kubernetes, not docker-compose, not pure-docker, non-cluster, non-dev).
-func IsDeployTypeSingleDockerContainer(deployType string) bool {
-	return deployType == DeploySingleDocker
-}
-
-// IsDev tells if the given deployment type is "dev".
-func IsDev(deployType string) bool {
-	return deployType == DeployDev
-}
-
-// IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, a Docker Compose
-// deployment, a pure Docker deployment, a Docker deployment, or a local development environment.
-func IsValidDeployType(deployType string) bool {
-	return IsDeployTypeKubernetes(deployType) ||
-		IsDeployTypeDockerCompose(deployType) ||
-		IsDeployTypePureDocker(deployType) ||
-		IsDeployTypeSingleDockerContainer(deployType) ||
-		IsDev(deployType)
 }
 
 // UpdateChannel tells the update channel. Default is "release".

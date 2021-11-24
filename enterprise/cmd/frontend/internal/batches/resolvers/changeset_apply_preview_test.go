@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -372,7 +374,14 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 
 		// We need to modify the changeset spec to not have a published field.
 		newFx.specPublished.Spec.Published = batches.PublishedValue{Val: nil}
-		require.Nil(t, bstore.UpdateChangesetSpec(ctx, newFx.specPublished))
+		spec, err := json.Marshal(newFx.specPublished.Spec)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
+		if _, err := db.Exec(q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			t.Fatal(err)
+		}
 
 		// Same as above, but this time we'll use a page size of 3 just to mix
 		// it up.

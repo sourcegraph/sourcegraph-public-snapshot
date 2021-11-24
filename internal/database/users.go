@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -293,7 +293,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	alreadyInitialized, err := globalstatedb.EnsureInitialized(ctx, u)
+	alreadyInitialized, err := GlobalStateWith(u).EnsureInitialized(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -741,6 +741,40 @@ func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]
 
 var ErrNoCurrentUser = errors.New("no current user")
 
+type ctxKey int
+
+const userKey ctxKey = iota
+
+type ctxUser struct {
+	// user is populated lazily
+	user     *types.User
+	userErr  error
+	userOnce sync.Once
+}
+
+// ctxUserFromContext gets the associated user cache from context. If one doesn't exist,
+// one is created and attached to the returned context.
+func ctxUserFromContext(ctx context.Context) (context.Context, *ctxUser) {
+	u, ok := ctx.Value(userKey).(*ctxUser)
+	if !ok {
+		u = &ctxUser{}
+		return context.WithValue(ctx, userKey, u), u
+	}
+	return ctx, u
+}
+
+// Get returns the expanded types.User for the actor's ID. The ID is expanded to a full
+// types.User using the fetcher, which is likely a *database.UserStore.
+func (user *ctxUser) Get(ctx context.Context, store *userStore, a *actor.Actor) (*types.User, error) {
+	user.userOnce.Do(func() {
+		user.user, user.userErr = store.GetByID(ctx, a.UID)
+	})
+	if user.user != nil && user.user.ID != a.UID {
+		return nil, errors.Errorf("actor UID (%d) and the ID of the cached User (%d) do not match", a.UID, user.user.ID)
+	}
+	return user.user, user.userErr
+}
+
 func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	if Mocks.Users.GetByCurrentAuthUser != nil {
 		return Mocks.Users.GetByCurrentAuthUser(ctx)
@@ -751,7 +785,8 @@ func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 		return nil, ErrNoCurrentUser
 	}
 
-	return a.User(ctx, u)
+	ctx, user := ctxUserFromContext(ctx)
+	return user.Get(ctx, u, a)
 }
 
 func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {

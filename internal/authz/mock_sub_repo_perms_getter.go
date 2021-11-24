@@ -31,6 +31,19 @@ func NewMockSubRepoPermissionsGetter() *MockSubRepoPermissionsGetter {
 	}
 }
 
+// NewStrictMockSubRepoPermissionsGetter creates a new mock of the
+// SubRepoPermissionsGetter interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockSubRepoPermissionsGetter() *MockSubRepoPermissionsGetter {
+	return &MockSubRepoPermissionsGetter{
+		GetByUserFunc: &SubRepoPermissionsGetterGetByUserFunc{
+			defaultHook: func(context.Context, int32) (map[api.RepoName]SubRepoPermissions, error) {
+				panic("unexpected invocation of MockSubRepoPermissionsGetter.GetByUser")
+			},
+		},
+	}
+}
+
 // NewMockSubRepoPermissionsGetterFrom creates a new mock of the
 // MockSubRepoPermissionsGetter interface. All methods delegate to the given
 // implementation, unless overwritten.

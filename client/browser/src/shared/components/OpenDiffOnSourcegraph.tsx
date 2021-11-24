@@ -81,10 +81,13 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
 
     private getOpenInSourcegraphUrl(props: OpenDiffInSourcegraphProps): string {
         const baseUrl = props.sourcegraphURL
-        const url = `${baseUrl}/${props.repoName}`
-        const urlToCommit = `${url}/-/compare/${props.commit.baseRev}...${
-            props.commit.headRev
-        }?utm_source=${getPlatformName()}`
+        const url = new URL(
+            `/${props.repoName}/-/compare/${props.commit.baseRev}...${
+                props.commit.headRev
+            }?utm_source=${getPlatformName()}`,
+            baseUrl
+        )
+        const urlToCommit = url.href
 
         if (this.state.fileDiff && this.state.fileDiff.nodes.length > 0) {
             // If the total number of files in the diff exceeds 25 (the default shown on commit pages),
