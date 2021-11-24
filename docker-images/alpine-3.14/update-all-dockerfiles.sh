@@ -64,6 +64,6 @@ TAG="${TAG:-${NEW_TAG:?"$MISSING_MESSAGE"}}"
 NEW_TAG_AND_DIGEST="$(get_new_tag_and_digest "$NEW_IMAGE" "$TAG")"
 
 for file in $(fd --glob Dockerfile .); do
-  update_image_reference $OLD_IMAGE "$NEW_IMAGE" "$NEW_TAG_AND_DIGEST" "$file"
-  echo $file
+  update_image_reference "$OLD_IMAGE" "$NEW_IMAGE" "$NEW_TAG_AND_DIGEST" "$file"
+  echo "$file"
 done
