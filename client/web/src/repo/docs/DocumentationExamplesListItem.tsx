@@ -4,7 +4,7 @@ import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'

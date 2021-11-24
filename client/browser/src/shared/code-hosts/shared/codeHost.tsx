@@ -35,15 +35,6 @@ import {
 } from 'rxjs/operators'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
-import {
-    ContextResolver,
-    createHoverifier,
-    findPositionsFromEvents,
-    Hoverifier,
-    HoverState,
-    MaybeLoadingResult,
-    DiffPart,
-} from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -52,6 +43,15 @@ import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/d
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
+import {
+    ContextResolver,
+    createHoverifier,
+    findPositionsFromEvents,
+    Hoverifier,
+    HoverState,
+    MaybeLoadingResult,
+} from '@sourcegraph/shared/src/codeintellify'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,

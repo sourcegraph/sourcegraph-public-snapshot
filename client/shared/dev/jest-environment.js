@@ -126,7 +126,8 @@ class JSDOMEnvironment {
   }
   runScript(script) {
     if (this.dom) {
-      return this.dom.runVMScript(script)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+      return script.runInContext(this.dom.getInternalVMContext())
     }
     return null
   }
