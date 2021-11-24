@@ -477,8 +477,9 @@ github.com/denisenkom/go-mssqldb v0.10.0/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/derision-test/glock v1.0.0 h1:b6sViZG+Cm6QtdpqbfWEjaBVbzNPntIS4GzsxpS+CmM=
 github.com/derision-test/glock v1.0.0/go.mod h1:jKtLdBMrF+XQatqvg46wiWdDfDSSDjdhO4dOM2FX9H4=
-github.com/derision-test/go-mockgen v1.1.2 h1:bMNCerr4I3dz2/UlguwgMuMuJDQXqRnBw17ezXkGvyI=
 github.com/derision-test/go-mockgen v1.1.2/go.mod h1:9H3VGTWYnL1VJoHHCuPKDpPFmNQ1uVyNlpX6P63l5Sk=
+github.com/derision-test/go-mockgen v1.1.3 h1:tu/OUL1kDQM/Xx0mKRMWBLdcnRbuCvzbsX4wHMwZCig=
+github.com/derision-test/go-mockgen v1.1.3/go.mod h1:9H3VGTWYnL1VJoHHCuPKDpPFmNQ1uVyNlpX6P63l5Sk=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/ristretto v0.1.0 h1:Jv3CGQHp9OjuMBSne1485aDpUkTKEcUqF+jm/LuerPI=
 github.com/dgraph-io/ristretto v0.1.0/go.mod h1:fux0lOrBhrVCJd3lcTHsIJhq1T2rokOu6v9Vcb3Q9ug=

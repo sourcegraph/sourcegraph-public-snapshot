@@ -63,6 +63,38 @@ func NewMockConfStore() *MockConfStore {
 	}
 }
 
+// NewStrictMockConfStore creates a new mock of the ConfStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockConfStore() *MockConfStore {
+	return &MockConfStore{
+		DoneFunc: &ConfStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockConfStore.Done")
+			},
+		},
+		HandleFunc: &ConfStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockConfStore.Handle")
+			},
+		},
+		SiteCreateIfUpToDateFunc: &ConfStoreSiteCreateIfUpToDateFunc{
+			defaultHook: func(context.Context, *int32, string) (*database.SiteConfig, error) {
+				panic("unexpected invocation of MockConfStore.SiteCreateIfUpToDate")
+			},
+		},
+		SiteGetLatestFunc: &ConfStoreSiteGetLatestFunc{
+			defaultHook: func(context.Context) (*database.SiteConfig, error) {
+				panic("unexpected invocation of MockConfStore.SiteGetLatest")
+			},
+		},
+		TransactFunc: &ConfStoreTransactFunc{
+			defaultHook: func(context.Context) (database.ConfStore, error) {
+				panic("unexpected invocation of MockConfStore.Transact")
+			},
+		},
+	}
+}
+
 // NewMockConfStoreFrom creates a new mock of the MockConfStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockConfStoreFrom(i database.ConfStore) *MockConfStore {

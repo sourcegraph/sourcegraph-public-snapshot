@@ -48,6 +48,28 @@ func NewMockGlobalStateStore() *MockGlobalStateStore {
 	}
 }
 
+// NewStrictMockGlobalStateStore creates a new mock of the GlobalStateStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGlobalStateStore() *MockGlobalStateStore {
+	return &MockGlobalStateStore{
+		EnsureInitializedFunc: &GlobalStateStoreEnsureInitializedFunc{
+			defaultHook: func(context.Context) (bool, error) {
+				panic("unexpected invocation of MockGlobalStateStore.EnsureInitialized")
+			},
+		},
+		GetFunc: &GlobalStateStoreGetFunc{
+			defaultHook: func(context.Context) (*database.GlobalState, error) {
+				panic("unexpected invocation of MockGlobalStateStore.Get")
+			},
+		},
+		SiteInitializedFunc: &GlobalStateStoreSiteInitializedFunc{
+			defaultHook: func(context.Context) (bool, error) {
+				panic("unexpected invocation of MockGlobalStateStore.SiteInitialized")
+			},
+		},
+	}
+}
+
 // NewMockGlobalStateStoreFrom creates a new mock of the
 // MockGlobalStateStore interface. All methods delegate to the given
 // implementation, unless overwritten.

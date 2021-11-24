@@ -37,6 +37,24 @@ func NewMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
 	}
 }
 
+// NewStrictMockSubRepoPermissionChecker creates a new mock of the
+// SubRepoPermissionChecker interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockSubRepoPermissionChecker() *MockSubRepoPermissionChecker {
+	return &MockSubRepoPermissionChecker{
+		EnabledFunc: &SubRepoPermissionCheckerEnabledFunc{
+			defaultHook: func() bool {
+				panic("unexpected invocation of MockSubRepoPermissionChecker.Enabled")
+			},
+		},
+		PermissionsFunc: &SubRepoPermissionCheckerPermissionsFunc{
+			defaultHook: func(context.Context, int32, RepoContent) (Perms, error) {
+				panic("unexpected invocation of MockSubRepoPermissionChecker.Permissions")
+			},
+		},
+	}
+}
+
 // NewMockSubRepoPermissionCheckerFrom creates a new mock of the
 // MockSubRepoPermissionChecker interface. All methods delegate to the given
 // implementation, unless overwritten.

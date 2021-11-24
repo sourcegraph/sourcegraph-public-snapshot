@@ -248,6 +248,143 @@ func NewMockDBStore() *MockDBStore {
 	}
 }
 
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CommitGraphMetadataFunc: &DBStoreCommitGraphMetadataFunc{
+			defaultHook: func(context.Context, int) (bool, *time.Time, error) {
+				panic("unexpected invocation of MockDBStore.CommitGraphMetadata")
+			},
+		},
+		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+				panic("unexpected invocation of MockDBStore.CreateConfigurationPolicy")
+			},
+		},
+		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.DefinitionDumps")
+			},
+		},
+		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockDBStore.DeleteConfigurationPolicyByID")
+			},
+		},
+		DeleteIndexByIDFunc: &DBStoreDeleteIndexByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockDBStore.DeleteIndexByID")
+			},
+		},
+		DeleteUploadByIDFunc: &DBStoreDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockDBStore.DeleteUploadByID")
+			},
+		},
+		FindClosestDumpsFunc: &DBStoreFindClosestDumpsFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.FindClosestDumps")
+			},
+		},
+		FindClosestDumpsFromGraphFragmentFunc: &DBStoreFindClosestDumpsFromGraphFragmentFunc{
+			defaultHook: func(context.Context, int, string, string, bool, string, *gitserver.CommitGraph) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.FindClosestDumpsFromGraphFragment")
+			},
+		},
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicies")
+			},
+		},
+		GetConfigurationPolicyByIDFunc: &DBStoreGetConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicyByID")
+			},
+		},
+		GetDumpsByIDsFunc: &DBStoreGetDumpsByIDsFunc{
+			defaultHook: func(context.Context, []int) ([]dbstore.Dump, error) {
+				panic("unexpected invocation of MockDBStore.GetDumpsByIDs")
+			},
+		},
+		GetIndexByIDFunc: &DBStoreGetIndexByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Index, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexByID")
+			},
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &DBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexConfigurationByRepositoryID")
+			},
+		},
+		GetIndexesFunc: &DBStoreGetIndexesFunc{
+			defaultHook: func(context.Context, dbstore.GetIndexesOptions) ([]dbstore.Index, int, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexes")
+			},
+		},
+		GetIndexesByIDsFunc: &DBStoreGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockDBStore.GetIndexesByIDs")
+			},
+		},
+		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetUploadByID")
+			},
+		},
+		GetUploadsFunc: &DBStoreGetUploadsFunc{
+			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
+				panic("unexpected invocation of MockDBStore.GetUploads")
+			},
+		},
+		GetUploadsByIDsFunc: &DBStoreGetUploadsByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Upload, error) {
+				panic("unexpected invocation of MockDBStore.GetUploadsByIDs")
+			},
+		},
+		HasCommitFunc: &DBStoreHasCommitFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockDBStore.HasCommit")
+			},
+		},
+		HasRepositoryFunc: &DBStoreHasRepositoryFunc{
+			defaultHook: func(context.Context, int) (bool, error) {
+				panic("unexpected invocation of MockDBStore.HasRepository")
+			},
+		},
+		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockDBStore.MarkRepositoryAsDirty")
+			},
+		},
+		ReferenceIDsAndFiltersFunc: &DBStoreReferenceIDsAndFiltersFunc{
+			defaultHook: func(context.Context, int, string, []precise.QualifiedMonikerData, int, int) (dbstore.PackageReferenceScanner, int, error) {
+				panic("unexpected invocation of MockDBStore.ReferenceIDsAndFilters")
+			},
+		},
+		RepoIDsByGlobPatternsFunc: &DBStoreRepoIDsByGlobPatternsFunc{
+			defaultHook: func(context.Context, []string, int, int) ([]int, int, error) {
+				panic("unexpected invocation of MockDBStore.RepoIDsByGlobPatterns")
+			},
+		},
+		RepoNameFunc: &DBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				panic("unexpected invocation of MockDBStore.RepoName")
+			},
+		},
+		UpdateConfigurationPolicyFunc: &DBStoreUpdateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) error {
+				panic("unexpected invocation of MockDBStore.UpdateConfigurationPolicy")
+			},
+		},
+		UpdateIndexConfigurationByRepositoryIDFunc: &DBStoreUpdateIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int, []byte) error {
+				panic("unexpected invocation of MockDBStore.UpdateIndexConfigurationByRepositoryID")
+			},
+		},
+	}
+}
+
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
@@ -3360,6 +3497,53 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 	}
 }
 
+// NewStrictMockEnqueuerDBStore creates a new mock of the EnqueuerDBStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockEnqueuerDBStore() *MockEnqueuerDBStore {
+	return &MockEnqueuerDBStore{
+		DirtyRepositoriesFunc: &EnqueuerDBStoreDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.DirtyRepositories")
+			},
+		},
+		DoneFunc: &EnqueuerDBStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockEnqueuerDBStore.Done")
+			},
+		},
+		GetIndexConfigurationByRepositoryIDFunc: &EnqueuerDBStoreGetIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.IndexConfiguration, bool, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.GetIndexConfigurationByRepositoryID")
+			},
+		},
+		GetIndexesByIDsFunc: &EnqueuerDBStoreGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.GetIndexesByIDs")
+			},
+		},
+		HandleFunc: &EnqueuerDBStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockEnqueuerDBStore.Handle")
+			},
+		},
+		InsertIndexesFunc: &EnqueuerDBStoreInsertIndexesFunc{
+			defaultHook: func(context.Context, []dbstore.Index) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.InsertIndexes")
+			},
+		},
+		IsQueuedFunc: &EnqueuerDBStoreIsQueuedFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.IsQueued")
+			},
+		},
+		TransactFunc: &EnqueuerDBStoreTransactFunc{
+			defaultHook: func(context.Context) (enqueuer.DBStore, error) {
+				panic("unexpected invocation of MockEnqueuerDBStore.Transact")
+			},
+		},
+	}
+}
+
 // NewMockEnqueuerDBStoreFrom creates a new mock of the MockEnqueuerDBStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
@@ -4323,6 +4507,39 @@ func NewMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
 	}
 }
 
+// NewStrictMockEnqueuerGitserverClient creates a new mock of the
+// EnqueuerGitserverClient interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockEnqueuerGitserverClient() *MockEnqueuerGitserverClient {
+	return &MockEnqueuerGitserverClient{
+		FileExistsFunc: &EnqueuerGitserverClientFileExistsFunc{
+			defaultHook: func(context.Context, int, string, string) (bool, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.FileExists")
+			},
+		},
+		HeadFunc: &EnqueuerGitserverClientHeadFunc{
+			defaultHook: func(context.Context, int) (string, bool, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.Head")
+			},
+		},
+		ListFilesFunc: &EnqueuerGitserverClientListFilesFunc{
+			defaultHook: func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.ListFiles")
+			},
+		},
+		RawContentsFunc: &EnqueuerGitserverClientRawContentsFunc{
+			defaultHook: func(context.Context, int, string, string) ([]byte, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.RawContents")
+			},
+		},
+		ResolveRevisionFunc: &EnqueuerGitserverClientResolveRevisionFunc{
+			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
+				panic("unexpected invocation of MockEnqueuerGitserverClient.ResolveRevision")
+			},
+		},
+	}
+}
+
 // NewMockEnqueuerGitserverClientFrom creates a new mock of the
 // MockEnqueuerGitserverClient interface. All methods delegate to the given
 // implementation, unless overwritten.
@@ -4959,6 +5176,23 @@ func NewMockGitserverClient() *MockGitserverClient {
 	}
 }
 
+// NewStrictMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{
+		CommitExistsFunc: &GitserverClientCommitExistsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitExists")
+			},
+		},
+		CommitGraphFunc: &GitserverClientCommitGraphFunc{
+			defaultHook: func(context.Context, int, gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitGraph")
+			},
+		},
+	}
+}
+
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
@@ -5223,6 +5457,23 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
 			defaultHook: func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockIndexEnqueuer creates a new mock of the IndexEnqueuer
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
+	return &MockIndexEnqueuer{
+		InferIndexConfigurationFunc: &IndexEnqueuerInferIndexConfigurationFunc{
+			defaultHook: func(context.Context, int) (*config.IndexConfiguration, error) {
+				panic("unexpected invocation of MockIndexEnqueuer.InferIndexConfiguration")
+			},
+		},
+		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
+			defaultHook: func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
 			},
 		},
 	}
@@ -5610,6 +5861,93 @@ func NewMockLSIFStore() *MockLSIFStore {
 		StencilFunc: &LSIFStoreStencilFunc{
 			defaultHook: func(context.Context, int, string) ([]lsifstore.Range, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockLSIFStore creates a new mock of the LSIFStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLSIFStore() *MockLSIFStore {
+	return &MockLSIFStore{
+		BulkMonikerResultsFunc: &LSIFStoreBulkMonikerResultsFunc{
+			defaultHook: func(context.Context, string, []int, []precise.MonikerData, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.BulkMonikerResults")
+			},
+		},
+		DefinitionsFunc: &LSIFStoreDefinitionsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.Definitions")
+			},
+		},
+		DiagnosticsFunc: &LSIFStoreDiagnosticsFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Diagnostic, int, error) {
+				panic("unexpected invocation of MockLSIFStore.Diagnostics")
+			},
+		},
+		DocumentationAtPositionFunc: &LSIFStoreDocumentationAtPositionFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]string, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationAtPosition")
+			},
+		},
+		DocumentationDefinitionsFunc: &LSIFStoreDocumentationDefinitionsFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationDefinitions")
+			},
+		},
+		DocumentationPageFunc: &LSIFStoreDocumentationPageFunc{
+			defaultHook: func(context.Context, int, string) (*precise.DocumentationPageData, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationPage")
+			},
+		},
+		DocumentationPathInfoFunc: &LSIFStoreDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, int, string) (*precise.DocumentationPathInfoData, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationPathInfo")
+			},
+		},
+		DocumentationSearchFunc: &LSIFStoreDocumentationSearchFunc{
+			defaultHook: func(context.Context, string, string, []string) ([]precise.DocumentationSearchResult, error) {
+				panic("unexpected invocation of MockLSIFStore.DocumentationSearch")
+			},
+		},
+		ExistsFunc: &LSIFStoreExistsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockLSIFStore.Exists")
+			},
+		},
+		HoverFunc: &LSIFStoreHoverFunc{
+			defaultHook: func(context.Context, int, string, int, int) (string, lsifstore.Range, bool, error) {
+				panic("unexpected invocation of MockLSIFStore.Hover")
+			},
+		},
+		ImplementationsFunc: &LSIFStoreImplementationsFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.Implementations")
+			},
+		},
+		MonikersByPositionFunc: &LSIFStoreMonikersByPositionFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([][]precise.MonikerData, error) {
+				panic("unexpected invocation of MockLSIFStore.MonikersByPosition")
+			},
+		},
+		PackageInformationFunc: &LSIFStorePackageInformationFunc{
+			defaultHook: func(context.Context, int, string, string) (precise.PackageInformationData, bool, error) {
+				panic("unexpected invocation of MockLSIFStore.PackageInformation")
+			},
+		},
+		RangesFunc: &LSIFStoreRangesFunc{
+			defaultHook: func(context.Context, int, string, int, int) ([]lsifstore.CodeIntelligenceRange, error) {
+				panic("unexpected invocation of MockLSIFStore.Ranges")
+			},
+		},
+		ReferencesFunc: &LSIFStoreReferencesFunc{
+			defaultHook: func(context.Context, int, string, int, int, int, int) ([]lsifstore.Location, int, error) {
+				panic("unexpected invocation of MockLSIFStore.References")
+			},
+		},
+		StencilFunc: &LSIFStoreStencilFunc{
+			defaultHook: func(context.Context, int, string) ([]lsifstore.Range, error) {
+				panic("unexpected invocation of MockLSIFStore.Stencil")
 			},
 		},
 	}
@@ -7601,6 +7939,19 @@ func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
 		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
 			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockRepoUpdaterClient creates a new mock of the
+// RepoUpdaterClient interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockRepoUpdaterClient() *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		EnqueueRepoUpdateFunc: &RepoUpdaterClientEnqueueRepoUpdateFunc{
+			defaultHook: func(context.Context, api.RepoName) (*protocol.RepoUpdateResponse, error) {
+				panic("unexpected invocation of MockRepoUpdaterClient.EnqueueRepoUpdate")
 			},
 		},
 	}
