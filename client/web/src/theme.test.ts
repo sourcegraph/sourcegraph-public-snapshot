@@ -1,8 +1,8 @@
 // causes false positive on act()
 /* eslint-disable @typescript-eslint/no-floating-promises */
+import { act, renderHook } from '@testing-library/react-hooks'
 
-import { renderHook, act } from '@testing-library/react-hooks'
-
+import { useGlobalStore } from './stores/global'
 import { ThemePreference } from './stores/themeState'
 import { useTheme } from './theme'
 
@@ -13,20 +13,20 @@ jest.mock('@sourcegraph/shared/src/util/useObservable', () => ({
     useObservable: () => undefined,
 }))
 
-const mockWindow = (systemTheme: 'light' | 'dark'): Pick<Window, 'matchMedia'> => ({
-    matchMedia: query => {
+const mockSystemTheme = (systemTheme: 'light' | 'dark') => {
+    window.matchMedia = query => {
         if (query === '(prefers-color-scheme: dark)') {
             // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             return { matches: systemTheme === 'dark' } as MediaQueryList
         }
         throw new Error('unexpected matchMedia query')
-    },
-})
+    }
+}
 
 describe('useTheme()', () => {
     describe('defaults to system', () => {
         it('light', () => {
-            window.matchMedia = mockWindow('light').matchMedia
+            mockSystemTheme('light')
 
             const { result } = renderHook(() => useTheme())
 
@@ -38,7 +38,7 @@ describe('useTheme()', () => {
         })
 
         it('dark', () => {
-            window.matchMedia = mockWindow('dark').matchMedia
+            mockSystemTheme('dark')
 
             const { result } = renderHook(() => useTheme())
 
@@ -50,12 +50,12 @@ describe('useTheme()', () => {
         })
     })
 
-    describe.skip('respects theme preference', () => {
+    describe('respects theme preference', () => {
         it('light', () => {
-            window.matchMedia = mockWindow('dark').matchMedia
-            window.localStorage.getItem = () => 'light'
-
+            mockSystemTheme('dark')
             const { result } = renderHook(() => useTheme())
+            act(() => useGlobalStore.setState({ theme: ThemePreference.Light }))
+
             expect(result.current.isLightTheme).toBe(true)
             expect(result.current.themePreference).toBe(ThemePreference.Light)
             expect(document.documentElement.classList).toContain('theme-light')
@@ -64,7 +64,10 @@ describe('useTheme()', () => {
         })
 
         it('dark', () => {
+            mockSystemTheme('light')
             const { result } = renderHook(() => useTheme())
+            act(() => useGlobalStore.setState({ theme: ThemePreference.Dark }))
+
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.Dark)
             expect(document.documentElement.classList).toContain('theme-dark')
@@ -73,7 +76,9 @@ describe('useTheme()', () => {
         })
 
         it('system', () => {
+            mockSystemTheme('dark')
             const { result } = renderHook(() => useTheme())
+            act(() => useGlobalStore.setState({ theme: ThemePreference.System }))
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-dark')
@@ -83,7 +88,7 @@ describe('useTheme()', () => {
     })
 
     it('changes theme preference', () => {
-        window.matchMedia = mockWindow('light').matchMedia
+        mockSystemTheme('light')
         const { result } = renderHook(() => useTheme())
         expect(result.current.isLightTheme).toBe(true)
         expect(result.current.themePreference).toBe(ThemePreference.System)
