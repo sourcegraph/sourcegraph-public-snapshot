@@ -35,6 +35,14 @@ import {
 } from 'rxjs/operators'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
+import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
+import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
+import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
+import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
+import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     ContextResolver,
     createHoverifier,
@@ -44,14 +52,6 @@ import {
     MaybeLoadingResult,
     DiffPart,
 } from '@sourcegraph/shared/src/codeintellify'
-import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
-import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
-import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
-import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
-import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
-import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,

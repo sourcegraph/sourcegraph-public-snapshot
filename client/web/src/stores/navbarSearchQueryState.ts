@@ -15,9 +15,9 @@ type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
 export type QueryUpdate =
     | /**
-     * Appends a filter to the current search query. If the filter is unique and
-     * already exists in the query, the update is ignored.
-     */
+       * Appends a filter to the current search query. If the filter is unique and
+       * already exists in the query, the update is ignored.
+       */
     {
           type: 'appendFilter'
           field: FilterType

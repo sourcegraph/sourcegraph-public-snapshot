@@ -16,8 +16,8 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/shared/src/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
+import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/shared/src/codeintellify'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
