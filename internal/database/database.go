@@ -54,6 +54,10 @@ func NewDB(inner dbutil.DB) DB {
 	return &db{basestore.NewWithDB(inner, sql.TxOptions{})}
 }
 
+func NewDBWith(other basestore.ShareableStore) DB {
+	return &db{basestore.NewWithHandle(other.Handle())}
+}
+
 type db struct {
 	*basestore.Store
 }

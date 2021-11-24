@@ -453,14 +453,15 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 		return nil, err
 	}
 
+	db := database.NewDB(dbconn.Global)
 	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.Repos.Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(db.Repos()).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo))
+		resolvers = append(resolvers, gql.NewRepositoryResolver(db, repo))
 	}
 
 	limitedCount := totalCount
