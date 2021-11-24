@@ -90,7 +90,7 @@ func main() {
 		h = handlers.LoggingHandler(os.Stdout, h)
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
-	h = trace.HTTPTraceMiddleware(h)
+	h = trace.HTTPTraceMiddleware(h, conf.DefaultClient())
 	h = ot.Middleware(h)
 	http.Handle("/", h)
 
