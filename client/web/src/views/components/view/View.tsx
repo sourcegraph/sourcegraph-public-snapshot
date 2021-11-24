@@ -37,15 +37,15 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
         >
             <ErrorBoundary className="pt-0" location={useLocation()}>
                 {hasHeader && (
-                    <header className={styles.viewHeader}>
-                        <div className={styles.viewHeaderContent}>
-                            <h4 title={title} className={styles.viewTitle}>
+                    <header className={styles.header}>
+                        <div className={styles.headerContent}>
+                            <h4 title={title} className={styles.title}>
                                 {title}
                             </h4>
                             {subtitle}
                         </div>
 
-                        <div className={styles.viewActions}>{actions}</div>
+                        <div className={styles.action}>{actions}</div>
                     </header>
                 )}
 

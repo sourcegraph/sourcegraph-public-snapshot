@@ -16,8 +16,11 @@ interface StaticView extends TelemetryProps, React.DetailedHTMLProps<React.HTMLA
  * consumers that have insight section (the search and the directory page).
  */
 export const StaticView: React.FunctionComponent<StaticView> = props => {
-    const { content, telemetryService, ...otherProps } = props
-    const view = content.view
+    const {
+        content: { view, id: contentId },
+        telemetryService,
+        ...otherProps
+    } = props
 
     const title = !isErrorLike(view) ? view?.title : undefined
     const subtitle = !isErrorLike(view) ? view?.subtitle : undefined
@@ -27,18 +30,18 @@ export const StaticView: React.FunctionComponent<StaticView> = props => {
             title={title}
             subtitle={subtitle}
             className="insight-content-card"
-            data-testid={`insight-card.${content.id}`}
+            data-testid={`insight-card.${contentId}`}
             {...otherProps}
         >
             {view === undefined ? (
-                <View.LoadingContent text="Loading code insight" description={content.id} icon={PuzzleIcon} />
+                <View.LoadingContent text="Loading code insight" description={contentId} icon={PuzzleIcon} />
             ) : isErrorLike(view) ? (
-                <View.ErrorContent error={view} title={content.id} icon={PuzzleIcon} />
+                <View.ErrorContent error={view} title={contentId} icon={PuzzleIcon} />
             ) : (
                 <View.Content
                     telemetryService={telemetryService}
                     content={view.content}
-                    viewID={content.id}
+                    viewID={contentId}
                     containerClassName="insight-content-card"
                 />
             )}

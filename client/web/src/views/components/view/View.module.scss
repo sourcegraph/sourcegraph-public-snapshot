@@ -9,33 +9,33 @@
     &:focus-within {
         box-shadow: var(--focus-box-shadow);
     }
+}
 
-    &__header {
-        display: flex;
-        margin-bottom: 0.75rem;
-    }
+.header {
+    display: flex;
+    margin-bottom: 0.75rem;
+}
 
-    &__header-content {
-        flex-grow: 1;
-    }
+.header-content {
+    flex-grow: 1;
+}
 
-    &__title {
-        // Truncation for multiple lines
-        // stylelint-disable-next-line value-no-vendor-prefix
-        display: -webkit-box;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        margin-bottom: 0.25rem;
-    }
+.title {
+    // Truncation for multiple lines
+    // stylelint-disable-next-line value-no-vendor-prefix
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    margin-bottom: 0.25rem;
+}
 
-    &__actions {
-        align-self: start;
-        display: flex;
-        align-items: center;
-        // Move icons in action panel visually closer to card border
-        margin-right: -0.5rem;
-        margin-top: -0.25rem;
-    }
+.action {
+    align-self: start;
+    display: flex;
+    align-items: center;
+    // Move icons in action panel visually closer to card border
+    margin-right: -0.5rem;
+    margin-top: -0.25rem;
 }
