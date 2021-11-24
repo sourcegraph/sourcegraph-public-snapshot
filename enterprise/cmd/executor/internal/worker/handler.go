@@ -86,7 +86,16 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
 	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
-	defer logger.Flush()
+	defer func() {
+		flushErr := logger.Flush()
+		if flushErr != nil {
+			if err != nil {
+				err = multierror.Append(err, flushErr)
+			} else {
+				err = flushErr
+			}
+		}
+	}()
 
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into

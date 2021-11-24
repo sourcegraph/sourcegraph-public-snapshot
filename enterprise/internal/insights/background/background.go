@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -78,6 +80,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
 		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
 	}
+	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
 
 	return routines
 }

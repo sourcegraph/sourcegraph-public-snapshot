@@ -40,14 +40,12 @@ export function useDeleteInsight(): UseDeleteInsightAPI {
 
             try {
                 await deleteInsight(insight.id).toPromise()
-                eventLogger.log('Insight Removal', { insightType: insight.type }, { insightType: insight.type })
+                eventLogger.log('InsightRemoval', { insightType: insight.type }, { insightType: insight.type })
             } catch (error) {
                 // TODO [VK] Improve error UI for deleting
                 console.error(error)
                 setError(error)
             }
-
-            setLoading(false)
         },
         [loading, deleteInsight]
     )

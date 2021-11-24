@@ -5,39 +5,48 @@ import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables } from '../../../graphql-operations'
 
 interface SearchRepositoriesResult {
-    previewResult: RepositoryPreviewResult
+    previewResult: RepositoryPreviewResult | null
     isLoadingPreview: boolean
     previewError: ApolloError | undefined
 }
 
 export interface RepositoryPreviewResult {
-    preview: {
-        name: string
-    }[]
+    repositoryNames: string[]
+    totalCount: number
+    totalMatches: number
+    limit: number | null
 }
 
 export const PREVIEW_REPOSITORY_FILTER = gql`
-    query PreviewRepositoryFilter($pattern: String!) {
-        previewRepositoryFilter(pattern: $pattern) {
-            name
+    query PreviewRepositoryFilter($patterns: [String!]!) {
+        previewRepositoryFilter(patterns: $patterns) {
+            nodes {
+                name
+            }
+            totalCount
+            totalMatches
+            limit
         }
     }
 `
 
-export const usePreviewRepositoryFilter = (pattern: string): SearchRepositoriesResult => {
+export const usePreviewRepositoryFilter = (patterns: string[]): SearchRepositoriesResult => {
     const { data, loading, error } = useQuery<PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables>(
         PREVIEW_REPOSITORY_FILTER,
         {
             variables: {
-                pattern,
+                patterns,
             },
         }
     )
 
     return {
-        previewResult: {
-            preview: data?.previewRepositoryFilter.map(({ name }) => ({ name })) || [],
-        },
+        previewResult: data
+            ? {
+                  ...data.previewRepositoryFilter,
+                  repositoryNames: data.previewRepositoryFilter.nodes.map(({ name }) => name),
+              }
+            : null,
         isLoadingPreview: loading,
         previewError: error,
     }

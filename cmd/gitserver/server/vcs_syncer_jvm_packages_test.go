@@ -161,6 +161,8 @@ func createMaliciousJar(t *testing.T, name string) {
 	assert.Nil(t, err)
 	_, err = writer.Create(".git/test")
 	assert.Nil(t, err)
+	_, err = writer.Create("../../../usr/bin/sh")
+	assert.Nil(t, err)
 }
 
 func TestJVMCloneCommand(t *testing.T) {

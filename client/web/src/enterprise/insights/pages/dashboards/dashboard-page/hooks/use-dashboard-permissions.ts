@@ -40,6 +40,10 @@ export function useDashboardPermissions(
         return DEFAULT_DASHBOARD_PERMISSIONS
     }
 
+    if (!dashboard) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
     if (isVirtualDashboard(dashboard)) {
         return {
             isConfigurable: false,

@@ -37,7 +37,9 @@ ADD entry.sh /
 
 USER root
 
-RUN apk add --upgrade --no-cache apk-tools=~2.12 krb5-libs=1.18.4-r0 libssl1.1=1.1.1l-r0 openssl=1.1.1l-r0
+# @FIXME: Update redis image
+# Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
+RUN apk add --upgrade --no-cache apk-tools=~2.12 krb5-libs=1.18.4-r0 libssl1.1=1.1.1l-r0 openssl=1.1.1l-r0 busybox=1.32.1-r7
 
 EXPOSE 3370
 USER grafana

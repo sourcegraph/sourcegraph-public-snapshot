@@ -32,6 +32,8 @@ type batchSpecWorkspaceResolver struct {
 	workspace *btypes.BatchSpecWorkspace
 	execution *btypes.BatchSpecWorkspaceExecutionJob
 
+	preloadedRepo *types.Repo
+
 	repoOnce sync.Once
 	repo     *graphqlbackend.RepositoryResolver
 	repoErr  error
@@ -45,6 +47,10 @@ func (r *batchSpecWorkspaceResolver) ID() graphql.ID {
 
 func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	r.repoOnce.Do(func() {
+		if r.preloadedRepo != nil {
+			r.repo = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.preloadedRepo)
+		}
+
 		var repo *types.Repo
 		repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
 		r.repo = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)

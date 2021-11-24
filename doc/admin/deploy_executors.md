@@ -4,7 +4,10 @@
 >Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
 >with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
 
-Executors are an experimental service that powers automatically indexing a repository for precise code intelligence.
+Executors are an experimental service that can run resource-intensive tasks on behalf of the Sourcegraph instance, such as:
+
+- [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
+- [computing batch changes](../batch_changes/explanations/server_side.md)
 
 ## Installation
 
@@ -39,7 +42,9 @@ Additional values may need to be supplied for a specific cloud provider. Refer t
 
 To deploy executor compute resources defined in the Terraform file above, simply run `terraform apply`.
 
-<!-- TODO: Write docs on how to validate it's up -->
+If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
+
+![Executor list in UI](https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/executor-ui-test.png)
 
 ### Examples
 

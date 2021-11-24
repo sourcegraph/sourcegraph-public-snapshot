@@ -19,6 +19,7 @@ import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
+import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -33,6 +34,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
+import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
@@ -238,7 +240,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }
 
     return (
-        <div className="layout">
+        <div className={styles.layout}>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
@@ -288,9 +290,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div className="layout__app-router-container">
+                                            <AppRouterContainer>
                                                 {render({ ...context, ...routeComponentProps })}
-                                            </div>
+                                            </AppRouterContainer>
                                         )}
                                     />
                                 )

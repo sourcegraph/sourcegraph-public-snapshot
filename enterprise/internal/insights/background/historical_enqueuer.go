@@ -66,7 +66,7 @@ import (
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
 func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_historical_enqueuer",
 		metrics.WithCountHelp("Total number of insights historical enqueuer executions"),

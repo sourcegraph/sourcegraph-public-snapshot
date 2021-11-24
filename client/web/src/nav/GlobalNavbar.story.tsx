@@ -62,6 +62,7 @@ const defaultProps = (
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
+    batchChangesWebhookLogsEnabled: true,
     enableCodeMonitoring: true,
     activation: undefined,
     routes: [],

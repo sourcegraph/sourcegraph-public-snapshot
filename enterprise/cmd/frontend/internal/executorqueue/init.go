@@ -2,7 +2,6 @@ package executorqueue
 
 import (
 	"context"
-	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,13 +18,7 @@ import (
 
 // Init initializes the executor endpoints required for use with the executor service.
 func Init(ctx context.Context, db dbutil.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *codeintel.Services) error {
-	accessToken := func() string {
-		if accessToken := conf.SiteConfig().ExecutorsAccessToken; accessToken != "" {
-			return accessToken
-		}
-		// Fallback to old environment variable, for a smooth rollout.
-		return os.Getenv("EXECUTOR_FRONTEND_PASSWORD")
-	}
+	accessToken := func() string { return conf.SiteConfig().ExecutorsAccessToken }
 
 	// Register queues. If this set changes, be sure to also update the list of valid
 	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
