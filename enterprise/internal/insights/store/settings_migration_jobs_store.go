@@ -56,8 +56,6 @@ const (
 func (s *DBSettingsMigrationJobsStore) GetNextSettingsMigrationJobs(ctx context.Context, jobType SettingsMigrationJobType) ([]*SettingsMigrationJob, error) {
 	where := getWhereForSubjectType(ctx, jobType)
 	q := sqlf.Sprintf(getSettingsMigrationJobsSql, where)
-	//fmt.Println(q)
-
 	return scanSettingsMigrationJobs(s.Query(ctx, q))
 }
 
@@ -203,7 +201,7 @@ func (s *DBSettingsMigrationJobsStore) IsJobTypeComplete(ctx context.Context, jo
 const countIncompleteJobsSql = `
 -- source: enterprise/internal/insights/store/settings_migration_jobs.go:IsJobTypeComplete
 SELECT COUNT(*) FROM insights_settings_migration_jobs
-WHERE %s AND (total_insights > migrated_insights OR total_dashboards > migrated_dashboards OR completed_at IS NULL);
+WHERE %s AND completed_at IS NULL;
 `
 
 func getWhereForSubject(ctx context.Context, userId *int, orgId *int) *sqlf.Query {
