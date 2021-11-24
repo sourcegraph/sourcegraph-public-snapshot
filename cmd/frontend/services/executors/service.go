@@ -15,7 +15,7 @@ import (
 type Executor interface {
 	List(ctx context.Context, query string, active bool, offset int, limit int) ([]types.Executor, int, error)
 	GetByID(ctx context.Context, gqlID graphql.ID) (types.Executor, bool, error)
-	Heartbeat(ctx context.Context, executor types.Executor) error
+	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
 }
 
 func New(db dbutil.DB) Executor {
@@ -47,7 +47,7 @@ func (s *executorService) GetByID(ctx context.Context, gqlID graphql.ID) (types.
 	return s.store.GetByID(ctx, int(id))
 }
 
-func (s *executorService) Heartbeat(ctx context.Context, executor types.Executor) error {
+func (s *executorService) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
 	return s.store.UpsertHeartbeat(ctx, executor)
 }
 
