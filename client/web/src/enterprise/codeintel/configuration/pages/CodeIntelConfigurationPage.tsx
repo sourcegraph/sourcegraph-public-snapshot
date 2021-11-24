@@ -1,6 +1,5 @@
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import * as H from 'history'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps, useHistory } from 'react-router'
@@ -75,7 +74,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     telemetryService,
     ...props
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPage'), [telemetryService])
+    useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
     const history = useHistory()
 
@@ -137,14 +136,9 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 export interface PoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
-    history?: H.History
 }
 
-export const PoliciesNode: FunctionComponent<PoliciesNodeProps> = ({
-    node: policy,
-    indexingEnabled = false,
-    history,
-}) => (
+export const PoliciesNode: FunctionComponent<PoliciesNodeProps> = ({ node: policy, indexingEnabled = false }) => (
     <>
         <span className={styles.separator} />
 
