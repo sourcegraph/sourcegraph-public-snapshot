@@ -22,6 +22,7 @@ type DB interface {
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
+	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
@@ -104,6 +105,10 @@ func (d *db) ExternalServices() ExternalServiceStore {
 
 func (d *db) FeatureFlags() FeatureFlagStore {
 	return FeatureFlagsWith(d.Store)
+}
+
+func (d *db) GlobalState() GlobalStateStore {
+	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
 }
 
 func (d *db) Namespaces() NamespaceStore {
