@@ -12,8 +12,6 @@ import (
 )
 
 func TestCodeIntelEndpoints(t *testing.T) {
-	t.Skip("Skipping this because it failed with 'ununknown commit 6ffc6072f5ed13d8e8782490705d9689cd2c546a'")
-
 	// Create a test user (authtest-user-code-intel) which is not a site admin, the
 	// user should receive access denied for LSIF endpoints of repositories the user
 	// does not have access to.
@@ -91,7 +89,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 
 		// Retry because the configuration update endpoint is eventually consistent
 		var lastBody string
-		err = gqltestutil.Retry(5*time.Second, func() error {
+		err = gqltestutil.Retry(10*time.Second, func() error {
 			resp, err := userClient.Post(*baseURL+"/.api/lsif/upload?commit=6ffc6072f5ed13d8e8782490705d9689cd2c546a&repository=github.com/sgtest/private", nil)
 			if err != nil {
 				t.Fatal(err)
