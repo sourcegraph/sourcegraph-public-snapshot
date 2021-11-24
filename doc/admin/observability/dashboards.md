@@ -2043,7 +2043,7 @@ Query: `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m]))
 
 <p class="subtitle">Internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-internalapi-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101502` on your Sourcegraph instance.
 
@@ -3024,7 +3024,7 @@ Query: `max(src_gitserver_echo_duration_seconds)`
 
 <br />
 
-#### gitserver: frontend_internalapi_error_responses
+#### gitserver: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
@@ -5157,7 +5157,7 @@ Query: `sum by (op)(increase(src_codeintel_uploadstore_errors_total{job=~"^preci
 
 ### Precise Code Intel Worker: Internal service requests
 
-#### precise-code-intel-worker: frontend_internalapi_error_responses
+#### precise-code-intel-worker: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
@@ -5570,7 +5570,7 @@ To see this dashboard, visit `/-/debug/grafana/d/query-runner/query-runner` on y
 
 ### Query Runner: Internal service requests
 
-#### query-runner: frontend_internalapi_error_responses
+#### query-runner: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
@@ -8637,7 +8637,7 @@ Query: `max(src_insights_search_queue_total{job=~"^worker.*"}) > 0 and on(job) s
 
 ### Worker: Internal service requests
 
-#### worker: frontend_internalapi_error_responses
+#### worker: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
@@ -10216,7 +10216,7 @@ Query: `sum by (op)(increase(src_codeintel_coursier_errors_total{op!="RunCommand
 
 ### Repo Updater: Internal service requests
 
-#### repo-updater: frontend_internalapi_error_responses
+#### repo-updater: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
@@ -10667,7 +10667,7 @@ Query: `sum by(instance) (rate(searcher_service_request_total[10m]))`
 
 ### Searcher: Internal service requests
 
-#### searcher: frontend_internalapi_error_responses
+#### searcher: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
@@ -10964,7 +10964,7 @@ Query: `sum(symbols_store_fetch_queue_size)`
 
 ### Symbols: Internal service requests
 
-#### symbols: frontend_internalapi_error_responses
+#### symbols: frontend_internal_api_error_responses
 
 <p class="subtitle">Frontend-internal API error responses every 5m by route</p>
 
