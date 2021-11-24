@@ -10,7 +10,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -57,7 +57,7 @@ func (s *server) Stop() {
 		// controller. We only do this in frontend and not on all services, because
 		// frontend is the only publicly exposed service where we don't control
 		// retries on connection failures (see httpcli.InternalClient).
-		if conf.DeployType() == conf.DeployKubernetes {
+		if deploy.Type() == deploy.Kubernetes {
 			time.Sleep(5 * time.Second)
 		}
 

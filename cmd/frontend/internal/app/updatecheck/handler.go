@@ -19,7 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
@@ -32,7 +32,7 @@ var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
-	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
+	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
 	latestReleaseDockerServerImageBuild = newBuild("3.34.1")
 
@@ -49,9 +49,9 @@ var (
 
 func getLatestRelease(deployType string) build {
 	switch {
-	case conf.IsDeployTypeKubernetes(deployType):
+	case deploy.IsDeployTypeKubernetes(deployType):
 		return latestReleaseKubernetesBuild
-	case conf.IsDeployTypeDockerCompose(deployType), conf.IsDeployTypePureDocker(deployType):
+	case deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return latestReleaseDockerComposeOrPureDocker
 	default:
 		return latestReleaseDockerServerImageBuild
@@ -138,8 +138,10 @@ func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (boo
 	return clientVersion.LessThan(latestReleaseBuild.Version), nil
 }
 
-var dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
-var timeNow = time.Now
+var (
+	dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
+	timeNow   = time.Now
+)
 
 // canUpdateDate returns true if clientVersionString contains a date
 // more than 40 days in the past. It returns an error if there is no

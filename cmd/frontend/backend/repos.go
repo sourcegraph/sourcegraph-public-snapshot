@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -95,7 +96,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 			Scheme:   "https",
 			Host:     "sourcegraph.com",
 			Path:     string(name),
-			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
 		}).String()}
 	default:
 		return nil, err

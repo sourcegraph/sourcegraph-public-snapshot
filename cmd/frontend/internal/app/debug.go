@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -60,7 +61,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 			})
 		}
 		rph.Populate(db, peps)
-	} else if conf.IsDeployTypeKubernetes(conf.DeployType()) {
+	} else if deploy.IsDeployTypeKubernetes(deploy.Type()) {
 		err := debugproxies.StartClusterScanner(func(endpoints []debugproxies.Endpoint) {
 			rph.Populate(db, endpoints)
 		})
