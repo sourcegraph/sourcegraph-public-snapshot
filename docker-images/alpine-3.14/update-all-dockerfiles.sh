@@ -35,7 +35,7 @@ get_new_tag_and_digest() {
 
 check_sd_installed
 
-REPO="sourcegraph/alpine-3.12"
+REPO="sourcegraph/alpine-3.14"
 
 MISSING_MESSAGE="Please provide the image tag either via the 'TAG' environent variable or as a shell script argument"
 TAG="${TAG:-${1:?"$MISSING_MESSAGE"}}"
