@@ -28,8 +28,10 @@ That means, in order to deploy executors that can talk to the Sourcegraph instan
 1. [Configure a shared secret in the Sourcegraph instance](#configure-sourcegraph)
 1. [Run executors](#run-executors)
   - [Using Terraform](#terraform)
-  - [Using pre-built binaries](#pre-built-binaries)
+  - [Using binaries](#binaries)
 1. [Confirm executors can reach Sourcegraph instance](#confirm-executors-are-working)
+1. Optional: [Configuring auto scaling](#configuring-auto-scaling)
+1. Optional: [Configuring observability](#configuring-observability)
 
 ### Configure Sourcegraph
 
@@ -42,7 +44,7 @@ Once the access token is set, executors can use that access token to talk to the
 There are two ways to install and run executors:
 
 1. [Using our Terraform modules to provision machines on Google Cloud or AWS that run executors](#terraform)
-2. [Downloading and running pre-built executor binaries yourself](#pre-built-binaries)
+2. [Downloading and running executor binaries yourself](#binaries)
 
 #### Terraform
 
@@ -73,18 +75,18 @@ Additional values may need to be supplied for a specific cloud provider. Refer t
 
 To deploy executor compute resources defined in the Terraform file above, simply run `terraform apply`.
 
-#### Pre-built binaries
+#### Binaries
 
-You can also download and run the executor binaries yourself without using Terraform.
+You can also download and run the executor binaries yourself, without using Terraform.
 
-The following dependencies need to be available:
+The following dependencies need to be available on the machine on which you want to run the `executor` binary:
 
 * Docker
-* git >=v2.18
+* git >= v2.18
 * [Ignite](https://ignite.readthedocs.io/en/stable/installation/) v0.10.0
 * [CNI Plugins](https://github.com/containernetworking/plugins) v0.9.1
 
-You can also take a look at [what goes into our executor machine images, used by our Terraform modules](https://github.com/sourcegraph/sourcegraph/blob/7ab43a96a340ff57b98dd0eb721c2700232b7834/enterprise/cmd/executor/image/build.sh) to see how we run executor binaries.
+You can also take a look at [what goes into our executor machine images, used by our Terraform modules](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/image/build.sh) to see how we run executor binaries.
 
 Once dependencies are met, you can download and run executor binaries:
 
@@ -131,6 +133,8 @@ The following are complete examples of provisioning _multiple_ executor types us
 - [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/multiple-executors)
 
 ## Configuring auto scaling
+
+> NOTE: Auto scaling is currently not supported when [downloading and running executor binaries yourself](#binaries)
 
 Auto scaling of executor instances can help to increase concurrency of jobs, without paying for unused resources. With auto scaling, you can scale down to 0 instances when no workload exist and scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
 
@@ -198,6 +202,8 @@ To test if the metric is correctly reported into the Cloud provider:
 Next, you can test whether the number of executors rises and shrinks as load spikes occur. Keep in mind that auto-scaling is not a real-time operation on most cloud providers and usually takes a short moment and can have some delays between the metric going down and the desired machine count adjusting.
 
 ## Configuring observability
+
+> NOTE: Observability features are currently not supported when [downloading and running executor binaries yourself](#binaries)
 
 Sourcegraph [ships with dashboards](observability/metrics.md) that can display executor metrics. We highly encourage setting this up to help make informed decisions on scaling and to make debugging easier.
 
