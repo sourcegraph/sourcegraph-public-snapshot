@@ -95,9 +95,12 @@ func BestCreatorType(ctx context.Context, images map[string]docker.Image) Creato
 	// if you have a batch change with steps that run as UID 1000 and then UID
 	// 2000, you'll get errors when the second step tries to write.
 
-	// For the time being, we're only going to consider volume mode on Intel
-	// macOS.
-	if runtime.GOOS != "darwin" || runtime.GOARCH != "amd64" {
+	// NOTE: For the time being, we're only going to consider volume mode on Intel or M1
+	// macOS. As we've generally not observed many issues from users using volume mode, and
+	// it is the faster of the options on non-Linux platforms (and only a touch slower on
+	// Linux itself), we should consider making it the default in the future for the sake of
+	// consistency.
+	if runtime.GOOS != "darwin" || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") {
 		return CreatorTypeBind
 	}
 
@@ -106,7 +109,7 @@ func BestCreatorType(ctx context.Context, images map[string]docker.Image) Creato
 
 func detectBestCreatorType(ctx context.Context, images map[string]docker.Image) CreatorType {
 	// OK, so we're interested in volume mode, but we need to take its
-	// shortcomings around mixed user environments into account.
+	// shortcomings around mixed user environments on Linux into account.
 	//
 	// To do that, let's iterate over the Docker images that are going to be
 	// used and get their default UID. This admittedly only gets us so far —

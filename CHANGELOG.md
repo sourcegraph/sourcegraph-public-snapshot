@@ -15,6 +15,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
+- `src batch [preview|apply]` will now use the faster volume workspace by default for macOS systems using arm64 processors (aka "Apple Silicon")
+
 ### Fixed
 
 ### Removed
