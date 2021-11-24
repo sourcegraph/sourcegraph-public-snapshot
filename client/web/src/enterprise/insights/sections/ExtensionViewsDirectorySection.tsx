@@ -11,13 +11,15 @@ import { isCodeInsightsEnabled } from '../../../insights/utils/is-code-insights-
 import { StaticView, ViewGrid } from '../../../views'
 import { SmartInsight } from '../components/insights-view-grid/components/smart-insight/SmartInsight'
 import { CodeInsightsBackendContext } from '../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../core/backend/code-insights-setting-cascade-backend'
+import { CodeInsightsSettingsCascadeBackend } from '../core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { Insight } from '../core/types'
+import { ALL_INSIGHTS_DASHBOARD_ID } from '../core/types/dashboard/virtual-dashboard'
 
 export interface ExtensionViewsDirectorySectionProps extends ExtensionViewsSectionCommonProps {
     where: 'directory'
     uri: string
 }
+
 const EMPTY_EXTENSION_LIST: ViewProviderResult[] = []
 
 /**
@@ -29,11 +31,10 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
 
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { directory: true })
 
-    const api = useMemo(() => {
-        console.log('recreate api context')
-
-        return new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade])
+    const api = useMemo(() => new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext), [
+        platformContext,
+        settingsCascade,
+    ])
 
     if (!showCodeInsights) {
         return null
@@ -88,7 +89,9 @@ const ExtensionViewsDirectorySectionContent: React.FunctionComponent<ExtensionVi
     )
 
     // Read code insights views from the settings cascade
-    const insights = useObservable(useMemo(() => getInsights('all'), [getInsights])) ?? EMPTY_INSIGHT_LIST
+    const insights =
+        useObservable(useMemo(() => getInsights({ dashboardId: ALL_INSIGHTS_DASHBOARD_ID }), [getInsights])) ??
+        EMPTY_INSIGHT_LIST
 
     // Pull extension views with Extension API
     const extensionViews =

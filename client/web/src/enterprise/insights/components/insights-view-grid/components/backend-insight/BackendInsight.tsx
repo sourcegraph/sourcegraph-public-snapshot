@@ -9,11 +9,11 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
-import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 import { InsightTypePrefix } from '../../../../core/types'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
-import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
+import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { DashboardInsightsContext } from '../../../../pages/dashboards/dashboard-page/components/dashboards-content/components/dashboard-inisghts/DashboardInsightsContext'
@@ -166,7 +166,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 />
             ) : isErrorLike(error) ? (
                 <View.ErrorContent error={error} title={insight.id} icon={DatabaseIcon}>
-                    {error instanceof InsightStillProcessingError ? (
+                    {error instanceof InsightInProcessError ? (
                         <div className="alert alert-info m-0">{error.message}</div>
                     ) : null}
                 </View.ErrorContent>

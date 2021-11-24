@@ -6,7 +6,7 @@ import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/s
 import { WebStory } from '../../../../../../../components/WebStory'
 import { Settings } from '../../../../../../../schema/settings.schema'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../../../core/backend/code-insights-setting-cascade-backend'
+import { CodeInsightsSettingsCascadeBackend } from '../../../../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { InsightsDashboardType, InsightsDashboardScope, CustomInsightDashboard } from '../../../../../core/types'
 
 import { AddInsightModal } from './AddInsightModal'
