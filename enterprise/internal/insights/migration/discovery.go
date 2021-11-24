@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/pkg/errors"
 	"github.com/segmentio/ksuid"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
@@ -193,65 +193,67 @@ func unmarshalDashboard(raw json.RawMessage, settingsRow api.Settings) ([]insigh
 	return result, multi
 }
 
-func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.SearchInsight, batch migrationBatch) int {
-	var count, skipped, errorCount int
+func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.SearchInsight, batch migrationBatch) (int, error) {
+	var count int
+	var errs error
 	for _, d := range toMigrate {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-			skipped++
+			// skippable error
+			count++
 			continue
 		}
-		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{ UniqueID: d.ID, WithoutAuthorization: true})
+		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
 		if err != nil {
-			skipped++
+			errs = multierror.Append(errs, err)
 			continue
 		}
 		if len(insight) > 0 {
+			// this insight has already been migrated, so count it
 			count++
 			continue
 		}
 		err = migrateSeries(ctx, m.insightStore, d, batch)
 		if err != nil {
-			// we can't do anything about errors, so we will just skip it and log it
-			errorCount++
-			log15.Error("insights migration: error while migrating insight", "error", err)
+			errs = multierror.Append(errs, err)
+			continue
+		} else {
+			count++
 		}
-		count++
 	}
-	log15.Info("insights settings migration batch complete", "batch", batch, "count", count, "skipped", skipped, "errors", errorCount)
-	return count
+	return count, errs
 }
 
-// TODO: I bet maybe we can combine these to consolidate some of the common steps.
-func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []insights.LangStatsInsight) int {
-	var count, skipped, errorCount int
+func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []insights.LangStatsInsight) (int, error) {
+	var count int
+	var errs error
 	for _, d := range toMigrate {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-			skipped++
+			// since it can never be migrated, we count it towards the total
+			count++
 			continue
 		}
-		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{ UniqueID: d.ID, WithoutAuthorization: true})
+		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
 		if err != nil {
-			skipped++
+			errs = multierror.Append(errs, err)
 			continue
 		}
 		if len(insight) > 0 {
+			// this insight has already been migrated, so count it towards the total
 			count++
 			continue
 		}
 
 		err = migrateLangStatSeries(ctx, m.insightStore, d)
 		if err != nil {
-			// we can't do anything about errors, so we will just skip it and log it
-			errorCount++
-			log15.Error("insights migration: error while migrating insight", "error", err)
+			errs = multierror.Append(errs, err)
+			continue
 		} else {
 			count++
 		}
 	}
-	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
-	return count
+	return count, errs
 }
 
 func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore, from insights.LangStatsInsight) (err error) {
@@ -260,8 +262,6 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 		return err
 	}
 	defer func() { err = tx.Store.Done(err) }()
-
-	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
 
 	view := types.InsightView{
 		Title:            from.Title,
@@ -285,15 +285,15 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 
 	view, err = tx.CreateView(ctx, view, grants)
 	if err != nil {
-		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+		return errors.Wrapf(err, "unable to migrate insight view, unique_id: %s", from.ID)
 	}
 	series, err = tx.CreateSeries(ctx, series)
 	if err != nil {
-		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+		return errors.Wrapf(err, "unable to migrate insight series, unique_id: %s", from.ID)
 	}
 	err = tx.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{})
 	if err != nil {
-		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
+		return errors.Wrapf(err, "unable to attach series, unique_id: %s", from.ID)
 	}
 
 	return nil
@@ -306,7 +306,6 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
-	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
 	dataSeries := make([]types.InsightSeries, len(from.Series))
 	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
 
@@ -319,7 +318,8 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			temp.Repositories = from.Repositories
 			if temp.Repositories == nil {
 				// this shouldn't be possible, but if for some reason we get here there is a malformed schema
-				return errors.New("invalid schema for frontend insight, missing repositories")
+				// we can't do anything to fix this, so skip this insight
+				return nil
 			}
 			interval := parseTimeInterval(from)
 			temp.SampleIntervalUnit = string(interval.unit)
@@ -340,7 +340,6 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 		} else if len(existing) > 0 {
 			series = existing[0]
-			log15.Info("insights migration: existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
 		} else {
 			series, err = tx.CreateSeries(ctx, temp)
 			if err != nil {
@@ -392,26 +391,24 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	return nil
 }
 
-func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.SettingDashboard, mc migrationContext) int {
-	var count, skipped, errorCount int
+func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.SettingDashboard, mc migrationContext) (int, error) {
+	var count int
+	var errs error
 	for _, d := range toMigrate {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
-			skipped++
+			// since it can never be migrated, we count it towards the total
+			count++
 			continue
 		}
-
 		err := m.migrateDashboard(ctx, d, mc)
 		if err != nil {
-			// we can't do anything about errors, so we will just skip it and log it
-			errorCount++
-			log15.Error("insights migration: error while migrating insight", "error", err)
+			errs = multierror.Append(errs, err)
 		} else {
 			count++
 		}
 	}
-	log15.Info("insights settings migration batch complete", "batch", "langStats", "count", count, "skipped", skipped, "errors", errorCount)
-	return count
+	return count, errs
 }
 
 // there seems to be some global insights with possibly old schema that have a step field
