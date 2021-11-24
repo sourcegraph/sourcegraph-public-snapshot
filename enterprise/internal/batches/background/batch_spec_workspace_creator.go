@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 	"encoding/json"
-	"sort"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
@@ -101,7 +99,8 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		rawKey, err := cacheKeyForWorkspace(spec, w)
+		key := service.CacheKeyForWorkspace(spec, w)
+		rawKey, err := key.Key()
 		if err != nil {
 			return err
 		}
@@ -176,29 +175,6 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
-}
-
-func cacheKeyForWorkspace(spec *btypes.BatchSpec, w *service.RepoWorkspace) (string, error) {
-	fileMatches := w.FileMatches
-	sort.Strings(fileMatches)
-
-	executionKey := cache.ExecutionKey{
-		Repository: batcheslib.Repository{
-			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
-			Name:        string(w.Repo.Name),
-			BaseRef:     git.EnsureRefPrefix(w.Branch),
-			BaseRev:     string(w.Commit),
-			FileMatches: fileMatches,
-		},
-		Path:               w.Path,
-		OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-		Steps:              w.Steps,
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-		},
-	}
-	return executionKey.Key()
 }
 
 func changesetSpecsFromCache(spec *btypes.BatchSpec, w *service.RepoWorkspace, entry *btypes.BatchSpecExecutionCacheEntry) ([]*btypes.ChangesetSpec, error) {
