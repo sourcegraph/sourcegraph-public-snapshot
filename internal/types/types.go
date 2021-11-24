@@ -454,8 +454,6 @@ type GitserverRepo struct {
 	// Usually represented by a gitserver hostname
 	ShardID     string
 	CloneStatus CloneStatus
-	// The last external service used to sync or clone this repo
-	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
