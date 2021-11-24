@@ -53,7 +53,7 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
 
 const RepositoryIndexConfigurationPage = lazyComponent<
     CodeIntelRepositoryIndexConfigurationPageProps,
-    'RepositoryIndexConfigurationPage'
+    'CodeIntelRepositoryIndexConfigurationPage'
 >(
     () => import('../../codeintel/configuration/pages/CodeIntelRepositoryIndexConfigurationPage'),
     'CodeIntelRepositoryIndexConfigurationPage'
