@@ -1,9 +1,10 @@
-package honey
+package search
 
 import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 )
 
 type SearchEventArgs struct {
@@ -18,12 +19,12 @@ type SearchEventArgs struct {
 }
 
 // SearchEvent returns a honey event for the dataset "search".
-func SearchEvent(ctx context.Context, args SearchEventArgs) Event {
+func SearchEvent(ctx context.Context, args SearchEventArgs) honey.Event {
 	act := &actor.Actor{}
 	if a := actor.FromContext(ctx); a != nil {
 		act = a
 	}
-	ev := NewEvent("search")
+	ev := honey.NewEvent("search")
 	ev.AddField("query", args.OriginalQuery)
 	ev.AddField("actor_uid", act.UID)
 	ev.AddField("actor_internal", act.Internal)
