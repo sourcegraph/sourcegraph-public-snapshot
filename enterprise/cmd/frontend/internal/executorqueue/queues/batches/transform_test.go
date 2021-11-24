@@ -76,7 +76,7 @@ func TestTransformRecord(t *testing.T) {
 		return nil
 	})
 	store.DatabaseDBFunc.SetDefaultReturn(db)
-	store.GetBatchSpecExecutionCacheEntryFunc.SetDefaultReturn(entry, nil)
+	store.ListBatchSpecExecutionCacheEntriesFunc.SetDefaultReturn([]*btypes.BatchSpecExecutionCacheEntry{entry}, nil)
 
 	wantInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,

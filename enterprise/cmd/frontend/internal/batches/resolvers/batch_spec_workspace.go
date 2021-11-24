@@ -170,14 +170,14 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		if err != nil {
 			return nil, err
 		}
-		entry, err := r.store.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
-			Key: rawKey,
+		entries, err := r.store.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
+			Keys: []string{rawKey},
 		})
-		if err != nil && err != store.ErrNoResults {
+		if err != nil {
 			return nil, err
 		}
-		if err == nil {
-			if err := json.Unmarshal([]byte(entry.Value), &cachedResult); err != nil {
+		if len(entries) == 1 {
+			if err := json.Unmarshal([]byte(entries[0].Value), &cachedResult); err != nil {
 				return nil, err
 			}
 		}

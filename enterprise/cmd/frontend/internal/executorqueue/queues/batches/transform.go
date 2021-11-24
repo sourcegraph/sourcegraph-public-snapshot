@@ -24,8 +24,8 @@ import (
 type BatchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
-	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
-	GetBatchSpecExecutionCacheEntry(ctx context.Context, opts store.GetBatchSpecExecutionCacheEntryOpts) (job *btypes.BatchSpecExecutionCacheEntry, err error)
+	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) error
+	ListBatchSpecExecutionCacheEntries(ctx context.Context, opts store.ListBatchSpecExecutionCacheEntriesOpts) ([]*btypes.BatchSpecExecutionCacheEntry, error)
 
 	DatabaseDB() database.DB
 }
@@ -124,18 +124,18 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 				return apiclient.Job{}, nil
 			}
 			// TODO: Once implemented, enforce ownership of cache entries here.
-			entry, err := s.GetBatchSpecExecutionCacheEntry(ctx, store.GetBatchSpecExecutionCacheEntryOpts{
-				Key: rawKey,
+			entries, err := s.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
+				Keys: []string{rawKey},
 			})
-			if err != nil && err != store.ErrNoResults {
+			if err != nil {
 				return apiclient.Job{}, err
 			}
-			if err == store.ErrNoResults {
+			if len(entries) != 1 {
 				continue
 			}
 
 			// Add file to virtualMachineFiles.
-			files[rawKey+`.json`] = entry.Value
+			files[rawKey+`.json`] = entries[0].Value
 			// And break after. src-cli only needs the most recent cache entry.
 			break
 		}
