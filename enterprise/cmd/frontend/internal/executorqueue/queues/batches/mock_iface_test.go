@@ -22,13 +22,13 @@ type MockBatchesStore struct {
 	// GetBatchSpecFunc is an instance of a mock function object controlling
 	// the behavior of the method GetBatchSpec.
 	GetBatchSpecFunc *BatchesStoreGetBatchSpecFunc
-	// GetBatchSpecExecutionCacheEntryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetBatchSpecExecutionCacheEntry.
-	GetBatchSpecExecutionCacheEntryFunc *BatchesStoreGetBatchSpecExecutionCacheEntryFunc
 	// GetBatchSpecWorkspaceFunc is an instance of a mock function object
 	// controlling the behavior of the method GetBatchSpecWorkspace.
 	GetBatchSpecWorkspaceFunc *BatchesStoreGetBatchSpecWorkspaceFunc
+	// ListBatchSpecExecutionCacheEntriesFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// ListBatchSpecExecutionCacheEntries.
+	ListBatchSpecExecutionCacheEntriesFunc *BatchesStoreListBatchSpecExecutionCacheEntriesFunc
 	// SetBatchSpecWorkspaceExecutionJobAccessTokenFunc is an instance of a
 	// mock function object controlling the behavior of the method
 	// SetBatchSpecWorkspaceExecutionJobAccessToken.
@@ -49,13 +49,13 @@ func NewMockBatchesStore() *MockBatchesStore {
 				return nil, nil
 			},
 		},
-		GetBatchSpecExecutionCacheEntryFunc: &BatchesStoreGetBatchSpecExecutionCacheEntryFunc{
-			defaultHook: func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
+		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
+			defaultHook: func(context.Context, store.GetBatchSpecWorkspaceOpts) (*types.BatchSpecWorkspace, error) {
 				return nil, nil
 			},
 		},
-		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
-			defaultHook: func(context.Context, store.GetBatchSpecWorkspaceOpts) (*types.BatchSpecWorkspace, error) {
+		ListBatchSpecExecutionCacheEntriesFunc: &BatchesStoreListBatchSpecExecutionCacheEntriesFunc{
+			defaultHook: func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error) {
 				return nil, nil
 			},
 		},
@@ -110,11 +110,11 @@ func NewMockBatchesStoreFrom(i BatchesStore) *MockBatchesStore {
 		GetBatchSpecFunc: &BatchesStoreGetBatchSpecFunc{
 			defaultHook: i.GetBatchSpec,
 		},
-		GetBatchSpecExecutionCacheEntryFunc: &BatchesStoreGetBatchSpecExecutionCacheEntryFunc{
-			defaultHook: i.GetBatchSpecExecutionCacheEntry,
-		},
 		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
 			defaultHook: i.GetBatchSpecWorkspace,
+		},
+		ListBatchSpecExecutionCacheEntriesFunc: &BatchesStoreListBatchSpecExecutionCacheEntriesFunc{
+			defaultHook: i.ListBatchSpecExecutionCacheEntries,
 		},
 		SetBatchSpecWorkspaceExecutionJobAccessTokenFunc: &BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc{
 			defaultHook: i.SetBatchSpecWorkspaceExecutionJobAccessToken,
@@ -331,119 +331,6 @@ func (c BatchesStoreGetBatchSpecFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// BatchesStoreGetBatchSpecExecutionCacheEntryFunc describes the behavior
-// when the GetBatchSpecExecutionCacheEntry method of the parent
-// MockBatchesStore instance is invoked.
-type BatchesStoreGetBatchSpecExecutionCacheEntryFunc struct {
-	defaultHook func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error)
-	hooks       []func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error)
-	history     []BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall
-	mutex       sync.Mutex
-}
-
-// GetBatchSpecExecutionCacheEntry delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockBatchesStore) GetBatchSpecExecutionCacheEntry(v0 context.Context, v1 store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
-	r0, r1 := m.GetBatchSpecExecutionCacheEntryFunc.nextHook()(v0, v1)
-	m.GetBatchSpecExecutionCacheEntryFunc.appendCall(BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetBatchSpecExecutionCacheEntry method of the parent MockBatchesStore
-// instance is invoked and the hook queue is empty.
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) SetDefaultHook(hook func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetBatchSpecExecutionCacheEntry method of the parent MockBatchesStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) PushHook(hook func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) SetDefaultReturn(r0 *types.BatchSpecExecutionCacheEntry, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) PushReturn(r0 *types.BatchSpecExecutionCacheEntry, r1 error) {
-	f.PushHook(func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
-		return r0, r1
-	})
-}
-
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) nextHook() func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) appendCall(r0 BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall objects describing
-// the invocations of this function.
-func (f *BatchesStoreGetBatchSpecExecutionCacheEntryFunc) History() []BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall {
-	f.mutex.Lock()
-	history := make([]BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall is an object that
-// describes an invocation of method GetBatchSpecExecutionCacheEntry on an
-// instance of MockBatchesStore.
-type BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 store.GetBatchSpecExecutionCacheEntryOpts
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *types.BatchSpecExecutionCacheEntry
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c BatchesStoreGetBatchSpecExecutionCacheEntryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // BatchesStoreGetBatchSpecWorkspaceFunc describes the behavior when the
 // GetBatchSpecWorkspace method of the parent MockBatchesStore instance is
 // invoked.
@@ -553,6 +440,119 @@ func (c BatchesStoreGetBatchSpecWorkspaceFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c BatchesStoreGetBatchSpecWorkspaceFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// BatchesStoreListBatchSpecExecutionCacheEntriesFunc describes the behavior
+// when the ListBatchSpecExecutionCacheEntries method of the parent
+// MockBatchesStore instance is invoked.
+type BatchesStoreListBatchSpecExecutionCacheEntriesFunc struct {
+	defaultHook func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error)
+	hooks       []func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error)
+	history     []BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall
+	mutex       sync.Mutex
+}
+
+// ListBatchSpecExecutionCacheEntries delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockBatchesStore) ListBatchSpecExecutionCacheEntries(v0 context.Context, v1 store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error) {
+	r0, r1 := m.ListBatchSpecExecutionCacheEntriesFunc.nextHook()(v0, v1)
+	m.ListBatchSpecExecutionCacheEntriesFunc.appendCall(BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListBatchSpecExecutionCacheEntries method of the parent MockBatchesStore
+// instance is invoked and the hook queue is empty.
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) SetDefaultHook(hook func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListBatchSpecExecutionCacheEntries method of the parent MockBatchesStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) PushHook(hook func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) SetDefaultReturn(r0 []*types.BatchSpecExecutionCacheEntry, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) PushReturn(r0 []*types.BatchSpecExecutionCacheEntry, r1 error) {
+	f.PushHook(func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error) {
+		return r0, r1
+	})
+}
+
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) nextHook() func(context.Context, store.ListBatchSpecExecutionCacheEntriesOpts) ([]*types.BatchSpecExecutionCacheEntry, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) appendCall(r0 BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall objects describing
+// the invocations of this function.
+func (f *BatchesStoreListBatchSpecExecutionCacheEntriesFunc) History() []BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall {
+	f.mutex.Lock()
+	history := make([]BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall is an object that
+// describes an invocation of method ListBatchSpecExecutionCacheEntries on
+// an instance of MockBatchesStore.
+type BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.ListBatchSpecExecutionCacheEntriesOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types.BatchSpecExecutionCacheEntry
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c BatchesStoreListBatchSpecExecutionCacheEntriesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
