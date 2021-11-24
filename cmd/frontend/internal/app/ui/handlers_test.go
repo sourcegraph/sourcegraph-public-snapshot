@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -167,12 +168,12 @@ func TestNewCommon_repo_error(t *testing.T) {
 
 			code := 200
 			got := ""
-			serveError := func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+			serveError := func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
 				got = err.Error()
 				code = statusCode
 			}
 
-			_, err = newCommon(httptest.NewRecorder(), req, "test", index, serveError)
+			_, err = newCommon(httptest.NewRecorder(), req, dbmock.NewMockDB(), "test", index, serveError)
 			if err != nil {
 				if got != "" || code != 200 {
 					t.Fatal("serveError called and error returned from newCommon")
@@ -401,7 +402,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r)
+			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, dbmock.NewMockDB())
 			if err != nil {
 				t.Fatal(err)
 			}
