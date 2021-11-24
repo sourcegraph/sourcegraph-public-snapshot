@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -97,7 +97,7 @@ func testGitTree(t *testing.T, db *dbmock.MockDB, tests []*Test) {
 		assert.Equal(t, exampleCommitSHA1, rev)
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitapi.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
 	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
 		assert.Equal(t, "foo bar", path)

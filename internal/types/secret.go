@@ -103,6 +103,8 @@ func redactionInfo(cfg interface{}) ([]jsonStringField, error) {
 		return []jsonStringField{}, nil
 	case *schema.JVMPackagesConnection:
 		return []jsonStringField{{[]string{"maven", "credentials"}, &cfg.Maven.Credentials}}, nil
+	case *schema.PagureConnection:
+		return []jsonStringField{{[]string{"token"}, &cfg.Token}}, nil
 	case *schema.OtherExternalServiceConnection:
 		return []jsonStringField{{[]string{"url"}, &cfg.Url}}, nil
 	default:

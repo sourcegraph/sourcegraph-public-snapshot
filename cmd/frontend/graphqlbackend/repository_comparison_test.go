@@ -18,9 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestRepositoryComparison(t *testing.T) {
@@ -91,12 +91,12 @@ func TestRepositoryComparison(t *testing.T) {
 	})
 
 	t.Run("Commits", func(t *testing.T) {
-		commits := []*gitapi.Commit{
+		commits := []*gitdomain.Commit{
 			{ID: api.CommitID(wantBaseRevision)},
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitapi.Commit, error) {
+		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {

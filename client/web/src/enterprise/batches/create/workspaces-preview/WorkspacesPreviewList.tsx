@@ -18,8 +18,8 @@ import {
 import {
     Scalars,
     PreviewBatchSpecWorkspaceFields,
-    BatchSpecWorkspacesResult,
-    BatchSpecWorkspacesVariables,
+    BatchSpecWorkspacesPreviewResult,
+    BatchSpecWorkspacesPreviewVariables,
 } from '../../../../graphql-operations'
 import { WORKSPACES } from '../backend'
 
@@ -87,7 +87,11 @@ export const WorkspacesPreviewList: React.FunctionComponent<WorkspacesPreviewLis
 }
 
 const useWorkspaces = (batchSpecID: Scalars['ID']): UseConnectionResult<PreviewBatchSpecWorkspaceFields> =>
-    useConnection<BatchSpecWorkspacesResult, BatchSpecWorkspacesVariables, PreviewBatchSpecWorkspaceFields>({
+    useConnection<
+        BatchSpecWorkspacesPreviewResult,
+        BatchSpecWorkspacesPreviewVariables,
+        PreviewBatchSpecWorkspaceFields
+    >({
         query: WORKSPACES,
         variables: {
             batchSpec: batchSpecID,

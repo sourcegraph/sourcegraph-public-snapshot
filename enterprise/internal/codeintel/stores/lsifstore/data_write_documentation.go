@@ -41,7 +41,7 @@ func (s *Store) WriteDocumentationPages(
 	documentationPages chan *precise.DocumentationPageData,
 	repositoryNameID int,
 	languageNameID int,
-) (err error) {
+) (count uint32, err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
 		log.String("repo", upload.RepositoryName),
@@ -61,10 +61,9 @@ func (s *Store) WriteDocumentationPages(
 
 	// Create temporary table symmetric to lsif_data_documentation_pages without the dump id
 	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesTemporaryTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
-	var count uint32
 	var pages []*precise.DocumentationPageData
 	inserter := func(inserter *batch.Inserter) error {
 		for page := range documentationPages {
@@ -91,7 +90,7 @@ func (s *Store) WriteDocumentationPages(
 		[]string{"path_id", "data"},
 		inserter,
 	); err != nil {
-		return err
+		return 0, err
 	}
 	traceLog(log.Int("numResultChunkRecords", int(count)))
 
@@ -100,13 +99,13 @@ func (s *Store) WriteDocumentationPages(
 	if conf.APIDocsSearchIndexingEnabled() {
 		// Perform search indexing for API docs pages.
 		if err := s.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages, repositoryNameID, languageNameID); err != nil {
-			return errors.Wrap(err, "WriteDocumentationSearch")
+			return 0, errors.Wrap(err, "WriteDocumentationSearch")
 		}
 	}
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
+	return count, s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
 }
 
 const writeDocumentationPagesTemporaryTableQuery = `
@@ -125,7 +124,7 @@ FROM t_lsif_data_documentation_pages source
 `
 
 // WriteDocumentationPathInfo is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (err error) {
+func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentationPathInfo chan *precise.DocumentationPathInfoData) (count uint32, err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPathInfo.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -133,16 +132,15 @@ func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, do
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Create temporary table symmetric to lsif_data_documentation_path_info without the dump id
 	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPathInfoTemporaryTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
-	var count uint32
 	inserter := func(inserter *batch.Inserter) error {
 		for v := range documentationPathInfo {
 			data, err := s.serializer.MarshalDocumentationPathInfoData(v)
@@ -167,13 +165,13 @@ func (s *Store) WriteDocumentationPathInfo(ctx context.Context, bundleID int, do
 		[]string{"path_id", "data"},
 		inserter,
 	); err != nil {
-		return err
+		return 0, err
 	}
 	traceLog(log.Int("numResultChunkRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPathInfoInsertQuery, bundleID))
+	return count, tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPathInfoInsertQuery, bundleID))
 }
 
 const writeDocumentationPathInfoTemporaryTableQuery = `
@@ -192,7 +190,7 @@ FROM t_lsif_data_documentation_path_info source
 `
 
 // WriteDocumentationMappings is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (err error) {
+func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) (count uint32, err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationMappings.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 	}})
@@ -200,16 +198,15 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	// Create temporary table symmetric to lsif_data_documentation_mappings without the dump id
 	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentationMappingsTemporaryTableQuery)); err != nil {
-		return err
+		return 0, err
 	}
 
-	var count uint32
 	inserter := func(inserter *batch.Inserter) error {
 		for mapping := range mappings {
 			if err := inserter.Insert(ctx, mapping.PathID, mapping.ResultID, mapping.FilePath); err != nil {
@@ -228,13 +225,13 @@ func (s *Store) WriteDocumentationMappings(ctx context.Context, bundleID int, ma
 		[]string{"path_id", "result_id", "file_path"},
 		inserter,
 	); err != nil {
-		return err
+		return 0, err
 	}
 	traceLog(log.Int("numRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationMappingsInsertQuery, bundleID))
+	return count, tx.Exec(ctx, sqlf.Sprintf(writeDocumentationMappingsInsertQuery, bundleID))
 }
 
 const writeDocumentationMappingsTemporaryTableQuery = `

@@ -105,25 +105,25 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     // Code intelligence upload routes
     {
         path: '/code-intelligence/uploads',
-        render: lazyComponent(() => import('../codeintel/list/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
+        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
         exact: true,
     },
     {
         path: '/code-intelligence/uploads/:id',
-        render: lazyComponent(() => import('../codeintel/detail/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
+        render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
         exact: true,
     },
 
     // Auto-indexing routes
     {
         path: '/code-intelligence/indexes',
-        render: lazyComponent(() => import('../codeintel/list/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
+        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
     {
         path: '/code-intelligence/indexes/:id',
-        render: lazyComponent(() => import('../codeintel/detail/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
+        render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
@@ -132,7 +132,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/configuration',
         render: lazyComponent(
-            () => import('../codeintel/configuration/CodeIntelConfigurationPage'),
+            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
             'CodeIntelConfigurationPage'
         ),
         exact: true,
@@ -140,7 +140,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/code-intelligence/configuration/:id',
         render: lazyComponent(
-            () => import('../codeintel/configuration/CodeIntelConfigurationPolicyPage'),
+            () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
             'CodeIntelConfigurationPolicyPage'
         ),
         exact: true,

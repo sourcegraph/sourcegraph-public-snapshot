@@ -40,7 +40,7 @@ type TemplateDataNewSearchResults struct {
 	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *codemonitors.MonitorEmail, numResults int) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(ctx context.Context, monitorDescription, queryString string, email *codemonitors.EmailAction, numResults int) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		searchURL                 string
 		codeMonitorURL            string

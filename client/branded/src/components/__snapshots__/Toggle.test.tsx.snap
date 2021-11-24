@@ -1,115 +1,98 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Toggle aria 1`] = `
-<Toggle
-  aria-describedby="test-id-1"
-  aria-label="test toggle"
-  aria-labelledby="test-id-2"
->
+<DocumentFragment>
   <button
     aria-describedby="test-id-1"
     aria-label="test toggle"
     aria-labelledby="test-id-2"
-    className="toggle"
-    onClick={[Function]}
+    class="toggle"
     role="switch"
     type="button"
-    value={0}
+    value="0"
   >
     <span
-      className="bar"
+      class="bar"
     />
     <span
-      className="knob"
+      class="knob"
     />
   </button>
-</Toggle>
+</DocumentFragment>
 `;
 
 exports[`Toggle className 1`] = `
-<Toggle
-  className="c"
->
+<DocumentFragment>
   <button
-    className="toggle c"
-    onClick={[Function]}
+    class="toggle c"
     role="switch"
     type="button"
-    value={0}
+    value="0"
   >
     <span
-      className="bar"
+      class="bar"
     />
     <span
-      className="knob"
+      class="knob"
     />
   </button>
-</Toggle>
+</DocumentFragment>
 `;
 
 exports[`Toggle disabled 1`] = `
-<Toggle
-  disabled={true}
-  onToggle={[Function]}
->
+<DocumentFragment>
   <button
-    className="toggle"
-    disabled={true}
-    onClick={[Function]}
+    class="toggle"
+    data-testid="toggle"
+    disabled=""
     role="switch"
     type="button"
-    value={0}
+    value="0"
   >
     <span
-      className="bar"
+      class="bar"
     />
     <span
-      className="knob"
+      class="knob"
     />
   </button>
-</Toggle>
+</DocumentFragment>
 `;
 
 exports[`Toggle value is false 1`] = `
-<Toggle
-  value={false}
->
+<DocumentFragment>
   <button
-    aria-checked={false}
-    className="toggle"
-    onClick={[Function]}
+    aria-checked="false"
+    class="toggle"
     role="switch"
     type="button"
-    value={0}
+    value="0"
   >
     <span
-      className="bar"
+      class="bar"
     />
     <span
-      className="knob"
+      class="knob"
     />
   </button>
-</Toggle>
+</DocumentFragment>
 `;
 
 exports[`Toggle value is true 1`] = `
-<Toggle
-  value={true}
->
+<DocumentFragment>
   <button
-    aria-checked={true}
-    className="toggle"
-    onClick={[Function]}
+    aria-checked="true"
+    class="toggle"
     role="switch"
     type="button"
-    value={1}
+    value="1"
   >
     <span
-      className="bar barOn"
+      class="bar barOn"
     />
     <span
-      className="knob knobOn"
+      class="knob knobOn"
     />
   </button>
-</Toggle>
+</DocumentFragment>
 `;

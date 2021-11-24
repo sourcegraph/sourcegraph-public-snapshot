@@ -9,9 +9,13 @@
   }
 </style>
 
->NOTE: **Sourcegraph executors are currently experimental.** We're exploring this feature set. 
->Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
->with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
+
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+</aside>
 
 Executors are Sourcegraph's solution for running untrusted code in a secure and controllable way.
 

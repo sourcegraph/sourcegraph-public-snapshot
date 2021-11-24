@@ -146,10 +146,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	db := database.NewDB(sqlDB)
 
 	// override site config first
-	if err := overrideSiteConfig(ctx); err != nil {
+	if err := overrideSiteConfig(ctx, db); err != nil {
 		log.Fatalf("failed to apply site config overrides: %v", err)
 	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
+	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
 	conf.Init()
 	conf.MustValidateDefaults()
 

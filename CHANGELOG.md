@@ -29,6 +29,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.34.1
+
+### Fixed
+
+- Fixed Redis alerting for docker-compose deployments [#28099](https://github.com/sourcegraph/sourcegraph/issues/28099)
+
 ## 3.34.0
 
 ### Added
@@ -65,6 +71,12 @@ All notable changes to Sourcegraph are documented in this file.
 - All version contexts functionality (deprecated in 3.33) is now removed. [#26267](https://github.com/sourcegraph/sourcegraph/issues/26267)
 - Query filter `repogroup` (deprecated in 3.33) is now removed. [#24277](https://github.com/sourcegraph/sourcegraph/issues/24277)
 - Notifications for saved searches (deprecated in v3.31.0) have been removed [#27912](https://github.com/sourcegraph/sourcegraph/pull/27912/files)
+
+## 3.33.2
+
+### Fixed
+
+- Fixed: backported saved search and code monitor notification fixes from 3.34.0 [#28019](https://github.com/sourcegraph/sourcegraph/pull/28019)
 
 ## 3.33.1
 

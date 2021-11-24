@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
@@ -48,7 +49,7 @@ export const REPOSITORIES_FOR_POPOVER = gql`
     }
 `
 
-export interface RepositoriesPopoverProps {
+export interface RepositoriesPopoverProps extends TelemetryProps {
     /**
      * The current repository (shown as selected in the list), if any.
      */
@@ -60,13 +61,17 @@ export const BATCH_COUNT = 10
 /**
  * A popover that displays a searchable list of repositories.
  */
-export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({ currentRepo }) => {
+export const RepositoriesPopover: React.FunctionComponent<RepositoriesPopoverProps> = ({
+    currentRepo,
+    telemetryService,
+}) => {
     const [searchValue, setSearchValue] = useState('')
     const query = useDebounce(searchValue, 200)
 
     useEffect(() => {
         eventLogger.logViewEvent('RepositoriesPopover')
-    }, [])
+        telemetryService.log('RepositoriesPopover')
+    }, [telemetryService])
 
     const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
         RepositoriesForPopoverResult,

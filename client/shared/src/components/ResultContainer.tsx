@@ -77,6 +77,11 @@ export interface Props {
     children?: never
 
     /**
+     * The result type
+     */
+    resultType?: string
+
+    /**
      * The number of stars for the result's associated repo
      */
     repoStars?: number
@@ -110,6 +115,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     matchCountLabel,
     repoStars,
     onResultClicked,
+    resultType,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -127,12 +133,13 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
             onResultClicked()
         }
     }
-
     const Icon = icon
     return (
         <div
             className="test-search-result result-container"
             data-testid="result-container"
+            data-result-type={resultType}
+            data-expanded={allExpanded}
             onClick={trackReferencePanelClick}
             role="none"
         >

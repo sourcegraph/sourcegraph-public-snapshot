@@ -2,9 +2,9 @@ import {
     BatchSpecWorkspaceResolutionState,
     WorkspaceResolutionStatusResult,
     PreviewBatchSpecWorkspaceFields,
-    BatchSpecWorkspacesResult,
     BatchSpecImportingChangesetsResult,
     PreviewBatchSpecImportingChangesetFields,
+    BatchSpecWorkspacesPreviewResult,
 } from '../../../../graphql-operations'
 
 export const mockWorkspaceResolutionStatus = (
@@ -83,7 +83,7 @@ export const mockImportingChangesets = (
     __typename: 'VisibleChangesetSpec'
 })[] => [...new Array(count).keys()].map(id => mockImportingChangeset(id))
 
-export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorkspacesResult => ({
+export const mockBatchSpecWorkspaces = (workspacesCount: number): BatchSpecWorkspacesPreviewResult => ({
     node: {
         __typename: 'BatchSpec',
         workspaceResolution: {

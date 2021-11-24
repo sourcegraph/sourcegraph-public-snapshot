@@ -42,7 +42,7 @@ export const WORKSPACE_RESOLUTION_STATUS = gql`
 `
 
 export const WORKSPACES = gql`
-    query BatchSpecWorkspaces($batchSpec: ID!, $first: Int, $after: String) {
+    query BatchSpecWorkspacesPreview($batchSpec: ID!, $first: Int, $after: String) {
         node(id: $batchSpec) {
             __typename
             ... on BatchSpec {

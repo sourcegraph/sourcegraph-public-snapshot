@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -96,7 +98,21 @@ func (r *batchSpecWorkspaceConnectionResolver) compute(ctx context.Context) ([]*
 	return r.workspaces, r.next, r.err
 }
 
-func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) graphqlbackend.BatchSpecWorkspacesStatsResolver {
-	// TODO(ssbc): not implemented
-	return nil
+func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) (graphqlbackend.BatchSpecWorkspacesStatsResolver, error) {
+	stats, err := r.store.GetBatchSpecStats(ctx, []int64{r.opts.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
+	stat, ok := stats[r.opts.BatchSpecID]
+	if !ok {
+		return nil, errors.New("stats not found")
+	}
+	return &batchSpecWorkspacesStatsResolver{
+		errored:    int32(stat.Failed),
+		completed:  int32(stat.Completed),
+		processing: int32(stat.Processing),
+		queued:     int32(stat.Queued),
+		// TODO: Handle more ignored cases here.
+		ignored: int32(stat.SkippedWorkspaces),
+	}, nil
 }

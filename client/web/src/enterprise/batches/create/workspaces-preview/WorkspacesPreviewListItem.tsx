@@ -57,12 +57,14 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<WorkspacesPrevie
             </div>
             <div className="flex-1">
                 <Link
-                    className={classNames(styles.link, (toBeExcluded || isStale) && styles.linkStale)}
+                    className={classNames(styles.link, styles.overflow, (toBeExcluded || isStale) && styles.linkStale)}
                     to={item.branch.url}
                 >
                     {item.repository.name}:{item.branch.abbrevName}
                 </Link>
-                {item.path !== '' && item.path !== '/' ? <span className="d-block text-muted">{item.path}</span> : null}
+                {item.path !== '' && item.path !== '/' ? (
+                    <span className={classNames(styles.overflow, 'd-block text-muted')}>{item.path}</span>
+                ) : null}
                 {item.branch.id !== item.repository.defaultBranch?.id ? (
                     <div className="d-flex align-items-center text-muted">
                         <SourceBranchIcon className="icon-inline mr-1" />
