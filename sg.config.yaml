@@ -982,6 +982,7 @@ tests:
 
   bext-integration:
     cmd: yarn --cwd client/browser test-integration
+    install: yarn run download-puppeteer-browser && EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-e2e:
     cmd: yarn run download-puppeteer-browser && yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts

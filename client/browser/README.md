@@ -140,8 +140,12 @@ Click reload for Sourcegraph at `about:debugging`
 ## Testing
 
 - Unit tests: `sg test bext`
-- Integration tests: `sg test bext-integration`
+- Integration tests:
+  - Install puppeteer: `yarn run download-puppeteer-browser`
+  - `EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build`
+  - `sg test bext-integration`
 - E2E tests:
+  - Install puppeteer: `yarn run download-puppeteer-browser`
   - `EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build`
   - `sg test bext-e2e`
 
