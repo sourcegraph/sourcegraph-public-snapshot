@@ -12,7 +12,7 @@ import {
     groupDecorationsByLine,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,

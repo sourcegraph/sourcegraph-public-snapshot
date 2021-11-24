@@ -50,8 +50,8 @@ import {
     Hoverifier,
     HoverState,
     MaybeLoadingResult,
-    DiffPart,
 } from '@sourcegraph/shared/src/codeintellify'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
