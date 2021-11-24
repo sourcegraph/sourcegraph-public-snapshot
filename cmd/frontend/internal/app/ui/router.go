@@ -279,7 +279,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 		router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
-		router.Get(routeLegacyRepoLanding).Handler(handler(db, serveRepoLanding))
+		router.Get(routeLegacyRepoLanding).Handler(handler(db, serveRepoLanding(db)))
 	}
 
 	// search

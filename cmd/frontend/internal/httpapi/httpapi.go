@@ -53,9 +53,9 @@ func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWeb
 	})
 
 	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield)))
+	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield(db))))
 
-	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh)))
+	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
 
 	gh := webhooks.GitHubWebhook{
 		ExternalServices: database.ExternalServices(db),
@@ -120,7 +120,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
-		ListIndexable:       backend.Repos.ListIndexable,
+		ListIndexable:       backend.NewRepos(db.Repos()).ListIndexable,
 		RepoStore:           database.Repos(db),
 		SearchContextsStore: database.SearchContexts(db),
 		Indexers:            search.Indexers(),
@@ -130,7 +130,7 @@ func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, n
 	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 
-	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName)))
+	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName(db))))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
 	m.Get(apirouter.SavedQueriesListAll).Handler(trace.Route(handler(serveSavedQueriesListAll(db))))
 	m.Get(apirouter.SavedQueriesGetInfo).Handler(trace.Route(handler(serveSavedQueriesGetInfo(db))))

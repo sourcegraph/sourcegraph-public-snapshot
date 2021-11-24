@@ -10,7 +10,6 @@ import (
 	regexpsyntax "regexp/syntax"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -89,8 +87,6 @@ var _ RepoStore = (*repoStore)(nil)
 // repoStore handles access to the repo table
 type repoStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // Repos instantiates and returns a new RepoStore with prepared statements.
@@ -113,26 +109,12 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 	return &repoStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-// This can't be removed yet because GlobalRepos still uses the zero value of `repoStore`,
-// depending on it being initialized by `ensureStore`
-func (s *repoStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 // Get finds and returns the repo with the given repository ID from the database.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.Get", "")
 	defer func() {
@@ -212,7 +194,6 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
 	defer func() {
@@ -258,7 +239,6 @@ func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types
 	if Mocks.Repos.GetByIDs != nil {
 		return Mocks.Repos.GetByIDs(ctx, ids...)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
 	defer func() {
@@ -289,7 +269,6 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
@@ -316,7 +295,6 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	if Mocks.Repos.Metadata != nil {
 		return Mocks.Repos.Metadata(ctx, ids...)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
 	defer func() {
@@ -723,7 +701,6 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
-	s.ensureStore()
 
 	// always having ID in ORDER BY helps Postgres create a more performant query plan
 	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
@@ -740,7 +717,6 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	s.ensureStore()
 
 	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
@@ -1086,7 +1062,6 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	s.ensureStore()
 
 	var where, joins []*sqlf.Query
 
@@ -1187,7 +1162,6 @@ func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	s.ensureStore()
 
 	records := make([]*repoRecord, 0, len(repos))
 
@@ -1445,7 +1419,6 @@ func (s *repoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	s.ensureStore()
 
 	// The number of deleted repos can potentially be higher
 	// than the maximum number of arguments we can pass to postgres.
@@ -1494,8 +1467,6 @@ WHERE
 // repo purger. We special case just returning enabled names so that we read much
 // less data into memory.
 func (s *repoStore) ListEnabledNames(ctx context.Context) (values []api.RepoName, err error) {
-	s.ensureStore()
-
 	q := sqlf.Sprintf(listEnabledNamesQueryFmtstr)
 	rows, queryErr := s.Query(ctx, q)
 	if queryErr != nil {
@@ -1537,8 +1508,6 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 	if Mocks.Repos.GetFirstRepoNamesByCloneURL != nil {
 		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
 	}
-
-	s.ensureStore()
 
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {

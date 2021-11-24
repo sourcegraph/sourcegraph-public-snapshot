@@ -37,11 +37,6 @@ func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }
 
-var Repos = &repos{
-	store: database.GlobalRepos,
-	cache: dbcache.NewIndexableReposLister(database.GlobalRepos),
-}
-
 // NewRepos uses the provided `database.RepoStore` to initialize a new repos
 // store for the backend.
 //
@@ -51,7 +46,7 @@ var Repos = &repos{
 func NewRepos(repoStore database.RepoStore) *repos {
 	return &repos{
 		store: repoStore,
-		cache: Repos.cache,
+		cache: dbcache.NewIndexableReposLister(repoStore),
 	}
 }
 
