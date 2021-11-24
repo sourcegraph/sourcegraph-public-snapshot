@@ -6,7 +6,7 @@ import {
     DiffPart,
     DOMFunctions as CodeIntellifyDOMFuncions,
     PositionAdjuster,
-} from '@sourcegraph/shared/src/codeintellify/src'
+} from '@sourcegraph/shared/src/codeintellify'
 import { Selection } from '@sourcegraph/extension-api-types'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'

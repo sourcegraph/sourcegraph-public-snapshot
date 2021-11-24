@@ -3,7 +3,7 @@ import { TestScheduler } from 'rxjs/testing'
 import { DocumentHighlight, Hover } from 'sourcegraph'
 
 import { MarkupKind, Range } from '@sourcegraph/extension-api-classes'
-import { LOADING } from '@sourcegraph/shared/src/codeintellify/src'
+import { LOADING } from '@sourcegraph/shared/src/codeintellify'
 
 import { fromHoverMerged, HoverMerged } from '../../client/types/hover'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'

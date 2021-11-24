@@ -1,4 +1,4 @@
-import { DiffPart, DOMFunctions } from '@sourcegraph/shared/src/codeintellify/src'
+import { DiffPart, DOMFunctions } from '@sourcegraph/shared/src/codeintellify'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 

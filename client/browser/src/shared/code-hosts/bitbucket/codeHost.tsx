@@ -1,7 +1,7 @@
 import { of } from 'rxjs'
 import { Omit } from 'utility-types'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/shared/src/codeintellify/src'
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/shared/src/codeintellify'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 

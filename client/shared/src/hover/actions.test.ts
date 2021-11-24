@@ -6,7 +6,7 @@ import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
 

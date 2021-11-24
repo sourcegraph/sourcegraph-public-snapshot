@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/src'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,

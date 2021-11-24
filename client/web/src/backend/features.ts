@@ -3,7 +3,7 @@ import { Observable, from, concat } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { DocumentHighlight } from 'sourcegraph'
 
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'

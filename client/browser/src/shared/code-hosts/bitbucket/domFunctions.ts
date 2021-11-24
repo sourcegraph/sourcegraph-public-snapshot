@@ -1,4 +1,4 @@
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/src'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify'
 
 import { DOMFunctions } from '../shared/codeViews'
 

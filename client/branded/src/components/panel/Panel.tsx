@@ -13,7 +13,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'

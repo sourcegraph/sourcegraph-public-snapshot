@@ -12,7 +12,7 @@ import {
 } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
-import { LOADING, MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { LOADING, MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
 
 import { getModeFromPath } from '../../languages'

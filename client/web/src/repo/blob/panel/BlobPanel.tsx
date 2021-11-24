@@ -7,7 +7,7 @@ import { BuiltinPanelView, useBuiltinPanelViews } from '@sourcegraph/branded/src
 import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { ReferenceParameters, TextDocumentPositionParameters } from '@sourcegraph/shared/src/api/protocol'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { Activation, ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'

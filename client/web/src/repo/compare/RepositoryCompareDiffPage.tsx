@@ -3,7 +3,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { Hoverifier } from '@sourcegraph/shared/src/codeintellify/src'
+import { Hoverifier } from '@sourcegraph/shared/src/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

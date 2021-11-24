@@ -3,7 +3,7 @@ import { Observer, of } from 'rxjs'
 import { Hover } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientAPI } from '../../client/api/api'

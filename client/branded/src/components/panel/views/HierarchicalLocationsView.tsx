@@ -7,7 +7,7 @@ import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, t
 
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'

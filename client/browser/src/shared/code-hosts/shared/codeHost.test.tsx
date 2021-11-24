@@ -10,7 +10,7 @@ import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
-import { DiffPart } from '@sourcegraph/shared/src/codeintellify/src'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'

@@ -30,7 +30,7 @@ module.exports = {
       },
     },
     {
-      files: ['src/codeintellify/*.test.*', 'src/codeintellify/src/testutils/**'],
+      files: ['src/codeintellify/*.test.*', 'src/codeintellify/testutils/**'],
       rules: {
         'import/extensions': ['error', 'never', { html: 'always' }],
       },

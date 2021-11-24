@@ -43,7 +43,7 @@ import {
     HoverState,
     MaybeLoadingResult,
     DiffPart,
-} from '@sourcegraph/shared/src/codeintellify/src'
+} from '@sourcegraph/shared/src/codeintellify'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'

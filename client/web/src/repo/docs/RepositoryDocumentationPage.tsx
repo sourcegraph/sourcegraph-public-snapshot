@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/src/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'

@@ -1,7 +1,7 @@
 import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 
-import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify/src'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
 
 import { ConfiguredExtension } from '../extensions/extension'
