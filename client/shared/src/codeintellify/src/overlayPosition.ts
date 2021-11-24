@@ -1,10 +1,15 @@
+// eslint-disable-next-line unicorn/prevent-abbreviations
+export interface HasGetBoundingClientRect {
+    getBoundingClientRect: () => DOMRect
+}
+
 export interface CalculateOverlayPositionOptions {
     /** The closest parent element that is `position: relative` */
-    relativeElement: HTMLElement
+    relativeElement: HasGetBoundingClientRect & { scrollLeft: number; scrollTop: number }
     /** The DOM Node that was hovered */
-    target: HTMLElement
+    target: HasGetBoundingClientRect
     /** The DOM Node of the tooltip */
-    hoverOverlayElement: HTMLElement
+    hoverOverlayElement: HasGetBoundingClientRect
 }
 
 export interface CSSOffsets {
