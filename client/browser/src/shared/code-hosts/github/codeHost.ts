@@ -385,6 +385,7 @@ export const isPrivateRepository = (
     }
     return fetchCache<{ private?: boolean }>({
         url: `https://api.github.com/repos/${repoName}`,
+        credentials: 'omit',
         cacheMaxAge: 60 * 60 * 1000, // 1 hour
     })
         .then(response => {
