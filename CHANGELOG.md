@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Sourcegraph services now listen to SIGTERM signals. This allows smoother rollouts in kubernetes deployments. [#27958](https://github.com/sourcegraph/sourcegraph/pull/27958)
 
 ### Fixed
 
