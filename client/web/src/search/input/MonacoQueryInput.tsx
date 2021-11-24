@@ -19,6 +19,39 @@ import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligen
 
 import styles from './MonacoQueryInput.module.scss'
 
+export const DEFAULT_MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
+    readOnly: false,
+    lineNumbers: 'off',
+    lineHeight: 16,
+    // Match the query input's height for suggestion items line height.
+    suggestLineHeight: 34,
+    minimap: {
+        enabled: false,
+    },
+    scrollbar: {
+        vertical: 'hidden',
+        horizontal: 'hidden',
+    },
+    glyphMargin: false,
+    hover: { delay: 150 },
+    lineDecorationsWidth: 0,
+    lineNumbersMinChars: 0,
+    overviewRulerBorder: false,
+    folding: false,
+    rulers: [],
+    overviewRulerLanes: 0,
+    wordBasedSuggestions: false,
+    quickSuggestions: false,
+    fixedOverflowWidgets: true,
+    contextmenu: false,
+    links: false,
+    // Match our monospace/code style from code.scss
+    fontFamily: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
+    // Display the cursor as a 1px line.
+    cursorStyle: 'line',
+    cursorWidth: 1,
+}
+
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
@@ -29,6 +62,7 @@ export interface MonacoQueryInputProps
     onChange: (newState: QueryState) => void
     onSubmit: () => void
     onFocus?: () => void
+    onBlur?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
@@ -42,6 +76,10 @@ export interface MonacoQueryInputProps
     interpretComments?: boolean
 
     className?: string
+
+    height?: string | number
+    preventNewLine?: boolean
+    editorOptions?: Monaco.editor.IStandaloneEditorConstructionOptions
 }
 
 /**
@@ -100,6 +138,7 @@ const toMonacoSelection = (range: Monaco.IRange): Monaco.ISelection => ({
 export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
     queryState,
     onFocus,
+    onBlur,
     onChange,
     onSubmit,
     onSuggestionsInitialized,
@@ -112,6 +151,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isSourcegraphDotCom,
     isLightTheme,
     className,
+    height = 17,
+    preventNewLine = true,
+    editorOptions,
     onHandleFuzzyFinder,
     onEditorCreated: onEditorCreatedCallback,
 }) => {
@@ -129,6 +171,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     // The Monaco editor doesn't auto-resize with its container:
     // https://github.com/microsoft/monaco-editor/issues/28
     const [container, setContainer] = useState<HTMLElement | null>()
+
     useLayoutEffect(() => {
         if (!editor || !container) {
             return
@@ -150,6 +193,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         interpretComments,
         isSourcegraphDotCom,
     })
+
     useQueryDiagnostics(editor, { patternType, interpretComments })
 
     // Register suggestions handle
@@ -177,6 +221,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             // to surface issues with this workaround when upgrading Monaco.
             throw new Error('Cannot unbind default Monaco keybindings')
         }
+
         for (const action of Object.keys(editor._actions)) {
             // Keep ctrl+space to show all available completions. Keep ctrl+k to delete text on right of cursor.
             if (action === 'editor.action.triggerSuggest' || action === 'deleteAllRight') {
@@ -211,6 +256,16 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
         editor.focus()
     }, [editor, autoFocus])
+
+    useEffect(() => {
+        if (!editor || !onBlur) {
+            return
+        }
+
+        const disposable = editor.onDidBlurEditorText(onBlur)
+
+        return () => disposable.dispose()
+    }, [editor, onBlur])
 
     // Always focus the editor on selectedSearchContextSpec change
     useEffect(() => {
@@ -255,7 +310,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 editor.revealPosition(position)
             }
         }
-        editor.focus()
     }, [editor, queryState])
 
     // Prevent newline insertion in model, and surface query changes with stripped newlines.
@@ -266,10 +320,13 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         const replacePattern = /[\n\r↵]/g
         const disposable = editor.onDidChangeModelContent(() => {
             const value = editor.getValue()
-            onChange({ query: value.replace(replacePattern, ''), changeSource: QueryChangeSource.userInput })
+            onChange({
+                query: preventNewLine ? value.replace(replacePattern, '') : value,
+                changeSource: QueryChangeSource.userInput,
+            })
         })
         return () => disposable.dispose()
-    }, [editor, onChange])
+    }, [editor, onChange, preventNewLine])
 
     // Submit on enter, hiding the suggestions widget if it's visible.
     useEffect(() => {
@@ -309,38 +366,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
     }, [editor, onSubmit, onHandleFuzzyFinder])
 
-    const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
-        readOnly: false,
-        lineNumbers: 'off',
-        lineHeight: 16,
-        // Match the query input's height for suggestion items line height.
-        suggestLineHeight: 34,
-        minimap: {
-            enabled: false,
-        },
-        scrollbar: {
-            vertical: 'hidden',
-            horizontal: 'hidden',
-        },
-        glyphMargin: false,
-        hover: { delay: 150 },
-        lineDecorationsWidth: 0,
-        lineNumbersMinChars: 0,
-        overviewRulerBorder: false,
-        folding: false,
-        rulers: [],
-        overviewRulerLanes: 0,
-        wordBasedSuggestions: false,
-        quickSuggestions: false,
-        fixedOverflowWidgets: true,
-        contextmenu: false,
-        links: false,
-        // Match our monospace/code style from code.scss
-        fontFamily: 'sfmono-regular, consolas, menlo, dejavu sans mono, monospace',
-        // Display the cursor as a 1px line.
-        cursorStyle: 'line',
-        cursorWidth: 1,
-    }
     return (
         <div
             ref={setContainer}
@@ -351,11 +376,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 id="monaco-query-input"
                 language={sourcegraphSearchLanguageId}
                 value={queryState.query}
-                height={17}
+                height={height}
                 isLightTheme={isLightTheme}
                 editorWillMount={noop}
                 onEditorCreated={onEditorCreated}
-                options={options}
+                options={editorOptions ?? DEFAULT_MONACO_OPTIONS}
                 border={false}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
                 className={classNames('test-query-input', styles.monacoQueryInput)}
