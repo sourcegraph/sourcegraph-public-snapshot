@@ -264,6 +264,163 @@ func NewMockDB() *MockDB {
 	}
 }
 
+// NewStrictMockDB creates a new mock of the DB interface. All methods panic
+// on invocation, unless overwritten.
+func NewStrictMockDB() *MockDB {
+	return &MockDB{
+		AccessTokensFunc: &DBAccessTokensFunc{
+			defaultHook: func() database.AccessTokenStore {
+				panic("unexpected invocation of MockDB.AccessTokens")
+			},
+		},
+		AuthzFunc: &DBAuthzFunc{
+			defaultHook: func() database.AuthzStore {
+				panic("unexpected invocation of MockDB.Authz")
+			},
+		},
+		ConfFunc: &DBConfFunc{
+			defaultHook: func() database.ConfStore {
+				panic("unexpected invocation of MockDB.Conf")
+			},
+		},
+		DoneFunc: &DBDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockDB.Done")
+			},
+		},
+		EventLogsFunc: &DBEventLogsFunc{
+			defaultHook: func() database.EventLogStore {
+				panic("unexpected invocation of MockDB.EventLogs")
+			},
+		},
+		ExecContextFunc: &DBExecContextFunc{
+			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
+				panic("unexpected invocation of MockDB.ExecContext")
+			},
+		},
+		ExecutorsFunc: &DBExecutorsFunc{
+			defaultHook: func() database.ExecutorStore {
+				panic("unexpected invocation of MockDB.Executors")
+			},
+		},
+		ExternalServicesFunc: &DBExternalServicesFunc{
+			defaultHook: func() database.ExternalServiceStore {
+				panic("unexpected invocation of MockDB.ExternalServices")
+			},
+		},
+		FeatureFlagsFunc: &DBFeatureFlagsFunc{
+			defaultHook: func() database.FeatureFlagStore {
+				panic("unexpected invocation of MockDB.FeatureFlags")
+			},
+		},
+		GlobalStateFunc: &DBGlobalStateFunc{
+			defaultHook: func() database.GlobalStateStore {
+				panic("unexpected invocation of MockDB.GlobalState")
+			},
+		},
+		NamespacesFunc: &DBNamespacesFunc{
+			defaultHook: func() database.NamespaceStore {
+				panic("unexpected invocation of MockDB.Namespaces")
+			},
+		},
+		OrgInvitationsFunc: &DBOrgInvitationsFunc{
+			defaultHook: func() database.OrgInvitationStore {
+				panic("unexpected invocation of MockDB.OrgInvitations")
+			},
+		},
+		OrgMembersFunc: &DBOrgMembersFunc{
+			defaultHook: func() database.OrgMemberStore {
+				panic("unexpected invocation of MockDB.OrgMembers")
+			},
+		},
+		OrgsFunc: &DBOrgsFunc{
+			defaultHook: func() database.OrgStore {
+				panic("unexpected invocation of MockDB.Orgs")
+			},
+		},
+		PhabricatorFunc: &DBPhabricatorFunc{
+			defaultHook: func() database.PhabricatorStore {
+				panic("unexpected invocation of MockDB.Phabricator")
+			},
+		},
+		QueryContextFunc: &DBQueryContextFunc{
+			defaultHook: func(context.Context, string, ...interface{}) (*sql.Rows, error) {
+				panic("unexpected invocation of MockDB.QueryContext")
+			},
+		},
+		QueryRowContextFunc: &DBQueryRowContextFunc{
+			defaultHook: func(context.Context, string, ...interface{}) *sql.Row {
+				panic("unexpected invocation of MockDB.QueryRowContext")
+			},
+		},
+		ReposFunc: &DBReposFunc{
+			defaultHook: func() database.RepoStore {
+				panic("unexpected invocation of MockDB.Repos")
+			},
+		},
+		SavedSearchesFunc: &DBSavedSearchesFunc{
+			defaultHook: func() database.SavedSearchStore {
+				panic("unexpected invocation of MockDB.SavedSearches")
+			},
+		},
+		SearchContextsFunc: &DBSearchContextsFunc{
+			defaultHook: func() database.SearchContextsStore {
+				panic("unexpected invocation of MockDB.SearchContexts")
+			},
+		},
+		SettingsFunc: &DBSettingsFunc{
+			defaultHook: func() database.SettingsStore {
+				panic("unexpected invocation of MockDB.Settings")
+			},
+		},
+		SubRepoPermsFunc: &DBSubRepoPermsFunc{
+			defaultHook: func() database.SubRepoPermsStore {
+				panic("unexpected invocation of MockDB.SubRepoPerms")
+			},
+		},
+		TemporarySettingsFunc: &DBTemporarySettingsFunc{
+			defaultHook: func() database.TemporarySettingsStore {
+				panic("unexpected invocation of MockDB.TemporarySettings")
+			},
+		},
+		TransactFunc: &DBTransactFunc{
+			defaultHook: func(context.Context) (database.DB, error) {
+				panic("unexpected invocation of MockDB.Transact")
+			},
+		},
+		UserCredentialsFunc: &DBUserCredentialsFunc{
+			defaultHook: func(encryption.Key) database.UserCredentialsStore {
+				panic("unexpected invocation of MockDB.UserCredentials")
+			},
+		},
+		UserEmailsFunc: &DBUserEmailsFunc{
+			defaultHook: func() database.UserEmailsStore {
+				panic("unexpected invocation of MockDB.UserEmails")
+			},
+		},
+		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
+			defaultHook: func() database.UserExternalAccountsStore {
+				panic("unexpected invocation of MockDB.UserExternalAccounts")
+			},
+		},
+		UserPublicReposFunc: &DBUserPublicReposFunc{
+			defaultHook: func() database.UserPublicRepoStore {
+				panic("unexpected invocation of MockDB.UserPublicRepos")
+			},
+		},
+		UsersFunc: &DBUsersFunc{
+			defaultHook: func() database.UserStore {
+				panic("unexpected invocation of MockDB.Users")
+			},
+		},
+		WebhookLogsFunc: &DBWebhookLogsFunc{
+			defaultHook: func(encryption.Key) database.WebhookLogStore {
+				panic("unexpected invocation of MockDB.WebhookLogs")
+			},
+		},
+	}
+}
+
 // NewMockDBFrom creates a new mock of the MockDB interface. All methods
 // delegate to the given implementation, unless overwritten.
 func NewMockDBFrom(i database.DB) *MockDB {

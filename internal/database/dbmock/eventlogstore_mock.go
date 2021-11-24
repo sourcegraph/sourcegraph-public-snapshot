@@ -306,6 +306,178 @@ func NewMockEventLogStore() *MockEventLogStore {
 	}
 }
 
+// NewStrictMockEventLogStore creates a new mock of the EventLogStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockEventLogStore() *MockEventLogStore {
+	return &MockEventLogStore{
+		AggregatedCodeIntelEventsFunc: &EventLogStoreAggregatedCodeIntelEventsFunc{
+			defaultHook: func(context.Context) ([]types.CodeIntelAggregatedEvent, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedCodeIntelEvents")
+			},
+		},
+		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
+			defaultHook: func(context.Context, time.Time) ([]types.SearchAggregatedEvent, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedSearchEvents")
+			},
+		},
+		BulkInsertFunc: &EventLogStoreBulkInsertFunc{
+			defaultHook: func(context.Context, []*database.Event) error {
+				panic("unexpected invocation of MockEventLogStore.BulkInsert")
+			},
+		},
+		CodeIntelligenceCrossRepositoryWAUsFunc: &EventLogStoreCodeIntelligenceCrossRepositoryWAUsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceCrossRepositoryWAUs")
+			},
+		},
+		CodeIntelligencePreciseCrossRepositoryWAUsFunc: &EventLogStoreCodeIntelligencePreciseCrossRepositoryWAUsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligencePreciseCrossRepositoryWAUs")
+			},
+		},
+		CodeIntelligencePreciseWAUsFunc: &EventLogStoreCodeIntelligencePreciseWAUsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligencePreciseWAUs")
+			},
+		},
+		CodeIntelligenceRepositoryCountsFunc: &EventLogStoreCodeIntelligenceRepositoryCountsFunc{
+			defaultHook: func(context.Context) (database.CodeIntelligenceRepositoryCounts, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceRepositoryCounts")
+			},
+		},
+		CodeIntelligenceRepositoryCountsByLanguageFunc: &EventLogStoreCodeIntelligenceRepositoryCountsByLanguageFunc{
+			defaultHook: func(context.Context) (map[string]database.CodeIntelligenceRepositoryCountsForLanguage, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceRepositoryCountsByLanguage")
+			},
+		},
+		CodeIntelligenceSearchBasedCrossRepositoryWAUsFunc: &EventLogStoreCodeIntelligenceSearchBasedCrossRepositoryWAUsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceSearchBasedCrossRepositoryWAUs")
+			},
+		},
+		CodeIntelligenceSearchBasedWAUsFunc: &EventLogStoreCodeIntelligenceSearchBasedWAUsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceSearchBasedWAUs")
+			},
+		},
+		CodeIntelligenceSettingsPageViewCountFunc: &EventLogStoreCodeIntelligenceSettingsPageViewCountFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceSettingsPageViewCount")
+			},
+		},
+		CodeIntelligenceWAUsFunc: &EventLogStoreCodeIntelligenceWAUsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CodeIntelligenceWAUs")
+			},
+		},
+		CountByUserIDFunc: &EventLogStoreCountByUserIDFunc{
+			defaultHook: func(context.Context, int32) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountByUserID")
+			},
+		},
+		CountByUserIDAndEventNameFunc: &EventLogStoreCountByUserIDAndEventNameFunc{
+			defaultHook: func(context.Context, int32, string) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountByUserIDAndEventName")
+			},
+		},
+		CountByUserIDAndEventNamePrefixFunc: &EventLogStoreCountByUserIDAndEventNamePrefixFunc{
+			defaultHook: func(context.Context, int32, string) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountByUserIDAndEventNamePrefix")
+			},
+		},
+		CountByUserIDAndEventNamesFunc: &EventLogStoreCountByUserIDAndEventNamesFunc{
+			defaultHook: func(context.Context, int32, []string) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountByUserIDAndEventNames")
+			},
+		},
+		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
+			defaultHook: func(context.Context, time.Time, time.Time) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersAll")
+			},
+		},
+		CountUniqueUsersByEventNameFunc: &EventLogStoreCountUniqueUsersByEventNameFunc{
+			defaultHook: func(context.Context, time.Time, time.Time, string) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersByEventName")
+			},
+		},
+		CountUniqueUsersByEventNamePrefixFunc: &EventLogStoreCountUniqueUsersByEventNamePrefixFunc{
+			defaultHook: func(context.Context, time.Time, time.Time, string) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersByEventNamePrefix")
+			},
+		},
+		CountUniqueUsersByEventNamesFunc: &EventLogStoreCountUniqueUsersByEventNamesFunc{
+			defaultHook: func(context.Context, time.Time, time.Time, []string) (int, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersByEventNames")
+			},
+		},
+		CountUniqueUsersPerPeriodFunc: &EventLogStoreCountUniqueUsersPerPeriodFunc{
+			defaultHook: func(context.Context, database.PeriodType, time.Time, int, *database.CountUniqueUsersOptions) ([]database.UsageValue, error) {
+				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersPerPeriod")
+			},
+		},
+		DoneFunc: &EventLogStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockEventLogStore.Done")
+			},
+		},
+		HandleFunc: &EventLogStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockEventLogStore.Handle")
+			},
+		},
+		InsertFunc: &EventLogStoreInsertFunc{
+			defaultHook: func(context.Context, *database.Event) error {
+				panic("unexpected invocation of MockEventLogStore.Insert")
+			},
+		},
+		LatestPingFunc: &EventLogStoreLatestPingFunc{
+			defaultHook: func(context.Context) (*types.Event, error) {
+				panic("unexpected invocation of MockEventLogStore.LatestPing")
+			},
+		},
+		ListAllFunc: &EventLogStoreListAllFunc{
+			defaultHook: func(context.Context, database.EventLogsListOptions) ([]*types.Event, error) {
+				panic("unexpected invocation of MockEventLogStore.ListAll")
+			},
+		},
+		ListUniqueUsersAllFunc: &EventLogStoreListUniqueUsersAllFunc{
+			defaultHook: func(context.Context, time.Time, time.Time) ([]int32, error) {
+				panic("unexpected invocation of MockEventLogStore.ListUniqueUsersAll")
+			},
+		},
+		MaxTimestampByUserIDFunc: &EventLogStoreMaxTimestampByUserIDFunc{
+			defaultHook: func(context.Context, int32) (*time.Time, error) {
+				panic("unexpected invocation of MockEventLogStore.MaxTimestampByUserID")
+			},
+		},
+		MaxTimestampByUserIDAndSourceFunc: &EventLogStoreMaxTimestampByUserIDAndSourceFunc{
+			defaultHook: func(context.Context, int32, string) (*time.Time, error) {
+				panic("unexpected invocation of MockEventLogStore.MaxTimestampByUserIDAndSource")
+			},
+		},
+		SiteUsageFunc: &EventLogStoreSiteUsageFunc{
+			defaultHook: func(context.Context) (types.SiteUsageSummary, error) {
+				panic("unexpected invocation of MockEventLogStore.SiteUsage")
+			},
+		},
+		TransactFunc: &EventLogStoreTransactFunc{
+			defaultHook: func(context.Context) (database.EventLogStore, error) {
+				panic("unexpected invocation of MockEventLogStore.Transact")
+			},
+		},
+		UsersUsageCountsFunc: &EventLogStoreUsersUsageCountsFunc{
+			defaultHook: func(context.Context) ([]types.UserUsageCounts, error) {
+				panic("unexpected invocation of MockEventLogStore.UsersUsageCounts")
+			},
+		},
+		WithFunc: &EventLogStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.EventLogStore {
+				panic("unexpected invocation of MockEventLogStore.With")
+			},
+		},
+	}
+}
+
 // NewMockEventLogStoreFrom creates a new mock of the MockEventLogStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

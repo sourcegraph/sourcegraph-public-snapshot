@@ -101,6 +101,53 @@ func NewMockDBStore() *MockDBStore {
 	}
 }
 
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicies")
+			},
+		},
+		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetUploadByID")
+			},
+		},
+		GetUploadsFunc: &DBStoreGetUploadsFunc{
+			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
+				panic("unexpected invocation of MockDBStore.GetUploads")
+			},
+		},
+		InsertCloneableDependencyRepoFunc: &DBStoreInsertCloneableDependencyRepoFunc{
+			defaultHook: func(context.Context, precise.Package) (bool, error) {
+				panic("unexpected invocation of MockDBStore.InsertCloneableDependencyRepo")
+			},
+		},
+		InsertDependencyIndexingJobFunc: &DBStoreInsertDependencyIndexingJobFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, error) {
+				panic("unexpected invocation of MockDBStore.InsertDependencyIndexingJob")
+			},
+		},
+		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
+			defaultHook: func(context.Context, int) (dbstore.PackageReferenceScanner, error) {
+				panic("unexpected invocation of MockDBStore.ReferencesForUpload")
+			},
+		},
+		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
+			defaultHook: func(context.Context, time.Duration, bool, *int, int) ([]int, error) {
+				panic("unexpected invocation of MockDBStore.SelectRepositoriesForIndexScan")
+			},
+		},
+		WithFunc: &DBStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) DBStore {
+				panic("unexpected invocation of MockDBStore.With")
+			},
+		},
+	}
+}
+
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
@@ -1065,6 +1112,24 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 	}
 }
 
+// NewStrictMockExternalServiceStore creates a new mock of the
+// ExternalServiceStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
+	return &MockExternalServiceStore{
+		ListFunc: &ExternalServiceStoreListFunc{
+			defaultHook: func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				panic("unexpected invocation of MockExternalServiceStore.List")
+			},
+		},
+		UpsertFunc: &ExternalServiceStoreUpsertFunc{
+			defaultHook: func(context.Context, ...*types.ExternalService) error {
+				panic("unexpected invocation of MockExternalServiceStore.Upsert")
+			},
+		},
+	}
+}
+
 // NewMockExternalServiceStoreFrom creates a new mock of the
 // MockExternalServiceStore interface. All methods delegate to the given
 // implementation, unless overwritten.
@@ -1359,6 +1424,43 @@ func NewMockGitserverClient() *MockGitserverClient {
 		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
 			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
 				return "", nil
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{
+		FileExistsFunc: &GitserverClientFileExistsFunc{
+			defaultHook: func(context.Context, int, string, string) (bool, error) {
+				panic("unexpected invocation of MockGitserverClient.FileExists")
+			},
+		},
+		HeadFunc: &GitserverClientHeadFunc{
+			defaultHook: func(context.Context, int) (string, bool, error) {
+				panic("unexpected invocation of MockGitserverClient.Head")
+			},
+		},
+		ListFilesFunc: &GitserverClientListFilesFunc{
+			defaultHook: func(context.Context, int, string, *regexp.Regexp) ([]string, error) {
+				panic("unexpected invocation of MockGitserverClient.ListFiles")
+			},
+		},
+		RawContentsFunc: &GitserverClientRawContentsFunc{
+			defaultHook: func(context.Context, int, string, string) ([]byte, error) {
+				panic("unexpected invocation of MockGitserverClient.RawContents")
+			},
+		},
+		RepoInfoFunc: &GitserverClientRepoInfoFunc{
+			defaultHook: func(context.Context, ...api.RepoName) (map[api.RepoName]*protocol.RepoInfo, error) {
+				panic("unexpected invocation of MockGitserverClient.RepoInfo")
+			},
+		},
+		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
+			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitserverClient.ResolveRevision")
 			},
 		},
 	}
@@ -2107,6 +2209,23 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	}
 }
 
+// NewStrictMockIndexEnqueuer creates a new mock of the IndexEnqueuer
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
+	return &MockIndexEnqueuer{
+		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
+			defaultHook: func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
+			},
+		},
+		QueueIndexesForPackageFunc: &IndexEnqueuerQueueIndexesForPackageFunc{
+			defaultHook: func(context.Context, precise.Package) error {
+				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexesForPackage")
+			},
+		},
+	}
+}
+
 // NewMockIndexEnqueuerFrom creates a new mock of the MockIndexEnqueuer
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
@@ -2379,6 +2498,24 @@ func NewMockIndexingRepoStore() *MockIndexingRepoStore {
 	}
 }
 
+// NewStrictMockIndexingRepoStore creates a new mock of the
+// IndexingRepoStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockIndexingRepoStore() *MockIndexingRepoStore {
+	return &MockIndexingRepoStore{
+		ListIndexableReposFunc: &IndexingRepoStoreListIndexableReposFunc{
+			defaultHook: func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockIndexingRepoStore.ListIndexableRepos")
+			},
+		},
+		ListMinimalReposFunc: &IndexingRepoStoreListMinimalReposFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockIndexingRepoStore.ListMinimalRepos")
+			},
+		},
+	}
+}
+
 // NewMockIndexingRepoStoreFrom creates a new mock of the
 // MockIndexingRepoStore interface. All methods delegate to the given
 // implementation, unless overwritten.
@@ -2640,6 +2777,19 @@ func NewMockIndexingSettingStore() *MockIndexingSettingStore {
 	}
 }
 
+// NewStrictMockIndexingSettingStore creates a new mock of the
+// IndexingSettingStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockIndexingSettingStore() *MockIndexingSettingStore {
+	return &MockIndexingSettingStore{
+		GetLastestSchemaSettingsFunc: &IndexingSettingStoreGetLastestSchemaSettingsFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+				panic("unexpected invocation of MockIndexingSettingStore.GetLastestSchemaSettings")
+			},
+		},
+	}
+}
+
 // NewMockIndexingSettingStoreFrom creates a new mock of the
 // MockIndexingSettingStore interface. All methods delegate to the given
 // implementation, unless overwritten.
@@ -2781,6 +2931,18 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
 			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockPolicyMatcher creates a new mock of the PolicyMatcher
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
+			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
 	}
@@ -2934,6 +3096,19 @@ func NewMockRepoUpdaterClient() *MockRepoUpdaterClient {
 		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
 			defaultHook: func(context.Context, api.RepoName) (*protocol1.RepoInfo, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockRepoUpdaterClient creates a new mock of the
+// RepoUpdaterClient interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockRepoUpdaterClient() *MockRepoUpdaterClient {
+	return &MockRepoUpdaterClient{
+		RepoLookupFunc: &RepoUpdaterClientRepoLookupFunc{
+			defaultHook: func(context.Context, api.RepoName) (*protocol1.RepoInfo, error) {
+				panic("unexpected invocation of MockRepoUpdaterClient.RepoLookup")
 			},
 		},
 	}
