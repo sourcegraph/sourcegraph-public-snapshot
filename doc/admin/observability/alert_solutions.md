@@ -658,7 +658,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 6000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+- <span class="badge badge-warning">warning</span> frontend: 15000+ cryptographic requests to Cloud KMS every 1m for 5m0s
 - <span class="badge badge-critical">critical</span> frontend: 30000+ cryptographic requests to Cloud KMS every 1m for 5m0s
 
 **Possible solutions**
