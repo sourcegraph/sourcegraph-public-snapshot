@@ -1,6 +1,7 @@
 .line-chart {
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 
     &--no-interaction {
         pointer-events: none;
@@ -15,9 +16,12 @@
 .legend {
     display: flex;
     flex-wrap: wrap;
-    padding: 0.5rem;
+
+    // Reset ul styles (bullets, paddings, margins)
     list-style: none;
-    margin: 0;
+    padding: 0;
+    margin: 0.75rem 0 0;
+    line-height: 1;
 }
 
 .legend-item {

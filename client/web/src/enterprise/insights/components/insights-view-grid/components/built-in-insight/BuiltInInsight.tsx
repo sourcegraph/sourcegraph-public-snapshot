@@ -6,13 +6,8 @@ import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHos
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import {
-    ViewCard,
-    ViewLoadingContent,
-    ViewErrorContent,
-    ViewContent,
-    LineChartSettingsContext,
-} from '../../../../../../views'
+import * as View from '../../../../../../views'
+import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
@@ -57,15 +52,16 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
     return (
-        <ViewCard
+        <View.Root
             {...otherProps}
-            insight={{ id: insight.id, view: data?.view }}
+            data-testid={`insight-card.${insight.id}`}
+            title={insight.title}
             className={classNames('extension-insight-card', otherProps.className)}
-            contextMenu={
+            actions={
                 <InsightContextMenu
                     insight={insight}
                     dashboard={dashboard}
-                    menuButtonClassName="ml-1 mr-n2 d-inline-flex"
+                    menuButtonClassName="ml-1 d-inline-flex"
                     zeroYAxisMin={zeroYAxisMin}
                     onToggleZeroYAxisMin={() => setZeroYAxisMin(!zeroYAxisMin)}
                     onDelete={() => handleDelete(insight)}
@@ -73,19 +69,19 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
             }
         >
             {!data || loading || isDeleting ? (
-                <ViewLoadingContent
+                <View.LoadingContent
                     text={isDeleting ? 'Deleting code insight' : 'Loading code insight'}
-                    subTitle={insight.id}
+                    description={insight.id}
                     icon={PuzzleIcon}
                 />
             ) : isErrorLike(data.view) ? (
-                <ViewErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
+                <View.ErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
             ) : (
                 data.view && (
                     <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
-                        <ViewContent
+                        <View.Content
                             telemetryService={telemetryService}
-                            viewContent={data.view.content}
+                            content={data.view.content}
                             viewID={insight.id}
                             containerClassName="extension-insight-card"
                         />
@@ -97,6 +93,6 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                 // resize-handler from the react-grid-layout library
                 otherProps.children
             }
-        </ViewCard>
+        </View.Root>
     )
 }

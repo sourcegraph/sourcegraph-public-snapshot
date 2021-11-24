@@ -78,7 +78,7 @@ const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionVie
         <ViewGrid viewIds={allViewIds} telemetryService={telemetryService} className={className}>
             {/* Render extension views for the search page */}
             {extensionViews.map(view => (
-                <StaticView key={view.id} view={view} telemetryService={telemetryService} />
+                <StaticView key={view.id} content={view} telemetryService={telemetryService} />
             ))}
             {/* Render all code insights with proper home (search) page context */}
             {insights.map(insight => (

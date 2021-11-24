@@ -39,9 +39,13 @@ export function useScalesConfiguration<Datum>(props: UseScalesConfiguration<Datu
     // Extend origin config with calculated domain with vertical padding
     return useMemo(() => {
         let [min, max] = getMinAndMax(data, accessors)
+
         if (zeroYAxisMin) {
             min = 0
         }
+
+        // Generate pseudo domain if all values of dataset are equal
+        ;[min, max] = min === max ? [max - max / 2, max + max / 2] : [min, max]
 
         return {
             ...config,
