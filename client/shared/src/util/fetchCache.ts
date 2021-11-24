@@ -9,7 +9,7 @@ export interface FetchCacheResponse<T> {
     headers: Record<string, string>
 }
 
-interface FetchCacheRequest extends RequestInit {
+export interface FetchCacheRequest extends RequestInit {
     /**
      * URL to fetch
      */

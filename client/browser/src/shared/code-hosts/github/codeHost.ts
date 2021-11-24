@@ -390,9 +390,9 @@ export const isPrivateRepository = (
         .then(response => {
             const rateLimit = response.headers['x-ratelimit-remaining']
             if (Number(rateLimit) <= 0) {
-                const error = new Error('Github rate limit exceeded.')
-                Sentry.captureException(error)
-                throw error
+                const rateLimitError = new Error('Github rate limit exceeded.')
+                Sentry.captureException(rateLimitError)
+                throw rateLimitError
             }
             return response
         })

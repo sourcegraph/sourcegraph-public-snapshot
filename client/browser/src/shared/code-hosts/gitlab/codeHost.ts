@@ -148,13 +148,14 @@ export const isPrivateRepository = (projectId?: string, fetchCache = background.
         .then(response => {
             const rateLimit = response.headers['ratelimit-remaining']
             if (Number(rateLimit) <= 0) {
-                throw new Error('Gitlab rate limit exceeded.')
+                const rateLimitError = new Error('Gitlab rate limit exceeded.')
+                Sentry.captureException(rateLimitError)
+                throw rateLimitError
             }
             return response
         })
         .then(({ data }) => data?.visibility !== 'public')
         .catch(error => {
-            Sentry.captureException(error)
             console.warn('Failed to fetch repository visibility info.', error)
             return true
         })
