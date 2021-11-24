@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -1057,7 +1058,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 		if srr != nil {
 			n = len(srr.Matches)
 		}
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: r.rawQuery(),
 			Typ:           requestName,
 			Source:        requestSource,

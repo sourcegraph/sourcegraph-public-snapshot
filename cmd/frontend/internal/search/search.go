@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -256,7 +257,7 @@ LOOP:
 
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: inputs.OriginalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
