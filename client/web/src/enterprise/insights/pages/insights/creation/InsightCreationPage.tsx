@@ -49,7 +49,7 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
 
     const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
 
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
     if (dashboard === undefined || subjects === undefined) {

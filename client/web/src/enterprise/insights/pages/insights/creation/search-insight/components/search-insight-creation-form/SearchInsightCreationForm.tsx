@@ -13,7 +13,7 @@ import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
 import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from '../../../../../../core/backend/code-insights-gql-backend'
+import { CodeInsightsGqlBackend } from '../../../../../../core/backend/gql-api/code-insights-gql-backend'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'

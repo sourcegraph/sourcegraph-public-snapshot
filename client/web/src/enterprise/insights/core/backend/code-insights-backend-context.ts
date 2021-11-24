@@ -7,6 +7,9 @@ import { RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
+/**
+ * Default context api class. Provides mock methods only.
+ */
 export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     // Insights
     public getInsights = errorMockMethod('getInsights')
