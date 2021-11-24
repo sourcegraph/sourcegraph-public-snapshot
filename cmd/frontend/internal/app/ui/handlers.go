@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -97,7 +98,7 @@ func repoShortName(name api.RepoName) string {
 // serveErrorHandler is a function signature used in newCommon and
 // mockNewCommon. This is used as syntactic sugar to prevent programmer's
 // (fragile creatures from planet Earth) from crashing out.
-type serveErrorHandler func(w http.ResponseWriter, r *http.Request, err error, statusCode int)
+type serveErrorHandler func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int)
 
 // mockNewCommon is used in tests to mock newCommon (duh!).
 //
@@ -122,7 +123,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 //
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has an incomplete RevSpec.
-func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
@@ -143,7 +144,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
-		Context:  jscontext.NewJSContextFromRequest(r),
+		Context:  jscontext.NewJSContextFromRequest(r, db),
 		Title:    title,
 		Manifest: manifest,
 		Metadata: &Metadata{
@@ -185,18 +186,18 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 			}
 			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				// Revision does not exist.
-				serveError(w, r, err, http.StatusNotFound)
+				serveError(w, r, db, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
 				if errcode.IsNotFound(err) {
 					// Repository is not found.
-					serveError(w, r, err, http.StatusNotFound)
+					serveError(w, r, db, err, http.StatusNotFound)
 					return nil, nil
 				}
 
 				// Repository is not clonable.
-				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
+				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
 			if gitdomain.IsRepoNotExist(err) {
@@ -205,17 +206,17 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 					return common, nil
 				}
 				// Repo does not exist.
-				serveError(w, r, err, http.StatusNotFound)
+				serveError(w, r, db, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 				// Repo does not exist.
-				serveError(w, r, err, http.StatusNotFound)
+				serveError(w, r, db, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if errcode.IsUnauthorized(err) {
 				// Not authorized to access repository.
-				serveError(w, r, err, http.StatusUnauthorized)
+				serveError(w, r, db, err, http.StatusUnauthorized)
 				return nil, nil
 			}
 			return nil, err
@@ -272,15 +273,15 @@ const (
 	noIndex = false
 )
 
-func serveBrandedPageString(titles string, description *string, indexed bool) handlerFunc {
-	return serveBasicPage(func(c *Common, r *http.Request) string {
+func serveBrandedPageString(db database.DB, titles string, description *string, indexed bool) handlerFunc {
+	return serveBasicPage(db, func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(titles)
 	}, description, indexed)
 }
 
-func serveBasicPage(title func(c *Common, r *http.Request) string, description *string, indexed bool) handlerFunc {
+func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) string, description *string, indexed bool) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", indexed, serveError)
+		common, err := newCommon(w, r, db, "", indexed, serveError)
 		if err != nil {
 			return err
 		}
@@ -295,37 +296,41 @@ func serveBasicPage(title func(c *Common, r *http.Request) string, description *
 	}
 }
 
-func serveHome(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, globals.Branding().BrandName, index, serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
+func serveHome(db database.DB) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		common, err := newCommon(w, r, db, globals.Branding().BrandName, index, serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
 
-	// Homepage redirects to /search.
-	r.URL.Path = "/search"
-	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-	return nil
+		// Homepage redirects to /search.
+		r.URL.Path = "/search"
+		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+		return nil
+	}
 }
 
-func serveSignIn(w http.ResponseWriter, r *http.Request) error {
-	common, err := newCommon(w, r, "", index, serveError)
-	if err != nil {
-		return err
-	}
-	if common == nil {
-		return nil // request was handled
-	}
-	common.Title = brandNameSubtitle("Sign in")
+func serveSignIn(db database.DB) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		common, err := newCommon(w, r, db, "", index, serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
+		common.Title = brandNameSubtitle("Sign in")
 
-	return renderTemplate(w, "app.html", common)
+		return renderTemplate(w, "app.html", common)
+	}
 }
 
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request) (requestHandled bool, err error) {
+func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB) (requestHandled bool, err error) {
 	// NOTE: It makes no sense for this function to proceed if the commit ID
 	// for the repository is empty. It is most likely the repository is still
 	// clone in progress.
@@ -345,7 +350,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 	stat, err := git.Stat(r.Context(), common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			serveError(w, r, err, http.StatusNotFound)
+			serveError(w, r, db, err, http.StatusNotFound)
 			return true, nil
 		}
 		return false, err
@@ -366,9 +371,9 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 }
 
 // serveTree serves the tree (directory) pages.
-func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
+func serveTree(db database.DB, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", index, serveError)
+		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
 		}
@@ -384,7 +389,7 @@ func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r)
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db)
 		if handled {
 			return nil
 		}
@@ -397,9 +402,9 @@ func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 	}
 }
 
-func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
+func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, "", index, serveError)
+		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
 		}
@@ -415,7 +420,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r)
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db)
 		if handled {
 			return nil
 		}
