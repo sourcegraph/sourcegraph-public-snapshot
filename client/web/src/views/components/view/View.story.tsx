@@ -1,5 +1,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
@@ -13,7 +13,10 @@ import { WebStory } from '../../../components/WebStory'
 
 import * as View from '.'
 
-const { add } = storiesOf('web/views', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
+export default {
+    title: 'web/views',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+} as Meta
 
 const standardViewProps = {
     style: { width: '400px', height: '400px' },
@@ -63,21 +66,21 @@ const LINE_CHART_DATA: LineChartContent<any, string> = {
     },
 }
 
-add('With title and empty content', () => <View.Root {...standardViewProps} title="Empty view" />)
+export const EmptyView: Story = () => <View.Root {...standardViewProps} title="Empty view" />
 
-add('With chart content', () => (
+export const ViewWithChartContent: Story = () => (
     <View.Root {...standardViewProps} title="Chart view" subtitle="Subtitle chart description">
         <View.Content viewID="unique view id" content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </View.Root>
-))
+)
 
-add('With loading content', () => (
+export const ViewWithLoadingContent: Story = () => (
     <View.Root {...standardViewProps} title="Loading view">
         <View.LoadingContent text="Loading insight" description="searchInsights.insight.id" icon={PuzzleIcon} />
     </View.Root>
-))
+)
 
-add('With error-like content', () => (
+export const ViewWithErrorLikeContent: Story = () => (
     <View.Root
         style={{ width: '400px', height: '400px' }}
         title="Error view"
@@ -89,7 +92,7 @@ add('With error-like content', () => (
             icon={PuzzleIcon}
         />
     </View.Root>
-))
+)
 
 function ContextMenu() {
     return (
@@ -110,7 +113,7 @@ function ContextMenu() {
     )
 }
 
-add('With context menu in action panel', () => (
+export const ViewWithContextMenu: Story = () => (
     <View.Root
         {...standardViewProps}
         title="Chart view and looooooong loooooooooooooooong name of insight card block"
@@ -126,4 +129,4 @@ add('With context menu in action panel', () => (
     >
         <View.Content viewID="unique view id" content={[LINE_CHART_DATA]} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </View.Root>
-))
+)

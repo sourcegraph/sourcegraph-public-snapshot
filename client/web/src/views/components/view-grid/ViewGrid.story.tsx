@@ -1,5 +1,5 @@
 import { Menu, MenuButton, MenuItem, MenuItems, MenuPopover } from '@reach/menu-button'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
@@ -13,9 +13,12 @@ import * as View from '../view'
 
 import { ViewGrid } from './ViewGrid'
 
-const { add } = storiesOf('web/views/view-grid', module).addDecorator(story => <WebStory>{() => story()}</WebStory>)
+export default {
+    title: 'web/views/view-grid',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+} as Meta
 
-add('Simple view grid', () => (
+export const SimpleViewGrid: Story = () => (
     <ViewGrid viewIds={['1', '2', '3']} telemetryService={NOOP_TELEMETRY_SERVICE}>
         <View.Root key="1" title="Empty view" />
 
@@ -47,7 +50,7 @@ add('Simple view grid', () => (
             />
         </View.Root>
     </ViewGrid>
-))
+)
 
 function ContextMenu() {
     return (
