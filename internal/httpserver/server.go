@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -49,6 +51,16 @@ func (s *server) Start() {
 
 func (s *server) Stop() {
 	s.once.Do(func() {
+		// On kubernetes, we want to wait an additional 5 seconds after we receive a
+		// shutdown request to give some additional time for the endpoint changes
+		// to propagate to services talking to this server like the LB or ingress
+		// controller. We only do this in frontend and not on all services, because
+		// frontend is the only publicly exposed service where we don't control
+		// retries on connection failures (see httpcli.InternalClient).
+		if conf.DeployType() == conf.DeployKubernetes {
+			time.Sleep(5 * time.Second)
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
 		defer cancel()
 
