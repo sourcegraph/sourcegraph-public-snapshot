@@ -24,7 +24,6 @@ import (
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
-	resetMocks()
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		assert.Equal(t, api.RepoID(2), repo.ID)
 		assert.Equal(t, "abc", rev)
