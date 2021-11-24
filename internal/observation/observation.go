@@ -53,7 +53,6 @@ package observation
 
 import (
 	"context"
-	"runtime"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -197,8 +196,6 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	event := honey.NoopEvent()
 	snakecaseOpName := toSnakeCase(op.name)
 	if op.context.HoneyDataset != nil {
-		mem := &runtime.MemStats{}
-		runtime.ReadMemStats(mem)
 		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
 			"operation":     snakecaseOpName,
 			"meta.hostname": hostname.Get(),

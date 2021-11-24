@@ -39,7 +39,6 @@ func (w eventWrapper) Dataset() string {
 }
 
 func (w eventWrapper) AddField(name string, val interface{}) {
-	name = toSnakeCase(name)
 	w.event.AddField(name, val)
 }
 
