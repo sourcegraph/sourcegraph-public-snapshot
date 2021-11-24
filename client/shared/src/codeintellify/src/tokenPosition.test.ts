@@ -120,7 +120,9 @@ describe('token_positions', () => {
 
                     expect(tokenElement).not.toEqual(undefined)
 
-                    expect(tokenElement!).toHaveTextContent(token)
+                    // toHaveTextContent() doesn't have the same behavior.
+                    // eslint-disable-next-line jest-dom/prefer-to-have-text-content
+                    expect(tokenElement!.textContent).toEqual(token)
                 }
             })
 
@@ -198,7 +200,9 @@ describe('token_positions', () => {
 
                     expect(tokenElement).not.toEqual(undefined)
 
-                    expect(tokenElement!).toHaveTextContent(textContent)
+                    // toHaveTextContent() doesn't have the same behavior.
+                    // eslint-disable-next-line jest-dom/prefer-to-have-text-content
+                    expect(tokenElement!.textContent).toEqual(textContent)
                 }
             })
 
@@ -453,6 +457,6 @@ describe('token_positions', () => {
             )
         })
 
-        it('returns all code elements within a given range on a diff code view')
+        it.skip('returns all code elements within a given range on a diff code view', () => {})
     })
 })

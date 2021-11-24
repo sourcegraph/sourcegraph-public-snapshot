@@ -379,7 +379,7 @@ describe('Hoverifier', () => {
                 )
                 .toPromise()
 
-            await of(null).pipe(delay(200)).toPromise()
+            await new Promise(resolve => setTimeout(resolve, 200))
 
             const selected = codeViewProps.codeView.querySelectorAll('.test-highlight')
             expect(selected.length).toEqual(3)
@@ -389,7 +389,9 @@ describe('Hoverifier', () => {
         }
     })
 
-    it('hides the hover overlay when the hovered token intersects with a scrollBoundary', async () => {
+    // jsdom does not support `scrollIntoView()` because it doesn't do layout.
+    // https://github.com/jsdom/jsdom/issues/1695
+    it.skip('hides the hover overlay when the hovered token intersects with a scrollBoundary', async () => {
         const gitHubCodeView = testcases[1]
         const hoverifier = createHoverifier({
             closeButtonClicks: NEVER,
@@ -1001,7 +1003,7 @@ describe('Hoverifier', () => {
                 codeViewSubscription.unsubscribe()
 
                 expect(hoverifier.hoverState.hoverOverlayProps).toEqual(undefined)
-                await of(null).pipe(delay(200)).toPromise()
+                await new Promise(resolve => setTimeout(resolve, 200))
                 expect(hoverifier.hoverState.hoverOverlayProps).toEqual(undefined)
             }
         })
@@ -1051,7 +1053,7 @@ describe('Hoverifier', () => {
                 codeViewSubscription.unsubscribe()
 
                 expect(hoverifier.hoverState.hoverOverlayProps).toBeDefined()
-                await of(null).pipe(delay(200)).toPromise()
+                await new Promise(resolve => setTimeout(resolve, 200))
                 expect(hoverifier.hoverState.hoverOverlayProps).toBeDefined()
             }
         })
