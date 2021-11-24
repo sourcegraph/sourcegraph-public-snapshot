@@ -19,7 +19,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	Active *bool
 	First  *int32
 	After  *string
-}) (*gql.ExecutorConnection, error) {
+}) (*gql.ExecutorPaginatedConnection, error) {
 	// 🚨 SECURITY: Only site-admins may view executor details
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -36,15 +36,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	resolvers := make([]*gql.ExecutorResolver, 0, len(executors))
-	for _, executor := range executors {
-		resolvers = append(resolvers, gql.NewExecutorResolver(executor))
-	}
-
-	nextOffset := graphqlutil.NextOffset(offset, len(executors), totalCount)
-	executorConnection := gql.NewExecutorConnection(resolvers, totalCount, nextOffset)
-
-	return executorConnection, nil
+	return executorService.ToPaginatedConnection(ctx, executors, totalCount, offset), nil
 }
 
 func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*gql.ExecutorResolver, error) {
@@ -61,7 +53,7 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*gql.E
 		return nil, nil
 	}
 
-	return gql.NewExecutorResolver(executor), nil
+	return executorService.ToResolver(ctx, executor), nil
 }
 
 type graphqlArgs *struct {
