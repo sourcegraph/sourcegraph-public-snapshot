@@ -60,21 +60,21 @@ func MigrateDB(db *sql.DB, database *Database) error {
 }
 
 func DoMigrateDB(db *sql.DB, database *Database) (func(), error) {
-	m, err := NewMigrate(db, database)
+	m, err := newMigrate(db, database)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := DoMigrate(m); err != nil {
+	if err := doMigrate(m); err != nil {
 		return nil, errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
 
 	return func() { m.Close() }, nil
 }
 
-// NewMigrate returns a new configured migration object for the given database. The migration can
+// newMigrate returns a new configured migration object for the given database. The migration can
 // be subsequently run by invoking `dbconn.DoMigrate`.
-func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
+func newMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		MigrationsTable: database.MigrationsTable,
 	})
@@ -102,8 +102,8 @@ func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 	return m, nil
 }
 
-// DoMigrate runs all up migrations.
-func DoMigrate(m *migrate.Migrate) (err error) {
+// doMigrate runs all up migrations.
+func doMigrate(m *migrate.Migrate) (err error) {
 	err = m.Up()
 	if err == nil || err == migrate.ErrNoChange {
 		return nil
