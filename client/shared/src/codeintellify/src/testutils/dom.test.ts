@@ -1,10 +1,8 @@
 import { DOM } from './dom'
 
-const { expect } = chai
-
 describe('can create dom elements from generated code tables', () => {
     const dom = new DOM()
-    after(dom.cleanup)
+    afterAll(dom.cleanup)
 
     it('can create the code view test cases and their helper function work', () => {
         for (const codeViewProps of dom.createCodeViews()) {
@@ -17,11 +15,11 @@ describe('can create dom elements from generated code tables', () => {
 
             for (let index = 1; index < 10; index++) {
                 const cellFromLine = getCodeElementFromLineNumber(codeView, index)
-                expect(cellFromLine).to.not.equal(null)
+                expect(cellFromLine).not.toEqual(null)
                 const cellFromTarget = getCodeElementFromTarget(cellFromLine!)
-                expect(cellFromTarget).to.equal(cellFromLine)
+                expect(cellFromTarget).toEqual(cellFromLine)
                 const line = getLineNumberFromCodeElement(cellFromTarget!)
-                expect(line).to.equal(index)
+                expect(line).toEqual(index)
             }
         }
     })

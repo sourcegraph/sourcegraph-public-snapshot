@@ -28,14 +28,12 @@ import {
 import { dispatchMouseEventAtPositionImpure } from './testutils/mouse'
 import { HoverAttachment } from './types'
 
-const { assert } = chai
-
 describe('Hoverifier', () => {
     const dom = new DOM()
-    after(dom.cleanup)
+    afterAll(dom.cleanup)
 
     let testcases: CodeViewProps[] = []
-    before(() => {
+    beforeAll(() => {
         testcases = dom.createCodeViews()
     })
 
@@ -48,7 +46,7 @@ describe('Hoverifier', () => {
 
     it('highlights token when hover is fetched (not before)', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const delayTime = 100
             const hoverRange = { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } }
@@ -112,7 +110,7 @@ describe('Hoverifier', () => {
 
     it('pins the overlay without it disappearing temporarily on mouseover then click', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hover = {}
             const delayTime = 10
@@ -202,7 +200,7 @@ describe('Hoverifier', () => {
 
     it('does not pin the overlay on click when pinningEnabled is false', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hover = {}
             const delayTime = 10
@@ -283,7 +281,7 @@ describe('Hoverifier', () => {
 
     it('emits the currently hovered token', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hover = {}
             const delayTime = 10
@@ -384,9 +382,9 @@ describe('Hoverifier', () => {
             await of(null).pipe(delay(200)).toPromise()
 
             const selected = codeViewProps.codeView.querySelectorAll('.test-highlight')
-            assert.equal(selected.length, 3)
+            expect(selected.length).toEqual(3)
             for (const element of selected) {
-                assert.equal(element.textContent, 'Router')
+                expect(element).toHaveTextContent('Router')
             }
         }
     })
@@ -444,7 +442,7 @@ describe('Hoverifier', () => {
     describe('pinning', () => {
         it('unpins upon clicking on a different position', () => {
             for (const codeView of testcases) {
-                const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+                const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
                 const delayTime = 10
 
@@ -524,7 +522,7 @@ describe('Hoverifier', () => {
 
         it('unpins upon navigation to an invalid or undefined position (such as a file with no particular position)', () => {
             for (const codeView of testcases) {
-                const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+                const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
                 scheduler.run(({ cold, expectObservable }) => {
                     const hoverifier = createHoverifier({
@@ -606,7 +604,7 @@ describe('Hoverifier', () => {
 
     it('emits loading and then state on click events', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hoverDelayTime = 100
             const actionsDelayTime = 150
@@ -682,7 +680,7 @@ describe('Hoverifier', () => {
 
     it('debounces mousemove events before showing overlay', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hover = {}
 
@@ -745,7 +743,7 @@ describe('Hoverifier', () => {
 
     it('keeps the overlay open when the mouse briefly moves over another token on the way to the overlay', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hover = {}
 
@@ -819,7 +817,7 @@ describe('Hoverifier', () => {
 
     it('dedupes mouseover and mousemove event on same token', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             const hover = {}
 
@@ -897,7 +895,7 @@ describe('Hoverifier', () => {
      */
     it.skip('PositionAdjuster gets called when expected', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             scheduler.run(({ cold, expectObservable }) => {
                 const adjustmentDirections = new Subject<AdjustmentDirection>()
@@ -1002,9 +1000,9 @@ describe('Hoverifier', () => {
 
                 codeViewSubscription.unsubscribe()
 
-                assert.strictEqual(hoverifier.hoverState.hoverOverlayProps, undefined)
+                expect(hoverifier.hoverState.hoverOverlayProps).toEqual(undefined)
                 await of(null).pipe(delay(200)).toPromise()
-                assert.strictEqual(hoverifier.hoverState.hoverOverlayProps, undefined)
+                expect(hoverifier.hoverState.hoverOverlayProps).toEqual(undefined)
             }
         })
         it('does not hide the hover overlay when a different code view is unhoverified', async () => {
@@ -1052,9 +1050,9 @@ describe('Hoverifier', () => {
 
                 codeViewSubscription.unsubscribe()
 
-                assert.isDefined(hoverifier.hoverState.hoverOverlayProps)
+                expect(hoverifier.hoverState.hoverOverlayProps).toBeDefined()
                 await of(null).pipe(delay(200)).toPromise()
-                assert.isDefined(hoverifier.hoverState.hoverOverlayProps)
+                expect(hoverifier.hoverState.hoverOverlayProps).toBeDefined()
             }
         })
     })

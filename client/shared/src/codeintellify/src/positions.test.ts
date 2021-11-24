@@ -12,16 +12,16 @@ import { HoveredToken } from './tokenPosition'
 
 describe('positions', () => {
     const dom = new DOM()
-    after(dom.cleanup)
+    afterAll(dom.cleanup)
 
     let testcases: CodeViewProps[] = []
-    before(() => {
+    beforeAll(() => {
         testcases = dom.createCodeViews()
     })
 
     it('can find the position from a mouse event', () => {
         for (const codeView of testcases) {
-            const scheduler = new TestScheduler((a, b) => chai.assert.deepEqual(a, b))
+            const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
             scheduler.run(({ cold, expectObservable }) => {
                 const diagram = '-ab'
@@ -74,9 +74,9 @@ describe('positions', () => {
                 const htmlAfter = codeView.getCodeElementFromLineNumber(codeView.codeView, 5)!.outerHTML
 
                 if (tokenize) {
-                    chai.expect(htmlBefore).to.not.equal(htmlAfter)
+                    expect(htmlBefore).not.toEqual(htmlAfter)
                 } else {
-                    chai.expect(htmlBefore).to.equal(htmlAfter)
+                    expect(htmlBefore).toEqual(htmlAfter)
                 }
             })
         }

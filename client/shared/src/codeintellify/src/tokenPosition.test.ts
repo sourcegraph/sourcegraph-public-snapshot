@@ -13,16 +13,14 @@ import {
     locateTarget,
 } from './tokenPosition'
 
-const { expect } = chai
-
 const tabChar = String.fromCharCode(9)
 
 describe('token_positions', () => {
     const dom = new DOM()
-    after(dom.cleanup)
+    afterAll(dom.cleanup)
 
     let testcases: CodeViewProps[] = []
-    before(() => {
+    beforeAll(() => {
         testcases = dom.createCodeViews()
     })
 
@@ -72,10 +70,10 @@ describe('token_positions', () => {
 
                 const nodes = getTextNodes(element)
 
-                expect(nodes.length).to.equal(nodeValues.length)
+                expect(nodes.length).toEqual(nodeValues.length)
 
                 for (const [index, value] of nodeValues.entries()) {
-                    expect(nodes[index].nodeValue).to.equal(value)
+                    expect(nodes[index].nodeValue).toEqual(value)
                 }
             }
         })
@@ -86,7 +84,7 @@ describe('token_positions', () => {
 
             convertNode(element)
 
-            expect(element.textContent).to.equal(text)
+            expect(element).toHaveTextContent(text)
         })
     })
 
@@ -120,9 +118,9 @@ describe('token_positions', () => {
                 for (const { offsetStart, token } of elems) {
                     const tokenElement = findElementWithOffset(element, { offsetStart })
 
-                    expect(tokenElement).to.not.equal(undefined)
+                    expect(tokenElement).not.toEqual(undefined)
 
-                    expect(tokenElement!.textContent).to.equal(token)
+                    expect(tokenElement!).toHaveTextContent(token)
                 }
             })
 
@@ -155,9 +153,9 @@ describe('token_positions', () => {
                 for (const { offsetStart, token } of elems) {
                     const tokenElement = findElementWithOffset(element, { offsetStart }, false)
 
-                    expect(tokenElement).to.not.equal(undefined)
+                    expect(tokenElement).not.toEqual(undefined)
 
-                    expect(tokenElement!.textContent).to.equal(token)
+                    expect(tokenElement!).toHaveTextContent(token)
                 }
             })
 
@@ -171,7 +169,7 @@ describe('token_positions', () => {
                 for (const offset of offsets) {
                     const tokenElement = findElementWithOffset(element, { offsetStart: offset })
 
-                    expect(tokenElement).to.equal(undefined)
+                    expect(tokenElement).toEqual(undefined)
                 }
             })
         })
@@ -198,9 +196,9 @@ describe('token_positions', () => {
                 for (const { offsetStart, offsetEnd, textContent } of ranges) {
                     const tokenElement = findElementWithOffset(element, { offsetStart, offsetEnd })
 
-                    expect(tokenElement).to.not.equal(undefined)
+                    expect(tokenElement).not.toEqual(undefined)
 
-                    expect(tokenElement!.textContent).to.equal(textContent)
+                    expect(tokenElement!).toHaveTextContent(textContent)
                 }
             })
 
@@ -235,9 +233,9 @@ describe('token_positions', () => {
                 for (const { offsetStart, offsetEnd, textContent } of elems) {
                     const tokenElement = findElementWithOffset(element, { offsetStart, offsetEnd }, false)
 
-                    expect(tokenElement).to.not.equal(undefined)
+                    expect(tokenElement).not.toEqual(undefined)
 
-                    expect(tokenElement!.textContent).to.equal(textContent)
+                    expect(tokenElement!).toHaveTextContent(textContent)
                 }
             })
 
@@ -254,7 +252,7 @@ describe('token_positions', () => {
                 for (const offset of offsets) {
                     const tokenElement = findElementWithOffset(element, offset)
 
-                    expect(tokenElement).to.equal(undefined)
+                    expect(tokenElement).toEqual(undefined)
                 }
             })
         })
@@ -286,8 +284,8 @@ describe('token_positions', () => {
                     for (const { token, position } of tokens) {
                         const found = getTokenAtPositionOrRange(codeView, position, domOptions)
 
-                        expect(found).to.not.equal(undefined)
-                        expect(found!.textContent).to.equal(token)
+                        expect(found).not.toEqual(undefined)
+                        expect(found!).toHaveTextContent(token)
                     }
                 }
             })
@@ -307,7 +305,7 @@ describe('token_positions', () => {
                         getCodeElementFromLineNumber: code => code.children.item(0) as HTMLElement,
                     })
 
-                    chai.expect(token!.textContent).to.equal('Token')
+                    expect(token!).toHaveTextContent('Token')
                 }
             })
 
@@ -322,7 +320,8 @@ describe('token_positions', () => {
                 const token1 = getTokenAtPositionOrRange(codeView, position, domFn)
                 const token2 = getTokenAtPositionOrRange(codeView, position, domFn)
 
-                chai.expect(token1).to.equal(token2, 'getTokenAtPositionOrRange is wrapping tokens more than once')
+                // If this fails then getTokenAtPositionOrRange is wrapping tokens more than once
+                expect(token1).toEqual(token2)
             })
         })
 
@@ -374,8 +373,8 @@ describe('token_positions', () => {
                 for (const { codeView, ...domOptions } of testcases) {
                     for (const { textContent, range } of ranges) {
                         const found = getTokenAtPositionOrRange(codeView, range, domOptions)
-                        expect(found).to.not.equal(undefined)
-                        expect(found!.textContent).to.equal(textContent)
+                        expect(found).not.toEqual(undefined)
+                        expect(found!).toHaveTextContent(textContent)
                     }
                 }
             })
@@ -404,18 +403,12 @@ describe('token_positions', () => {
 
                     const found = locateTarget(target!, domOptions)
 
-                    expect(found).to.not.equal(undefined)
+                    expect(found).not.toEqual(undefined)
 
                     const token = found as HoveredToken
 
-                    expect(token.line).to.equal(
-                        foundPosition.line,
-                        `expected line to be ${token.line} but got ${foundPosition.line}`
-                    )
-                    expect(token.character).to.equal(
-                        foundPosition.character,
-                        `expected character to be ${token.character} but got ${foundPosition.character}`
-                    )
+                    expect(token.line).toEqual(foundPosition.line)
+                    expect(token.character).toEqual(foundPosition.character)
                 }
             }
         })
