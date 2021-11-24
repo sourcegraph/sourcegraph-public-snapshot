@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -320,23 +321,32 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 }
 
 func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
-	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(db, schema, enterprise.GitHubWebhook, enterprise.GitLabWebhook, enterprise.BitbucketServerWebhook, enterprise.NewCodeIntelUploadHandler, enterprise.NewExecutorProxyHandler, rateLimiter)
-	if err != nil {
-		return nil, err
-	}
-
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	server := httpserver.New(listener, &http.Server{
+	// Create the external HTTP handler.
+	externalHandler, err := newExternalHTTPHandler(
+		db,
+		schema,
+		enterprise.GitHubWebhook,
+		enterprise.GitLabWebhook,
+		enterprise.BitbucketServerWebhook,
+		enterprise.NewCodeIntelUploadHandler,
+		enterprise.NewExecutorProxyHandler,
+		rateLimiter,
+	)
+	if err != nil {
+		return nil, err
+	}
+	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-	})
+	}
 
+	server := httpserver.New(listener, httpServer, makeServerOptions()...)
 	log15.Debug("HTTP running", "on", httpAddr)
 	return server, nil
 }
@@ -352,19 +362,38 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 	}
 
 	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(schema, db, enterprise.NewCodeIntelUploadHandler, rateLimiter)
-
-	server := httpserver.New(listener, &http.Server{
+	internalHandler := newInternalHTTPHandler(
+		schema,
+		db,
+		enterprise.NewCodeIntelUploadHandler,
+		rateLimiter,
+	)
+	httpServer := &http.Server{
 		Handler:     internalHandler,
 		ReadTimeout: 75 * time.Second,
 		// Higher since for internal RPCs which can have large responses
 		// (eg git archive). Should match the timeout used for git archive
 		// in gitserver.
 		WriteTimeout: time.Hour,
-	})
+	}
 
+	server := httpserver.New(listener, httpServer, makeServerOptions()...)
 	log15.Debug("HTTP (internal) running", "on", httpAddrInternal)
 	return server, nil
+}
+
+func makeServerOptions() (options []httpserver.ServerOptions) {
+	if deploy.Type() == deploy.Kubernetes {
+		// On kubernetes, we want to wait an additional 5 seconds after we receive a
+		// shutdown request to give some additional time for the endpoint changes
+		// to propagate to services talking to this server like the LB or ingress
+		// controller. We only do this in frontend and not on all services, because
+		// frontend is the only publicly exposed service where we don't control
+		// retries on connection failures (see httpcli.InternalClient).
+		options = append(options, httpserver.WithPreShutdownPause(time.Second*5))
+	}
+
+	return options
 }
 
 func isAllowedOrigin(origin string, allowedOrigins []string) bool {
