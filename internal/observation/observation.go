@@ -220,7 +220,6 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	}
 
 	if traceID := trace.ID(ctx); traceID != "" {
-		event.AddField("trace", trace.URL(traceID))
 		event.AddField("traceID", traceID)
 	}
 
