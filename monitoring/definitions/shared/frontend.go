@@ -10,7 +10,7 @@ import (
 
 var FrontendInternalAPIErrorResponses sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
 	return Observable{
-		Name:        "frontend_internal_api_error_responses",
+		Name:        "frontend_internalapi_error_responses",
 		Description: "frontend-internal API error responses every 5m by route",
 		Query:       fmt.Sprintf(`sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s"}[5m]))`, containerName),
 		Warning:     monitoring.Alert().GreaterOrEqual(2, nil).For(5 * time.Minute),

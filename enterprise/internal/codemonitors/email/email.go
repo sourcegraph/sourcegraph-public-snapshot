@@ -9,7 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/internal/api/internal_api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
@@ -88,19 +88,19 @@ func NewTestTemplateDataForNewSearchResults(ctx context.Context, monitorDescript
 }
 
 func sendEmail(ctx context.Context, userID int32, template txtypes.Templates, data interface{}) error {
-	email, err := internal_api.Client.UserEmailsGetEmail(ctx, userID)
+	email, err := internalapi.Client.UserEmailsGetEmail(ctx, userID)
 	if err != nil {
-		return errors.Errorf("internal_api.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
+		return errors.Errorf("internalapi.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
 	}
 	if email == nil {
 		return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
 	}
-	if err := internal_api.Client.SendEmail(ctx, txtypes.Message{
+	if err := internalapi.Client.SendEmail(ctx, txtypes.Message{
 		To:       []string{*email},
 		Template: template,
 		Data:     data,
 	}); err != nil {
-		return errors.Errorf("internal_api.Client.SendEmail to email=%q userID=%d: %w", *email, userID, err)
+		return errors.Errorf("internalapi.Client.SendEmail to email=%q userID=%d: %w", *email, userID, err)
 	}
 	return nil
 }
@@ -119,7 +119,7 @@ func sourcegraphURL(ctx context.Context, path, query, utmSource string) (string,
 	}
 	if externalURL == nil {
 		// Determine the external URL.
-		externalURLStr, err := internal_api.Client.ExternalURL(ctx)
+		externalURLStr, err := internalapi.Client.ExternalURL(ctx)
 		if err != nil {
 			return "", errors.Errorf("failed to get ExternalURL: %w", err)
 		}

@@ -20,7 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internal_api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -119,7 +119,7 @@ func (e *executorT) run(ctx context.Context) error {
 	// (impossible for new results to exist).
 	var oldList map[api.SavedQueryIDSpec]api.ConfigSavedQuery
 	for {
-		allSavedQueries, err := internal_api.Client.SavedQueriesListAll(context.Background())
+		allSavedQueries, err := internalapi.Client.SavedQueriesListAll(context.Background())
 		if err != nil {
 			log15.Error("executor: error fetching saved queries list (trying again in 5s", "error", err)
 			time.Sleep(5 * time.Second)
@@ -162,7 +162,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 		return nil
 	}
 
-	info, err := internal_api.Client.SavedQueriesGetInfo(ctx, query.Query)
+	info, err := internalapi.Client.SavedQueriesGetInfo(ctx, query.Query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueriesGetInfo")
 	}
@@ -212,7 +212,7 @@ func (e *executorT) runQuery(ctx context.Context, spec api.SavedQueryIDSpec, que
 	// constantly and potentially causing harm to the system. We'll retry at
 	// our normal interval, regardless of errors.
 	v, execDuration, searchErr := performSearch(ctx, newQuery)
-	if err := internal_api.Client.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
+	if err := internalapi.Client.SavedQueriesSetInfo(ctx, &api.SavedQueryInfo{
 		Query:        query.Query,
 		LastExecuted: time.Now(),
 		LatestResult: latestResultTime(info, v, searchErr),
@@ -341,7 +341,7 @@ func savedSearchListPageURL(utmSource string) string {
 func sourcegraphURL(path, query, utmSource string) string {
 	if externalURL == nil {
 		// Determine the external URL.
-		externalURLStr, err := internal_api.Client.ExternalURL(context.Background())
+		externalURLStr, err := internalapi.Client.ExternalURL(context.Background())
 		if err != nil {
 			log15.Error("failed to get ExternalURL", err)
 			return ""

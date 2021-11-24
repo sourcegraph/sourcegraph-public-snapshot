@@ -534,7 +534,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: internal_api_error_responses
+## frontend: internalapi_error_responses
 
 <p class="subtitle">internal API error responses every 5m by route</p>
 
@@ -550,7 +550,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_internal_api_error_responses"
+  "warning_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -1141,7 +1141,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## gitserver: frontend_internal_api_error_responses
+## gitserver: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -1163,7 +1163,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_gitserver_frontend_internal_api_error_responses"
+  "warning_gitserver_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -1877,7 +1877,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## precise-code-intel-worker: frontend_internal_api_error_responses
+## precise-code-intel-worker: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -1899,7 +1899,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_precise-code-intel-worker_frontend_internal_api_error_responses"
+  "warning_precise-code-intel-worker_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -2153,7 +2153,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## query-runner: frontend_internal_api_error_responses
+## query-runner: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -2175,7 +2175,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_query-runner_frontend_internal_api_error_responses"
+  "warning_query-runner_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -2807,7 +2807,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## worker: frontend_internal_api_error_responses
+## worker: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -2829,7 +2829,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ```json
 "observability.silenceAlerts": [
-  "warning_worker_frontend_internal_api_error_responses"
+  "warning_worker_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -3822,7 +3822,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## repo-updater: frontend_internal_api_error_responses
+## repo-updater: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -3844,7 +3844,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_repo-updater_frontend_internal_api_error_responses"
+  "warning_repo-updater_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -4144,7 +4144,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## searcher: frontend_internal_api_error_responses
+## searcher: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -4166,7 +4166,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_searcher_frontend_internal_api_error_responses"
+  "warning_searcher_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -4439,7 +4439,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## symbols: frontend_internal_api_error_responses
+## symbols: frontend_internalapi_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
 
@@ -4461,7 +4461,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 ```json
 "observability.silenceAlerts": [
-  "warning_symbols_frontend_internal_api_error_responses"
+  "warning_symbols_frontend_internalapi_error_responses"
 ]
 ```
 

@@ -18,7 +18,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internal_api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -92,7 +92,7 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: internal_api.Client.URL + "/.internal"}
+	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {

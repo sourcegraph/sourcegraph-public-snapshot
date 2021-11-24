@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internal_api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
@@ -161,7 +161,7 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 }
 
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(internal_api.Client.URL)
+	u, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
 		return "", err
 	}
