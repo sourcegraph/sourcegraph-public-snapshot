@@ -318,7 +318,7 @@
     "ts-morph": "^8.1.0",
     "ts-node": "^9.1.1",
     "typed-scss-modules": "^4.1.1",
-    "typescript": "^4.4.2",
+    "typescript": "^4.5.2",
     "utc-version": "^2.0.2",
     "web-ext": "^4.2.0",
     "webpack": "^5.45.1",
