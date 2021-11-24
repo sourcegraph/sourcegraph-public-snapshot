@@ -1,22 +1,23 @@
-package confdb
+package database
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestSiteGetLatestDefault(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	t.Parallel()
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := NewDB(dbtest.NewDB(t))
+
 	ctx := context.Background()
-
-	latest, err := SiteGetLatest(ctx)
+	latest, err := db.Conf().SiteGetLatest(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,13 +31,14 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	t.Parallel()
 
-	dbtesting.SetupGlobalTestDB(t)
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
 
 	malformedJSON := "[This is malformed.}"
 
-	_, err := SiteCreateIfUpToDate(ctx, nil, malformedJSON)
+	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, malformedJSON)
 
 	if err == nil || !strings.Contains(err.Error(), "invalid settings JSON") {
 		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
@@ -44,6 +46,8 @@ func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
 }
 
 func TestSiteCreateIfUpToDate(t *testing.T) {
+	t.Parallel()
+
 	type input struct {
 		lastID   int32
 		contents string
@@ -157,10 +161,11 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 		},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			dbtesting.SetupGlobalTestDB(t)
+			t.Parallel()
+			db := NewDB(dbtest.NewDB(t))
 			ctx := context.Background()
 			for _, p := range test.sequence {
-				output, err := SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
+				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, p.input.contents)
 				if err != nil {
 					if err == p.expected.err {
 						continue
@@ -179,7 +184,7 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 					t.Fatalf("returned configuration ID after creation - expected: %v, got:%v", p.expected.ID, output.ID)
 				}
 
-				latest, err := SiteGetLatest(ctx)
+				latest, err := db.Conf().SiteGetLatest(ctx)
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -21,6 +21,9 @@ type MockDB struct {
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
+	// ConfFunc is an instance of a mock function object controlling the
+	// behavior of the method Conf.
+	ConfFunc *DBConfFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *DBDoneFunc
@@ -112,6 +115,11 @@ func NewMockDB() *MockDB {
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: func() database.AuthzStore {
+				return nil
+			},
+		},
+		ConfFunc: &DBConfFunc{
+			defaultHook: func() database.ConfStore {
 				return nil
 			},
 		},
@@ -257,6 +265,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
+		},
+		ConfFunc: &DBConfFunc{
+			defaultHook: i.Conf,
 		},
 		DoneFunc: &DBDoneFunc{
 			defaultHook: i.Done,
@@ -534,6 +545,105 @@ func (c DBAuthzFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAuthzFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBConfFunc describes the behavior when the Conf method of the parent
+// MockDB instance is invoked.
+type DBConfFunc struct {
+	defaultHook func() database.ConfStore
+	hooks       []func() database.ConfStore
+	history     []DBConfFuncCall
+	mutex       sync.Mutex
+}
+
+// Conf delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Conf() database.ConfStore {
+	r0 := m.ConfFunc.nextHook()()
+	m.ConfFunc.appendCall(DBConfFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Conf method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBConfFunc) SetDefaultHook(hook func() database.ConfStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Conf method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBConfFunc) PushHook(hook func() database.ConfStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBConfFunc) SetDefaultReturn(r0 database.ConfStore) {
+	f.SetDefaultHook(func() database.ConfStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBConfFunc) PushReturn(r0 database.ConfStore) {
+	f.PushHook(func() database.ConfStore {
+		return r0
+	})
+}
+
+func (f *DBConfFunc) nextHook() func() database.ConfStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBConfFunc) appendCall(r0 DBConfFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBConfFuncCall objects describing the
+// invocations of this function.
+func (f *DBConfFunc) History() []DBConfFuncCall {
+	f.mutex.Lock()
+	history := make([]DBConfFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBConfFuncCall is an object that describes an invocation of method Conf
+// on an instance of MockDB.
+type DBConfFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ConfStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBConfFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBConfFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
