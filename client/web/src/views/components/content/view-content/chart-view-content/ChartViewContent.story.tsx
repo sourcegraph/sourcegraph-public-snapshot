@@ -2,6 +2,7 @@ import { storiesOf } from '@storybook/react'
 import isChromatic from 'chromatic/isChromatic'
 import { createMemoryHistory } from 'history'
 import React from 'react'
+import { ChartContent } from 'sourcegraph'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -157,6 +158,59 @@ add('Line chart with 0 to 1 data', () => (
         }}
     />
 ))
+
+const DATA_WITH_HUGE_DATA: ChartContent = {
+    chart: 'line',
+    data: [
+        { dateTime: 1606780800000, series0: 8394074, series1: 1001777 },
+        {
+            dateTime: 1609459200000,
+            series0: 839476900,
+            series1: 100180700,
+        },
+        { dateTime: 1612137600000, series0: 8395504, series1: 1001844 },
+        {
+            dateTime: 1614556800000,
+            series0: 839684900,
+            series1: 1001966,
+        },
+        { dateTime: 1617235200000, series0: 8397911, series1: 1002005 },
+        {
+            dateTime: 1619827200000,
+            series0: 839922700,
+            series1: 100202500,
+        },
+        { dateTime: 1622505600000, series0: 8400349, series1: 1002137 },
+        {
+            dateTime: 1625097600000,
+            series0: 840148500,
+            series1: 100218000,
+        },
+        { dateTime: 1627776000000, series0: 8402574, series1: 1002280 },
+        {
+            dateTime: 1630454400000,
+            series0: 840362900,
+            series1: 100237600,
+        },
+        { dateTime: 1633046400000, series0: 8374023, series1: null },
+        {
+            dateTime: 1635724800000,
+            series0: 837455000,
+            series1: null,
+        },
+    ],
+    series: [
+        { name: 'Fix', dataKey: 'series0', stroke: 'var(--oc-indigo-7)' },
+        {
+            name: 'Revert',
+            dataKey: 'series1',
+            stroke: 'var(--oc-orange-7)',
+        },
+    ],
+    xAxis: { dataKey: 'dateTime', scale: 'time', type: 'number' },
+}
+
+add('Line chart with different data', () => <ChartViewContent {...commonProps} content={DATA_WITH_HUGE_DATA} />)
 
 add('Bar chart', () => (
     <ChartViewContent
