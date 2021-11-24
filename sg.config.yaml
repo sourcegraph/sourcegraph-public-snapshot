@@ -980,7 +980,7 @@ tests:
   bext:
     cmd: yarn --cwd client/browser test
 
-  bext-pretest:
+  bext-build:
     cmd: yarn run download-puppeteer-browser && EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
 
   bext-integration:
