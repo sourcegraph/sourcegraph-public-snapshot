@@ -206,6 +206,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                     <div>
                         <button
                             type="submit"
+                            data-testid="submit-action"
                             className="btn btn-secondary mr-1 test-submit-action"
                             onClick={completeForm}
                             onSubmit={completeForm}

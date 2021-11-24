@@ -96,7 +96,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             {showCodeMonitoringTestEmailButton && isSiteAdminUser && hasEnabledAction && node.enabled && (
                                 <button
                                     type="button"
-                                    className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
+                                    className="btn btn-link p-0 border-0 ml-2"
                                     onClick={sendEmailRequest}
                                 >
                                     Send test email

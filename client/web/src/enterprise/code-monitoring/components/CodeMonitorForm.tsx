@@ -149,7 +149,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
 
     return (
         <>
-            <Form className="my-4 pb-5 test-monitor-form" onSubmit={requestOnSubmit}>
+            <Form className="my-4 pb-5" data-testid="monitor-form" onSubmit={requestOnSubmit}>
                 <Container className="mb-3">
                     <div className="form-group">
                         <label htmlFor="code-monitor-form-name">Name</label>
@@ -157,6 +157,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             id="code-monitor-form-name"
                             type="text"
                             className="form-control mb-2 test-name-input"
+                            data-testid="name-input"
                             required={true}
                             onChange={event => {
                                 onNameChange(event.target.value)
@@ -255,6 +256,7 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                                     codeMonitorOrError === LOADING ||
                                     !hasChangedFields
                                 }
+                                data-testid="submit-monitor"
                                 className="btn btn-primary mr-2 test-submit-monitor"
                             >
                                 {submitButtonLabel}
