@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -175,16 +176,23 @@ func main() {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+
+	// Once we receive one of the signals from above, continues with the shutdown
+	// process.
 	<-c
 	go func() {
+		// If a second signal is received, exit immediately.
 		<-c
 		os.Exit(0)
 	}()
 
-	// Stop accepting requests. In the future we should use graceful shutdown.
-	if err := srv.Close(); err != nil {
-		log15.Error("closing http server", "error", err)
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel = context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
+	defer cancel()
+	// Stop accepting requests.
+	if err := srv.Shutdown(ctx); err != nil {
+		log15.Error("shutting down http server", "error", err)
 	}
 
 	// The most important thing this does is kill all our clones. If we just
