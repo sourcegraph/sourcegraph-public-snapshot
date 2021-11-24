@@ -1,4 +1,4 @@
-import { Observable, of, zip, OperatorFunction } from 'rxjs'
+import { Observable, of, zip, OperatorFunction, from } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
@@ -102,7 +102,7 @@ export const trackCodeViews = ({
 
 const fetchFileContentForFileInfo = (
     fileInfo: FileInfoWithRepoName,
-    checkPrivateCloudError: (error: any) => boolean,
+    checkPrivateCloudError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<FileInfoWithContent> =>
     ensureRevisionIsClonedForFileInfo(fileInfo, requestGraphQL).pipe(
@@ -120,24 +120,28 @@ const fetchFileContentForFileInfo = (
             }
             return { ...fileInfo }
         }),
-        catchError(error => {
+        catchError(error =>
             // Check if the repository is a private repository
             // that has not been found. (if the browser extension is pointed towards
             // Sourcegraph cloud). In that case, it's impossible to resolve the file content,
             // so we fallback with undefined content.
             // Note: we recover/fallback in this case so that we can show informative
             // alerts to the user.
-            if (checkPrivateCloudError(error)) {
-                // In this case, fileInfo will have undefined content.
-                return of(fileInfo)
-            }
-            throw error
-        })
+            from(checkPrivateCloudError(error)).pipe(
+                switchMap(hasPrivateCloudError => {
+                    // In this case, fileInfo will have undefined content.
+                    if (hasPrivateCloudError) {
+                        return of(fileInfo)
+                    }
+                    throw error
+                })
+            )
+        )
     )
 
 export const fetchFileContentForDiffOrFileInfo = (
     diffOrBlobInfo: DiffOrBlobInfo<FileInfoWithRepoName>,
-    checkPrivateCloudError: (error: any) => boolean,
+    checkPrivateCloudError: (error: any) => Promise<boolean>,
     requestGraphQL: PlatformContext['requestGraphQL']
 ): Observable<DiffOrBlobInfo<FileInfoWithContent>> => {
     if ('blob' in diffOrBlobInfo) {

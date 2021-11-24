@@ -11,7 +11,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
@@ -30,8 +29,10 @@ type handler struct {
 	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
-var _ workerutil.Handler = &handler{}
-var _ workerutil.WithPreDequeue = &handler{}
+var (
+	_ workerutil.Handler        = &handler{}
+	_ workerutil.WithPreDequeue = &handler{}
+)
 
 // PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
 // the maximum number of concurrent handlers. If so, then a new job can be dequeued. Otherwise,
@@ -266,7 +267,7 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.L
 	return nil
 }
 
-func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) *libhoney.Event {
+func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
 	fields := map[string]interface{}{
 		"duration_ms":    duration.Milliseconds(),
 		"recordID":       job.RecordID(),
@@ -280,5 +281,5 @@ func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration
 		fields["error"] = err.Error()
 	}
 
-	return honey.EventWithFields("executor", fields)
+	return honey.NewEventWithFields("executor", fields)
 }

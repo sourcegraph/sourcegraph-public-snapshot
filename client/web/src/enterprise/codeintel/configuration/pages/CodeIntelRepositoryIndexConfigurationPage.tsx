@@ -11,20 +11,20 @@ import { AuthenticatedUser } from '../../../../auth'
 import { CodeIntelConfigurationPageHeader } from '../components/CodeIntelConfigurationPageHeader'
 import { ConfigurationEditor } from '../components/ConfigurationEditor'
 
-export interface RepositoryIndexConfigurationPageProps extends ThemeProps, TelemetryProps {
+export interface CodeIntelRepositoryIndexConfigurationPageProps extends ThemeProps, TelemetryProps {
     repo: { id: string }
     authenticatedUser: AuthenticatedUser | null
     history: H.History
 }
 
-export const RepositoryIndexConfigurationPage: FunctionComponent<RepositoryIndexConfigurationPageProps> = ({
+export const CodeIntelRepositoryIndexConfigurationPage: FunctionComponent<CodeIntelRepositoryIndexConfigurationPageProps> = ({
     repo,
     authenticatedUser,
     history,
     telemetryService,
     ...props
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPage'), [telemetryService])
+    useEffect(() => telemetryService.logViewEvent('CodeIntelRepositoryIndexConfiguration'), [telemetryService])
 
     return (
         <>

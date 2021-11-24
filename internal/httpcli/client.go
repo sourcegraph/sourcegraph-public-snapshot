@@ -98,6 +98,7 @@ func NewExternalClientFactory() *Factory {
 	return NewFactory(
 		NewMiddleware(
 			ContextErrorMiddleware,
+			HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
 		),
 		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and

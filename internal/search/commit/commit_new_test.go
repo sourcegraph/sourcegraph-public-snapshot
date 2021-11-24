@@ -66,7 +66,7 @@ func TestQueryToGitQuery(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			output := queryToGitQuery(tc.input, tc.diff)
+			output := QueryToGitQuery(tc.input, tc.diff)
 			require.Equal(t, tc.output, output)
 		})
 	}

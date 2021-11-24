@@ -161,7 +161,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 
 	// Search.
 	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery, m.NamespaceUserID)
+	results, err = search(ctx, newQuery, m.UserID)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 		}
 
-		recs, err := s.ListAllRecipientsForEmailAction(ctx, *j.Email)
+		recs, err := s.ListRecipients(ctx, cm.ListRecipientsOpts{EmailID: j.Email})
 		if err != nil {
 			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 		}

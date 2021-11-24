@@ -961,8 +961,8 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	if honey.Enabled() || traceLogs {
 		actor := r.Header.Get("X-Sourcegraph-Actor")
-		ev := honey.Event("gitserver-search")
-		ev.SampleRate = honeySampleRate("", actor == "internal")
+		ev := honey.NewEvent("gitserver-search")
+		ev.SetSampleRate(honeySampleRate("", actor == "internal"))
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
@@ -1194,8 +1194,8 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				actor := r.Header.Get("X-Sourcegraph-Actor")
-				ev := honey.Event("gitserver-exec")
-				ev.SampleRate = honeySampleRate(cmd, actor == "internal")
+				ev := honey.NewEvent("gitserver-exec")
+				ev.SetSampleRate(honeySampleRate(cmd, actor == "internal"))
 				ev.AddField("repo", req.Repo)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
@@ -1431,8 +1431,8 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 			isSlow := cmdDuration > 30*time.Second
 			if honey.Enabled() || traceLogs || isSlow {
 				actor := r.Header.Get("X-Sourcegraph-Actor")
-				ev := honey.Event("gitserver-p4exec")
-				ev.SampleRate = honeySampleRate(cmd, actor == "internal")
+				ev := honey.NewEvent("gitserver-p4exec")
+				ev.SetSampleRate(honeySampleRate(cmd, actor == "internal"))
 				ev.AddField("p4port", req.P4Port)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
@@ -1455,9 +1455,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 					ev.AddField("trace", trace.URL(traceID))
 				}
 
-				if honey.Enabled() {
-					_ = ev.Send()
-				}
+				_ = ev.Send()
 				if traceLogs {
 					log15.Debug("TRACE gitserver p4exec", mapToLog15Ctx(ev.Fields())...)
 				}

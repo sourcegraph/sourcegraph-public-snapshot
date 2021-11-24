@@ -1,21 +1,54 @@
 # Deploying Sourcegraph executors
 
->NOTE: **Sourcegraph executors are currently experimental.** We're exploring this feature set. 
->Let us know what you think! [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose)
->with feedback/problems/questions, or [contact us directly](https://about.sourcegraph.com/contact).
+<aside class="experimental">
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
 
-Executors are an experimental service that can run resource-intensive tasks on behalf of the Sourcegraph instance, such as:
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+</aside>
+
+[Executors](executors.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
 - [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
 - [computing batch changes](../batch_changes/explanations/server_side.md)
 
+## Requirements
+
+[Our sandboxing model](executors.md#how-it-works) requires the executor binary to be run on machines capable of running Linux KVM extensions. This requires bare-metal machines or machines capable of nested virtualization, which is made available by most popular Cloud providers.
+
 ## Installation
 
-Executors operate outside of your Sourcegraph instance and must be provisioned separately from your Sourcegraph server deployment method.
+Executors operate outside of your Sourcegraph instance and must be run separately from your Sourcegraph server deployment method.
 
-In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. These requests are authenticated via a shared secret value known by the Sourcegraph instance. Before provisioning executor compute resources, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config.md#view-and-edit-site-configuration).
+Since they must still be able to reach the Sourcegraph instance in order to dequeue and perform work, requests between the Sourcegraph instance and the executors are authenticated via a shared secret.
 
-Once the access token is set, executor compute resources can be provisioned. We supply [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) to provision such resources on common cloud providers ([Google Cloud](https://github.com/sourcegraph/terraform-google-executors) and [AWS](https://github.com/sourcegraph/terraform-aws-executors)).
+That means, in order to deploy executors that can talk to the Sourcegraph instance, you need to do the following:
+
+1. [Configure a shared secret in the Sourcegraph instance](#configure-sourcegraph)
+1. [Run executors](#run-executors)
+  - [Using Terraform](#terraform)
+  - [Using binaries](#binaries)
+1. [Confirm executors can reach Sourcegraph instance](#confirm-executors-are-working)
+1. Optional: [Configuring auto scaling](#configuring-auto-scaling)
+1. Optional: [Configuring observability](#configuring-observability)
+
+### Configure Sourcegraph
+
+Before starting any executors, generate an arbitrary secret string (with at least 20 characters) and [set it as the `executors.accessToken` key in your Sourcegraph instance's site-config](config/site_config.md#view-and-edit-site-configuration).
+
+Once the access token is set, executors can use that access token to talk to the Sourcegraph instance.
+
+### Start executors
+
+There are two ways to install and run executors:
+
+1. [Using our Terraform modules to provision machines on Google Cloud or AWS that run executors](#terraform)
+2. [Downloading and running executor binaries yourself](#binaries)
+
+#### Terraform
+
+We supply [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) to provision such resources on common cloud providers ([Google Cloud](https://github.com/sourcegraph/terraform-google-executors) or [AWS](https://github.com/sourcegraph/terraform-aws-executors)).
 
 A Terraform definition of executor compute resources will look similar to the following basic, minimal usage. Here, we configure the use of a Terraform module defined in the public registry - no explicit installation or clone step is required to use the modules provided by Sourcegraph.
 
@@ -25,7 +58,7 @@ module "executors" {
   version = "<version>"
 
   executor_sourcegraph_external_url            = "<sourcegraph_external_url>"
-  executor_sourcegraph_executor_proxy_password = "<sourcegraph_executor_proxy_password>"
+  executor_sourcegraph_executor_proxy_password = "<shared_secret_configured_in_sourcegraph_instance>"
   executor_queue_name                          = "codeintel" # Type of work (e.g., codeintel, batches)
   executor_instance_tag                        = "codeintel"
   executor_metrics_environment_label           = "prod"
@@ -35,12 +68,53 @@ module "executors" {
 
 Two variables must be supplied to the module in order for it to contact your Sourcegraph instance:
 
-- `sourcegraph_external_url` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal)): The **public** URL of your Sourcegraph instance.
+- `sourcegraph_external_url` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal)): The **public** URL of your Sourcegraph instance. This corresponds to the `externalURL` value in your Sourcegraph instance's site-config and must be resolvable from the provisioned executor compute resources.
 - `sourcegraph_executor_proxy_password` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal)): The access token chosen and configured above.
 
 Additional values may need to be supplied for a specific cloud provider. Refer to the relevant Terraform module documentation for specifics.
 
 To deploy executor compute resources defined in the Terraform file above, simply run `terraform apply`.
+
+#### Binaries
+
+You can also download and run the executor binaries yourself, without using Terraform.
+
+The following dependencies need to be available on the machine on which you want to run the `executor` binary:
+
+* Docker
+* git >= v2.18
+* [Ignite](https://ignite.readthedocs.io/en/stable/installation/) v0.10.0
+* [CNI Plugins](https://github.com/containernetworking/plugins) v0.9.1
+
+You can also take a look at [what goes into our executor machine images, used by our Terraform modules](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/image/build.sh) to see how we run executor binaries.
+
+Once dependencies are met, you can download and run executor binaries:
+
+**Step 1:** Download latest binary
+
+* https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/info.txt
+* https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
+* https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor_SHA256SUM
+
+**Step 2:** Setup required environment variables
+
+| Env var                       | Example value | Description |
+| ------------------------------| ------------- | ----------- |
+| `EXECUTOR_FRONTEND_URL`       | `http://sourcegraph.example.com` | The external URL of the Sourcegraph instance. |
+| `EXECUTOR_FRONTEND_PASSWORD`  | `our-shared-secret` | The shared secret configured in the Sourcegraph instannce under `executors.accessToken` |
+| `EXECUTOR_QUEUE_NAME`         | `batches`     | The name of the queue to pull jobs from to. Possible values: `batches` and `codeintel` |
+
+**Step 3:** Start executor
+
+```
+export EXECUTOR_QUEUE_NAME=batches
+export EXECUTOR_FRONTEND_URL=http://localhost:3080
+export EXECUTOR_FRONTEND_PASSWORD=hunter2hunter2hunter2
+
+./executor
+```
+
+### Confirm executors are working
 
 If executor instances boot correctly and can authenticate with the Sourcegraph frontend, they will show up in the _Executors_ page under _Site Admin_ > _Maintenance_.
 
@@ -48,47 +122,166 @@ If executor instances boot correctly and can authenticate with the Sourcegraph f
 
 ### Examples
 
-The following are complete examples of provisioning a _single_ executor type using each of the provided Terraform modules. In these examples, executors pull from the queue `codeintel`, which controls auto-indexing.
+The following are complete examples of provisioning a _single_ executor type using each of the provided Terraform modules. In these examples, executors pull from the queue `codeintel`, which controls [auto-indexing](../code_intelligence/explanations/auto_indexing.md).
 
 - [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/single-executor)
 - [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/single-executor)
 
-The following are complete examples of provisioning _multiple_ executor types using the provided Terraform submodules. In these examples, two pools of executors pull from the `codeintel` and `batches` queues, which control auto-indexing and server-side batch changes, respectively.
+The following are complete examples of provisioning _multiple_ executor types using the provided Terraform submodules. In these examples, two pools of executors pull from the `codeintel` and `batches` queues, which control [auto-indexing](../code_intelligence/explanations/auto_indexing.md) and [server-side batch changes](../batch_changes/explanations/server_side.md), respectively.
 
 - [AWS example](https://github.com/sourcegraph/terraform-aws-executors/tree/master/examples/multiple-executors)
 - [Google example](https://github.com/sourcegraph/terraform-google-executors/tree/master/examples/multiple-executors)
 
 ## Configuring auto scaling
 
+> NOTE: Auto scaling is currently not supported when [downloading and running executor binaries yourself](#binaries)
+
+Auto scaling of executor instances can help to increase concurrency of jobs, without paying for unused resources. With auto scaling, you can scale down to 0 instances when no workload exist and scale up as far as you like and your cloud provider can support. Auto scaling needs to be configured separately.
+
+Auto scaling makes use of the auto-scaling capabilities of the respective cloud provider (AutoScalingGroups on AWS and Instance Groups on GCP). Sourcegraph's `worker` service publishes a scaling metric (that is, the number of jobs in queue) to the cloud providers. Then, based on that reported value, the auto scalers add and remove compute resources to match the required amount of compute.
+
+With the Terraform variables [`min-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22max_replicas%22&patternType=literal) in the Terraform modules linked to above, you can configure the minimum and maximum number of compute machines to be run at a given time. `min-replicas` must be `>= 0`.
+
+For auto scaling to work, the Sourcegraph instance (its `worker` service, specifically) needs to be configured to have credentials to publish a scaling metric to the cloud provider used. Therefore, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. Using them, you get properly configured credentials in the Terraform outputs.
+
+```terraform
+module "credentials" {
+  source  = "sourcegraph/executors/<cloud>//modules/credentials"
+  version = "<version>"
+
+  region          = <region>
+  resource_prefix = ""
+}
+```
+
+When applied, this will yield something like
+
+```
+# For AWS:
+metric_writer_access_key_id = <THE_ACCESS_KEY_TO_CONFIGURE>
+metric_writer_secret_key    = <THE_SECRET_KEY_TO_CONFIGURE>
+
+# For Google:
+metric_writer_credentials_file = <THE_CREDENTIALS_FILE_CONTENT>
+```
+
+Use these credentials in the following way for the different cloud providers:
+
 ### Google
 
-The GCE auto-scaling groups configured by the Sourcegraph Terraform module to respond to changes in metric values written to Cloud Monitoring. The target Sourcegraph instance is expected to continuously write these values.
+The GCE auto-scaling groups configured by the Sourcegraph Terraform module respond to changes in metric values written to Cloud Monitoring. The target Sourcegraph instance is expected to continuously write these values.
 
-To write the metric to Cloud Monitoring, the `worker` service must define the following environment variables:
+To write the scaling metric to Cloud Monitoring, the `worker` service must have defined the following environment variables:
 
-- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
+- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use the same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
 - `EXECUTOR_METRIC_GCP_PROJECT_ID`
 - `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE`
 
 ### AWS
 
-The EC2 auto-scaling groups configured by the Sourcegraph Terraform module to respond to changes in metric values written to CloudWatch. The target Sourcegraph instance is expected to continuously write these values.
+The EC2 auto-scaling groups configured by the Sourcegraph Terraform module respond to changes in metric values written to CloudWatch. The target Sourcegraph instance is expected to continuously write these values.
 
-To write the metric to CloudWatch, the `worker` service must define the following environment variables:
+To write the scaling metric to CloudWatch, the `worker` service must have defined the following environment variables:
 
-- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
+- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use the same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
 - `EXECUTOR_METRIC_AWS_NAMESPACE`: Must be set to `sourcegraph-executor`
 - `EXECUTOR_METRIC_AWS_REGION`
 - `EXECUTOR_METRIC_AWS_ACCESS_KEY_ID`
 - `EXECUTOR_METRIC_AWS_SECRET_ACCESS_KEY`
 
+### Testing auto scaling
+
+Once these are set, and the worker service has been restarted, you should be able to find the scaling metrics in your cloud providers dashboards.
+
+To test if the metric is correctly reported into the Cloud provider:
+
+- On Google Cloud, this can be found in the Metrics explorer. Select Resource type = "Global" and then Metric = "custom/executors/queue/size". You should see some values reported here, 0 is also an indicator that it works correct.
+
+- On AWS, this can be found in the CloudWatch metrics section. Under "All metrics", select the namespace "sourcegraph-executor" and then the metric "environment, queueName". Make sure there are entries returned.
+
+Next, you can test whether the number of executors rises and shrinks as load spikes occur. Keep in mind that auto-scaling is not a real-time operation on most cloud providers and usually takes a short moment and can have some delays between the metric going down and the desired machine count adjusting.
+
 ## Configuring observability
 
-Sourcegraph ships with dashboards to display executor metrics. To populate these dashboards, the target Prometheus instance must be able to scrape the executor metrics endpoint.
+> NOTE: Observability features are currently not supported when [downloading and running executor binaries yourself](#binaries)
+
+Sourcegraph [ships with dashboards](observability/metrics.md) that can display executor metrics. We highly encourage setting this up to help make informed decisions on scaling and to make debugging easier.
+
+In order to do that, the Prometheus instance bundled with your Sourcegraph deployment must be able to scrape the executor metrics endpoint.
+
+That requires two things:
+
+1. Provide Prometheus with service account credentials that allow it to get a list of active compute instances from the cloud provider.
+2. Add additional scrape jobs to Prometheus.
+
+To add service account credentials, you can use the `credentials` submodule in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules.
+
+```terraform
+module "credentials" {
+  source  = "sourcegraph/executors/<cloud>//modules/credentials"
+  version = "<version>"
+
+  region          = <region>
+  resource_prefix = ""
+}
+```
+
+Just as with [auto scaling](#configuring-auto-scaling), you use the `credentials` submodule to get properly configured credentials in the Terraform outputs. When applied, this will yield something like this:
+
+```
+# For AWS:
+instance_scraper_access_key_id     = <THE_ACCESS_KEY_TO_CONFIGURE>
+instance_scraper_access_secret_key = <THE_SECRET_KEY_TO_CONFIGURE>
+
+# For Google:
+instance_scraper_credentials_file = <THE_CREDENTIALS_FILE_CONTENT>
+```
+
+Now we can use these credentials for the different cloud providers.
 
 ### Google
 
-The Prometheus configuration must add the following scraping job that uses [GCE service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#gce_sd_config):
+Credentials need to be added to the Prometheus container of your Sourcegraph deployment and a new scrape job needs to be added.
+
+In a Kubernetes deployment, credentials can be added by mounting the credentials file obtained from the `credentials` module in the last step, and pointing to it from an environment variable.
+
+**Step 1:** Create a secret called `prometheus-secrets` containing the credentials file content:
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: prometheus-secrets
+data:
+  GCP_ACCOUNT_JSON: <THE_CREDENTIALS_FILE_CONTENT>
+```
+
+**Step 2:** Modify the Prometheus deployment manifest:
+
+```yaml
+containers:
+- name: prometheus
+  # [...]
+  env:
+  - name: GOOGLE_APPLICATION_CREDENTIALS
+    value: /credentials/google_application_credentials.json
+  volumeMounts:
+  - mountPath: /credentials/google_application_credentials.json
+    name: credentials
+    subPath: google_application_credentials.json
+    readOnly: true
+volumes:
+- name: credentials
+  secret:
+    secretName: prometheus-secrets
+    items:
+    - key: GCP_ACCOUNT_JSON
+      path: google_application_credentials.json
+
+```
+
+**Step 3:** Add the following scraping job that uses [GCE service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#gce_sd_config) to the Prometheus configuration. To do that, you can edit the Prometheus `ConfigMap` and modify the contents of the `prometheus.yml` file. Under [`scrape_configs:`](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@0938b6686f0c94d80e8331e36f5ddac4659027b1/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L43:5) add the following and make sure to replace `{GCP_PROJECT}`, `{GCP_ZONE}` and `{INSTANCE_TAG}`. The `{INSTANCE_TAG}` value must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
 
 ```yaml
 - job_name: 'sourcegraph-executors'
@@ -140,16 +333,35 @@ The Prometheus configuration must add the following scraping job that uses [GCE 
   relabel_configs: *executor_relabel_config
 ```
 
-The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22instance_tag%22&patternType=literal).
+**Step 4:** Restart Prometheus.
+
+If you currently have any executors or Docker registry mirrors running, you should start seeing metrics on the _Executors_ dashboard in Grafana. Alternatively, you can check if the executors can be scraped, by [port-forwarding the Prometheus UI to your local machine and checkin in the UI](./observability/metrics.md#accessing-prometheus-directly).
 
 ### AWS
 
-The Prometheus configuration must add the following scraping job that uses [EC2 service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#ec2_sd_config).
+Credentials need to be added to the Prometheus container of your Sourcegraph deployment and a new scrape job needs to be added.
+
+In a Kubernetes deployment, credentials can be added by setting the two secrets obtained from the `credentials` module in the last step as environment variables.
+
+**Step 1:** Modify the Prometheus deployment manifest:
+
+```yaml
+containers:
+- name: prometheus
+  # [...]
+  env:
+  - name: AWS_ACCESS_KEY_ID
+    value: <THE_ACCESS_KEY_TO_CONFIGURE>
+  - name: AWS_SECRET_ACCESS_KEY
+    value: <THE_SECRET_KEY_TO_CONFIGURE>
+```
+
+**Step 2:** Add the following scraping job that uses [EC2 service discovery configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#ec2_sd_config) to the Prometheus configuration. To do that, you can edit the Prometheus `ConfigMap` and modify the contents of the `prometheus.yml` file. Under [`scrape_configs:`](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph@master/-/blob/base/prometheus/prometheus.ConfigMap.yaml?L43:5) add the following and make sure to replace `{AWS_REGION}` and `{INSTANCE_TAG}`. The `{INSTANCE_TAG}` value must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
 
 ```yaml
 - job_name: 'sourcegraph-executors'
   metrics_path: /proxy
-  params: 
+  params:
     module: [executor]
   ec2_sd_configs: &executor_ec2_config
     - region: {AWS_REGION}
@@ -196,4 +408,6 @@ The Prometheus configuration must add the following scraping job that uses [EC2 
   relabel_configs: *executor_relabel_config
 ```
 
-The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).
+**Step 3:** Restart Prometheus.
+
+If you currently have any executors or Docker registry mirrors running, you should start seeing metrics on the _Executors_ dashboard in Grafana. Alternatively, you can check if the executors can be scraped, by [port-forwarding the Prometheus UI to your local machine and checkin in the UI](./observability/metrics.md#accessing-prometheus-directly).

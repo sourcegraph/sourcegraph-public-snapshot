@@ -427,6 +427,27 @@ func Frontend() *monitoring.Container {
 				},
 			},
 
+			{
+				Title:  "Cloud KMS",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "cloudkms_cryptographic_requests",
+							Description: "cryptographic requests to Cloud KMS every 1m",
+							Query:       `sum(increase(src_cloudkms_cryptographic_total[1m]))`,
+							Warning:     monitoring.Alert().GreaterOrEqual(15000, nil).For(5 * time.Minute),
+							Critical:    monitoring.Alert().GreaterOrEqual(30000, nil).For(5 * time.Minute),
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: `
+								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+							`,
+						},
+					},
+				},
+			},
+
 			// Resource monitoring
 			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),

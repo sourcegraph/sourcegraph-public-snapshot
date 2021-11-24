@@ -61,3 +61,41 @@ func Test_scanTemplate(t *testing.T) {
 		`[{"constant":"$repo "}]`).
 		Equal(t, test(`\$repo `))
 }
+
+func Test_templatize(t *testing.T) {
+	test := func(input string) string {
+		t, err := templatize(input)
+		if err != nil {
+			return fmt.Sprintf("Error: %s", err)
+		}
+		return t
+	}
+
+	autogold.Want(
+		"basic templatize",
+		"artifcats: {{.Repo}}").
+		Equal(t, test("artifcats: $repo"))
+
+	autogold.Want(
+		"exclude regex var in templatize",
+		"artifcats: {{.Repo}} $1").
+		Equal(t, test("artifcats: $repo $1"))
+}
+
+func Test_substituteMetaVariables(t *testing.T) {
+	test := func(input string, env *MetaEnvironment) string {
+		t, err := substituteMetaVariables(input, env)
+		if err != nil {
+			return fmt.Sprintf("Error: %s", err)
+		}
+		return t
+	}
+
+	autogold.Want(
+		"substitute for meta values in interface",
+		"artifcats: $1 $foo hi").
+		Equal(t, test(
+			"artifcats: $1 $foo $author",
+			&MetaEnvironment{Author: "hi"},
+		))
+}

@@ -3,7 +3,10 @@ package compute
 import (
 	"encoding/json"
 	"strings"
+	"text/template"
 	"unicode/utf8"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // Template is just a list of Atom, where an Atom is either a Variable or a Constant string.
@@ -175,4 +178,90 @@ func toJSONString(template *Template) string {
 	}
 	json, _ := json.Marshal(jsons)
 	return string(json)
+}
+
+type MetaEnvironment struct {
+	Repo    string
+	Path    string
+	Content string
+	Commit  string
+	Author  string
+	Date    string
+	Email   string
+}
+
+var empty = struct{}{}
+
+var builtinVariables = map[string]struct{}{
+	"repo":    empty,
+	"path":    empty,
+	"content": empty,
+	"commit":  empty,
+	"author":  empty,
+	"date":    empty,
+	"email":   empty,
+}
+
+func templatize(pattern string) (string, error) {
+	t, err := scanTemplate([]byte(pattern))
+	if err != nil {
+		return "", err
+	}
+	var templatized []string
+	for _, atom := range *t {
+		switch a := atom.(type) {
+		case Constant:
+			templatized = append(templatized, string(a))
+		case Variable:
+			if _, ok := builtinVariables[a.Name[1:]]; ok {
+				templateVar := strings.Title(a.Name[1:])
+				templatized = append(templatized, `{{.`+templateVar+`}}`)
+				continue
+			}
+			// Leave alone other variables that don't correspond to
+			// builtins (e.g., regex capture groups)
+			templatized = append(templatized, a.Name)
+		}
+	}
+	return strings.Join(templatized, ""), nil
+}
+
+func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, error) {
+	templated, err := templatize(pattern)
+	if err != nil {
+		return "", err
+	}
+	t, err := template.New("").Parse(templated)
+	if err != nil {
+		return "", err
+	}
+	var result strings.Builder
+	if err := t.Execute(&result, env); err != nil {
+		return "", err
+	}
+	return result.String(), nil
+}
+
+// NewMetaEnvironment maps results to a metavariable:value environment where
+// metavariables can be referenced and substituted for in an output template.
+func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
+	switch m := r.(type) {
+	case *result.FileMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Path:    m.Path,
+			Commit:  string(m.CommitID),
+			Content: content,
+		}
+	case *result.CommitMatch:
+		return &MetaEnvironment{
+			Repo:    string(m.Repo.Name),
+			Commit:  string(m.Commit.ID),
+			Author:  m.Commit.Author.Name,
+			Date:    m.Commit.Committer.Date.Format("2006-01-02"),
+			Email:   m.Commit.Author.Email,
+			Content: content,
+		}
+	}
+	return &MetaEnvironment{}
 }

@@ -1,9 +1,11 @@
+import * as Sentry from '@sentry/browser'
 import { Omit } from 'utility-types'
 
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { toAbsoluteBlobURL } from '@sourcegraph/shared/src/util/url'
 
+import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { CodeHost } from '../shared/codeHost'
 import { CodeView } from '../shared/codeViews'
 import { createNotificationClassNameGetter } from '../shared/getNotificationClassName'
@@ -129,6 +131,36 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
+/**
+ * Checks whether repository is private or not using Gitlab API
+ *
+ * @description see https://docs.gitlab.com/ee/api/projects.html#get-single-project
+ * @description see rate limit https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers
+ */
+export const isPrivateRepository = (projectId?: string, fetchCache = background.fetchCache): Promise<boolean> => {
+    if (window.location.hostname !== 'gitlab.com' || !projectId) {
+        return Promise.resolve(true)
+    }
+    return fetchCache<{ visibility?: 'public' | 'private' | 'internal' }>({
+        url: `https://gitlab.com/api/v4/projects/${projectId}`,
+        cacheMaxAge: 60 * 60 * 1000, // 1 hour
+    })
+        .then(response => {
+            const rateLimit = response.headers['ratelimit-remaining']
+            if (Number(rateLimit) <= 0) {
+                const rateLimitError = new Error('Gitlab rate limit exceeded.')
+                Sentry.captureException(rateLimitError)
+                throw rateLimitError
+            }
+            return response
+        })
+        .then(({ data }) => data?.visibility !== 'public')
+        .catch(error => {
+            console.warn('Failed to fetch repository visibility info.', error)
+            return true
+        })
+}
+
 export const gitlabCodeHost = subtypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
@@ -136,10 +168,13 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     codeViewResolvers: [codeViewResolver],
     adjustOverlayPosition,
     getCommandPaletteMount,
-    getContext: () => ({
-        ...getPageInfo(),
-        privateRepository: window.location.hostname !== 'gitlab.com',
-    }),
+    getContext: async () => {
+        const { projectId, ...pageInfo } = getPageInfo()
+        return {
+            ...pageInfo,
+            privateRepository: await isPrivateRepository(projectId),
+        }
+    },
     urlToFile: (sourcegraphURL, target, context): string => {
         // A view state means that a panel must be shown, and panels are currently only supported on
         // Sourcegraph (not code hosts).

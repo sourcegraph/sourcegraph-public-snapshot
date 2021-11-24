@@ -58,18 +58,22 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // Context carries context about where to send logs, trace spans, and register
 // metrics. It should be created once on service startup, and passed around to
 // any location that wants to use it for observing operations.
 type Context struct {
-	Logger     logging.ErrorLogger
-	Tracer     *trace.Tracer
-	Registerer prometheus.Registerer
+	Logger       logging.ErrorLogger
+	Tracer       *trace.Tracer
+	Registerer   prometheus.Registerer
+	HoneyDataset *honey.Dataset
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
@@ -82,8 +86,9 @@ const (
 	EmitForMetrics ErrorFilterBehaviour = 1 << iota
 	EmitForLogs
 	EmitForTraces
+	EmitForHoney
 
-	EmitForAll = EmitForMetrics | EmitForLogs | EmitForTraces
+	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces
 )
 
 // Op configures an Operation instance.
@@ -188,15 +193,41 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 	start := time.Now()
 	tr, ctx := op.trace(ctx, args)
 
+	event := honey.NoopEvent()
+	snakecaseOpName := toSnakeCase(op.name)
+	if op.context.HoneyDataset != nil {
+		event = op.context.HoneyDataset.EventWithFields(map[string]interface{}{
+			"operation":     snakecaseOpName,
+			"meta.hostname": hostname.Get(),
+			"meta.version":  version.Version(),
+		})
+	}
+
 	var logFields TraceLogger
 	if tr != nil {
-		logFields = tr.LogFields
+		logFields = func(fields ...log.Field) {
+			for _, field := range fields {
+				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
+			}
+			tr.LogFields(fields...)
+		}
 	} else {
-		logFields = func(fields ...log.Field) {}
+		logFields = func(fields ...log.Field) {
+			for _, field := range fields {
+				event.AddField(snakecaseOpName+"."+toSnakeCase(field.Key()), field.Value())
+			}
+		}
+	}
+
+	if traceID := trace.ID(ctx); traceID != "" {
+		event.AddField("trace", trace.URL(traceID))
+		event.AddField("traceID", traceID)
 	}
 
 	return ctx, logFields, func(count float64, finishArgs Args) {
-		elapsed := time.Since(start).Seconds()
+		since := time.Since(start)
+		elapsed := since.Seconds()
+		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
@@ -205,8 +236,10 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 			logErr     = op.applyErrorFilter(err, EmitForLogs)
 			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
 			traceErr   = op.applyErrorFilter(err, EmitForTraces)
+			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
 		)
 		op.emitErrorLogs(logErr, logFields)
+		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, logFields, elapsedMs)
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 		op.finishTrace(traceErr, tr, logFields)
 	}
@@ -242,6 +275,20 @@ func (op *Operation) emitErrorLogs(err *error, logFields []log.Field) {
 	}
 
 	logging.Log(op.context.Logger, op.name, err, kvs...)
+}
+
+func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []log.Field, duration int64) {
+	if err != nil && *err != nil {
+		event.AddField("error", (*err).Error())
+	}
+
+	event.AddField("duration_ms", duration)
+
+	for _, field := range logFields {
+		event.AddField(opName+"."+toSnakeCase(field.Key()), field.Value())
+	}
+
+	event.Send()
 }
 
 // emitMetrics will emit observe the duration, operation/result, and error counter metrics

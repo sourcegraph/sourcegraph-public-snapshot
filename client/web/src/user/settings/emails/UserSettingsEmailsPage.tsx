@@ -92,7 +92,6 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
             {isErrorLike(emailActionError) && <ErrorAlert className="mt-2" error={emailActionError} />}
 
             <Container>
-                <h3>All configured emails</h3>
                 <ul className="list-group">
                     {emails.map(email => (
                         <li key={email.email} className={classNames('list-group-item', styles.listItem)}>
@@ -110,11 +109,11 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
                         <li className={classNames('list-group-item text-muted', styles.listItem)}>No emails</li>
                     )}
                 </ul>
-                {/* re-fetch emails on onDidAdd to guarantee correct state */}
-                <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
-                <hr className="my-4" />
-                <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
             </Container>
+            {/* re-fetch emails on onDidAdd to guarantee correct state */}
+            <AddUserEmailForm className={styles.emailForm} user={user.id} onDidAdd={fetchEmails} />
+            <hr className="my-4" />
+            <SetUserPrimaryEmailForm user={user.id} emails={emails} onDidSet={fetchEmails} />
         </div>
     )
 }

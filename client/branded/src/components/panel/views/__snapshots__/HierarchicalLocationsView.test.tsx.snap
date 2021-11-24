@@ -16,6 +16,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         <div>
           <div
             class="test-search-result result-container"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
@@ -237,6 +238,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         <div>
           <div
             class="test-search-result result-container"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >
@@ -413,6 +415,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         <div>
           <div
             class="test-search-result result-container"
+            data-result-type="content"
             data-testid="result-container"
             role="none"
           >

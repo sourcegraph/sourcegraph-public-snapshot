@@ -74,9 +74,9 @@ func TestActionRunner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//Empty database, preserve schema.
-			dbtesting.SetupGlobalTestDB(t)
+			db := dbtesting.GetDB(t)
 
-			_, _, _, userCtx := storetest.NewTestUser(ctx, t)
+			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
 			_, err = ts.InsertTestMonitor(userCtx, t)

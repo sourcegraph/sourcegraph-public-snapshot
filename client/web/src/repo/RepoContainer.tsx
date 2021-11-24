@@ -268,12 +268,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             fade={false}
                             popperClassName="border-0"
                         >
-                            <RepositoriesPopover currentRepo={repoOrError.id} />
+                            <RepositoriesPopover
+                                currentRepo={repoOrError.id}
+                                telemetryService={props.telemetryService}
+                            />
                         </UncontrolledPopover>
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError])
+        }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
