@@ -22,6 +22,7 @@ const mockSystemTheme = (systemTheme: 'light' | 'dark') => {
         throw new Error('unexpected matchMedia query')
     }
 }
+
 describe('useTheme()', () => {
     describe('defaults to system', () => {
         it('light', () => {
@@ -49,7 +50,7 @@ describe('useTheme()', () => {
         })
     })
 
-    describe.skip('respects theme preference', () => {
+    describe('respects theme preference', () => {
         it('light', () => {
             mockSystemTheme('dark')
             const { result } = renderHook(() => useThemeProps())
