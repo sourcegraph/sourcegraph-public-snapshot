@@ -10,14 +10,16 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	cachelib "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 const batchSpecWorkspaceIDKind = "BatchSpecWorkspace"
@@ -128,17 +130,22 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		return nil, err
 	}
 
-	taskKey := service.CacheKeyForWorkspace(spec, &service.RepoWorkspace{
-		RepoRevision: &service.RepoRevision{
-			Repo:        repo,
-			Branch:      r.workspace.Branch,
-			Commit:      api.CommitID(r.workspace.Commit),
+	taskKey := cache.KeyForWorkspace(
+		&template.BatchChangeAttributes{
+			Name:        spec.Spec.Name,
+			Description: spec.Spec.Description,
+		},
+		batches.Repository{
+			ID:          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+			Name:        string(repo.Name),
+			BaseRef:     r.workspace.Branch,
+			BaseRev:     r.workspace.Commit,
 			FileMatches: r.workspace.FileMatches,
 		},
-		Path:               r.workspace.Path,
-		Steps:              r.workspace.Steps,
-		OnlyFetchWorkspace: r.workspace.OnlyFetchWorkspace,
-	})
+		r.workspace.Path,
+		r.workspace.OnlyFetchWorkspace,
+		r.workspace.Steps,
+	)
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.workspace.Steps))
 	for idx, step := range r.workspace.Steps {
@@ -165,7 +172,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		// from the UI. We should persist the cache result on the execution itself,
 		// too.
 		var cachedResult *execution.AfterStepResult
-		key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: idx}
+		key := cachelib.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: idx}
 		rawKey, err := key.Key()
 		if err != nil {
 			return nil, err
@@ -182,7 +189,16 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 			}
 		}
 
-		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repoResolver, baseRev: r.workspace.Commit, cachedResult: cachedResult})
+		resolver := &batchSpecWorkspaceStepResolver{
+			index:        idx,
+			step:         step,
+			stepInfo:     si,
+			store:        r.store,
+			repo:         repoResolver,
+			baseRev:      r.workspace.Commit,
+			cachedResult: cachedResult,
+		}
+		resolvers = append(resolvers, resolver)
 	}
 
 	return resolvers, nil

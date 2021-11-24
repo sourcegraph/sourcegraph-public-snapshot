@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -11,9 +12,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -29,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -56,27 +57,30 @@ type RepoWorkspace struct {
 	Unsupported bool
 }
 
-func CacheKeyForWorkspace(spec *btypes.BatchSpec, w *RepoWorkspace) cache.ExecutionKey {
-	fileMatches := w.FileMatches
-	sort.Strings(fileMatches)
-
-	executionKey := cache.ExecutionKey{
-		Repository: batcheslib.Repository{
-			ID:          string(relay.MarshalID("Repository", w.Repo.ID)),
-			Name:        string(w.Repo.Name),
-			BaseRef:     git.EnsureRefPrefix(w.Branch),
-			BaseRev:     string(w.Commit),
-			FileMatches: fileMatches,
-		},
-		Path:               w.Path,
-		OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-		Steps:              w.Steps,
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-		},
+func DBChangesetSpecsFromCache(batchSpecID int64, repoID api.RepoID, userID int32, spec *batcheslib.BatchSpec, r batcheslib.Repository, entry *btypes.BatchSpecExecutionCacheEntry) ([]*btypes.ChangesetSpec, error) {
+	var executionResult execution.Result
+	if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
+		return nil, err
 	}
-	return executionKey
+
+	rawSpecs, err := cache.ChangesetSpecsFromCache(spec, r, executionResult)
+	if err != nil {
+		return nil, err
+	}
+
+	var specs []*btypes.ChangesetSpec
+	for _, s := range rawSpecs {
+		changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
+		if err != nil {
+			return nil, err
+		}
+		changesetSpec.BatchSpecID = batchSpecID
+		changesetSpec.RepoID = repoID
+		changesetSpec.UserID = userID
+
+		specs = append(specs, changesetSpec)
+	}
+	return specs, nil
 }
 
 type WorkspaceResolver interface {

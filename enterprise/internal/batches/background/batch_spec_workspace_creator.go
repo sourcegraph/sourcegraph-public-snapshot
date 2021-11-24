@@ -2,12 +2,12 @@ package background
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -15,8 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -79,7 +77,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	// Collect all cache keys so we can look them up in a single query.
 	cacheKeyWorkspaces := make(map[string]struct {
 		dbWorkspace *btypes.BatchSpecWorkspace
-		workspace   *service.RepoWorkspace
+		repo        batcheslib.Repository
 	})
 
 	// Build workspaces DB objects.
@@ -106,17 +104,34 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		key := service.CacheKeyForWorkspace(spec, w)
+		r := batcheslib.Repository{
+			ID:          string(graphqlbackend.MarshalRepositoryID(w.Repo.ID)),
+			Name:        string(w.Repo.Name),
+			BaseRef:     w.Branch,
+			BaseRev:     string(w.Commit),
+			FileMatches: w.FileMatches,
+		}
+
+		key := cache.KeyForWorkspace(
+			&template.BatchChangeAttributes{
+				Name:        spec.Spec.Name,
+				Description: spec.Spec.Description,
+			},
+			r,
+			w.Path,
+			w.OnlyFetchWorkspace,
+			w.Steps,
+		)
 		rawKey, err := key.Key()
 		if err != nil {
 			return err
 		}
 		cacheKeyWorkspaces[rawKey] = struct {
 			dbWorkspace *btypes.BatchSpecWorkspace
-			workspace   *service.RepoWorkspace
+			repo        batcheslib.Repository
 		}{
 			dbWorkspace: workspace,
-			workspace:   w,
+			repo:        r,
 		}
 	}
 
@@ -154,7 +169,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		workspace.dbWorkspace.CachedResultFound = true
 
 		// Build the changeset specs from the cache entry.
-		changesetSpecs, err := changesetSpecsFromCache(spec, workspace.workspace, entry)
+		changesetSpecs, err := service.DBChangesetSpecsFromCache(spec.ID, workspace.dbWorkspace.RepoID, spec.UserID, spec.Spec, workspace.repo, entry)
 		if err != nil {
 			return err
 		}
@@ -220,53 +235,4 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
-}
-
-func changesetSpecsFromCache(spec *btypes.BatchSpec, w *service.RepoWorkspace, entry *btypes.BatchSpecExecutionCacheEntry) ([]*btypes.ChangesetSpec, error) {
-	var executionResult execution.Result
-	if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-		return nil, err
-	}
-
-	repoID := string(graphqlbackend.MarshalRepositoryID(w.Repo.ID))
-	input := &batcheslib.ChangesetSpecInput{
-		BaseRepositoryID: repoID,
-		HeadRepositoryID: repoID,
-		Repository: batcheslib.ChangesetSpecRepository{
-			Name:        string(w.Repo.Name),
-			FileMatches: w.FileMatches,
-			BaseRef:     git.EnsureRefPrefix(w.Branch),
-			BaseRev:     string(w.Commit),
-		},
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-		},
-		Template:         spec.Spec.ChangesetTemplate,
-		TransformChanges: spec.Spec.TransformChanges,
-		Result:           executionResult,
-	}
-
-	rawSpecs, err := batcheslib.BuildChangesetSpecs(input, batcheslib.ChangesetSpecFeatureFlags{
-		IncludeAutoAuthorDetails: true,
-		AllowOptionalPublished:   true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var specs []*btypes.ChangesetSpec
-	for _, s := range rawSpecs {
-		changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
-		if err != nil {
-			return nil, err
-		}
-		changesetSpec.BatchSpecID = spec.ID
-		changesetSpec.RepoID = w.Repo.ID
-		changesetSpec.UserID = spec.UserID
-
-		specs = append(specs, changesetSpec)
-
-	}
-	return specs, nil
 }

@@ -9,16 +9,16 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	cachelib "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 type BatchesStore interface {
@@ -62,7 +62,7 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
-		RawSpec: batchSpec.RawSpec,
+		Spec: batchSpec.Spec,
 		Workspace: batcheslib.Workspace{
 			Repository: batcheslib.WorkspaceRepo{
 				ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
@@ -106,19 +106,25 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 	if !batchSpec.NoCache {
 		// We start at the back so that we can find the _last_ cached step,
 		// then restart execution on the following step.
-		taskKey := service.CacheKeyForWorkspace(batchSpec, &service.RepoWorkspace{
-			RepoRevision: &service.RepoRevision{
-				Repo:        repo,
-				Branch:      executionInput.Workspace.Branch.Name,
-				Commit:      api.CommitID(executionInput.Workspace.Branch.Target.OID),
-				FileMatches: executionInput.Workspace.SearchResultPaths,
+		taskKey := cache.KeyForWorkspace(
+			&template.BatchChangeAttributes{
+				Name:        batchSpec.Spec.Name,
+				Description: batchSpec.Spec.Description,
 			},
-			Path:               executionInput.Workspace.Path,
-			Steps:              workspace.Steps,
-			OnlyFetchWorkspace: executionInput.Workspace.OnlyFetchWorkspace,
-		})
+			batcheslib.Repository{
+				ID:          string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
+				Name:        string(repo.Name),
+				BaseRef:     workspace.Branch,
+				BaseRev:     workspace.Commit,
+				FileMatches: workspace.FileMatches,
+			},
+			workspace.Path,
+			workspace.OnlyFetchWorkspace,
+			workspace.Steps,
+		)
+
 		for i := len(workspace.Steps) - 1; i > -1; i-- {
-			key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
+			key := cachelib.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
 			rawKey, err := key.Key()
 			if err != nil {
 				return apiclient.Job{}, nil
