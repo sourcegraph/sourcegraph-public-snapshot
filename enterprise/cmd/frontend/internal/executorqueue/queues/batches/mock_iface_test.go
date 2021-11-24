@@ -67,6 +67,38 @@ func NewMockBatchesStore() *MockBatchesStore {
 	}
 }
 
+// NewStrictMockBatchesStore creates a new mock of the BatchesStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockBatchesStore() *MockBatchesStore {
+	return &MockBatchesStore{
+		DatabaseDBFunc: &BatchesStoreDatabaseDBFunc{
+			defaultHook: func() database.DB {
+				panic("unexpected invocation of MockBatchesStore.DatabaseDB")
+			},
+		},
+		GetBatchSpecFunc: &BatchesStoreGetBatchSpecFunc{
+			defaultHook: func(context.Context, store.GetBatchSpecOpts) (*types.BatchSpec, error) {
+				panic("unexpected invocation of MockBatchesStore.GetBatchSpec")
+			},
+		},
+		GetBatchSpecExecutionCacheEntryFunc: &BatchesStoreGetBatchSpecExecutionCacheEntryFunc{
+			defaultHook: func(context.Context, store.GetBatchSpecExecutionCacheEntryOpts) (*types.BatchSpecExecutionCacheEntry, error) {
+				panic("unexpected invocation of MockBatchesStore.GetBatchSpecExecutionCacheEntry")
+			},
+		},
+		GetBatchSpecWorkspaceFunc: &BatchesStoreGetBatchSpecWorkspaceFunc{
+			defaultHook: func(context.Context, store.GetBatchSpecWorkspaceOpts) (*types.BatchSpecWorkspace, error) {
+				panic("unexpected invocation of MockBatchesStore.GetBatchSpecWorkspace")
+			},
+		},
+		SetBatchSpecWorkspaceExecutionJobAccessTokenFunc: &BatchesStoreSetBatchSpecWorkspaceExecutionJobAccessTokenFunc{
+			defaultHook: func(context.Context, int64, int64) error {
+				panic("unexpected invocation of MockBatchesStore.SetBatchSpecWorkspaceExecutionJobAccessToken")
+			},
+		},
+	}
+}
+
 // NewMockBatchesStoreFrom creates a new mock of the MockBatchesStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
