@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -293,7 +292,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	alreadyInitialized, err := globalstatedb.EnsureInitialized(ctx, u)
+	alreadyInitialized, err := GlobalStateWith(u).EnsureInitialized(ctx)
 	if err != nil {
 		return nil, err
 	}

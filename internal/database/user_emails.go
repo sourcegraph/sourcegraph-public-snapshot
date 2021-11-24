@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 )
 
 // UserEmail represents a row in the `user_emails` table.
@@ -95,7 +94,7 @@ func (s *userEmailsStore) Transact(ctx context.Context) (UserEmailsStore, error)
 //
 // If the site has not yet been initialized, returns an empty string.
 func (s *userEmailsStore) GetInitialSiteAdminEmail(ctx context.Context) (email string, err error) {
-	if init, err := globalstatedb.SiteInitialized(ctx); err != nil || !init {
+	if init, err := GlobalStateWith(s).SiteInitialized(ctx); err != nil || !init {
 		return "", err
 	}
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {

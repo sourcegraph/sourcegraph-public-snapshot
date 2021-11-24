@@ -252,7 +252,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		return err
 	}
 
-	siteid.Init()
+	siteid.Init(db)
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()

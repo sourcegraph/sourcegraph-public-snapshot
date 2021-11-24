@@ -51,9 +51,9 @@ var (
 	connectErr  error
 )
 
-// SetupGlobalTestDB creates a temporary test DB handle, sets
+// setupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
-func SetupGlobalTestDB(t testing.TB) {
+func setupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -84,7 +84,7 @@ func SetupGlobalTestDB(t testing.TB) {
 // New callers and callers actually wishing to migrate fully away from a global DB connection
 // should use the new ../dbtest package instead of this one.
 func GetDB(t testing.TB) *sql.DB {
-	SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 	return dbconn.Global
 }
 

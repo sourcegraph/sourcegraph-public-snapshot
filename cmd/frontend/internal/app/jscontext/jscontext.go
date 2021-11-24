@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -122,7 +121,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := globalstatedb.Get(req.Context())
+	globalState, err := db.GlobalState().Get(req.Context())
 	needsSiteInit := err == nil && !globalState.Initialized
 
 	// Auth providers
