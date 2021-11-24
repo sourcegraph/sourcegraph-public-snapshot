@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -422,8 +421,10 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 
 func init() {
 	globals.ConfigurationServerFrontendOnly = &conf.Server{}
-	globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
-		return &globalstatedb.State{SiteID: "a"}, nil
-	}
-	siteid.Init()
+	gss := dbmock.NewMockGlobalStateStore()
+	gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.GlobalStateFunc.SetDefaultReturn(gss)
+	siteid.Init(db)
 }

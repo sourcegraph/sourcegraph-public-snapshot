@@ -13,7 +13,7 @@ import (
 )
 
 type GlobalStateStore interface {
-	Get(context.Context) (*State, error)
+	Get(context.Context) (*GlobalState, error)
 	SiteInitialized(context.Context) (bool, error)
 
 	// EnsureInitialized ensures the site is marked as having been initialized. If the site was already
@@ -29,7 +29,11 @@ type GlobalStateStore interface {
 	EnsureInitialized(context.Context) (bool, error)
 }
 
-type State struct {
+func GlobalStateWith(other basestore.ShareableStore) GlobalStateStore {
+	return &globalStateStore{Store: basestore.NewWithHandle(other.Handle())}
+}
+
+type GlobalState struct {
 	SiteID      string
 	Initialized bool // whether the initial site admin account has been created
 }
@@ -38,7 +42,7 @@ type globalStateStore struct {
 	*basestore.Store
 }
 
-func (g *globalStateStore) Get(ctx context.Context) (*State, error) {
+func (g *globalStateStore) Get(ctx context.Context) (*GlobalState, error) {
 	configuration, err := g.getConfiguration(ctx)
 	if err == nil {
 		return configuration, nil
@@ -87,8 +91,8 @@ func (g *globalStateStore) EnsureInitialized(ctx context.Context) (bool, error) 
 	return alreadyInitialized, err
 }
 
-func (g *globalStateStore) getConfiguration(ctx context.Context) (*State, error) {
-	var s State
+func (g *globalStateStore) getConfiguration(ctx context.Context) (*GlobalState, error) {
+	var s GlobalState
 	q := sqlf.Sprintf("SELECT site_id, initialized FROM global_state LIMIT 1")
 	err := g.QueryRow(ctx, q).Scan(
 		&s.SiteID,

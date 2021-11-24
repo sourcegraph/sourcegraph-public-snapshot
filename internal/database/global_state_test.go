@@ -1,19 +1,20 @@
-package globalstatedb
+package database
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
-func TestGet(t *testing.T) {
+func TestGlobalState_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	dbtesting.SetupGlobalTestDB(t)
+
+	db := NewDB(dbtest.NewDB(t))
 	ctx := context.Background()
-	config, err := Get(ctx)
+	config, err := db.GlobalState().Get(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}

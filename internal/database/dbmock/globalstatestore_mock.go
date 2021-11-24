@@ -36,7 +36,7 @@ func NewMockGlobalStateStore() *MockGlobalStateStore {
 			},
 		},
 		GetFunc: &GlobalStateStoreGetFunc{
-			defaultHook: func(context.Context) (*database.State, error) {
+			defaultHook: func(context.Context) (*database.GlobalState, error) {
 				return nil, nil
 			},
 		},
@@ -177,15 +177,15 @@ func (c GlobalStateStoreEnsureInitializedFuncCall) Results() []interface{} {
 // GlobalStateStoreGetFunc describes the behavior when the Get method of the
 // parent MockGlobalStateStore instance is invoked.
 type GlobalStateStoreGetFunc struct {
-	defaultHook func(context.Context) (*database.State, error)
-	hooks       []func(context.Context) (*database.State, error)
+	defaultHook func(context.Context) (*database.GlobalState, error)
+	hooks       []func(context.Context) (*database.GlobalState, error)
 	history     []GlobalStateStoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGlobalStateStore) Get(v0 context.Context) (*database.State, error) {
+func (m *MockGlobalStateStore) Get(v0 context.Context) (*database.GlobalState, error) {
 	r0, r1 := m.GetFunc.nextHook()(v0)
 	m.GetFunc.appendCall(GlobalStateStoreGetFuncCall{v0, r0, r1})
 	return r0, r1
@@ -194,7 +194,7 @@ func (m *MockGlobalStateStore) Get(v0 context.Context) (*database.State, error) 
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockGlobalStateStore instance is invoked and the hook queue is
 // empty.
-func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*database.State, error)) {
+func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*database.GlobalState, error)) {
 	f.defaultHook = hook
 }
 
@@ -202,7 +202,7 @@ func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*da
 // Get method of the parent MockGlobalStateStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*database.State, error)) {
+func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*database.GlobalState, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -210,21 +210,21 @@ func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*database
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GlobalStateStoreGetFunc) SetDefaultReturn(r0 *database.State, r1 error) {
-	f.SetDefaultHook(func(context.Context) (*database.State, error) {
+func (f *GlobalStateStoreGetFunc) SetDefaultReturn(r0 *database.GlobalState, r1 error) {
+	f.SetDefaultHook(func(context.Context) (*database.GlobalState, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GlobalStateStoreGetFunc) PushReturn(r0 *database.State, r1 error) {
-	f.PushHook(func(context.Context) (*database.State, error) {
+func (f *GlobalStateStoreGetFunc) PushReturn(r0 *database.GlobalState, r1 error) {
+	f.PushHook(func(context.Context) (*database.GlobalState, error) {
 		return r0, r1
 	})
 }
 
-func (f *GlobalStateStoreGetFunc) nextHook() func(context.Context) (*database.State, error) {
+func (f *GlobalStateStoreGetFunc) nextHook() func(context.Context) (*database.GlobalState, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -262,7 +262,7 @@ type GlobalStateStoreGetFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *database.State
+	Result0 *database.GlobalState
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
