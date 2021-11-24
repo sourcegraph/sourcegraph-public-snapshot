@@ -1,0 +1,33 @@
+.field {
+    height: auto;
+
+    &:focus-within,
+    &:focus {
+        border: 1px solid var(--input-focus-border-color);
+        box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+    }
+
+    &:global(.is-valid) {
+        border-color: var(--success);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--success-3);
+        }
+    }
+
+    &:global(.is-invalid) {
+        border-color: var(--danger);
+
+        :global(.theme-light) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-2);
+        }
+
+        :global(.theme-dark) &:focus-within {
+            box-shadow: 0 0 0 2px var(--danger-3);
+        }
+    }
+}
