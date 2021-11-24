@@ -1,4 +1,5 @@
 .field {
+    min-height: 34px;
     height: auto;
 
     &:focus-within,
@@ -29,5 +30,9 @@
         :global(.theme-dark) &:focus-within {
             box-shadow: 0 0 0 2px var(--danger-3);
         }
+    }
+
+    :global(.scroll-decoration) {
+        display: none;
     }
 }

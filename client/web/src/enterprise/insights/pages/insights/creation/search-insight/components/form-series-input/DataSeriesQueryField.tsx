@@ -5,6 +5,7 @@ import React, { InputHTMLAttributes, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
+import { QueryChangeSource } from '../../../../../../../../search/helpers'
 import { LazyMonacoQueryInput } from '../../../../../../../../search/input/LazyMonacoQueryInput'
 import { DEFAULT_MONACO_OPTIONS } from '../../../../../../../../search/input/MonacoQueryInput'
 import { ThemePreference, useThemeState } from '../../../../../../../../theme'
@@ -15,6 +16,7 @@ const MONACO_OPTIONS: Monaco.editor.IStandaloneEditorConstructionOptions = {
     ...DEFAULT_MONACO_OPTIONS,
     wordWrap: 'on',
     fixedOverflowWidgets: false,
+    lineHeight: 21,
     scrollbar: {
         vertical: 'auto',
         horizontal: 'hidden',
@@ -36,7 +38,7 @@ export const DataSeriesQueryField: React.FunctionComponent<DataSeriesQueryFieldP
 
     return (
         <LazyMonacoQueryInput
-            queryState={{ query: value }}
+            queryState={{ query: value, changeSource: QueryChangeSource.userInput }}
             isLightTheme={enhancedThemePreference === ThemePreference.Light}
             isSourcegraphDotCom={false}
             preventNewLine={false}
