@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -233,5 +235,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestUnredactFieldsDeletion(t *testing.T) {
+	oldJson := `{"url":"https://src.fedoraproject.org", "token": "oldtoken"}`
+	newJson := `{"url":"https://src.fedoraproject.org"}`
+	pagureConfig := schema.PagureConnection{}
+	_, err := unredactFields(oldJson, newJson, &pagureConfig)
+	assert.Nil(t, err)
 }
