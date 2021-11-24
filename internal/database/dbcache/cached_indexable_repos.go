@@ -36,18 +36,29 @@ func (c *cachedRepos) Repos() ([]types.MinimalRepo, bool) {
 
 func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
-		store: store,
+		store:      store,
+		ReposCache: &ReposCache{},
 	}
+}
+
+func NewIndexableReposListerWithCache(store database.RepoStore, cache *ReposCache) *IndexableReposLister {
+	return &IndexableReposLister{
+		store:      store,
+		ReposCache: cache,
+	}
+}
+
+type ReposCache struct {
+	cacheAllRepos    atomic.Value
+	cachePublicRepos atomic.Value
+	mu               sync.Mutex
 }
 
 // IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
 	store database.RepoStore
-
-	cacheAllRepos    atomic.Value
-	cachePublicRepos atomic.Value
-	mu               sync.Mutex
+	*ReposCache
 }
 
 // List lists ALL indexable repos. These include all repos with a minimum number of stars,
