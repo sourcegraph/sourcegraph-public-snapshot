@@ -74,10 +74,6 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces))
 
-	// All changeset specs to be created.
-	cs := make([]*btypes.ChangesetSpec, 0)
-	// Collect all IDs of used cache entries to mark them as recently used later.
-	usedCacheEntries := make([]int64, 0)
 	// Build DB workspaces and check for cache entries.
 	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
 	// Collect all cache keys so we can look them up in a single query.
@@ -142,6 +138,11 @@ func (r *batchSpecWorkspaceCreator) process(
 			entriesByCacheKey[entry.Key] = entry
 		}
 	}
+
+	// All changeset specs to be created.
+	cs := make([]*btypes.ChangesetSpec, 0)
+	// Collect all IDs of used cache entries to mark them as recently used later.
+	usedCacheEntries := make([]int64, 0)
 
 	// Check for an existing cache entry for each of the workspaces.
 	for rawKey, workspace := range cacheKeyWorkspaces {
