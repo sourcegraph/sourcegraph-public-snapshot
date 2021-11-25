@@ -10,30 +10,45 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
 type server struct {
-	server       *http.Server
-	makeListener func() (net.Listener, error)
-	once         sync.Once
+	server           *http.Server
+	makeListener     func() (net.Listener, error)
+	once             sync.Once
+	preShutdownPause time.Duration
+}
+
+type ServerOptions func(s *server)
+
+func WithPreShutdownPause(d time.Duration) ServerOptions {
+	return func(s *server) { s.preShutdownPause = d }
 }
 
 // New returns a BackgroundRoutine that serves the given server on the given listener.
-func New(listener net.Listener, httpServer *http.Server) goroutine.BackgroundRoutine {
-	return &server{
-		server:       httpServer,
-		makeListener: func() (net.Listener, error) { return listener, nil },
-	}
+func New(listener net.Listener, httpServer *http.Server, options ...ServerOptions) goroutine.BackgroundRoutine {
+	makeListener := func() (net.Listener, error) { return listener, nil }
+	return newServer(httpServer, makeListener, options...)
 }
 
 // New returns a BackgroundRoutine that serves the given handler on the given address.
-func NewFromAddr(addr string, httpServer *http.Server) goroutine.BackgroundRoutine {
-	return &server{
+func NewFromAddr(addr string, httpServer *http.Server, options ...ServerOptions) goroutine.BackgroundRoutine {
+	makeListener := func() (net.Listener, error) { return NewListener(addr) }
+	return newServer(httpServer, makeListener, options...)
+}
+
+func newServer(httpServer *http.Server, makeListener func() (net.Listener, error), options ...ServerOptions) goroutine.BackgroundRoutine {
+	s := &server{
 		server:       httpServer,
-		makeListener: func() (net.Listener, error) { return NewListener(addr) },
+		makeListener: makeListener,
 	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	return s
 }
 
 func (s *server) Start() {
@@ -51,14 +66,8 @@ func (s *server) Start() {
 
 func (s *server) Stop() {
 	s.once.Do(func() {
-		// On kubernetes, we want to wait an additional 5 seconds after we receive a
-		// shutdown request to give some additional time for the endpoint changes
-		// to propagate to services talking to this server like the LB or ingress
-		// controller. We only do this in frontend and not on all services, because
-		// frontend is the only publicly exposed service where we don't control
-		// retries on connection failures (see httpcli.InternalClient).
-		if deploy.Type() == deploy.Kubernetes {
-			time.Sleep(5 * time.Second)
+		if s.preShutdownPause > 0 {
+			time.Sleep(s.preShutdownPause)
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
