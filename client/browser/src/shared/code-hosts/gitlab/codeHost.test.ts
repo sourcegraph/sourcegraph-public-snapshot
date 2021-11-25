@@ -118,12 +118,13 @@ describe('isPrivateRepository', () => {
         enableFetchCache()
     })
 
-    it('returns [true] if not on "gitlab.com"', async () => {
+    it('returns [private=true] if not on "gitlab.com"', async () => {
         expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
     })
 
     describe('when on "gitlab.com"', () => {
         const { location } = window
+        const EMPTY_JSON = JSON.stringify({})
 
         beforeAll(() => {
             fetch.enableMocks()
@@ -146,6 +147,14 @@ describe('isPrivateRepository', () => {
             window.location = location
         })
 
+        it('makes request without credentials', async () => {
+            fetch.mockResponseOnce(EMPTY_JSON)
+
+            await isPrivateRepository('test-org/test-repo', fetchCache)
+            expect(fetch).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ credentials: 'omit' }))
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
         it('returns [private=true] on unsuccessful request', async () => {
             fetch.mockRejectOnce(new Error('Error happened'))
 
@@ -153,38 +162,28 @@ describe('isPrivateRepository', () => {
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('returns [private=true] if empty response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({}))
-
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
-            expect(fetch).toHaveBeenCalledTimes(1)
-        })
-
         it('returns [private=true] if rate-limit exceeded', async () => {
-            fetch.mockResponseOnce(
-                JSON.stringify({
-                    visibility: 'public',
-                }),
-                {
-                    headers: { 'ratelimit-remaining': '0' },
-                }
-            )
+            fetch.mockResponseOnce(EMPTY_JSON, {
+                headers: { 'ratelimit-remaining': '0' },
+            })
 
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
             expect(fetch).toHaveBeenCalledTimes(1)
         })
 
-        it('returns correctly from API response', async () => {
-            fetch.mockResponseOnce(JSON.stringify({ visibility: 'private' }))
-            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+        it('returns [private=true] when NOT 200 status response', async () => {
+            fetch.mockResponseOnce(EMPTY_JSON, {
+                status: 404,
+            })
 
-            fetch.mockResponseOnce(JSON.stringify({ visibility: 'internal' }))
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
 
-            fetch.mockResponseOnce(JSON.stringify({ visibility: 'public' }))
+        it('returns [private=false] when 200 status response', async () => {
+            fetch.mockResponseOnce(EMPTY_JSON, { status: 200 })
             expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
-
-            expect(fetch).toHaveBeenCalledTimes(3)
+            expect(fetch).toHaveBeenCalledTimes(1)
         })
     })
 })

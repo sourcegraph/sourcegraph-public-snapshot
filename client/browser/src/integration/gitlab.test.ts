@@ -36,6 +36,10 @@ describe('GitLab', () => {
             response.sendStatus(200)
         })
 
+        testContext.server.any('https://gitlab.com/api/v4/projects/*').intercept((request, response) => {
+            response.sendStatus(200).send(JSON.stringify({ visibility: 'public' }))
+        })
+
         testContext.overrideGraphQL({
             ViewerConfiguration: () => ({
                 viewerConfiguration: {

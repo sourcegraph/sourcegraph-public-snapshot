@@ -137,12 +137,13 @@ const notificationClassNames = {
  * @description see https://docs.gitlab.com/ee/api/projects.html#get-single-project
  * @description see rate limit https://docs.gitlab.com/ee/user/admin_area/settings/user_and_ip_rate_limits.html#response-headers
  */
-export const isPrivateRepository = (projectId?: string, fetchCache = background.fetchCache): Promise<boolean> => {
-    if (window.location.hostname !== 'gitlab.com' || !projectId) {
+export const isPrivateRepository = (repoName: string, fetchCache = background.fetchCache): Promise<boolean> => {
+    if (window.location.hostname !== 'gitlab.com' || !repoName) {
         return Promise.resolve(true)
     }
-    return fetchCache<{ visibility?: 'public' | 'private' | 'internal' }>({
-        url: `https://gitlab.com/api/v4/projects/${projectId}`,
+    return fetchCache({
+        url: `https://gitlab.com/api/v4/projects/${encodeURIComponent(repoName)}`,
+        credentials: 'omit', // it returns different response based on auth state
         cacheMaxAge: 60 * 60 * 1000, // 1 hour
     })
         .then(response => {
@@ -154,7 +155,7 @@ export const isPrivateRepository = (projectId?: string, fetchCache = background.
             }
             return response
         })
-        .then(({ data }) => data?.visibility !== 'public')
+        .then(({ status }) => status !== 200)
         .catch(error => {
             console.warn('Failed to fetch repository visibility info.', error)
             return true
@@ -169,10 +170,10 @@ export const gitlabCodeHost = subtypeOf<CodeHost>()({
     adjustOverlayPosition,
     getCommandPaletteMount,
     getContext: async () => {
-        const { projectId, ...pageInfo } = getPageInfo()
+        const { repoName, ...pageInfo } = getPageInfo()
         return {
             ...pageInfo,
-            privateRepository: await isPrivateRepository(projectId),
+            privateRepository: await isPrivateRepository(repoName),
         }
     },
     urlToFile: (sourcegraphURL, target, context): string => {

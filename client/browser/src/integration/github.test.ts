@@ -42,7 +42,7 @@ describe('GitHub', () => {
             response
                 .status(200)
                 .setHeader('Access-Control-Allow-Origin', 'https://github.com')
-                .send(JSON.stringify({ visibility: 'private' }))
+                .send(JSON.stringify({ private: false }))
         })
 
         testContext.overrideGraphQL({
