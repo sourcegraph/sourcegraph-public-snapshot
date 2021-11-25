@@ -79,7 +79,13 @@ func TestHTTPMiddleware(t *testing.T) {
 		headers: map[string]string{
 			headerActorUID: noActorHeaderValue,
 		},
-		wantActor: &Actor{}, // FromContext provides a zero-value actor
+		wantActor: &Actor{}, // FromContext provides a zero-value actor if one is not present
+	}, {
+		name: "invalid actor",
+		headers: map[string]string{
+			headerActorUID: "not-a-valid-id",
+		},
+		wantActor: &Actor{}, // FromContext provides a zero-value actor  if one is not present
 	}, {
 		name: "internal actor",
 		headers: map[string]string{
