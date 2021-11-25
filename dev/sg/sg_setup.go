@@ -328,6 +328,13 @@ sudo apt install -y postgresql postgresql-contrib`,
 		command: `sudo systemctl enable --now postgresql
 sudo systemctl enable --now redis-server.service`,
 	},
+	{
+		ifBool: "docker",
+		prompt: `Even though you're going to run the database in docker you will probably want to install the CLI tooling for Redis and Postgres
+
+redis-tools will provide redis-cli and postgresql will provide createdb and createuser`,
+		command: `sudo apt install -y redis-tools postgresql postgresql-contrib`,
+	},
 	// step 4
 	{
 		ifBool: "docker",
