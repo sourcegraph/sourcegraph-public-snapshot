@@ -19,6 +19,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -543,12 +544,12 @@ fragment RepositoryFields on Repository {
 	conditionalGHEFields := []string{}
 	version := c.determineGitHubVersion(ctx)
 
-	if ghe220PlusOrDotComSemver.Check(version) {
-		conditionalGHEFields = append(conditionalGHEFields, "visibility")
-	}
-
 	if ghe300PlusOrDotComSemver.Check(version) {
 		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
+	}
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+		conditionalGHEFields = append(conditionalGHEFields, "visibility")
 	}
 
 	// Some fields are not yet available on GitHub Enterprise yet

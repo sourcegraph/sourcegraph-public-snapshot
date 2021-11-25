@@ -23,6 +23,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -1080,9 +1081,9 @@ const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RE
 
 var (
 	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
-	ghe220PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
 	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
 	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
+	ghe330PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
 )
 
 func timelineItemTypes(version *semver.Version) (string, error) {
@@ -1759,7 +1760,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
-	return &Repository{
+	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
 		NameWithOwner:    restRepo.FullName,
@@ -1773,8 +1774,13 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
-		Visibility:       Visibility(restRepo.Visibility),
 	}
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+		repo.Visibility = Visibility(restRepo.Visibility)
+	}
+
+	return &repo
 }
 
 // convertRestRepoPermissions converts repo information returned by the rest API

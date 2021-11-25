@@ -643,7 +643,6 @@ func TestV4Client_SearchRepos_Enterprise(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-
 			if tc.ctx == nil {
 				tc.ctx = context.Background()
 			}
@@ -713,10 +712,11 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 	t.Helper()
 
 	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-	uri, err := url.Parse("https://ghe.sgdev.org/api")
+	uri, err := url.Parse("https://ghe.sgdev.org/")
 	if err != nil {
 		t.Fatal(err)
 	}
+	uri, _ = APIRoot(uri)
 
 	doer, err := cf.Doer()
 	if err != nil {
