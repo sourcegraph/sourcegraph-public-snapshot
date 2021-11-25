@@ -10,7 +10,9 @@ const BatchSpecJSON = `{
   "description": "A batch specification, which describes the batch change and what kinds of changes to make (or what existing changesets to track).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["name"],
+  "required": [
+    "name"
+  ],
   "properties": {
     "name": {
       "type": "string",
@@ -22,7 +24,10 @@ const BatchSpecJSON = `{
       "description": "The description of the batch change."
     },
     "on": {
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
       "description": "The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.",
       "items": {
         "title": "OnQueryOrRepository",
@@ -32,12 +37,16 @@ const BatchSpecJSON = `{
             "type": "object",
             "description": "A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.",
             "additionalProperties": false,
-            "required": ["repositoriesMatchingQuery"],
+            "required": [
+              "repositoriesMatchingQuery"
+            ],
             "properties": {
               "repositoriesMatchingQuery": {
                 "type": "string",
                 "description": "A Sourcegraph search query that matches a set of repositories (and branches). If the query matches files, symbols, or some other object inside a repository, the object's repository is included.",
-                "examples": ["file:README.md"]
+                "examples": [
+                  "file:README.md"
+                ]
               }
             }
           },
@@ -46,41 +55,86 @@ const BatchSpecJSON = `{
             "type": "object",
             "description": "A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.",
             "additionalProperties": false,
-            "required": ["repository"],
+            "required": [
+              "repository"
+            ],
             "properties": {
               "repository": {
                 "type": "string",
                 "description": "The name of the repository (as it is known to Sourcegraph).",
-                "examples": ["github.com/foo/bar"]
+                "examples": [
+                  "github.com/foo/bar"
+                ]
               },
               "branch": {
-                "type": "string",
-                "description": "The branch on the repository to propose changes to. If unset, the repository's default branch is used."
+                "$ref": "#/$defs/branch"
+              },
+              "branches": {
+                "$ref": "#/$defs/branch"
               }
-            }
+            },
+            "$comment": "This is a convoluted way of saying either ` + "`" + `branch` + "`" + ` or ` + "`" + `branches` + "`" + ` can be provided, but not both at once, and neither are required.",
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "required": [
+                      "branch"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "branches"
+                    ]
+                  }
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "branch",
+                    "branches"
+                  ]
+                }
+              }
+            ]
           }
         ]
       }
     },
     "workspaces": {
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
       "description": "Individual workspace configurations for one or more repositories that define which workspaces to use for the execution of steps in the repositories.",
       "items": {
         "title": "WorkspaceConfiguration",
         "type": "object",
         "description": "Configuration for how to setup workspaces in repositories",
         "additionalProperties": false,
-        "required": ["rootAtLocationOf"],
+        "required": [
+          "rootAtLocationOf"
+        ],
         "properties": {
           "rootAtLocationOf": {
             "type": "string",
             "description": "The name of the file that sits at the root of the desired workspace.",
-            "examples": ["package.json", "go.mod", "Gemfile", "Cargo.toml", "README.md"]
+            "examples": [
+              "package.json",
+              "go.mod",
+              "Gemfile",
+              "Cargo.toml",
+              "README.md"
+            ]
           },
           "in": {
             "type": "string",
             "description": "The repositories in which to apply the workspace configuration. Supports globbing.",
-            "examples": ["github.com/sourcegraph/src-cli", "github.com/sourcegraph/*"]
+            "examples": [
+              "github.com/sourcegraph/src-cli",
+              "github.com/sourcegraph/*"
+            ]
           },
           "onlyFetchWorkspace": {
             "type": "boolean",
@@ -91,14 +145,20 @@ const BatchSpecJSON = `{
       }
     },
     "steps": {
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
       "description": "The sequence of commands to run (for each repository branch matched in the ` + "`" + `on` + "`" + ` property) to produce the workspace changes that will be included in the batch change.",
       "items": {
         "title": "Step",
         "type": "object",
         "description": "A command to run (as part of a sequence) in a repository branch to produce the required changes.",
         "additionalProperties": false,
-        "required": ["run", "container"],
+        "required": [
+          "run",
+          "container"
+        ],
         "properties": {
           "run": {
             "type": "string",
@@ -107,25 +167,40 @@ const BatchSpecJSON = `{
           "container": {
             "type": "string",
             "description": "The Docker image used to launch the Docker container in which the shell command is run.",
-            "examples": ["alpine:3"]
+            "examples": [
+              "alpine:3"
+            ]
           },
           "outputs": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "description": "Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>",
             "additionalProperties": {
               "title": "OutputVariable",
               "type": "object",
-              "required": ["value"],
+              "required": [
+                "value"
+              ],
               "properties": {
                 "value": {
                   "type": "string",
                   "description": "The value of the output, which can be a template string.",
-                  "examples": ["hello world", "${{ step.stdout }}", "${{ repository.name }}"]
+                  "examples": [
+                    "hello world",
+                    "${{ step.stdout }}",
+                    "${{ repository.name }}"
+                  ]
                 },
                 "format": {
                   "type": "string",
                   "description": "The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.",
-                  "enum": ["json", "yaml", "text"]
+                  "enum": [
+                    "json",
+                    "yaml",
+                    "text"
+                  ]
                 }
               }
             }
@@ -153,7 +228,7 @@ const BatchSpecJSON = `{
                     },
                     {
                       "type": "object",
-                      "description": "An environment variable to set in the step environment: the value will be passed through from the environment src is running within.",
+                      "description": "An environment variable to set in the step environment: the key is used as the environment variable name and the value as the value.",
                       "additionalProperties": {
                         "type": "string"
                       },
@@ -166,14 +241,27 @@ const BatchSpecJSON = `{
             ]
           },
           "files": {
-            "type": ["object", "null"],
+            "type": [
+              "object",
+              "null"
+            ],
             "description": "Files that should be mounted into or be created inside the Docker container.",
             "additionalProperties": {
               "type": "string"
             }
           },
           "if": {
-            "oneOf": [{ "type": "boolean" }, { "type": "string" }, { "type": "null" }],
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "description": "A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.",
             "examples": [
               "true",
@@ -186,18 +274,27 @@ const BatchSpecJSON = `{
       }
     },
     "transformChanges": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Optional transformations to apply to the changes produced in each repository.",
       "additionalProperties": false,
       "properties": {
         "group": {
-          "type": ["array", "null"],
+          "type": [
+            "array",
+            "null"
+          ],
           "description": "A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.",
           "items": {
             "title": "TransformChangesGroup",
             "type": "object",
             "additionalProperties": false,
-            "required": ["directory", "branch"],
+            "required": [
+              "directory",
+              "branch"
+            ],
             "properties": {
               "directory": {
                 "type": "string",
@@ -212,7 +309,9 @@ const BatchSpecJSON = `{
               "repository": {
                 "type": "string",
                 "description": "Only apply this transformation in the repository with this name (as it is known to Sourcegraph).",
-                "examples": ["github.com/foo/bar"]
+                "examples": [
+                  "github.com/foo/bar"
+                ]
               }
             }
           }
@@ -220,19 +319,28 @@ const BatchSpecJSON = `{
       }
     },
     "importChangesets": {
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
       "description": "Import existing changesets on code hosts.",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["repository", "externalIDs"],
+        "required": [
+          "repository",
+          "externalIDs"
+        ],
         "properties": {
           "repository": {
             "type": "string",
             "description": "The repository name as configured on your Sourcegraph instance."
           },
           "externalIDs": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "description": "The changesets to import from the code host. For GitHub this is the PR number, for GitLab this is the MR number, for Bitbucket Server this is the PR number.",
             "uniqueItems": true,
             "items": {
@@ -245,7 +353,10 @@ const BatchSpecJSON = `{
                 }
               ]
             },
-            "examples": [120, "120"]
+            "examples": [
+              120,
+              "120"
+            ]
           }
         }
       }
@@ -254,7 +365,11 @@ const BatchSpecJSON = `{
       "type": "object",
       "description": "A template describing how to create (and update) changesets with the file changes produced by the command steps.",
       "additionalProperties": false,
-      "required": ["title", "branch", "commit"],
+      "required": [
+        "title",
+        "branch",
+        "commit"
+      ],
       "properties": {
         "title": {
           "type": "string",
@@ -273,7 +388,9 @@ const BatchSpecJSON = `{
           "type": "object",
           "description": "The Git commit to create with the changes.",
           "additionalProperties": false,
-          "required": ["message"],
+          "required": [
+            "message"
+          ],
           "properties": {
             "message": {
               "type": "string",
@@ -284,7 +401,10 @@ const BatchSpecJSON = `{
               "type": "object",
               "description": "The author of the Git commit.",
               "additionalProperties": false,
-              "required": ["name", "email"],
+              "required": [
+                "name",
+                "email"
+              ],
               "properties": {
                 "name": {
                   "type": "string",
@@ -341,6 +461,22 @@ const BatchSpecJSON = `{
           ]
         }
       }
+    }
+  },
+  "$defs": {
+    "branch": {
+      "description": "The branch or branches on the repository to propose changes to. If unset, the repository's default branch is used.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
     }
   }
 }

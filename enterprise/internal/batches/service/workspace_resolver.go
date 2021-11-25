@@ -153,7 +153,11 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 }
 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
-	seen := map[api.RepoID]*RepoRevision{}
+	type repoRevKey struct {
+		repo   api.RepoID
+		branch string
+	}
+	seen := map[repoRevKey]*RepoRevision{}
 
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
@@ -170,13 +174,13 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 				continue
 			}
 
-			if other, ok := seen[repo.Repo.ID]; !ok {
-				seen[repo.Repo.ID] = repo
+			key := repoRevKey{repo: repo.Repo.ID, branch: repo.Branch}
+			if other, ok := seen[key]; !ok {
+				seen[key] = repo
 			} else {
-				// If we've already seen this repository, we overwrite the
-				// Commit/Branch fields with the latest value we have
+				// If we've already seen this repository and branch, we
+				// overwrite the Commit field with the latest value we have.
 				other.Commit = repo.Commit
-				other.Branch = repo.Branch
 			}
 		}
 	}
@@ -253,12 +257,17 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 		return wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
 	}
 
-	if on.Repository != "" && on.Branch != "" {
-		repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, on.Branch)
-		if err != nil {
-			return nil, err
+	if on.Repository != "" && len(on.Branches) > 0 {
+		revs := make([]*RepoRevision, len(on.Branches))
+		for i, branch := range on.Branches {
+			repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, branch)
+			if err != nil {
+				return nil, err
+			}
+
+			revs[i] = repo
 		}
-		return []*RepoRevision{repo}, nil
+		return revs, nil
 	}
 
 	if on.Repository != "" {

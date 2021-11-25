@@ -1,6 +1,7 @@
 package batches
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -70,9 +71,48 @@ type WorkspaceConfiguration struct {
 }
 
 type OnQueryOrRepository struct {
-	RepositoriesMatchingQuery string `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
-	Repository                string `json:"repository,omitempty" yaml:"repository"`
-	Branch                    string `json:"branch,omitempty" yaml:"branch"`
+	RepositoriesMatchingQuery string
+	Repository                string
+	Branches                  []string
+}
+
+type rawOnQueryOrRepository struct {
+	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
+	Repository                string   `json:"repository,omitempty" yaml:"repository"`
+	Branch                    branches `json:"branch,omitempty" yaml:"branch"`
+	Branches                  branches `json:"branches,omitempty" yaml:"branches"`
+}
+
+func (raw *rawOnQueryOrRepository) overwrite(oqor *OnQueryOrRepository) {
+	oqor.RepositoriesMatchingQuery = raw.RepositoriesMatchingQuery
+	oqor.Repository = raw.Repository
+
+	oqor.Branches = []string{}
+	if len(raw.Branch) > 0 {
+		oqor.Branches = raw.Branch
+	} else {
+		oqor.Branches = raw.Branches
+	}
+}
+
+func (oqor *OnQueryOrRepository) UnmarshalJSON(data []byte) error {
+	raw := rawOnQueryOrRepository{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	raw.overwrite(oqor)
+	return nil
+}
+
+func (oqor *OnQueryOrRepository) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	raw := rawOnQueryOrRepository{}
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	raw.overwrite(oqor)
+	return nil
 }
 
 type Step struct {

@@ -166,8 +166,8 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		batchSpec := &batcheslib.BatchSpec{
 			On: []batcheslib.OnQueryOrRepository{
 				{Repository: string(rs[0].Name)},
-				{Repository: string(rs[1].Name), Branch: "non-default-branch"},
-				{Repository: string(rs[2].Name), Branch: "other-non-default-branch"},
+				{Repository: string(rs[1].Name), Branches: []string{"non-default-branch"}},
+				{Repository: string(rs[2].Name), Branches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
 				{Repository: string(rs[3].Name)},
 				{Repository: string(unsupported[0].Name)},
 			},
@@ -178,6 +178,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[rs[0].Name].branch:          defaultBranches[rs[0].Name].commit,
 			"non-default-branch":                        api.CommitID("d34db33f"),
 			"other-non-default-branch":                  api.CommitID("c0ff33"),
+			"yet-another-non-default-branch":            api.CommitID("b33a"),
 			defaultBranches[rs[3].Name].branch:          defaultBranches[rs[3].Name].commit,
 			defaultBranches[unsupported[0].Name].branch: defaultBranches[unsupported[0].Name].commit,
 		})
@@ -186,6 +187,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			defaultBranches[rs[0].Name].commit:          false,
 			api.CommitID("d34db33f"):                    false,
 			api.CommitID("c0ff33"):                      false,
+			api.CommitID("b33a"):                        false,
 			defaultBranches[rs[3].Name].commit:          true,
 			defaultBranches[unsupported[0].Name].commit: false,
 		})
@@ -196,6 +198,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			buildRepoWorkspace(rs[0], "", "", []string{}),
 			buildRepoWorkspace(rs[1], "non-default-branch", "d34db33f", []string{}),
 			buildRepoWorkspace(rs[2], "other-non-default-branch", "c0ff33", []string{}),
+			buildRepoWorkspace(rs[2], "yet-another-non-default-branch", "b33a", []string{}),
 			buildIgnoredRepoWorkspace(rs[3], "", "", []string{}),
 			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
 		}
