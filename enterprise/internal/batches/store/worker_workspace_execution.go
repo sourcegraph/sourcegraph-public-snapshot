@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/go-enry/go-enry/v2/regex"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
@@ -147,12 +146,12 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, 
 		return false, err
 	}
 
-	cacheEntries, err := extractCacheEntries(ctx, events)
+	executionResults, stepResults, err := extractCacheEntries(ctx, events)
 	if err != nil {
 		return false, err
 	}
 
-	for _, entry := range cacheEntries {
+	for _, entry := range append(executionResults, stepResults...) {
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
 			return false, err
 		}
@@ -209,25 +208,30 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, err
 	}
 
-	cacheEntries, err := extractCacheEntries(ctx, events)
+	executionResults, stepResults, err := extractCacheEntries(ctx, events)
 	if err != nil {
 		// Rollback transaction but ignore rollback errors
 		tx.Done(err)
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract cache entries: %s", err), options)
 	}
 
+	for _, entry := range stepResults {
+		// Store the cache entry.
+		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
+			tx.Done(err)
+			return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to save cache entry: %s", err), options)
+		}
+	}
+
 	changesetSpecIDs := []int64{}
-	for _, entry := range cacheEntries {
+	for _, entry := range executionResults {
+		// Store the cache entry.
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
 			tx.Done(err)
 			return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to save cache entry: %s", err), options)
 		}
 
-		stepCacheRe := regex.MustCompile(".*-step-\\d+$")
-		if !stepCacheRe.Match([]byte(entry.Key)) {
-			continue
-		}
-
+		// And now build changeset specs from it.
 		var executionResult execution.Result
 		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
 			tx.Done(err)
@@ -344,19 +348,17 @@ SET
 WHERE id = %s
 `
 
-func extractCacheEntries(ctx context.Context, events []*batcheslib.LogEvent) ([]*btypes.BatchSpecExecutionCacheEntry, error) {
-	var entries []*btypes.BatchSpecExecutionCacheEntry
-
+func extractCacheEntries(ctx context.Context, events []*batcheslib.LogEvent) (executionResults, stepResults []*btypes.BatchSpecExecutionCacheEntry, err error) {
 	for _, e := range events {
 		switch m := e.Metadata.(type) {
 		case *batcheslib.CacheResultMetadata:
 			// TODO: This is stupid, because we unmarshal and then marshal again.
 			value, err := json.Marshal(&m.Value)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
-			entries = append(entries, &btypes.BatchSpecExecutionCacheEntry{
+			executionResults = append(executionResults, &btypes.BatchSpecExecutionCacheEntry{
 				Key:   m.Key,
 				Value: string(value),
 			})
@@ -364,17 +366,17 @@ func extractCacheEntries(ctx context.Context, events []*batcheslib.LogEvent) ([]
 			// TODO: This is stupid, because we unmarshal and then marshal again.
 			value, err := json.Marshal(&m.Value)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
-			entries = append(entries, &btypes.BatchSpecExecutionCacheEntry{
+			stepResults = append(stepResults, &btypes.BatchSpecExecutionCacheEntry{
 				Key:   m.Key,
 				Value: string(value),
 			})
 		}
 	}
 
-	return entries, nil
+	return executionResults, stepResults, nil
 }
 
 var ErrNoSrcCLILogEntry = errors.New("no src-cli log entry found in execution logs")
