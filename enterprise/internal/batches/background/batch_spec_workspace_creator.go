@@ -248,7 +248,7 @@ func (r *batchSpecWorkspaceCreator) process(
 		return err
 	}
 
-	// Associate the changeset specs with the workspace.
+	// Associate the changeset specs with the workspace now that they have IDs.
 	for workspace, changesetSpecs := range changesetsByWorkspace {
 		for _, spec := range changesetSpecs {
 			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
