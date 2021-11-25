@@ -1,12 +1,12 @@
 # NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
-FROM sourcegraph/alpine-3.12:116273_2021-11-12_dbac772@sha256:78995f23b1dbadb35ba4a153adecde3f309ee3763888e4172e0f8dc05c9728d3 AS ctags
+FROM sourcegraph/alpine-3.14:117816_2021-11-25_6eb4943@sha256:06d0ecb92132c7c40ce6476b2e72d633b55b1076a49411526985fa08cdfc16ab AS ctags
 # hadolint ignore=DL3002
 USER root
 
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM sourcegraph/alpine-3.12:116273_2021-11-12_dbac772@sha256:78995f23b1dbadb35ba4a153adecde3f309ee3763888e4172e0f8dc05c9728d3 AS symbols
+FROM sourcegraph/alpine-3.14:117816_2021-11-25_6eb4943@sha256:06d0ecb92132c7c40ce6476b2e72d633b55b1076a49411526985fa08cdfc16ab AS symbols
 
 # TODO(security): This container should not run as root!
 #

@@ -14,7 +14,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-ENV LOG_REQUEST=true
 USER sourcegraph
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/github-proxy"]
-COPY github-proxy /usr/local/bin/
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/query-runner"]
+COPY query-runner /usr/local/bin/
