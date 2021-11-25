@@ -96,6 +96,7 @@ func TestK8sURL(t *testing.T) {
 		"k8s+http://searcher":               "http://endpoint.service",
 		"k8s+http://searcher.namespace:123": "http://endpoint.service:123",
 		"k8s+rpc://indexed-search:6070":     "endpoint.service:6070",
+		"k8s+http://symbols:3184/?kind=sts": "http://endpoint.service:3184",
 	}
 	for rawurl, want := range cases {
 		u, err := parseURL(rawurl)

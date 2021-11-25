@@ -149,6 +149,8 @@ func (u *k8sURL) endpointURL(endpoint string) string {
 	if uCopy.Scheme == "rpc" {
 		return uCopy.Host
 	}
+	uCopy.Path = ""
+	uCopy.RawQuery = ""
 	return uCopy.String()
 }
 
