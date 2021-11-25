@@ -33,15 +33,16 @@ body.theme-dark .markdown-body ul li:before {
 > - [GitHub repository](https://github.com/sourcegraph/sourcegraph)
 > - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 
-## [Local enviroment setup](setup/index.md)
+<div class="cta-group">
+<a class="btn btn-primary" href="setup/quickstart">★ Quickstart: develop Sourcegraph on your machine</a>
+<a class="btn" href="setup/how-to">Languages</a>
+<a class="btn" href="setup/troubleshooting">Testing</a>
+</div>
+
+
+## [Getting Started](setup/index.md)
 
 <p class="subtitle">Working on Sourcegraph code on your local machine.</p>
-
-<!-- <div class="cta-group"> -->
-<!-- <a class="btn btn-primary" href="setup/quickstart">★ Quickstart</a> -->
-<!-- <a class="btn" href="setup/how-to">How-tos</a> -->
-<!-- <a class="btn" href="setup/troubleshooting">Troubleshooting</a> -->
-<!-- </div> -->
 
 <div class="getting-started">
   <a href="setup/quickstart" class="btn" alt="Run through the Quickstart guide">
@@ -50,13 +51,13 @@ body.theme-dark .markdown-body ul li:before {
    Run through the <b>step by step guide</b> and get your local environment ready.
   </a>
 
-  <a href="setup/how-to" class="btn" alt="TODO">
+  <a href="setup/how-to" class="btn" alt="How-to guides">
    <span>How-to guides</span>
    </br>
   <b>Context specific</b> guides: debugging live code, m1 mac workarounds, ...
   </a>
 
-  <a href="setup/troubleshooting" class="btn" alt="TODO">
+  <a href="setup/troubleshooting" class="btn" alt="Troubleshooting">
    <span>Troubleshooting</span>
    </br>
   List of the <b>most common</b> local environment problems and their solutions.
@@ -64,8 +65,6 @@ body.theme-dark .markdown-body ul li:before {
 </div>
 
 <br/>
-
----
 
 ## [Background information](background-information/index.md)
 

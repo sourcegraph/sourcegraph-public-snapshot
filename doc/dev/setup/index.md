@@ -31,7 +31,6 @@ body.theme-dark .markdown-body ul li:before {
 
 <div class="cta-group">
 <a class="btn btn-primary" href="quickstart">★ Quickstart with <code>sg</code></a>
-<a class="btn" href="how-to/m1_mac_local_dev">M1 Mac workarounds</a>
 <a class="btn" href="#how-tos">How-tos</a>
 <a class="btn" href="#troubleshooting">Troubleshooting</a>
 </div>
@@ -44,10 +43,9 @@ In order to run the Sourcegraph locally, the following pages will guide you from
 - [**Quickstart with `sg`**](quickstart.md)
 - (optional) [Workarounds for local development on M1 macs](how-to/m1_mac_local_dev.md)
 
-The quick start guide above provides a standard approach, focused on simplicity and accessiblility. But it's not the only way, the pages below document alternatives for setting up languages and databases:
+The quick start guide above provides a standard approach, focused on simplicity and accessiblility. But it's not the only way, the dependencies page below documents more exhaustively various approaches to set them up.
 
-- [Alternative set up for languages](alternative-set-up-for-languages.md)
-- [Alternative set up for databases](alternative-set-up-for-databases.md)
+- [Dependencies](dependencies.md)
 
 ## How-tos
 
@@ -57,7 +55,6 @@ The following how-tos are optional and will guide you to set up your local envir
 - [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
 - [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
 - [Use `golangci-lint`](how-to/use-golangci-lint.md)
-- [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
 
 ## Troubleshooting
 
