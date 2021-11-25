@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { useGlobalStore } from './stores/global'
+import { useThemeState as useThemeGlobalState } from './stores'
 
 /**
  * The user preference for the theme.
@@ -46,7 +46,7 @@ export const useThemeState = (): ThemeState => {
     )
     const systemIsLightTheme = useObservable(systemIsLightThemeObservable) ?? systemIsLightThemeInitialValue
 
-    const [themePreference, setThemePreference] = useGlobalStore(state => [state.theme, state.setTheme])
+    const [themePreference, setThemePreference] = useThemeGlobalState(state => [state.theme, state.setTheme])
     const enhancedThemePreference =
         themePreference === ThemePreference.System
             ? systemIsLightTheme
@@ -64,7 +64,7 @@ export const useThemeState = (): ThemeState => {
 /**
  * A React hook for getting and setting the theme.
  */
-export const useTheme = (): ThemeProps & ThemePreferenceProps => {
+export const useThemeProps = (): ThemeProps & ThemePreferenceProps => {
     const { themePreference, enhancedThemePreference, setThemePreference } = useThemeState()
     const isLightTheme = enhancedThemePreference === ThemePreference.Light
 

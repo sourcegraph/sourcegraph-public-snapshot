@@ -2,9 +2,9 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { act, renderHook } from '@testing-library/react-hooks'
 
-import { useGlobalStore } from './stores/global'
+import { useThemeState } from './stores'
 import { ThemePreference } from './stores/themeState'
-import { useTheme } from './theme'
+import { useThemeProps } from './theme'
 
 // Don't test reacting to system-wide theme changes, for simplicity. This means that
 // observeSystemIsLightTheme's initial value will be used, but it will not monitor for subsequent
@@ -28,7 +28,7 @@ describe('useTheme()', () => {
         it('light', () => {
             mockSystemTheme('light')
 
-            const { result } = renderHook(() => useTheme())
+            const { result } = renderHook(() => useThemeProps())
 
             expect(result.current.isLightTheme).toBe(true)
             expect(result.current.themePreference).toBe(ThemePreference.System)
@@ -40,7 +40,7 @@ describe('useTheme()', () => {
         it('dark', () => {
             mockSystemTheme('dark')
 
-            const { result } = renderHook(() => useTheme())
+            const { result } = renderHook(() => useThemeProps())
 
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.System)
@@ -53,8 +53,8 @@ describe('useTheme()', () => {
     describe('respects theme preference', () => {
         it('light', () => {
             mockSystemTheme('dark')
-            const { result } = renderHook(() => useTheme())
-            act(() => useGlobalStore.setState({ theme: ThemePreference.Light }))
+            const { result } = renderHook(() => useThemeProps())
+            act(() => useThemeState.setState({ theme: ThemePreference.Light }))
 
             expect(result.current.isLightTheme).toBe(true)
             expect(result.current.themePreference).toBe(ThemePreference.Light)
@@ -65,8 +65,8 @@ describe('useTheme()', () => {
 
         it('dark', () => {
             mockSystemTheme('light')
-            const { result } = renderHook(() => useTheme())
-            act(() => useGlobalStore.setState({ theme: ThemePreference.Dark }))
+            const { result } = renderHook(() => useThemeProps())
+            act(() => useThemeState.setState({ theme: ThemePreference.Dark }))
 
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.Dark)
@@ -77,8 +77,8 @@ describe('useTheme()', () => {
 
         it('system', () => {
             mockSystemTheme('dark')
-            const { result } = renderHook(() => useTheme())
-            act(() => useGlobalStore.setState({ theme: ThemePreference.System }))
+            const { result } = renderHook(() => useThemeProps())
+            act(() => useThemeState.setState({ theme: ThemePreference.System }))
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-dark')
@@ -89,7 +89,7 @@ describe('useTheme()', () => {
 
     it('changes theme preference', () => {
         mockSystemTheme('light')
-        const { result } = renderHook(() => useTheme())
+        const { result } = renderHook(() => useThemeProps())
         expect(result.current.isLightTheme).toBe(true)
         expect(result.current.themePreference).toBe(ThemePreference.System)
 

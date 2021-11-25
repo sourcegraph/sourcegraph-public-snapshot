@@ -1,4 +1,5 @@
-import { SetState } from 'zustand/vanilla'
+import create from 'zustand'
+import { persist } from 'zustand/middleware'
 
 /**
  * The user preference for the theme.
@@ -32,7 +33,17 @@ export interface ThemeState {
     setTheme: (theme: ThemePreference) => void
 }
 
-export const createThemeStateStore = (set: SetState<ThemeState>): ThemeState => ({
-    theme: readStoredThemePreference(),
-    setTheme: theme => set({ theme }),
-})
+export const useThemeState = create<ThemeState>(
+    persist<ThemeState>(
+        set => ({
+            theme: readStoredThemePreference(),
+            setTheme: theme => set({ theme }),
+        }),
+        {
+            name: LIGHT_THEME_LOCAL_STORAGE_KEY,
+            whitelist: ['theme'],
+            serialize: state => state.state.theme,
+            deserialize: string => ({ state: { theme: readStoredThemePreference(string) } }),
+        }
+    )
+)
