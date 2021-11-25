@@ -255,7 +255,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     private onDidUpdateUser = (didRemoveSelf: boolean): void => {
         if (didRemoveSelf) {
-            this.props.history.push('/search')
+            this.props.history.push('/user/settings')
             return
         }
         this.userUpdates.next()
