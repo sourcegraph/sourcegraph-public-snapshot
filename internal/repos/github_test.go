@@ -178,9 +178,12 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						StargazerCount: 0,
 						ForkCount:      0,
 						IsPrivate:      true,
-						// We're hitting github.com here, so visibility will be empty irrespective
-						// of repository type. This is a GitHub enterprise only feature.
-						Visibility: "internal",
+						// We're hitting ghe.sgdev.org here, so visibility should not be empty.
+						// However, our GHE instance is < 3.3.0 and it is guarded behind a feature
+						// flag.  We will need to enable the feature flag once our GHE instance is
+						// upgraded to at least 3.3.0 and then fix the test to expect a type
+						// "internal" here.
+						Visibility: github.Visibility(""),
 					},
 				}
 
