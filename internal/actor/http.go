@@ -10,7 +10,7 @@ import (
 )
 
 // headerActorUID is the header key for the actor's user ID.
-const headerActorUID = "X-Sourcegraph-Actor-UID"
+const headerActorUID = "X-Sourcegraph-Actor-ID"
 
 const (
 	// internalActorHeaderValue indicates the request uses an internal actor.
@@ -67,6 +67,10 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // HTTPMiddleware wraps the given handle func and attaches the actor indicated in incoming
 // requests to the request header.
+//
+// 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e.
+// only use for internal endpoints), because internal requests can bypass repository
+// permissions checks.
 func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
