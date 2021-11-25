@@ -196,7 +196,7 @@ The following are complete examples of provisioning _multiple_ executor types us
 
 Let's walk through setting up a single executor VM on GCP and indexing a repository.
 
-1. Install Terraform `0.13.7` (must be exact):
+1. Install Terraform `0.13.7` (must match the version listed in [`.tool-versions`](https://github.com/sourcegraph/terraform-google-executors/blob/master/.tool-versions)):
 
 ```
 brew install tfenv
