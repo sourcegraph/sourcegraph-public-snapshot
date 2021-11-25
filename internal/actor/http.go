@@ -38,16 +38,19 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	actor := FromContext(req.Context())
-	if actor.IsInternal() {
-		// Indicate this is an internal user
+	switch {
+	// Indicate this is an internal user
+	case actor.IsInternal():
 		req.Header.Set(headerActorUID, internalActorHeaderValue)
 		metricOutgoingActors.WithLabelValues(internalActorHeaderValue).Inc()
-	} else if actor.IsAuthenticated() {
-		// Indicate this is an authenticated user
+
+	// Indicate this is an authenticated user
+	case actor.IsAuthenticated():
 		req.Header.Set(headerActorUID, actor.UIDString())
 		metricOutgoingActors.WithLabelValues("user").Inc()
-	} else {
-		// Indicate no actor is associated with request
+
+	// Indicate no actor is associated with request
+	default:
 		req.Header.Set(headerActorUID, noActorHeaderValue)
 		metricOutgoingActors.WithLabelValues(noActorHeaderValue).Inc()
 	}
@@ -85,12 +88,13 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 					"error", err,
 					"uid", uidStr)
 				metricIncomingActors.WithLabelValues("invalid").Inc()
-			} else {
-				// Valid user, add to context
-				actor := FromUser(int32(uid))
-				ctx = WithActor(ctx, actor)
-				metricIncomingActors.WithLabelValues("user").Inc()
+				break
 			}
+
+			// Valid user, add to context
+			actor := FromUser(int32(uid))
+			ctx = WithActor(ctx, actor)
+			metricIncomingActors.WithLabelValues("user").Inc()
 		}
 
 		next.ServeHTTP(rw, req.WithContext(ctx))
