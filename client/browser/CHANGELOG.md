@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+## Chrome / Firefox v21.11.25.1400, Safari v1.8
+
 - Fix omnibox opening in wrong tab [#issues/23475](https://github.com/sourcegraph/sourcegraph/issues/23475), [#pull/27525](https://github.com/sourcegraph/sourcegraph/pull/27525)
 - Fix excessive "all websites" permissions for Safari [#issues/23542](https://github.com/sourcegraph/sourcegraph/issues/23542), [#pull/26832](https://github.com/sourcegraph/sourcegraph/pull/26832)
 - Update private repository detection logic for Gitlab and Github [#issues/27382](https://github.com/sourcegraph/sourcegraph/issues/27382), [#pull/27779](https://github.com/sourcegraph/sourcegraph/pull/27779)
