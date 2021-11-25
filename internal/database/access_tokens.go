@@ -46,7 +46,7 @@ func (e InvalidTokenError) Error() string {
 	return fmt.Sprintf("invalid token: %s", e.err)
 }
 
-// accessTokenStore implements autocert.Cache
+// AccessTokenStore implements autocert.Cache
 type AccessTokenStore interface {
 	// Count counts all access tokens, except internal tokens, that satisfy the options (ignoring limit and offset).
 	//

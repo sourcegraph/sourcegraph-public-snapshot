@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -16,23 +17,23 @@ func init() {
 }
 
 func extensionRegistryPublishers(ctx context.Context, db dbutil.DB, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
-	var opt dbPublishersListOptions
+	var opt stores.PublishersListOptions
 	args.Set(&opt.LimitOffset)
 	return &registryPublisherConnection{opt: opt, db: db}, nil
 }
 
 // registryPublisherConnection resolves a list of registry publishers.
 type registryPublisherConnection struct {
-	opt dbPublishersListOptions
+	opt stores.PublishersListOptions
 
 	// cache results because they are used by multiple fields
 	once               sync.Once
-	registryPublishers []*dbPublisher
+	registryPublishers []*stores.Publisher
 	err                error
 	db                 dbutil.DB
 }
 
-func (r *registryPublisherConnection) compute(ctx context.Context) ([]*dbPublisher, error) {
+func (r *registryPublisherConnection) compute(ctx context.Context) ([]*stores.Publisher, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
@@ -41,7 +42,7 @@ func (r *registryPublisherConnection) compute(ctx context.Context) ([]*dbPublish
 			opt2.Limit++ // so we can detect if there is a next page
 		}
 
-		r.registryPublishers, r.err = dbExtensions{}.ListPublishers(ctx, opt2)
+		r.registryPublishers, r.err = stores.Extensions(r.db).ListPublishers(ctx, opt2)
 	})
 	return r.registryPublishers, r.err
 }
@@ -64,7 +65,7 @@ func (r *registryPublisherConnection) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *registryPublisherConnection) TotalCount(ctx context.Context) (int32, error) {
-	count, err := dbExtensions{}.CountPublishers(ctx, r.opt)
+	count, err := stores.Extensions(r.db).CountPublishers(ctx, r.opt)
 	return int32(count), err
 }
 
