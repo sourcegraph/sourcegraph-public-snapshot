@@ -13,14 +13,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
 	frontendregistry.ExtensionRegistry.ViewerPublishersFunc = extensionRegistryViewerPublishers
 }
 
-func extensionRegistryViewerPublishers(ctx context.Context, db dbutil.DB) ([]graphqlbackend.RegistryPublisher, error) {
+func extensionRegistryViewerPublishers(ctx context.Context, db database.DB) ([]graphqlbackend.RegistryPublisher, error) {
 	// The feature check here makes it so the any "New extension" form will show an error, so the
 	// user finds out before trying to submit the form that the feature is disabled.
 	if err := licensing.Check(licensing.FeatureExtensionRegistry); err != nil {
@@ -136,14 +135,14 @@ func unmarshalRegistryPublisherID(id graphql.ID) (*registryPublisherID, error) {
 // registry extension with the given publisher.
 //
 // 🚨 SECURITY
-func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db dbutil.DB) error {
+func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db database.DB) error {
 	switch {
 	case p.userID != 0:
 		// 🚨 SECURITY: Check that the current user is either the publisher or a site admin.
-		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), p.userID)
+		return backend.CheckSiteAdminOrSameUser(ctx, db, p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(db), p.orgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, p.orgID)
 	default:
 		return errRegistryUnknownPublisher
 	}

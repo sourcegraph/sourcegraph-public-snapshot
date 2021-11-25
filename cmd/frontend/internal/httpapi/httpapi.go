@@ -88,7 +88,7 @@ func NewHandler(db database.DB, m *mux.Router, schema *graphql.Schema, githubWeb
 	m.Get(apirouter.SrcCliVersion).Handler(trace.Route(handler(srcCliVersionServe)))
 	m.Get(apirouter.SrcCliDownload).Handler(trace.Route(handler(srcCliDownloadServe)))
 
-	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry)))
+	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry(db))))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
