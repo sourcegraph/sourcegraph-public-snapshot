@@ -39,7 +39,7 @@ Referenced by:
  closed_at          | timestamp with time zone |           |          | 
  batch_spec_id      | bigint                   |           | not null | 
  last_applier_id    | bigint                   |           |          | 
- last_applied_at    | timestamp with time zone |           | not null | 
+ last_applied_at    | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
     "batch_changes_namespace_org_id" btree (namespace_org_id)
