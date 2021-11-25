@@ -96,7 +96,7 @@ interface Props
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
