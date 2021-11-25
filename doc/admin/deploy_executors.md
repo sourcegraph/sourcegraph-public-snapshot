@@ -92,7 +92,17 @@ You can also take a look at [what goes into our executor machine images, used by
 
 Once dependencies are met, you can download and run executor binaries:
 
-**Step 1:** Download latest binary
+**Step 1:** Confirm that virtualization is enabled
+
+The following command checks whether virtualization is enabled on the machine, which is required for [our sandboxing model](executors.md#how-it-works).
+
+If it prints something other than 0, virtualization is enabled.
+
+```bash
+grep -cw vmx /proc/cpuinfo
+```
+
+**Step 2:** Download latest binary
 
 Below are the the download for the *insiders* release (`latest`) of executors:
 
@@ -108,7 +118,7 @@ chmod +x executor
 mv executor /usr/local/bin
 ```
 
-**Step 2:** Generate Ignite base image
+**Step 3:** Generate Ignite base image
 
 This creates the base image that Ignite will use when creating new [Firecracker](https://firecracker-microvm.github.io/) microVMs for each job.
 
@@ -130,7 +140,7 @@ ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
 docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
 ```
 
-**Step 3:** _Optional_: Pre-heat Ignite by importing kernel image
+**Step 4:** _Optional_: Pre-heat Ignite by importing kernel image
 
 This step imports the kernel image to avoid the executor having to import it when executing the first job.
 
@@ -143,7 +153,7 @@ ignite kernel import --runtime docker "${KERNEL_IMAGE}"
 docker pull "weaveworks/ignite:${IGNITE_VERSION}"
 ```
 
-**Step 4:** Setup required environment variables
+**Step 5:** Setup required environment variables
 
 | Env var                       | Example value | Description |
 | ------------------------------| ------------- | ----------- |
@@ -158,7 +168,7 @@ export EXECUTOR_FRONTEND_URL=http://sourcegraph.example.com
 export EXECUTOR_FRONTEND_PASSWORD=hunter2hunter2hunter2
 ```
 
-**Step 5:** Start executor
+**Step 6:** Start executor
 
 ```bash
 /usr/local/bin/executor
