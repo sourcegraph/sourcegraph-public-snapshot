@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -14,7 +13,6 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -30,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -55,32 +52,6 @@ type RepoWorkspace struct {
 
 	Ignored     bool
 	Unsupported bool
-}
-
-func DBChangesetSpecsFromCache(batchSpecID int64, repoID api.RepoID, userID int32, spec *batcheslib.BatchSpec, r batcheslib.Repository, entry *btypes.BatchSpecExecutionCacheEntry) ([]*btypes.ChangesetSpec, error) {
-	var executionResult execution.Result
-	if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-		return nil, err
-	}
-
-	rawSpecs, err := cache.ChangesetSpecsFromCache(spec, r, executionResult)
-	if err != nil {
-		return nil, err
-	}
-
-	var specs []*btypes.ChangesetSpec
-	for _, s := range rawSpecs {
-		changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
-		if err != nil {
-			return nil, err
-		}
-		changesetSpec.BatchSpecID = batchSpecID
-		changesetSpec.RepoID = repoID
-		changesetSpec.UserID = userID
-
-		specs = append(specs, changesetSpec)
-	}
-	return specs, nil
 }
 
 type WorkspaceResolver interface {

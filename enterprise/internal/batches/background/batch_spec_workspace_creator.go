@@ -2,12 +2,12 @@ package background
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -169,12 +171,31 @@ func (r *batchSpecWorkspaceCreator) process(
 		workspace.dbWorkspace.CachedResultFound = true
 
 		// Build the changeset specs from the cache entry.
-		changesetSpecs, err := service.DBChangesetSpecsFromCache(spec.ID, workspace.dbWorkspace.RepoID, spec.UserID, spec.Spec, workspace.repo, entry)
+		var executionResult execution.Result
+		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
+			return err
+		}
+
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, executionResult)
 		if err != nil {
 			return err
 		}
-		cs = append(cs, changesetSpecs...)
-		changesetsByWorkspace[workspace.dbWorkspace] = changesetSpecs
+
+		var specs []*btypes.ChangesetSpec
+		for _, s := range rawSpecs {
+			changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
+			if err != nil {
+				return err
+			}
+			changesetSpec.BatchSpecID = spec.ID
+			changesetSpec.RepoID = workspace.dbWorkspace.RepoID
+			changesetSpec.UserID = spec.UserID
+
+			specs = append(specs, changesetSpec)
+		}
+
+		cs = append(cs, specs...)
+		changesetsByWorkspace[workspace.dbWorkspace] = specs
 
 		// And mark the cache entries as used.
 		usedCacheEntries = append(usedCacheEntries, entry.ID)

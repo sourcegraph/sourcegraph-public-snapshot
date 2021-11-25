@@ -10,7 +10,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	cachelib "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -172,7 +171,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		// from the UI. We should persist the cache result on the execution itself,
 		// too.
 		var cachedResult *execution.AfterStepResult
-		key := cachelib.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: idx}
+		key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: idx}
 		rawKey, err := key.Key()
 		if err != nil {
 			return nil, err

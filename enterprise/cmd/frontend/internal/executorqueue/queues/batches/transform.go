@@ -9,7 +9,6 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/cache"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -17,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	cachelib "github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -124,7 +123,7 @@ func transformRecord(ctx context.Context, s BatchesStore, job *btypes.BatchSpecW
 		)
 
 		for i := len(workspace.Steps) - 1; i > -1; i-- {
-			key := cachelib.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
+			key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: i}
 			rawKey, err := key.Key()
 			if err != nil {
 				return apiclient.Job{}, nil
