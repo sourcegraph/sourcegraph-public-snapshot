@@ -4,7 +4,7 @@ COPY go.sum go.mod ./
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o searchblitz ./internal/cmd/search-blitz
 
-FROM sourcegraph/alpine-3.12:116273_2021-11-12_dbac772@sha256:78995f23b1dbadb35ba4a153adecde3f309ee3763888e4172e0f8dc05c9728d3
+FROM sourcegraph/alpine-3.14:117816_2021-11-25_6eb4943@sha256:06d0ecb92132c7c40ce6476b2e72d633b55b1076a49411526985fa08cdfc16ab
 
 COPY --from=builder /build/searchblitz /usr/local/bin
 

@@ -3,7 +3,7 @@
 ARG JAEGER_VERSION
 FROM jaegertracing/jaeger-agent:${JAEGER_VERSION} as base
 
-FROM sourcegraph/alpine-3.12:116273_2021-11-12_dbac772@sha256:78995f23b1dbadb35ba4a153adecde3f309ee3763888e4172e0f8dc05c9728d3
+FROM sourcegraph/alpine-3.14:117816_2021-11-25_6eb4943@sha256:06d0ecb92132c7c40ce6476b2e72d633b55b1076a49411526985fa08cdfc16ab
 USER root
 # hadolint ignore=DL3018
 RUN apk --no-cache add bash curl apk-tools=2.10.8-r0
