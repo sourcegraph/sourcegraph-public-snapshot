@@ -95,7 +95,7 @@ async function main(): Promise<void> {
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
         observeSourcegraphURL(IS_EXTENSION).subscribe(async sourcegraphURL => {
             if (previousSubscription) {
-                console.log('[Sourcegraph] Detached code intelligence')
+                console.log('Sourcegraph detached code intelligence')
                 previousSubscription.unsubscribe()
             }
 
@@ -114,7 +114,7 @@ async function main(): Promise<void> {
                             const { privateRepository } = await codeHost.getContext()
                             if (privateRepository) {
                                 throw new Error(
-                                    'Code-intel for private repository on Sourcegraph Cloud is not supported yet.'
+                                    `Code intelligence for private repository is not supported when using Sourcegraph URL ${DEFAULT_SOURCEGRAPH_URL}`
                                 )
                             }
                         }
@@ -132,9 +132,9 @@ async function main(): Promise<void> {
                         await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
                     }
                 )
-                console.log('Attached code intelligence')
+                console.log('Sourcegraph attached code intelligence')
             } catch (error) {
-                console.warn('Code intelligence stopped working. Reason:', error?.message)
+                console.log('Sourcegraph code host integration stopped initialization. Reason:', error?.message)
             }
         })
     )
