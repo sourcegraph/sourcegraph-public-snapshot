@@ -20,7 +20,6 @@ It's totally possible to use alternative if you need to: `sg` checks will still 
 Requirements: 
 
 - The `github.com/sourcegraph/sourcegraph` repository cloned in a folder of your choice.
-- [`Homebrew`](https://brew.shell) is installed.
 
 Instructions:
 
