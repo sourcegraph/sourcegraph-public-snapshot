@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"regexp"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
@@ -127,26 +127,33 @@ func rfcTitlesPrinter(out *output.Output) func(r *drive.FileList) error {
 			matches := rfcTitleRegex.FindStringSubmatch(i.Name)
 			if len(matches) == 4 {
 				number := matches[1]
-				status := matches[2]
+				// status := matches[2]
 				name := matches[3]
 
-				var statusColor output.Style
-				switch strings.ToUpper(status) {
-				case "WIP":
-					statusColor = output.StylePending
-				case "REVIEW":
-					statusColor = output.Fg256Color(208)
-				case "IMPLEMENTED", "APPROVED":
-					statusColor = output.StyleSuccess
-				case "ABANDONED", "PAUSED":
-					statusColor = output.StyleSearchAlertTitle
-				}
+				// var statusColor output.Style
+				// switch strings.ToUpper(status) {
+				// case "WIP":
+				// 	statusColor = output.StylePending
+				// case "REVIEW":
+				// 	statusColor = output.Fg256Color(208)
+				// case "IMPLEMENTED", "APPROVED":
+				// 	statusColor = output.StyleSuccess
+				// case "ABANDONED", "PAUSED":
+				// 	statusColor = output.StyleSearchAlertTitle
+				// }
 
-				numberColor := output.Fg256Color(8)
+				// numberColor := output.Fg256Color(8)
+				// out.Writef("")
 
-				out.Writef("RFC %s%s %s%s%s %s", numberColor, number, statusColor, status, output.StyleReset, name)
+				filepath:= fmt.Sprintf("/Users/olafurpg/dev/sourcegraph/sourcegraph/rfcs/rfc-%s.md", number)
+				url := fmt.Sprintf("https://docs.google.com/document/d/%s/edit", i.Id)
+				f, _ := os.Create(filepath)
+				f.Write([]byte(fmt.Sprintf("# %s\n\nURL: %s\n", name, url)))
+				f.Close()
+
+				out.Writef(filepath)
 			} else {
-				out.Writef("%s%s", i.Name, output.StyleReset)
+				// out.Writef("%s%s", i.Name, output.StyleReset)
 			}
 		}
 
