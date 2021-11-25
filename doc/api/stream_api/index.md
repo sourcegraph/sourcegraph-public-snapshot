@@ -36,7 +36,7 @@ See [Example](#example-curl).
 The API responds with a stream of events. Each event consists of exactly two
 fields, event and data, one per line. Events are separated by 2 newline
 characters, `\n\n`. The value of `event:` is a always a string that describes the
-type of the event. The value of `data:` is always a JSON.
+type of the event. The value of `data:` is always JSON.
 
 ```text
 event: <event-type> // event 1
