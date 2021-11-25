@@ -71,7 +71,7 @@ Refer to the [interface definitions of our typescript client](https://sourcegrap
 
 ## Example (curl) 
 
-On Sourcegraph Cloud we can queries without authentication.
+On Sourcegraph Cloud we can run queries without authentication.
 
 ```bash
 curl --header "Accept: text/event-stream" \
