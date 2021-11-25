@@ -135,6 +135,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
+	h = actor.HTTPMiddleware(h)
 	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
 	h = ot.Middleware(h)
 	return h
