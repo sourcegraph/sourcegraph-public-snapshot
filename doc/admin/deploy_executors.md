@@ -210,7 +210,7 @@ tfenv use 0.13.7
   - `"externalURL": "<URL>"` to a URL that is accessible from the GCP VM that will be created later (e.g. a public URL such as `https://sourcegraph.acme.com`)
   - `"executors.accessToken": "<new long secret>"` to a new long secret (e.g. `cat /dev/random | base64 | head -c 20`)
   - `"codeIntelAutoIndexing.enabled": true`
-5. Download the example [`main.tf`](https://github.com/sourcegraph/terraform-google-executors/blob/a0110747f70067b9b0d1c382334de02b86821ae3/examples/single-executor/main.tf) and change these:
+5. Download the [example files](https://github.com/sourcegraph/terraform-google-executors/blob/master/examples/single-executor) and change these:
   - `project`: your GCP project name and change `region` and `zone` if needed
   - `executor_sourcegraph_external_url`: this must match `externalURL` you set in your site config
   - `executor_sourcegraph_executor_proxy_password`: this must match `executors.accessToken` you set in your site config
