@@ -85,7 +85,7 @@ func TestClient_GetRepository(t *testing.T) {
   "stargazers_count": 30,
   "watchers_count": 20,
   "forks_count": 5,
-  "visibility": "internal"
+  "visibility": ""
 }
 `,
 	}
@@ -99,7 +99,10 @@ func TestClient_GetRepository(t *testing.T) {
 		IsFork:         true,
 		StargazerCount: 30,
 		ForkCount:      5,
-		Visibility:     "internal",
+		// This is guarded behind a feature flag so will be empty for now. When the feature flag is
+		// enabled, it will return a repo of type "internal". We will need to fix the test
+		// then. This is blocked on our GHE instance being upgraded to 3.3.0.
+		Visibility: "",
 	}
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
