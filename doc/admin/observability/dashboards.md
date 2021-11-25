@@ -2039,11 +2039,11 @@ Query: `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m]))
 
 <br />
 
-#### frontend: internal_api_error_responses
+#### frontend: internalapi_error_responses
 
 <p class="subtitle">Internal API error responses every 5m by route</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#frontend-internal-api-error-responses) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#frontend-internalapi-error-responses) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=101502` on your Sourcegraph instance.
 

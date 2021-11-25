@@ -1,4 +1,4 @@
-package api
+package internalapi
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -27,7 +28,7 @@ type internalClient struct {
 	URL string
 }
 
-var InternalClient = &internalClient{URL: "http://" + frontendInternal}
+var Client = &internalClient{URL: "http://" + frontendInternal}
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
@@ -35,78 +36,24 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
-type SavedQueryIDSpec struct {
-	Subject SettingsSubject
-	Key     string
-}
-
-// ConfigSavedQuery is the JSON shape of a saved query entry in the JSON configuration
-// (i.e., an entry in the {"search.savedQueries": [...]} array).
-type ConfigSavedQuery struct {
-	Key             string  `json:"key,omitempty"`
-	Description     string  `json:"description"`
-	Query           string  `json:"query"`
-	Notify          bool    `json:"notify,omitempty"`
-	NotifySlack     bool    `json:"notifySlack,omitempty"`
-	UserID          *int32  `json:"userID"`
-	OrgID           *int32  `json:"orgID"`
-	SlackWebhookURL *string `json:"slackWebhookURL"`
-}
-
-func (sq ConfigSavedQuery) Equals(other ConfigSavedQuery) bool {
-	a, _ := json.Marshal(sq)
-	b, _ := json.Marshal(other)
-	return bytes.Equal(a, b)
-}
-
-// PartialConfigSavedQueries is the JSON configuration shape, including only the
-// search.savedQueries section.
-type PartialConfigSavedQueries struct {
-	SavedQueries []ConfigSavedQuery `json:"search.savedQueries"`
-}
-
-// SavedQuerySpecAndConfig represents a saved query configuration its unique ID.
-type SavedQuerySpecAndConfig struct {
-	Spec   SavedQueryIDSpec
-	Config ConfigSavedQuery
-}
-
 // SavedQueriesListAll lists all saved queries, from every user, org, etc.
-func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[SavedQueryIDSpec]ConfigSavedQuery, error) {
-	var result []SavedQuerySpecAndConfig
+func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[api.SavedQueryIDSpec]api.ConfigSavedQuery, error) {
+	var result []api.SavedQuerySpecAndConfig
 	err := c.postInternal(ctx, "saved-queries/list-all", nil, &result)
 	if err != nil {
 		return nil, err
 	}
-	m := map[SavedQueryIDSpec]ConfigSavedQuery{}
+	m := map[api.SavedQueryIDSpec]api.ConfigSavedQuery{}
 	for _, r := range result {
 		m[r.Spec] = r.Config
 	}
 	return m, nil
 }
 
-// SavedQueryInfo represents information about a saved query that was executed.
-type SavedQueryInfo struct {
-	// Query is the search query in question.
-	Query string
-
-	// LastExecuted is the timestamp of the last time that the search query was
-	// executed.
-	LastExecuted time.Time
-
-	// LatestResult is the timestamp of the latest-known result for the search
-	// query. Therefore, searching `after:<LatestResult>` will return the new
-	// search results not yet seen.
-	LatestResult time.Time
-
-	// ExecDuration is the amount of time it took for the query to execute.
-	ExecDuration time.Duration
-}
-
 // SavedQueriesGetInfo gets the info from the DB for the given saved query. nil
 // is returned if there is no existing info for the saved query.
-func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) (*SavedQueryInfo, error) {
-	var result *SavedQueryInfo
+func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) (*api.SavedQueryInfo, error) {
+	var result *api.SavedQueryInfo
 	err := c.postInternal(ctx, "saved-queries/get-info", query, &result)
 	if err != nil {
 		return nil, err
@@ -115,7 +62,7 @@ func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) 
 }
 
 // SavedQueriesSetInfo sets the info in the DB for the given query.
-func (c *internalClient) SavedQueriesSetInfo(ctx context.Context, info *SavedQueryInfo) error {
+func (c *internalClient) SavedQueriesSetInfo(ctx context.Context, info *api.SavedQueryInfo) error {
 	return c.postInternal(ctx, "saved-queries/set-info", info, nil)
 }
 
@@ -125,8 +72,8 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 
 func (c *internalClient) SettingsGetForSubject(
 	ctx context.Context,
-	subject SettingsSubject,
-) (parsed *schema.Settings, settings *Settings, err error) {
+	subject api.SettingsSubject,
+) (parsed *schema.Settings, settings *api.Settings, err error) {
 	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
 	if err == nil {
 		err = jsonc.Unmarshal(settings.Contents, &parsed)
@@ -199,20 +146,20 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-// MockInternalClientConfiguration mocks (*internalClient).Configuration.
-var MockInternalClientConfiguration func() (conftypes.RawUnified, error)
+// MockClientConfiguration mocks (*internalClient).Configuration.
+var MockClientConfiguration func() (conftypes.RawUnified, error)
 
 func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnified, error) {
-	if MockInternalClientConfiguration != nil {
-		return MockInternalClientConfiguration()
+	if MockClientConfiguration != nil {
+		return MockClientConfiguration()
 	}
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
 }
 
-func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) (*Repo, error) {
-	var repo Repo
+func (c *internalClient) ReposGetByName(ctx context.Context, repoName api.RepoName) (*api.Repo, error) {
+	var repo api.Repo
 	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
 	if err != nil {
 		return nil, err
@@ -220,8 +167,8 @@ func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) 
 	return &repo, nil
 }
 
-func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoName, callsign, url string) error {
-	return c.postInternal(ctx, "phabricator/repo-create", PhabricatorRepoCreateRequest{
+func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo api.RepoName, callsign, url string) error {
+	return c.postInternal(ctx, "phabricator/repo-create", api.PhabricatorRepoCreateRequest{
 		RepoName: repo,
 		Callsign: callsign,
 		URL:      url,
@@ -236,7 +183,7 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 	if MockExternalServiceConfigs != nil {
 		return MockExternalServiceConfigs(kind, result)
 	}
-	return c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
+	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
 		Kind: kind,
 	}, &result)
 }
@@ -244,9 +191,9 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 // ExternalServicesList returns all external services of the given kind.
 func (c *internalClient) ExternalServicesList(
 	ctx context.Context,
-	opts ExternalServicesListRequest,
-) ([]*ExternalService, error) {
-	var extsvcs []*ExternalService
+	opts api.ExternalServicesListRequest,
+) ([]*api.ExternalService, error) {
+	var extsvcs []*api.ExternalService
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 

@@ -373,7 +373,7 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "internal_api_error_responses",
+							Name:        "internalapi_error_responses",
 							Description: "internal API error responses every 5m by route",
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),

@@ -534,7 +534,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: internal_api_error_responses
+## frontend: internalapi_error_responses
 
 <p class="subtitle">internal API error responses every 5m by route</p>
 
@@ -545,12 +545,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-api-error-responses).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internalapi-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_internal_api_error_responses"
+  "warning_frontend_internalapi_error_responses"
 ]
 ```
 
