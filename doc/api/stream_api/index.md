@@ -52,8 +52,8 @@ data: {}
 ```
 
 > NOTE: 
-> Our format is a subset of the event stream format described for server-sent
-> events [here](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format). However, we do not guarantee compatiblity with any third-party clients written for server-sent events.
+> Our format is a subset of the event stream format for [server-sent
+> events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#event_stream_format). However, we do not guarantee compatibility with any third-party clients written for server-sent events.
 
 ### Event-types
 
