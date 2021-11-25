@@ -32,4 +32,4 @@ RUN apk update && apk add --no-cache \
     mailcap \
     tini \
     # Required due to ssl_clent upgrade with busybox
-    'wget=1.21.1-r1'
+    wget
