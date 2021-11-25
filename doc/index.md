@@ -89,7 +89,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 ### Reference
 
 - [Query syntax reference](code_search/reference/queries.md)
-- [GraphQL API](api/graphql/index.md)
+- [API Documentation](api/index.md)
 - [Sourcegraph changelog](./CHANGELOG.md)
 
 ## Cloud documentation
