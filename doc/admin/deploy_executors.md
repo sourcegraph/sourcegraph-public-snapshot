@@ -104,7 +104,7 @@ grep -cw vmx /proc/cpuinfo
 
 **Step 2:** Download latest binary
 
-Below are the the download for the *insiders* release (`latest`) of executors:
+Below are the download links for the *insiders* release (`latest`) of executors:
 
 * [`info.txt`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/info.txt)
 * [`linux-amd64/executor`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor)
@@ -125,7 +125,7 @@ This creates the base image that Ignite will use when creating new [Firecracker]
 ```bash
 # Change this to use the version of src-cli that's compatible with your Sourcegraph instance.
 # See this for details: https://github.com/sourcegraph/src-cli#version-compatible-with-your-sourcegraph-instance
-export SRC_CLI_VERSION="3.34.0"
+export SRC_CLI_VERSION="3.34.1"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 
 # Download Dockerfile and build Docker image
