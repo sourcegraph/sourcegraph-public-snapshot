@@ -26,7 +26,7 @@ Learn more about it [here](https://handbook.sourcegraph.com/engineering/observab
 The source code for this program is currently kept in [`docker-images/prometheus/cmd/prom-wrapper`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus/cmd/prom-wrapper).
 The prom-wrapper also exports an API which can be leveraged through the [`internal/src-prometheus` package](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/src-prometheus).
 
-To learn more about developing our observability stack, see the [local Sourcegraph monitoring development guide](../../../local-dev-env/how-to/monitoring_local_dev.md).
+To learn more about developing our observability stack, see the [local Sourcegraph monitoring development guide](../../how-to/monitoring_local_dev.md).
 
 ## Alertmanager
 
@@ -45,7 +45,7 @@ To perform an upgrade:
 1. Upgrade the [Alertmanager and Prometheus Go client dependencies](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:go.mod+prometheus/alertmanager+OR+prometheus/client_golang&patternType=literal) where appropriate
    1. For the Alertmanager dependency, the fork needs to be upgraded to the appropriate version first: [`sourcegraph/alertmanager`](https://github.com/sourcegraph/alertmanager)
 1. Ensure the image still builds: `./docker-images/prometheus/build.sh`
-1. [Run the monitoring stack locally](../../../local-dev-env/how-to/monitoring_local_dev.md) and verify that:
+1. [Run the monitoring stack locally](../../how-to/monitoring_local_dev.md) and verify that:
    1. If upgrading Prometheus: all Prometheus rules are evaluated successfully (`localhost:9090/rules`)
    1. If upgrading Alertmanager: Alertmanager starts up correctly (`localhost:9090/alertmanager/#/status`), and [`observability.alerts` can be configured in site config](../../../admin/observability/alerting.md) (check this by adding an entry, e.g. Slack alerts) via the Sourcegraph web application, e.g:
 

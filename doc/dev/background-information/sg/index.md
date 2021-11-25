@@ -44,7 +44,7 @@ Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and ho
 
 3. Once the `enterprise-web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
 
-A more detailed introduction is available in the [development quickstart guide](../../../local-dev-env/quickstart.md).
+A more detailed introduction is available in the [development quickstart guide](../../setup/quickstart.md).
 
 ## Installation
 

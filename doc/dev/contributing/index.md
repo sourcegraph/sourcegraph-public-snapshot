@@ -6,7 +6,7 @@
 ## Project setup and CI checks
 
 - For [frontend issues](frontend_contribution.md).
-- For [backend issues](../../local-dev-env/index.md).
+- For [backend issues](../setup/index.md).
 
 ## For Sourcegraph team
 

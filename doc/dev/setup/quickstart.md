@@ -17,7 +17,7 @@ This is the quickstart guide for [developing Sourcegraph](../index.md).
 
 ## Install `sg`
 
-At Sourcegraph we use [`sg`, the Sourcegraph developer tool](../dev/background-information/sg/index.md), to manage our local development environment.
+At Sourcegraph we use [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md), to manage our local development environment.
 
 To install `sg`, run the following in your terminal:
 
@@ -25,7 +25,7 @@ To install `sg`, run the following in your terminal:
 curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 ```
 
-See the [`sg` documentation](../dev/background-information/sg/index.md) for more information or ask in the `#dev-experience` Slack channel.
+See the [`sg` documentation](../background-information/sg/index.md) for more information or ask in the `#dev-experience` Slack channel.
 
 ## Run `sg setup`
 
@@ -99,4 +99,4 @@ Here are some additional resources to help you go further:
 
 - [How-to guides](how-to/index.md), particularly:
   - [Troubleshooting local development](troubleshooting.md)
-- [Background information](../dev/background-information/index.md) for more context on various topics.
+- [Background information](../background-information/index.md) for more context on various topics.

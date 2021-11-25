@@ -4,7 +4,6 @@
 - [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
 - [Ignoring editor config files in Git](ignoring_editor_config_files.md)
 - [Use `golangci-lint`](use-golangci-lint.md)
-- [Set up local Sourcegraph monitoring development](monitoring_local_dev.md)
 
 ## Offline development
 
