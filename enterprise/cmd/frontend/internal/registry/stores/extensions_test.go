@@ -434,7 +434,7 @@ func TestFeaturedExtensions(t *testing.T) {
 	ctx := context.Background()
 
 	releases := Releases(db)
-	s := &extensionsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+	s := &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 
 	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {

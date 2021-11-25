@@ -66,7 +66,7 @@ func (err ExtensionNotFoundError) Error() string {
 	return fmt.Sprintf("registry extension not found: %v", err.args)
 }
 
-type ExtensionsStore interface {
+type ExtensionStore interface {
 	// Create creates a new extension in the extension registry. Exactly 1 of publisherUserID and publisherOrgID must be nonzero.
 	Create(ctx context.Context, publisherUserID, publisherOrgID int32, name string) (id int32, err error)
 	// GetByID retrieves the registry extension (if any) given its ID.
@@ -114,37 +114,37 @@ type ExtensionsStore interface {
 	// GePublisher gets the registry publisher with the given name.
 	GetPublisher(ctx context.Context, name string) (*Publisher, error)
 
-	Transact(context.Context) (ExtensionsStore, error)
-	With(basestore.ShareableStore) ExtensionsStore
+	Transact(context.Context) (ExtensionStore, error)
+	With(basestore.ShareableStore) ExtensionStore
 	basestore.ShareableStore
 }
 
-type extensionsStore struct {
+type extensionStore struct {
 	*basestore.Store
 }
 
-var _ ExtensionsStore = (*extensionsStore)(nil)
+var _ ExtensionStore = (*extensionStore)(nil)
 
 // Extensions instantiates and returns a new ExtensionsStore with prepared statements.
-func Extensions(db dbutil.DB) ExtensionsStore {
-	return &extensionsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Extensions(db dbutil.DB) ExtensionStore {
+	return &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ExtensionsWith instantiates and returns a new ExtensionsStore using the other store handle.
-func ExtensionsWith(other basestore.ShareableStore) ExtensionsStore {
-	return &extensionsStore{Store: basestore.NewWithHandle(other.Handle())}
+func ExtensionsWith(other basestore.ShareableStore) ExtensionStore {
+	return &extensionStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *extensionsStore) With(other basestore.ShareableStore) ExtensionsStore {
-	return &extensionsStore{Store: s.Store.With(other)}
+func (s *extensionStore) With(other basestore.ShareableStore) ExtensionStore {
+	return &extensionStore{Store: s.Store.With(other)}
 }
 
-func (s *extensionsStore) Transact(ctx context.Context) (ExtensionsStore, error) {
+func (s *extensionStore) Transact(ctx context.Context) (ExtensionStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &extensionsStore{Store: txBase}, err
+	return &extensionStore{Store: txBase}, err
 }
 
-func (s *extensionsStore) Create(ctx context.Context, publisherUserID, publisherOrgID int32, name string) (id int32, err error) {
+func (s *extensionStore) Create(ctx context.Context, publisherUserID, publisherOrgID int32, name string) (id int32, err error) {
 	if publisherUserID != 0 && publisherOrgID != 0 {
 		return 0, errors.New("at most 1 of the publisher user/org may be set")
 	}
@@ -180,7 +180,7 @@ RETURNING id`,
 	return id, nil
 }
 
-func (s *extensionsStore) GetByID(ctx context.Context, id int32) (*Extension, error) {
+func (s *extensionStore) GetByID(ctx context.Context, id int32) (*Extension, error) {
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("x.id = %d", id)}, nil, nil)
 	if err != nil {
 		return nil, err
@@ -193,7 +193,7 @@ func (s *extensionsStore) GetByID(ctx context.Context, id int32) (*Extension, er
 	return results[0], nil
 }
 
-func (s *extensionsStore) GetByUUID(ctx context.Context, uuid string) (*Extension, error) {
+func (s *extensionStore) GetByUUID(ctx context.Context, uuid string) (*Extension, error) {
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("x.uuid = %d", uuid)}, nil, nil)
 	if err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ const (
 	extensionIDExpr = "CONCAT(" + extensionPublisherNameExpr + ", '/', x.name)"
 )
 
-func (s *extensionsStore) GetByExtensionID(ctx context.Context, extensionID string) (*Extension, error) {
+func (s *extensionStore) GetByExtensionID(ctx context.Context, extensionID string) (*Extension, error) {
 	// TODO(sqs): prevent the creation of an org with the same name as a user so that there is no
 	// ambiguity as to whether the publisher refers to a user or org by the given name
 	// (https://github.com/sourcegraph/sourcegraph/issues/12068).
@@ -246,7 +246,7 @@ func (s *extensionsStore) GetByExtensionID(ctx context.Context, extensionID stri
 // dotcom for these extensions and filter based on site configuration.
 var featuredExtensionIDs = []string{"sourcegraph/codecov", "sourcegraph/sentry", "sourcegraph/open-in-vscode"}
 
-func (s *extensionsStore) GetFeaturedExtensions(ctx context.Context) ([]*Extension, error) {
+func (s *extensionStore) GetFeaturedExtensions(ctx context.Context) ([]*Extension, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("GetFeaturedExtensions should only be called on Sourcegraph.com")
 	}
@@ -254,7 +254,7 @@ func (s *extensionsStore) GetFeaturedExtensions(ctx context.Context) ([]*Extensi
 	return s.getFeaturedExtensions(ctx, featuredExtensionIDs)
 }
 
-func (s *extensionsStore) getFeaturedExtensions(ctx context.Context, featuredExtensionIDs []string) ([]*Extension, error) {
+func (s *extensionStore) getFeaturedExtensions(ctx context.Context, featuredExtensionIDs []string) ([]*Extension, error) {
 	conds := make([]*sqlf.Query, 0, len(featuredExtensionIDs))
 
 	for i := 0; i < len(featuredExtensionIDs); i++ {
@@ -360,11 +360,11 @@ func (o ExtensionsListOptions) sqlOrder() []*sqlf.Query {
 	return []*sqlf.Query{sqlf.Sprintf(extensionIDExpr+` IN (%v) ASC`, sqlf.Join(ids, ","))}
 }
 
-func (s *extensionsStore) List(ctx context.Context, opt ExtensionsListOptions) ([]*Extension, error) {
+func (s *extensionStore) List(ctx context.Context, opt ExtensionsListOptions) ([]*Extension, error) {
 	return s.list(ctx, opt.sqlConditions(), opt.sqlOrder(), opt.LimitOffset)
 }
 
-func (s *extensionsStore) listCountSQL(conds []*sqlf.Query) *sqlf.Query {
+func (s *extensionStore) listCountSQL(conds []*sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(`
 FROM registry_extensions x
 LEFT JOIN users ON users.id = publisher_user_id AND users.deleted_at IS NULL
@@ -381,7 +381,7 @@ WHERE (%s)
 		sqlf.Join(conds, ") AND ("))
 }
 
-func (s *extensionsStore) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Extension, error) {
+func (s *extensionStore) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Extension, error) {
 	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:list
@@ -422,7 +422,7 @@ ORDER BY %s,
 	return results, nil
 }
 
-func (s *extensionsStore) Count(ctx context.Context, opt ExtensionsListOptions) (int, error) {
+func (s *extensionStore) Count(ctx context.Context, opt ExtensionsListOptions) (int, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Count
 SELECT COUNT(*) %s
@@ -436,7 +436,7 @@ SELECT COUNT(*) %s
 	return count, nil
 }
 
-func (s *extensionsStore) Update(ctx context.Context, id int32, name *string) error {
+func (s *extensionStore) Update(ctx context.Context, id int32, name *string) error {
 	res, err := s.ExecResult(ctx,
 		sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Update
@@ -470,7 +470,7 @@ WHERE
 	return nil
 }
 
-func (s *extensionsStore) Delete(ctx context.Context, id int32) error {
+func (s *extensionStore) Delete(ctx context.Context, id int32) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/extensions.go:Delete
 UPDATE

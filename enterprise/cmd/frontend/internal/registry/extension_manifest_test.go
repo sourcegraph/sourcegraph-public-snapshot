@@ -16,7 +16,7 @@ func TestGetExtensionManifestWithBundleURL(t *testing.T) {
 	t0 := time.Unix(1234, 0)
 
 	t.Run(`manifest with "url"`, func(t *testing.T) {
-		s := dbmocks.NewMockReleasesStore()
+		s := dbmocks.NewMockReleaseStore()
 		s.GetLatestFunc.SetDefaultReturn(&stores.Release{
 			Manifest:  `{"name":"x","url":"u"}`,
 			CreatedAt: t0,
@@ -35,7 +35,7 @@ func TestGetExtensionManifestWithBundleURL(t *testing.T) {
 	})
 
 	t.Run(`manifest without "url"`, func(t *testing.T) {
-		s := dbmocks.NewMockReleasesStore()
+		s := dbmocks.NewMockReleaseStore()
 		s.GetLatestFunc.SetDefaultReturn(&stores.Release{
 			Manifest:  `{"name":"x"}`,
 			CreatedAt: t0,

@@ -43,7 +43,7 @@ func (err ReleaseNotFoundError) Error() string {
 
 var ErrInvalidJSONInManifest = errors.New("invalid syntax in extension manifest JSON")
 
-type ReleasesStore interface {
+type ReleaseStore interface {
 	// Create creates a new release of an extension in the extension registry. The release.ID and
 	// release.CreatedAt fields are ignored (they are populated automatically by the database).
 	Create(ctx context.Context, release *Release) (id int64, err error)
@@ -58,37 +58,37 @@ type ReleasesStore interface {
 	// (by ID).
 	GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error)
 
-	Transact(context.Context) (ReleasesStore, error)
-	With(basestore.ShareableStore) ReleasesStore
+	Transact(context.Context) (ReleaseStore, error)
+	With(basestore.ShareableStore) ReleaseStore
 	basestore.ShareableStore
 }
 
-type releasesStore struct {
+type releaseStore struct {
 	*basestore.Store
 }
 
-var _ ReleasesStore = (*releasesStore)(nil)
+var _ ReleaseStore = (*releaseStore)(nil)
 
 // Releases instantiates and returns a new ReleasesStore with prepared statements.
-func Releases(db dbutil.DB) ReleasesStore {
-	return &releasesStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Releases(db dbutil.DB) ReleaseStore {
+	return &releaseStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ReleasesWith instantiates and returns a new ReleasesStore using the other store handle.
-func ReleasesWith(other basestore.ShareableStore) ReleasesStore {
-	return &releasesStore{Store: basestore.NewWithHandle(other.Handle())}
+func ReleasesWith(other basestore.ShareableStore) ReleaseStore {
+	return &releaseStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *releasesStore) With(other basestore.ShareableStore) ReleasesStore {
-	return &releasesStore{Store: s.Store.With(other)}
+func (s *releaseStore) With(other basestore.ShareableStore) ReleaseStore {
+	return &releaseStore{Store: s.Store.With(other)}
 }
 
-func (s *releasesStore) Transact(ctx context.Context) (ReleasesStore, error) {
+func (s *releaseStore) Transact(ctx context.Context) (ReleaseStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &releasesStore{Store: txBase}, err
+	return &releaseStore{Store: txBase}, err
 }
 
-func (s *releasesStore) Create(ctx context.Context, release *Release) (id int64, err error) {
+func (s *releaseStore) Create(ctx context.Context, release *Release) (id int64, err error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:Create
 INSERT INTO registry_extension_releases
@@ -117,7 +117,7 @@ RETURNING id
 	return id, nil
 }
 
-func (s *releasesStore) GetLatest(ctx context.Context, registryExtensionID int32, releaseTag string, includeArtifacts bool) (*Release, error) {
+func (s *releaseStore) GetLatest(ctx context.Context, registryExtensionID int32, releaseTag string, includeArtifacts bool) (*Release, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetLatest
 SELECT
@@ -157,7 +157,7 @@ LIMIT 1`,
 	return &r, nil
 }
 
-func (s *releasesStore) GetLatestBatch(ctx context.Context, registryExtensionIDs []int32, releaseTag string, includeArtifacts bool) ([]*Release, error) {
+func (s *releaseStore) GetLatestBatch(ctx context.Context, registryExtensionIDs []int32, releaseTag string, includeArtifacts bool) ([]*Release, error) {
 	if len(registryExtensionIDs) == 0 {
 		return nil, nil
 	}
@@ -210,7 +210,7 @@ ORDER BY
 	return releases, nil
 }
 
-func (s *releasesStore) GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error) {
+func (s *releaseStore) GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/releases.go:GetArtifacts
 SELECT

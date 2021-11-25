@@ -30,7 +30,7 @@ func validateExtensionManifest(text string) error {
 // releases, it returns a nil manifest. If the manifest has no "url" field itself, a "url" field
 // pointing to the extension's bundle is inserted. It also returns the date that the release was
 // published.
-func getLatestRelease(ctx context.Context, releases stores.ReleasesStore, extensionID string, registryExtensionID int32, releaseTag string) (*stores.Release, error) {
+func getLatestRelease(ctx context.Context, releases stores.ReleaseStore, extensionID string, registryExtensionID int32, releaseTag string) (*stores.Release, error) {
 	release, err := releases.GetLatest(ctx, registryExtensionID, releaseTag, false)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err

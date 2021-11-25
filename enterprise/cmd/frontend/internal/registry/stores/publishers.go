@@ -49,11 +49,11 @@ func (o PublishersListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-func (s *extensionsStore) ListPublishers(ctx context.Context, opt PublishersListOptions) ([]*Publisher, error) {
+func (s *extensionStore) ListPublishers(ctx context.Context, opt PublishersListOptions) ([]*Publisher, error) {
 	return s.listPublishers(ctx, nil, opt.LimitOffset)
 }
 
-func (s *extensionsStore) publishersSQLCTE() *sqlf.Query {
+func (s *extensionStore) publishersSQLCTE() *sqlf.Query {
 	return sqlf.Sprintf(`WITH publishers AS (
   (SELECT DISTINCT ON (publisher_user_id) publisher_user_id AS user_id, NULL AS org_id FROM registry_extensions WHERE publisher_user_id IS NOT NULL AND deleted_at IS NULL)
   UNION
@@ -61,7 +61,7 @@ func (s *extensionsStore) publishersSQLCTE() *sqlf.Query {
 ) `)
 }
 
-func (s *extensionsStore) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Publisher, error) {
+func (s *extensionStore) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*Publisher, error) {
 	conds = append(conds, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:listPublishers
@@ -104,7 +104,7 @@ ORDER BY
 	return results, nil
 }
 
-func (s *extensionsStore) CountPublishers(ctx context.Context, opt PublishersListOptions) (int, error) {
+func (s *extensionStore) CountPublishers(ctx context.Context, opt PublishersListOptions) (int, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/internal/registry/stores/publishers.go:CountPublishers
 %s
@@ -118,7 +118,7 @@ SELECT COUNT(*) FROM publishers WHERE (%s)`, s.publishersSQLCTE(), sqlf.Join(opt
 	return count, nil
 }
 
-func (s *extensionsStore) GetPublisher(ctx context.Context, name string) (*Publisher, error) {
+func (s *extensionStore) GetPublisher(ctx context.Context, name string) (*Publisher, error) {
 	var userID, orgID sql.NullInt64
 	var p Publisher
 	q := sqlf.Sprintf(`
