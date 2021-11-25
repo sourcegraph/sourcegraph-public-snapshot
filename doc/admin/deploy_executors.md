@@ -39,7 +39,7 @@ Before starting any executors, generate an arbitrary secret string (with at leas
 
 Once the access token is set, executors can use that access token to talk to the Sourcegraph instance.
 
-### Start executors
+### Run executors
 
 There are two ways to install and run executors:
 
@@ -48,7 +48,7 @@ There are two ways to install and run executors:
 
 #### Terraform
 
-We supply [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) to provision such resources on common cloud providers ([Google Cloud](https://github.com/sourcegraph/terraform-google-executors) or [AWS](https://github.com/sourcegraph/terraform-aws-executors)).
+We supply [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) to provision machines running executors on common cloud providers ([Google Cloud](https://github.com/sourcegraph/terraform-google-executors) or [AWS](https://github.com/sourcegraph/terraform-aws-executors)).
 
 A Terraform definition of executor compute resources will look similar to the following basic, minimal usage. Here, we configure the use of a Terraform module defined in the public registry - no explicit installation or clone step is required to use the modules provided by Sourcegraph.
 
@@ -75,6 +75,8 @@ Additional values may need to be supplied for a specific cloud provider. Refer t
 
 To deploy executor compute resources defined in the Terraform file above, simply run `terraform apply`.
 
+See the [Examples](#examples) for more information on how to configure and deploy single or multiple executors.
+
 #### Binaries
 
 You can also download and run the executor binaries yourself, without using Terraform.
@@ -86,17 +88,72 @@ The following dependencies need to be available on the machine on which you want
 * [Ignite](https://ignite.readthedocs.io/en/stable/installation/) v0.10.0
 * [CNI Plugins](https://github.com/containernetworking/plugins) v0.9.1
 
-You can also take a look at [what goes into our executor machine images, used by our Terraform modules](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/image/build.sh) to see how we run executor binaries.
+You can also take a look at [what goes into our executor machine images, used by our Terraform modules,](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/image/build.sh) to see how we run executor binaries.
 
 Once dependencies are met, you can download and run executor binaries:
 
-**Step 1:** Download latest binary
+**Step 1:** Confirm that virtualization is enabled
 
-* https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/info.txt
-* https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
-* https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor_SHA256SUM
+The following command checks whether virtualization is enabled on the machine, which is required for [our sandboxing model](executors.md#how-it-works).
 
-**Step 2:** Setup required environment variables
+If it prints something other than 0, virtualization is enabled.
+
+```bash
+grep -cw vmx /proc/cpuinfo
+```
+
+**Step 2:** Download latest binary
+
+Below are the download links for the *insiders* release (`latest`) of executors:
+
+* [`info.txt`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/info.txt)
+* [`linux-amd64/executor`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor)
+* [`linux-amd64/executor_SHA256SUM`](https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor_SHA256SUM)
+
+Download and setup `executor` binary:
+
+```bash
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
+chmod +x executor
+mv executor /usr/local/bin
+```
+
+**Step 3:** Generate Ignite base image
+
+This creates the base image that Ignite will use when creating new [Firecracker](https://firecracker-microvm.github.io/) microVMs for each job.
+
+```bash
+# Change this to use the version of src-cli that's compatible with your Sourcegraph instance.
+# See this for details: https://github.com/sourcegraph/src-cli#version-compatible-with-your-sourcegraph-instance
+export SRC_CLI_VERSION="3.34.1"
+export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
+
+# Download Dockerfile and build Docker image
+mkdir -p /tmp/ignite-ubuntu
+curl -sfLo /tmp/ignite-ubuntu/Dockerfile https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/enterprise/cmd/executor/image/ignite-ubuntu/Dockerfile
+docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
+
+# Import Docker image into Ignite
+ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
+
+# Clean up
+docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
+```
+
+**Step 4:** _Optional_: Pre-heat Ignite by importing kernel image
+
+This step imports the kernel image to avoid the executor having to import it when executing the first job.
+
+```bash
+# Change this to match the version of Ignite you're using.
+export IGNITE_VERSION=v0.10.0
+export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
+
+ignite kernel import --runtime docker "${KERNEL_IMAGE}"
+docker pull "weaveworks/ignite:${IGNITE_VERSION}"
+```
+
+**Step 5:** Setup required environment variables
 
 | Env var                       | Example value | Description |
 | ------------------------------| ------------- | ----------- |
@@ -104,14 +161,17 @@ Once dependencies are met, you can download and run executor binaries:
 | `EXECUTOR_FRONTEND_PASSWORD`  | `our-shared-secret` | The shared secret configured in the Sourcegraph instannce under `executors.accessToken` |
 | `EXECUTOR_QUEUE_NAME`         | `batches`     | The name of the queue to pull jobs from to. Possible values: `batches` and `codeintel` |
 
-**Step 3:** Start executor
-
-```
+```bash
+# Example:
 export EXECUTOR_QUEUE_NAME=batches
-export EXECUTOR_FRONTEND_URL=http://localhost:3080
+export EXECUTOR_FRONTEND_URL=http://sourcegraph.example.com
 export EXECUTOR_FRONTEND_PASSWORD=hunter2hunter2hunter2
+```
 
-./executor
+**Step 6:** Start executor
+
+```bash
+/usr/local/bin/executor
 ```
 
 ### Confirm executors are working
