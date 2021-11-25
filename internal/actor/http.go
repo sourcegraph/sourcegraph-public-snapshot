@@ -19,6 +19,18 @@ const (
 	noActorHeaderValue = "none"
 )
 
+var (
+	metricIncomingActors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_actors_incoming_requests",
+		Help: "Total number of actors set from incoming requests by actor type.",
+	}, []string{"actor_type"})
+
+	metricOutgoingActors = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_actors_outgoing_requests",
+		Help: "Total number of actors set on outgoing requests by actor type.",
+	}, []string{"actor_type"})
+)
+
 // HTTPTransport is a roundtripper that sets actors within request context as headers on
 // outgoing requests.
 type HTTPTransport struct {
@@ -26,11 +38,6 @@ type HTTPTransport struct {
 }
 
 var _ http.RoundTripper = &HTTPTransport{}
-
-var metricOutgoingActors = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_actors_on_outgoing_request",
-	Help: "Total number of actors set on outgoing requests.",
-}, []string{"actor"})
 
 func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
@@ -57,11 +64,6 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	return t.RoundTripper.RoundTrip(req)
 }
-
-var metricIncomingActors = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_actors_from_incoming_request",
-	Help: "Total number of actors set from incoming requests.",
-}, []string{"actor"})
 
 // HTTPMiddleware wraps the given handle func and attaches the actor indicated in incoming
 // requests to the request header.
