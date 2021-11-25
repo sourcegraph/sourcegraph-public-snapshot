@@ -60,6 +60,12 @@ curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
 
 That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
 
+#### Windows Subsystem for Linux 2 (WSL2)
+
+When trying to install `sg` with the pre-built binaries on WSL2 you may run into this error message: `failed to set max open files: invalid argument`. The default configuration of WSL2 does not allow the user to modify the number of open files by default [which `sg` requires](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/main.go#L72:L90) to start. To work around this you can modify the file limits for your given session with `sudo prlimit --nofile=20000 --pid $$; ulimit -n 20000` then re-run the installation script.
+
+Note: this change will be reverted when your session ends. You will need to reset these limits every time you open a new session and want to use `sg`.
+
 ### Using install script
 
 Run the following in the root of `sourcegraph/sourcegraph`:
