@@ -1,4 +1,4 @@
-package registry
+package stores
 
 import (
 	"context"
@@ -22,42 +22,45 @@ func TestRegistryExtensionReleases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	xExtensionID, err := dbExtensions{}.Create(ctx, user.ID, 0, "x")
+	extensions := Extensions(db)
+	xExtensionID, err := extensions.Create(ctx, user.ID, 0, "x")
 	if err != nil {
 		t.Fatal(err)
 	}
-	yExtensionID, err := dbExtensions{}.Create(ctx, user.ID, 0, "y")
+	yExtensionID, err := extensions.Create(ctx, user.ID, 0, "y")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	norm := func(r *dbRelease) {
+	norm := func(r *Release) {
 		r.CreatedAt = time.Time{}
 	}
 
+	s := Releases(db)
+
 	t.Run("GetLatest with no releases", func(t *testing.T) {
-		_, err := dbReleases{}.GetLatest(ctx, xExtensionID, "release", false)
+		_, err := s.GetLatest(ctx, xExtensionID, "release", false)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
 
 	t.Run("GetLatest with nonexistent registry extension and no releases", func(t *testing.T) {
-		_, err := dbReleases{}.GetLatest(ctx, 9999 /* doesn't exist */, "release", false)
+		_, err := s.GetLatest(ctx, 9999 /* doesn't exist */, "release", false)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
 
 	t.Run("GetArtifacts with no release", func(t *testing.T) {
-		_, _, err := dbReleases{}.GetArtifacts(ctx, 9999 /* doesn't exist */)
+		_, _, err := s.GetArtifacts(ctx, 9999 /* doesn't exist */)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
 
 	t.Run("Create", func(t *testing.T) {
-		input := dbRelease{
+		input := Release{
 			RegistryExtensionID: xExtensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -65,14 +68,14 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			Bundle:              strptr("b"),
 			SourceMap:           strptr("sm"),
 		}
-		id, err := dbReleases{}.Create(ctx, &input)
+		id, err := s.Create(ctx, &input)
 		if err != nil {
 			t.Fatal(err)
 		}
 		input.ID = id
 
 		t.Run("GetArtifacts", func(t *testing.T) {
-			bundle, sourcemap, err := dbReleases{}.GetArtifacts(ctx, id)
+			bundle, sourcemap, err := s.GetArtifacts(ctx, id)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -85,7 +88,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 		})
 
 		t.Run("GetLatest for 1st release", func(t *testing.T) {
-			r1, err := dbReleases{}.GetLatest(ctx, xExtensionID, "release", true)
+			r1, err := s.GetLatest(ctx, xExtensionID, "release", true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -96,16 +99,16 @@ func TestRegistryExtensionReleases(t *testing.T) {
 		})
 
 		t.Run("GetLatest with wrong release tag", func(t *testing.T) {
-			_, err := dbReleases{}.GetLatest(ctx, xExtensionID, "other", true)
+			_, err := s.GetLatest(ctx, xExtensionID, "other", true)
 			if !errcode.IsNotFound(err) {
 				t.Errorf("got err %v, want errcode.IsNotFound", err)
 			}
 		})
 	})
 
-	var input2 dbRelease
+	var input2 Release
 	t.Run("Create 2nd release and GetLatest", func(t *testing.T) {
-		input2 = dbRelease{
+		input2 = Release{
 			RegistryExtensionID: xExtensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -113,13 +116,13 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			Bundle:              strptr("b2"),
 			SourceMap:           strptr("sm2"),
 		}
-		id2, err := dbReleases{}.Create(ctx, &input2)
+		id2, err := s.Create(ctx, &input2)
 		if err != nil {
 			t.Fatal(err)
 		}
 		input2.ID = id2
 
-		r2, err := dbReleases{}.GetLatest(ctx, xExtensionID, "release", true)
+		r2, err := s.GetLatest(ctx, xExtensionID, "release", true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -130,7 +133,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 	})
 
 	t.Run("GetLatestBatch", func(t *testing.T) {
-		input3 := dbRelease{
+		input3 := Release{
 			RegistryExtensionID: yExtensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -138,26 +141,26 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			Bundle:              strptr("b2"),
 			SourceMap:           strptr("sm2"),
 		}
-		id3, err := dbReleases{}.Create(ctx, &input3)
+		id3, err := s.Create(ctx, &input3)
 		if err != nil {
 			t.Fatal(err)
 		}
 		input3.ID = id3
 
-		r3, err := dbReleases{}.GetLatestBatch(ctx, []int32{xExtensionID, yExtensionID}, "release", true)
+		r3, err := s.GetLatestBatch(ctx, []int32{xExtensionID, yExtensionID}, "release", true)
 		if err != nil {
 			t.Fatal(err)
 		}
 		norm(r3[0])
 		norm(r3[1])
-		expected := []*dbRelease{&input2, &input3}
+		expected := []*Release{&input2, &input3}
 		if !reflect.DeepEqual(r3, expected) {
 			t.Errorf("got %+v, want %+v", r3, expected)
 		}
 	})
 
 	t.Run("Create fails on invalid JSON", func(t *testing.T) {
-		_, err := dbReleases{}.Create(ctx, &dbRelease{
+		_, err := s.Create(ctx, &Release{
 			RegistryExtensionID: xExtensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -165,13 +168,13 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			Bundle:              strptr(""),
 			SourceMap:           strptr(""),
 		})
-		if want := errInvalidJSONInManifest; err != want {
+		if want := ErrInvalidJSONInManifest; err != want {
 			t.Fatalf("got error %v, want %v", err, want)
 		}
 	})
 
 	t.Run("Release without bundle", func(t *testing.T) {
-		input := dbRelease{
+		input := Release{
 			RegistryExtensionID: xExtensionID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -179,12 +182,12 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			Bundle:              nil,
 			SourceMap:           nil,
 		}
-		id, err := dbReleases{}.Create(ctx, &input)
+		id, err := s.Create(ctx, &input)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		bundle, sourcemap, err := dbReleases{}.GetArtifacts(ctx, id)
+		bundle, sourcemap, err := s.GetArtifacts(ctx, id)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
@@ -196,3 +199,5 @@ func TestRegistryExtensionReleases(t *testing.T) {
 		}
 	})
 }
+
+func strptr(s string) *string { return &s }

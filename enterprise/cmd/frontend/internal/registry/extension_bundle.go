@@ -13,7 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -41,7 +43,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	bundle, sourceMap, err := dbReleases{}.GetArtifacts(r.Context(), releaseID)
+	bundle, sourceMap, err := stores.Releases(dbconn.Global).GetArtifacts(r.Context(), releaseID)
 	if errcode.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

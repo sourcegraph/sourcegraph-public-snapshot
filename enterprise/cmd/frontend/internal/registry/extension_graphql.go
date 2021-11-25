@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -18,11 +19,11 @@ import (
 // extensionDBResolver implements the GraphQL type RegistryExtension.
 type extensionDBResolver struct {
 	db dbutil.DB
-	v  *dbExtension
+	v  *stores.Extension
 
 	// Supplied as part of list endpoints, but
 	// calculated as part of single-extension endpoints
-	r *dbRelease
+	r *stores.Release
 }
 
 func (r *extensionDBResolver) ID() graphql.ID {
@@ -99,13 +100,13 @@ func (r *extensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, er
 	return err == nil, err
 }
 
-func (r *extensionDBResolver) release(ctx context.Context) (*dbRelease, error) {
+func (r *extensionDBResolver) release(ctx context.Context) (*stores.Release, error) {
 	if r.r != nil {
 		return r.r, nil
 	}
 
 	var err error
-	r.r, err = getLatestRelease(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	r.r, err = getLatestRelease(ctx, stores.Releases(r.db), r.v.NonCanonicalExtensionID, r.v.ID, "release")
 	return r.r, err
 }
 

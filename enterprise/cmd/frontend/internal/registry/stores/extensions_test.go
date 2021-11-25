@@ -1,7 +1,8 @@
-package registry
+package stores
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/jackc/pgconn"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -46,6 +48,8 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
+	s := Extensions(db)
+
 	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
@@ -54,7 +58,7 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 	for _, test := range registryExtensionNamesForTests {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
-			if _, err := (dbExtensions{}).Create(ctx, user.ID, 0, test.name); err != nil {
+			if _, err := s.Create(ctx, user.ID, 0, test.name); err != nil {
 				var e *pgconn.PgError
 				if errors.As(err, &e) && (e.ConstraintName == "registry_extensions_name_valid_chars" || e.ConstraintName == "registry_extensions_name_length") {
 					valid = false
@@ -76,9 +80,12 @@ func TestRegistryExtensions(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	testGetByID := func(t *testing.T, id int32, want *dbExtension, wantPublisherName string) {
+	releases := Releases(db)
+	s := Extensions(db)
+
+	testGetByID := func(t *testing.T, id int32, want *Extension, wantPublisherName string) {
 		t.Helper()
-		x, err := dbExtensions{}.GetByID(ctx, id)
+		x, err := s.GetByID(ctx, id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,9 +96,9 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Errorf("got publisher name %q, want %q", x.Publisher.NonCanonicalName, wantPublisherName)
 		}
 	}
-	testGetByExtensionID := func(t *testing.T, extensionID string, want *dbExtension) {
+	testGetByExtensionID := func(t *testing.T, extensionID string, want *Extension) {
 		t.Helper()
-		x, err := dbExtensions{}.GetByExtensionID(ctx, extensionID)
+		x, err := s.GetByExtensionID(ctx, extensionID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,18 +109,18 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Errorf("got extension ID %q, want %q", x.NonCanonicalExtensionID, extensionID)
 		}
 	}
-	testList := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
+	testList := func(t *testing.T, opt ExtensionsListOptions, want []*Extension) {
 		t.Helper()
-		if ois, err := (dbExtensions{}).List(ctx, opt); err != nil {
+		if ois, err := s.List(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(ois, want) {
 			t.Errorf("got %s, want %s", asJSON(t, ois), asJSON(t, want))
 		}
 	}
-	testListCount := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
+	testListCount := func(t *testing.T, opt ExtensionsListOptions, want []*Extension) {
 		t.Helper()
 		testList(t, opt, want)
-		if n, err := (dbExtensions{}).Count(ctx, opt); err != nil {
+		if n, err := s.Count(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if want := len(want); n != want {
 			t.Errorf("got %d, want %d", n, want)
@@ -129,13 +136,13 @@ func TestRegistryExtensions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createAndGet := func(t *testing.T, publisherUserID, publisherOrgID int32, name string) *dbExtension {
+	createAndGet := func(t *testing.T, publisherUserID, publisherOrgID int32, name string) *Extension {
 		t.Helper()
-		xID, err := dbExtensions{}.Create(ctx, publisherUserID, publisherOrgID, name)
+		xID, err := s.Create(ctx, publisherUserID, publisherOrgID, name)
 		if err != nil {
 			t.Fatal(err)
 		}
-		x, err := dbExtensions{}.GetByID(ctx, xID)
+		x, err := s.GetByID(ctx, xID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -145,25 +152,25 @@ func TestRegistryExtensions(t *testing.T) {
 	xo := createAndGet(t, 0, org.ID, "xo")
 
 	t.Run("List/Count/Get publishers", func(t *testing.T) {
-		publishers, err := dbExtensions{}.ListPublishers(ctx, dbPublishersListOptions{})
+		publishers, err := s.ListPublishers(ctx, PublishersListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if want := []*dbPublisher{
+		if want := []*Publisher{
 			&xo.Publisher,
 			&xu.Publisher,
 		}; !reflect.DeepEqual(publishers, want) {
 			t.Errorf("got publishers %+v, want %+v", publishers, want)
 		}
 
-		if n, err := (dbExtensions{}).CountPublishers(ctx, dbPublishersListOptions{}); err != nil {
+		if n, err := s.CountPublishers(ctx, PublishersListOptions{}); err != nil {
 			t.Fatal(err)
 		} else if want := 2; n != 2 {
 			t.Errorf("got count %d, want %d", n, want)
 		}
 
-		for _, p := range []*dbPublisher{&xo.Publisher, &xu.Publisher} {
-			got, err := dbExtensions{}.GetPublisher(ctx, p.NonCanonicalName)
+		for _, p := range []*Publisher{&xo.Publisher, &xu.Publisher} {
+			got, err := s.GetPublisher(ctx, p.NonCanonicalName)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -171,7 +178,7 @@ func TestRegistryExtensions(t *testing.T) {
 				t.Errorf("got %+v, want %+v", got, p)
 			}
 		}
-		if _, err := (dbExtensions{}).GetPublisher(ctx, "doesntexist"); !errcode.IsNotFound(err) {
+		if _, err := s.GetPublisher(ctx, "doesntexist"); !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
@@ -189,24 +196,24 @@ func TestRegistryExtensions(t *testing.T) {
 
 			t.Run("GetByID", func(t *testing.T) {
 				testGetByID(t, x.ID, x, c.publisherName)
-				if _, err := (dbExtensions{}).GetByID(ctx, 12345 /* doesn't exist */); !errcode.IsNotFound(err) {
+				if _, err := s.GetByID(ctx, 12345 /* doesn't exist */); !errcode.IsNotFound(err) {
 					t.Errorf("got err %v, want errcode.IsNotFound", err)
 				}
 			})
 
 			t.Run("GetByExtensionID", func(t *testing.T) {
 				testGetByExtensionID(t, c.publisherName+"/"+x.Name, x)
-				if _, err := (dbExtensions{}).GetByExtensionID(ctx, "foo.bar"); !errcode.IsNotFound(err) {
+				if _, err := s.GetByExtensionID(ctx, "foo.bar"); !errcode.IsNotFound(err) {
 					t.Errorf("got err %v, want errcode.IsNotFound", err)
 				}
 			})
 
 			t.Run("List/Count all", func(t *testing.T) {
-				testListCount(t, dbExtensionsListOptions{}, []*dbExtension{xu, xo, x})
+				testListCount(t, ExtensionsListOptions{}, []*Extension{xu, xo, x})
 			})
-			wantByPublisherUser := []*dbExtension{xu}
-			wantByPublisherOrg := []*dbExtension{xo}
-			var wantByCurrent []*dbExtension
+			wantByPublisherUser := []*Extension{xu}
+			wantByPublisherOrg := []*Extension{xo}
+			var wantByCurrent []*Extension
 			if c.publisherUserID != 0 {
 				wantByPublisherUser = append(wantByPublisherUser, x)
 				wantByCurrent = wantByPublisherUser
@@ -215,33 +222,33 @@ func TestRegistryExtensions(t *testing.T) {
 				wantByCurrent = wantByPublisherOrg
 			}
 			t.Run("List/Count by PublisherUserID", func(t *testing.T) {
-				testListCount(t, dbExtensionsListOptions{Publisher: dbPublisher{UserID: user.ID}}, wantByPublisherUser)
+				testListCount(t, ExtensionsListOptions{Publisher: Publisher{UserID: user.ID}}, wantByPublisherUser)
 			})
 			t.Run("List/Count by Publisher.OrgID", func(t *testing.T) {
-				testListCount(t, dbExtensionsListOptions{Publisher: dbPublisher{OrgID: org.ID}}, wantByPublisherOrg)
+				testListCount(t, ExtensionsListOptions{Publisher: Publisher{OrgID: org.ID}}, wantByPublisherOrg)
 			})
 			t.Run("List/Count by Publisher.Query all", func(t *testing.T) {
-				testListCount(t, dbExtensionsListOptions{Query: "x"}, []*dbExtension{xu, xo, x})
+				testListCount(t, ExtensionsListOptions{Query: "x"}, []*Extension{xu, xo, x})
 			})
 			t.Run("List/Count by Publisher.Query one", func(t *testing.T) {
-				testListCount(t, dbExtensionsListOptions{Query: c.publisherName + "/" + x.Name}, wantByCurrent)
+				testListCount(t, ExtensionsListOptions{Query: c.publisherName + "/" + x.Name}, wantByCurrent)
 			})
 			t.Run("List/Count with ExtensionIDs", func(t *testing.T) {
-				testList(t, dbExtensionsListOptions{ExtensionIDs: []string{xu.NonCanonicalExtensionID}}, []*dbExtension{xu})
-				testList(t, dbExtensionsListOptions{ExtensionIDs: []string{xo.NonCanonicalExtensionID}}, []*dbExtension{xo})
+				testList(t, ExtensionsListOptions{ExtensionIDs: []string{xu.NonCanonicalExtensionID}}, []*Extension{xu})
+				testList(t, ExtensionsListOptions{ExtensionIDs: []string{xo.NonCanonicalExtensionID}}, []*Extension{xo})
 			})
 			t.Run("List/Count with prioritizeExtensionIDs", func(t *testing.T) {
-				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xu.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*dbExtension{xu})
-				testList(t, dbExtensionsListOptions{PrioritizeExtensionIDs: []string{xo.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*dbExtension{xo})
+				testList(t, ExtensionsListOptions{PrioritizeExtensionIDs: []string{xu.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*Extension{xu})
+				testList(t, ExtensionsListOptions{PrioritizeExtensionIDs: []string{xo.NonCanonicalExtensionID}, LimitOffset: &database.LimitOffset{Limit: 1}}, []*Extension{xo})
 			})
 
-			if err := (dbExtensions{}).Delete(ctx, x.ID); err != nil {
+			if err := s.Delete(ctx, x.ID); err != nil {
 				t.Fatal(err)
 			}
-			if err := (dbExtensions{}).Delete(ctx, x.ID); !errcode.IsNotFound(err) {
+			if err := s.Delete(ctx, x.ID); !errcode.IsNotFound(err) {
 				t.Errorf("2nd Delete: got err %v, want errcode.IsNotFound", err)
 			}
-			if _, err := (dbExtensions{}).GetByID(ctx, x.ID); !errcode.IsNotFound(err) {
+			if _, err := s.GetByID(ctx, x.ID); !errcode.IsNotFound(err) {
 				t.Errorf("GetByID after Delete: got err %v, want errcode.IsNotFound", err)
 			}
 		})
@@ -249,10 +256,10 @@ func TestRegistryExtensions(t *testing.T) {
 
 	t.Run("Update", func(t *testing.T) {
 		x := xu
-		if err := (dbExtensions{}).Update(ctx, x.ID, nil); err != nil {
+		if err := s.Update(ctx, x.ID, nil); err != nil {
 			t.Fatal(err)
 		}
-		x1, err := dbExtensions{}.GetByID(ctx, x.ID)
+		x1, err := s.GetByID(ctx, x.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -265,11 +272,11 @@ func TestRegistryExtensions(t *testing.T) {
 	})
 
 	t.Run("Create with same publisher and name", func(t *testing.T) {
-		_, err := dbExtensions{}.Create(ctx, user.ID, 0, "zzz")
+		_, err := s.Create(ctx, user.ID, 0, "zzz")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, err := (dbExtensions{}).Create(ctx, user.ID, 0, "zzz"); err == nil {
+		if _, err := s.Create(ctx, user.ID, 0, "zzz"); err == nil {
 			t.Fatal("err == nil")
 		}
 	})
@@ -280,7 +287,7 @@ func TestRegistryExtensions(t *testing.T) {
 
 		// xwip2 is a WIP extension because it has a "wip": true property.
 		xwip2 := createAndGet(t, user.ID, 0, "wiptest2")
-		_, err = dbReleases{}.Create(ctx, &dbRelease{
+		_, err = releases.Create(ctx, &Release{
 			RegistryExtensionID: xwip2.ID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -294,7 +301,7 @@ func TestRegistryExtensions(t *testing.T) {
 
 		// xnonwip1 is a non-WIP extension.
 		xnonwip1 := createAndGet(t, user.ID, 0, "wiptest3")
-		_, err = dbReleases{}.Create(ctx, &dbRelease{
+		_, err = releases.Create(ctx, &Release{
 			RegistryExtensionID: xnonwip1.ID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -309,7 +316,7 @@ func TestRegistryExtensions(t *testing.T) {
 
 		// xnonwip2 is a non-WIP extension because its wip property is not true.
 		xnonwip2 := createAndGet(t, user.ID, 0, "wiptest4")
-		_, err = dbReleases{}.Create(ctx, &dbRelease{
+		_, err = releases.Create(ctx, &Release{
 			RegistryExtensionID: xnonwip2.ID,
 			CreatorUserID:       user.ID,
 			ReleaseTag:          "release",
@@ -323,7 +330,7 @@ func TestRegistryExtensions(t *testing.T) {
 		xnonwip2.NonCanonicalIsWorkInProgress = false
 
 		// The non-WIP extension should be sorted first.
-		testList(t, dbExtensionsListOptions{Query: "wiptest", LimitOffset: &database.LimitOffset{Limit: 5}}, []*dbExtension{xnonwip1, xnonwip2, xwip1, xwip2})
+		testList(t, ExtensionsListOptions{Query: "wiptest", LimitOffset: &database.LimitOffset{Limit: 5}}, []*Extension{xnonwip1, xnonwip2, xwip1, xwip2})
 	})
 }
 
@@ -334,18 +341,21 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
-	testList := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
+	releases := Releases(db)
+	s := Extensions(db)
+
+	testList := func(t *testing.T, opt ExtensionsListOptions, want []*Extension) {
 		t.Helper()
-		if ois, err := (dbExtensions{}).List(ctx, opt); err != nil {
+		if ois, err := s.List(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(ois, want) {
 			t.Errorf("got %s, want %s", asJSON(t, ois), asJSON(t, want))
 		}
 	}
-	testListCount := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
+	testListCount := func(t *testing.T, opt ExtensionsListOptions, want []*Extension) {
 		t.Helper()
 		testList(t, opt, want)
-		if n, err := (dbExtensions{}).Count(ctx, opt); err != nil {
+		if n, err := s.Count(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if want := len(want); n != want {
 			t.Errorf("got %d, want %d", n, want)
@@ -357,14 +367,14 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createAndGet := func(t *testing.T, name, manifest string) *dbExtension {
+	createAndGet := func(t *testing.T, name, manifest string) *Extension {
 		t.Helper()
-		xID, err := dbExtensions{}.Create(ctx, user.ID, 0, name)
+		xID, err := s.Create(ctx, user.ID, 0, name)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if manifest != "" {
-			_, err = dbReleases{}.Create(ctx, &dbRelease{
+			_, err = releases.Create(ctx, &Release{
 				RegistryExtensionID: xID,
 				CreatorUserID:       user.ID,
 				ReleaseTag:          "release",
@@ -376,7 +386,7 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		x, err := dbExtensions{}.GetByID(ctx, xID)
+		x, err := s.GetByID(ctx, xID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -390,29 +400,29 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 	createAndGet(t, "xinvalidcategoriestags", `{"title": "invalidcategories", "categories": 123, "tags": 123}`)
 	x1 := createAndGet(t, "x", `{"title": "foo1", "description": "foo2", "categories": ["mycategory1", "Mycategory2"], "tags": ["t1", "T2"], "xyz": 1}`)
 	t.Run("by title", func(t *testing.T) {
-		testListCount(t, dbExtensionsListOptions{Query: "foo"}, []*dbExtension{x1})
+		testListCount(t, ExtensionsListOptions{Query: "foo"}, []*Extension{x1})
 		// BACKCOMPAT: match on title even though extension manifests no longer have a title property.
-		testListCount(t, dbExtensionsListOptions{Query: "foo1"}, []*dbExtension{x1})
-		testListCount(t, dbExtensionsListOptions{Query: "foo2"}, []*dbExtension{x1})
+		testListCount(t, ExtensionsListOptions{Query: "foo1"}, []*Extension{x1})
+		testListCount(t, ExtensionsListOptions{Query: "foo2"}, []*Extension{x1})
 		// Ensure it's not just searching the full JSON manifest.
-		testListCount(t, dbExtensionsListOptions{Query: "xyz"}, nil)
+		testListCount(t, ExtensionsListOptions{Query: "xyz"}, nil)
 		// Ensure it's not matching on category.
-		testListCount(t, dbExtensionsListOptions{Query: "mycategory1"}, nil)
-		testListCount(t, dbExtensionsListOptions{Query: "Mycategory2"}, nil)
+		testListCount(t, ExtensionsListOptions{Query: "mycategory1"}, nil)
+		testListCount(t, ExtensionsListOptions{Query: "Mycategory2"}, nil)
 	})
 	t.Run("by category", func(t *testing.T) {
-		testListCount(t, dbExtensionsListOptions{Category: "mycategory1"}, []*dbExtension{x1})
-		testListCount(t, dbExtensionsListOptions{Category: "Mycategory2"}, []*dbExtension{x1})
-		testListCount(t, dbExtensionsListOptions{Category: "mycategory2"}, nil) // case-sensitive
-		testListCount(t, dbExtensionsListOptions{Category: "mycateg"}, nil)     // no partial matches
-		testListCount(t, dbExtensionsListOptions{Category: "othercategory"}, nil)
+		testListCount(t, ExtensionsListOptions{Category: "mycategory1"}, []*Extension{x1})
+		testListCount(t, ExtensionsListOptions{Category: "Mycategory2"}, []*Extension{x1})
+		testListCount(t, ExtensionsListOptions{Category: "mycategory2"}, nil) // case-sensitive
+		testListCount(t, ExtensionsListOptions{Category: "mycateg"}, nil)     // no partial matches
+		testListCount(t, ExtensionsListOptions{Category: "othercategory"}, nil)
 	})
 	t.Run("by tag", func(t *testing.T) {
-		testListCount(t, dbExtensionsListOptions{Tag: "t1"}, []*dbExtension{x1})
-		testListCount(t, dbExtensionsListOptions{Tag: "T2"}, []*dbExtension{x1})
-		testListCount(t, dbExtensionsListOptions{Tag: "t2"}, nil) // case-sensitive
-		testListCount(t, dbExtensionsListOptions{Tag: "t"}, nil)  // no partial matches
-		testListCount(t, dbExtensionsListOptions{Tag: "t3"}, nil)
+		testListCount(t, ExtensionsListOptions{Tag: "t1"}, []*Extension{x1})
+		testListCount(t, ExtensionsListOptions{Tag: "T2"}, []*Extension{x1})
+		testListCount(t, ExtensionsListOptions{Tag: "t2"}, nil) // case-sensitive
+		testListCount(t, ExtensionsListOptions{Tag: "t"}, nil)  // no partial matches
+		testListCount(t, ExtensionsListOptions{Tag: "t3"}, nil)
 	})
 }
 
@@ -423,19 +433,22 @@ func TestFeaturedExtensions(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
 
+	releases := Releases(db)
+	s := &extensionStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+
 	user, err := database.Users(db).Create(ctx, database.NewUser{Username: "u"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	createAndGet := func(t *testing.T, name, manifest string) *dbExtension {
+	createAndGet := func(t *testing.T, name, manifest string) *Extension {
 		t.Helper()
-		xID, err := dbExtensions{}.Create(ctx, user.ID, 0, name)
+		xID, err := s.Create(ctx, user.ID, 0, name)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if manifest != "" {
-			_, err = dbReleases{}.Create(ctx, &dbRelease{
+			_, err = releases.Create(ctx, &Release{
 				RegistryExtensionID: xID,
 				CreatorUserID:       user.ID,
 				ReleaseTag:          "release",
@@ -447,7 +460,7 @@ func TestFeaturedExtensions(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		x, err := dbExtensions{}.GetByID(ctx, xID)
+		x, err := s.GetByID(ctx, xID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -462,13 +475,13 @@ func TestFeaturedExtensions(t *testing.T) {
 	// Non-featured extension shouldn't be returned.
 	createAndGet(t, "four", `{"name": "four", "publisher": "u"}`)
 
-	want := []*dbExtension{
+	want := []*Extension{
 		one,
 		two,
 		three,
 	}
 
-	featuredExtensions, err := dbExtensions{}.getFeaturedExtensions(ctx, mockFeaturedExtensionIDs)
+	featuredExtensions, err := s.getFeaturedExtensions(ctx, mockFeaturedExtensionIDs)
 	if err != nil {
 		t.Fatal(err)
 	}

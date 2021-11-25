@@ -15,7 +15,9 @@ import (
 
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -28,8 +30,8 @@ func init() {
 // Funcs called by serveRegistry to get registry data. If fakeRegistryData is set, it is used as
 // the data source instead of the database.
 var (
-	registryList = func(ctx context.Context, opt dbExtensionsListOptions) ([]*registry.Extension, error) {
-		vs, err := dbExtensions{}.List(ctx, opt)
+	registryList = func(ctx context.Context, opt stores.ExtensionsListOptions) ([]*registry.Extension, error) {
+		vs, err := stores.Extensions(dbconn.Global).List(ctx, opt)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +57,7 @@ var (
 	}
 
 	registryGetByUUID = func(ctx context.Context, uuid string) (*registry.Extension, error) {
-		x, err := dbExtensions{}.GetByUUID(ctx, uuid)
+		x, err := stores.Extensions(dbconn.Global).GetByUUID(ctx, uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +65,7 @@ var (
 	}
 
 	registryGetByExtensionID = func(ctx context.Context, extensionID string) (*registry.Extension, error) {
-		x, err := dbExtensions{}.GetByExtensionID(ctx, extensionID)
+		x, err := stores.Extensions(dbconn.Global).GetByExtensionID(ctx, extensionID)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +73,7 @@ var (
 	}
 
 	registryGetFeaturedExtensions = func(ctx context.Context) ([]*registry.Extension, error) {
-		dbExtensions, err := dbExtensions{}.GetFeaturedExtensions(ctx)
+		dbExtensions, err := stores.Extensions(dbconn.Global).GetFeaturedExtensions(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -87,8 +89,8 @@ var (
 	}
 )
 
-func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Extension, error) {
-	release, err := getLatestRelease(ctx, v.NonCanonicalExtensionID, v.ID, "release")
+func toRegistryAPIExtension(ctx context.Context, v *stores.Extension) (*registry.Extension, error) {
+	release, err := getLatestRelease(ctx, stores.Releases(dbconn.Global), v.NonCanonicalExtensionID, v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +102,7 @@ func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Exte
 	return newExtension(v, &release.Manifest, release.CreatedAt), nil
 }
 
-func toRegistryAPIExtensionBatch(ctx context.Context, vs []*dbExtension) ([]*registry.Extension, error) {
+func toRegistryAPIExtensionBatch(ctx context.Context, vs []*stores.Extension) ([]*registry.Extension, error) {
 	releasesByExtensionID, err := getLatestForBatch(ctx, vs)
 	if err != nil {
 		return nil, err
@@ -118,7 +120,7 @@ func toRegistryAPIExtensionBatch(ctx context.Context, vs []*dbExtension) ([]*reg
 	return extensions, nil
 }
 
-func newExtension(v *dbExtension, manifest *string, publishedAt time.Time) *registry.Extension {
+func newExtension(v *stores.Extension, manifest *string, publishedAt time.Time) *registry.Extension {
 	baseURL := strings.TrimSuffix(conf.Get().ExternalURL, "/")
 	return &registry.Extension{
 		UUID:        v.UUID,
@@ -197,7 +199,7 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		operation = "list"
 
 		query := r.URL.Query().Get("q")
-		var opt dbExtensionsListOptions
+		var opt stores.ExtensionsListOptions
 		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
 		xs, err := registryList(r.Context(), opt)
 		if err != nil {
@@ -278,7 +280,7 @@ func init() {
 		return xs, nil
 	}
 
-	registryList = func(ctx context.Context, opt dbExtensionsListOptions) ([]*registry.Extension, error) {
+	registryList = func(ctx context.Context, opt stores.ExtensionsListOptions) ([]*registry.Extension, error) {
 		xs, err := readFakeExtensions()
 		if err != nil {
 			return nil, err

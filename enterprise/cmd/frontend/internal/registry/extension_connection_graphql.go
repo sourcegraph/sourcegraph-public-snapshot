@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -29,7 +30,7 @@ func listLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphql
 		return nil, err
 	}
 
-	vs, err := dbExtensions{}.List(ctx, opt)
+	vs, err := stores.Extensions(db).List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -53,11 +54,11 @@ func countLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphq
 	if err != nil {
 		return 0, err
 	}
-	return dbExtensions{}.Count(ctx, opt)
+	return stores.Extensions(db).Count(ctx, opt)
 }
 
-func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionArgs) (dbExtensionsListOptions, error) {
-	var opt dbExtensionsListOptions
+func toDBExtensionsListOptions(args graphqlbackend.RegistryExtensionConnectionArgs) (stores.ExtensionsListOptions, error) {
+	var opt stores.ExtensionsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	if args.Publisher != nil {
 		p, err := unmarshalRegistryPublisherID(*args.Publisher)
