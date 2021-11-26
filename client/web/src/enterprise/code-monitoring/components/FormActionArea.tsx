@@ -142,7 +142,7 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                 <div className={classNames(cardClassName, 'card p-3')}>
                     <div className="font-weight-bold">Send email notifications</div>
                     <span className="text-muted">Deliver email notifications to specified recipients.</span>
-                    <div className="form-group mt-4 test-action-form">
+                    <div className="form-group mt-4 test-action-form" data-testid="action-form">
                         <label htmlFor="code-monitoring-form-actions-recipients">Recipients</label>
                         <input
                             id="code-monitoring-form-actions-recipients"
@@ -239,7 +239,9 @@ export const FormActionArea: React.FunctionComponent<ActionAreaProps> = ({
                                 Send email notifications
                             </div>
                             {actionsCompleted ? (
-                                <span className="text-muted test-existing-action-email">{authenticatedUser.email}</span>
+                                <span className="text-muted" data-testid="existing-action-email">
+                                    {authenticatedUser.email}
+                                </span>
                             ) : (
                                 <span className="text-muted">Deliver email notifications to specified recipients.</span>
                             )}
