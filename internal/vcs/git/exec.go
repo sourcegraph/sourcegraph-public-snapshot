@@ -12,18 +12,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// ExecSafe executes a Git subcommand iff it is allowed according to an
-// allowlist.
+// execSafe executes a Git subcommand iff it is allowed according to a allowlist.
 //
-// An error is only returned when there is a failure unrelated to the actual command being
-// executed. If the executed command exits with a nonzero exit code, err == nil. This is similar to
-// how http.Get returns a nil error for HTTP non-2xx responses.
-func ExecSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
+// An error is only returned when there is a failure unrelated to the actual
+// command being executed. If the executed command exits with a nonzero exit
+// code, err == nil. This is similar to how http.Get returns a nil error for HTTP
+// non-2xx responses.
+//
+// execSafe should NOT be exported. We want to limit direct git calls to this
+// package.
+func execSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, stderr []byte, exitCode int, err error) {
 	if Mocks.ExecSafe != nil {
 		return Mocks.ExecSafe(params)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecSafe")
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: execSafe")
 	defer span.Finish()
 
 	if len(params) == 0 {
@@ -44,8 +47,11 @@ func ExecSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, 
 	return stdout, stderr, exitCode, err
 }
 
-// execReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
-// to its stdout.
+// execReader executes an arbitrary `git` command (`git [args...]`) and returns a
+// reader connected to its stdout.
+//
+// execReader should NOT be exported. We want to limit direct git calls to this
+// package.
 func execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
 	if Mocks.ExecReader != nil {
 		return Mocks.ExecReader(args)
@@ -64,7 +70,7 @@ func execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadC
 }
 
 var (
-	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling ExecSafe.
+	// gitCmdAllowlist are commands and arguments that are allowed to execute when calling execSafe.
 	gitCmdAllowlist = map[string][]string{
 		"log":    append([]string{}, gitCommonAllowlist...),
 		"show":   append([]string{}, gitCommonAllowlist...),
@@ -123,9 +129,9 @@ func isAllowedGitCmd(args []string) bool {
 		if strings.HasPrefix(arg, "-") {
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
-			// flags (such as --something=query), so if we did not special-case these,
-			// there would be no way to safely express a query that began with a '-'
-			// character. (Same for `git show`, where the flag has the same meaning.)
+			// flags (such as --something=query), so if we did not special-case these, there
+			// would be no way to safely express a query that began with a '-' character.
+			// (Same for `git show`, where the flag has the same meaning.)
 			if (cmd == "log" || cmd == "show") && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
 				continue // this arg is OK
 			}
@@ -138,8 +144,8 @@ func isAllowedGitCmd(args []string) bool {
 	return true
 }
 
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
+// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which
+// could cause it to be interpreted as a git command line argument.
 func checkSpecArgSafety(spec string) error {
 	if strings.HasPrefix(spec, "-") {
 		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
