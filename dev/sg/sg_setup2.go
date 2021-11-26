@@ -381,7 +381,7 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 
 	for i, dep := range category.dependencies {
 		idx := i + 1
-		if dep.err == nil && dep.state {
+		if dep.IsMet() {
 			writeSuccessLine("%d. %s", idx, dep.name)
 		} else {
 			if dep.err != nil {
@@ -395,7 +395,7 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 
 func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory) error {
 	for _, dep := range category.dependencies {
-		if dep.err == nil && dep.state {
+		if dep.IsMet() {
 			continue
 		}
 
@@ -433,7 +433,7 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 
 	for {
 		for i, dep := range category.dependencies {
-			if dep.err == nil || dep.state {
+			if dep.IsMet() {
 				continue
 			}
 
@@ -673,6 +673,8 @@ type dependency struct {
 	instructionsCommands   string
 	requiresSgSetupRestart bool
 }
+
+func (d *dependency) IsMet() bool { return d.err == nil && d.state }
 
 func (d *dependency) Update(ctx context.Context) {
 	d.err = nil
