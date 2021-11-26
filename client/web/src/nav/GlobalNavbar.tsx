@@ -1,8 +1,13 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import BarChartIcon from 'mdi-react/BarChartIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
+import ClockFastIcon from 'mdi-react/ClockFastIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import OrderBoolAscendingVariantIcon from 'mdi-react/OrderBoolAscendingVariantIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
+import ShieldHalfFullIcon from 'mdi-react/ShieldHalfFullIcon'
+import StarShootingIcon from 'mdi-react/StarShootingIcon'
+import ViewDashboardOutlineIcon from 'mdi-react/ViewDashboardOutlineIcon'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -18,6 +23,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
@@ -30,7 +36,6 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringProps } from '../code-monitoring'
-import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -212,9 +217,12 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
-                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Search' }}
                         mobileHomeItem={{ content: 'Search home' }}
                         items={[
+                            props.enableCodeMonitoring
+                                ? { path: '/code-monitoring', content: <>Monitoring</> }
+                                : undefined,
                             {
                                 path: '/contexts',
                                 content: (
@@ -223,22 +231,41 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     </>
                                 ),
                             },
-                        ]}
+                        ].filter(isDefined)}
                     />
-                    {props.enableCodeMonitoring && (
-                        <NavItem icon={CodeMonitoringLogo}>
-                            <NavLink to="/code-monitoring">Monitoring</NavLink>
+                    <NavItem icon={BookOpenBlankVariantIcon}>
+                        <NavLink to="/extensions">Catalog</NavLink>
+                    </NavItem>
+                    {codeInsights && (
+                        <NavItem icon={ViewDashboardOutlineIcon}>
+                            <NavLink to="/insights/dashboards/all">Dashboards</NavLink>
                         </NavItem>
                     )}
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
                     {(props.batchChangesEnabled || isSourcegraphDotCom) && <BatchChangesNavItem />}
-                    {codeInsights && (
-                        <NavItem icon={BarChartIcon}>
-                            <NavLink to="/insights/dashboards/all">Insights</NavLink>
-                        </NavItem>
-                    )}
+                    <div className="NavBar-module__divider align-self-center mx-0" />
+                    {/* TODO(sqs): illegal reference of class name outside this module */}
+                    <NavItem icon={ShieldHalfFullIcon}>
+                        <NavLink to="/extensions">Security</NavLink>
+                    </NavItem>
+                    <NavItem icon={StarShootingIcon}>
+                        <NavLink to="/extensions">Quality</NavLink>
+                    </NavItem>
+                    <NavItem icon={ClockFastIcon}>
+                        <NavLink to="/extensions">Velocity</NavLink>
+                    </NavItem>
+                    <NavDropdown
+                        toggleItem={{ path: '/search', icon: OrderBoolAscendingVariantIcon, content: 'Policy' }}
+                        mobileHomeItem={{ content: 'Policy home' }}
+                        items={[
+                            {
+                                path: '/contexts',
+                                content: <>Scorecards</>,
+                            },
+                        ].filter(isDefined)}
+                    />
                     <NavItem icon={PuzzleOutlineIcon}>
                         <NavLink to="/extensions">Extensions</NavLink>
                     </NavItem>
