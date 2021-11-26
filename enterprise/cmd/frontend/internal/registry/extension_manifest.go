@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -51,14 +51,14 @@ func getLatestRelease(ctx context.Context, releases stores.ReleaseStore, extensi
 // returns a nil manifest. If the manifest has no "url" field itself, a "url" field
 // pointing to the extension's bundle is inserted. It also returns the date that the
 // release was published.
-func getLatestForBatch(ctx context.Context, vs []*stores.Extension) (map[int32]*stores.Release, error) {
+func getLatestForBatch(ctx context.Context, db database.DB, vs []*stores.Extension) (map[int32]*stores.Release, error) {
 	var extensionIDs []int32
 	extensionIDMap := map[int32]string{}
 	for _, v := range vs {
 		extensionIDs = append(extensionIDs, v.ID)
 		extensionIDMap[v.ID] = v.NonCanonicalExtensionID
 	}
-	releases, err := stores.Releases(dbconn.Global).GetLatestBatch(ctx, extensionIDs, "release", false)
+	releases, err := stores.Releases(db).GetLatestBatch(ctx, extensionIDs, "release", false)
 	if err != nil {
 		return nil, err
 	}

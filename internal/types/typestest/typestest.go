@@ -1,4 +1,4 @@
-package types
+package typestest
 
 import (
 	"sort"
@@ -17,13 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService) *Repo {
+func MakeRepo(name, serviceID, serviceType string, services ...*types.ExternalService) *types.Repo {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	repo := Repo{
+	repo := types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "1234",
 			ServiceType: serviceType,
@@ -33,11 +34,11 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 		URI:         name,
 		Description: "The description",
 		CreatedAt:   now,
-		Sources:     make(map[string]*SourceInfo),
+		Sources:     make(map[string]*types.SourceInfo),
 	}
 
 	for _, svc := range services {
-		repo.Sources[svc.URN()] = &SourceInfo{
+		repo.Sources[svc.URN()] = &types.SourceInfo{
 			ID: svc.URN(),
 		}
 	}
@@ -46,54 +47,54 @@ func MakeRepo(name, serviceID, serviceType string, services ...*ExternalService)
 }
 
 // MakeGithubRepo returns a configured Github repository.
-func MakeGithubRepo(services ...*ExternalService) *Repo {
+func MakeGithubRepo(services ...*types.ExternalService) *types.Repo {
 	repo := MakeRepo("github.com/foo/bar", "http://github.com", extsvc.TypeGitHub, services...)
 	repo.Metadata = new(github.Repository)
 	return repo
 }
 
 // MakeGitlabRepo returns a configured Gitlab repository.
-func MakeGitlabRepo(services ...*ExternalService) *Repo {
+func MakeGitlabRepo(services ...*types.ExternalService) *types.Repo {
 	repo := MakeRepo("gitlab.com/foo/bar", "http://gitlab.com", extsvc.TypeGitLab, services...)
 	repo.Metadata = new(gitlab.Project)
 	return repo
 }
 
 // MakeBitbucketServerRepo returns a configured Bitbucket Server repository.
-func MakeBitbucketServerRepo(services ...*ExternalService) *Repo {
+func MakeBitbucketServerRepo(services ...*types.ExternalService) *types.Repo {
 	repo := MakeRepo("bitbucketserver.mycorp.com/foo/bar", "http://bitbucketserver.mycorp.com", extsvc.TypeBitbucketServer, services...)
 	repo.Metadata = new(bitbucketserver.Repo)
 	return repo
 }
 
 // MakeAWSCodeCommitRepo returns a configured AWS Code Commit repository.
-func MakeAWSCodeCommitRepo(services ...*ExternalService) *Repo {
+func MakeAWSCodeCommitRepo(services ...*types.ExternalService) *types.Repo {
 	repo := MakeRepo("git-codecommit.us-west-1.amazonaws.com/stripe-go", "arn:aws:codecommit:us-west-1:999999999999:", extsvc.KindAWSCodeCommit, services...)
 	repo.Metadata = new(awscodecommit.Repository)
 	return repo
 }
 
 // MakeOtherRepo returns a configured repository from a custom host.
-func MakeOtherRepo(services ...*ExternalService) *Repo {
+func MakeOtherRepo(services ...*types.ExternalService) *types.Repo {
 	repo := MakeRepo("git-host.com/org/foo", "https://git-host.com/", extsvc.KindOther, services...)
 	repo.Metadata = new(extsvc.OtherRepoMetadata)
 	return repo
 }
 
 // MakeGitoliteRepo returns a configured Gitolite repository.
-func MakeGitoliteRepo(services ...*ExternalService) *Repo {
+func MakeGitoliteRepo(services ...*types.ExternalService) *types.Repo {
 	repo := MakeRepo("gitolite.mycorp.com/bar", "git@gitolite.mycorp.com", extsvc.KindGitolite, services...)
 	repo.Metadata = new(gitolite.Repo)
 	return repo
 }
 
 // GenerateRepos takes a list of base repos and generates n ones with different names.
-func GenerateRepos(n int, base ...*Repo) Repos {
+func GenerateRepos(n int, base ...*types.Repo) types.Repos {
 	if len(base) == 0 {
 		return nil
 	}
 
-	rs := make(Repos, 0, n)
+	rs := make(types.Repos, 0, n)
 	for i := 0; i < n; i++ {
 		id := strconv.Itoa(i)
 		r := base[i%len(base)].Clone()
@@ -104,12 +105,12 @@ func GenerateRepos(n int, base ...*Repo) Repos {
 	return rs
 }
 
-// MakeExternalServices creates one configured external service per kind and returns the list.
-func MakeExternalServices() ExternalServices {
+// Maketypes.ExternalServices creates one configured external service per kind and returns the list.
+func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 	now := clock.Now()
 
-	githubSvc := ExternalService{
+	githubSvc := types.ExternalService{
 		Kind:        extsvc.KindGitHub,
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`,
@@ -117,7 +118,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	gitlabSvc := ExternalService{
+	gitlabSvc := types.ExternalService{
 		Kind:        extsvc.KindGitLab,
 		DisplayName: "GitLab - Test",
 		Config:      `{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`,
@@ -125,7 +126,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	bitbucketServerSvc := ExternalService{
+	bitbucketServerSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket Server - Test",
 		Config:      `{"url": "https://bitbucket.com", "username": "foo", "token": "abc", "repositoryQuery": ["none"]}`,
@@ -133,7 +134,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	bitbucketCloudSvc := ExternalService{
+	bitbucketCloudSvc := types.ExternalService{
 		Kind:        extsvc.KindBitbucketCloud,
 		DisplayName: "Bitbucket Cloud - Test",
 		Config:      `{"url": "https://bitbucket.com", "username": "foo", "appPassword": "abc"}`,
@@ -141,7 +142,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	awsSvc := ExternalService{
+	awsSvc := types.ExternalService{
 		Kind:        extsvc.KindAWSCodeCommit,
 		DisplayName: "AWS Code - Test",
 		Config:      `{"region": "eu-west-1", "accessKeyID": "key", "secretAccessKey": "secret", "gitCredentials": {"username": "foo", "password": "bar"}}`,
@@ -149,7 +150,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	otherSvc := ExternalService{
+	otherSvc := types.ExternalService{
 		Kind:        extsvc.KindOther,
 		DisplayName: "Other - Test",
 		Config:      `{"url": "https://other.com", "repos": ["none"]}`,
@@ -157,7 +158,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	gitoliteSvc := ExternalService{
+	gitoliteSvc := types.ExternalService{
 		Kind:        extsvc.KindGitolite,
 		DisplayName: "Gitolite - Test",
 		Config:      `{"prefix": "foo", "host": "bar"}`,
@@ -165,7 +166,7 @@ func MakeExternalServices() ExternalServices {
 		UpdatedAt:   now,
 	}
 
-	return []*ExternalService{
+	return []*types.ExternalService{
 		&githubSvc,
 		&gitlabSvc,
 		&bitbucketServerSvc,
@@ -176,12 +177,12 @@ func MakeExternalServices() ExternalServices {
 	}
 }
 
-// GenerateExternalServices takes a list of base external services and generates n ones with different names.
-func GenerateExternalServices(n int, base ...*ExternalService) ExternalServices {
+// Generatetypes.ExternalServices takes a list of base external services and generates n ones with different names.
+func GenerateExternalServices(n int, base ...*types.ExternalService) types.ExternalServices {
 	if len(base) == 0 {
 		return nil
 	}
-	es := make(ExternalServices, 0, n)
+	es := make(types.ExternalServices, 0, n)
 	for i := 0; i < n; i++ {
 		id := strconv.Itoa(i)
 		r := base[i%len(base)].Clone()
@@ -193,8 +194,8 @@ func GenerateExternalServices(n int, base ...*ExternalService) ExternalServices 
 
 // ExternalServicesToMap is a helper function that returns a map whose key is the external service kind.
 // If two external services have the same kind, only the last one will be stored in the map.
-func ExternalServicesToMap(es ExternalServices) map[string]*ExternalService {
-	m := make(map[string]*ExternalService)
+func ExternalServicesToMap(es types.ExternalServices) map[string]*types.ExternalService {
+	m := make(map[string]*types.ExternalService)
 
 	for _, svc := range es {
 		m[svc.Kind] = svc
@@ -209,80 +210,80 @@ func ExternalServicesToMap(es ExternalServices) map[string]*ExternalService {
 
 // Opt contains functional options to be used in tests.
 var Opt = struct {
-	ExternalServiceID         func(int64) func(*ExternalService)
-	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
-	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
-	RepoID                    func(api.RepoID) func(*Repo)
-	RepoName                  func(api.RepoName) func(*Repo)
-	RepoCreatedAt             func(time.Time) func(*Repo)
-	RepoModifiedAt            func(time.Time) func(*Repo)
-	RepoDeletedAt             func(time.Time) func(*Repo)
-	RepoSources               func(...string) func(*Repo)
-	RepoMetadata              func(interface{}) func(*Repo)
-	RepoExternalID            func(string) func(*Repo)
+	ExternalServiceID         func(int64) func(*types.ExternalService)
+	ExternalServiceModifiedAt func(time.Time) func(*types.ExternalService)
+	ExternalServiceDeletedAt  func(time.Time) func(*types.ExternalService)
+	RepoID                    func(api.RepoID) func(*types.Repo)
+	RepoName                  func(api.RepoName) func(*types.Repo)
+	RepoCreatedAt             func(time.Time) func(*types.Repo)
+	RepoModifiedAt            func(time.Time) func(*types.Repo)
+	RepoDeletedAt             func(time.Time) func(*types.Repo)
+	RepoSources               func(...string) func(*types.Repo)
+	RepoMetadata              func(interface{}) func(*types.Repo)
+	RepoExternalID            func(string) func(*types.Repo)
 }{
-	ExternalServiceID: func(n int64) func(*ExternalService) {
-		return func(e *ExternalService) {
+	ExternalServiceID: func(n int64) func(*types.ExternalService) {
+		return func(e *types.ExternalService) {
 			e.ID = n
 		}
 	},
-	ExternalServiceModifiedAt: func(ts time.Time) func(*ExternalService) {
-		return func(e *ExternalService) {
+	ExternalServiceModifiedAt: func(ts time.Time) func(*types.ExternalService) {
+		return func(e *types.ExternalService) {
 			e.UpdatedAt = ts
 			e.DeletedAt = time.Time{}
 		}
 	},
-	ExternalServiceDeletedAt: func(ts time.Time) func(*ExternalService) {
-		return func(e *ExternalService) {
+	ExternalServiceDeletedAt: func(ts time.Time) func(*types.ExternalService) {
+		return func(e *types.ExternalService) {
 			e.UpdatedAt = ts
 			e.DeletedAt = ts
 		}
 	},
-	RepoID: func(n api.RepoID) func(*Repo) {
-		return func(r *Repo) {
+	RepoID: func(n api.RepoID) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.ID = n
 		}
 	},
-	RepoName: func(name api.RepoName) func(*Repo) {
-		return func(r *Repo) {
+	RepoName: func(name api.RepoName) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.Name = name
 		}
 	},
-	RepoCreatedAt: func(ts time.Time) func(*Repo) {
-		return func(r *Repo) {
+	RepoCreatedAt: func(ts time.Time) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.CreatedAt = ts
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
 		}
 	},
-	RepoModifiedAt: func(ts time.Time) func(*Repo) {
-		return func(r *Repo) {
+	RepoModifiedAt: func(ts time.Time) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
 		}
 	},
-	RepoDeletedAt: func(ts time.Time) func(*Repo) {
-		return func(r *Repo) {
+	RepoDeletedAt: func(ts time.Time) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.UpdatedAt = ts
 			r.DeletedAt = ts
-			r.Sources = map[string]*SourceInfo{}
+			r.Sources = map[string]*types.SourceInfo{}
 		}
 	},
-	RepoSources: func(srcs ...string) func(*Repo) {
-		return func(r *Repo) {
-			r.Sources = map[string]*SourceInfo{}
+	RepoSources: func(srcs ...string) func(*types.Repo) {
+		return func(r *types.Repo) {
+			r.Sources = map[string]*types.SourceInfo{}
 			for _, src := range srcs {
-				r.Sources[src] = &SourceInfo{ID: src, CloneURL: "clone-url"}
+				r.Sources[src] = &types.SourceInfo{ID: src, CloneURL: "clone-url"}
 			}
 		}
 	},
-	RepoMetadata: func(md interface{}) func(*Repo) {
-		return func(r *Repo) {
+	RepoMetadata: func(md interface{}) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.Metadata = md
 		}
 	},
-	RepoExternalID: func(id string) func(*Repo) {
-		return func(r *Repo) {
+	RepoExternalID: func(id string) func(*types.Repo) {
+		return func(r *types.Repo) {
 			r.ExternalRepo.ID = id
 		}
 	},
@@ -293,32 +294,32 @@ var Opt = struct {
 //
 
 // A ReposAssertion performs an assertion on the given Repos.
-type ReposAssertion func(testing.TB, Repos)
+type ReposAssertion func(testing.TB, types.Repos)
 
 // An ExternalServicesAssertion performs an assertion on the given
-// ExternalServices.
-type ExternalServicesAssertion func(testing.TB, ExternalServices)
+// types.ExternalServices.
+type ExternalServicesAssertion func(testing.TB, types.ExternalServices)
 
 // Assert contains assertion functions to be used in tests.
 var Assert = struct {
-	ReposEqual                func(...*Repo) ReposAssertion
-	ReposOrderedBy            func(func(a, b *Repo) bool) ReposAssertion
-	ExternalServicesEqual     func(...*ExternalService) ExternalServicesAssertion
-	ExternalServicesOrderedBy func(func(a, b *ExternalService) bool) ExternalServicesAssertion
+	ReposEqual                func(...*types.Repo) ReposAssertion
+	ReposOrderedBy            func(func(a, b *types.Repo) bool) ReposAssertion
+	ExternalServicesEqual     func(...*types.ExternalService) ExternalServicesAssertion
+	ExternalServicesOrderedBy func(func(a, b *types.ExternalService) bool) ExternalServicesAssertion
 }{
-	ReposEqual: func(rs ...*Repo) ReposAssertion {
-		want := append(Repos{}, rs...).With(Opt.RepoID(0))
-		return func(t testing.TB, have Repos) {
+	ReposEqual: func(rs ...*types.Repo) ReposAssertion {
+		want := append(types.Repos{}, rs...).With(Opt.RepoID(0))
+		return func(t testing.TB, have types.Repos) {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
-			have = append(Repos{}, have...).With(Opt.RepoID(0))
-			if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(Repo{}, "CreatedAt", "UpdatedAt")); diff != "" {
+			have = append(types.Repos{}, have...).With(Opt.RepoID(0))
+			if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.Repo{}, "CreatedAt", "UpdatedAt")); diff != "" {
 				t.Errorf("repos (-want +got): %s", diff)
 			}
 		}
 	},
-	ReposOrderedBy: func(ord func(a, b *Repo) bool) ReposAssertion {
-		return func(t testing.TB, have Repos) {
+	ReposOrderedBy: func(ord func(a, b *types.Repo) bool) ReposAssertion {
+		return func(t testing.TB, have types.Repos) {
 			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {
@@ -329,19 +330,19 @@ var Assert = struct {
 			}
 		}
 	},
-	ExternalServicesEqual: func(es ...*ExternalService) ExternalServicesAssertion {
-		want := append(ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
-		return func(t testing.TB, have ExternalServices) {
+	ExternalServicesEqual: func(es ...*types.ExternalService) ExternalServicesAssertion {
+		want := append(types.ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
+		return func(t testing.TB, have types.ExternalServices) {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
-			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
+			have = append(types.ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
 			if diff := cmp.Diff(want, have); diff != "" {
 				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
-	ExternalServicesOrderedBy: func(ord func(a, b *ExternalService) bool) ExternalServicesAssertion {
-		return func(t testing.TB, have ExternalServices) {
+	ExternalServicesOrderedBy: func(ord func(a, b *types.ExternalService) bool) ExternalServicesAssertion {
+		return func(t testing.TB, have types.ExternalServices) {
 			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {

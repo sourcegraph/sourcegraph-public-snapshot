@@ -29,7 +29,7 @@ const resolveRepoNameForFileInfo = (
         catchError(error =>
             // Check if the repository is a private repository
             // that has not been found. (if the browser extension is pointed towards
-            // Sourcegraph cloud). In that case, it's impossible to resolve the repo names,
+            // Sourcegraph Cloud). In that case, it's impossible to resolve the repo names,
             // so we keep the repo names inferred from the code host's DOM.
             // Note: we recover/fallback in this case so that we can show informative
             // alerts to the user.

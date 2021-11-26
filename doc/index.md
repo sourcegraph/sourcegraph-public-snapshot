@@ -89,14 +89,14 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 ### Reference
 
 - [Query syntax reference](code_search/reference/queries.md)
-- [GraphQL API](api/graphql/index.md)
+- [API Documentation](api/index.md)
 - [Sourcegraph changelog](./CHANGELOG.md)
 
 ## Cloud documentation
 
-- [Sourcegraph cloud](code_search/explanations/sourcegraph_cloud.md)
-- [Differences between Sourcegraph cloud and self-hosted](cloud/cloud_ent_on-prem_comparison.md)
-- [Indexing open source code in Sourcegraph cloud](cloud/indexing_open_source_code.md)
+- [Sourcegraph Cloud](code_search/explanations/sourcegraph_cloud.md)
+- [Differences between Sourcegraph Cloud and self-hosted](cloud/cloud_ent_on-prem_comparison.md)
+- [Indexing open source code in Sourcegraph Cloud](cloud/indexing_open_source_code.md)
 
 ## Self-hosted documentation
 

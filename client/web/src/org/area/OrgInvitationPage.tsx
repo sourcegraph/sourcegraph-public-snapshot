@@ -31,7 +31,7 @@ interface Props extends OrgAreaPageProps {
     authenticatedUser: AuthenticatedUser
 
     /** Called when the viewer responds to the invitation. */
-    onDidRespondToInvitation: () => void
+    onDidRespondToInvitation: (accepted: boolean) => void
 }
 
 interface State {
@@ -77,7 +77,11 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     responseType,
                                 }).pipe(
                                     tap(() => eventLogger.log('OrgInvitationRespondedTo')),
-                                    tap(() => this.props.onDidRespondToInvitation()),
+                                    tap(() =>
+                                        this.props.onDidRespondToInvitation(
+                                            responseType === OrganizationInvitationResponseType.ACCEPT
+                                        )
+                                    ),
                                     concatMap(() => [
                                         // Refresh current user's list of organizations.
                                         refreshAuthenticatedUser(),

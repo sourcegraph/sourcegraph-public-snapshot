@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
@@ -218,7 +219,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 	if err := ExternalServices(db).Create(ctx, confGet, service); err != nil {
 		t.Fatal(err)
 	}
-	repo := types.MakeGithubRepo(service)
+	repo := typestest.MakeGithubRepo(service)
 	if err := Repos(db).Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
