@@ -274,7 +274,13 @@ export class OrgArea extends React.Component<Props> {
         )
     }
 
-    private onDidRespondToInvitation = (): void => this.refreshRequests.next()
+    private onDidRespondToInvitation = (accepted: boolean): void => {
+        if (!accepted) {
+            this.props.history.push('/user/settings')
+            return
+        }
+        this.refreshRequests.next()
+    }
 
     private onDidUpdateOrganization = (): void => this.refreshRequests.next()
 }
