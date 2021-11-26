@@ -35,7 +35,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-y">✓</td> <!-- Additional language features -->
+        <td class="indexer-implemented-y">✓</td> <!-- Find implementations -->
         <td>-</td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -47,7 +47,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Additional language features -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td>-</td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -59,7 +59,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
         <td class="indexer-implemented-n">✗</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Additional language features -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://github.com/sourcegraph/lsif-clang/blob/main/docs/compatibility.md">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -70,8 +70,8 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
-        <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Additional language features -->
+        <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
@@ -82,35 +82,26 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
-        <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Additional language features -->
+        <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
       <tr>
         <td>Kotlin</td>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
-        <td><img src="https://img.shields.io/badge/Experimental-purple" alt="Experimental"></td>
+        <td><img src="https://img.shields.io/badge/GA-green" alt="GA"></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
-        <td class="indexer-implemented-y">✓</td> <!-- Cross-repository -->
-        <td class="indexer-implemented-n">✗</td> <!-- Additional language features -->
+        <td class="indexer-implemented-y">✓*</td> <!-- Cross-repository -->
+        <td class="indexer-implemented-n">✗</td> <!-- Find implementations -->
         <td><a href="https://sourcegraph.github.io/lsif-java/docs/getting-started.html#supported-build-tools">See notes</a></td> <!-- Build tooling -->
       </tr>
    </tbody>
 </table>
 
-<!-- ### Legend
-
-- **M1**: Can provide a decorated AST
-- **M2**: Emits documents and ranges
-- **M3**: Emits hover text
-- **M4**: Emits definitions (within compilation unit)
-- **M5**: Emits references (within compilation unit)
-- **M6**: Emits definitions (within input source)
-- **M7**: Emits references (within input source)
-- **M8**: Emits monikers for cross-repository support -->
+*Requires enabling and setting up Sourcegraph's auto-indexing feature. Further information in [Auto-indexing](../explanations/auto_indexing.md).
 
 #### Status definitions
 An indexer status is:
@@ -140,9 +131,9 @@ The indexer integrates natively with common mainstream build tools. We should ai
 
 The implementation of this milestone will also vary wildly by language. It could be that the indexer runs as a step in a larger tool, or the indexer contains build-specific logic in order to determine the set of source code that needs to be analyzed.
 
-### The long tail: Additional language features
+### The long tail: Find implementations
 
-The next milestone represents the never-finished long tail of feature additions. The remaining _20%_ of the language should be supported via incremental updates and releases over time. Support of additional language features should be prioritized by popularity and demand.
+The next milestone represents the never-finished long tail of feature additions. The remaining _20%_ of the language should be supported via incremental updates and releases over time. Support of Find implementations should be prioritized by popularity and demand.
 
 We may lack the language expertise or bandwidth to implement certain features on indexers. We will consider investing resources to add additional features when the demand for support is sufficiently high and the implementation is sufficiently difficult.
 
