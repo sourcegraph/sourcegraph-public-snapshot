@@ -46,7 +46,7 @@ func FileOrDir(ctx context.Context, db database.DB, repo *types.Repo, rev, path 
 		branchName, _, err := git.GetDefaultBranchShort(ctx, repo.Name)
 		if err == nil && branchName != "" {
 			links = append(links, NewResolver(
-				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
+				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(branchName), path, rev),
 				extsvc.TypePhabricator,
 			))
 		}
