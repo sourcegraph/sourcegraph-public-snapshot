@@ -10,13 +10,13 @@ const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = environmentConfig
 
 export interface WebpackManifest {
     /** Main app entry JS bundle */
-    appBundle: string
+    'app.js': string
     /** Main app entry CSS bundle, only used in production mode */
-    cssBundle?: string
+    'app.css'?: string
     /** Runtime bundle, only used in development mode */
-    runtimeBundle?: string
+    'runtime.js'?: string
     /** React entry bundle, only used in production mode */
-    reactBundle?: string
+    'react.js'?: string
     /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
 }
@@ -29,10 +29,10 @@ export interface WebpackManifest {
  * between our development server and the actual production server.
  */
 export const getHTMLPage = ({
-    appBundle,
-    cssBundle,
-    runtimeBundle,
-    reactBundle,
+    'app.js': appBundle,
+    'app.css': cssBundle,
+    'runtime.js': runtimeBundle,
+    'react.js': reactBundle,
     isModule,
 }: WebpackManifest): string => `
 <!DOCTYPE html>
