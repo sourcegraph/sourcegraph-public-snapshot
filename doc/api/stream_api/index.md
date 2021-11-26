@@ -73,8 +73,8 @@ Refer to the [interface definitions of our typescript client](https://sourcegrap
 
 On Sourcegraph Cloud we can run queries without authentication.
 
-```bash
-curl --header "Accept: text/event-stream" \
+```shellsession
+$ curl --header "Accept: text/event-stream" \
      --get \
      --url "https://sourcegraph.com/search/stream" \
      --data-urlencode "q=r:sourcegraph/sourcegraph doResults count:1"
