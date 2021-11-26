@@ -11,4 +11,5 @@ const (
 	EmojiWarningSign      = "⚠️"
 	EmojiFingerPointRight = "👉"
 	EmojiOk               = "👌"
+	EmojiQuestionMark     = "❔"
 )

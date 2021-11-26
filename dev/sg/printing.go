@@ -13,3 +13,11 @@ func writeSuccessLine(fmtStr string, args ...interface{}) {
 func writeFailureLine(fmtStr string, args ...interface{}) {
 	out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
 }
+
+func writeSkippedLine(fmtStr string, args ...interface{}) {
+	out.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, fmtStr, args...))
+}
+
+func writeFingerPointingLine(fmtStr string, args ...interface{}) {
+	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, fmtStr, args...))
+}
