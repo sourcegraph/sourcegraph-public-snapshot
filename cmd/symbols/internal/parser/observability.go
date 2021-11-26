@@ -20,26 +20,30 @@ type operations struct {
 
 func newOperations(observationContext *observation.Context) *operations {
 	parsing := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "codeintel_symbols_parsing",
-		Help: "The number of parse jobs currently running.",
+		Namespace: "src",
+		Name:      "codeintel_symbols_parsing",
+		Help:      "The number of parse jobs currently running.",
 	})
 	observationContext.Registerer.MustRegister(parsing)
 
 	parseQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "codeintel_symbols_parse_queue_size",
-		Help: "The number of parse jobs enqueued.",
+		Namespace: "src",
+		Name:      "codeintel_symbols_parse_queue_size",
+		Help:      "The number of parse jobs enqueued.",
 	})
 	observationContext.Registerer.MustRegister(parseQueueSize)
 
 	parseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "codeintel_symbols_parse_queue_timeouts_total",
-		Help: "The total number of parse jobs that timed out while enqueued.",
+		Namespace: "src",
+		Name:      "codeintel_symbols_parse_queue_timeouts_total",
+		Help:      "The total number of parse jobs that timed out while enqueued.",
 	})
 	observationContext.Registerer.MustRegister(parseQueueTimeouts)
 
 	parseFailed := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "codeintel_symbols_parse_failed_total",
-		Help: "The total number of parse jobs that failed.",
+		Namespace: "src",
+		Name:      "codeintel_symbols_parse_failed_total",
+		Help:      "The total number of parse jobs that failed.",
 	})
 	observationContext.Registerer.MustRegister(parseFailed)
 
