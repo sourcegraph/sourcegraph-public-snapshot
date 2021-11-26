@@ -49,7 +49,7 @@ func getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refNa
 	if short {
 		args = append(args, "--short")
 	}
-	refBytes, _, exitCode, err := ExecSafe(ctx, repo, args)
+	refBytes, _, exitCode, err := execSafe(ctx, repo, args)
 	refName = string(bytes.TrimSpace(refBytes))
 
 	if err == nil && exitCode == 0 {
