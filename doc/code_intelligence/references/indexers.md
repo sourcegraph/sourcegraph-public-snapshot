@@ -39,7 +39,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td>-</td> <!-- Build tooling -->
       </tr>
       <tr>
-        <td>TS/JS</td>
+        <td>TypeScript/JavaScript</td>
         <td><a href="https://github.com/sourcegraph/lsif-node">lsif-node</a></td>
         <td><img src="https://img.shields.io/badge/Partially-GA-yellow" alt="Partially Available"></td>
         <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
