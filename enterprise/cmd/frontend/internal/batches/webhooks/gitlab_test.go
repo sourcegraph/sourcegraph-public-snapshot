@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -920,7 +921,7 @@ func createGitLabRepo(t *testing.T, ctx context.Context, rstore database.RepoSto
 			ServiceType: extsvc.TypeGitLab,
 			ServiceID:   "https://gitlab.com/",
 		},
-	}).With(types.Opt.RepoSources(es.URN()))
+	}).With(typestest.Opt.RepoSources(es.URN()))
 	if err := rstore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
