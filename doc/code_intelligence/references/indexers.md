@@ -21,7 +21,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <th>Find references</th>
         <th>Cross-file</th>
         <th>Cross-repository</th>
-        <th>Additional language features</th>
+        <th>Find implementations</th>
         <th>Build tooling</th>
       </tr>
    </thead>
