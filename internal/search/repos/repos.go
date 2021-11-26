@@ -35,9 +35,6 @@ import (
 type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
-	// Perf improvement: we precompute this map during repo resolution to save time
-	// on the critical path.
-	RepoSet         map[api.RepoID]types.MinimalRepo
 	MissingRepoRevs []*search.RepositoryRevisions
 	OverLimit       bool
 
@@ -206,7 +203,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		repos = repos[:len(repos)-1]
 	}
 
-	tr.LazyPrintf("Associate/validate revs - start")
+	tr.LazyPrintf("Associate revs - start")
 
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
@@ -223,7 +220,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	res := Resolved{
 		RepoRevs: make([]*search.RepositoryRevisions, 0, len(repos)),
-		RepoSet:  make(map[api.RepoID]types.MinimalRepo, len(repos)),
 		Next:     next,
 	}
 
@@ -250,66 +246,11 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			}
 		}
 
-		// We do in place filtering to reduce allocations. Common path is no
-		// filtering of revs.
-		if len(revs) > 0 {
-			repoRev.Revs = revs[:0]
-		}
-
-		// Check if the repository actually has the revisions that the user specified.
-		for _, rev := range revs {
-			if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
-				// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
-				// invalid, so it's not clear what validation would even mean.
-				repoRev.Revs = append(repoRev.Revs, rev)
-				continue
-			}
-			if rev.RevSpec == "" { // skip default branch resolution to save time
-				repoRev.Revs = append(repoRev.Revs, rev)
-				continue
-			}
-
-			// Validate the revspec.
-			// Do not trigger a repo-updater lookup (e.g.,
-			// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-			// down by a lot (if we're looping over many repos). This means that it'll fail if a
-			// repo is not on gitserver.
-			//
-			// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
-			// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
-			// taking a long time because they all ask gitserver to try to fetch from the remote
-			// repo.
-			trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-			if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					return Resolved{}, context.DeadlineExceeded
-				}
-				if errors.HasType(err, gitdomain.BadCommitError{}) {
-					return Resolved{}, err
-				}
-				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					// The revspec does not exist, so don't include it, and report that it's missing.
-					if rev.RevSpec == "" {
-						// Report as HEAD not "" (empty string) to avoid user confusion.
-						rev.RevSpec = "HEAD"
-					}
-					res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
-						Repo: repo,
-						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
-					})
-				}
-				// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
-				// if there is one.
-				continue
-			}
-			repoRev.Revs = append(repoRev.Revs, rev)
-		}
-
+		repoRev.Revs = revs
 		res.RepoRevs = append(res.RepoRevs, &repoRev)
-		res.RepoSet[repoRev.Repo.ID] = repoRev.Repo
 	}
 
-	tr.LazyPrintf("Associate/validate revs - done")
+	tr.LazyPrintf("Associate revs - done")
 
 	if op.CommitAfter != "" {
 		start := time.Now()
