@@ -81,7 +81,7 @@ func TestResolverTo(t *testing.T) {
 	// codecov coverage reports are noisy.
 	resolvers := []interface{}{
 		&FileMatchResolver{db: db},
-		&GitTreeEntryResolver{db: db},
+		&GitTreeEntryResolver{db: db, stat: fileInfo{}},
 		&NamespaceResolver{},
 		&NodeResolver{},
 		&RepositoryResolver{db: db},

@@ -5,6 +5,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { isCatalogEnabled } from '../catalog'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
@@ -76,6 +77,11 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         path: EnterprisePageRoutes.Context,
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
+    },
+    {
+        path: EnterprisePageRoutes.Catalog,
+        render: lazyComponent(() => import('./catalog/CatalogArea'), 'CatalogArea'),
+        condition: props => isCatalogEnabled(props.settingsCascade),
     },
     ...routes,
 ]

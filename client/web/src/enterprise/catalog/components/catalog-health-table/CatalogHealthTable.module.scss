@@ -1,0 +1,86 @@
+.table {
+    width: unset !important;
+
+    > thead th,
+    > tbody td {
+        padding: calc(0.5 * var(--spacer)) calc(0.625 * var(--spacer));
+        &:first-child {
+            padding-left: 0;
+        }
+        &:last-child {
+            padding-right: 0;
+        }
+    }
+
+    border-collapse: separate;
+    border-spacing: 0;
+    th {
+        border-top-width: 0;
+        border-bottom-width: 1px !important;
+    }
+    > tbody > tr:first-child > td:not(.cell-state) {
+        border-top-width: 0 !important;
+    }
+
+    .col-name {
+        width: 0;
+    }
+    .col-owner {
+        width: 0;
+    }
+
+    .header-combined-status {
+        font-weight: bold !important;
+    }
+    --status-cell-width: 6rem;
+    .header-combined-status,
+    .header-status-context {
+        text-align: center;
+        width: var(--status-cell-width);
+        max-width: var(--status-cell-width);
+    }
+
+    .header-owner,
+    .cell-owner {
+        padding-right: var(--spacer) !important;
+    }
+
+    .cell-state {
+        border: solid 3px var(--body-bg);
+        text-align: center;
+        font-weight: bold;
+        a {
+            color: inherit;
+            font-size: 1.15rem;
+            margin: -9px;
+        }
+    }
+    .state-null {
+        background-color: transparent;
+        color: transparent;
+    }
+    .state-expected {
+        background-color: var(--warning);
+        color: var(--warning-4);
+    }
+    .state-error {
+        background-color: var(--danger);
+        color: var(--danger-4);
+    }
+    .state-failure {
+        background-color: var(--danger);
+        color: var(--danger-4);
+    }
+    .state-pending {
+        background-color: var(--warning);
+        color: var(--warning-4);
+    }
+    .state-success {
+        background-color: var(--success);
+        color: var(--success-4);
+    }
+    .state-info {
+        background-color: var(--success);
+        color: var(--success-4);
+    }
+}

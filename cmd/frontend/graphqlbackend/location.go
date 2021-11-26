@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 type LocationResolver interface {
@@ -105,4 +106,21 @@ func (r *positionResolver) urlFragment(forceIncludeCharacter bool) string {
 		return strconv.Itoa(r.pos.Line + 1)
 	}
 	return fmt.Sprintf("%d:%d", r.pos.Line+1, r.pos.Character+1)
+}
+
+func NewStaticLocationConnectionResolver(locations []LocationResolver, hasNextPage bool) LocationConnectionResolver {
+	return &locationConnectionResolver{locations: locations, hasNextPage: hasNextPage}
+}
+
+type locationConnectionResolver struct {
+	locations   []LocationResolver
+	hasNextPage bool
+}
+
+func (r *locationConnectionResolver) Nodes(context.Context) ([]LocationResolver, error) {
+	return r.locations, nil
+}
+
+func (r *locationConnectionResolver) PageInfo(context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(r.hasNextPage), nil
 }

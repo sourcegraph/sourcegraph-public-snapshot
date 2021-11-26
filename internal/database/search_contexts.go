@@ -451,6 +451,7 @@ func scanSingleSearchContext(rows *sql.Rows) (*types.SearchContext, error) {
 		return nil, err
 	}
 	if len(searchContexts) != 1 {
+		panic("X")
 		return nil, ErrSearchContextNotFound
 	}
 	return searchContexts[0], nil

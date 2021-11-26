@@ -36,7 +36,7 @@ export const CopyPathAction: React.FunctionComponent = () => {
 
     return (
         <Button
-            className="btn-icon p-2"
+            className="btn-icon"
             data-tooltip={copied ? 'Copied!' : 'Copy path to clipboard'}
             aria-label="Copy path"
             onClick={onClick}

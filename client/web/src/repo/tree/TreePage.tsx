@@ -36,6 +36,7 @@ import { CodeInsightsProps } from '../../insights/types'
 import { basename } from '../../util/path'
 import { fetchTreeEntries } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
+import { RepoSidebarViewOptionsProps } from '../RepoRevisionSidebar'
 
 import { TreeCommits } from './commits/TreeCommits'
 import { RepositoryRootLinks } from './RepositoryRootLinks'
@@ -53,6 +54,7 @@ interface Props
         BatchChangesProps,
         CodeInsightsProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        RepoSidebarViewOptionsProps,
         BreadcrumbSetters {
     repo: TreePageRepositoryFields
     /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
@@ -84,6 +86,8 @@ export const TreePage: React.FunctionComponent<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     extensionViews: ExtensionViewsSection,
+    repoSidebarIsVisible,
+    setRepoSidebarIsVisible,
     ...props
 }) => {
     useEffect(() => {
@@ -190,7 +194,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     )
                 ) : (
                     <>
-                        <header className="mb-3">
+                        <header>
                             {treeOrError.isRoot ? (
                                 <>
                                     <PageHeader
@@ -215,7 +219,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
 
                         <ExtensionViewsSection
-                            className={classNames('mb-3', styles.section)}
+                            className={classNames('my-3', styles.section)}
                             telemetryService={props.telemetryService}
                             settingsCascade={settingsCascade}
                             platformContext={props.platformContext}
@@ -233,6 +237,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 isLightTheme={props.isLightTheme}
                             />
                         </section>
+
                         <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
                             {items => (
                                 <section className={styles.section}>
@@ -287,6 +292,7 @@ export function useTreePageBreadcrumb({
             return {
                 key: 'treePath',
                 className: 'flex-shrink-past-contents',
+                divider: <></>,
                 element: (
                     <FilePathBreadcrumbs
                         key="path"

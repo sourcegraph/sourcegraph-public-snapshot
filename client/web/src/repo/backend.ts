@@ -38,6 +38,7 @@ export const externalLinkFieldsFragment = gql`
 
 export const repositoryFragment = gql`
     fragment RepositoryFields on Repository {
+        __typename
         id
         name
         url
@@ -110,6 +111,8 @@ export const resolveRevision = memoizeObservable(
                     repositoryRedirect(name: $repoName) {
                         __typename
                         ... on Repository {
+                            id
+                            __typename
                             mirrorInfo {
                                 cloneInProgress
                                 cloneProgress
@@ -263,6 +266,7 @@ export const fetchTreeEntries = memoizeObservable(
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $revision) {
+                            id
                             tree(path: $filePath) {
                                 ...TreeFields
                             }

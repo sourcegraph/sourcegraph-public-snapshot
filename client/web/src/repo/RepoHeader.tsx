@@ -230,7 +230,7 @@ export const RepoHeader: React.FunctionComponent<Props> = ({
                 {/* Breadcrumb for the nav elements */}
                 <Breadcrumbs breadcrumbs={props.breadcrumbs} location={props.location} />
             </div>
-            <ul className="navbar-nav">
+            <ul className="navbar-nav h-100">
                 {leftActions.map((a, index) => (
                     <li className="nav-item" key={a.id || index}>
                         {a.element}

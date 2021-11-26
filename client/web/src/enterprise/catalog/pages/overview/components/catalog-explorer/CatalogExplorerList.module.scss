@@ -1,0 +1,16 @@
+// TODO(sqs): lots of duplication with CatalogExplorerRelationList.module.scss
+.table {
+    display: grid;
+    gap: 0.5rem 1.25rem;
+    grid-template-columns:
+        [name] min-content [owner] min-content [lifecycle] min-content [date] min-content [description] minmax(
+            auto,
+            1fr
+        )
+        [end];
+    overflow: hidden;
+}
+
+.separator {
+    grid-column: 1/-1;
+}

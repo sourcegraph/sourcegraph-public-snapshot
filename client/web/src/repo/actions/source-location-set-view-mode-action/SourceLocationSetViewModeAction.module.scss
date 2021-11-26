@@ -1,0 +1,16 @@
+.wrapper {
+    height: 100%;
+}
+.btn {
+    height: 100%;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    &--view-mode-component {
+        color: var(--body-color) !important;
+        fill: var(--body-color) !important;
+    }
+    &--view-mode-tree {
+        color: var(--text-muted) !important;
+        fill: var(--text-muted) !important;
+    }
+}

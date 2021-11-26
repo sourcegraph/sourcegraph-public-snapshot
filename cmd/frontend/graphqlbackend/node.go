@@ -267,3 +267,38 @@ func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
 	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToComponent() (ComponentResolver, bool) {
+	n, ok := r.Node.(ComponentResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToGroup() (GroupResolver, bool) {
+	n, ok := r.Node.(GroupResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToComponentStatus() (ComponentStatusResolver, bool) {
+	n, ok := r.Node.(ComponentStatusResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToComponentStatusContext() (ComponentStatusContextResolver, bool) {
+	n, ok := r.Node.(ComponentStatusContextResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPackage() (PackageResolver, bool) {
+	n, ok := r.Node.(PackageResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	n, ok := r.Node.(*GitTreeEntryResolver)
+	return n, ok && n.IsDirectory()
+}
+
+func (r *NodeResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	n, ok := r.Node.(*GitTreeEntryResolver)
+	return n, ok && !n.IsDirectory()
+}

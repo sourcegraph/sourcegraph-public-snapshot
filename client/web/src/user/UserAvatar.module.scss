@@ -6,6 +6,10 @@
     color: var(--color-bg-1);
     align-items: center;
     justify-content: center;
-    min-width: 1.5rem;
-    min-height: 1.5rem;
+    flex-shrink: 0;
+
+    &--not-tiny {
+        min-width: 1.5rem;
+        min-height: 1.5rem;
+    }
 }

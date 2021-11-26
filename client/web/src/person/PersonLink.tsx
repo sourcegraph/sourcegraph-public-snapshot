@@ -41,7 +41,7 @@ export const PersonLink: React.FunctionComponent<{
     <LinkOrSpan
         to={person.user?.url}
         className={classNames(className, person.user && userClassName)}
-        data-tooltip={
+        title={
             person.user && (person.user.displayName || person.displayName)
                 ? `${person.user.displayName || person.displayName} <${person.email}>`
                 : person.email

@@ -25,6 +25,7 @@ import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { TosConsentModal } from './auth/TosConsentModal'
 import { BatchChangesProps } from './batches'
+import { CatalogProps } from './catalog'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -82,6 +83,7 @@ export interface LayoutProps
         BatchChangesProps,
         CodeInsightsProps,
         CodeInsightsContextProps,
+        CatalogProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

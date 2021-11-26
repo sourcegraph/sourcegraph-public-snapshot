@@ -354,6 +354,7 @@ func NewSchema(
 	searchContexts SearchContextsResolver,
 	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
+	catalogRootResolver CatalogRootResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -443,6 +444,16 @@ func NewSchema(
 		}
 	}
 
+	if catalogRootResolver != nil {
+		EnterpriseResolvers.catalogRootResolver = catalogRootResolver
+		resolver.CatalogRootResolver = catalogRootResolver
+		schemas = append(schemas, catalogSchema)
+		// Register NodeByID handlers.
+		for kind, res := range catalogRootResolver.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -468,6 +479,7 @@ type schemaResolver struct {
 	SearchContextsResolver
 	OrgRepositoryResolver
 	NotebooksResolver
+	CatalogRootResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -509,6 +521,12 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		"GitCommit": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitCommitByID(ctx, id)
 		},
+		"GitTree": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitTreeEntryByID(ctx, id)
+		},
+		"GitBlob": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return r.gitTreeEntryByID(ctx, id)
+		},
 		"RegistryExtension": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return RegistryExtensionByID(ctx, db, id)
 		},
@@ -545,6 +563,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
 	notebooksResolver      NotebooksResolver
+	catalogRootResolver    CatalogRootResolver
 }{}
 
 // DEPRECATED

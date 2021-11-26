@@ -184,6 +184,7 @@
     color: var(--body-color);
     font-weight: 700;
     border-bottom: 2px solid var(--brand-secondary);
+    background-color: unset;
 }
 
 // Bootstrap's nav base class does not include styles for the active state.
