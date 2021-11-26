@@ -19,6 +19,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Excess newlines in between outputs in logfiles written when `--keep-logs` is used have been fixed. [#665](https://github.com/sourcegraph/src-cli/pull/665)
+
 ### Removed
 
 ## 3.34.1

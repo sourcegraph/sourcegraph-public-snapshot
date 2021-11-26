@@ -82,7 +82,19 @@ type prefixWriter struct {
 }
 
 func (pw *prefixWriter) Write(p []byte) (int, error) {
-	for _, line := range bytes.Split(p, []byte("\n")) {
+	// Don't split on the final newline in this writer, split
+	// content into separate lines anyways, so lines without \n
+	// at the end wouldn't print properly regardless. This fixes
+	// output being separated by constant newlines.
+	// Otherwise:
+	// > echo Hello world; echo Hello Sourcegraph
+	//
+	// Hello world
+	//
+	// Hello Sourcegraph
+	//
+	t := bytes.TrimSuffix(p, []byte("\n"))
+	for _, line := range bytes.Split(t, []byte("\n")) {
 		pw.logger.Logf("%s | %s", pw.prefix, string(line))
 	}
 	return len(p), nil
