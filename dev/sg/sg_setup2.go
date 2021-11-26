@@ -85,11 +85,11 @@ func setup2Exec(ctx context.Context, args []string) error {
 				continue
 			}
 
-			// pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
+			pending := out.Pending(output.Linef("", output.StylePending, "%d. %s - Determining status...", idx, category.name))
 			for _, dep := range category.dependencies {
 				dep.Update(ctx)
 			}
-			// pending.Destroy()
+			pending.Destroy()
 
 			if combined := category.CombinedState(); combined {
 				writeSuccessLine("%d. %s", idx, category.name)
@@ -170,6 +170,14 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	{
 		name: "Clone repositories",
 		dependencies: []*dependency{
+			{
+				name:  "SSH authentication with GitHub.com",
+				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
+				instructionsComment: `` +
+					`Make sure that you can clone git repositories from GitHub via SSH.
+
+See here on how to set that up: https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
+			},
 			{
 				name:                 "github.com/sourcegraph/sourcegraph",
 				check:                checkInMainRepoOrRepoInDirectory,
@@ -341,7 +349,7 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 	// TODO: It doesn't make a lot of sense to give a choice here if
 	// there's only one dependency
 
-	choices := map[int]string{1: "I want to fix these one-by-one"}
+	choices := map[int]string{1: "I want to fix these manually"}
 	if category.autoFixing {
 		choices[2] = "I'm feeling lucky. You try fixing all of it for me."
 		choices[3] = "Go back"
@@ -354,12 +362,11 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 		return err
 	}
 
-	out.ClearScreen()
-
 	switch choice {
 	case 1:
 		err = fixCategoryManually(ctx, category)
 	case 2:
+		out.ClearScreen()
 		err = fixCategoryAutomatically(ctx, category)
 	case 3:
 		return nil
@@ -372,14 +379,15 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 	out.Write("")
 	out.Write("Checks:")
 
-	for _, dep := range category.dependencies {
+	for i, dep := range category.dependencies {
+		idx := i + 1
 		if dep.err == nil && dep.state {
-			writeSuccessLine("%s", dep.name)
+			writeSuccessLine("%d. %s", idx, dep.name)
 		} else {
 			if dep.err != nil {
-				writeFailureLine("%s: %s", dep.name, dep.err)
+				writeFailureLine("%d. %s: %s", idx, dep.name, dep.err)
 			} else {
-				writeFailureLine("%s: %s", dep.name, "check failed")
+				writeFailureLine("%d. %s: %s", idx, dep.name, "check failed")
 			}
 		}
 	}
@@ -387,7 +395,7 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 
 func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory) error {
 	for _, dep := range category.dependencies {
-		if dep.err == nil || dep.state {
+		if dep.err == nil && dep.state {
 			continue
 		}
 
@@ -421,10 +429,30 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 }
 
 func fixCategoryManually(ctx context.Context, category *dependencyCategory) error {
-	for _, dep := range category.dependencies {
-		if dep.err == nil || dep.state {
-			continue
+	toFix := []int{}
+
+	for {
+		for i, dep := range category.dependencies {
+			if dep.err == nil || dep.state {
+				continue
+			}
+
+			toFix = append(toFix, i)
 		}
+
+		if len(toFix) == 0 {
+			break
+		}
+
+		writeFingerPointingLine("Which one do you want to fix?")
+		idx, err := getNumberOutOf(toFix)
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+		dep := category.dependencies[idx]
 
 		out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
 		out.Write("")
@@ -464,11 +492,11 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 			return err
 		}
 
-		out.ClearScreen()
 		switch choice {
 		case 1:
 			writeFingerPointingLine("Hit return once you're done")
 			waitForReturn()
+			toFix = removeEntry(toFix, idx)
 		case 2:
 			if err := fixDependencyAutomatically(ctx, dep); err != nil {
 				return err
@@ -476,6 +504,12 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 		case 3:
 			return nil
 		}
+
+		pending := out.Pending(output.Linef("", output.StylePending, "Determining status..."))
+		for _, dep := range category.dependencies {
+			dep.Update(ctx)
+		}
+		pending.Destroy()
 	}
 
 	return nil
@@ -493,10 +527,7 @@ func removeEntry(s []int, val int) (result []int) {
 func checkCommandOutputContains(cmd, contains string) func(context.Context) (bool, error) {
 	return func(ctx context.Context) (bool, error) {
 		elems := strings.Split(cmd, " ")
-		out, err := exec.Command(elems[0], elems[1:]...).CombinedOutput()
-		if err != nil {
-			return false, err
-		}
+		out, _ := exec.Command(elems[0], elems[1:]...).CombinedOutput()
 		return strings.Contains(string(out), contains), nil
 	}
 }
