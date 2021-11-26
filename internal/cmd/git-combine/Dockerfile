@@ -6,8 +6,8 @@ ENV CGO_ENABLE=0
 
 # We only have one dependency. When building we just use the latest version of
 # it rather than maintaining our own go.mod just in this directory.
-RUN go mod init github.com/sourcegraph/sourcegraph/internal/cmd/git-combine
-RUN go get github.com/go-git/go-git/v5
+RUN go mod init github.com/sourcegraph/sourcegraph/internal/cmd/git-combine \
+    && go get github.com/go-git/go-git/v5
 
 COPY git-combine.go .
 RUN go build .
@@ -16,6 +16,7 @@ RUN go build .
 # Sourcegraph.com.
 FROM alpine:3.15
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache git ca-certificates tini
 
 COPY --from=builder /go/src/app/git-combine /usr/bin/
