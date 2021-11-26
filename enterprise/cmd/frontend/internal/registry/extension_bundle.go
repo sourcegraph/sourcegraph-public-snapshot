@@ -29,7 +29,7 @@ var sourceMappingURLLineRegex = lazyregexp.New(`(?m)\r?\n?^//# sourceMappingURL=
 
 // handleRegistryExtensionBundle serves the bundled JavaScript source file or the source map for an
 // extension in the registry as a raw JavaScript or JSON file.
-func handleRegistryExtensionBundle(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func handleRegistryExtensionBundle(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if conf.Extensions() == nil {
 			w.WriteHeader(http.StatusNotFound)
