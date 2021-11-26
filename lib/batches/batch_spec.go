@@ -71,9 +71,9 @@ type WorkspaceConfiguration struct {
 }
 
 type OnQueryOrRepository struct {
-	RepositoriesMatchingQuery string
-	Repository                string
-	Branches                  []string
+	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
+	Repository                string   `json:"repository,omitempty" yaml:"repository"`
+	Branches                  []string `json:"branches,omitempty" yaml:"branch"`
 }
 
 type rawOnQueryOrRepository struct {
