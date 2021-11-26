@@ -43,3 +43,12 @@ git remote add --no-tags -t master tensorflow https://github.com/tensorflow/tens
 
 git remote add origin https://sourcegraph-bot:$ACCESS_TOKEN@github.com/sgtest/megarepo.git
 ```
+
+Add a file called `PAUSE` in the git-combine working directory and the daemon mode will stop running. This is useful when adding more remotes.
+
+This script will print the size of the working copy in Gb:
+
+```shell
+git ls-tree -r --long HEAD | awk '$4 != "-" { total += $4 } END { print
+total / 1024 / 1024 / 1024.0 }'
+```
