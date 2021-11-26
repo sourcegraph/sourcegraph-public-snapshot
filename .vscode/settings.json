@@ -56,10 +56,7 @@
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
   "eslint.workingDirectories": [
-    "./dev/release",
     "./client/web",
-    "./client/browser",
-    "./client/build-config",
     "./client/shared",
     "./client/search",
     "./client/search-ui",

@@ -232,7 +232,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
 	github.com/cockroachdb/redact v1.1.3
 	github.com/dave/jennifer v1.4.1 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.0
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
@@ -375,6 +375,8 @@ require (
 	k8s.io/klog/v2 v2.40.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 )
+
+require github.com/CycloneDX/cyclonedx-go v0.4.0
 
 // Permanent replace directives
 // ============================

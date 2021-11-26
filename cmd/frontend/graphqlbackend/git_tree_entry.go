@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -58,11 +60,65 @@ func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
+// gitTreeEntryGQLID is a type used for marshaling and unmarshaling a Git tree entry's GraphQL ID.
+type gitTreeEntryGQLID struct {
+	Commit gitCommitGQLID `json:"c"`
+	Path   string         `json:"p"`
+}
+
+func marshalGitTreeEntryID(repo graphql.ID, commitID GitObjectID, path string, isTree bool) graphql.ID {
+	var typ string
+	if isTree {
+		typ = "GitTree"
+	} else {
+		typ = "GitBlob"
+	}
+	return relay.MarshalID(typ, gitTreeEntryGQLID{
+		Commit: gitCommitGQLID{Repository: repo, CommitID: commitID},
+		Path:   path,
+	})
+}
+
+func unmarshalGitTreeEntryID(id graphql.ID) (repo graphql.ID, commitID GitObjectID, path string, isTree bool, err error) {
+	var spec gitTreeEntryGQLID
+	err = relay.UnmarshalSpec(id, &spec)
+	typ := relay.UnmarshalKind(id)
+	isTree = typ == "GitTree"
+	return spec.Commit.Repository, spec.Commit.CommitID, spec.Path, isTree, err
+}
+
+func (r *GitTreeEntryResolver) ID() graphql.ID {
+	return marshalGitTreeEntryID(r.commit.repoResolver.ID(), r.commit.oid, r.stat.Name(), r.IsDirectory())
+}
+
+func (r *schemaResolver) gitTreeEntryByID(ctx context.Context, id graphql.ID) (Node, error) {
+	repoID, commitID, path, isTree, err := unmarshalGitTreeEntryID(id)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := r.repositoryByID(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	commit, err := repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
+	if err != nil {
+		return nil, err
+	}
+	return NewGitTreeEntryResolver(r.db, commit, fileInfo{path: path, isDir: isTree}), nil
+}
+
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, true }
-func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, true }
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	// TODO(sqs): is necessary to return the correct __typename for a GitTreeEntry iface in gql
+	return r, r.IsDirectory()
+}
+
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	// TODO(sqs): is necessary to return the correct __typename for a GitTreeEntry iface in gql
+	return r, !r.IsDirectory()
+}
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 

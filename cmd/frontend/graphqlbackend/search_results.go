@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -568,6 +569,38 @@ func toFeatures(flags featureflag.FlagSet) search.Features {
 	}
 }
 
+func withCatalogAutoDefinedSearchContexts(args search.TextParameters) search.TextParameters {
+	query.ForAll(args.Query, func(node query.Node) bool {
+		n, ok := node.(query.Parameter)
+		if !ok {
+			return true
+		}
+		if n.Field == query.FieldContext {
+			if strings.HasPrefix(n.Value, "c/") {
+				componentName := strings.TrimPrefix(n.Value, "c/")
+				c := catalog.ComponentByName(componentName)
+				if c == nil {
+					panic("no catalog component found: " + componentName)
+				}
+				for _, sloc := range c.SourceLocations {
+					args.RepoOptions.RepoFilters = append(args.RepoOptions.RepoFilters, string(sloc.Repo))
+					args.Repos = append(args.Repos, &search.RepositoryRevisions{
+						Repo: types.MinimalRepo{Name: sloc.Repo},
+					})
+					for _, p := range sloc.Paths {
+						// TODO(sqs): this does not properly associate the includepatterns with the
+						// repos. It searches in these includepatterns across all selected repos.
+						args.PatternInfo.IncludePatterns = append(args.PatternInfo.IncludePatterns, "^"+regexp.QuoteMeta(p)+"($|/)")
+
+					}
+				}
+			}
+		}
+		return true
+	})
+	return args
+}
+
 // toSearchRoutine converts a query parse tree to the _internal_ representation
 // needed to run a search routine. To understand why this conversion matters, think
 // about the fact that the query parse tree doesn't know anything about our
@@ -612,6 +645,8 @@ func (r *searchResolver) toSearchRoutine(q query.Q) (*run.Routine, error) {
 	}
 	args = withResultTypes(args, forceResultTypes)
 	args = withMode(args, r.PatternType)
+	args = withCatalogAutoDefinedSearchContexts(args)
+
 	repoOptions := r.toRepoOptions(args.Query)
 	// explicitly populate RepoOptions field in args, because the repo search job
 	// still relies on all of args. In time it should depend only on the bits it truly needs.

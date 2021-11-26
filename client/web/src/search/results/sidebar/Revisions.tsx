@@ -4,7 +4,7 @@ import React from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { FilterLink, RevisionsProps, SyntaxHighlightedSearchQuery, TabIndex } from '@sourcegraph/search-ui'
-import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSection.module.scss'
+// import styles from '@sourcegraph/search-ui/src/results/sidebar/SearchSidebarSection.module.scss'
 import { GitRefType } from '@sourcegraph/shared/src/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'

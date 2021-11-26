@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -113,6 +114,8 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 			return GetUserSearchContext(namespace.User, parsedSearchContextSpec.NamespaceName), nil
 		}
 		return GetOrganizationSearchContext(namespace.Organization, parsedSearchContextSpec.NamespaceName, parsedSearchContextSpec.NamespaceName), nil
+	} else if strings.HasPrefix(searchContextSpec, "c/") {
+		return &types.SearchContext{Name: searchContextSpec}, nil
 	}
 
 	// Check if instance-level context
@@ -377,6 +380,19 @@ func DeleteSearchContext(ctx context.Context, db database.DB, searchContext *typ
 
 func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
+
+	for _, component := range catalog.Components() {
+		description := "Component"
+		if component.Description != "" {
+			description += fmt.Sprintf(" (%s)", component.Description)
+		}
+		searchContexts = append(searchContexts, &types.SearchContext{
+			Name:        "c/" + component.Name,
+			Public:      false,
+			Description: description,
+		})
+	}
+
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
 		return searchContexts, nil
@@ -396,6 +412,7 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types
 	for _, org := range organizations {
 		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
 	}
+
 	return searchContexts, nil
 }
 

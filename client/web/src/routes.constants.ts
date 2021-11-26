@@ -35,4 +35,5 @@ export enum EnterprisePageRoutes {
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:spec+/edit',
     Context = '/contexts/:spec+',
+    Catalog = '/catalog',
 }

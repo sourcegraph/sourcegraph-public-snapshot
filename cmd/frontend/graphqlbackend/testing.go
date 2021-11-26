@@ -20,7 +20,7 @@ import (
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}

@@ -1,0 +1,13 @@
+.tab {
+    // ::after used here for avoids the CLS when the font-weight change (see: https://css-tricks.com/bold-on-hover-without-the-layout-shift/)
+    &::after {
+        content: attr(data-tab-content);
+        height: 0;
+        text-transform: capitalize;
+        visibility: hidden; // a11y: avoid detection for voice over
+        overflow: hidden;
+        user-select: none;
+        pointer-events: none;
+        font-weight: 700;
+    }
+}

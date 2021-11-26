@@ -142,7 +142,7 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 
 	if !p.DisableTimeout {
 		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 3000*time.Millisecond)
 		defer cancel()
 	}
 	if p.SimulateTimeout {

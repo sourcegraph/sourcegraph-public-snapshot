@@ -68,6 +68,7 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
     fileDecorationsByPath,
     isLightTheme,
 }) => {
+    // TODO(sqs): hack to make ComponentSources work
     const directChildren = entries.filter(entry => entry.path === [parentPath, entry.name].filter(Boolean).join('/'))
     if (directChildren.length === 0) {
         return null

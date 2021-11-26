@@ -26,6 +26,7 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
+import { CatalogProps } from '../catalog'
 import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
@@ -39,7 +40,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
-import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
+import { RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -69,7 +70,8 @@ export interface RepoRevisionContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps {
+        FeatureFlagProps,
+        CatalogProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -106,6 +108,7 @@ interface RepoRevisionContainerProps
         CodeIntelligenceProps,
         RepoSidebarViewOptionsProps,
         BatchChangesProps,
+        CatalogProps,
         CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -139,20 +142,18 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
     repo,
 }) => (
     <Button
-        className="d-flex align-items-center text-nowrap"
+        className="d-flex align-items-center text-nowrap border-0 px-1"
         key="repo-revision"
         id="repo-revision-popover"
         aria-label="Change revision"
         outline={true}
         variant="secondary"
-        size="sm"
     >
         {(revision && revision === resolvedRevisionOrError.commitID
             ? resolvedRevisionOrError.commitID.slice(0, 7)
             : revision) ||
             resolvedRevisionOrError.defaultBranch ||
             'HEAD'}
-        <RepoRevisionChevronDownIcon className="icon-inline" />
         <RepoRevisionContainerPopover
             repo={repo}
             resolvedRevisionOrError={resolvedRevisionOrError}

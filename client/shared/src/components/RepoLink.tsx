@@ -10,7 +10,7 @@ interface Props {
     /**
      * The link's destination. If null, the element is text, not a link.
      */
-    to: string | null
+    to?: string | null
 
     className?: string
 
@@ -34,7 +34,7 @@ export const RepoLink: React.FunctionComponent<Props> = ({
             <span className={repoClassName}>{repoName}</span>
         </span>
     )
-    if (to === null) {
+    if (to === null || to === undefined) {
         return children
     }
     return (

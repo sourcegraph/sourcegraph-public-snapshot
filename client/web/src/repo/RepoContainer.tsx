@@ -5,7 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
 import { NEVER, ObservableInput, of } from 'rxjs'
@@ -36,6 +36,7 @@ import { Button, useLocalStorage, useObservable, Link } from '@sourcegraph/wildc
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
+import { CatalogProps } from '../catalog'
 import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -51,8 +52,10 @@ import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { ComponentRepoHeaderAction } from './actions/component-action/ComponentRepoHeaderAction'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
+import { SourceLocationSetViewModeAction } from './actions/source-location-set-view-mode-action/SourceLocationSetViewModeAction'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
@@ -87,7 +90,8 @@ export interface RepoContainerContext
         BatchChangesProps,
         CodeInsightsProps,
         FeatureFlagProps,
-        RepoSidebarViewOptionsProps {
+        RepoSidebarViewOptionsProps,
+        CatalogProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -129,7 +133,8 @@ interface RepoContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        FeatureFlagProps {
+        FeatureFlagProps,
+        CatalogProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -240,38 +245,41 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className="text-nowrap test-repo-header-repo-link"
+                                className="text-nowrap text-body border-0 px-1 d-flex align-items-center test-repo-header-repo-link"
                                 variant="secondary"
                                 outline={true}
-                                size="sm"
                                 as={Link}
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Button>
-                            <Button
-                                id="repo-popover"
-                                className={styles.repoChange}
-                                aria-label="Change repository"
-                                outline={true}
-                                variant="secondary"
-                                size="sm"
-                            >
-                                <ChevronDownIcon className="icon-inline" />
-                            </Button>
+                            {false && (
+                                <Button
+                                    id="repo-popover"
+                                    className={styles.repoChange}
+                                    aria-label="Change repository"
+                                    outline={true}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    <ChevronDownIcon className="icon-inline" />
+                                </Button>
+                            )}
                         </div>
-                        <UncontrolledPopover
-                            placement="bottom-start"
-                            target="repo-popover"
-                            trigger="legacy"
-                            hideArrow={true}
-                            fade={false}
-                            popperClassName="border-0"
-                        >
-                            <RepositoriesPopover
-                                currentRepo={repoOrError.id}
-                                telemetryService={props.telemetryService}
-                            />
-                        </UncontrolledPopover>
+                        {false && (
+                            <UncontrolledPopover
+                                placement="bottom-start"
+                                target="repo-popover"
+                                trigger="legacy"
+                                hideArrow={true}
+                                fade={false}
+                                popperClassName="border-0"
+                            >
+                                <RepositoriesPopover
+                                    currentRepo={repoOrError.id}
+                                    telemetryService={props.telemetryService}
+                                />
+                            </UncontrolledPopover>
+                        )}
                     </>
                 ),
             }
@@ -446,6 +454,38 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
             />
             <RepoHeaderContributionPortal
                 position="right"
+                priority={100}
+                id="catalog-component"
+                {...repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <ComponentRepoHeaderAction
+                        key="catalog-component"
+                        repo={repoOrError}
+                        filePath={filePath}
+                        actionType={actionType}
+                        repoName={repoName}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
+            <RepoHeaderContributionPortal
+                position="left"
+                priority={-1}
+                id="source-location-set-view-mode"
+                {...repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <SourceLocationSetViewModeAction
+                        key="source-location-set-view-mode"
+                        repo={repoOrError}
+                        filePath={filePath}
+                        actionType={actionType}
+                        repoName={repoName}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
+            <RepoHeaderContributionPortal
+                position="right"
                 priority={2}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
@@ -470,48 +510,50 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 )}
             </RepoHeaderContributionPortal>
             <ErrorBoundary location={props.location}>
-                <Switch>
-                    {[
-                        '',
-                        ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
-                        '/-/blob',
-                        '/-/tree',
-                        '/-/commits',
-                        '/-/docs',
-                    ].map(routePath => (
-                        <Route
-                            path={`${repoMatchURL}${routePath}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={routePath === ''}
-                            render={routeComponentProps => (
-                                <RepoRevisionContainer
-                                    {...routeComponentProps}
-                                    {...context}
-                                    {...childBreadcrumbSetters}
-                                    routes={props.repoRevisionContainerRoutes}
-                                    revision={revision || ''}
-                                    resolvedRevisionOrError={resolvedRevisionOrError}
-                                    // must exactly match how the revision was encoded in the URL
-                                    routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
-                                    useActionItemsBar={useActionItemsBar}
-                                />
-                            )}
-                        />
-                    ))}
-                    {props.repoContainerRoutes.map(
-                        ({ path, render, exact, condition = () => true }) =>
-                            condition(context) && (
-                                <Route
-                                    path={context.routePrefix + path}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={exact}
-                                    // RouteProps.render is an exception
-                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                />
-                            )
-                    )}
-                    <Route key="hardcoded-key" component={RepoPageNotFound} />
-                </Switch>
+                <Suspense fallback={null}>
+                    <Switch>
+                        {[
+                            '',
+                            ...(rawRevision ? [`@${rawRevision}`] : []), // must exactly match how the revision was encoded in the URL
+                            '/-/blob',
+                            '/-/tree',
+                            '/-/commits',
+                            '/-/docs',
+                        ].map(routePath => (
+                            <Route
+                                path={`${repoMatchURL}${routePath}`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={routePath === ''}
+                                render={routeComponentProps => (
+                                    <RepoRevisionContainer
+                                        {...routeComponentProps}
+                                        {...context}
+                                        {...childBreadcrumbSetters}
+                                        routes={props.repoRevisionContainerRoutes}
+                                        revision={revision || ''}
+                                        resolvedRevisionOrError={resolvedRevisionOrError}
+                                        // must exactly match how the revision was encoded in the URL
+                                        routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
+                                        useActionItemsBar={useActionItemsBar}
+                                    />
+                                )}
+                            />
+                        ))}
+                        {props.repoContainerRoutes.map(
+                            ({ path, render, exact, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        path={context.routePrefix + path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={exact}
+                                        // RouteProps.render is an exception
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
+                        )}
+                        <Route key="hardcoded-key" component={RepoPageNotFound} />
+                    </Switch>
+                </Suspense>
             </ErrorBoundary>
         </div>
     )

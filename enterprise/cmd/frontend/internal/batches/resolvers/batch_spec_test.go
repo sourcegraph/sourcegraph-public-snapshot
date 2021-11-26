@@ -85,7 +85,7 @@ func TestBatchSpecResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -288,7 +288,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

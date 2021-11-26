@@ -4683,14 +4683,21 @@
   resolved "https://registry.npmjs.org/@types/d3-selection/-/d3-selection-1.4.1.tgz#fa1f8710a6b5d7cfe5c6caa61d161be7cae4a022"
   integrity sha512-bv8IfFYo/xG6dxri9OwDnK3yCagYPeRIjTlrcdYJSx+FDWlCeBDepIHUpqROmhPtZ53jyna0aUajZRk0I3rXNA==
 
-"@types/d3-shape@1.3.2", "@types/d3-shape@^1", "@types/d3-shape@^1.3.1":
+"@types/d3-shape@^1", "@types/d3-shape@^1.3.1":
   version "1.3.2"
   resolved "https://registry.npmjs.org/@types/d3-shape/-/d3-shape-1.3.2.tgz#a41d9d6b10d02e221696b240caf0b5d0f5a588ec"
   integrity sha512-LtD8EaNYCaBRzHzaAiIPrfcL3DdIysc81dkGlQvv7WQP3+YXV7b0JJTtR1U3bzeRieS603KF4wUo+ZkJVenh8w==
   dependencies:
     "@types/d3-path" "*"
 
-"@types/d3-time-format@3.0.0":
+"@types/d3-shape@^3.0.2":
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.0.2.tgz#4b1ca4ddaac294e76b712429726d40365cd1e8ca"
+  integrity sha512-5+ButCmIfNX8id5seZ7jKj3igdcxx+S9IDBiT35fQGTLZUfkFgTv+oBH34xgeoWDKpWcMITSzBILWQtBoN5Piw==
+  dependencies:
+    "@types/d3-path" "*"
+
+"@types/d3-time-format@^3.0.0":
   version "3.0.0"
   resolved "https://registry.npmjs.org/@types/d3-time-format/-/d3-time-format-3.0.0.tgz#913e984362a59792dc8d8b122dd17625991eade2"
   integrity sha512-UpLg1mn/8PLyjr+J/JwdQJM/GzysMvv2CS8y+WYAL5K0+wbvXv/pPSLEfdNaprCZsGcXTxPsFMy8QtkYv9ueew==
@@ -5248,6 +5255,13 @@
     "@types/react" "*"
     "@types/stripe-v3" "*"
 
+"@types/react-svg-pan-zoom@^3.3.4":
+  version "3.3.4"
+  resolved "https://registry.npmjs.org/@types/react-svg-pan-zoom/-/react-svg-pan-zoom-3.3.4.tgz#7d59f72b5d2f71ffa3a39238aa6f6d357a9b7efa"
+  integrity sha512-jkmAkAdhEKyYFiH7eTOvnR6xU6N/3jiOiWULZh7ETF7yDKgmnyJnUtytcMbZfrooUYFapbf9oWSfJHG0cnCbLQ==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-syntax-highlighter@11.0.5":
   version "11.0.5"
   resolved "https://registry.npmjs.org/@types/react-syntax-highlighter/-/react-syntax-highlighter-11.0.5.tgz#0d546261b4021e1f9d85b50401c0a42acb106087"
@@ -5255,10 +5269,17 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-test-renderer@*":
+"@types/react-test-renderer@*", "@types/react-test-renderer@16.9.2":
   version "16.9.2"
   resolved "https://registry.npmjs.org/@types/react-test-renderer/-/react-test-renderer-16.9.2.tgz#e1c408831e8183e5ad748fdece02214a7c2ab6c5"
   integrity sha512-4eJr1JFLIAlWhzDkBCkhrOIWOvOxcCAfQh+jiKg7l/nNZcCIL2MHl2dZhogIFKyHzedVWHaVP1Yydq/Ruu4agw==
+  dependencies:
+    "@types/react" "*"
+
+"@types/react-virtualized-auto-sizer@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@types/react-virtualized-auto-sizer/-/react-virtualized-auto-sizer-1.0.1.tgz#b3187dae1dfc4c15880c9cfc5b45f2719ea6ebd4"
+  integrity sha512-GH8sAnBEM5GV9LTeiz56r4ZhMOUSrP43tAQNSRVxNexDjcNKLCEtnxusAItg1owFUFE6k0NslV26gqVClVvong==
   dependencies:
     "@types/react" "*"
 
@@ -9652,14 +9673,14 @@ d3-selection@1, d3-selection@^1.1.0, d3-selection@^1.4.1:
   resolved "https://registry.npmjs.org/d3-selection/-/d3-selection-3.0.0.tgz#c25338207efa72cc5b9bd1458a1a41901f1e1b31"
   integrity sha512-fmTRWbNMmsmWq6xJV8D19U/gw/bwrHfNXxrIN+HfZgnzqTHp9jOmKMhsTUjXOJnZOdZY9Q28y4yebKzqDKlxlQ==
 
-d3-shape@1, d3-shape@^1.0.6, d3-shape@^1.2.0, d3-shape@^1.3.7:
+d3-shape@1, d3-shape@^1.0.6, d3-shape@^1.2.0:
   version "1.3.7"
   resolved "https://registry.npmjs.org/d3-shape/-/d3-shape-1.3.7.tgz#df63801be07bc986bc54f63789b4fe502992b5d7"
   integrity sha512-EUkvKjqPFUAZyOlhY5gzCxCeI0Aep04LwIRpsZ/mLFelJiUfnK56jo5JMDSE7yyP2kLSb6LtF+S5chMk7uqPqw==
   dependencies:
     d3-path "1"
 
-d3-shape@3:
+d3-shape@3, d3-shape@^3.0.1:
   version "3.0.1"
   resolved "https://registry.npmjs.org/d3-shape/-/d3-shape-3.0.1.tgz#9ccdfb28fd9b0d12f2d8aec234cd5c4a9ea27931"
   integrity sha512-HNZNEQoDhuCrDWEc/BMbF/hKtzMZVoe64TvisFLDp2Iyj0UShB/E6/lBsLlJTfBMbYgftHj90cXJ0SEitlE6Xw==
@@ -9863,6 +9884,14 @@ dagre-d3@^0.6.4:
     dagre "^0.8.5"
     graphlib "^2.1.8"
     lodash "^4.17.15"
+
+dagre-reactjs@^1.0.0-alpha.2:
+  version "1.0.0-alpha.2"
+  resolved "https://registry.npmjs.org/dagre-reactjs/-/dagre-reactjs-1.0.0-alpha.2.tgz#4f83f18e3b719f6d54b1f73a2b55d152625f7e74"
+  integrity sha512-jCjKsqq20ii8Wnx8w/muVP6mcBiq3TpKI+CcAifMzlEpngCdmuH91ZtEKmyBRv/vHAEh71U31oVSP8W5i4Gtzw==
+  dependencies:
+    lodash-es "^4.17.15"
+    lodash.defaultsdeep "^4.6.1"
 
 dagre@^0.8.5:
   version "0.8.5"
@@ -16045,6 +16074,11 @@ lodash-es@^4.17.11:
   resolved "https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.15.tgz#21bd96839354412f23d7a10340e5eac6ee455d78"
   integrity sha512-rlrc3yU3+JNOpZ9zj5pQtxnx2THmvRykwL4Xlxoa8I9lHBlVbbyPhgyPMioxVZ4NqyxaVVtaJnzsyOidQIhyyQ==
 
+lodash-es@^4.17.15:
+  version "4.17.21"
+  resolved "https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.21.tgz#43e626c46e6591b7750beb2b50117390c609e3ee"
+  integrity sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==
+
 lodash._reinterpolate@~3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/lodash._reinterpolate/-/lodash._reinterpolate-3.0.0.tgz#0ccf2d89166af03b3663c796538b75ac6e114d9d"
@@ -16069,6 +16103,11 @@ lodash.defaults@^4.2.0:
   version "4.2.0"
   resolved "https://registry.npmjs.org/lodash.defaults/-/lodash.defaults-4.2.0.tgz#d09178716ffea4dde9e5fb7b37f6f0802274580c"
   integrity sha1-0JF4cW/+pN3p5ft7N/bwgCJ0WAw=
+
+lodash.defaultsdeep@^4.6.1:
+  version "4.6.1"
+  resolved "https://registry.npmjs.org/lodash.defaultsdeep/-/lodash.defaultsdeep-4.6.1.tgz#512e9bd721d272d94e3d3a63653fa17516741ca6"
+  integrity sha512-3j8wdDzYuWO3lM3Reg03MuQR957t287Rpcxp1njpEa8oDrikb+FwGdW3n+FELh/A6qib6yPit0j/pv9G/yeAqA==
 
 lodash.difference@^4.5.0:
   version "4.5.0"
@@ -19802,6 +19841,14 @@ react-style-singleton@^2.1.0:
     invariant "^2.2.4"
     tslib "^1.0.0"
 
+react-svg-pan-zoom@^3.10.0:
+  version "3.10.0"
+  resolved "https://registry.npmjs.org/react-svg-pan-zoom/-/react-svg-pan-zoom-3.10.0.tgz#d27453fa0dcc777d3e942f67d37718c01639fb1c"
+  integrity sha512-sJt/ekGlC/VNypwcLeg5+EXNuwj8ag0geRT2D7MTFpDXVN7Oot/6oxyrYyJ8R1WsgV4A4s4BaowZ2LNF7tSjGQ==
+  dependencies:
+    prop-types "^15.7.2"
+    transformation-matrix "^2.6.0"
+
 react-syntax-highlighter@^13.5.3:
   version "13.5.3"
   resolved "https://registry.npmjs.org/react-syntax-highlighter/-/react-syntax-highlighter-13.5.3.tgz#9712850f883a3e19eb858cf93fad7bb357eea9c6"
@@ -19858,6 +19905,11 @@ react-use-measure@^2.0.4:
   integrity sha512-7K2HIGaPMl3Q9ZQiEVjen3tRXl4UDda8LiTPy/QxP8dP2rl5gPBhf7mMH6MVjjRNv3loU7sNzey/ycPNnHVTxQ==
   dependencies:
     debounce "^1.2.0"
+
+react-virtualized-auto-sizer@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.npmjs.org/react-virtualized-auto-sizer/-/react-virtualized-auto-sizer-1.0.6.tgz#66c5b1c9278064c5ef1699ed40a29c11518f97ca"
+  integrity sha512-7tQ0BmZqfVF6YYEWcIGuoR3OdYe8I/ZFbNclFlGOC3pMqunkYF/oL30NCjSGl9sMEb17AnzixDz98Kqc3N76HQ==
 
 react-visibility-sensor@^5.1.1:
   version "5.1.1"
@@ -22602,6 +22654,11 @@ tr46@~0.0.3:
   version "0.0.3"
   resolved "https://registry.npmjs.org/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
   integrity sha1-gYT9NH2snNwYWZLzpmIuFLnZq2o=
+
+transformation-matrix@^2.6.0:
+  version "2.10.0"
+  resolved "https://registry.npmjs.org/transformation-matrix/-/transformation-matrix-2.10.0.tgz#a135638fdbf91da2e75316cf68648e2436c60a1d"
+  integrity sha512-KH+vJ3eW9rZQMJY2nbhtX9ogUSb4vlolFaVJwe0J1nChBoE/G5+EVqwMgd8kxxL0pdb5PIeRypf3RjzgyDC+0A==
 
 traverse@0.4.x:
   version "0.4.6"

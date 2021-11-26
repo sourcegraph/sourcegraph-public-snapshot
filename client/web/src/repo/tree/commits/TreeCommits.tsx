@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { formatISO, subYears } from 'date-fns'
+import { formatISO, startOfDay, subYears } from 'date-fns'
 import React, { useCallback, useState } from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -55,7 +55,10 @@ export const TreeCommits: React.FunctionComponent<Props> = ({ repoID, commitID, 
             repo: repoID,
             revspec: commitID,
             filePath,
-            afterDate: showOlderCommits ? null : formatISO(subYears(Date.now(), 1)),
+            afterDate: showOlderCommits ? null : formatISO(startOfDay(subYears(Date.now(), 1))),
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)

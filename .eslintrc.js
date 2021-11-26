@@ -73,6 +73,9 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     ],
     'react/jsx-no-target-blank': ['error', { allowReferrer: true }],
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off'
   },
   overrides: [
     {

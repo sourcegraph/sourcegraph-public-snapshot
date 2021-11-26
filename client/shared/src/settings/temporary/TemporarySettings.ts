@@ -18,6 +18,8 @@ export interface TemporarySettingsSchema {
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'codemonitor.info.visible': boolean
+    'catalog.sidebar.visible': boolean
+    'catalog.explorer.viewMode': 'list' | 'graph'
 }
 
 /**

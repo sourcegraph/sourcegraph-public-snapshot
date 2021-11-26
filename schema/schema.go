@@ -1535,6 +1535,8 @@ type SettingsExperimentalFeatures struct {
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
+	// Catalog description: Enables the catalog feature.
+	Catalog *bool `json:"catalog,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
 	ClientSearchResultRanking *string `json:"clientSearchResultRanking,omitempty"`
 	// CodeInsights description: Enables code insights on directory pages.

@@ -8,7 +8,7 @@ import { SurveyToast } from './SurveyToast'
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
-    title: 'web/Survey',
+    title: 'web/SurveyToast',
     decorators: [decorator],
 }
 

@@ -30,6 +30,7 @@ import { ProductStatusBadge, useObservable, Button, Link } from '@sourcegraph/wi
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
+import { CatalogIcon, CatalogProps, isCatalogEnabled } from '../catalog'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
@@ -63,6 +64,7 @@ interface Props
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        CatalogProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -104,6 +106,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    catalogEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -175,6 +178,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
+    const catalog = catalogEnabled && isCatalogEnabled(props.settingsCascade)
+
     const searchNavBar = (
         <SearchNavbarItem
             {...props}
@@ -217,11 +222,23 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
-                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Search' }}
                         mobileHomeItem={{ content: 'Search home' }}
                         items={searchNavBarItems}
                     />
-                    {enableCodeMonitoring && (
+                    {catalog && (
+                        <NavDropdown
+                            toggleItem={{ path: '/catalog', icon: CatalogIcon, content: 'Catalog' }}
+                            mobileHomeItem={{ content: 'Catalog home' }}
+                            items={[
+                                {
+                                    path: '/catalog/graph',
+                                    content: <>Graph</>,
+                                },
+                            ]}
+                        />
+                    )}
+                    {enableCodeMonitoring && false && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
@@ -238,7 +255,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     <NavItem icon={PuzzleOutlineIcon}>
                         <NavLink to="/extensions">Extensions</NavLink>
                     </NavItem>
-                    {props.activation && (
+                    {props.activation && false && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
                         </NavItem>

@@ -14,6 +14,8 @@ interface PopoverProps extends React.HTMLAttributes<HTMLDivElement> {
     isOpen?: boolean
     onVisibilityChange?: (open: boolean) => void
     className?: string
+
+    interaction?: 'click' | 'hover'
 }
 
 export const Popover: React.FunctionComponent<PopoverProps> = props => {
@@ -25,6 +27,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         children,
         className,
         onVisibilityChange,
+        interaction = 'click',
         ...otherProps
     } = props
 
@@ -53,14 +56,22 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
         }
 
         const targetElement = target.current
-        const handleTargetClick = (): void => {
-            setPopoverVisibility(!isPopoverVisible)
+
+        const handleTargetEvent = (event: MouseEvent): void => {
+            setPopoverVisibility(event.type === 'click' ? !isPopoverVisible : event.type === 'mouseenter')
         }
 
-        targetElement.addEventListener('click', handleTargetClick)
+        const eventNames = interaction === 'click' ? ['click' as const] : ['mouseenter' as const, 'mouseleave' as const]
+        for (const eventName of eventNames) {
+            targetElement.addEventListener(eventName, handleTargetEvent)
+        }
 
-        return () => targetElement.removeEventListener('click', handleTargetClick)
-    }, [isPopoverVisible, target, setPopoverVisibility])
+        return () => {
+            for (const eventName of eventNames) {
+                targetElement.removeEventListener(eventName, handleTargetEvent)
+            }
+        }
+    }, [isPopoverVisible, target, setPopoverVisibility, interaction])
 
     const handleEscapePress = useCallback(() => {
         setPopoverVisibility(false)
@@ -102,7 +113,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
             role="dialog"
             {...otherProps}
         >
-            <FocusLock returnFocus={true}>{children}</FocusLock>
+            {interaction === 'click' ? <FocusLock returnFocus={true}>{children}</FocusLock> : children}
         </ReachPopover>
     )
 }

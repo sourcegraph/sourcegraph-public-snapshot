@@ -1,0 +1,359 @@
+extend type Query {
+    """
+    [WIP]
+    """
+    component(name: String!): Component
+    components(query: String, first: Int, after: String): ComponentConnection!
+    graph(query: String): CatalogGraph!
+    groups: [Group!]!
+    group(name: String!): Group
+    componentTags: [ComponentTag!]!
+}
+
+enum ComponentLifecycle {
+    PRODUCTION
+    EXPERIMENTAL
+}
+
+enum ComponentStatusState {
+    EXPECTED
+    ERROR
+    FAILURE
+    PENDING
+    SUCCESS
+    INFO
+}
+
+union EntityOwner = Person | Group
+
+type Group implements Node {
+    id: ID!
+    name: String!
+    title: String!
+    description: String
+    url: String!
+    parentGroup: Group
+    ancestorGroups: [Group!]!
+    childGroups: [Group!]!
+    descendentGroups: [Group!]!
+    members: [Person!]!
+    ownedEntities: [Component!]!
+}
+
+type CatalogGraph {
+    nodes: [Component!]!
+    edges: [ComponentRelationEdge!]!
+}
+
+type ComponentRelationEdge {
+    type: ComponentRelationType!
+    outNode: Component!
+    inNode: Component!
+}
+
+type ComponentRelatedEntityConnection {
+    edges: [ComponentRelatedEntityEdge!]!
+}
+
+enum ComponentRelationType {
+    DEPENDS_ON
+    DEPENDENCY_OF
+    PART_OF
+    HAS_PART
+}
+
+type ComponentRelatedEntityEdge {
+    node: Component!
+    type: ComponentRelationType!
+}
+
+type ComponentStatus implements Node {
+    id: ID!
+    contexts: [ComponentStatusContext!]!
+
+    """
+    The combined status (from all status contexts).
+    """
+    state: ComponentStatusState!
+}
+
+type ComponentStatusContext implements Node {
+    id: ID!
+    name: String!
+    state: ComponentStatusState!
+    title: String!
+    description: String
+    targetURL: String
+}
+
+type WhoKnowsEdge {
+    node: Person!
+    reasons: [String!]!
+    score: Float!
+}
+
+type ComponentConnection {
+    nodes: [Component!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+    tags: [ComponentTag!]!
+}
+
+enum ComponentKind {
+    SERVICE
+    APPLICATION
+    WEBSITE
+    LIBRARY
+    TOOL
+    OTHER
+}
+
+type Component implements Node {
+    id: ID!
+    name: String!
+    kind: ComponentKind!
+    description: String
+    lifecycle: ComponentLifecycle!
+    owner: EntityOwner
+    labels: [ComponentLabel!]!
+    tags: [ComponentTag!]!
+    sourceLocations: [ComponentSourceLocation!]!
+    url: String!
+    catalogURL: String!
+    status: ComponentStatus!
+    relatedEntities(query: String, first: Int, after: String): ComponentRelatedEntityConnection!
+}
+
+type ComponentLabel {
+    key: String!
+    values: [String!]!
+}
+
+type ComponentTag {
+    name: String!
+    components(first: Int, after: String): ComponentConnection!
+}
+
+type ComponentSourceLocation {
+    id: ID!
+    repositoryName: String!
+    repository: Repository
+    path: String
+    isEntireRepository: Boolean!
+    treeEntry: TreeEntry
+    isPrimary: Boolean!
+}
+
+type ComponentAuthorEdge {
+    person: Person!
+    authoredLineCount: Int!
+    authoredLineProportion: Float!
+    lastCommit: GitCommit!
+}
+
+type ComponentCodeOwnerEdge {
+    node: Person!
+    fileCount: Int!
+    fileProportion: Float!
+}
+
+type ComponentUsage {
+    locations: LocationConnection
+    people: [ComponentUsedByPersonEdge!]!
+    components: [ComponentUsedByComponentEdge!]!
+}
+
+type ComponentUsedByPersonEdge {
+    node: Person!
+    locations: LocationConnection!
+    authoredLineCount: Int!
+    lastCommit: GitCommit!
+}
+
+type ComponentUsedByComponentEdge {
+    """
+    A component that uses the query parent's component.
+    """
+    node: Component!
+    locations: LocationConnection!
+}
+
+type Package implements Node {
+    id: ID!
+    name: String!
+    url: String!
+}
+
+type CodeOwnerConnection {
+    edges: [ComponentCodeOwnerEdge!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type ContributorConnection {
+    edges: [ComponentAuthorEdge!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+extend type Repository {
+    components(path: String = "", primary: Boolean = false, recursive: Boolean = true): [Component!]!
+}
+
+interface SourceLocationSet implements Node {
+    id: ID!
+    readme: File2
+    commits(first: Int): GitCommitConnection
+    branches(
+        """
+        Returns the first n Git branches from the list.
+        """
+        first: Int
+        """
+        Return Git branches whose names match the query.
+        """
+        query: String
+        """
+        Ordering for Git branches in the list.
+        """
+        orderBy: GitRefOrder
+        """
+        Ordering is an expensive operation that doesn't scale for lots of
+        references. If this is true we fallback on not ordering. This should
+        never be false in interactive API requests.
+        """
+        interactive: Boolean = true
+    ): GitRefConnection!
+    codeOwners(first: Int): CodeOwnerConnection
+    contributors(first: Int): ContributorConnection
+    usage: ComponentUsage
+    whoKnows(query: String): [WhoKnowsEdge!]!
+    cyclonedx: String
+}
+
+extend interface TreeEntry implements SourceLocationSet {
+    components: [Component!]!
+
+    # SourceLocationSet:
+    readme: File2
+    commits(first: Int): GitCommitConnection
+    branches(
+        """
+        Returns the first n Git branches from the list.
+        """
+        first: Int
+        """
+        Return Git branches whose names match the query.
+        """
+        query: String
+        """
+        Ordering for Git branches in the list.
+        """
+        orderBy: GitRefOrder
+        """
+        Ordering is an expensive operation that doesn't scale for lots of
+        references. If this is true we fallback on not ordering. This should
+        never be false in interactive API requests.
+        """
+        interactive: Boolean = true
+    ): GitRefConnection!
+    codeOwners(first: Int): CodeOwnerConnection
+    contributors(first: Int): ContributorConnection
+    usage: ComponentUsage
+    whoKnows(query: String): [WhoKnowsEdge!]!
+    cyclonedx: String
+}
+
+extend type GitBlob implements SourceLocationSet {
+    components: [Component!]!
+
+    readme: File2
+    commits(first: Int): GitCommitConnection
+    branches(
+        """
+        Returns the first n Git branches from the list.
+        """
+        first: Int
+        """
+        Return Git branches whose names match the query.
+        """
+        query: String
+        """
+        Ordering for Git branches in the list.
+        """
+        orderBy: GitRefOrder
+        """
+        Ordering is an expensive operation that doesn't scale for lots of
+        references. If this is true we fallback on not ordering. This should
+        never be false in interactive API requests.
+        """
+        interactive: Boolean = true
+    ): GitRefConnection!
+    codeOwners(first: Int): CodeOwnerConnection
+    contributors(first: Int): ContributorConnection
+    usage: ComponentUsage
+    whoKnows(query: String): [WhoKnowsEdge!]!
+    cyclonedx: String
+}
+
+extend type GitTree implements SourceLocationSet {
+    components: [Component!]!
+
+    readme: File2
+    commits(first: Int): GitCommitConnection
+    branches(
+        """
+        Returns the first n Git branches from the list.
+        """
+        first: Int
+        """
+        Return Git branches whose names match the query.
+        """
+        query: String
+        """
+        Ordering for Git branches in the list.
+        """
+        orderBy: GitRefOrder
+        """
+        Ordering is an expensive operation that doesn't scale for lots of
+        references. If this is true we fallback on not ordering. This should
+        never be false in interactive API requests.
+        """
+        interactive: Boolean = true
+    ): GitRefConnection!
+    codeOwners(first: Int): CodeOwnerConnection
+    contributors(first: Int): ContributorConnection
+    usage: ComponentUsage
+    whoKnows(query: String): [WhoKnowsEdge!]!
+    cyclonedx: String
+}
+
+extend type Component implements SourceLocationSet {
+    readme: File2
+    commits(first: Int): GitCommitConnection
+    branches(
+        """
+        Returns the first n Git branches from the list.
+        """
+        first: Int
+        """
+        Return Git branches whose names match the query.
+        """
+        query: String
+        """
+        Ordering for Git branches in the list.
+        """
+        orderBy: GitRefOrder
+        """
+        Ordering is an expensive operation that doesn't scale for lots of
+        references. If this is true we fallback on not ordering. This should
+        never be false in interactive API requests.
+        """
+        interactive: Boolean = true
+    ): GitRefConnection!
+    codeOwners(first: Int): CodeOwnerConnection
+    contributors(first: Int): ContributorConnection
+    usage: ComponentUsage
+    whoKnows(query: String): [WhoKnowsEdge!]!
+    cyclonedx: String
+}
