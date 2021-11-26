@@ -13,6 +13,8 @@ var once sync.Once
 var repositoryRootValue string
 var repositoryRootError error
 
+var ErrNotInsideSourcegraph = errors.New("not running inside sourcegraph/sourcegraph")
+
 // RepositoryRoot caches and returns the value of findRoot.
 func RepositoryRoot() (string, error) {
 	once.Do(func() { repositoryRootValue, repositoryRootError = findRootFromCwd() })
@@ -50,7 +52,7 @@ func findRoot(wd string) (string, error) {
 			continue
 		}
 
-		return "", errors.Errorf("not running inside sourcegraph/sourcegraph")
+		return "", ErrNotInsideSourcegraph
 	}
 }
 
