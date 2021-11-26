@@ -33,6 +33,7 @@ import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { authenticatedUser, AuthenticatedUser } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
+import { CatalogProps } from './catalog'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
@@ -106,6 +107,7 @@ export interface SourcegraphWebAppProps
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
         Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<CatalogProps, 'catalogEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

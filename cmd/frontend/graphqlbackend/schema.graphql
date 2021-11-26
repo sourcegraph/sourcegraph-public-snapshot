@@ -3864,6 +3864,7 @@ type Submodule {
 A file, directory, or other tree entry.
 """
 interface TreeEntry {
+    id: ID!
     """
     The full path (relative to the repository root) of this tree entry.
     """
@@ -3928,6 +3929,7 @@ interface TreeEntry {
 A Git tree in a repository.
 """
 type GitTree implements TreeEntry {
+    id: ID!
     """
     The full path (relative to the root) of this tree.
     """
@@ -4212,6 +4214,7 @@ type File {
 A Git blob in a repository.
 """
 type GitBlob implements TreeEntry & File2 {
+    id: ID!
     """
     The full path (relative to the repository root) of this blob.
     """

@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -57,11 +59,33 @@ func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 
+// gitTreeEntryGQLID is a type used for marshaling and unmarshaling a Git tree entry's GraphQL ID.
+type gitTreeEntryGQLID struct {
+	Commit gitCommitGQLID `json:"c"`
+	Path   string         `json:"p"`
+}
+
+func (r *GitTreeEntryResolver) ID() graphql.ID {
+	return relay.MarshalID("GitTreeEntry",
+		gitTreeEntryGQLID{
+			Commit: gitCommitGQLID{Repository: r.commit.repoResolver.ID(), CommitID: r.commit.oid},
+			Path:   r.stat.Name(),
+		},
+	)
+}
+
 func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
 func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, true }
-func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, true }
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	// TODO(sqs): is necessary to return the correct __typename for a GitTreeEntry iface in gql
+	return r, r.IsDirectory()
+}
+
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	// TODO(sqs): is necessary to return the correct __typename for a GitTreeEntry iface in gql
+	return r, !r.IsDirectory()
+}
 
 func (r *GitTreeEntryResolver) ToVirtualFile() (*virtualFileResolver, bool) { return nil, false }
 

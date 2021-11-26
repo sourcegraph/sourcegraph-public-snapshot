@@ -52,3 +52,7 @@ var orgSchema string
 // notebooksSchema is the Notebooks raw graqhql schema.
 //go:embed notebooks.graphql
 var notebooksSchema string
+
+// catalogSchema is the Catalog raw graqhql schema.
+//go:embed catalog.graphql
+var catalogSchema string

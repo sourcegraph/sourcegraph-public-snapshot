@@ -75,7 +75,7 @@ async function generateGraphQlOperations() {
         },
       },
       generates: {
-        [path.join(BROWSER_FOLDER, './src/graphql-operations.ts')]: {
+        /* [path.join(BROWSER_FOLDER, './src/graphql-operations.ts')]: {
           documents: BROWSER_DOCUMENTS_GLOB,
           config: {
             onlyOperationTypes: true,
@@ -84,7 +84,7 @@ async function generateGraphQlOperations() {
             interfaceNameForOperations: 'BrowserGraphQlOperations',
           },
           plugins: SHARED_PLUGINS,
-        },
+        }, */
 
         [path.join(WEB_FOLDER, './src/graphql-operations.ts')]: {
           documents: WEB_DOCUMENTS_GLOB,
@@ -97,7 +97,7 @@ async function generateGraphQlOperations() {
           plugins: SHARED_PLUGINS,
         },
 
-        [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
+        /* [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
           documents: SHARED_DOCUMENTS_GLOB,
           config: {
             onlyOperationTypes: true,
@@ -105,7 +105,7 @@ async function generateGraphQlOperations() {
             interfaceNameForOperations: 'SharedGraphQlOperations',
           },
           plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
-        },
+        }, */
       },
     },
     true

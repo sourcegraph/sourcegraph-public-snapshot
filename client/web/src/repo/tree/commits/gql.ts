@@ -7,7 +7,9 @@ export const TREE_COMMITS = gql`
         node(id: $repo) {
             __typename
             ... on Repository {
+                id
                 commit(rev: $revspec) {
+                    id
                     ancestors(first: $first, path: $filePath, after: $afterDate) {
                         nodes {
                             ...GitCommitFields

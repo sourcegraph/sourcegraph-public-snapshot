@@ -1,0 +1,18 @@
+.item--horizontal {
+    min-width: 8rem;
+
+    &:first-child {
+        border-left: none;
+    }
+    &:last-child {
+        border-right: none;
+    }
+}
+
+.item-text {
+    font-size: 0.7rem;
+}
+
+.item-date {
+    font-size: 0.6rem;
+}

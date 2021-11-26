@@ -1,6 +1,10 @@
 .checks-wrapper {
     line-height: 1.6;
     font-size: 0.75rem;
+
+    code {
+        font-weight: 600;
+    }
 }
 
 .checks {
@@ -31,8 +35,4 @@
         top: 3px;
         opacity: 0.4;
     }
-}
-
-code {
-    font-weight: 600;
 }

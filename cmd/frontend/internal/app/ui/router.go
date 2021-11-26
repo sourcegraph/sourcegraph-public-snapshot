@@ -56,6 +56,7 @@ const (
 	routeBlob                    = "blob"
 	routeRaw                     = "raw"
 	routeOrganizations           = "org"
+	routeCatalog                 = "catalog"
 	routeSettings                = "settings"
 	routeSiteAdmin               = "site-admin"
 	routeAPIConsole              = "api-console"
@@ -145,6 +146,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
 	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
 	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
+	r.PathPrefix("/catalog").Methods("GET").Name(routeCatalog)
 	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
 	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
 	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
@@ -240,6 +242,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	router.Get(uirouter.RouteSignUp).Handler(brandedIndex("Sign up"))
 	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
 	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
+	router.Get(routeCatalog).Handler(brandedNoIndex("Catalog"))
 	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
 	router.Get(routeSiteAdmin).Handler(brandedNoIndex("Admin"))
 	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))

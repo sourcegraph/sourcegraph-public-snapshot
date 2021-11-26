@@ -128,3 +128,29 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	// indicate whether or not a next page exists.
 	return graphqlutil.HasNextPage(r.args.First != nil && len(commits) > 0 && len(commits) > int(*r.args.First)), nil
 }
+
+func NewStaticGitCommitConnection(commits []*GitCommitResolver, totalCount *int32, hasNextPage bool) GitCommitConnectionResolver {
+	return &staticGitCommitConnection{
+		commits:     commits,
+		totalCount:  totalCount,
+		hasNextPage: hasNextPage,
+	}
+}
+
+type staticGitCommitConnection struct {
+	commits     []*GitCommitResolver
+	totalCount  *int32
+	hasNextPage bool
+}
+
+func (c *staticGitCommitConnection) Nodes(context.Context) ([]*GitCommitResolver, error) {
+	return c.commits, nil
+}
+
+func (c *staticGitCommitConnection) TotalCount(context.Context) (*int32, error) {
+	return c.totalCount, nil
+}
+
+func (c *staticGitCommitConnection) PageInfo(context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(c.hasNextPage), nil
+}

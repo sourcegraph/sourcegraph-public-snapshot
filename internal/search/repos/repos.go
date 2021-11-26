@@ -13,6 +13,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -205,7 +206,20 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	tr.LazyPrintf("Associate/validate revs - start")
 
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
-	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
+	if strings.HasPrefix(searchContext.Name, "c/") {
+		searchContextRepositoryRevisions = map[api.RepoID]*search.RepositoryRevisions{}
+
+		c := catalog.ComponentByName(strings.TrimPrefix(searchContext.Name, "c/"))
+		for _, sloc := range c.SourceLocations {
+			repo, err := r.DB.Repos().GetByName(ctx, sloc.Repo)
+			if err != nil {
+				return Resolved{}, err
+			}
+			searchContextRepositoryRevisions[repo.ID] = &search.RepositoryRevisions{
+				Repo: types.MinimalRepo{ID: repo.ID, Name: repo.Name},
+			}
+		}
+	} else if !searchcontexts.IsAutoDefinedSearchContext(searchContext) {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err

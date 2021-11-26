@@ -1,0 +1,38 @@
+.container {
+    width: 100%;
+    padding: 0 calc(1 * var(--spacer));
+
+    border-bottom: solid 1px var(--border-color);
+}
+
+.ancestors,
+.header {
+    padding: calc(1 * var(--spacer)) 0;
+    white-space: nowrap;
+}
+
+.header {
+    font-size: unset;
+    margin-bottom: 0;
+    line-height: unset;
+    flex: 1 0;
+    a {
+        color: var(--body-color);
+    }
+}
+
+.divider {
+    margin-left: calc(0.5 * var(--spacer));
+    margin-right: calc(0.5 * var(--spacer));
+    color: var(--text-muted);
+}
+
+.icon {
+    width: var(--icon-inline-size);
+    height: var(--icon-inline-size);
+    fill: currentColor;
+    vertical-align: text-bottom;
+}
+.icon + .text {
+    margin-left: calc(0.5 * var(--spacer));
+}

@@ -88,7 +88,7 @@ func TestGetNotebook(t *testing.T) {
 	}
 
 	database := database.NewDB(db)
-	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database))
+	schema, err := graphqlbackend.NewSchema(database, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(database), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

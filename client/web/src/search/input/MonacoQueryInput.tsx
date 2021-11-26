@@ -376,7 +376,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     return (
         <div
             ref={setContainer}
-            {...nativeElementProps}
+            // {...nativeElementProps} // TODO(sqs): eliminate warnings
             className={classNames('flex-grow-1 flex-shrink-past-contents', className)}
             onFocus={onFocus}
         >

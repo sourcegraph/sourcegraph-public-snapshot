@@ -16,6 +16,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
 import { BatchChangesProps } from './batches'
+import { CatalogProps } from './catalog'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -87,6 +88,7 @@ export interface LayoutProps
         BatchChangesProps,
         CodeInsightsProps,
         CodeInsightsContextProps,
+        CatalogProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]

@@ -263,6 +263,7 @@ export const fetchTreeEntries = memoizeObservable(
                 ) {
                     repository(name: $repoName) {
                         commit(rev: $commitID, inputRevspec: $revision) {
+                            id
                             tree(path: $filePath) {
                                 ...TreeFields
                             }

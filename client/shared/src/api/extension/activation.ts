@@ -167,7 +167,7 @@ export function activateExtensions(
                         return from(
                             Promise.all([
                                 toActivate.map(async ({ id, scriptURL }) => {
-                                    console.log(`Activating Sourcegraph extension: ${id}`)
+                                    console.debug(`Activating Sourcegraph extension: ${id}`)
 
                                     // We only want to log non-default extension events
                                     if (!defaultExtensions[id]) {

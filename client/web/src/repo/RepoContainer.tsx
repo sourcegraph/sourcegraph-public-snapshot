@@ -51,6 +51,7 @@ import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
+import { ComponentAction } from './actions/component-action/ComponentAction'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
@@ -438,6 +439,23 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 extensionsController={props.extensionsController}
                 telemetryService={props.telemetryService}
             />
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={100}
+                id="catalog-component"
+                {...repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => (
+                    <ComponentAction
+                        key="catalog-component"
+                        repo={repoOrError}
+                        filePath={filePath}
+                        actionType={actionType}
+                        repoName={repoName}
+                    />
+                )}
+            </RepoHeaderContributionPortal>
+
             <RepoHeaderContributionPortal
                 position="right"
                 priority={2}

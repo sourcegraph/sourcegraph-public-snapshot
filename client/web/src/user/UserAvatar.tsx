@@ -64,7 +64,11 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div id={targetID} className={classNames(styles.userAvatar, className)}>
+        <div
+            id={targetID}
+            className={classNames(styles.userAvatar, className, size && size < 20 ? '' : styles.userAvatarNotTiny)}
+            style={{ width: `${size}px`, height: `${size}px`, fontSize: `${size * 0.5}px` }}
+        >
             {getInitials(name)}
         </div>
     )

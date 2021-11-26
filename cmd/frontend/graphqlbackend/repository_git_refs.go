@@ -142,7 +142,6 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 	return &gitRefConnectionResolver{
 		first: args.First,
 		refs:  refs,
-		repo:  r,
 	}, nil
 }
 
@@ -171,11 +170,19 @@ func hydrateBranchCommits(ctx context.Context, repo api.RepoName, interactive bo
 	return true, nil
 }
 
+type GitRefConnectionResolver interface {
+	Nodes() []*GitRefResolver
+	TotalCount() int32
+	PageInfo() *graphqlutil.PageInfo
+}
+
+func NewGitRefConnectionResolver(first *int32, refs []*GitRefResolver) GitRefConnectionResolver {
+	return &gitRefConnectionResolver{first: first, refs: refs}
+}
+
 type gitRefConnectionResolver struct {
 	first *int32
 	refs  []*GitRefResolver
-
-	repo *RepositoryResolver
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {

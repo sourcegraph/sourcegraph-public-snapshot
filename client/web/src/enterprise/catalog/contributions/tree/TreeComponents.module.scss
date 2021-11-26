@@ -1,0 +1,30 @@
+.box-grid {
+    list-style-type: none;
+    margin-bottom: 0;
+    padding-left: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    grid-gap: calc(0.5 * var(--spacer));
+}
+
+.box-grid-item {
+    padding: calc(0.5 * var(--spacer));
+    overflow: hidden;
+
+    .link-big-click-area {
+        padding: calc(0.5 * var(--spacer));
+        margin: calc(-1 * 0.5 * var(--spacer));
+    }
+}
+
+.box-grid-item-body {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.component-detail,
+.box-grid-item {
+    background-color: var(--color-bg-1);
+}

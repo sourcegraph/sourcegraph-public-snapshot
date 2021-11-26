@@ -31,6 +31,7 @@ import { CodeIntelligenceProps } from '../../codeintel'
 import { ErrorAlert } from '../../components/alerts'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
+import { TreeComponents } from '../../enterprise/catalog/contributions/tree/TreeComponents'
 import { TreePageRepositoryFields } from '../../graphql-operations'
 import { CodeInsightsProps } from '../../insights/types'
 import { Settings } from '../../schema/settings.schema'
@@ -216,7 +217,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     )
                 ) : (
                     <>
-                        <header className="mb-3">
+                        <header>
                             {treeOrError.isRoot ? (
                                 <>
                                     <PageHeader
@@ -241,13 +242,19 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
 
                         <ExtensionViewsSection
-                            className={classNames('mb-3', styles.section)}
+                            className={classNames('my-3', styles.section)}
                             telemetryService={props.telemetryService}
                             settingsCascade={settingsCascade}
                             platformContext={props.platformContext}
                             extensionsController={props.extensionsController}
                             where="directory"
                             uri={uri}
+                        />
+
+                        <TreeComponents
+                            repoID={repo.id}
+                            filePath={filePath}
+                            className={classNames('my-3', styles.section)}
                         />
 
                         <section className={classNames('test-tree-entries mb-3', styles.section)}>

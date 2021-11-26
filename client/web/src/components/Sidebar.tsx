@@ -83,11 +83,14 @@ export const SidebarCollapseItems: React.FunctionComponent<{
 
 interface SidebarGroupProps {
     className?: string
+    style?: React.CSSProperties
 }
 
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` as children.
  */
-export const SidebarGroup: React.FunctionComponent<SidebarGroupProps> = ({ children, className }) => (
-    <div className={classNames('mb-3', styles.sidebar, className)}>{children}</div>
+export const SidebarGroup: React.FunctionComponent<SidebarGroupProps> = ({ children, className, style }) => (
+    <div className={classNames('mb-3', styles.sidebar, className)} style={style}>
+        {children}
+    </div>
 )

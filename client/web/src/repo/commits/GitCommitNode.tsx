@@ -112,9 +112,12 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 </button>
             )}
             {compact && (
-                <small className={classNames('text-muted', styles.messageTimestamp)}>
-                    <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
-                </small>
+                <>
+                    <div className="flex-grow-1" />
+                    <small className={classNames('text-muted', styles.messageTimestamp)}>
+                        <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
+                    </small>
+                </>
             )}
         </div>
     )
@@ -267,7 +270,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                             {bylineElement}
                             {messageElement}
-                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {!hideSHAInCompactMode && <Link to={node.canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
                         {commitMessageBody}

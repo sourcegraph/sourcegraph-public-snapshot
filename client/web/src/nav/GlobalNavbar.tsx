@@ -18,6 +18,7 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/web/src/nav'
@@ -29,6 +30,7 @@ import { ProductStatusBadge } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
+import { CatalogIcon, CatalogProps, isCatalogEnabled } from '../catalog'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
@@ -70,6 +72,7 @@ interface Props
         PatternTypeProps,
         SearchContextInputProps,
         CodeInsightsProps,
+        CatalogProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -112,6 +115,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    catalogEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -179,6 +183,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
+    const catalog = catalogEnabled && isCatalogEnabled(props.settingsCascade)
+
     const searchNavBar = (
         <SearchNavbarItem
             {...props}
@@ -206,7 +212,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
-                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Search' }}
                         mobileHomeItem={{ content: 'Search home' }}
                         items={[
                             {
@@ -217,9 +223,21 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     </>
                                 ),
                             },
-                        ]}
+                        ].filter(isDefined)}
                     />
-                    {enableCodeMonitoring && (
+                    {catalog && (
+                        <NavDropdown
+                            toggleItem={{ path: '/catalog', icon: CatalogIcon, content: 'Catalog' }}
+                            mobileHomeItem={{ content: 'Catalog home' }}
+                            items={[
+                                {
+                                    path: '/catalog/graph',
+                                    content: <>Graph</>,
+                                },
+                            ]}
+                        />
+                    )}
+                    {enableCodeMonitoring && false && (
                         <NavItem icon={CodeMonitoringLogo}>
                             <NavLink to="/code-monitoring">Monitoring</NavLink>
                         </NavItem>
@@ -236,7 +254,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     <NavItem icon={PuzzleOutlineIcon}>
                         <NavLink to="/extensions">Extensions</NavLink>
                     </NavItem>
-                    {props.activation && (
+                    {props.activation && false && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
                         </NavItem>
