@@ -13,6 +13,7 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -153,41 +154,70 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 }
 
 func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
-	type repoRevKey struct {
-		repo   api.RepoID
-		branch string
+	// We have to track each repo that is matched, including whether the
+	// revisions should be overridden or not by future rules.
+	type repo struct {
+		overridable bool
+		revisions   map[string]*RepoRevision
 	}
-	seen := map[repoRevKey]*RepoRevision{}
+	repos := map[api.RepoID]*repo{}
 
 	var errs error
 	// TODO: this could be trivially parallelised in the future.
 	for _, on := range batchSpec.On {
-		repos, err := wr.resolveRepositoriesOn(ctx, &on)
+		revs, overridable, err := wr.resolveRepositoriesOn(ctx, &on)
 		if err != nil {
 			errs = multierror.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
 			continue
 		}
 
-		for _, repo := range repos {
+		// We need to track what we've seen from this On rule, then merge it
+		// with the global state in repos.
+		ruleRepos := map[api.RepoID]map[string]*RepoRevision{}
+		for _, rev := range revs {
 			// Skip repos where no branch exists.
-			if !repo.HasBranch() {
+			if !rev.HasBranch() {
 				continue
 			}
 
-			key := repoRevKey{repo: repo.Repo.ID, branch: repo.Branch}
-			if other, ok := seen[key]; !ok {
-				seen[key] = repo
+			if ruleRepo, ok := ruleRepos[rev.Repo.ID]; ok {
+				ruleRepo[rev.Branch] = rev
 			} else {
-				// If we've already seen this repository and branch, we
-				// overwrite the Commit field with the latest value we have.
-				other.Commit = repo.Commit
+				ruleRepos[rev.Repo.ID] = map[string]*RepoRevision{
+					rev.Branch: rev,
+				}
 			}
 		}
+
+		// Now we merge each repo, figuring out if we're overriding an older
+		// repo, or merging the revisions that we've seen.
+		for id, repoRevs := range ruleRepos {
+			if seenRepo, ok := repos[id]; ok {
+				if seenRepo.overridable {
+					seenRepo.overridable = overridable
+					seenRepo.revisions = repoRevs
+				} else {
+					seenRepo.overridable = overridable
+					for branch, rev := range repoRevs {
+						seenRepo.revisions[branch] = rev
+					}
+				}
+			} else {
+				repos[id] = &repo{
+					overridable: overridable,
+					revisions:   repoRevs,
+				}
+			}
+		}
+
+		log15.Info("after On iteration", "on", on, "ruleRepos", ruleRepos, "repos", repos)
 	}
 
-	repoRevs := make([]*RepoRevision, 0, len(seen))
-	for _, rr := range seen {
-		repoRevs = append(repoRevs, rr)
+	repoRevs := []*RepoRevision{}
+	for _, r := range repos {
+		for _, rev := range r.revisions {
+			repoRevs = append(repoRevs, rev)
+		}
 	}
 	return repoRevs, errs
 }
@@ -246,7 +276,12 @@ func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*t
 
 var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
 
-func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, err error) {
+// resolveRepositoriesOn resolves a single on: entry in a batch spec.
+//
+// The `overridable` return value indicates whether the result should be
+// overridden if a later on: rule matches the same repository. If false, then
+// future results should be merged with the results from this invocation.
+func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, overridable bool, err error) {
 	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn", "")
 	defer func() {
 		tr.SetError(err)
@@ -254,7 +289,8 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 	}()
 
 	if on.RepositoriesMatchingQuery != "" {
-		return wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
+		revs, err := wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
+		return revs, true, err
 	}
 
 	if on.Repository != "" && len(on.Branches) > 0 {
@@ -262,25 +298,25 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 		for i, branch := range on.Branches {
 			repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, branch)
 			if err != nil {
-				return nil, err
+				return nil, false, err
 			}
 
 			revs[i] = repo
 		}
-		return revs, nil
+		return revs, false, nil
 	}
 
 	if on.Repository != "" {
 		repo, err := wr.resolveRepositoryName(ctx, on.Repository)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
-		return []*RepoRevision{repo}, nil
+		return []*RepoRevision{repo}, false, nil
 	}
 
 	// This shouldn't happen on any batch spec that has passed validation, but,
 	// alas, software.
-	return nil, ErrMalformedOnQueryOrRepository
+	return nil, false, ErrMalformedOnQueryOrRepository
 }
 
 func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name string) (_ *RepoRevision, err error) {
