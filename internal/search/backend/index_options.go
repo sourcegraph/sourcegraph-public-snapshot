@@ -3,10 +3,11 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
+	"regexp"
 	"sort"
 
 	"github.com/google/zoekt"
-
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -78,12 +79,47 @@ type RepoIndexOptions struct {
 	GetVersion func(branch string) (string, error)
 }
 
+func SiteConfigRevisionsGetter(c *schema.SiteConfiguration) func(name string) []string {
+	if c == nil || c.ExperimentalFeatures == nil {
+		return nil
+	}
+
+	searchIndexRegexps := make(map[string]*regexp.Regexp, len(c.ExperimentalFeatures.SearchIndexRevisions))
+	for regex := range c.ExperimentalFeatures.SearchIndexRevisions {
+		r, err := regexp.Compile(regex)
+		if err != nil {
+			log15.Error("error compiling regex from search.index.revisions", "regex", regex, "err", err)
+			continue
+		}
+		searchIndexRegexps[regex] = r
+	}
+
+	return func(name string) (matched []string) {
+		cfg := c.ExperimentalFeatures
+
+		if len(cfg.SearchIndexBranches) != 0 {
+			branchesRevs := cfg.SearchIndexBranches[name]
+			matched = make([]string, 0, len(branchesRevs)*2)
+			matched = append(matched, branchesRevs...)
+		}
+
+		for regex, revs := range cfg.SearchIndexRevisions {
+			if r := searchIndexRegexps[regex]; r != nil && r.MatchString(name) {
+				matched = append(matched, revs...)
+			}
+		}
+
+		return matched
+	}
+}
+
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID int32) ([]string, error),
+	getSiteConfigRevisions func(name string) []string,
 	repos ...int32,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
@@ -96,7 +132,7 @@ func GetIndexOptions(
 		sema <- struct{}{}
 		go func(i int) {
 			defer func() { <-sema }()
-			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions)
+			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions, getSiteConfigRevisions)
 		}(i)
 	}
 
@@ -113,6 +149,7 @@ func getIndexOptions(
 	repoID int32,
 	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID int32) ([]string, error),
+	getSiteConfigRevisions func(name string) []string,
 ) []byte {
 	opts, err := getRepoIndexOptions(repoID)
 	if err != nil {
@@ -133,9 +170,9 @@ func getIndexOptions(
 	// Set of branch names. Always index HEAD
 	branches := map[string]struct{}{"HEAD": {}}
 
-	// Add all branches that are referenced by version contexts
-	if c.ExperimentalFeatures != nil {
-		for _, rev := range c.ExperimentalFeatures.SearchIndexBranches[opts.Name] {
+	// Add all branches that are referenced by search.index.branches and search.index.revisions.
+	if getSiteConfigRevisions != nil {
+		for _, rev := range getSiteConfigRevisions(opts.Name) {
 			branches[rev] = struct{}{}
 		}
 	}
