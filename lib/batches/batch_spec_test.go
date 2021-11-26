@@ -1,8 +1,12 @@
 package batches
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 )
 
 func TestParseBatchSpec(t *testing.T) {
@@ -169,6 +173,43 @@ changesetTemplate:
 			}
 		}
 	})
+	t.Run("uses conflicting branch attributes", func(t *testing.T) {
+		const spec = `
+name: hello-world
+description: Add Hello World to READMEs
+on:
+  - repository: github.com/foo/bar
+    branch: foo
+    branches: bar
+steps:
+  - run: echo Hello World | tee -a $(find -name README.md)
+    container: alpine:3
+
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`
+
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{})
+		if err == nil {
+			t.Fatal("no error returned")
+		}
+
+		wantErr := `3 errors occurred:
+	* on.0: Must validate one and only one schema (oneOf)
+	* on.0: Must validate at least one schema (anyOf)
+	* on.0: Must validate one and only one schema (oneOf)
+
+`
+		haveErr := err.Error()
+		if haveErr != wantErr {
+			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
+		}
+	})
 	t.Run("uses unsupported files attribute", func(t *testing.T) {
 		const spec = `
 name: hello-world
@@ -204,4 +245,51 @@ changesetTemplate:
 			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
 		}
 	})
+}
+
+func TestOnQueryOrRepository(t *testing.T) {
+	// Note that we're not testing the full set of branch value possibilities
+	// here: there are tests in branch_test.go to handle that. This is just
+	// ensuring that the unmarshalling does sensible things.
+	for name, tc := range map[string]struct {
+		input string
+		want  OnQueryOrRepository
+	}{
+		"branch": {
+			input: `{"repository": "github.com/a/b", "branch": "foo"}`,
+			want: OnQueryOrRepository{
+				Repository: "github.com/a/b",
+				Branches:   []string{"foo"},
+			},
+		},
+		"branches": {
+			input: `{"repository": "github.com/a/b", "branches": "foo"}`,
+			want: OnQueryOrRepository{
+				Repository: "github.com/a/b",
+				Branches:   []string{"foo"},
+			},
+		},
+		"no branches": {
+			input: `{"repositoriesMatchingQuery": "foo"}`,
+			want: OnQueryOrRepository{
+				RepositoriesMatchingQuery: "foo",
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Run("json", func(t *testing.T) {
+				have := OnQueryOrRepository{}
+				err := json.Unmarshal([]byte(tc.input), &have)
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, have)
+			})
+
+			t.Run("yaml", func(t *testing.T) {
+				have := OnQueryOrRepository{}
+				err := yaml.Unmarshal([]byte(tc.input), &have)
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want, have)
+			})
+		})
+	}
 }

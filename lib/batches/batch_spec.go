@@ -76,6 +76,32 @@ type OnQueryOrRepository struct {
 	Branches                  []string `json:"branches,omitempty" yaml:"branch"`
 }
 
+func (oqor *OnQueryOrRepository) UnmarshalJSON(data []byte) error {
+	// We need to unmarshal OnQueryOrRepository through rawOnQueryOrRepository
+	// to be able to handle the possibility of the branches field being named
+	// branch, which was its original name.
+	raw := rawOnQueryOrRepository{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+
+	raw.overwrite(oqor)
+	return nil
+}
+
+func (oqor *OnQueryOrRepository) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// We need to unmarshal OnQueryOrRepository through rawOnQueryOrRepository
+	// to be able to handle the possibility of the branches field being named
+	// branch, which was its original name.
+	raw := rawOnQueryOrRepository{}
+	if err := unmarshal(&raw); err != nil {
+		return err
+	}
+
+	raw.overwrite(oqor)
+	return nil
+}
+
 type rawOnQueryOrRepository struct {
 	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
 	Repository                string   `json:"repository,omitempty" yaml:"repository"`
@@ -87,32 +113,13 @@ func (raw *rawOnQueryOrRepository) overwrite(oqor *OnQueryOrRepository) {
 	oqor.RepositoriesMatchingQuery = raw.RepositoriesMatchingQuery
 	oqor.Repository = raw.Repository
 
+	// Only one of Branch or Branches is allowed to be set per the JSON schema.
 	oqor.Branches = []string{}
 	if len(raw.Branch) > 0 {
 		oqor.Branches = raw.Branch
 	} else {
 		oqor.Branches = raw.Branches
 	}
-}
-
-func (oqor *OnQueryOrRepository) UnmarshalJSON(data []byte) error {
-	raw := rawOnQueryOrRepository{}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-
-	raw.overwrite(oqor)
-	return nil
-}
-
-func (oqor *OnQueryOrRepository) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	raw := rawOnQueryOrRepository{}
-	if err := unmarshal(&raw); err != nil {
-		return err
-	}
-
-	raw.overwrite(oqor)
-	return nil
 }
 
 type Step struct {
