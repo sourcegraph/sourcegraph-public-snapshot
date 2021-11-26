@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -741,40 +740,6 @@ func (u *userStore) GetByUsernames(ctx context.Context, usernames ...string) ([]
 
 var ErrNoCurrentUser = errors.New("no current user")
 
-type ctxKey int
-
-const userKey ctxKey = iota
-
-type ctxUser struct {
-	// user is populated lazily
-	user     *types.User
-	userErr  error
-	userOnce sync.Once
-}
-
-// ctxUserFromContext gets the associated user cache from context. If one doesn't exist,
-// one is created and attached to the returned context.
-func ctxUserFromContext(ctx context.Context) (context.Context, *ctxUser) {
-	u, ok := ctx.Value(userKey).(*ctxUser)
-	if !ok {
-		u = &ctxUser{}
-		return context.WithValue(ctx, userKey, u), u
-	}
-	return ctx, u
-}
-
-// Get returns the expanded types.User for the actor's ID. The ID is expanded to a full
-// types.User using the fetcher, which is likely a *database.UserStore.
-func (user *ctxUser) Get(ctx context.Context, store *userStore, a *actor.Actor) (*types.User, error) {
-	user.userOnce.Do(func() {
-		user.user, user.userErr = store.GetByID(ctx, a.UID)
-	})
-	if user.user != nil && user.user.ID != a.UID {
-		return nil, errors.Errorf("actor UID (%d) and the ID of the cached User (%d) do not match", a.UID, user.user.ID)
-	}
-	return user.user, user.userErr
-}
-
 func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	if Mocks.Users.GetByCurrentAuthUser != nil {
 		return Mocks.Users.GetByCurrentAuthUser(ctx)
@@ -785,8 +750,7 @@ func (u *userStore) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 		return nil, ErrNoCurrentUser
 	}
 
-	ctx, user := ctxUserFromContext(ctx)
-	return user.Get(ctx, u, a)
+	return a.User(ctx, u)
 }
 
 func (u *userStore) InvalidateSessionsByID(ctx context.Context, id int32) (err error) {
