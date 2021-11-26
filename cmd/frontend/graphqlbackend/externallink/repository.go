@@ -1,7 +1,6 @@
 package externallink
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"net/url"
@@ -44,8 +43,7 @@ func FileOrDir(ctx context.Context, db database.DB, repo *types.Repo, rev, path 
 	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		branchName, _, _, err := git.ExecSafe(ctx, repo.Name, []string{"symbolic-ref", "--short", "HEAD"})
-		branchName = bytes.TrimSpace(branchName)
+		branchName, _, err := git.GetDefaultBranchShort(ctx, repo.Name)
 		if err == nil && string(branchName) != "" {
 			links = append(links, NewResolver(
 				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(string(branchName)), path, rev),
