@@ -368,7 +368,7 @@ var cloneInstructions = []instruction{
 	{
 		prompt:  `Cloning the code`,
 		comment: `We're now going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
-		command: `git clone https://github.com/sourcegraph/sourcegraph.git`,
+		command: `git clone git@github.com:sourcegraph/sourcegraph.git`,
 	},
 	{
 		prompt:    "Are you a Sourcegraph employee",
@@ -383,7 +383,7 @@ To illustrate:
  |-- dev-private
  +-- sourcegraph
 NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-private as the secrets are updated from time to time.`,
-		command: `git clone https://github.com/sourcegraph/dev-private.git`,
+		command: `git clone git@github.com:sourcegraph/dev-private.git`,
 		ifBool:  "employee",
 	},
 }
