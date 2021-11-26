@@ -783,26 +783,33 @@ func gitMaintenance(dir GitDir) error {
 		"gc.auto=1",
 		"-c",
 		"gc.autoDetach=false",
+		// commit-graph runs when the number of reachable commits that are not in the
+		// commit-graph file is at least maintenance.commit-graph.auto.
+		"-c",
+		"maintenance.commit-graph.auto=100",
+		// loose-objects runs when the number of loose objects is at least
+		// maintenance.loose-objects.auto.
+		"-c",
+		"maintenance.loose-objects.auto=100",
+		// incremental-repack runs when the number of pack-files not in the
+		// multi-pack-index is at least maintenance.incremental-repack.
+		"-c",
+		"maintenance.incremental-repack.auto=10",
 		"maintenance",
 		"run",
-		// commit-graph runs when the number of reachable commits that are not in the
-		// commit-graph file is at least 100.
 		"--task",
 		"commit-graph",
 		"--task",
 		"prefetch",
-		// loose-objects runs when the number of loose objects is at least 100.
 		"--task",
 		"loose-objects",
-		// incremental-repack runs when the number of pack-files not in the
-		// multi-pack-index is at least 10.
 		"--task",
 		"incremental-repack",
 		"--task",
 		"gc",
 		// Initially it seemed appealing to use --schedule instead of --auto. However,
 		// --schedule=<schedule-frequency> merely runs tasks with task-frequency >=
-		// schedule-frequency and is not based on the last time the task ran. Which means
+		// schedule-frequency and is not based on the last time the task ran. This means
 		// we would still need a separate janitor job running at a different frequency.
 		//
 		// We control the aggressiveness of --auto with config parameters.
