@@ -41,10 +41,6 @@ func GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName stri
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
 func getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranch != nil {
-		return Mocks.GetDefaultBranch(repo)
-	}
-
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
