@@ -14,9 +14,9 @@ RUN go build .
 
 # Does not need to use sourcegraph-alpine since this is only deployed for
 # Sourcegraph.com.
-FROM alpine:3.15
+FROM alpine:3.15 # CI:ALPINE_OK
 
-RUN apk add --no-cache git ca-certificates
+RUN apk add --no-cache git ca-certificates tini
 
 COPY --from=builder /go/src/app/git-combine /usr/bin/
 
@@ -29,4 +29,4 @@ LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/tree/main/internal/cmd/git-combine
 LABEL org.opencontainers.image.documentation=https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/git-combine/README.md
 
-CMD ["git-combine"]
+ENTRYPOINT ["/sbin/tini", "--", "git-combine"]
