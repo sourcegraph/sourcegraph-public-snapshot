@@ -1,8 +1,10 @@
 import { ParentSize } from '@visx/responsive'
 import { EventEmitterProvider } from '@visx/xychart'
-import React, { ReactElement } from 'react'
+import classNames from 'classnames'
+import React, { ReactElement, useContext } from 'react'
 
 import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
+import { LineChartSettingsContext } from './line-chart-settings-provider'
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
@@ -12,6 +14,7 @@ export interface LineChartProps<Datum extends object> extends LineChartContentPr
  */
 export function LineChart<Datum extends object>(props: LineChartProps<Datum>): ReactElement {
     const { width, height, ...otherProps } = props
+    const { layout } = useContext(LineChartSettingsContext)
     const hasLegend = props.series.every(line => !!line.name)
 
     if (!hasLegend) {
@@ -25,13 +28,15 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
         )
     }
 
+    const isHorizontal = layout === 'horizontal'
+
     return (
         <EventEmitterProvider>
             <div
                 aria-label="Line chart"
                 /* eslint-disable-next-line react/forbid-dom-props */
                 style={{ width, height }}
-                className={styles.lineChart}
+                className={classNames(styles.lineChart, { [styles.lineChartHorizontal]: isHorizontal })}
             >
                 {/*
                     In case if we have a legend to render we have to have responsive container for chart
@@ -41,7 +46,10 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
-                <ul aria-hidden={true} className={styles.legend}>
+                <ul
+                    aria-hidden={true}
+                    className={classNames(styles.legend, { [styles.legendHorizontal]: isHorizontal })}
+                >
                     {props.series.map(line => (
                         <li key={line.dataKey.toString()} className={styles.legendItem}>
                             <div
