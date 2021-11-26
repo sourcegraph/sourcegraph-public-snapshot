@@ -48,6 +48,11 @@ const (
 // likely evolve into some form of site config value in the future.
 var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
 
+// git maintenance and git gc must not be enabled at the same time. However, both
+// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+// SRC_ENABLE_GIT_MAINTENANCE.
+var enableGitMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GIT_MAINTENANCE", "false", "Use git maintenance during janitorial cleanup phases"))
+
 var (
 	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_repos_removed",
@@ -238,10 +243,17 @@ func (s *Server) cleanupRepos() {
 	}
 
 	performGC := func(dir GitDir) (done bool, err error) {
-		if !enableGCAuto {
+		if enableGitMaintenance || !enableGCAuto {
 			return false, nil
 		}
 		return false, gitGC(dir)
+	}
+
+	performGitMaintenance := func(dir GitDir) (done bool, err error) {
+		if enableGCAuto || !enableGitMaintenance {
+			return false, nil
+		}
+		return false, gitMaintenance(dir)
 	}
 
 	type cleanupFn struct {
@@ -267,6 +279,10 @@ func (s *Server) cleanupRepos() {
 		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
 		// working trees. May also update ancillary indexes such as the commit-graph.
 		{"garbage collect", performGC},
+		// Run tasks to optimize Git repository data, speeding up other Git commands and
+		// reducing storage requirements for the repository. Note: performGC and
+		// performGitMaintenance must not be enabled at the same time.
+		{"git maintenance", performGitMaintenance},
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -748,6 +764,54 @@ func gitGC(dir GitDir) error {
 	err := cmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+	}
+	return nil
+}
+
+// gitMaintenance runs git maintenance on dir. The tasks are run in "auto" mode,
+// which means that git decides which of the tasks are run based on certain
+// thresholds.
+//
+// See https://sourcegraph.com/github.com/git/git/-/blob/Documentation/config/gc.txt and
+// https://sourcegraph.com/github.com/git/git/-/blob/Documentation/config/maintenance.txt
+// for more information about the thresholds.
+func gitMaintenance(dir GitDir) error {
+	cmd := exec.Command(
+		"git",
+		// The number of loose objects that have to be present before gc runs.
+		"-c",
+		"gc.auto=1",
+		"-c",
+		"gc.autoDetach=false",
+		"maintenance",
+		"run",
+		// commit-graph runs when the number of reachable commits that are not in the
+		// commit-graph file is at least 100.
+		"--task",
+		"commit-graph",
+		"--task",
+		"prefetch",
+		// loose-objects runs when the number of loose objects is at least 100.
+		"--task",
+		"loose-objects",
+		// incremental-repack runs when the number of pack-files not in the
+		// multi-pack-index is at least 10.
+		"--task",
+		"incremental-repack",
+		"--task",
+		"gc",
+		// Initially it seemed appealing to use --schedule instead of --auto. However,
+		// --schedule=<schedule-frequency> merely runs tasks with task-frequency >=
+		// schedule-frequency and is not based on the last time the task ran. Which means
+		// we would still need a separate janitor job running at a different frequency.
+		//
+		// We control the aggressiveness of --auto with config parameters.
+		"--auto",
+	)
+	dir.Set(cmd)
+	err := cmd.Run()
+	if err != nil {
+		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run git-maintenance")
 	}
 	return nil
 }
