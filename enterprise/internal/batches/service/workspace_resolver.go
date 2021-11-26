@@ -13,7 +13,6 @@ import (
 	"github.com/gobwas/glob"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -171,46 +170,35 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 			continue
 		}
 
-		// We need to track what we've seen from this On rule, then merge it
-		// with the global state in repos.
-		ruleRepos := map[api.RepoID]map[string]*RepoRevision{}
 		for _, rev := range revs {
 			// Skip repos where no branch exists.
 			if !rev.HasBranch() {
 				continue
 			}
 
-			if ruleRepo, ok := ruleRepos[rev.Repo.ID]; ok {
-				ruleRepo[rev.Branch] = rev
-			} else {
-				ruleRepos[rev.Repo.ID] = map[string]*RepoRevision{
-					rev.Branch: rev,
-				}
-			}
-		}
-
-		// Now we merge each repo, figuring out if we're overriding an older
-		// repo, or merging the revisions that we've seen.
-		for id, repoRevs := range ruleRepos {
-			if seenRepo, ok := repos[id]; ok {
+			if seenRepo, ok := repos[rev.Repo.ID]; ok {
+				// We've seen this repo previously, so we now need to ascertain
+				// whether we're overriding the previous revisions, or merging
+				// into them.
 				if seenRepo.overridable {
-					seenRepo.overridable = overridable
-					seenRepo.revisions = repoRevs
-				} else {
-					seenRepo.overridable = overridable
-					for branch, rev := range repoRevs {
-						seenRepo.revisions[branch] = rev
+					seenRepo.revisions = map[string]*RepoRevision{
+						rev.Branch: rev,
 					}
+				} else {
+					seenRepo.revisions[rev.Branch] = rev
 				}
+				seenRepo.overridable = overridable
 			} else {
-				repos[id] = &repo{
+				// This is a new repo, so let's set up the state we need to
+				// track.
+				repos[rev.Repo.ID] = &repo{
 					overridable: overridable,
-					revisions:   repoRevs,
+					revisions: map[string]*RepoRevision{
+						rev.Branch: rev,
+					},
 				}
 			}
 		}
-
-		log15.Info("after On iteration", "on", on, "ruleRepos", ruleRepos, "repos", repos)
 	}
 
 	repoRevs := []*RepoRevision{}
