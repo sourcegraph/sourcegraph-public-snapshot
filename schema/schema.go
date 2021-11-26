@@ -1138,8 +1138,8 @@ type OnQuery struct {
 
 // OnRepository description: A specific repository (and branch) that is added to the list of repositories that the batch change will be run on.
 type OnRepository struct {
-	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
-	Branch string `json:"branch,omitempty"`
+	Branch   interface{} `json:"branch,omitempty"`
+	Branches interface{} `json:"branches,omitempty"`
 	// Repository description: The name of the repository (as it is known to Sourcegraph).
 	Repository string `json:"repository"`
 }
