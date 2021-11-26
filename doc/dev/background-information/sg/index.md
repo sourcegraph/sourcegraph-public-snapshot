@@ -160,7 +160,7 @@ sg doctor
 
 ```bash
 # See which version is deployed on a preset environment
-sg live dot-com
+sg live cloud
 sg live k8s
 
 # See which version is deployed on a custom environment
