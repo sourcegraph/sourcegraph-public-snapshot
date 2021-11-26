@@ -772,8 +772,8 @@ func gitGC(dir GitDir) error {
 // which means that git decides which of the tasks are run based on certain
 // thresholds.
 //
-// See https://sourcegraph.com/github.com/git/git/-/blob/Documentation/config/gc.txt and
-// https://sourcegraph.com/github.com/git/git/-/blob/Documentation/config/maintenance.txt
+// See https://sourcegraph.com/github.com/git/git@v2.34.0/-/blob/Documentation/config/gc.txt and
+// https://sourcegraph.com/github.com/git/git@v2.34.0/-/blob/Documentation/config/maintenance.txt
 // for more information about the thresholds.
 func gitMaintenance(dir GitDir) error {
 	cmd := exec.Command(
