@@ -90,7 +90,7 @@ This table is maintained as an authoritative resource for users, Sales, and Cust
         <td>Kotlin</td>
         <td><a href="https://github.com/sourcegraph/lsif-java">lsif-java</a></td>
         <td><img src="https://img.shields.io/badge/Experimental-purple" alt="Experimental"></td>
-        <td class="indexer-implemented-n">✗</td> <!-- Hover documentation -->
+        <td class="indexer-implemented-y">✓</td> <!-- Hover documentation -->
         <td class="indexer-implemented-y">✓</td> <!-- Go to definition -->
         <td class="indexer-implemented-y">✓</td> <!-- Find references -->
         <td class="indexer-implemented-y">✓</td> <!-- Cross-file -->
