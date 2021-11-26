@@ -153,7 +153,7 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCategory) {
 	out.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.name))
 	out.Write("")
-	out.Write("Dependencies:")
+	out.Write("Checks:")
 
 	for _, dep := range category.dependencies {
 		if dep.err == nil || dep.state {
@@ -404,9 +404,9 @@ func checkPostgresConnection() func(context.Context) (bool, error) {
 
 func checkRedisConnection() func(context.Context) (bool, error) {
 	connectToRedis := func(ctx context.Context) (bool, error) {
-		conn, err := redis.Dial("tcp", "localhost:6379", redis.DialConnectTimeout(5*time.Second))
+		conn, err := redis.Dial("tcp", ":6379", redis.DialConnectTimeout(5*time.Second))
 		if err != nil {
-			return false, errors.Wrap(err, "failed to connect to Redis at localhost:6379")
+			return false, errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
 		}
 
 		if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
@@ -506,7 +506,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
-			{name: "bash", check: checkCommandOutputContains("sudo bash --version", "version 5"), instructionsCommands: `brew install bash`},
+			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
 		},
 		enableAutoFixing: true,
 	},
@@ -634,7 +634,12 @@ func getChoice(choices map[int]string) (int, error) {
 	out.Write("")
 	out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleBold, "What do you want to do?"))
 
-	for num, desc := range choices {
+	for i := 0; i < len(choices); i++ {
+		num := i + 1
+		desc, ok := choices[num]
+		if !ok {
+			return 0, errors.Newf("internal error: %d not found in provided choices", i)
+		}
 		out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 	}
 
