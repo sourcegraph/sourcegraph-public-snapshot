@@ -18,7 +18,8 @@ func TestCreateChangesetSpecs(t *testing.T) {
 		BaseRepository: "base-repo-id",
 		BaseRef:        "refs/heads/my-cool-base-ref",
 		BaseRev:        "f00b4r",
-		HeadRepository: "head-repo-id",
+		// This field is deprecated and should always match BaseRepository.
+		HeadRepository: "base-repo-id",
 		HeadRef:        "refs/heads/my-branch",
 
 		Title: "The title",
