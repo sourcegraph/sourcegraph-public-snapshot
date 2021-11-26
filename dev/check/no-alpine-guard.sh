@@ -12,11 +12,12 @@ path_filter() {
 }
 
 set +e
-ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' \
+ALPINE_MATCHES=$(git grep -e '\salpine\:' --and --not -e '^\s*//' --and --not -e 'CI\:ALPINE_OK' \
   ':(exclude)doc/admin/updates/docker_compose.md' \
   ':(exclude)docker-images/README.md' \
   ':(exclude)docker-images/alpine-3.14/' \
   ':(exclude)doc/batch_changes/' \
+  ':(exclude)internal/cmd/git-combine/Dockerfile' \
   ':(exclude)web/src/enterprise/batches/create/CreateBatchChangePage.tsx' \
   ':(exclude)*_test.go' \
   ':(exclude)*vendor*' \
