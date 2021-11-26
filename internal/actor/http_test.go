@@ -24,19 +24,19 @@ func TestHTTPTransport(t *testing.T) {
 		name:  "unauthenticated",
 		actor: nil,
 		wantHeaders: map[string]string{
-			headerActorUID: noActorHeaderValue,
+			headerKeyActorUID: headerValueNoActor,
 		},
 	}, {
 		name:  "internal actor",
 		actor: &Actor{Internal: true},
 		wantHeaders: map[string]string{
-			headerActorUID: internalActorHeaderValue,
+			headerKeyActorUID: headerValueInternalActor,
 		},
 	}, {
 		name:  "user actor",
 		actor: &Actor{UID: 1234},
 		wantHeaders: map[string]string{
-			headerActorUID: "1234",
+			headerKeyActorUID: "1234",
 		},
 	}}
 	for _, tt := range tests {
@@ -77,25 +77,25 @@ func TestHTTPMiddleware(t *testing.T) {
 	}{{
 		name: "unauthenticated",
 		headers: map[string]string{
-			headerActorUID: noActorHeaderValue,
+			headerKeyActorUID: headerValueNoActor,
 		},
 		wantActor: &Actor{}, // FromContext provides a zero-value actor if one is not present
 	}, {
 		name: "invalid actor",
 		headers: map[string]string{
-			headerActorUID: "not-a-valid-id",
+			headerKeyActorUID: "not-a-valid-id",
 		},
 		wantActor: &Actor{}, // FromContext provides a zero-value actor  if one is not present
 	}, {
 		name: "internal actor",
 		headers: map[string]string{
-			headerActorUID: internalActorHeaderValue,
+			headerKeyActorUID: headerValueInternalActor,
 		},
 		wantActor: &Actor{Internal: true},
 	}, {
 		name: "user actor",
 		headers: map[string]string{
-			headerActorUID: "1234",
+			headerKeyActorUID: "1234",
 		},
 		wantActor: &Actor{UID: 1234},
 	}}

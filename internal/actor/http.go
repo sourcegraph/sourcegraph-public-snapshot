@@ -9,14 +9,25 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-// headerActorUID is the header key for the actor's user ID.
-const headerActorUID = "X-Sourcegraph-Actor-ID"
+const (
+	// headerKeyActorUID is the header key for the actor's user ID.
+	headerKeyActorUID = "X-Sourcegraph-Actor-ID"
+	// headerValueInternalActor indicates the request uses an internal actor.
+	headerValueInternalActor = "internal"
+	// headerValueNoActor indicates the request has no actor.
+	headerValueNoActor = "none"
+)
 
 const (
-	// internalActorHeaderValue indicates the request uses an internal actor.
-	internalActorHeaderValue = "internal"
-	// noActorHeaderValue indicates the request has no actor.
-	noActorHeaderValue = "none"
+	// metricActorTypeUser is a label indicating a request was in the context of a user.
+	// We do not record actual user IDs as metric labels to limit cardinality.
+	metricActorTypeUser = "user"
+	// metricTypeUserActor is a label indicating a request was in the context of an internal actor.
+	metricActorTypeInternal = headerValueInternalActor
+	// metricActorTypeNone is a label indicating a request was in the context of an internal actor.
+	metricActorTypeNone = headerValueNoActor
+	// metricActorTypeInvalid is a label indicating a request was in the context of an internal actor.
+	metricActorTypeInvalid = "invalid"
 )
 
 var (
@@ -48,18 +59,18 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	switch {
 	// Indicate this is an internal user
 	case actor.IsInternal():
-		req.Header.Set(headerActorUID, internalActorHeaderValue)
-		metricOutgoingActors.WithLabelValues(internalActorHeaderValue).Inc()
+		req.Header.Set(headerKeyActorUID, headerValueInternalActor)
+		metricOutgoingActors.WithLabelValues(metricActorTypeInternal).Inc()
 
 	// Indicate this is an authenticated user
 	case actor.IsAuthenticated():
-		req.Header.Set(headerActorUID, actor.UIDString())
-		metricOutgoingActors.WithLabelValues("user").Inc()
+		req.Header.Set(headerKeyActorUID, actor.UIDString())
+		metricOutgoingActors.WithLabelValues(metricActorTypeUser).Inc()
 
 	// Indicate no actor is associated with request
 	default:
-		req.Header.Set(headerActorUID, noActorHeaderValue)
-		metricOutgoingActors.WithLabelValues(noActorHeaderValue).Inc()
+		req.Header.Set(headerKeyActorUID, headerValueNoActor)
+		metricOutgoingActors.WithLabelValues(metricActorTypeNone).Inc()
 	}
 
 	return t.RoundTripper.RoundTrip(req)
@@ -75,16 +86,16 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
-		uidStr := req.Header.Get(headerActorUID)
+		uidStr := req.Header.Get(headerKeyActorUID)
 		switch uidStr {
 		// Request associated with internal actor - add internal actor to context
-		case internalActorHeaderValue:
+		case headerValueInternalActor:
 			ctx = WithInternalActor(ctx)
-			metricIncomingActors.WithLabelValues(internalActorHeaderValue).Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
 
 		// Request not associated with any actor
-		case "", noActorHeaderValue:
-			metricIncomingActors.WithLabelValues(noActorHeaderValue).Inc()
+		case "", headerValueNoActor:
+			metricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()
 
 		// Request associated with authenticated user - add user actor to context
 		default:
@@ -93,14 +104,14 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 				log15.Warn("invalid user ID in request",
 					"error", err,
 					"uid", uidStr)
-				metricIncomingActors.WithLabelValues("invalid").Inc()
+				metricIncomingActors.WithLabelValues(metricActorTypeInvalid).Inc()
 				break
 			}
 
 			// Valid user, add to context
 			actor := FromUser(int32(uid))
 			ctx = WithActor(ctx, actor)
-			metricIncomingActors.WithLabelValues("user").Inc()
+			metricIncomingActors.WithLabelValues(metricActorTypeUser).Inc()
 		}
 
 		next.ServeHTTP(rw, req.WithContext(ctx))
