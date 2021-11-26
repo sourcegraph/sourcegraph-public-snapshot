@@ -3,6 +3,8 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 set -euxo pipefail
 
+echo '--- init vagrant'
+
 box="$1"
 exit_code=0
 
