@@ -7,8 +7,8 @@
 > event stream format will be documented in the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md).
 
 
-The Stream API is a simple way to consume search results and related metadata as
-a stream. The Sourcegraph UI calls the Stream API for all interactive searches.
+With the Stream API you can consume search results and related metadata as
+a stream of events. The Sourcegraph UI calls the Stream API for all interactive searches.
 Compared to our [GraphQL API](../graphql/index.md), it offers shorter times to first results and 
 supports running exhaustive searches returning a large volume of results without
 putting pressure on the backend.
@@ -20,7 +20,8 @@ curl --header "Accept: text/event-stream" \
      --header "Authorization: token <access token>" \
      --get \
      --url "<Sourcegraph URL>/search/stream" \
-     --data-urlencode "q=<query>"
+     --data-urlencode "q=<query>" \
+     [--data-urlencode "display=<display-limit>"]
 ```
 
 | parameter | description |
@@ -28,6 +29,7 @@ curl --header "Accept: text/event-stream" \
 | access token | [Sourcegraph access token](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) |
 | Sourcegraph URL | The URL of your instance of Sourcegraph or https://sourcegraph.com for Sourcegraph's Cloud instance. |
 | query | A Sourcegraph query string, see our [search query syntax](../../code_search/reference/queries.md) |
+| display-limit | The maximum number of matches the backend returns. Defaults to -1 (no limit). If the backend finds more then display-limit results, it will keep searching and aggregating statistics, but the matches will not be returned anymore. Note that the display-limit is different from the query filter `count:` which causes the search to stop and return once we found `count:` matches. |
 
 See [Example](#example-curl).
 
