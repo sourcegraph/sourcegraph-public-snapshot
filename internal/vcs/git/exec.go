@@ -12,16 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-func checkSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
-	}
-	return nil
-}
-
-// ExecSafe executes a Git subcommand iff it is allowed according to a allowlist.
+// ExecSafe executes a Git subcommand iff it is allowed according to an
+// allowlist.
 //
 // An error is only returned when there is a failure unrelated to the actual command being
 // executed. If the executed command exits with a nonzero exit code, err == nil. This is similar to
@@ -52,9 +44,9 @@ func ExecSafe(ctx context.Context, repo api.RepoName, params []string) (stdout, 
 	return stdout, stderr, exitCode, err
 }
 
-// ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
+// execReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
 // to its stdout.
-func ExecReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
+func execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
 	if Mocks.ExecReader != nil {
 		return Mocks.ExecReader(args)
 	}
@@ -144,6 +136,15 @@ func isAllowedGitCmd(args []string) bool {
 		}
 	}
 	return true
+}
+
+// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
+// cause it to be interpreted as a git command line argument.
+func checkSpecArgSafety(spec string) error {
+	if strings.HasPrefix(spec, "-") {
+		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+	}
+	return nil
 }
 
 func gitserverCmdFunc(repo api.RepoName) cmdFunc {
