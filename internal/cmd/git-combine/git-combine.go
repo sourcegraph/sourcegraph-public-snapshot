@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"sort"
 	"strings"
 	"syscall"
@@ -357,7 +358,17 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 		}
 	}
 
+	opt.SetDefaults()
+
 	for {
+		// convenient way to stop the daemon to do manual operations like add
+		// more upstreams.
+		if b, err := os.ReadFile(filepath.Join(dir, "PAUSE")); err == nil {
+			opt.Logger.Printf("PAUSE file present: %s", string(b))
+			<-ticker
+			continue
+		}
+
 		if err := runGit(dir, "fetch", "--all", "--no-tags"); err != nil {
 			return err
 		}

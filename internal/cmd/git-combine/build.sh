@@ -7,7 +7,7 @@ version="$1"
 commit="$(git rev-parse HEAD)"
 image="us.gcr.io/sourcegraph-dev/git-combine:$version"
 
-if [[ !($version =~ ^[0-9]+\.[0-9]+\.[0-9]+$) ]]; then
+if [[ ! ($version =~ ^[0-9]+\.[0-9]+\.[0-9]+$) ]]; then
   echo -e "USAGE: build.sh VERSION\n\nVERSION is a string like 0.0.1"
   exit 1
 fi
@@ -15,9 +15,9 @@ fi
 set -x
 
 docker build \
-       --build-arg VERSION="$version" \
-       --build-arg COMMIT_SHA="$commit" \
-       --tag "$image" \
-       .
+  --build-arg VERSION="$version" \
+  --build-arg COMMIT_SHA="$commit" \
+  --tag "$image" \
+  .
 
 docker push "$image"
