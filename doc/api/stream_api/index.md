@@ -67,7 +67,7 @@ Events can be of the following types:
 | alert | info, warning and error messages |
 | done | always the last event |
 
-Refer to the [interface definitions of our typescript client](https://sourcegraph.com/github.com/sourcegraiiiph/sourcegraph/-/blob/client/shared/src/search/stream.ts?L12) to learn about the schema of the event-types. 
+Refer to the [interface definitions of our typescript client](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/search/stream.ts?L12) to learn about the schema of the event-types. 
 
 ## Example (curl) 
 
