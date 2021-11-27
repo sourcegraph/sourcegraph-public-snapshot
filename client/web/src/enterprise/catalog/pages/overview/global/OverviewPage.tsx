@@ -1,34 +1,44 @@
 import React, { useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Page } from '@sourcegraph/web/src/components/Page'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
-import { useCatalogComponentFilters } from '../../../core/component-filters'
+import { CatalogIcon } from '../../../../../catalog'
+import { CatalogComponentFiltersProps } from '../../../core/component-filters'
 import { OverviewContent } from '../components/overview-content/OverviewContent'
-import { Sidebar } from '../components/sidebar/Sidebar'
 
-import styles from './OverviewPage.module.scss'
-
-// TODO(sqs): extract the Insights components used above to the shared components area
-
-export interface OverviewPageProps extends TelemetryProps {
+export interface OverviewPageProps extends CatalogComponentFiltersProps, TelemetryProps {
     authenticatedUser: AuthenticatedUser
 }
 
 /**
  * The catalog overview page.
  */
-export const OverviewPage: React.FunctionComponent<OverviewPageProps> = ({ telemetryService }) => {
+export const OverviewPage: React.FunctionComponent<OverviewPageProps> = ({
+    filters,
+    onFiltersChange,
+    telemetryService,
+}) => {
     useEffect(() => {
         telemetryService.logViewEvent('CatalogOverview')
     }, [telemetryService])
 
-    const { filters, onFiltersChange } = useCatalogComponentFilters()
-
     return (
-        <div className={styles.container}>
-            <Sidebar filters={filters} onFiltersChange={onFiltersChange} />
-            <OverviewContent filters={filters} onFiltersChange={onFiltersChange} telemetryService={telemetryService} />
-        </div>
+        <Page>
+            <PageHeader
+                path={[{ icon: CatalogIcon, text: 'Catalog' }]}
+                className="mb-3"
+                description="Explore software components, services, libraries, APIs, and more."
+            />
+            <Container className="mb-4 p-0">
+                <OverviewContent
+                    filters={filters}
+                    onFiltersChange={onFiltersChange}
+                    telemetryService={telemetryService}
+                />
+            </Container>
+        </Page>
     )
 }

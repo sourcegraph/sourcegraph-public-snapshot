@@ -27,12 +27,13 @@ import styles from './ComponentList.module.scss'
 import { ComponentListFilters } from './ComponentListFilters'
 
 interface Props extends CatalogComponentFiltersProps {
+    size: 'sm' | 'lg'
     className?: string
 }
 
 const FIRST = 20
 
-export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFiltersChange, className }) => {
+export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         CatalogComponentsResult,
         CatalogComponentsVariables,
@@ -55,11 +56,16 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFilte
     })
 
     return (
-        <div>
-            <ComponentListFilters filters={filters} onFiltersChange={onFiltersChange} size="sm" />
+        <>
+            <ComponentListFilters
+                filters={filters}
+                onFiltersChange={onFiltersChange}
+                size={size}
+                className="p-2 border-bottom"
+            />
             <ConnectionContainer className={className}>
                 {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className={classNames('list-group list-group-flush border-bottom', styles.list)}>
+                <ConnectionList className={classNames('list-group list-group-flush', styles.list)}>
                     {connection?.nodes?.map(node => (
                         <CatalogComponent key={node.id} node={node} />
                     ))}
@@ -80,14 +86,16 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFilte
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
-        </div>
+        </>
     )
 }
 
 const CatalogComponent: React.FunctionComponent<{ node: CatalogComponentFields }> = ({ node }) => (
     <li className="list-group-item d-flex">
         <h3 className="h6 font-weight-bold d-flex align-items-center mb-0">
-            <CatalogComponentIcon node={node} className="icon-inline text-muted mr-2" /> {node.name}
+            <Link to={`/catalog/${node.id}`}>
+                <CatalogComponentIcon node={node} className="icon-inline text-muted mr-2" /> {node.name}
+            </Link>
         </h3>
         <div className="flex-1" />
         {node.sourceLocation && <Link to={node.sourceLocation.url}>Source</Link>}

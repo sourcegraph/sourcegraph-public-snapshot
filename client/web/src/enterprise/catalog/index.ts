@@ -1,5 +1,5 @@
 // Public catalog components
-export { CatalogRouter } from './CatalogRouter'
+export { CatalogArea } from './CatalogArea'
 
 // Guard
 export { isCatalogEnabled } from '../../catalog'

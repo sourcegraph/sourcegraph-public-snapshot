@@ -8,9 +8,10 @@ import styles from './ComponentListFilters.module.scss'
 
 interface Props extends CatalogComponentFiltersProps {
     size: 'sm' | 'lg'
+    className?: string
 }
 
-export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size }) => {
+export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size, className }) => {
     // Update filter query on submit (not incrementally while typing).
     const queryElement = useRef<HTMLInputElement | null>(null)
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -47,7 +48,7 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
             : { form: styles.formLg, formGroup: styles.formGroupLg }
 
     return (
-        <Form className={sizeStyles.form} onSubmit={onSubmit}>
+        <Form className={classNames(sizeStyles.form, className)} onSubmit={onSubmit}>
             <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
                 <label htmlFor="component-list-filters__query" className="sr-only">
                     Query

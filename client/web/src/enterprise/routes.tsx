@@ -80,7 +80,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: EnterprisePageRoutes.Catalog,
-        render: lazyComponent(() => import('./catalog/CatalogRouter'), 'CatalogRouter'),
+        render: lazyComponent(() => import('./catalog/CatalogArea'), 'CatalogArea'),
         condition: props => isCatalogEnabled(props.settingsCascade),
     },
     ...routes,

@@ -33,7 +33,7 @@ const SidebarContent: React.FunctionComponent<SidebarProps & { className?: strin
 }) => (
     <div className={classNames('p-2 d-flex flex-column', className)}>
         <h2 className="h5 font-weight-bold">Catalog</h2>
-        <ComponentList filters={filters} onFiltersChange={onFiltersChange} className="flex-1" />
+        <ComponentList filters={filters} onFiltersChange={onFiltersChange} className="flex-1" size="sm" />
         <div className="flex-1" />
         <FeedbackPopoverButton />
     </div>

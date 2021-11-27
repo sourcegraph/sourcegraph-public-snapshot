@@ -12,8 +12,11 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { Settings } from '../../schema/settings.schema'
 
+import styles from './CatalogArea.module.scss'
 import { CatalogBackendContext } from './core/backend/context'
 import { CatalogGqlBackend } from './core/backend/gql-api/gql-backend'
+import { useCatalogComponentFilters } from './core/component-filters'
+import { ComponentDetailPage } from './pages/component-detail/global/ComponentDetailPage'
 import { OverviewPage } from './pages/overview/global/OverviewPage'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -32,9 +35,9 @@ export interface CatalogRouterProps extends SettingsCascadeProps<Settings>, Plat
 }
 
 /**
- * The main Catalog routing component (the main entrypoint to the Catalog UI).
+ * The main entrypoint to the catalog UI.
  */
-export const CatalogRouter = withAuthenticatedUser<CatalogRouterProps>(props => {
+export const CatalogArea = withAuthenticatedUser<CatalogRouterProps>(props => {
     const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
@@ -42,14 +45,31 @@ export const CatalogRouter = withAuthenticatedUser<CatalogRouterProps>(props => 
 
     const api = useMemo(() => new CatalogGqlBackend(apolloClient), [apolloClient])
 
+    const { filters, onFiltersChange } = useCatalogComponentFilters()
+
     return (
-        <CatalogBackendContext.Provider value={api}>
-            <Switch>
-                <Route path={match.url}>
-                    <OverviewPage authenticatedUser={authenticatedUser} telemetryService={telemetryService} />
-                </Route>
-                <Route component={NotFoundPage} key="hardcoded-key" />
-            </Switch>
-        </CatalogBackendContext.Provider>
+        <div className={styles.container}>
+            <CatalogBackendContext.Provider value={api}>
+                <Switch>
+                    <Route path={match.url} exact={true}>
+                        <OverviewPage
+                            authenticatedUser={authenticatedUser}
+                            filters={filters}
+                            onFiltersChange={onFiltersChange}
+                            telemetryService={telemetryService}
+                        />
+                    </Route>
+                    <Route path={`${match.url}/:id`}>
+                        <ComponentDetailPage
+                            authenticatedUser={authenticatedUser}
+                            filters={filters}
+                            onFiltersChange={onFiltersChange}
+                            telemetryService={telemetryService}
+                        />
+                    </Route>
+                    <Route component={NotFoundPage} key="hardcoded-key" />
+                </Switch>
+            </CatalogBackendContext.Provider>
+        </div>
     )
 })
