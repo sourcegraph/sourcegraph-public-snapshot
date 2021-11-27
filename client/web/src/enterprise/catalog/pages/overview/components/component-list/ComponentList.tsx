@@ -3,6 +3,7 @@ import ApplicationCogOutlineIcon from 'mdi-react/ApplicationCogOutlineIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { useConnection } from '../../../../../../components/FilteredConnection/hooks/useConnection'
@@ -27,13 +28,22 @@ import styles from './ComponentList.module.scss'
 import { ComponentListFilters } from './ComponentListFilters'
 
 interface Props extends CatalogComponentFiltersProps {
+    /** The currently selected CatalogComponent, if any. */
+    selected?: { id: Scalars['ID'] }
+
     size: 'sm' | 'lg'
     className?: string
 }
 
 const FIRST = 20
 
-export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size, className }) => {
+export const ComponentList: React.FunctionComponent<Props> = ({
+    selected,
+    filters,
+    onFiltersChange,
+    size,
+    className,
+}) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         CatalogComponentsResult,
         CatalogComponentsVariables,
@@ -67,7 +77,12 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFilte
                 {error && <ConnectionError errors={[error.message]} />}
                 <ConnectionList className={classNames('list-group list-group-flush', styles.list)}>
                     {connection?.nodes?.map(node => (
-                        <CatalogComponent key={node.id} node={node} size={size} />
+                        <CatalogComponent
+                            key={node.id}
+                            node={node}
+                            selected={selected && node.id === selected.id}
+                            size={size}
+                        />
                     ))}
                 </ConnectionList>
                 {loading && <ConnectionLoading />}
@@ -90,14 +105,25 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFilte
     )
 }
 
-const CatalogComponent: React.FunctionComponent<{ node: CatalogComponentFields; size: 'sm' | 'lg' }> = ({
-    node,
-    size,
-}) => (
-    <li className="list-group-item d-flex">
+const CatalogComponent: React.FunctionComponent<{
+    node: CatalogComponentFields
+    selected: boolean
+    size: 'sm' | 'lg'
+}> = ({ node, selected, size }) => (
+    <li className={classNames('list-group-item d-flex', { active: selected })}>
         <h3 className="h6 font-weight-bold mb-0">
-            <Link to={`/catalog/${node.id}`} className="d-flex align-items-center">
-                <CatalogComponentIcon node={node} className="icon-inline text-muted mr-1" /> {node.name}
+            <Link
+                to={`/catalog/${node.id}`}
+                className={classNames('d-flex align-items-center', {
+                    'text-body': selected,
+                    'stretched-link': size === 'sm',
+                })}
+            >
+                <CatalogComponentIcon
+                    node={node}
+                    className={classNames('icon-inline mr-1', { 'text-muted': !selected })}
+                />{' '}
+                {node.name}
             </Link>
         </h3>
         <div className="flex-1" />

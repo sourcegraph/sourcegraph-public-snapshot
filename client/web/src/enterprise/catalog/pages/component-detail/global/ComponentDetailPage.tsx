@@ -1,22 +1,22 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
 
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../../../../../auth'
+import { HeroPage } from '../../../../../components/HeroPage'
+import { Page } from '../../../../../components/Page'
+import { PageTitle } from '../../../../../components/PageTitle'
+import { CatalogComponentByIDResult, CatalogComponentByIDVariables } from '../../../../../graphql-operations'
 import { CatalogComponentFiltersProps } from '../../../core/component-filters'
 import { ComponentList } from '../../overview/components/component-list/ComponentList'
 import { Sidebar } from '../sidebar/Sidebar'
 
-import { CATALOG_COMPONENT_DETAIL_FRAGMENT, ComponentDetailContent } from './ComponentDetailContent'
-import { PageTitle } from '../../../../../components/PageTitle'
-import { gql } from '@sourcegraph/shared/src/graphql/graphql'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-
-import { CatalogComponentByIDResult, CatalogComponentByIDVariables } from '../../../../../graphql-operations'
-import { HeroPage } from '../../../../../components/HeroPage'
+import { ComponentDetailContent } from './ComponentDetailContent'
+import { CATALOG_COMPONENT_BY_ID } from './gql'
 
 export interface Props extends CatalogComponentFiltersProps, TelemetryProps {
     /** The GraphQL ID of the CatalogComponent. */
@@ -38,18 +38,8 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('CatalogComponentDetail')
     }, [telemetryService])
 
-    const { data, error, loading, refetch } = useQuery<CatalogComponentByIDResult, CatalogComponentByIDVariables>(
-        gql`
-            query CatalogComponentByID($id: ID!) {
-                node(id: $id) {
-                    __typename
-                    ... on CatalogComponent {
-                        ...CatalogComponentDetailFields
-                    }
-                }
-            }
-            ${CATALOG_COMPONENT_DETAIL_FRAGMENT}
-        `,
+    const { data, error, loading } = useQuery<CatalogComponentByIDResult, CatalogComponentByIDVariables>(
+        CATALOG_COMPONENT_BY_ID,
         {
             variables: { id: catalogComponentID },
 
@@ -84,9 +74,17 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
         <>
             <PageTitle title={catalogComponent.name} />
             <Sidebar>
-                <ComponentList filters={filters} onFiltersChange={onFiltersChange} className="flex-1" size="sm" />
+                <ComponentList
+                    selected={catalogComponent}
+                    filters={filters}
+                    onFiltersChange={onFiltersChange}
+                    className="flex-1"
+                    size="sm"
+                />
             </Sidebar>
-            <ComponentDetailContent catalogComponent={catalogComponent} telemetryService={telemetryService} />
+            <Page className="py-0 pt-2">
+                <ComponentDetailContent catalogComponent={catalogComponent} telemetryService={telemetryService} />
+            </Page>
         </>
     )
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,16 +27,19 @@ func (r *rootResolver) Catalog(context.Context) (gql.CatalogResolver, error) {
 func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"CatalogComponent": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			panic("TODO(sqs)")
+			components := dummyData(r.db)
+			for _, c := range components {
+				if c.ID() == id {
+					return c, nil
+				}
+			}
+			return nil, nil
 		},
 	}
 }
 
-type catalogResolver struct {
-	db database.DB
-}
-
-func (r *catalogResolver) Components(ctx context.Context, args *gql.CatalogComponentsArgs) (gql.CatalogComponentConnectionResolver, error) {
+// TODO(sqs): dummy data
+func dummyData(db database.DB) []*catalogComponentResolver {
 	const (
 		sourceRepo   = "github.com/sourcegraph/sourcegraph"
 		sourceCommit = "2ada4911722e2c812cc4f1bbfb6d5d1756891392"
@@ -63,11 +67,22 @@ func (r *catalogResolver) Components(ctx context.Context, args *gql.CatalogCompo
 			sourcePath:   "cmd/repo-updater/main.go",
 		},
 	}
+	for _, c := range components {
+		c.db = db
+	}
+	return components
+}
+
+type catalogResolver struct {
+	db database.DB
+}
+
+func (r *catalogResolver) Components(ctx context.Context, args *gql.CatalogComponentsArgs) (gql.CatalogComponentConnectionResolver, error) {
+	components := dummyData(r.db)
 
 	var keep []gql.CatalogComponentResolver
 	for _, c := range components {
 		if args.Query == nil || strings.Contains(c.name, *args.Query) {
-			c.db = r.db
 			keep = append(keep, c)
 		}
 	}
@@ -104,7 +119,7 @@ type catalogComponentResolver struct {
 }
 
 func (r *catalogComponentResolver) ID() graphql.ID {
-	return graphql.ID(r.name) // TODO(sqs)
+	return relay.MarshalID("CatalogComponent", r.name) // TODO(sqs)
 }
 
 func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {
