@@ -4,7 +4,7 @@ import { map } from 'rxjs/operators'
 
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
-import { ListComponentsResult } from '../../../../../graphql-operations'
+import { ListComponentsResult, ListComponentsVariables } from '../../../../../graphql-operations'
 import { CatalogBackend } from '../backend'
 
 import { LIST_COMPONENTS_GQL } from './gql/ListComponents'
@@ -12,10 +12,13 @@ import { LIST_COMPONENTS_GQL } from './gql/ListComponents'
 export class CatalogGqlBackend implements CatalogBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
-    public listComponents = (): Observable<ListComponentsResult['catalog']['components']> =>
+    public listComponents = (
+        variables: ListComponentsVariables
+    ): Observable<ListComponentsResult['catalog']['components']> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<ListComponentsResult>({
                 query: LIST_COMPONENTS_GQL,
+                variables,
             })
         ).pipe(map(({ data }) => data.catalog.components))
 }

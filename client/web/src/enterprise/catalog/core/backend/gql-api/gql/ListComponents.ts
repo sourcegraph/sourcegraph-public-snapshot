@@ -1,10 +1,11 @@
 import { gql } from '@apollo/client'
 
 export const LIST_COMPONENTS_GQL = gql`
-    query ListComponents {
+    query ListComponents($query: String) {
         catalog {
-            components {
+            components(query: $query) {
                 nodes {
+                    id
                     name
                 }
             }

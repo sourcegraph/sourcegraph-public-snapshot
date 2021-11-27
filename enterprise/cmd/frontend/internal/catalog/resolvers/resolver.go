@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -31,13 +32,22 @@ func (r *rootResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 
 type catalogResolver struct{}
 
-func (r *catalogResolver) Components(ctx context.Context) (graphqlbackend.CatalogComponentConnectionResolver, error) {
+func (r *catalogResolver) Components(ctx context.Context, args *graphqlbackend.CatalogComponentsArgs) (graphqlbackend.CatalogComponentConnectionResolver, error) {
+	components := []*catalogComponentResolver{
+		{name: "aaa"},
+		{name: "bbb"},
+		{name: "ccc"},
+	}
+
+	var keep []graphqlbackend.CatalogComponentResolver
+	for _, c := range components {
+		if args.Query == nil || strings.Contains(c.name, *args.Query) {
+			keep = append(keep, c)
+		}
+	}
+
 	return &catalogComponentConnectionResolver{
-		components: []graphqlbackend.CatalogComponentResolver{
-			&catalogComponentResolver{name: "aaa"},
-			&catalogComponentResolver{name: "bbb"},
-			&catalogComponentResolver{name: "ccc"},
-		},
+		components: keep,
 	}, nil
 }
 
@@ -62,9 +72,13 @@ type catalogComponentResolver struct {
 }
 
 func (r *catalogComponentResolver) ID() graphql.ID {
-	return "" // TODO(sqs)
+	return graphql.ID(r.name) // TODO(sqs)
 }
 
 func (r *catalogComponentResolver) Name() string {
+	return r.name
+}
+
+func (r *catalogComponentResolver) Xyz123() string {
 	return r.name
 }

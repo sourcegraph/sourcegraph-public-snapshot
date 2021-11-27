@@ -19,7 +19,11 @@ type CatalogRootResolver interface {
 }
 
 type CatalogResolver interface {
-	Components(context.Context) (CatalogComponentConnectionResolver, error)
+	Components(context.Context, *CatalogComponentsArgs) (CatalogComponentConnectionResolver, error)
+}
+
+type CatalogComponentsArgs struct {
+	Query *string
 }
 
 type CatalogComponentConnectionResolver interface {
@@ -31,4 +35,5 @@ type CatalogComponentConnectionResolver interface {
 type CatalogComponentResolver interface {
 	ID() graphql.ID
 	Name() string
+	Xyz123() string
 }

@@ -1,26 +1,21 @@
 import React, { useContext, useMemo } from 'react'
-import { useHistory } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { authenticatedUser } from '@sourcegraph/web/src/auth'
 
 import { CatalogBackendContext } from '../../../../core/backend/context'
+import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
 
-export interface OverviewContentProps extends TelemetryProps {
+export interface OverviewContentProps extends TelemetryProps, Pick<CatalogComponentFiltersProps, 'filters'> {
     // TODO(sqs): what scope of catalog (eg repo) or global
 }
 
-export const OverviewContent: React.FunctionComponent<OverviewContentProps> = props => {
-    const { telemetryService } = props
-
-    const history = useHistory()
+export const OverviewContent: React.FunctionComponent<OverviewContentProps> = ({ filters }) => {
     const { listComponents } = useContext(CatalogBackendContext)
-
-    const components = useObservable(useMemo(() => listComponents(), [listComponents]))
-
-    const user = useObservable(authenticatedUser)
+    const components = useObservable(
+        useMemo(() => listComponents({ query: filters.query }), [filters.query, listComponents])
+    )
 
     if (components === undefined) {
         return <LoadingSpinner />
@@ -29,9 +24,11 @@ export const OverviewContent: React.FunctionComponent<OverviewContentProps> = pr
     return (
         <div>
             <section className="d-flex flex-wrap align-items-center">
-                Foos: <code>{JSON.stringify(components)}</code>
-                <br />
-                User: {user?.username || 'none'}
+                <ul>
+                    {components.nodes.map(node => (
+                        <li key={node.id}>{node.name}</li>
+                    ))}
+                </ul>
             </section>
         </div>
     )
