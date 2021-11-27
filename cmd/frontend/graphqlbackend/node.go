@@ -250,3 +250,8 @@ func (r *NodeResolver) ToExecutor() (*executorResolver, bool) {
 	n, ok := r.Node.(*executorResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
+	n, ok := r.Node.(CatalogComponentResolver)
+	return n, ok
+}

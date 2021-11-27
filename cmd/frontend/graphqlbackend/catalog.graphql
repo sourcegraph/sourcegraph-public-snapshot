@@ -6,5 +6,16 @@ extend type Query {
 }
 
 type Catalog {
-    foo: [String!]!
+    components: CatalogComponentConnection!
+}
+
+type CatalogComponentConnection {
+    nodes: [CatalogComponent!]!
+    totalCount: Int!
+    pageInfo: PageInfo!
+}
+
+type CatalogComponent implements Node {
+    id: ID!
+    name: String!
 }

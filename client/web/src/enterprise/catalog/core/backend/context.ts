@@ -9,7 +9,7 @@ const errorMockMethod = (methodName: string) => () => throwError(new Error(`Impl
  * Default context API class. Provides mock methods only.
  */
 export class FakeDefaultCatalogBackend implements CatalogBackend {
-    public getFoo = errorMockMethod('getFoo')
+    public listComponents = errorMockMethod('listComponents')
 }
 
 export const CatalogBackendContext = React.createContext<CatalogBackend>(new FakeDefaultCatalogBackend())

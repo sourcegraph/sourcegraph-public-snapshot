@@ -4,18 +4,18 @@ import { map } from 'rxjs/operators'
 
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
-import { GetFooResult } from '../../../../../graphql-operations'
+import { ListComponentsResult } from '../../../../../graphql-operations'
 import { CatalogBackend } from '../backend'
 
-import { GET_FOO_GQL } from './gql/GetFoo'
+import { LIST_COMPONENTS_GQL } from './gql/ListComponents'
 
 export class CatalogGqlBackend implements CatalogBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
-    public getFoo = (): Observable<string[]> =>
+    public listComponents = (): Observable<ListComponentsResult['catalog']['components']> =>
         fromObservableQuery(
-            this.apolloClient.watchQuery<GetFooResult>({
-                query: GET_FOO_GQL,
+            this.apolloClient.watchQuery<ListComponentsResult>({
+                query: LIST_COMPONENTS_GQL,
             })
-        ).pipe(map(({ data }) => data.catalog.foo))
+        ).pipe(map(({ data }) => data.catalog.components))
 }

@@ -437,6 +437,10 @@ func NewSchema(
 		EnterpriseResolvers.catalogRootResolver = catalogRootResolver
 		resolver.CatalogRootResolver = catalogRootResolver
 		schemas = append(schemas, catalogSchema)
+		// Register NodeByID handlers.
+		for kind, res := range catalogRootResolver.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	schemas = append(schemas, computeSchema)

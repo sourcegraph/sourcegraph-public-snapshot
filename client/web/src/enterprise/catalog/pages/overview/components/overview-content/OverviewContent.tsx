@@ -16,20 +16,20 @@ export const OverviewContent: React.FunctionComponent<OverviewContentProps> = pr
     const { telemetryService } = props
 
     const history = useHistory()
-    const { getFoo } = useContext(CatalogBackendContext)
+    const { listComponents } = useContext(CatalogBackendContext)
 
-    const foo = useObservable(useMemo(() => getFoo(), [getFoo]))
+    const components = useObservable(useMemo(() => listComponents(), [listComponents]))
 
     const user = useObservable(authenticatedUser)
 
-    if (foo === undefined) {
+    if (components === undefined) {
         return <LoadingSpinner />
     }
 
     return (
         <div>
             <section className="d-flex flex-wrap align-items-center">
-                Foos: <code>{JSON.stringify(foo)}</code>
+                Foos: <code>{JSON.stringify(components)}</code>
                 <br />
                 User: {user?.username || 'none'}
             </section>
