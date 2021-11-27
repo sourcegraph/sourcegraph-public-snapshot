@@ -44,8 +44,8 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
 
     const sizeStyles =
         size === 'sm'
-            ? { form: styles.formSm, formGroup: styles.formGroupSm }
-            : { form: styles.formLg, formGroup: styles.formGroupLg }
+            ? { form: styles.formSm, formGroup: styles.formGroupSm, input: undefined }
+            : { form: styles.formLg, formGroup: styles.formGroupLg, input: undefined }
 
     return (
         <Form className={classNames(sizeStyles.form, className)} onSubmit={onSubmit}>
@@ -55,49 +55,53 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
                 </label>
                 <input
                     id="component-list-filters__query"
-                    className="form-control"
+                    className={classNames('form-control', sizeStyles.input)}
                     type="search"
                     placeholder="Search..."
                     defaultValue={filters.query}
                     ref={queryElement}
                 />
             </div>
-            <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                <label htmlFor="component-list-filters__owner" className="sr-only">
-                    Owner
-                </label>
-                <input
-                    id="component-list-filters__owner"
-                    className="form-control"
-                    placeholder="Owner"
-                    value={filters.owner || ''}
-                    onChange={onOwnerChange}
-                />
-            </div>
-            <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                <label htmlFor="component-list-filters__system" className="sr-only">
-                    System
-                </label>
-                <input
-                    id="component-list-filters__system"
-                    className="form-control"
-                    placeholder="System"
-                    value={filters.system || ''}
-                    onChange={onSystemChange}
-                />
-            </div>
-            <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                <label htmlFor="component-list-filters__tags" className="sr-only">
-                    Tags
-                </label>
-                <input
-                    id="component-list-filters__tags"
-                    className="form-control"
-                    placeholder="Tags"
-                    value={filters.tags || ''}
-                    onChange={onTagsChange}
-                />
-            </div>
+            {size === 'lg' && (
+                <>
+                    <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
+                        <label htmlFor="component-list-filters__owner" className="sr-only">
+                            Owner
+                        </label>
+                        <input
+                            id="component-list-filters__owner"
+                            className={classNames('form-control', sizeStyles.input)}
+                            placeholder="Owner"
+                            value={filters.owner || ''}
+                            onChange={onOwnerChange}
+                        />
+                    </div>
+                    <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
+                        <label htmlFor="component-list-filters__system" className="sr-only">
+                            System
+                        </label>
+                        <input
+                            id="component-list-filters__system"
+                            className={classNames('form-control', sizeStyles.input)}
+                            placeholder="System"
+                            value={filters.system || ''}
+                            onChange={onSystemChange}
+                        />
+                    </div>
+                    <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
+                        <label htmlFor="component-list-filters__tags" className="sr-only">
+                            Tags
+                        </label>
+                        <input
+                            id="component-list-filters__tags"
+                            className={classNames('form-control', sizeStyles.input)}
+                            placeholder="Tags"
+                            value={filters.tags || ''}
+                            onChange={onTagsChange}
+                        />
+                    </div>
+                </>
+            )}
             <button type="submit" className="sr-only">
                 Filter
             </button>

@@ -67,7 +67,7 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFilte
                 {error && <ConnectionError errors={[error.message]} />}
                 <ConnectionList className={classNames('list-group list-group-flush', styles.list)}>
                     {connection?.nodes?.map(node => (
-                        <CatalogComponent key={node.id} node={node} />
+                        <CatalogComponent key={node.id} node={node} size={size} />
                     ))}
                 </ConnectionList>
                 {loading && <ConnectionLoading />}
@@ -90,15 +90,18 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFilte
     )
 }
 
-const CatalogComponent: React.FunctionComponent<{ node: CatalogComponentFields }> = ({ node }) => (
+const CatalogComponent: React.FunctionComponent<{ node: CatalogComponentFields; size: 'sm' | 'lg' }> = ({
+    node,
+    size,
+}) => (
     <li className="list-group-item d-flex">
-        <h3 className="h6 font-weight-bold d-flex align-items-center mb-0">
-            <Link to={`/catalog/${node.id}`}>
-                <CatalogComponentIcon node={node} className="icon-inline text-muted mr-2" /> {node.name}
+        <h3 className="h6 font-weight-bold mb-0">
+            <Link to={`/catalog/${node.id}`} className="d-flex align-items-center">
+                <CatalogComponentIcon node={node} className="icon-inline text-muted mr-1" /> {node.name}
             </Link>
         </h3>
         <div className="flex-1" />
-        {node.sourceLocation && <Link to={node.sourceLocation.url}>Source</Link>}
+        {size === 'lg' && node.sourceLocation && <Link to={node.sourceLocation.url}>Source</Link>}
     </li>
 )
 

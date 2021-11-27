@@ -1,9 +1,11 @@
 import classNames from 'classnames'
 import React, { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { Button } from '@sourcegraph/wildcard'
 
+import { CatalogIcon } from '../../../../../../catalog'
 import { Badge } from '../../../../../../components/Badge'
 import { FeedbackPromptContent } from '../../../../../../nav/Feedback/FeedbackPrompt'
 import { Popover } from '../../../../../insights/components/popover/Popover'
@@ -31,8 +33,12 @@ const SidebarContent: React.FunctionComponent<SidebarProps & { className?: strin
     onFiltersChange,
     className,
 }) => (
-    <div className={classNames('p-2 d-flex flex-column', className)}>
-        <h2 className="h5 font-weight-bold">Catalog</h2>
+    <div className={classNames('d-flex flex-column', className)}>
+        <h2 className="h5 font-weight-bold pt-2 px-2 pb-0 mb-0">
+            <Link to="/catalog" className="d-flex align-items-center text-body">
+                <CatalogIcon className="icon-inline mr-1" /> Catalog
+            </Link>
+        </h2>
         <ComponentList filters={filters} onFiltersChange={onFiltersChange} className="flex-1" size="sm" />
         <div className="flex-1" />
         <FeedbackPopoverButton />
