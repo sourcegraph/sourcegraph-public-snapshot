@@ -6,7 +6,11 @@ extend type Query {
 }
 
 type Catalog {
-    components(query: String): CatalogComponentConnection!
+  components(
+    query: String
+    first: Int
+    after: String
+  ): CatalogComponentConnection!
 }
 
 type CatalogComponentConnection {
@@ -15,8 +19,19 @@ type CatalogComponentConnection {
     pageInfo: PageInfo!
 }
 
+enum CatalogComponentKind {
+    SERVICE
+    WEBSITE
+    LIBRARY
+    OTHER
+}
+
 type CatalogComponent implements Node {
     id: ID!
+    kind: CatalogComponentKind!
     name: String!
-    xyz123: String!
+    owner: Person
+    system: String
+    tags: [String!]!
+    sourceLocation: TreeEntry
 }

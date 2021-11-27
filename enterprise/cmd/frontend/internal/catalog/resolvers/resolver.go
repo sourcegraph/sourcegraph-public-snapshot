@@ -5,12 +5,13 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func NewRootResolver(db database.DB) graphqlbackend.CatalogRootResolver {
+func NewRootResolver(db database.DB) gql.CatalogRootResolver {
 	return &rootResolver{db: db}
 }
 
@@ -18,30 +19,55 @@ type rootResolver struct {
 	db database.DB
 }
 
-func (r *rootResolver) Catalog(context.Context) (graphqlbackend.CatalogResolver, error) {
-	return &catalogResolver{}, nil
+func (r *rootResolver) Catalog(context.Context) (gql.CatalogResolver, error) {
+	return &catalogResolver{db: r.db}, nil
 }
 
-func (r *rootResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		"CatalogComponent": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
+	return map[string]gql.NodeByIDFunc{
+		"CatalogComponent": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			panic("TODO(sqs)")
 		},
 	}
 }
 
-type catalogResolver struct{}
+type catalogResolver struct {
+	db database.DB
+}
 
-func (r *catalogResolver) Components(ctx context.Context, args *graphqlbackend.CatalogComponentsArgs) (graphqlbackend.CatalogComponentConnectionResolver, error) {
+func (r *catalogResolver) Components(ctx context.Context, args *gql.CatalogComponentsArgs) (gql.CatalogComponentConnectionResolver, error) {
+	const (
+		sourceRepo   = "github.com/sourcegraph/sourcegraph"
+		sourceCommit = "2ada4911722e2c812cc4f1bbfb6d5d1756891392"
+	)
 	components := []*catalogComponentResolver{
-		{name: "aaa"},
-		{name: "bbb"},
-		{name: "ccc"},
+		{
+			kind:         "SERVICE",
+			name:         "frontend",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/frontend/main.go",
+		},
+		{
+			kind:         "SERVICE",
+			name:         "gitserver",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/gitserver/main.go",
+		},
+		{
+			kind:         "SERVICE",
+			name:         "repo-updater",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/repo-updater/main.go",
+		},
 	}
 
-	var keep []graphqlbackend.CatalogComponentResolver
+	var keep []gql.CatalogComponentResolver
 	for _, c := range components {
 		if args.Query == nil || strings.Contains(c.name, *args.Query) {
+			c.db = r.db
 			keep = append(keep, c)
 		}
 	}
@@ -52,10 +78,10 @@ func (r *catalogResolver) Components(ctx context.Context, args *graphqlbackend.C
 }
 
 type catalogComponentConnectionResolver struct {
-	components []graphqlbackend.CatalogComponentResolver
+	components []gql.CatalogComponentResolver
 }
 
-func (r *catalogComponentConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CatalogComponentResolver, error) {
+func (r *catalogComponentConnectionResolver) Nodes(ctx context.Context) ([]gql.CatalogComponentResolver, error) {
 	return r.components, nil
 }
 
@@ -68,17 +94,48 @@ func (r *catalogComponentConnectionResolver) PageInfo(ctx context.Context) (*gra
 }
 
 type catalogComponentResolver struct {
-	name string
+	kind   gql.CatalogComponentKind
+	name   string
+	system *string
+
+	sourceRepo, sourceCommit, sourcePath string
+
+	db database.DB
 }
 
 func (r *catalogComponentResolver) ID() graphql.ID {
 	return graphql.ID(r.name) // TODO(sqs)
 }
 
+func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {
+	return r.kind
+}
+
 func (r *catalogComponentResolver) Name() string {
 	return r.name
 }
 
-func (r *catalogComponentResolver) Xyz123() string {
-	return r.name
+func (r *catalogComponentResolver) Owner(context.Context) (*gql.PersonResolver, error) {
+	return nil, nil
+}
+
+func (r *catalogComponentResolver) System() *string {
+	return r.system
+}
+
+func (r *catalogComponentResolver) Tags() []string {
+	return []string{"my-tag1", "my-tag2"}
+}
+
+func (r *catalogComponentResolver) SourceLocation(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
+	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(r.sourceRepo))
+	if err != nil {
+		return nil, err
+	}
+
+	repoResolver := gql.NewRepositoryResolver(r.db, repo)
+	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil)
+	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(r.sourcePath, false)), nil
 }

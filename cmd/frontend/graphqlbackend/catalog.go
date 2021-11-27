@@ -24,6 +24,8 @@ type CatalogResolver interface {
 
 type CatalogComponentsArgs struct {
 	Query *string
+	First *int32
+	After *string
 }
 
 type CatalogComponentConnectionResolver interface {
@@ -34,6 +36,12 @@ type CatalogComponentConnectionResolver interface {
 
 type CatalogComponentResolver interface {
 	ID() graphql.ID
+	Kind() CatalogComponentKind
 	Name() string
-	Xyz123() string
+	Owner(context.Context) (*PersonResolver, error)
+	System() *string
+	Tags() []string
+	SourceLocation(context.Context) (*GitTreeEntryResolver, error)
 }
+
+type CatalogComponentKind string

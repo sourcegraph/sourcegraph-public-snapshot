@@ -3,7 +3,10 @@ import { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 export interface CatalogComponentFilters {
-    query: string
+    query?: string
+    owner?: string
+    system?: string
+    tags?: string[]
 }
 
 export interface CatalogComponentFiltersProps {
@@ -35,7 +38,10 @@ export const useCatalogComponentFilters = (): CatalogComponentFiltersProps => {
 function catalogComponentFiltersFromLocation(locationSearch: H.Location['search']): CatalogComponentFilters {
     const parameters = new URLSearchParams(locationSearch)
     return {
-        query: parameters.get('q') || '',
+        query: parameters.get('q') || undefined,
+        owner: parameters.get('owner') || undefined,
+        system: parameters.get('system') || undefined,
+        tags: parameters.get('tags')?.split(','),
     }
 }
 
@@ -46,10 +52,28 @@ function urlSearchParamsFromCatalogComponentFilters(
 ): URLSearchParams {
     const parameters = new URLSearchParams(base)
 
-    if (filters.query !== '') {
+    if (filters.query) {
         parameters.set('q', filters.query)
     } else {
         parameters.delete('q')
+    }
+
+    if (filters.owner) {
+        parameters.set('owner', filters.owner)
+    } else {
+        parameters.delete('owner')
+    }
+
+    if (filters.system) {
+        parameters.set('system', filters.system)
+    } else {
+        parameters.delete('system')
+    }
+
+    if (filters.tags) {
+        parameters.set('tags', filters.tags.join(','))
+    } else {
+        parameters.delete('tags')
     }
 
     return parameters
