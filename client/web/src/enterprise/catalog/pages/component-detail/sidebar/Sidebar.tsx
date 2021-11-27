@@ -44,7 +44,7 @@ const FeedbackPopoverButton: React.FunctionComponent = () => {
     const [isVisible, setVisibility] = useState(false)
 
     return (
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center px-2">
             <Badge status="wip" className="text-uppercase mr-2" />
             <Button ref={buttonReference} variant="link" size="sm">
                 Share feedback
@@ -57,8 +57,8 @@ const FeedbackPopoverButton: React.FunctionComponent = () => {
             >
                 <FeedbackPromptContent
                     closePrompt={() => setVisibility(false)}
-                    textPrefix="Code Insights: "
-                    routeMatch="/insights/dashboards"
+                    textPrefix="Catalog: "
+                    routeMatch="/catalog"
                 />
             </Popover>
         </div>

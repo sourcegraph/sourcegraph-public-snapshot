@@ -82,7 +82,7 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                     size="sm"
                 />
             </Sidebar>
-            <Page className="py-0 pt-2">
+            <Page>
                 <ComponentDetailContent catalogComponent={catalogComponent} telemetryService={telemetryService} />
             </Page>
         </>

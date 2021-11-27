@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import ApplicationCogOutlineIcon from 'mdi-react/ApplicationCogOutlineIcon'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -21,6 +20,7 @@ import {
     CatalogComponentsVariables,
     CatalogComponentFields,
 } from '../../../../../../graphql-operations'
+import { CatalogComponentIcon } from '../../../../components/CatalogComponentIcon'
 import { CATALOG_COMPONENTS_GQL } from '../../../../core/backend/gql-api/gql/CatalogComponents'
 import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
 
@@ -107,7 +107,7 @@ export const ComponentList: React.FunctionComponent<Props> = ({
 
 const CatalogComponent: React.FunctionComponent<{
     node: CatalogComponentFields
-    selected: boolean
+    selected?: boolean
     size: 'sm' | 'lg'
 }> = ({ node, selected, size }) => (
     <li className={classNames('list-group-item d-flex', { active: selected })}>
@@ -120,7 +120,7 @@ const CatalogComponent: React.FunctionComponent<{
                 })}
             >
                 <CatalogComponentIcon
-                    node={node}
+                    catalogComponent={node}
                     className={classNames('icon-inline mr-1', { 'text-muted': !selected })}
                 />{' '}
                 {node.name}
@@ -130,8 +130,3 @@ const CatalogComponent: React.FunctionComponent<{
         {size === 'lg' && node.sourceLocation && <Link to={node.sourceLocation.url}>Source</Link>}
     </li>
 )
-
-const CatalogComponentIcon: React.FunctionComponent<{ node: CatalogComponentFields; className?: string }> = ({
-    node: { kind },
-    className,
-}) => <ApplicationCogOutlineIcon className={className} />
