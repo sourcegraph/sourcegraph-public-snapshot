@@ -12,5 +12,5 @@ type CatalogRootResolver interface {
 }
 
 type CatalogResolver interface {
-	Foo() []string
+	Foo() ([]string, error)
 }

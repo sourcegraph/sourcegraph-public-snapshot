@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
@@ -56,6 +57,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"dotcom":         dotcom.Init,
 	"searchcontexts": searchcontexts.Init,
 	"enterprise":     orgrepos.Init,
+	"catalog":        catalog.Init,
 }
 
 func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
