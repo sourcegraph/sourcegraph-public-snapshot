@@ -1,0 +1,10 @@
+extend type Query {
+    """
+    [WIP]
+    """
+    catalog: Catalog!
+}
+
+type Catalog {
+    foo: [String!]!
+}

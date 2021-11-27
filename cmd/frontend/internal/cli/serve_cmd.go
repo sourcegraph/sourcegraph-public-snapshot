@@ -280,6 +280,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 		enterprise.DotcomResolver,
 		enterprise.SearchContextsResolver,
 		enterprise.OrgRepositoryResolver,
+		enterprise.CatalogRootResolver,
 	)
 	if err != nil {
 		return err

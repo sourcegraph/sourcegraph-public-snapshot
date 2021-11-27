@@ -353,6 +353,7 @@ func NewSchema(
 	dotcom DotcomRootResolver,
 	searchContexts SearchContextsResolver,
 	orgRepositoryResolver OrgRepositoryResolver,
+	catalogRootResolver CatalogRootResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -432,6 +433,12 @@ func NewSchema(
 		schemas = append(schemas, orgSchema)
 	}
 
+	if catalogRootResolver != nil {
+		EnterpriseResolvers.catalogRootResolver = catalogRootResolver
+		resolver.CatalogRootResolver = catalogRootResolver
+		schemas = append(schemas, catalogSchema)
+	}
+
 	schemas = append(schemas, computeSchema)
 
 	return graphql.ParseSchema(
@@ -456,6 +463,7 @@ type schemaResolver struct {
 	DotcomRootResolver
 	SearchContextsResolver
 	OrgRepositoryResolver
+	CatalogRootResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -532,6 +540,7 @@ var EnterpriseResolvers = struct {
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
+	catalogRootResolver    CatalogRootResolver
 }{}
 
 // DEPRECATED

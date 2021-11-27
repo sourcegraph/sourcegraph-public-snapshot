@@ -47,7 +47,7 @@ func TestOrgRepositories(t *testing.T) {
 			Schema: func() *graphql.Schema {
 				t.Helper()
 
-				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db))
+				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
 				if parseSchemaErr != nil {
 					t.Fatal(parseSchemaErr)
 				}

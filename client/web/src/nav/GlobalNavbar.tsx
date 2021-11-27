@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import ClockFastIcon from 'mdi-react/ClockFastIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import OrderBoolAscendingVariantIcon from 'mdi-react/OrderBoolAscendingVariantIcon'
@@ -35,6 +34,7 @@ import { NavDropdown } from '@sourcegraph/wildcard/src/components/NavBar/NavDrop
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
+import { CatalogIcon, CatalogProps, isCatalogEnabled } from '../catalog'
 import { CodeMonitoringProps } from '../code-monitoring'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { CodeInsightsProps } from '../insights/types'
@@ -81,6 +81,7 @@ interface Props
         CodeMonitoringProps,
         CodeInsightsProps,
         OnboardingTourProps,
+        CatalogProps,
         BatchChangesProps {
     history: H.History
     location: H.Location<{ query: string }>
@@ -124,6 +125,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
+    catalogEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -189,6 +191,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     // isCodeInsightsEnabled selector controls appearance based on user settings flags
     const codeInsights = props.authenticatedUser && codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
+    const catalog = catalogEnabled && isCatalogEnabled(props.settingsCascade)
+
     const searchNavBar = (
         <SearchNavbarItem
             {...props}
@@ -233,9 +237,11 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                             },
                         ].filter(isDefined)}
                     />
-                    <NavItem icon={BookOpenBlankVariantIcon}>
-                        <NavLink to="/extensions">Catalog</NavLink>
-                    </NavItem>
+                    {catalog && (
+                        <NavItem icon={CatalogIcon}>
+                            <NavLink to="/catalog">Catalog</NavLink>
+                        </NavItem>
+                    )}
                     {codeInsights && (
                         <NavItem icon={ViewDashboardOutlineIcon}>
                             <NavLink to="/insights/dashboards/all">Dashboards</NavLink>

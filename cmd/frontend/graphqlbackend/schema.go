@@ -48,3 +48,7 @@ var searchContextsSchema string
 // organization repositories.
 //go:embed org.graphql
 var orgSchema string
+
+// catalogSchema is the Catalog raw graqhql schema.
+//go:embed catalog.graphql
+var catalogSchema string
