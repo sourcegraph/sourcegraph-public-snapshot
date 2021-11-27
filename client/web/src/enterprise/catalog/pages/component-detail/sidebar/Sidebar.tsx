@@ -5,20 +5,18 @@ import { Link } from 'react-router-dom'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { Button } from '@sourcegraph/wildcard'
 
-import { CatalogIcon } from '../../../../../../catalog'
-import { Badge } from '../../../../../../components/Badge'
-import { FeedbackPromptContent } from '../../../../../../nav/Feedback/FeedbackPrompt'
-import { Popover } from '../../../../../insights/components/popover/Popover'
-import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
-import { ComponentList } from '../component-list/ComponentList'
+import { CatalogIcon } from '../../../../../catalog'
+import { Badge } from '../../../../../components/Badge'
+import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
+import { Popover } from '../../../../insights/components/popover/Popover'
 
 import styles from './Sidebar.module.scss'
 
 const SIZE_STORAGE_KEY = 'catalog-sidebar-size'
 
-interface SidebarProps extends CatalogComponentFiltersProps {}
+interface Props {}
 
-export const Sidebar: React.FunctionComponent<SidebarProps> = props => (
+export const Sidebar: React.FunctionComponent<Props> = props => (
     <Resizable
         defaultSize={200}
         handlePosition="right"
@@ -28,18 +26,14 @@ export const Sidebar: React.FunctionComponent<SidebarProps> = props => (
     />
 )
 
-const SidebarContent: React.FunctionComponent<SidebarProps & { className?: string }> = ({
-    filters,
-    onFiltersChange,
-    className,
-}) => (
+const SidebarContent: React.FunctionComponent<Props & { className?: string }> = ({ className, children }) => (
     <div className={classNames('d-flex flex-column', className)}>
         <h2 className="h5 font-weight-bold pt-2 px-2 pb-0 mb-0">
             <Link to="/catalog" className="d-flex align-items-center text-body">
                 <CatalogIcon className="icon-inline mr-1" /> Catalog
             </Link>
         </h2>
-        <ComponentList filters={filters} onFiltersChange={onFiltersChange} className="flex-1" size="sm" />
+        {children}
         <div className="flex-1" />
         <FeedbackPopoverButton />
     </div>

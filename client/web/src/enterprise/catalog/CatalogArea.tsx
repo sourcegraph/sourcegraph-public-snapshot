@@ -1,7 +1,7 @@
 import { useApolloClient } from '@apollo/client'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useMemo } from 'react'
-import { Switch, Route, useRouteMatch } from 'react-router'
+import { Switch, Route, useRouteMatch, RouteComponentProps } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -60,12 +60,15 @@ export const CatalogArea = withAuthenticatedUser<CatalogRouterProps>(props => {
                         />
                     </Route>
                     <Route path={`${match.url}/:id`}>
-                        <ComponentDetailPage
-                            authenticatedUser={authenticatedUser}
-                            filters={filters}
-                            onFiltersChange={onFiltersChange}
-                            telemetryService={telemetryService}
-                        />
+                        {(props: RouteComponentProps<{ id: string }>) => (
+                            <ComponentDetailPage
+                                catalogComponentID={props.match.params.id}
+                                authenticatedUser={authenticatedUser}
+                                filters={filters}
+                                onFiltersChange={onFiltersChange}
+                                telemetryService={telemetryService}
+                            />
+                        )}
                     </Route>
                     <Route component={NotFoundPage} key="hardcoded-key" />
                 </Switch>
