@@ -3,13 +3,12 @@ import React from 'react'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
-import { ComponentList } from '../component-list/ComponentList'
 
-export interface OverviewContentProps extends TelemetryProps, Pick<CatalogComponentFiltersProps, 'filters'> {
+export interface OverviewContentProps extends TelemetryProps, CatalogComponentFiltersProps {
     // TODO(sqs): what scope of catalog (eg repo) or global
 }
 
-export const OverviewContent: React.FunctionComponent<OverviewContentProps> = ({ filters }) => (
+export const OverviewContent: React.FunctionComponent<OverviewContentProps> = ({ filters, onFiltersChange }) => (
     /* const { listComponents } = useContext(CatalogBackendContext)
     const components = useObservable(
         useMemo(() => listComponents({ query: filters.query }), [filters.query, listComponents])
@@ -20,5 +19,5 @@ export const OverviewContent: React.FunctionComponent<OverviewContentProps> = ({
     }
     */
 
-    <ComponentList filters={filters} className="flex-1" />
+    <>asdf{/* <ComponentList filters={filters} onFiltersChange={onFiltersChange} className="flex-1" /> */}</>
 )

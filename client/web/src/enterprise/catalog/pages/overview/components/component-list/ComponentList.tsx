@@ -24,14 +24,15 @@ import { CATALOG_COMPONENTS_GQL } from '../../../../core/backend/gql-api/gql/Cat
 import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
 
 import styles from './ComponentList.module.scss'
+import { ComponentListFilters } from './ComponentListFilters'
 
-interface Props extends Pick<CatalogComponentFiltersProps, 'filters'> {
+interface Props extends CatalogComponentFiltersProps {
     className?: string
 }
 
 const FIRST = 20
 
-export const ComponentList: React.FunctionComponent<Props> = ({ filters, className }) => {
+export const ComponentList: React.FunctionComponent<Props> = ({ filters, onFiltersChange, className }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         CatalogComponentsResult,
         CatalogComponentsVariables,
@@ -54,29 +55,32 @@ export const ComponentList: React.FunctionComponent<Props> = ({ filters, classNa
     })
 
     return (
-        <ConnectionContainer className={className}>
-            {error && <ConnectionError errors={[error.message]} />}
-            <ConnectionList className={classNames('list-group list-group-flush border-bottom', styles.list)}>
-                {connection?.nodes?.map(node => (
-                    <CatalogComponent key={node.id} node={node} />
-                ))}
-            </ConnectionList>
-            {loading && <ConnectionLoading />}
-            {connection && (
-                <SummaryContainer centered={true}>
-                    <ConnectionSummary
-                        noSummaryIfAllNodesVisible={true}
-                        first={FIRST}
-                        connection={connection}
-                        noun="component"
-                        pluralNoun="components"
-                        hasNextPage={hasNextPage}
-                        emptyElement={<p>No components found</p>}
-                    />
-                    {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                </SummaryContainer>
-            )}
-        </ConnectionContainer>
+        <div>
+            <ComponentListFilters filters={filters} onFiltersChange={onFiltersChange} size="sm" />
+            <ConnectionContainer className={className}>
+                {error && <ConnectionError errors={[error.message]} />}
+                <ConnectionList className={classNames('list-group list-group-flush border-bottom', styles.list)}>
+                    {connection?.nodes?.map(node => (
+                        <CatalogComponent key={node.id} node={node} />
+                    ))}
+                </ConnectionList>
+                {loading && <ConnectionLoading />}
+                {connection && (
+                    <SummaryContainer centered={true}>
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            first={FIRST}
+                            connection={connection}
+                            noun="component"
+                            pluralNoun="components"
+                            hasNextPage={hasNextPage}
+                            emptyElement={<p>No components found</p>}
+                        />
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
+        </div>
     )
 }
 

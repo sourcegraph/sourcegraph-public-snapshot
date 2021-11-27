@@ -28,7 +28,7 @@ export const OverviewPage: React.FunctionComponent<OverviewPageProps> = ({ telem
     return (
         <div className={styles.container}>
             <Sidebar filters={filters} onFiltersChange={onFiltersChange} />
-            <OverviewContent filters={filters} telemetryService={telemetryService} />
+            <OverviewContent filters={filters} onFiltersChange={onFiltersChange} telemetryService={telemetryService} />
         </div>
     )
 }
