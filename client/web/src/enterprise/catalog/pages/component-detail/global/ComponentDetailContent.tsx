@@ -29,11 +29,11 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                     <strong>Lifecycle</strong> production
                 </li>
             </ul>
+            <ComponentSources catalogComponent={catalogComponent} className="" />
         </header>
         <div className="py-4 border-top">
             <h2>Implementation</h2>
             <div className={styles.grid}>
-                <ComponentSources catalogComponent={catalogComponent} className="" />
                 {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
                 <ComponentAuthors
                     catalogComponent={catalogComponent}
@@ -50,10 +50,6 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             </div>
         </div>
         <div className={styles.grid}>
-            <section className="card card-body">
-                <h3>Authors</h3>
-                TODO(sqs): show blame %s and last commit
-            </section>
             <section className="card card-body">
                 <h3>Usage</h3>
             </section>

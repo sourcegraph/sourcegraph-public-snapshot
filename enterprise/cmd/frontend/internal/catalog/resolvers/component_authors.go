@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
-	"log"
 	"os"
 	pathpkg "path"
 	"sort"
@@ -180,10 +179,10 @@ func getBlameAuthorsCached(ctx context.Context, repoName api.RepoName, commit ap
 
 	v, ok := get(key)
 	if ok {
-		log.Println("HIT")
+		// log.Println("HIT")
 		return v.AuthorsByEmail, v.TotalLineCount, nil
 	}
-	log.Println("MISS")
+	// log.Println("MISS")
 
 	authorsByEmail, totalLineCount, err = getBlameAuthors(ctx, repoName, commit, path)
 	if err == nil {

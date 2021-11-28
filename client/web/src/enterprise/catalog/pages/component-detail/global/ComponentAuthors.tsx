@@ -43,7 +43,7 @@ export const ComponentAuthors: React.FunctionComponent<Props> = ({
                             title={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
                         >
                             {author.authoredLineProportion >= 0.01
-                                ? `${(author.authoredLineProportion * 100).toFixed(1)}%`
+                                ? `${(author.authoredLineProportion * 100).toFixed(0)}%`
                                 : '<1%'}
                         </div>
                         <div className={classNames('text-muted', styles.lastCommit)}>

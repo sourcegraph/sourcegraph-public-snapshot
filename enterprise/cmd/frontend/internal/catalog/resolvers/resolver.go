@@ -66,6 +66,68 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceCommit: sourceCommit,
 			sourcePath:   "cmd/repo-updater",
 		},
+		{
+			kind:         "SERVICE",
+			name:         "executor",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/executor",
+		},
+		{
+			kind:         "SERVICE",
+			name:         "precise-code-intel-worker",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/precise-code-intel-worker",
+		},
+
+		{
+			kind:         "SERVICE",
+			name:         "github-proxy",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/github-proxy",
+		},
+
+		{
+			kind:         "SERVICE",
+			name:         "query-runner",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/query-runner",
+		},
+
+		{
+			kind:         "SERVICE",
+			name:         "worker",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/worker",
+		},
+
+		{
+			kind:         "SERVICE",
+			name:         "server",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/server",
+		},
+
+		{
+			kind:         "SERVICE",
+			name:         "symbols",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/symbols",
+		},
+
+		{
+			kind:         "SERVICE",
+			name:         "sitemap",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePath:   "cmd/sitemap",
+		},
 	}
 	for _, c := range components {
 		c.db = db
