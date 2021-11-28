@@ -71,14 +71,14 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			name:         "executor",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/executor",
+			sourcePath:   "enterprise/cmd/executor",
 		},
 		{
 			kind:         "SERVICE",
 			name:         "precise-code-intel-worker",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/precise-code-intel-worker",
+			sourcePath:   "enterprise/cmd/precise-code-intel-worker",
 		},
 
 		{

@@ -1,5 +1,17 @@
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(36rem, 1fr));
     grid-gap: 1rem;
+    align-items: start;
+}
+
+.card-header {
+}
+.card-title {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+.card-body {
+    overflow: auto;
+    max-height: 24rem;
 }

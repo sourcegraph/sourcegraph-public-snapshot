@@ -15,6 +15,7 @@ interface Props {
     className?: string
     headerClassName?: string
     titleClassName?: string
+    bodyClassName?: string
 }
 
 export const ComponentAuthors: React.FunctionComponent<Props> = ({
@@ -22,13 +23,14 @@ export const ComponentAuthors: React.FunctionComponent<Props> = ({
     className,
     headerClassName,
     titleClassName,
+    bodyClassName,
 }) =>
     authors && authors.length > 0 ? (
         <div className={className}>
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Authors</h3>
             </header>
-            <ol className="list-group list-group-horizontal overflow-auto">
+            <ol className={classNames('list-group list-group-horizontal', bodyClassName)}>
                 {authors.map(author => (
                     <li
                         key={author.person.email}

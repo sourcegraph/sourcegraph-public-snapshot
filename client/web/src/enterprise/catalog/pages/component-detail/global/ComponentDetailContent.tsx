@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -29,24 +30,28 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                     <strong>Lifecycle</strong> production
                 </li>
             </ul>
-            <ComponentSources catalogComponent={catalogComponent} className="" />
         </header>
         <div className="py-4 border-top">
             <h2>Implementation</h2>
             <div className={styles.grid}>
                 {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
-                <ComponentAuthors
-                    catalogComponent={catalogComponent}
-                    className="card"
-                    headerClassName="card-header"
-                    titleClassName="mb-0"
-                />
-                <ComponentCommits
-                    catalogComponent={catalogComponent}
-                    className="card"
-                    headerClassName="card-header"
-                    titleClassName="mb-0"
-                />
+                <ComponentSources catalogComponent={catalogComponent} className="" />
+                <div>
+                    <ComponentAuthors
+                        catalogComponent={catalogComponent}
+                        className="card mb-3"
+                        headerClassName={classNames('card-header', styles.cardHeader)}
+                        titleClassName={classNames('card-title', styles.cardTitle)}
+                        bodyClassName={styles.cardBody}
+                    />
+                    <ComponentCommits
+                        catalogComponent={catalogComponent}
+                        className="card"
+                        headerClassName={classNames('card-header', styles.cardHeader)}
+                        titleClassName={classNames('card-title', styles.cardTitle)}
+                        bodyClassName={styles.cardBody}
+                    />
+                </div>
             </div>
         </div>
         <div className={styles.grid}>

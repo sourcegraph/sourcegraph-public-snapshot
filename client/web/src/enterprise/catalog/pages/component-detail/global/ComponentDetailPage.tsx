@@ -8,7 +8,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
-import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CatalogComponentByIDResult, CatalogComponentByIDVariables } from '../../../../../graphql-operations'
 import { CatalogComponentFiltersProps } from '../../../core/component-filters'
@@ -82,9 +81,9 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                     size="sm"
                 />
             </Sidebar>
-            <Page className="overflow-auto">
+            <div className="p-2 overflow-auto">
                 <ComponentDetailContent catalogComponent={catalogComponent} telemetryService={telemetryService} />
-            </Page>
+            </div>
         </>
     )
 }
