@@ -5,7 +5,7 @@ import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
 import { CatalogComponentAuthorsFields } from '../../../../../graphql-operations'
-import { formatPersonName, PersonLink } from '../../../../../person/PersonLink'
+import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 
 import styles from './ComponentAuthors.module.scss'
@@ -35,18 +35,16 @@ export const ComponentAuthors: React.FunctionComponent<Props> = ({
                         className={classNames('list-group-item text-center pt-2', styles.author)}
                     >
                         <div>
-                            <UserAvatar
-                                className="icon-inline"
-                                user={author.person}
-                                data-tooltip={formatPersonName(author.person)}
-                            />{' '}
+                            <UserAvatar className="icon-inline" user={author.person} />
                         </div>
                         <PersonLink person={author.person} className="text-muted small text-truncate d-block" />
                         <div
                             className={classNames(styles.percent)}
-                            data-tooltip={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
+                            title={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
                         >
-                            {(author.authoredLineProportion * 100).toFixed(1)}%
+                            {author.authoredLineProportion >= 0.01
+                                ? `${(author.authoredLineProportion * 100).toFixed(1)}%`
+                                : '<1%'}
                         </div>
                         <div className={classNames('text-muted', styles.lastCommit)}>
                             <Timestamp date={author.lastCommit.author.date} noAbout={true} />

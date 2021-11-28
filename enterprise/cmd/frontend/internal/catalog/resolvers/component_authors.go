@@ -1,7 +1,16 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/gob"
+	"encoding/hex"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	pathpkg "path"
 	"sort"
 	"time"
 
@@ -18,7 +27,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 	}
 
 	// TODO(sqs): HACK make this go faster in local dev
-	if max := 7; len(entries) > max {
+	if max := 100; len(entries) > max {
 		entries = entries[:max]
 	}
 
@@ -29,7 +38,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 			continue
 		}
 
-		authorsByEmail, lineCount, err := getBlameAuthors(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
+		authorsByEmail, lineCount, err := getBlameAuthorsCached(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
 		if err != nil {
 			return nil, err
 		}
@@ -40,11 +49,11 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 			if ca == nil {
 				all[email] = a
 			} else {
-				ca.lineCount += a.lineCount
-				if a.lastCommitDate.After(ca.lastCommitDate) {
-					ca.name = a.name // use latest name in case it changed over time
-					ca.lastCommit = a.lastCommit
-					ca.lastCommitDate = a.lastCommitDate
+				ca.LineCount += a.LineCount
+				if a.LastCommitDate.After(ca.LastCommitDate) {
+					ca.Name = a.Name // use latest name in case it changed over time
+					ca.LastCommit = a.LastCommit
+					ca.LastCommitDate = a.LastCommitDate
 				}
 			}
 		}
@@ -55,7 +64,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 		edges = append(edges, &catalogComponentAuthorEdgeResolver{
 			db:             r.db,
 			component:      r,
-			blameAuthor:    a,
+			data:           a,
 			totalLineCount: totalLineCount,
 		})
 	}
@@ -68,10 +77,10 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 }
 
 type blameAuthor struct {
-	name, email    string
-	lineCount      int
-	lastCommit     api.CommitID
-	lastCommitDate time.Time
+	Name, Email    string
+	LineCount      int
+	LastCommit     api.CommitID
+	LastCommitDate time.Time
 }
 
 // TODO(sqs): the "reduce" step is duplicated in this getBlameAuthors func body and above in the
@@ -89,30 +98,86 @@ func getBlameAuthors(ctx context.Context, repoName api.RepoName, commit api.Comm
 		a := authorsByEmail[hunk.Author.Email]
 		if a == nil {
 			a = &blameAuthor{
-				name:  hunk.Author.Name,
-				email: hunk.Author.Email,
+				Name:  hunk.Author.Name,
+				Email: hunk.Author.Email,
 			}
 			authorsByEmail[hunk.Author.Email] = a
 		}
 
 		lineCount := hunk.EndLine - hunk.StartLine
 		totalLineCount += lineCount
-		a.lineCount += lineCount
+		a.LineCount += lineCount
 
-		if hunk.Author.Date.After(a.lastCommitDate) {
-			a.name = hunk.Author.Name // use latest name in case it changed over time
-			a.lastCommit = hunk.CommitID
-			a.lastCommitDate = hunk.Author.Date
+		if hunk.Author.Date.After(a.LastCommitDate) {
+			a.Name = hunk.Author.Name // use latest name in case it changed over time
+			a.LastCommit = hunk.CommitID
+			a.LastCommitDate = hunk.Author.Date
 		}
 	}
 
 	return authorsByEmail, totalLineCount, nil
 }
 
+// TODO(sqs): HACK SECURITY this bypasses repo perms and is just a hack for perf
+func getBlameAuthorsCached(ctx context.Context, repoName api.RepoName, commit api.CommitID, path string) (authorsByEmail map[string]*blameAuthor, totalLineCount int, err error) {
+	type cacheEntry struct {
+		AuthorsByEmail map[string]*blameAuthor
+		TotalLineCount int
+	}
+
+	cachePath := func(key string) string {
+		const dir = "/tmp/sqs-wip-cache"
+		_ = os.MkdirAll(dir, 0700)
+
+		h := sha256.Sum256([]byte(key))
+		name := hex.EncodeToString(h[:])
+
+		return pathpkg.Join(dir, name)
+	}
+	get := func(key string) (cacheEntry, bool) {
+		b, err := ioutil.ReadFile(cachePath(key))
+		if os.IsNotExist(err) {
+			return cacheEntry{}, false
+		}
+		if err != nil {
+			panic(err)
+		}
+		var v cacheEntry
+		if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&v); err != nil {
+			panic(err)
+		}
+		return v, true
+	}
+	set := func(key string, data cacheEntry) {
+		var buf bytes.Buffer
+		if err := gob.NewEncoder(&buf).Encode(data); err != nil {
+			panic(err)
+		}
+		if err := ioutil.WriteFile(cachePath(key), buf.Bytes(), 0600); err != nil {
+			panic(err)
+		}
+	}
+
+	key := fmt.Sprintf("%s:%s:%s", repoName, commit, path)
+
+	v, ok := get(key)
+	if ok {
+		log.Println("HIT")
+		return v.AuthorsByEmail, v.TotalLineCount, nil
+	}
+	log.Println("MISS")
+
+	authorsByEmail, totalLineCount, err = getBlameAuthors(ctx, repoName, commit, path)
+	if err == nil {
+		set(key, cacheEntry{AuthorsByEmail: authorsByEmail, TotalLineCount: totalLineCount})
+	}
+	return
+}
+
 type catalogComponentAuthorEdgeResolver struct {
-	db        database.DB
-	component *catalogComponentResolver
-	*blameAuthor
+	db             database.DB
+	component      *catalogComponentResolver
+	data           *blameAuthor
 	totalLineCount int
 }
 
@@ -121,13 +186,15 @@ func (r *catalogComponentAuthorEdgeResolver) Component() gql.CatalogComponentRes
 }
 
 func (r *catalogComponentAuthorEdgeResolver) Person() *gql.PersonResolver {
-	return gql.NewPersonResolver(r.db, r.name, r.email, true)
+	return gql.NewPersonResolver(r.db, r.data.Name, r.data.Email, true)
 }
 
-func (r *catalogComponentAuthorEdgeResolver) AuthoredLineCount() int32 { return int32(r.lineCount) }
+func (r *catalogComponentAuthorEdgeResolver) AuthoredLineCount() int32 {
+	return int32(r.data.LineCount)
+}
 
 func (r *catalogComponentAuthorEdgeResolver) AuthoredLineProportion() float64 {
-	return float64(r.lineCount) / float64(r.totalLineCount)
+	return float64(r.data.LineCount) / float64(r.totalLineCount)
 }
 
 func (r *catalogComponentAuthorEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
@@ -136,5 +203,5 @@ func (r *catalogComponentAuthorEdgeResolver) LastCommit(ctx context.Context) (*g
 		return nil, err
 	}
 
-	return gql.NewGitCommitResolver(r.db, repoResolver, r.lastCommit, nil), nil
+	return gql.NewGitCommitResolver(r.db, repoResolver, r.data.LastCommit, nil), nil
 }

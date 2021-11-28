@@ -41,7 +41,7 @@ export const Timestamp: React.FunctionComponent<Props> = ({
     }, [date, noAbout, now, strict])
 
     return (
-        <span className="timestamp" data-tooltip={date}>
+        <span className="timestamp" title={date}>
             {label}
         </span>
     )
