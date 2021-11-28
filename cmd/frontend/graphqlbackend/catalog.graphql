@@ -6,11 +6,7 @@ extend type Query {
 }
 
 type Catalog {
-  components(
-    query: String
-    first: Int
-    after: String
-  ): CatalogComponentConnection!
+    components(query: String, first: Int, after: String): CatalogComponentConnection!
 }
 
 type CatalogComponentConnection {
@@ -34,4 +30,5 @@ type CatalogComponent implements Node {
     system: String
     tags: [String!]!
     sourceLocation: TreeEntry
+    editCommits(first: Int): GitCommitConnection
 }

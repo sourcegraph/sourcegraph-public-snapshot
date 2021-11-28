@@ -5,6 +5,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { CatalogComponentDetailFields } from '../../../../../graphql-operations'
 import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
 
+import { ComponentChanges } from './ComponentChanges'
 import styles from './ComponentDetailContent.module.scss'
 
 interface Props extends TelemetryProps {
@@ -28,8 +29,15 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             </ul>
         </header>
         <div className={styles.grid}>
+            <ComponentChanges
+                catalogComponent={catalogComponent}
+                className="card"
+                headerClassName="card-header"
+                titleClassName="mb-0"
+            />
             <section className="card card-body">
-                <h3>Changes</h3>
+                <h3>Authors</h3>
+                TODO(sqs): show blame %s and last commit
             </section>
             <section className="card card-body">
                 <h3>Usage</h3>

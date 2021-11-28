@@ -50,21 +50,21 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			name:         "frontend",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/frontend/main.go",
+			sourcePath:   "cmd/frontend",
 		},
 		{
 			kind:         "SERVICE",
 			name:         "gitserver",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/gitserver/main.go",
+			sourcePath:   "cmd/gitserver",
 		},
 		{
 			kind:         "SERVICE",
 			name:         "repo-updater",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/repo-updater/main.go",
+			sourcePath:   "cmd/repo-updater",
 		},
 	}
 	for _, c := range components {
@@ -142,7 +142,7 @@ func (r *catalogComponentResolver) Tags() []string {
 	return []string{"my-tag1", "my-tag2"}
 }
 
-func (r *catalogComponentResolver) SourceLocation(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
+func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {
 	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
 	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(r.sourceRepo))
@@ -150,7 +150,27 @@ func (r *catalogComponentResolver) SourceLocation(ctx context.Context) (*gql.Git
 		return nil, err
 	}
 
-	repoResolver := gql.NewRepositoryResolver(r.db, repo)
+	return gql.NewRepositoryResolver(r.db, repo), nil
+}
+
+func (r *catalogComponentResolver) SourceLocation(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
+	repoResolver, err := r.sourceRepoResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
 	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil)
 	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(r.sourcePath, false)), nil
+}
+
+func (r *catalogComponentResolver) EditCommits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
+	repoResolver, err := r.sourceRepoResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return gql.NewGitCommitConnectionResolver(r.db, repoResolver, gql.GitCommitConnectionArgs{
+		RevisionRange: r.sourceCommit,
+		Path:          &r.sourcePath,
+		First:         args.First,
+	}), nil
 }

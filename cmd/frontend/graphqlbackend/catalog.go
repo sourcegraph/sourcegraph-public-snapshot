@@ -42,6 +42,7 @@ type CatalogComponentResolver interface {
 	System() *string
 	Tags() []string
 	SourceLocation(context.Context) (*GitTreeEntryResolver, error)
+	EditCommits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 }
 
 type CatalogComponentKind string

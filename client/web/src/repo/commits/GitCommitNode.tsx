@@ -47,6 +47,9 @@ export interface GitCommitNodeProps {
 
     /** An optional additional css class name to apply this to commit node message subject */
     messageSubjectClassName?: string
+
+    /** Hide the SHA (compact mode only). */
+    hideSHAInCompactMode?: boolean
 }
 
 /** Displays a Git commit. */
@@ -61,6 +64,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     showSHAAndParentsRow,
     diffMode,
     onHandleDiffMode,
+    hideSHAInCompactMode,
 }) => {
     const [showCommitMessageBody, setShowCommitMessageBody] = useState<boolean>(false)
     const [flashCopiedToClipboardMessage, setFlashCopiedToClipboardMessage] = useState<boolean>(false)
@@ -104,9 +108,12 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 </button>
             )}
             {compact && (
-                <small className={classNames('text-muted', styles.messageTimestamp)}>
-                    <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
-                </small>
+                <>
+                    <div className="flex-grow-1" />
+                    <small className={classNames('text-muted', styles.messageTimestamp)}>
+                        <Timestamp noAbout={true} date={node.committer ? node.committer.date : node.author.date} />
+                    </small>
+                </>
             )}
         </div>
     )
@@ -259,7 +266,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                         <div className="w-100 d-flex justify-content-between align-items-center flex-wrap-reverse">
                             {bylineElement}
                             {messageElement}
-                            <Link to={node.canonicalURL}>{oidElement}</Link>
+                            {!hideSHAInCompactMode && <Link to={node.canonicalURL}>{oidElement}</Link>}
                             {afterElement}
                         </div>
                         {commitMessageBody}
