@@ -24,6 +24,7 @@ type GitCommitConnectionArgs struct {
 	First         *int32
 	Query         *string
 	Path          *string
+	Follow        bool
 	Author        *string
 
 	// after corresponds to --after in the git log / git rev-spec commands. Not to be confused with
@@ -100,6 +101,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			After:        toValue(r.args.After).(string),
 			Skip:         uint(afterCursor),
 			Path:         toValue(r.args.Path).(string),
+			Follow:       r.args.Follow,
 		}, authz.DefaultSubRepoPermsChecker)
 	}
 

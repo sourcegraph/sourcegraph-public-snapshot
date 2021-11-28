@@ -323,6 +323,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query       *string
 	Path        *string
+	Follow      bool
 	After       *string
 	AfterCursor *string
 }) (GitCommitConnectionResolver, error) {
@@ -331,6 +332,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 		First:         args.ConnectionArgs.First,
 		Query:         args.Query,
 		Path:          args.Path,
+		Follow:        args.Follow,
 		After:         args.After,
 		AfterCursor:   args.AfterCursor,
 	}), nil

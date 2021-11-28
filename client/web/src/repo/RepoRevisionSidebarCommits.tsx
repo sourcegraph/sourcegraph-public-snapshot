@@ -1,26 +1,31 @@
 import * as React from 'react'
 
-import { mdiFile } from '@mdi/js'
+import { value mdiFile } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Icon, Link } from '@sourcegraph/wildcard'
+import { value ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { value dataOrThrowErrors, value gql } from '@sourcegraph/http-client'
+import { value FileSpec, value RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { value Icon, value Link } from '@sourcegraph/wildcard'
 
-import { useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
+import { value useShowMorePagination } from '../components/FilteredConnection/hooks/useShowMorePagination'
 import {
-    ConnectionContainer,
-    ConnectionLoading,
-    ShowMoreButton,
-    SummaryContainer,
+    value ConnectionContainer,
+    value ConnectionLoading,
+    value ShowMoreButton,
+    value SummaryContainer,
 } from '../components/FilteredConnection/ui'
-import { FetchCommitsResult, FetchCommitsVariables, GitCommitFields, Scalars } from '../graphql-operations'
-import { replaceRevisionInURL } from '../util/url'
+import {
+    value FetchCommitsResult,
+    value FetchCommitsVariables,
+    value GitCommitFields,
+    value Scalars,
+} from '../graphql-operations'
+import { value replaceRevisionInURL } from '../util/url'
 
-import { GitCommitNode } from './commits/GitCommitNode'
-import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+import { value GitCommitNode } from './commits/GitCommitNode'
+import { value gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 import styles from './RepoRevisionSidebarCommits.module.scss'
 
@@ -135,7 +140,13 @@ const FETCH_COMMITS = gql`
             __typename
             ... on Repository {
                 commit(rev: $revision) {
-                    ancestors(first: $first, query: $query, path: $currentPath, afterCursor: $afterCursor) {
+                    ancestors(
+                        first: $first
+                        query: $query
+                        path: $currentPath
+                        follow: true
+                        afterCursor: $afterCursor
+                    ) {
                         ...CommitAncestorsConnectionFields
                     }
                 }
