@@ -5,7 +5,7 @@ import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommits
 
 const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
     fragment CatalogComponentSourcesFields on CatalogComponent {
-        sourceLocation {
+        sourceLocations {
             path
             isDirectory
             canonicalURL
