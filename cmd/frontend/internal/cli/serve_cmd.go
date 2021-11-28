@@ -265,12 +265,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
-	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
-	// being initialized
-	if dbconn.Global == nil {
-		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
-	}
-
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
 		enterprise.CodeIntelResolver,
