@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"cuelang.org/go/cue/cuecontext"
+	"cuelang.org/go/cue/parser"
 	"github.com/cockroachdb/errors"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jackc/pgx/v4"
@@ -42,6 +44,29 @@ func setup2Exec(ctx context.Context, args []string) error {
 		os.Exit(1)
 	}
 
+	cueCtx := cuecontext.New()
+	f, err := parser.ParseFile("setup/setup.cue", nil)
+	if err != nil {
+		return err
+	}
+	v := cueCtx.BuildFile(f)
+	if err := v.Err(); err != nil {
+		return err
+	}
+
+	decls := []dependencyDecl{}
+	err = v.Decode(&decls)
+	if err != nil {
+		return err
+	}
+
+	var dependencies []*dependency
+	for _, d := range decls {
+		dependencies = append(dependencies, d.Dependency())
+	}
+
+	macOSDependencies[1].dependencies = dependencies
+
 	currentOS := runtime.GOOS
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
 		currentOS = overridesOS
@@ -57,7 +82,7 @@ func setup2Exec(ctx context.Context, args []string) error {
 
 	// Check whether we're in the sourcegraph/sourcegraph repository so we can
 	// skip categories/dependencies that depend on the repository.
-	_, err := root.RepositoryRoot()
+	_, err = root.RepositoryRoot()
 	inRepo := err == nil
 
 	failed := []int{}
@@ -155,16 +180,16 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	},
 	{
 		name: "Install base utilities (git, docker, ...)",
-		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
-			{name: "docker", check: checkInPath("docker"), instructionsCommands: `brew install --cask docker`},
-			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
-			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
-			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
-			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
-			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
-			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
-		},
+		// dependencies: []*dependency{
+		// 	{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
+		// 	{name: "docker", check: checkInPath("docker"), instructionsCommands: `brew install --cask docker`},
+		// 	{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
+		// 	{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
+		// 	{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
+		// 	{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
+		// 	{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
+		// 	{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
+		// },
 		autoFixing: true,
 	},
 	{
@@ -672,6 +697,30 @@ type dependency struct {
 	instructionsComment    string
 	instructionsCommands   string
 	requiresSgSetupRestart bool
+}
+
+type dependencyDecl struct {
+	Name  string
+	Check struct {
+		Name string
+		Args []string
+	}
+	Instructions string
+}
+
+// Cue Lang experiment: we can probably handle this better, by listing the available values and args arity on Cue's side.
+func (d *dependencyDecl) Dependency() *dependency {
+	dep := dependency{
+		name:                 d.Name,
+		instructionsCommands: d.Instructions,
+	}
+	switch d.Check.Name {
+	case "checkInPath":
+		dep.check = checkInPath(d.Check.Args[0])
+	case "checkCommandOutputContains":
+		dep.check = checkCommandOutputContains(d.Check.Args[0], d.Check.Args[1])
+	}
+	return &dep
 }
 
 func (d *dependency) IsMet() bool { return d.err == nil && d.state }

@@ -3,6 +3,7 @@ module github.com/sourcegraph/sourcegraph/dev/sg
 go 1.17
 
 require (
+	cuelang.org/go v0.4.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cockroachdb/errors v1.8.6
@@ -26,6 +27,7 @@ require (
 	cloud.google.com/go v0.97.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f // indirect
 	github.com/cockroachdb/redact v1.1.3 // indirect
 	github.com/cockroachdb/sentry-go v0.6.1-cockroachdb.2 // indirect
@@ -35,6 +37,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.1.1 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20211108205335-ed9a9b14a747 // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
@@ -53,6 +56,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
+	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -64,10 +68,12 @@ require (
 	golang.org/x/net v0.0.0-20211108170745-6635138e15ea // indirect
 	golang.org/x/sys v0.0.0-20211109065445-02f5c0300f6e // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20211104193956-4c6863e31247 // indirect
 	google.golang.org/grpc v1.42.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
 replace github.com/sourcegraph/sourcegraph/lib => ./../../lib
