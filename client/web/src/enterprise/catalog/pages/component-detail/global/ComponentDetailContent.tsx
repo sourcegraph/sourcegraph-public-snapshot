@@ -8,7 +8,6 @@ import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
 import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
-import { ComponentOwners } from './ComponentOwners'
 import { ComponentSources } from './ComponentSources'
 
 interface Props extends TelemetryProps {
@@ -36,7 +35,12 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             <div className={styles.grid}>
                 <ComponentSources catalogComponent={catalogComponent} className="" />
                 {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
-                <ComponentAuthors catalogComponent={catalogComponent} className="" />
+                <ComponentAuthors
+                    catalogComponent={catalogComponent}
+                    className="card"
+                    headerClassName="card-header"
+                    titleClassName="mb-0"
+                />
                 <ComponentCommits
                     catalogComponent={catalogComponent}
                     className="card"

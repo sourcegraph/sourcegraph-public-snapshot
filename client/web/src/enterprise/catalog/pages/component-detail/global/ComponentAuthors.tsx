@@ -1,8 +1,14 @@
+import classNames from 'classnames'
 import React from 'react'
+
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
 import { CatalogComponentAuthorsFields } from '../../../../../graphql-operations'
-import { PersonLink } from '../../../../../person/PersonLink'
+import { formatPersonName, PersonLink } from '../../../../../person/PersonLink'
+import { UserAvatar } from '../../../../../user/UserAvatar'
+
+import styles from './ComponentAuthors.module.scss'
 
 interface Props {
     catalogComponent: CatalogComponentAuthorsFields
@@ -22,15 +28,33 @@ export const ComponentAuthors: React.FunctionComponent<Props> = ({
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Authors</h3>
             </header>
-            <ol className="list-group list-group-flush">
-                {authors.slice(0, 100 /* TODO(sqs): show all */).map(author => (
-                    <li key={author.person.email} className="list-group-item">
-                        <PersonLink person={author.person} /> {(author.authoredLineProportion * 100).toFixed(1)}%{' '}
-                        <Timestamp date={author.lastCommit.author.date} />
+            <ol className="list-group list-group-horizontal overflow-auto">
+                {authors.map(author => (
+                    <li
+                        key={author.person.email}
+                        className={classNames('list-group-item text-center pt-2', styles.author)}
+                    >
+                        <div>
+                            <UserAvatar
+                                className="icon-inline"
+                                user={author.person}
+                                data-tooltip={formatPersonName(author.person)}
+                            />{' '}
+                        </div>
+                        <PersonLink person={author.person} className="text-muted small text-truncate d-block" />
+                        <div
+                            className={classNames(styles.percent)}
+                            data-tooltip={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
+                        >
+                            {(author.authoredLineProportion * 100).toFixed(1)}%
+                        </div>
+                        <div className={classNames('text-muted', styles.lastCommit)}>
+                            <Timestamp date={author.lastCommit.author.date} noAbout={true} />
+                        </div>
                     </li>
                 ))}
             </ol>
         </div>
     ) : (
-        <p>No changes found</p>
+        <p>Unable to determine authorship</p>
     )

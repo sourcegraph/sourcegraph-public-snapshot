@@ -42,6 +42,7 @@ const CATALOG_COMPONENT_AUTHORS_FRAGMENT = gql`
         authors {
             person {
                 ...PersonLinkFields
+                avatarURL
             }
             authoredLineCount
             authoredLineProportion
