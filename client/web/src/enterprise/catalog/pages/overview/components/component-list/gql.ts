@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-export const CATALOG_COMPONENTS_GQL = gql`
+export const CATALOG_COMPONENTS = gql`
     query CatalogComponents($query: String, $first: Int, $after: String) {
         catalog {
             components(query: $query, first: $first, after: $after) {
@@ -17,8 +17,5 @@ export const CATALOG_COMPONENTS_GQL = gql`
         name
         system
         tags
-        sourceLocation {
-            url
-        }
     }
 `

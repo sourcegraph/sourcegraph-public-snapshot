@@ -1,6 +1,5 @@
-import { useApolloClient } from '@apollo/client'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Switch, Route, useRouteMatch, RouteComponentProps } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -13,8 +12,6 @@ import { HeroPage } from '../../components/HeroPage'
 import { Settings } from '../../schema/settings.schema'
 
 import styles from './CatalogArea.module.scss'
-import { CatalogBackendContext } from './core/backend/context'
-import { CatalogGqlBackend } from './core/backend/gql-api/gql-backend'
 import { useCatalogComponentFilters } from './core/component-filters'
 import { ComponentDetailPage } from './pages/component-detail/global/ComponentDetailPage'
 import { OverviewPage } from './pages/overview/global/OverviewPage'
@@ -41,38 +38,33 @@ export const CatalogArea = withAuthenticatedUser<CatalogRouterProps>(props => {
     const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
-    const apolloClient = useApolloClient()
-
-    const api = useMemo(() => new CatalogGqlBackend(apolloClient), [apolloClient])
 
     const { filters, onFiltersChange } = useCatalogComponentFilters()
 
     return (
         <div className={styles.container}>
-            <CatalogBackendContext.Provider value={api}>
-                <Switch>
-                    <Route path={match.url} exact={true}>
-                        <OverviewPage
+            <Switch>
+                <Route path={match.url} exact={true}>
+                    <OverviewPage
+                        authenticatedUser={authenticatedUser}
+                        filters={filters}
+                        onFiltersChange={onFiltersChange}
+                        telemetryService={telemetryService}
+                    />
+                </Route>
+                <Route path={`${match.url}/:id`}>
+                    {(props: RouteComponentProps<{ id: string }>) => (
+                        <ComponentDetailPage
+                            catalogComponentID={props.match.params.id}
                             authenticatedUser={authenticatedUser}
                             filters={filters}
                             onFiltersChange={onFiltersChange}
                             telemetryService={telemetryService}
                         />
-                    </Route>
-                    <Route path={`${match.url}/:id`}>
-                        {(props: RouteComponentProps<{ id: string }>) => (
-                            <ComponentDetailPage
-                                catalogComponentID={props.match.params.id}
-                                authenticatedUser={authenticatedUser}
-                                filters={filters}
-                                onFiltersChange={onFiltersChange}
-                                telemetryService={telemetryService}
-                            />
-                        )}
-                    </Route>
-                    <Route component={NotFoundPage} key="hardcoded-key" />
-                </Switch>
-            </CatalogBackendContext.Provider>
+                    )}
+                </Route>
+                <Route component={NotFoundPage} key="hardcoded-key" />
+            </Switch>
         </div>
     )
 })

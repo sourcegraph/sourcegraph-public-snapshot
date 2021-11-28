@@ -21,11 +21,11 @@ import {
     CatalogComponentFields,
 } from '../../../../../../graphql-operations'
 import { CatalogComponentIcon } from '../../../../components/CatalogComponentIcon'
-import { CATALOG_COMPONENTS_GQL } from '../../../../core/backend/gql-api/gql/CatalogComponents'
 import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
 
 import styles from './ComponentList.module.scss'
 import { ComponentListFilters } from './ComponentListFilters'
+import { CATALOG_COMPONENTS } from './gql'
 
 interface Props extends CatalogComponentFiltersProps {
     /** The currently selected CatalogComponent, if any. */
@@ -49,7 +49,7 @@ export const ComponentList: React.FunctionComponent<Props> = ({
         CatalogComponentsVariables,
         CatalogComponentFields
     >({
-        query: CATALOG_COMPONENTS_GQL,
+        query: CATALOG_COMPONENTS,
         variables: {
             query: filters.query || '',
             first: FIRST,
@@ -127,6 +127,6 @@ const CatalogComponent: React.FunctionComponent<{
             </Link>
         </h3>
         <div className="flex-1" />
-        {size === 'lg' && node.sourceLocation && <Link to={node.sourceLocation.url}>Source</Link>}
+        {size === 'lg' && <Link to="TODO">Source</Link>}
     </li>
 )

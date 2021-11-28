@@ -46,8 +46,8 @@ const GitCommit: React.FunctionComponent<{ commit: GitCommitFields; tag: 'li'; c
             committer={commit.committer}
             messageElement={
                 <h4 className="h6 mb-0 text-truncate">
-                    <Link to={commit.canonicalURL} className="text-body">
-                        {commit.message}
+                    <Link to={commit.canonicalURL} className="text-body" title={commit.message}>
+                        {commit.subject}
                     </Link>
                 </h4>
             }

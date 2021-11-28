@@ -36,6 +36,18 @@ func (r *catalogComponentResolver) Commits(ctx context.Context, args *graphqluti
 		return combinedCommits[i].Author.Date.After(combinedCommits[j].Author.Date)
 	})
 
+	// Remove duplicate commits (that touched multiple paths).
+	keep := combinedCommits[:0]
+	var lastCommitID api.CommitID
+	for _, c := range combinedCommits {
+		if c.ID == lastCommitID {
+			continue
+		}
+		keep = append(keep, c)
+		lastCommitID = c.ID
+	}
+	combinedCommits = keep
+
 	var hasNextPage bool
 	if len(combinedCommits) > int(args.GetFirst()) {
 		combinedCommits = combinedCommits[:int(args.GetFirst())]
