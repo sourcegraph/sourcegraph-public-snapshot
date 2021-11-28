@@ -13,23 +13,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type gitCommitConnectionResolver struct {
-	db              database.DB
-	gitserverClient gitserver.Client
-	revisionRange   string
+type GitCommitConnectionResolver interface {
+	Nodes(context.Context) ([]*GitCommitResolver, error)
+	TotalCount(context.Context) (*int32, error)
+	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
 
-	first  *int32
-	query  *string
-	path   *string
-	author *string
+type GitCommitConnectionArgs struct {
+	RevisionRange string
+	First         *int32
+	Query         *string
+	Path          *string
+	Author        *string
 
 	// after corresponds to --after in the git log / git rev-spec commands. Not to be confused with
 	// "after" when used as an offset for pagination. For pagination we use "offset" as the name of
 	// the field. See next field.
-	after       *string
-	afterCursor *string
+	After       *string
+	AfterCursor *string
+}
 
-	repo *RepositoryResolver
+func NewGitCommitConnectionResolver(db database.DB, repo *RepositoryResolver, gitserverClient gitserver.Client, args GitCommitConnectionArgs) GitCommitConnectionResolver {
+	return &gitCommitConnectionResolver{
+		db:              db,
+		gitserverClient: gitserverClient,
+		repo:            repo,
+		args:            args,
+	}
+}
+
+type gitCommitConnectionResolver struct {
+	db              database.DB
+	gitserverClient gitserver.Client
+	repo            *RepositoryResolver
+	args            GitCommitConnectionArgs
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
@@ -49,7 +66,7 @@ func toValue[T any](v *T) any {
 // afterCursorAsInt will parse the afterCursor field and return it as an int. If no value is set, it
 // will return 0. It returns a non-nil error if there are any errors in parsing the input string.
 func (r *gitCommitConnectionResolver) afterCursorAsInt() (int, error) {
-	v := toValue(r.afterCursor).(string)
+	v := toValue(r.args.AfterCursor).(string)
 	if v == "" {
 		return 0, nil
 	}
@@ -63,8 +80,8 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		// IMPORTANT: We cannot use toValue here because we toValue will return 0 if r.first is nil.
 		// And n will be incorrectly set to 1. A nil value for r.first implies no limits, so skip
 		// setting a value for n completely.
-		if r.first != nil {
-			n = *r.first
+		if r.args.First != nil {
+			n = *r.args.First
 			n++ // fetch +1 additional result so we can determine if a next page exists
 		}
 
@@ -76,13 +93,13 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		}
 
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
-			Range:        r.revisionRange,
+			Range:        r.args.RevisionRange,
 			N:            uint(n),
-			MessageQuery: toValue(r.query).(string),
-			Author:       toValue(r.author).(string),
-			After:        toValue(r.after).(string),
+			MessageQuery: toValue(r.args.Query).(string),
+			Author:       toValue(r.args.Author).(string),
+			After:        toValue(r.args.After).(string),
 			Skip:         uint(afterCursor),
-			Path:         toValue(r.path).(string),
+			Path:         toValue(r.args.Path).(string),
 		}, authz.DefaultSubRepoPermsChecker)
 	}
 
@@ -96,9 +113,9 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 		return nil, err
 	}
 
-	if r.first != nil && len(commits) > int(*r.first) {
+	if r.args.First != nil && len(commits) > int(*r.args.First) {
 		// Don't return +1 results, which is used to determine if next page exists.
-		commits = commits[:*r.first]
+		commits = commits[:*r.args.First]
 	}
 
 	resolvers := make([]*GitCommitResolver, len(commits))
@@ -110,7 +127,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 }
 
 func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	if r.first != nil {
+	if r.args.First != nil {
 		// Return indeterminate total count if the caller requested an incomplete list of commits
 		// (which means we'd need an extra and expensive Git operation to determine the total
 		// count). This is to avoid `totalCount` taking significantly longer than `nodes` to
@@ -133,11 +150,11 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 
 	totalCommits := len(commits)
 	// If no limit is set, we have retrieved all the commits and there is no next page.
-	if r.first == nil {
+	if r.args.First == nil {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
-	limit := int(*r.first)
+	limit := int(*r.args.First)
 
 	// If a limit is set, we attempt to fetch N+1 commits to know if there is a next page or not. If
 	// we have more than N commits then we have a next page.

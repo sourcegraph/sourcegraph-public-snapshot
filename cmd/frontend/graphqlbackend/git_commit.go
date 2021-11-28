@@ -325,18 +325,15 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	Path        *string
 	After       *string
 	AfterCursor *string
-}) (*gitCommitConnectionResolver, error) {
-	return &gitCommitConnectionResolver{
-		db:              r.db,
-		gitserverClient: r.gitserverClient,
-		revisionRange:   string(r.oid),
-		first:           args.ConnectionArgs.First,
-		query:           args.Query,
-		path:            args.Path,
-		after:           args.After,
-		afterCursor:     args.AfterCursor,
-		repo:            r.repoResolver,
-	}, nil
+}) (GitCommitConnectionResolver, error) {
+	return NewGitCommitConnectionResolver(r.db, r.repoResolver, r.gitserverClient, GitCommitConnectionArgs{
+		RevisionRange: string(r.oid),
+		First:         args.ConnectionArgs.First,
+		Query:         args.Query,
+		Path:          args.Path,
+		After:         args.After,
+		AfterCursor:   args.AfterCursor,
+	}), nil
 }
 
 func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {

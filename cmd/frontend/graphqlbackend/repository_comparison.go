@@ -176,15 +176,12 @@ type RepositoryComparisonCommitsArgs struct {
 
 func (r *RepositoryComparisonResolver) Commits(
 	args *RepositoryComparisonCommitsArgs,
-) *gitCommitConnectionResolver {
-	return &gitCommitConnectionResolver{
-		db:              r.db,
-		gitserverClient: r.gitserverClient,
-		revisionRange:   r.baseRevspec + ".." + r.headRevspec,
-		first:           args.First,
-		repo:            r.repo,
-		path:            args.Path,
-	}
+) GitCommitConnectionResolver {
+	return NewGitCommitConnectionResolver(r.db, r.repo, r.gitserverClient, GitCommitConnectionArgs{
+		RevisionRange: r.baseRevspec + ".." + r.headRevspec,
+		First:         args.First,
+		Path:          args.Path,
+	})
 }
 
 func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {
