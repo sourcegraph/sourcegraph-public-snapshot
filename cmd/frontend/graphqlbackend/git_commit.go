@@ -290,16 +290,14 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	Query *string
 	Path  *string
 	After *string
-}) (*gitCommitConnectionResolver, error) {
-	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: string(r.oid),
-		first:         args.ConnectionArgs.First,
-		query:         args.Query,
-		path:          args.Path,
-		after:         args.After,
-		repo:          r.repoResolver,
-	}, nil
+}) (GitCommitConnectionResolver, error) {
+	return NewGitCommitConnectionResolver(r.db, r.repoResolver, GitCommitConnectionArgs{
+		RevisionRange: string(r.oid),
+		First:         args.ConnectionArgs.First,
+		Query:         args.Query,
+		Path:          args.Path,
+		After:         args.After,
+	}), nil
 }
 
 func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
