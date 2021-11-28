@@ -97,7 +97,8 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
 	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
-	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+	sqlDB, err := dbconn.New(opts)
+	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
@@ -109,16 +110,16 @@ func InitDB() (*sql.DB, error) {
 		// which would be added by running the migrations. Once we detect that
 		// it's missing, we run the migrations and try to update the version again.
 
-		err := backend.UpdateServiceVersion(ctx, database.NewDB(dbconn.Global), "frontend", version.Version())
+		err := backend.UpdateServiceVersion(ctx, database.NewDB(sqlDB), "frontend", version.Version())
 		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
 			return nil, err
 		}
 
 		if !migrate {
-			return dbconn.Global, nil
+			return sqlDB, nil
 		}
 
-		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
+		if err := dbconn.MigrateDB(sqlDB, dbconn.Frontend); err != nil {
 			return nil, err
 		}
 
