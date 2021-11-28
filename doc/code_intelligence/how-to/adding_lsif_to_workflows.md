@@ -18,7 +18,7 @@ Setting up a source code indexing job in your CI build provides you with fast co
   - [Circle CI Examples](#circle-ci-examples)
   - [Travis CI Examples](#travis-ci-examples)
 - [Recommended upload frequency](#recommended-upload-frequency)
-- [Uploading LSIF data to Sourcegraph.com](#uploading-lsif-data-to-sourcegraphcom)
+- [Uploading LSIF data to Sourcegraph.com](#uploading-lsif-data-to-sourcegraph-com)
 
 ## Using indexer containers
 
