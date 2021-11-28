@@ -22,13 +22,6 @@ const typePolicies: TypedTypePolicies = {
             },
         },
     },
-    CatalogComponent: {
-        fields: {
-            sourceLocation: {
-                merge: (existing, incoming) => ({ ...existing, ...incoming }),
-            },
-        },
-    },
 }
 
 export const generateCache = (): InMemoryCache =>

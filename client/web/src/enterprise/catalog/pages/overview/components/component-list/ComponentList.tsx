@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -29,7 +29,7 @@ import { CATALOG_COMPONENTS } from './gql'
 
 interface Props extends CatalogComponentFiltersProps {
     /** The currently selected CatalogComponent, if any. */
-    selected?: { id: Scalars['ID'] }
+    selectedComponentID?: Scalars['ID']
 
     size: 'sm' | 'lg'
     className?: string
@@ -38,7 +38,7 @@ interface Props extends CatalogComponentFiltersProps {
 const FIRST = 20
 
 export const ComponentList: React.FunctionComponent<Props> = ({
-    selected,
+    selectedComponentID,
     filters,
     onFiltersChange,
     size,
@@ -65,6 +65,8 @@ export const ComponentList: React.FunctionComponent<Props> = ({
         },
     })
 
+    useEffect(() => () => console.log('DESTROY ComponentList'), [])
+
     return (
         <>
             <ComponentListFilters
@@ -80,7 +82,7 @@ export const ComponentList: React.FunctionComponent<Props> = ({
                         <CatalogComponent
                             key={node.id}
                             node={node}
-                            selected={selected && node.id === selected.id}
+                            selected={Boolean(selectedComponentID && node.id === selectedComponentID)}
                             size={size}
                         />
                     ))}
@@ -111,18 +113,18 @@ const CatalogComponent: React.FunctionComponent<{
     size: 'sm' | 'lg'
 }> = ({ node, selected, size }) => (
     <li className={classNames('list-group-item d-flex', { active: selected })}>
-        <h3 className="h6 font-weight-bold mb-0">
+        <h3 className="h6 font-weight-bold mb-0 overflow-hidden">
             <Link
                 to={`/catalog/${node.id}`}
-                className={classNames('d-flex align-items-center', {
+                className={classNames('d-block text-truncate', {
                     'text-body': selected,
                     'stretched-link': size === 'sm',
                 })}
             >
                 <CatalogComponentIcon
                     catalogComponent={node}
-                    className={classNames('icon-inline mr-1', { 'text-muted': !selected })}
-                />{' '}
+                    className={classNames('icon-inline mr-1 flex-shrink-0', { 'text-muted': !selected })}
+                />
                 {node.name}
             </Link>
         </h3>

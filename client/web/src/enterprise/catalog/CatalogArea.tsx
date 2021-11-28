@@ -1,5 +1,5 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Switch, Route, useRouteMatch, RouteComponentProps } from 'react-router'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -41,6 +41,8 @@ export const CatalogArea = withAuthenticatedUser<CatalogRouterProps>(props => {
 
     const { filters, onFiltersChange } = useCatalogComponentFilters()
 
+    useEffect(() => () => console.log('DESTROY CatalogArea'), [])
+
     return (
         <div className={styles.container}>
             <Switch>
@@ -55,6 +57,7 @@ export const CatalogArea = withAuthenticatedUser<CatalogRouterProps>(props => {
                 <Route path={`${match.url}/:id`}>
                     {(props: RouteComponentProps<{ id: string }>) => (
                         <ComponentDetailPage
+                            key={1}
                             catalogComponentID={props.match.params.id}
                             authenticatedUser={authenticatedUser}
                             filters={filters}

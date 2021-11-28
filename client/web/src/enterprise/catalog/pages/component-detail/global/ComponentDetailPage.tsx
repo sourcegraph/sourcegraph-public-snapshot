@@ -1,4 +1,3 @@
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -7,7 +6,6 @@ import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../../../../../auth'
-import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CatalogComponentByIDResult, CatalogComponentByIDVariables } from '../../../../../graphql-operations'
 import { CatalogComponentFiltersProps } from '../../../core/component-filters'
@@ -53,36 +51,40 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
         }
     )
 
-    if (loading && !data) {
-        return (
-            <div className="text-center">
-                <LoadingSpinner className="icon-inline mx-auto my-4" />
-            </div>
-        )
-    }
-    if (error && !data) {
-        throw new Error(error.message)
-    }
-    if (!data || !data.node || data.node.__typename !== 'CatalogComponent') {
-        return <HeroPage icon={AlertCircleIcon} title="Component not found in catalog" />
-    }
-
-    const catalogComponent = data.node
+    useEffect(() => () => console.log('DESTROY ComponentDetailPage'), [])
 
     return (
         <>
-            <PageTitle title={catalogComponent.name} />
+            <PageTitle
+                title={
+                    error
+                        ? 'Error loading component'
+                        : loading && !data
+                        ? 'Loading component...'
+                        : !data || !data.node || data.node.__typename !== 'CatalogComponent'
+                        ? 'Component not found'
+                        : data.node.name
+                }
+            />
             <Sidebar>
                 <ComponentList
-                    selected={catalogComponent}
+                    selectedComponentID={catalogComponentID}
                     filters={filters}
                     onFiltersChange={onFiltersChange}
                     className="flex-1"
                     size="sm"
                 />
             </Sidebar>
-            <div className="p-2 overflow-auto">
-                <ComponentDetailContent catalogComponent={catalogComponent} telemetryService={telemetryService} />
+            <div className="p-2 overflow-auto w-100">
+                {loading && !data ? (
+                    <LoadingSpinner className="icon-inline" />
+                ) : error && !data ? (
+                    <div className="alert alert-danger">Error: {error.message}</div>
+                ) : !data || !data.node || data.node.__typename !== 'CatalogComponent' ? (
+                    <div className="alert alert-danger">Component not found in catalog</div>
+                ) : (
+                    <ComponentDetailContent catalogComponent={data.node} telemetryService={telemetryService} />
+                )}
             </div>
         </>
     )
