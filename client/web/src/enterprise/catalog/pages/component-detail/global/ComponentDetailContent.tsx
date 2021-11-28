@@ -5,8 +5,10 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { CatalogComponentDetailFields } from '../../../../../graphql-operations'
 import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
 
-import { ComponentChanges } from './ComponentChanges'
+import { ComponentAuthors } from './ComponentAuthors'
+import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
+import { ComponentOwners } from './ComponentOwners'
 import { ComponentSources } from './ComponentSources'
 
 interface Props extends TelemetryProps {
@@ -28,15 +30,22 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                     <strong>Lifecycle</strong> production
                 </li>
             </ul>
-            <ComponentSources catalogComponent={catalogComponent} className="" />
         </header>
+        <div className="py-4 border-top">
+            <h2>Implementation</h2>
+            <div className={styles.grid}>
+                <ComponentSources catalogComponent={catalogComponent} className="" />
+                {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
+                <ComponentAuthors catalogComponent={catalogComponent} className="" />
+                <ComponentCommits
+                    catalogComponent={catalogComponent}
+                    className="card"
+                    headerClassName="card-header"
+                    titleClassName="mb-0"
+                />
+            </div>
+        </div>
         <div className={styles.grid}>
-            <ComponentChanges
-                catalogComponent={catalogComponent}
-                className="card"
-                headerClassName="card-header"
-                titleClassName="mb-0"
-            />
             <section className="card card-body">
                 <h3>Authors</h3>
                 TODO(sqs): show blame %s and last commit

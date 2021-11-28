@@ -42,7 +42,16 @@ type CatalogComponentResolver interface {
 	System() *string
 	Tags() []string
 	SourceLocation(context.Context) (*GitTreeEntryResolver, error)
-	EditCommits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
+	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
+	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
 }
 
 type CatalogComponentKind string
+
+type CatalogComponentAuthorEdgeResolver interface {
+	Component() CatalogComponentResolver
+	Person() *PersonResolver
+	AuthoredLineCount() int32
+	AuthoredLineProportion() float64
+	LastCommit(context.Context) (*GitCommitResolver, error)
+}

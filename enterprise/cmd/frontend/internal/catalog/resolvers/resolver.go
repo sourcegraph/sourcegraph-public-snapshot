@@ -161,16 +161,3 @@ func (r *catalogComponentResolver) SourceLocation(ctx context.Context) (*gql.Git
 	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil)
 	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(r.sourcePath, false)), nil
 }
-
-func (r *catalogComponentResolver) EditCommits(ctx context.Context, args *graphqlutil.ConnectionArgs) (gql.GitCommitConnectionResolver, error) {
-	repoResolver, err := r.sourceRepoResolver(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return gql.NewGitCommitConnectionResolver(r.db, repoResolver, gql.GitCommitConnectionArgs{
-		RevisionRange: r.sourceCommit,
-		Path:          &r.sourcePath,
-		First:         args.First,
-	}), nil
-}

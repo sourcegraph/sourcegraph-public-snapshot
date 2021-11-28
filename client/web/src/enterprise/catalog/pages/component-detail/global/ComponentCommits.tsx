@@ -11,19 +11,19 @@ interface Props {
     titleClassName?: string
 }
 
-export const ComponentChanges: React.FunctionComponent<Props> = ({
-    catalogComponent: { editCommits },
+export const ComponentCommits: React.FunctionComponent<Props> = ({
+    catalogComponent: { commits },
     className,
     headerClassName,
     titleClassName,
 }) =>
-    editCommits && editCommits.nodes.length > 0 ? (
+    commits && commits.nodes.length > 0 ? (
         <div className={className}>
             <header className={headerClassName}>
-                <h3 className={titleClassName}>Changes</h3>
+                <h3 className={titleClassName}>Commits</h3>
             </header>
             <ol className="list-group list-group-flush">
-                {editCommits.nodes.map(commit => (
+                {commits.nodes.map(commit => (
                     <GitCommit key={commit.oid} commit={commit} tag="li" className="list-group-item py-2" />
                 ))}
             </ol>

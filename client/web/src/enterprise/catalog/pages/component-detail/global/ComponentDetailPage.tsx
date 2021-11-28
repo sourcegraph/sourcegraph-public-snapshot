@@ -82,7 +82,7 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                     size="sm"
                 />
             </Sidebar>
-            <Page>
+            <Page className="overflow-auto">
                 <ComponentDetailContent catalogComponent={catalogComponent} telemetryService={telemetryService} />
             </Page>
         </>

@@ -1,5 +1,6 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
+import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 
 const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
@@ -27,13 +28,30 @@ const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
 
 const CATALOG_COMPONENT_CHANGES_FRAGMENT = gql`
     fragment CatalogComponentChangesFields on CatalogComponent {
-        editCommits(first: 7) {
+        commits(first: 7) {
             nodes {
                 ...GitCommitFields
             }
         }
     }
     ${gitCommitFragment}
+`
+
+const CATALOG_COMPONENT_AUTHORS_FRAGMENT = gql`
+    fragment CatalogComponentAuthorsFields on CatalogComponent {
+        authors {
+            person {
+                ...PersonLinkFields
+            }
+            authoredLineCount
+            authoredLineProportion
+            lastCommit {
+                ...GitCommitFields
+            }
+        }
+    }
+    ${gitCommitFragment}
+    ${personLinkFieldsFragment}
 `
 
 const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
@@ -45,9 +63,11 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         tags
         ...CatalogComponentSourcesFields
         ...CatalogComponentChangesFields
+        ...CatalogComponentAuthorsFields
     }
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
+    ${CATALOG_COMPONENT_AUTHORS_FRAGMENT}
 `
 
 export const CATALOG_COMPONENT_BY_ID = gql`
