@@ -273,7 +273,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 
 	// Get the billing customer for the current user, and update it to use the payment source
 	// provided to us.
-	custID, err := billing.GetOrAssignUserCustomerID(ctx, user.DatabaseID())
+	custID, err := billing.GetOrAssignUserCustomerID(ctx, database.NewDB(r.DB), user.DatabaseID())
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +359,7 @@ func (r ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx 
 
 	// Get the billing customer for the current user, and update it to use the payment source
 	// provided to us.
-	custID, err := billing.GetOrAssignUserCustomerID(ctx, subToUpdate.v.UserID)
+	custID, err := billing.GetOrAssignUserCustomerID(ctx, database.NewDB(r.DB), subToUpdate.v.UserID)
 	if err != nil {
 		return nil, err
 	}
