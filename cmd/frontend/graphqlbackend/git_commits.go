@@ -21,6 +21,7 @@ type GitCommitConnectionArgs struct {
 	First         *int32
 	Query         *string
 	Path          *string
+	Follow        bool
 	Author        *string
 	After         *string
 }
@@ -74,6 +75,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 			Author:       author,
 			After:        after,
 			Path:         path,
+			Follow:       r.args.Follow,
 		})
 	}
 

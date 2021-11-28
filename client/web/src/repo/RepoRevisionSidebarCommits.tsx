@@ -94,7 +94,7 @@ function fetchCommits(
                     __typename
                     ... on Repository {
                         commit(rev: $revision) {
-                            ancestors(first: $first, query: $query, path: $currentPath) {
+                            ancestors(first: $first, query: $query, path: $currentPath, follow: true) {
                                 ...CommitAncestorsConnectionFields
                             }
                         }
