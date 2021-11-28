@@ -288,15 +288,17 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 
 func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-	Query *string
-	Path  *string
-	After *string
+	Query  *string
+	Path   *string
+	Follow bool
+	After  *string
 }) (GitCommitConnectionResolver, error) {
 	return NewGitCommitConnectionResolver(r.db, r.repoResolver, GitCommitConnectionArgs{
 		RevisionRange: string(r.oid),
 		First:         args.ConnectionArgs.First,
 		Query:         args.Query,
 		Path:          args.Path,
+		Follow:        args.Follow,
 		After:         args.After,
 	}), nil
 }
