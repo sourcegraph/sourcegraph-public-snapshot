@@ -35,7 +35,13 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             <h2>Implementation</h2>
             <div className={styles.grid}>
                 {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
-                <ComponentSources catalogComponent={catalogComponent} className="" />
+                <ComponentSources
+                    catalogComponent={catalogComponent}
+                    className="card"
+                    headerClassName={classNames('card-header', styles.cardHeader)}
+                    titleClassName={classNames('card-title', styles.cardTitle)}
+                    bodyClassName={styles.cardBody}
+                />
                 <div>
                     <ComponentAuthors
                         catalogComponent={catalogComponent}
