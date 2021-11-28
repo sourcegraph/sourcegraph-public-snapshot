@@ -1617,7 +1617,7 @@ func TestRepository_Commits(t *testing.T) {
 	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
-				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
 
 				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
 				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
@@ -1881,7 +1881,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
 				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
 			})
 		}
 		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
@@ -1940,7 +1940,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	tests := map[string]struct {
 		opt         CommitsOptions
 		wantCommits []*gitdomain.Commit
-		wantTotal   uint
 	}{
 		"git cmd Path 0": {
 			opt: CommitsOptions{
@@ -1948,7 +1947,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "doesnt-exist",
 			},
 			wantCommits: nil,
-			wantTotal:   0,
 		},
 		"git cmd Path 1": {
 			opt: CommitsOptions{
@@ -1956,7 +1954,6 @@ func TestRepository_Commits_options_path(t *testing.T) {
 				Path:  "file1",
 			},
 			wantCommits: wantGitCommits,
-			wantTotal:   1,
 		},
 	}
 
@@ -1964,7 +1961,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		for label, test := range tests {
 			t.Run(label, func(t *testing.T) {
 				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantTotal, test.wantCommits, t)
+				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
 			})
 		}
 	}
@@ -2337,7 +2334,7 @@ func TestCommitDate(t *testing.T) {
 	})
 }
 
-func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
+func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
 	client := NewClient(db).(*clientImplementor)
@@ -2347,14 +2344,6 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 		return
 	}
 
-	total, err := client.commitCount(ctx, repo, opt)
-	if err != nil {
-		t.Errorf("%s: commitCount(): %s", label, err)
-		return
-	}
-	if total != wantTotal {
-		t.Errorf("%s: got %d total commits, want %d", label, total, wantTotal)
-	}
 	if len(commits) != len(wantCommits) {
 		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
 	}
