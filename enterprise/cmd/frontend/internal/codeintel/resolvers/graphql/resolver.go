@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 const (
@@ -103,7 +102,7 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 
 // 🚨 SECURITY: Only site admins may modify code intelligence upload data
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -174,7 +173,7 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 
 // 🚨 SECURITY: Only site admins may modify code intelligence index data
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -205,7 +204,7 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeInte
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.QueueAutoIndexJobsForRepoArgs) ([]gql.LSIFIndexResolver, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -312,7 +311,7 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.CreateCodeIntelligenceConfigurationPolicyArgs) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -353,7 +352,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -387,7 +386,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.DeleteCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -419,7 +418,7 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.I
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {
-	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 	if !autoIndexingEnabled() {
@@ -582,11 +581,6 @@ func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
 	}
 
 	return int(repoID), nil
-}
-
-// checkCurrentUserIsSiteAdmin returns true if the current user is a site-admin.
-func checkCurrentUserIsSiteAdmin(ctx context.Context) error {
-	return backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(dbconn.Global))
 }
 
 func validateConfigurationPolicy(policy gql.CodeIntelConfigurationPolicy) error {
