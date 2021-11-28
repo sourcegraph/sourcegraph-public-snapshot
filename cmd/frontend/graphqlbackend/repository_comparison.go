@@ -159,13 +159,11 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 
 func (r *RepositoryComparisonResolver) Commits(
 	args *graphqlutil.ConnectionArgs,
-) *gitCommitConnectionResolver {
-	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: r.baseRevspec + ".." + r.headRevspec,
-		first:         args.First,
-		repo:          r.repo,
-	}
+) GitCommitConnectionResolver {
+	return NewGitCommitConnectionResolver(r.db, r.repo, GitCommitConnectionArgs{
+		RevisionRange: r.baseRevspec + ".." + r.headRevspec,
+		First:         args.First,
+	})
 }
 
 func (r *RepositoryComparisonResolver) FileDiffs(ctx context.Context, args *FileDiffsConnectionArgs) (FileDiffConnection, error) {

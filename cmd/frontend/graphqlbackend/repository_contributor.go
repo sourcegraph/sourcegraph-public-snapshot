@@ -24,18 +24,16 @@ func (r *repositoryContributorResolver) Repository() *RepositoryResolver { retur
 
 func (r *repositoryContributorResolver) Commits(args *struct {
 	First *int32
-}) *gitCommitConnectionResolver {
+}) GitCommitConnectionResolver {
 	var revisionRange string
 	if r.args.RevisionRange != nil {
 		revisionRange = *r.args.RevisionRange
 	}
-	return &gitCommitConnectionResolver{
-		db:            r.db,
-		revisionRange: revisionRange,
-		path:          r.args.Path,
-		author:        &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails
-		after:         r.args.After,
-		first:         args.First,
-		repo:          r.repo,
-	}
+	return NewGitCommitConnectionResolver(r.db, r.repo, GitCommitConnectionArgs{
+		RevisionRange: revisionRange,
+		Path:          r.args.Path,
+		Author:        &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails
+		After:         r.args.After,
+		First:         args.First,
+	})
 }
