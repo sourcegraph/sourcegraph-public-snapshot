@@ -26,8 +26,8 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 	entries, err := git.ReadDir(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), r.sourcePath, true)
 	if err != nil {
 		return nil, err
-	}
 
+	}
 	var (
 		mu             sync.Mutex
 		all            = map[string]*blameAuthor{}
