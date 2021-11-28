@@ -2,6 +2,29 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 
+const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
+    fragment CatalogComponentSourcesFields on CatalogComponent {
+        sourceLocation {
+            path
+            isDirectory
+            canonicalURL
+            ... on GitTree {
+                repository {
+                    name
+                    url
+                }
+            }
+            ... on GitBlob {
+                repository {
+                    name
+                    url
+                }
+            }
+        }
+    }
+    ${gitCommitFragment}
+`
+
 const CATALOG_COMPONENT_CHANGES_FRAGMENT = gql`
     fragment CatalogComponentChangesFields on CatalogComponent {
         editCommits(first: 7) {
@@ -20,11 +43,10 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         name
         system
         tags
-        sourceLocation {
-            url
-        }
+        ...CatalogComponentSourcesFields
         ...CatalogComponentChangesFields
     }
+    ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
 `
 

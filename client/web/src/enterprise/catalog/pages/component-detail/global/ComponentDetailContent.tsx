@@ -7,6 +7,7 @@ import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
 
 import { ComponentChanges } from './ComponentChanges'
 import styles from './ComponentDetailContent.module.scss'
+import { ComponentSources } from './ComponentSources'
 
 interface Props extends TelemetryProps {
     catalogComponent: CatalogComponentDetailFields
@@ -27,6 +28,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                     <strong>Lifecycle</strong> production
                 </li>
             </ul>
+            <ComponentSources catalogComponent={catalogComponent} className="" />
         </header>
         <div className={styles.grid}>
             <ComponentChanges
