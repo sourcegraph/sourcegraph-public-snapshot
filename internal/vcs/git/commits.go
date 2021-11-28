@@ -40,6 +40,8 @@ type CommitsOptions struct {
 
 	Path string // only commits modifying the given path are selected (optional)
 
+	Follow bool // follow the history of the path beyond renames (works only for a single path)
+
 	// When true we opt out of attempting to fetch missing revisions
 	NoEnsureRevision bool
 }
@@ -291,6 +293,10 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 		args = append(args, opt.Range)
 	}
 
+	if opt.Follow {
+		args = append(args, "--follow")
+	}
+
 	if opt.Path != "" {
 		args = append(args, "--", opt.Path)
 	}
@@ -313,6 +319,9 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 	if opt.Path != "" {
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 		cmd.Args = append(cmd.Args, "--", opt.Path)
+	}
+	if opt.Follow {
+		panic("CommitCount does not support --follow because `git rev-list` doesn't support it either")
 	}
 	out, err := cmd.Output(ctx)
 	if err != nil {

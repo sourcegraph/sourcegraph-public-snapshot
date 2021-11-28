@@ -3752,6 +3752,10 @@ type GitCommit implements Node {
         """
         path: String
         """
+        Follow history beyond renames (only works for a single file).
+        """
+        follow: Boolean = false
+        """
         Return commits more recent than the specified date.
         """
         after: String
