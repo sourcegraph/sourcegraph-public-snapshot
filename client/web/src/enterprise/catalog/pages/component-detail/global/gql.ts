@@ -8,10 +8,14 @@ const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
         sourceLocations {
             path
             isDirectory
-            canonicalURL
+            url
             ... on GitTree {
                 repository {
                     name
+                    url
+                }
+                files(recursive: true) {
+                    path
                     url
                 }
             }

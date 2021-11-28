@@ -4,6 +4,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 
@@ -32,13 +33,30 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
             </header>
             <ol className={classNames('list-group list-group-flush', bodyClassName)}>
                 {sourceLocations.map(sourceLocation => (
-                    <li key={sourceLocation.canonicalURL} className="list-group-item">
+                    <li key={sourceLocation.url} className="list-group-item">
                         <RepoFileLink
                             repoName={sourceLocation.repository.name}
                             repoURL={sourceLocation.repository.url}
                             filePath={sourceLocation.path}
-                            fileURL={sourceLocation.canonicalURL}
+                            fileURL={sourceLocation.url}
+                            className="d-inline"
                         />
+                        {'files' in sourceLocation && sourceLocation.files && (
+                            <>
+                                <span className="text-muted small ml-1">
+                                    {sourceLocation.files.length} {pluralize('file', sourceLocation.files.length)}
+                                </span>
+                                <ol className="list-unstyled ml-3">
+                                    {sourceLocation.files.slice(0, 15 /* TODO(sqs) */).map(file => (
+                                        <li key={file.url} className="small">
+                                            <Link to={file.url} className="text-muted">
+                                                {file.path.slice(sourceLocation.path.length + 1)}
+                                            </Link>
+                                        </li>
+                                    ))}
+                                </ol>
+                            </>
+                        )}
                     </li>
                 ))}
             </ol>
