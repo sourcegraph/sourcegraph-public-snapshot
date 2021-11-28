@@ -7,11 +7,13 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
 	pathpkg "path"
 	"sort"
+	"sync"
 	"time"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -26,37 +28,53 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 		return nil, err
 	}
 
-	// TODO(sqs): HACK make this go faster in local dev
-	if max := 100; len(entries) > max {
-		entries = entries[:max]
-	}
-
-	all := map[string]*blameAuthor{}
-	var totalLineCount int
+	var (
+		mu             sync.Mutex
+		all            = map[string]*blameAuthor{}
+		totalLineCount int
+		allErr         error
+		wg             sync.WaitGroup
+	)
 	for _, e := range entries {
 		if e.IsDir() {
 			continue
 		}
 
-		authorsByEmail, lineCount, err := getBlameAuthorsCached(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
-		if err != nil {
-			return nil, err
-		}
+		wg.Add(1)
+		go func(e fs.FileInfo) {
+			defer wg.Done()
 
-		totalLineCount += lineCount
-		for email, a := range authorsByEmail {
-			ca := all[email]
-			if ca == nil {
-				all[email] = a
-			} else {
-				ca.LineCount += a.LineCount
-				if a.LastCommitDate.After(ca.LastCommitDate) {
-					ca.Name = a.Name // use latest name in case it changed over time
-					ca.LastCommit = a.LastCommit
-					ca.LastCommitDate = a.LastCommitDate
+			authorsByEmail, lineCount, err := getBlameAuthorsCached(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
+			if err != nil {
+				mu.Lock()
+				if allErr == nil {
+					allErr = err
+				}
+				mu.Unlock()
+				return
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+			totalLineCount += lineCount
+			for email, a := range authorsByEmail {
+				ca := all[email]
+				if ca == nil {
+					all[email] = a
+				} else {
+					ca.LineCount += a.LineCount
+					if a.LastCommitDate.After(ca.LastCommitDate) {
+						ca.Name = a.Name // use latest name in case it changed over time
+						ca.LastCommit = a.LastCommit
+						ca.LastCommitDate = a.LastCommitDate
+					}
 				}
 			}
-		}
+		}(e)
+	}
+	wg.Wait()
+	if allErr != nil {
+		return nil, err
 	}
 
 	edges := make([]gql.CatalogComponentAuthorEdgeResolver, 0, len(all))
