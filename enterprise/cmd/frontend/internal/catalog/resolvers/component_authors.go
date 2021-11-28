@@ -22,11 +22,15 @@ import (
 )
 
 func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogComponentAuthorEdgeResolver, error) {
-	entries, err := git.ReadDir(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), r.sourcePath, true)
-	if err != nil {
-		return nil, err
-
+	var allEntries []fs.FileInfo
+	for _, sourcePath := range r.sourcePaths {
+		entries, err := git.ReadDir(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), sourcePath, true)
+		if err != nil {
+			return nil, err
+		}
+		allEntries = append(allEntries, entries...)
 	}
+
 	var (
 		mu             sync.Mutex
 		all            = map[string]*blameAuthor{}
@@ -34,7 +38,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 		allErr         error
 		wg             sync.WaitGroup
 	)
-	for _, e := range entries {
+	for _, e := range allEntries {
 		if e.IsDir() {
 			continue
 		}
@@ -73,7 +77,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 	}
 	wg.Wait()
 	if allErr != nil {
-		return nil, err
+		return nil, allErr
 	}
 
 	edges := make([]gql.CatalogComponentAuthorEdgeResolver, 0, len(all))

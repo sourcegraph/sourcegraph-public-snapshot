@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -50,85 +51,122 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			name:         "frontend",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/frontend",
+			sourcePaths:  []string{"cmd/frontend", "enterprise/cmd/frontend"},
 		},
 		{
 			kind:         "SERVICE",
 			name:         "gitserver",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/gitserver",
+			sourcePaths:  []string{"cmd/gitserver"},
 		},
 		{
 			kind:         "SERVICE",
 			name:         "repo-updater",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/repo-updater",
+			sourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
 		},
 		{
 			kind:         "SERVICE",
 			name:         "executor",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "enterprise/cmd/executor",
+			sourcePaths:  []string{"enterprise/cmd/executor"},
 		},
 		{
 			kind:         "SERVICE",
 			name:         "precise-code-intel-worker",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "enterprise/cmd/precise-code-intel-worker",
+			sourcePaths:  []string{"enterprise/cmd/precise-code-intel-worker"},
 		},
-
 		{
 			kind:         "SERVICE",
 			name:         "github-proxy",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/github-proxy",
+			sourcePaths:  []string{"cmd/github-proxy"},
 		},
-
 		{
 			kind:         "SERVICE",
 			name:         "query-runner",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/query-runner",
+			sourcePaths:  []string{"cmd/query-runner"},
 		},
-
 		{
 			kind:         "SERVICE",
 			name:         "worker",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/worker",
+			sourcePaths:  []string{"cmd/worker", "enterprise/cmd/worker"},
 		},
-
 		{
 			kind:         "SERVICE",
 			name:         "server",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/server",
+			sourcePaths:  []string{"cmd/server", "enterprise/cmd/server"},
 		},
-
 		{
 			kind:         "SERVICE",
 			name:         "symbols",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/symbols",
+			sourcePaths:  []string{"cmd/symbols"},
 		},
-
 		{
 			kind:         "SERVICE",
 			name:         "sitemap",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
-			sourcePath:   "cmd/sitemap",
+			sourcePaths:  []string{"cmd/sitemap"},
+		},
+		{
+			kind:         "TOOL",
+			name:         "sg",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"dev/sg"},
+		},
+		{
+			kind:         "LIBRARY",
+			name:         "client/web",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"client/web"},
+		},
+		{
+			kind:         "LIBRARY",
+			name:         "client/browser",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"client/browser"},
+		},
+		{
+			kind:         "LIBRARY",
+			name:         "client/shared",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"client/shared"},
+		},
+		{
+			kind:         "LIBRARY",
+			name:         "wildcard",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"client/wildcard"},
+		},
+		{
+			kind:         "LIBRARY",
+			name:         "extension-api",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"client/extension-api"},
 		},
 	}
+	sort.Slice(components, func(i, j int) bool { return components[i].name < components[j].name })
 	for _, c := range components {
 		c.db = db
 	}
@@ -175,7 +213,8 @@ type catalogComponentResolver struct {
 	name   string
 	system *string
 
-	sourceRepo, sourceCommit, sourcePath string
+	sourceRepo, sourceCommit string
+	sourcePaths              []string
 
 	db database.DB
 }
@@ -215,11 +254,16 @@ func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql
 	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
-func (r *catalogComponentResolver) SourceLocation(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
+func (r *catalogComponentResolver) SourceLocations(ctx context.Context) ([]*gql.GitTreeEntryResolver, error) {
 	repoResolver, err := r.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
 	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil)
-	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(r.sourcePath, false)), nil
+	var locs []*gql.GitTreeEntryResolver
+	for _, sourcePath := range r.sourcePaths {
+
+		locs = append(locs, gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(sourcePath, false)))
+	}
+	return locs, nil
 }

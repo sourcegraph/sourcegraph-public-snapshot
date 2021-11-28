@@ -19,6 +19,7 @@ enum CatalogComponentKind {
     SERVICE
     WEBSITE
     LIBRARY
+    TOOL
     OTHER
 }
 
@@ -29,7 +30,7 @@ type CatalogComponent implements Node {
     owner: Person
     system: String
     tags: [String!]!
-    sourceLocation: TreeEntry
+    sourceLocations: [TreeEntry!]!
     commits(first: Int): GitCommitConnection
     authors: [CatalogComponentAuthorEdge!]
 }

@@ -41,7 +41,7 @@ type CatalogComponentResolver interface {
 	Owner(context.Context) (*PersonResolver, error)
 	System() *string
 	Tags() []string
-	SourceLocation(context.Context) (*GitTreeEntryResolver, error)
+	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
 }
