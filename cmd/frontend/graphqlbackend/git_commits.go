@@ -11,17 +11,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+type GitCommitConnectionResolver interface {
+	Nodes(context.Context) ([]*GitCommitResolver, error)
+	TotalCount(context.Context) (*int32, error)
+	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type GitCommitConnectionArgs struct {
+	RevisionRange string
+	First         *int32
+	Query         *string
+	Path          *string
+	Author        *string
+	After         *string
+}
+
+func NewGitCommitConnectionResolver(db database.DB, repo *RepositoryResolver, args GitCommitConnectionArgs) GitCommitConnectionResolver {
+	return &gitCommitConnectionResolver{
+		db:   db,
+		repo: repo,
+		args: args,
+	}
+}
+
 type gitCommitConnectionResolver struct {
-	db            database.DB
-	revisionRange string
-
-	first  *int32
-	query  *string
-	path   *string
-	author *string
-	after  *string
-
+	db   database.DB
 	repo *RepositoryResolver
+	args GitCommitConnectionArgs
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
@@ -32,28 +48,28 @@ type gitCommitConnectionResolver struct {
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
 	do := func() ([]*gitdomain.Commit, error) {
 		var n int32
-		if r.first != nil {
-			n = *r.first
+		if r.args.First != nil {
+			n = *r.args.First
 			n++ // fetch +1 additional result so we can determine if a next page exists
 		}
 		var query string
-		if r.query != nil {
-			query = *r.query
+		if r.args.Query != nil {
+			query = *r.args.Query
 		}
 		var path string
-		if r.path != nil {
-			path = *r.path
+		if r.args.Path != nil {
+			path = *r.args.Path
 		}
 		var author string
-		if r.author != nil {
-			author = *r.author
+		if r.args.Author != nil {
+			author = *r.args.Author
 		}
 		var after string
-		if r.after != nil {
-			after = *r.after
+		if r.args.After != nil {
+			after = *r.args.After
 		}
 		return git.Commits(ctx, r.repo.RepoName(), git.CommitsOptions{
-			Range:        r.revisionRange,
+			Range:        r.args.RevisionRange,
 			N:            uint(n),
 			MessageQuery: query,
 			Author:       author,
@@ -72,9 +88,9 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 		return nil, err
 	}
 
-	if r.first != nil && len(commits) > int(*r.first) {
+	if r.args.First != nil && len(commits) > int(*r.args.First) {
 		// Don't return +1 results, which is used to determine if next page exists.
-		commits = commits[:*r.first]
+		commits = commits[:*r.args.First]
 	}
 
 	resolvers := make([]*GitCommitResolver, len(commits))
@@ -86,7 +102,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 }
 
 func (r *gitCommitConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	if r.first != nil {
+	if r.args.First != nil {
 		// Return indeterminate total count if the caller requested an incomplete list of commits
 		// (which means we'd need an extra and expensive Git operation to determine the total
 		// count). This is to avoid `totalCount` taking significantly longer than `nodes` to
@@ -109,5 +125,5 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 
 	// If we have a limit, so we rely on having fetched +1 additional result in our limit to
 	// indicate whether or not a next page exists.
-	return graphqlutil.HasNextPage(r.first != nil && len(commits) > 0 && len(commits) > int(*r.first)), nil
+	return graphqlutil.HasNextPage(r.args.First != nil && len(commits) > 0 && len(commits) > int(*r.args.First)), nil
 }
