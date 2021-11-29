@@ -1,9 +1,9 @@
 import { nextTick } from 'process'
 import { promisify } from 'util'
 
+import { RenderResult } from '@testing-library/react'
 import { Remote } from 'comlink'
 import { uniqueId, noop, isEmpty, pick } from 'lodash'
-import renderer from 'react-test-renderer'
 import { BehaviorSubject, NEVER, of, Subject, Subscription } from 'rxjs'
 import { filter, take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
@@ -52,7 +52,7 @@ const notificationClassNames = {
     [NotificationType.Error]: 'error',
 }
 
-const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
+const elementRenderedAtMount = (mount: Element): RenderResult | undefined => {
     const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
 }
