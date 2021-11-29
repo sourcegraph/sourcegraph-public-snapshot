@@ -70,8 +70,10 @@ func Combine(path string, opt Options) error {
 	}
 
 	type dirCommit struct {
-		dir    string
-		commit *object.Commit
+		*object.Commit
+
+		// dir is the name of the directory we will import Commit into.
+		dir string
 	}
 
 	rootTree := map[string]plumbing.Hash{}
@@ -122,13 +124,13 @@ func Combine(path string, opt Options) error {
 
 			commits = append(commits, &dirCommit{
 				dir:    remote,
-				commit: commit,
+				Commit: commit,
 			})
 		}
 	}
 
 	sort.Slice(commits, func(i, j int) bool {
-		return commits[i].commit.Committer.When.Before(commits[j].commit.Committer.When)
+		return commits[i].Committer.When.Before(commits[j].Committer.When)
 	})
 
 	for i, commit := range commits {
@@ -136,7 +138,7 @@ func Combine(path string, opt Options) error {
 		// this commit. We don't touch the other entries, so the other
 		// directories will have the same code as the previous commit we
 		// created.
-		rootTree[commit.dir] = commit.commit.TreeHash
+		rootTree[commit.dir] = commit.TreeHash
 
 		var entries []object.TreeEntry
 		for dir, hash := range rootTree {
@@ -165,13 +167,13 @@ func Combine(path string, opt Options) error {
 		// TODO break links so we don't appear in upstream analytics. IE
 		// remove links from message, scrub author and committer, etc.
 		newCommit := &object.Commit{
-			Author: sanitizeSignature(commit.commit.Author),
+			Author: sanitizeSignature(commit.Author),
 			Committer: object.Signature{
 				Name:  "sourcegraph-bot",
 				Email: "no-reply@sourcegraph.com",
-				When:  commit.commit.Committer.When,
+				When:  commit.Committer.When,
 			},
-			Message:  sanitizeMessage(commit.dir, commit.commit),
+			Message:  sanitizeMessage(commit.dir, commit.Commit),
 			TreeHash: treeHash,
 		}
 
@@ -190,7 +192,7 @@ func Combine(path string, opt Options) error {
 			return err
 		}
 
-		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.commit.Hash, commitTitle(newCommit))
+		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Hash, commitTitle(newCommit))
 	}
 
 	return nil
