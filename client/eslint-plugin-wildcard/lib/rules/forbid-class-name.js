@@ -18,7 +18,6 @@ const config = {
      * @returns {[string]}
      */
     const extractStringLiteral = attributeNode => {
-      // Handle expressions like `classNames()`
       if (attributeNode.type === 'JSXExpressionContainer') {
         return attributeNode.expression.arguments
           .filter(argument => argument.type === 'Literal')
@@ -37,7 +36,7 @@ const config = {
     return {
       JSXAttribute: node => {
         if (node.name.name !== 'className') {
-          return false
+          return
         }
 
         const classNames = extractStringLiteral(node.value)
