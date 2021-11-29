@@ -58,7 +58,7 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"cmd/searcher"},
 			usagePatterns: []usagePattern{
-				newQueryUsagePattern(`lang:go \bsearcher\.Search(\b patterntype:regexp`),
+				newQueryUsagePattern(`lang:go \bsearcher\.Search\( patterntype:regexp`),
 			},
 		},
 		{
