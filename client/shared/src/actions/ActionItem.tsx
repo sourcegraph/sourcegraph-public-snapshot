@@ -277,7 +277,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     <OpenInNewIcon className={this.props.iconClassName} />
                 )}
                 {showLoadingSpinner && (
-                    <div className={styles.loader}>
+                    <div className={styles.loader} data-testid="action-item-spinner">
                         <LoadingSpinner className={this.props.iconClassName} />
                     </div>
                 )}
