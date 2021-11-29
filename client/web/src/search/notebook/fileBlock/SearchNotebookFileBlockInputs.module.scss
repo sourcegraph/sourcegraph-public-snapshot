@@ -15,6 +15,7 @@
 }
 
 .separator {
+    /* stylelint-disable-next-line declaration-property-unit-whitelist */
     width: 1px;
     height: 1.125rem;
     background-color: var(--border-color);
