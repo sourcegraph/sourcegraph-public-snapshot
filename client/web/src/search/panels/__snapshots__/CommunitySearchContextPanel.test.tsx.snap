@@ -1,329 +1,141 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CommunitySearchContextPanel renders correctly 1`] = `
-<CommunitySearchContextsPanel
-  authenticatedUser={null}
-  telemetryService={
-    Object {
-      "log": [Function],
-      "logViewEvent": [Function],
-    }
-  }
->
-  <PanelContainer
-    className="community-search-context-panel"
-    populatedContent={
+<DocumentFragment>
+  <div
+    class="community-search-context-panel panelContainer d-flex flex-column"
+  >
+    <div
+      class="d-flex border-bottom header"
+    >
+      <h4
+        class="headerText"
+      >
+        Community search contexts
+      </h4>
+    </div>
+    <div
+      class="h-100 content"
+    >
       <div
-        className="mt-2 row"
+        class="mt-2 row"
       >
         <div
-          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             alt=""
-            className="mr-4 icon"
+            class="mr-4 icon"
             src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png"
           />
           <div
-            className="d-flex flex-column"
+            class="d-flex flex-column"
           >
-            <AnchorLink
-              className="mb-1"
-              onClick={[Function]}
-              to="/cncf"
+            <a
+              class="mb-1"
+              href="/cncf"
             >
               Cloud Native Computing Foundation (CNCF)
-            </AnchorLink>
+            </a>
           </div>
         </div>
         <div
-          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             alt=""
-            className="mr-4 icon"
+            class="mr-4 icon"
             src="https://avatars.githubusercontent.com/u/56493103?s=200&v=4"
           />
           <div
-            className="d-flex flex-column"
+            class="d-flex flex-column"
           >
-            <AnchorLink
-              className="mb-1"
-              onClick={[Function]}
-              to="/temporal"
+            <a
+              class="mb-1"
+              href="/temporal"
             >
               Temporal
-            </AnchorLink>
+            </a>
           </div>
         </div>
         <div
-          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             alt=""
-            className="mr-4 icon"
+            class="mr-4 icon"
             src="https://raw.githubusercontent.com/o3de/artwork/19b89e72e15824f20204a8977a007f53d5fcd5b8/o3de/03_O3DE%20Application%20Icon/SVG/O3DE-Circle-Icon.svg"
           />
           <div
-            className="d-flex flex-column"
+            class="d-flex flex-column"
           >
-            <AnchorLink
-              className="mb-1"
-              onClick={[Function]}
-              to="/o3de"
+            <a
+              class="mb-1"
+              href="/o3de"
             >
               O3DE
-            </AnchorLink>
+            </a>
           </div>
         </div>
         <div
-          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             alt=""
-            className="mr-4 icon"
+            class="mr-4 icon"
             src="https://avatars.githubusercontent.com/u/4969009?s=200&v=4"
           />
           <div
-            className="d-flex flex-column"
+            class="d-flex flex-column"
           >
-            <AnchorLink
-              className="mb-1"
-              onClick={[Function]}
-              to="/stackstorm"
+            <a
+              class="mb-1"
+              href="/stackstorm"
             >
               StackStorm
-            </AnchorLink>
+            </a>
           </div>
         </div>
         <div
-          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             alt=""
-            className="mr-4 icon"
+            class="mr-4 icon"
             src="https://code.benco.io/icon-collection/logos/kubernetes.svg"
           />
           <div
-            className="d-flex flex-column"
+            class="d-flex flex-column"
           >
-            <AnchorLink
-              className="mb-1"
-              onClick={[Function]}
-              to="/kubernetes"
+            <a
+              class="mb-1"
+              href="/kubernetes"
             >
               Kubernetes
-            </AnchorLink>
+            </a>
           </div>
         </div>
         <div
-          className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
+          class="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
         >
           <img
             alt=""
-            className="mr-4 icon"
+            class="mr-4 icon"
             src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png"
           />
           <div
-            className="d-flex flex-column"
+            class="d-flex flex-column"
           >
-            <AnchorLink
-              className="mb-1"
-              onClick={[Function]}
-              to="/stanford"
+            <a
+              class="mb-1"
+              href="/stanford"
             >
               Stanford University
-            </AnchorLink>
-          </div>
-        </div>
-      </div>
-    }
-    state="populated"
-    title="Community search contexts"
-  >
-    <div
-      className="community-search-context-panel panelContainer d-flex flex-column"
-    >
-      <div
-        className="d-flex border-bottom header"
-      >
-        <h4
-          className="headerText"
-        >
-          Community search contexts
-        </h4>
-      </div>
-      <div
-        className="h-100 content"
-      >
-        <div
-          className="mt-2 row"
-        >
-          <div
-            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
-            key="cncf"
-          >
-            <img
-              alt=""
-              className="mr-4 icon"
-              src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png"
-            />
-            <div
-              className="d-flex flex-column"
-            >
-              <AnchorLink
-                className="mb-1"
-                onClick={[Function]}
-                to="/cncf"
-              >
-                <a
-                  className="mb-1"
-                  href="/cncf"
-                  onClick={[Function]}
-                >
-                  Cloud Native Computing Foundation (CNCF)
-                </a>
-              </AnchorLink>
-            </div>
-          </div>
-          <div
-            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
-            key="temporalio"
-          >
-            <img
-              alt=""
-              className="mr-4 icon"
-              src="https://avatars.githubusercontent.com/u/56493103?s=200&v=4"
-            />
-            <div
-              className="d-flex flex-column"
-            >
-              <AnchorLink
-                className="mb-1"
-                onClick={[Function]}
-                to="/temporal"
-              >
-                <a
-                  className="mb-1"
-                  href="/temporal"
-                  onClick={[Function]}
-                >
-                  Temporal
-                </a>
-              </AnchorLink>
-            </div>
-          </div>
-          <div
-            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
-            key="o3de"
-          >
-            <img
-              alt=""
-              className="mr-4 icon"
-              src="https://raw.githubusercontent.com/o3de/artwork/19b89e72e15824f20204a8977a007f53d5fcd5b8/o3de/03_O3DE%20Application%20Icon/SVG/O3DE-Circle-Icon.svg"
-            />
-            <div
-              className="d-flex flex-column"
-            >
-              <AnchorLink
-                className="mb-1"
-                onClick={[Function]}
-                to="/o3de"
-              >
-                <a
-                  className="mb-1"
-                  href="/o3de"
-                  onClick={[Function]}
-                >
-                  O3DE
-                </a>
-              </AnchorLink>
-            </div>
-          </div>
-          <div
-            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
-            key="stackstorm"
-          >
-            <img
-              alt=""
-              className="mr-4 icon"
-              src="https://avatars.githubusercontent.com/u/4969009?s=200&v=4"
-            />
-            <div
-              className="d-flex flex-column"
-            >
-              <AnchorLink
-                className="mb-1"
-                onClick={[Function]}
-                to="/stackstorm"
-              >
-                <a
-                  className="mb-1"
-                  href="/stackstorm"
-                  onClick={[Function]}
-                >
-                  StackStorm
-                </a>
-              </AnchorLink>
-            </div>
-          </div>
-          <div
-            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
-            key="kubernetes"
-          >
-            <img
-              alt=""
-              className="mr-4 icon"
-              src="https://code.benco.io/icon-collection/logos/kubernetes.svg"
-            />
-            <div
-              className="d-flex flex-column"
-            >
-              <AnchorLink
-                className="mb-1"
-                onClick={[Function]}
-                to="/kubernetes"
-              >
-                <a
-                  className="mb-1"
-                  href="/kubernetes"
-                  onClick={[Function]}
-                >
-                  Kubernetes
-                </a>
-              </AnchorLink>
-            </div>
-          </div>
-          <div
-            className="d-flex align-items-center mb-4 col-xl-6 col-lg-12 col-sm-6"
-            key="stanford"
-          >
-            <img
-              alt=""
-              className="mr-4 icon"
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png"
-            />
-            <div
-              className="d-flex flex-column"
-            >
-              <AnchorLink
-                className="mb-1"
-                onClick={[Function]}
-                to="/stanford"
-              >
-                <a
-                  className="mb-1"
-                  href="/stanford"
-                  onClick={[Function]}
-                >
-                  Stanford University
-                </a>
-              </AnchorLink>
-            </div>
+            </a>
           </div>
         </div>
       </div>
     </div>
-  </PanelContainer>
-</CommunitySearchContextsPanel>
+  </div>
+</DocumentFragment>
 `;

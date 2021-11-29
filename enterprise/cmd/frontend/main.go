@@ -26,12 +26,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -45,7 +45,7 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, dbutil.DB, conftypes.UnifiedWatchable, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
@@ -55,6 +55,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"codemonitors":   codemonitors.Init,
 	"dotcom":         dotcom.Init,
 	"searchcontexts": searchcontexts.Init,
+	"enterprise":     orgrepos.Init,
 }
 
 func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {

@@ -64,6 +64,7 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
     [ExternalServiceKind.PHABRICATOR]: <span>Unsupported</span>,
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,
+    [ExternalServiceKind.PAGURE]: <span>Unsupported</span>,
     [ExternalServiceKind.OTHER]: <span>Unsupported</span>,
 }
 

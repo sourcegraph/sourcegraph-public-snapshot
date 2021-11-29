@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import React from 'react'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
@@ -13,7 +13,7 @@ describe('StreamingProgressCount', () => {
             skipped: [],
         }
 
-        expect(mount(<StreamingProgressCount state="loading" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="loading" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 
     it('should render correctly for 0 repositories', () => {
@@ -24,7 +24,7 @@ describe('StreamingProgressCount', () => {
             skipped: [],
         }
 
-        expect(mount(<StreamingProgressCount state="loading" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="loading" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 
     it('should render correctly for 1 item complete', () => {
@@ -35,7 +35,7 @@ describe('StreamingProgressCount', () => {
             skipped: [],
         }
 
-        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="complete" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 
     it('should render correctly for 123 items complete', () => {
@@ -46,7 +46,7 @@ describe('StreamingProgressCount', () => {
             skipped: [],
         }
 
-        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="complete" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 
     it('should render correctly for big numbers complete', () => {
@@ -57,7 +57,7 @@ describe('StreamingProgressCount', () => {
             skipped: [],
         }
 
-        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="complete" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 
     it('should render correctly for limithit', () => {
@@ -75,7 +75,7 @@ describe('StreamingProgressCount', () => {
             ],
         }
 
-        expect(mount(<StreamingProgressCount state="complete" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="complete" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 
     it('should render correctly when a trace url is provided', () => {
@@ -86,7 +86,9 @@ describe('StreamingProgressCount', () => {
             trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
         }
 
-        expect(mount(<StreamingProgressCount state="loading" progress={progress} showTrace={true} />)).toMatchSnapshot()
+        expect(
+            render(<StreamingProgressCount state="loading" progress={progress} showTrace={true} />).asFragment()
+        ).toMatchSnapshot()
     })
 
     it('should not render a trace link when not opted into with &trace=1', () => {
@@ -97,6 +99,6 @@ describe('StreamingProgressCount', () => {
             trace: 'https://sourcegraph.test:3443/-/debug/jaeger/trace/abcdefg',
         }
 
-        expect(mount(<StreamingProgressCount state="loading" progress={progress} />)).toMatchSnapshot()
+        expect(render(<StreamingProgressCount state="loading" progress={progress} />).asFragment()).toMatchSnapshot()
     })
 })

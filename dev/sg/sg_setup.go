@@ -152,10 +152,17 @@ var macOSInstructionsAfterClone = []instruction{
 		readsBool: `docker`,
 	},
 	{
-		ifBool: "docker",
-		prompt: "Nothing to do yet!",
-		comment: `Nothing to do here, since you already installed Docker for Mac.
-We provide a docker compose file at dev/redis-postgres.yml to make it easy to run Redis and PostgreSQL as Docker containers, with docker compose.`},
+		ifBool:  "docker",
+		prompt:  "Install psql, the postgresql command line client",
+		comment: `While Postgres and Redis will be running within Docker, psql is mandatory to connect.`,
+		command: `brew install libpq`,
+	},
+	{
+		ifBool:  "docker",
+		prompt:  "Add psql to the PATH",
+		comment: `By default, brew does not make psql available when shipped through libpq.`,
+		command: `echo 'export PATH="/opt/homebrew/opt/libpq/bin:$PATH"' >> ~/.zshrc`,
+	},
 	{
 		ifNotBool: "docker",
 		prompt:    `Install PostgreSQL and Redis with the following commands`,
@@ -177,9 +184,9 @@ brew services start redis`,
 	{
 		ifNotBool: "docker",
 		prompt:    `Ensure psql, the PostgreSQL command line client, is available`,
-		comment:   `If the previous command printed "NOT OK", you can run the command below to fix that`,
-		command: `hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
-source ~/.bash_profile`,
+		comment:   `So if the previous command show "NOT OK", you can run the command below to fix that`,
+		command: `hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.zshrc }
+source ~/.zshrc`,
 	},
 	{
 		ifNotBool: "docker",
@@ -218,8 +225,7 @@ The development server startup script as well as the docker compose file provide
 		ifNotBool: "docker",
 		prompt:    `Create a database for the current Unix user`,
 		comment:   `You need a fresh Postgres database and a database user that has full ownership of that database.`,
-		command: `sudo su - _postgres
-createdb`,
+		command:   `createdb`,
 	},
 	{
 		ifNotBool: "docker",
@@ -322,6 +328,13 @@ sudo apt install -y postgresql postgresql-contrib`,
 		command: `sudo systemctl enable --now postgresql
 sudo systemctl enable --now redis-server.service`,
 	},
+	{
+		ifBool: "docker",
+		prompt: `Even though you're going to run the database in docker you will probably want to install the CLI tooling for Redis and Postgres
+
+redis-tools will provide redis-cli and postgresql will provide createdb and createuser`,
+		command: `sudo apt install -y redis-tools postgresql postgresql-contrib`,
+	},
 	// step 4
 	{
 		ifBool: "docker",
@@ -355,7 +368,7 @@ var cloneInstructions = []instruction{
 	{
 		prompt:  `Cloning the code`,
 		comment: `We're now going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
-		command: `git clone https://github.com/sourcegraph/sourcegraph.git`,
+		command: `git clone git@github.com:sourcegraph/sourcegraph.git`,
 	},
 	{
 		prompt:    "Are you a Sourcegraph employee",
@@ -370,7 +383,7 @@ To illustrate:
  |-- dev-private
  +-- sourcegraph
 NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-private as the secrets are updated from time to time.`,
-		command: `git clone https://github.com/sourcegraph/dev-private.git`,
+		command: `git clone git@github.com:sourcegraph/dev-private.git`,
 		ifBool:  "employee",
 	},
 }

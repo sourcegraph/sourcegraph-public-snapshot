@@ -123,6 +123,73 @@ func NewMockStore() *MockStore {
 	}
 }
 
+// NewStrictMockStore creates a new mock of the Store interface. All methods
+// panic on invocation, unless overwritten.
+func NewStrictMockStore() *MockStore {
+	return &MockStore{
+		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) (int, error) {
+				panic("unexpected invocation of MockStore.AddExecutionLogEntry")
+			},
+		},
+		DequeueFunc: &StoreDequeueFunc{
+			defaultHook: func(context.Context, string, []*sqlf.Query) (workerutil.Record, bool, error) {
+				panic("unexpected invocation of MockStore.Dequeue")
+			},
+		},
+		HandleFunc: &StoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockStore.Handle")
+			},
+		},
+		HeartbeatFunc: &StoreHeartbeatFunc{
+			defaultHook: func(context.Context, []int, store.HeartbeatOptions) ([]int, error) {
+				panic("unexpected invocation of MockStore.Heartbeat")
+			},
+		},
+		MarkCompleteFunc: &StoreMarkCompleteFunc{
+			defaultHook: func(context.Context, int, store.MarkFinalOptions) (bool, error) {
+				panic("unexpected invocation of MockStore.MarkComplete")
+			},
+		},
+		MarkErroredFunc: &StoreMarkErroredFunc{
+			defaultHook: func(context.Context, int, string, store.MarkFinalOptions) (bool, error) {
+				panic("unexpected invocation of MockStore.MarkErrored")
+			},
+		},
+		MarkFailedFunc: &StoreMarkFailedFunc{
+			defaultHook: func(context.Context, int, string, store.MarkFinalOptions) (bool, error) {
+				panic("unexpected invocation of MockStore.MarkFailed")
+			},
+		},
+		QueuedCountFunc: &StoreQueuedCountFunc{
+			defaultHook: func(context.Context, bool, []*sqlf.Query) (int, error) {
+				panic("unexpected invocation of MockStore.QueuedCount")
+			},
+		},
+		RequeueFunc: &StoreRequeueFunc{
+			defaultHook: func(context.Context, int, time.Time) error {
+				panic("unexpected invocation of MockStore.Requeue")
+			},
+		},
+		ResetStalledFunc: &StoreResetStalledFunc{
+			defaultHook: func(context.Context) (map[int]time.Duration, map[int]time.Duration, error) {
+				panic("unexpected invocation of MockStore.ResetStalled")
+			},
+		},
+		UpdateExecutionLogEntryFunc: &StoreUpdateExecutionLogEntryFunc{
+			defaultHook: func(context.Context, int, int, workerutil.ExecutionLogEntry, store.ExecutionLogEntryOptions) error {
+				panic("unexpected invocation of MockStore.UpdateExecutionLogEntry")
+			},
+		},
+		WithFunc: &StoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) store.Store {
+				panic("unexpected invocation of MockStore.With")
+			},
+		},
+	}
+}
+
 // NewMockStoreFrom creates a new mock of the MockStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {

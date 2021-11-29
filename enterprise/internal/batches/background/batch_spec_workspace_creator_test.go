@@ -221,11 +221,12 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
-		key, err := cacheKeyForWorkspace(batchSpec, workspace)
+		key := service.CacheKeyForWorkspace(batchSpec, workspace)
+		rawKey, err := key.Key()
 		if err != nil {
 			t.Fatal(err)
 		}
-		entry, err := btypes.NewCacheEntryFromResult(key, executionResult)
+		entry, err := btypes.NewCacheEntryFromResult(rawKey, executionResult)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -285,10 +286,14 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
-		reloadedEntry, err := s.GetBatchSpecExecutionCacheEntry(context.Background(), store.GetBatchSpecExecutionCacheEntryOpts{Key: entry.Key})
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
 		if !reloadedEntry.LastUsedAt.Equal(now) {
 			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
 		}
@@ -326,10 +331,14 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			},
 		})
 
-		reloadedEntry, err := s.GetBatchSpecExecutionCacheEntry(context.Background(), store.GetBatchSpecExecutionCacheEntryOpts{Key: entry.Key})
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
 		if !reloadedEntry.LastUsedAt.IsZero() {
 			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
 		}

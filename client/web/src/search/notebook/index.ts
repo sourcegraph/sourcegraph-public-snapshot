@@ -1,6 +1,6 @@
 import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
-import { map, startWith } from 'rxjs/operators'
+import { catchError, map, startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
@@ -12,6 +12,7 @@ import {
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { fetchHighlightedFileLineRanges } from '../../repo/backend'
@@ -34,14 +35,14 @@ export interface MarkdownBlock extends BaseBlock<string, string> {
     type: 'md'
 }
 
-interface FileBlockInput {
+export interface FileBlockInput {
     repositoryName: string
     revision: string
     filePath: string
-    lineRange?: IHighlightLineRange
+    lineRange: IHighlightLineRange | null
 }
 
-export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[]>> {
+export interface FileBlock extends BaseBlock<FileBlockInput, Observable<string[] | Error>> {
     type: 'file'
 }
 
@@ -153,7 +154,10 @@ export class Notebook {
                             ? [block.input.lineRange]
                             : [{ startLine: 0, endLine: 2147483647 }], // entire file,
                         disableTimeout: false,
-                    }).pipe(map(ranges => ranges[0])),
+                    }).pipe(
+                        map(ranges => ranges[0]),
+                        catchError(() => [asError('File not found')])
+                    ),
                 })
                 break
         }

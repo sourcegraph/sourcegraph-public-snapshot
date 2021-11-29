@@ -38,7 +38,7 @@ func newTriggerQueryEnqueuer(ctx context.Context, store cm.CodeMonitorStore) gor
 	enqueueActive := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_query_enqueuer",
 		func(ctx context.Context) error {
-			return store.EnqueueTriggerQueries(ctx)
+			return store.EnqueueQueryTriggerJobs(ctx)
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }
@@ -63,12 +63,12 @@ func newTriggerJobsLogDeleter(ctx context.Context, store cm.CodeMonitorStore) go
 		"code_monitors_trigger_jobs_log_deleter",
 		func(ctx context.Context) error {
 			// Delete logs without search results.
-			err := store.DeleteObsoleteJobLogs(ctx)
+			err := store.DeleteObsoleteTriggerJobs(ctx)
 			if err != nil {
 				return err
 			}
 			// Delete old logs, even if they have search results.
-			err = store.DeleteOldJobLogs(ctx, eventRetentionInDays)
+			err = store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 			if err != nil {
 				return err
 			}
@@ -109,7 +109,7 @@ func createDBWorkerStoreForTriggerJobs(s cm.CodeMonitorStore) dbworkerstore.Stor
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
 		ColumnExpressions: cm.TriggerJobsColumns,
-		Scan:              cm.ScanTriggerJobs,
+		Scan:              cm.ScanTriggerJobsRecord,
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -147,16 +147,21 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	defer func() { err = s.Done(err) }()
 
-	var q *cm.MonitorQuery
-	q, err = s.GetQueryByRecordID(ctx, record.RecordID())
+	q, err := s.GetQueryTriggerForJob(ctx, record.RecordID())
 	if err != nil {
 		return err
 	}
+
+	m, err := s.GetMonitor(ctx, q.Monitor)
+	if err != nil {
+		return err
+	}
+
 	newQuery := newQueryWithAfterFilter(q)
 
 	// Search.
 	var results *gqlSearchResponse
-	results, err = search(ctx, newQuery)
+	results, err = search(ctx, newQuery, m.UserID)
 	if err != nil {
 		return err
 	}
@@ -165,19 +170,19 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionEmailsForQueryIDInt64(ctx, q.Id, record.RecordID())
+		err := s.EnqueueActionJobsForQuery(ctx, q.ID, record.RecordID())
 		if err != nil {
-			return errors.Errorf("store.EnqueueActionEmailsForQueryIDInt64: %w", err)
+			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
 	newLatestResult := latestResultTime(q.LatestResult, results, err)
-	err = s.SetTriggerQueryNextRun(ctx, q.Id, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	err = s.SetQueryTriggerNextRun(ctx, q.ID, s.Clock()().Add(5*time.Minute), newLatestResult.UTC())
 	if err != nil {
 		return err
 	}
 	// Log the actual query we ran and whether we got any new results.
-	err = s.LogSearch(ctx, newQuery, numResults, record.RecordID())
+	err = s.UpdateTriggerJobWithResults(ctx, newQuery, numResults, record.RecordID())
 	if err != nil {
 		return errors.Errorf("LogSearch: %w", err)
 	}
@@ -214,12 +219,12 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 
 	switch {
 	case j.Email != nil:
-		e, err := s.ActionEmailByIDInt64(ctx, int64(*j.Email))
+		e, err := s.GetEmailAction(ctx, *j.Email)
 		if err != nil {
 			return errors.Errorf("store.ActionEmailByIDInt64: %w", err)
 		}
 
-		recs, err := s.AllRecipientsForEmailIDInt64(ctx, int64(*j.Email))
+		recs, err := s.ListRecipients(ctx, cm.ListRecipientsOpts{EmailID: j.Email})
 		if err != nil {
 			return errors.Errorf("store.AllRecipientsForEmailIDInt64: %w", err)
 		}
@@ -250,7 +255,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 
 // newQueryWithAfterFilter constructs a new query which finds search results
 // introduced after the last time we queried.
-func newQueryWithAfterFilter(q *cm.MonitorQuery) string {
+func newQueryWithAfterFilter(q *cm.QueryTrigger) string {
 	// For q.LatestResult = nil we return a query string without after: filter, which
 	// effectively triggers actions immediately provided the query returns any
 	// results.

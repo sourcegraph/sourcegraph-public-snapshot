@@ -195,9 +195,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Executor VM image
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
-		if c.RunType.Is(MainDryRun, MainBranch) {
+		if c.RunType.Is(MainDryRun, MainBranch, ReleaseBranch) {
 			ops.Append(buildExecutor(c.Version, skipHashCompare))
-			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
 				ops.Append(buildExecutorDockerMirror(c.Version))
 			}
 		}
@@ -208,7 +208,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-		const minimumUpgradeableVersion = "3.33.0"
+		const minimumUpgradeableVersion = "3.34.1"
 
 		// Various integration tests
 		ops.Append(
@@ -226,9 +226,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(publishFinalDockerImage(c, dockerImage))
 		}
 		// Executor VM image
-		if c.RunType.Is(MainBranch) {
+		if c.RunType.Is(MainBranch, ReleaseBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
-			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+			if c.RunType.Is(ReleaseBranch) || c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
 				ops.Append(publishExecutorDockerMirror(c.Version))
 			}
 		}

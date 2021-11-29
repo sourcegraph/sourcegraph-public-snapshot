@@ -4,7 +4,6 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
@@ -13,6 +12,7 @@ import {
     groupDecorationsByLine,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,

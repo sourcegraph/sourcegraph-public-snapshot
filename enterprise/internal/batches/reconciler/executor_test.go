@@ -15,7 +15,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -54,7 +54,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	defer state.Unmock()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
@@ -1047,7 +1047,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 	})
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -1077,7 +1077,7 @@ func TestBatchChangeURL(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				internalClient = tc
-				defer func() { internalClient = api.InternalClient }()
+				defer func() { internalClient = internalapi.Client }()
 
 				if _, err := batchChangeURL(ctx, nil, nil); err == nil {
 					t.Error("unexpected nil error")
@@ -1088,7 +1088,7 @@ func TestBatchChangeURL(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-		defer func() { internalClient = api.InternalClient }()
+		defer func() { internalClient = internalapi.Client }()
 
 		url, err := batchChangeURL(
 			ctx,

@@ -746,7 +746,7 @@ type BatchSpecWorkspaceConnectionResolver interface {
 	Nodes(ctx context.Context) ([]BatchSpecWorkspaceResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Stats(ctx context.Context) BatchSpecWorkspacesStatsResolver
+	Stats(ctx context.Context) (BatchSpecWorkspacesStatsResolver, error)
 }
 
 type BatchSpecWorkspacesStatsResolver interface {

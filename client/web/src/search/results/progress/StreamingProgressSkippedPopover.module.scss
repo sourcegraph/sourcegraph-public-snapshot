@@ -41,17 +41,18 @@
     );
 
     margin-right: var(--streaming-skipped-item-button-margin);
+}
 
-    &:global(.markdown) {
-        code {
-            // Force line breaks on markdown `code` elements
-            white-space: normal;
-            word-break: break-all;
-        }
+.markdown {
+    code {
+        // Force line breaks on markdown `code` elements
+        // Added !important to overwrite the p>class css of Markdown.module.scss
+        white-space: normal !important;
+        word-break: break-all;
+    }
 
-        ul {
-            padding-left: 1rem;
-        }
+    ul {
+        padding-left: 1rem;
     }
 }
 

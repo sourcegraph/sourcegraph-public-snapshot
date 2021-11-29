@@ -27,9 +27,6 @@ type Options struct {
 	// ExecutorName is a unique identifier for the requesting executor.
 	ExecutorName string
 
-	// ExecutorHostname is the hostname of the system it is running on.
-	ExecutorHostname string
-
 	// PathPrefix is the path prefix added to all requests.
 	PathPrefix string
 
@@ -66,8 +63,7 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *executor.Jo
 	defer endObservation(1, observation.Args{})
 
 	req, err := c.makeRequest("POST", fmt.Sprintf("%s/dequeue", queueName), executor.DequeueRequest{
-		ExecutorName:     c.options.ExecutorName,
-		ExecutorHostname: c.options.ExecutorHostname,
+		ExecutorName: c.options.ExecutorName,
 	})
 	if err != nil {
 		return false, err

@@ -132,6 +132,78 @@ func NewMockSyncStore() *MockSyncStore {
 	}
 }
 
+// NewStrictMockSyncStore creates a new mock of the SyncStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockSyncStore() *MockSyncStore {
+	return &MockSyncStore{
+		ClockFunc: &SyncStoreClockFunc{
+			defaultHook: func() func() time.Time {
+				panic("unexpected invocation of MockSyncStore.Clock")
+			},
+		},
+		DBFunc: &SyncStoreDBFunc{
+			defaultHook: func() dbutil.DB {
+				panic("unexpected invocation of MockSyncStore.DB")
+			},
+		},
+		ExternalServicesFunc: &SyncStoreExternalServicesFunc{
+			defaultHook: func() database.ExternalServiceStore {
+				panic("unexpected invocation of MockSyncStore.ExternalServices")
+			},
+		},
+		GetChangesetFunc: &SyncStoreGetChangesetFunc{
+			defaultHook: func(context.Context, store.GetChangesetOpts) (*types.Changeset, error) {
+				panic("unexpected invocation of MockSyncStore.GetChangeset")
+			},
+		},
+		GetExternalServiceIDsFunc: &SyncStoreGetExternalServiceIDsFunc{
+			defaultHook: func(context.Context, store.GetExternalServiceIDsOpts) ([]int64, error) {
+				panic("unexpected invocation of MockSyncStore.GetExternalServiceIDs")
+			},
+		},
+		GetSiteCredentialFunc: &SyncStoreGetSiteCredentialFunc{
+			defaultHook: func(context.Context, store.GetSiteCredentialOpts) (*types.SiteCredential, error) {
+				panic("unexpected invocation of MockSyncStore.GetSiteCredential")
+			},
+		},
+		ListChangesetSyncDataFunc: &SyncStoreListChangesetSyncDataFunc{
+			defaultHook: func(context.Context, store.ListChangesetSyncDataOpts) ([]*types.ChangesetSyncData, error) {
+				panic("unexpected invocation of MockSyncStore.ListChangesetSyncData")
+			},
+		},
+		ListCodeHostsFunc: &SyncStoreListCodeHostsFunc{
+			defaultHook: func(context.Context, store.ListCodeHostsOpts) ([]*types.CodeHost, error) {
+				panic("unexpected invocation of MockSyncStore.ListCodeHosts")
+			},
+		},
+		ReposFunc: &SyncStoreReposFunc{
+			defaultHook: func() database.RepoStore {
+				panic("unexpected invocation of MockSyncStore.Repos")
+			},
+		},
+		TransactFunc: &SyncStoreTransactFunc{
+			defaultHook: func(context.Context) (*store.Store, error) {
+				panic("unexpected invocation of MockSyncStore.Transact")
+			},
+		},
+		UpdateChangesetCodeHostStateFunc: &SyncStoreUpdateChangesetCodeHostStateFunc{
+			defaultHook: func(context.Context, *types.Changeset) error {
+				panic("unexpected invocation of MockSyncStore.UpdateChangesetCodeHostState")
+			},
+		},
+		UpsertChangesetEventsFunc: &SyncStoreUpsertChangesetEventsFunc{
+			defaultHook: func(context.Context, ...*types.ChangesetEvent) error {
+				panic("unexpected invocation of MockSyncStore.UpsertChangesetEvents")
+			},
+		},
+		UserCredentialsFunc: &SyncStoreUserCredentialsFunc{
+			defaultHook: func() database.UserCredentialsStore {
+				panic("unexpected invocation of MockSyncStore.UserCredentials")
+			},
+		},
+	}
+}
+
 // NewMockSyncStoreFrom creates a new mock of the MockSyncStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockSyncStoreFrom(i SyncStore) *MockSyncStore {

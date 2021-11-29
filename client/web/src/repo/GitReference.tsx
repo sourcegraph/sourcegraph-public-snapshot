@@ -20,6 +20,8 @@ import {
     Scalars,
 } from '../graphql-operations'
 
+import styles from './GitReference.module.scss'
+
 export interface GitReferenceNodeProps {
     node: GitRefFields
 
@@ -58,9 +60,10 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
     return (
         <LinkOrSpan
             key={node.id}
-            className={classNames('git-ref-node list-group-item', className)}
+            className={classNames('list-group-item', styles.gitRefNode, className)}
             to={!ancestorIsLink ? url : undefined}
             onClick={onClick}
+            data-testid="git-ref-node"
         >
             <span className="d-flex align-items-center">
                 {Icon && <Icon className="icon-inline mr-1" />}

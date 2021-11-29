@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -35,7 +36,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	esStore := database.ExternalServicesWith(s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo); err != nil {
 		t.Fatal(err)
@@ -296,23 +297,17 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("UpdateChangesetSpecBatchSpecID", func(t *testing.T) {
 		for _, c := range changesetSpecs {
-			c.UserID += 1234
-			c.DiffStatAdded += 1234
-			c.DiffStatChanged += 1234
-			c.DiffStatDeleted += 1234
-
-			clock.Add(1 * time.Second)
-
-			want := c
-			want.UpdatedAt = clock.Now()
-
-			have := c.Clone()
-			if err := s.UpdateChangesetSpec(ctx, have); err != nil {
+			c.BatchSpecID = 10001
+			want := c.Clone()
+			if err := s.UpdateChangesetSpecBatchSpecID(ctx, []int64{c.ID}, 10001); err != nil {
 				t.Fatal(err)
 			}
-
+			have, err := s.GetChangesetSpecByID(ctx, c.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}

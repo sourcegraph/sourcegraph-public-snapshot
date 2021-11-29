@@ -1,105 +1,66 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`MenuNavItem add menu children 1`] = `
-<MenuNavItem>
-  <ButtonDropdown
-    direction="down"
-    isOpen={false}
-    toggle={[Function]}
+<DocumentFragment>
+  <div
+    class="btn-group"
   >
-    <Dropdown
-      a11y={true}
-      active={false}
-      addonType={false}
-      direction="down"
-      group={true}
-      inNavbar={false}
-      isOpen={false}
-      nav={false}
-      setActiveFromChild={false}
-      toggle={[Function]}
+    <a
+      aria-expanded="false"
+      aria-haspopup="true"
+      class="bg-transparent nav-link"
+      href="#"
     >
-      <Manager>
-        <div
-          className="btn-group"
-          onKeyDown={[Function]}
-        >
-          <DropdownToggle
-            aria-haspopup={true}
-            className="bg-transparent"
-            color="secondary"
-            nav={true}
-          >
-            <Reference>
-              <InnerReference
-                setReferenceNode={[Function]}
-              >
-                <a
-                  aria-expanded={false}
-                  aria-haspopup={true}
-                  className="bg-transparent nav-link"
-                  href="#"
-                  onClick={[Function]}
-                >
-                  <Memo(MenuIcon)
-                    className="icon-inline"
-                  />
-                  <Memo(MenuDownIcon)
-                    className="icon-inline"
-                  />
-                </a>
-              </InnerReference>
-            </Reference>
-          </DropdownToggle>
-          <DropdownMenu
-            flip={true}
-            tag="div"
-          >
-            <div
-              aria-hidden={true}
-              className="dropdown-menu"
-              role="menu"
-              tabIndex="-1"
-            >
-              <DropdownItem
-                key=".0"
-                tag="button"
-                toggle={true}
-              >
-                <button
-                  className="dropdown-item"
-                  onClick={[Function]}
-                  role="menuitem"
-                  tabIndex="0"
-                  type="button"
-                >
-                  <div>
-                    item
-                  </div>
-                </button>
-              </DropdownItem>
-              <DropdownItem
-                key=".1"
-                tag="button"
-                toggle={true}
-              >
-                <button
-                  className="dropdown-item"
-                  onClick={[Function]}
-                  role="menuitem"
-                  tabIndex="0"
-                  type="button"
-                >
-                  <div>
-                    item
-                  </div>
-                </button>
-              </DropdownItem>
-            </div>
-          </DropdownMenu>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"
+        />
+      </svg>
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M7,10L12,15L17,10H7Z"
+        />
+      </svg>
+    </a>
+    <div
+      aria-hidden="true"
+      class="dropdown-menu"
+      role="menu"
+      tabindex="-1"
+    >
+      <button
+        class="dropdown-item"
+        role="menuitem"
+        tabindex="0"
+        type="button"
+      >
+        <div>
+          item
         </div>
-      </Manager>
-    </Dropdown>
-  </ButtonDropdown>
-</MenuNavItem>
+      </button>
+      <button
+        class="dropdown-item"
+        role="menuitem"
+        tabindex="0"
+        type="button"
+      >
+        <div>
+          item
+        </div>
+      </button>
+    </div>
+  </div>
+</DocumentFragment>
 `;

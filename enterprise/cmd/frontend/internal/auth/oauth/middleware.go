@@ -20,14 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func NewHandler(db dbutil.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
+func NewHandler(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	oauthFlowHandler := http.StripPrefix(authPrefix, newOAuthFlowHandler(db, serviceType))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
@@ -60,7 +59,7 @@ func NewHandler(db dbutil.DB, serviceType, authPrefix string, isAPIHandler bool,
 	})
 }
 
-func newOAuthFlowHandler(db dbutil.DB, serviceType string) http.Handler {
+func newOAuthFlowHandler(db database.DB, serviceType string) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/login", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get("pc")
@@ -106,7 +105,7 @@ var extraScopes = map[string][]string{
 	extsvc.TypeGitLab: {"api"},
 }
 
-func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]string, error) {
+func getExtraScopes(ctx context.Context, db database.DB, serviceType string) ([]string, error) {
 	// Extra scopes are only needed on Sourcegraph.com
 	if !envvar.SourcegraphDotComMode() {
 		return nil, nil

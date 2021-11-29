@@ -412,7 +412,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
 	}
 	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
+		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
@@ -427,7 +427,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		}}
 	} else {
 		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(*args.OrderBy),
+			Field:      ToDBRepoListColumn(*args.OrderBy),
 			Descending: args.Descending,
 		}}
 	}
@@ -436,7 +436,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.UserID = r.user.ID
 		opt.IncludeUserPublicRepos = true
 	} else {
-		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
+		id, err := UnmarshalExternalServiceID(*args.ExternalServiceID)
 		if err != nil {
 			return nil, err
 		}

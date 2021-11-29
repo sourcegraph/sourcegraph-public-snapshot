@@ -42,7 +42,7 @@ func newOperations(observationContext *observation.Context) *operations {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					return observation.EmitForNone
 				}
-				return observation.EmitForAll
+				return observation.EmitForDefault
 			},
 		})
 	}

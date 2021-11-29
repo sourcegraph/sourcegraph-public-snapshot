@@ -69,11 +69,12 @@ add('non-default branch', () => (
                     isStale={false}
                     item={mockWorkspace(1, {
                         branch: {
+                            __typename: 'GitRef',
                             id: 'not-main',
                             abbrevName: 'not-main',
                             displayName: 'not-main',
                             url: 'idk.com',
-                            target: { oid: '1234' },
+                            target: { __typename: 'GitObject', oid: '1234' },
                         },
                     })}
                     variant="light"
@@ -84,11 +85,12 @@ add('non-default branch', () => (
                     isStale={false}
                     item={mockWorkspace(2, {
                         branch: {
+                            __typename: 'GitRef',
                             id: 'release 3.30',
                             abbrevName: 'release 3.30',
                             displayName: 'release 3.30',
                             url: 'idk.com',
-                            target: { oid: '1234' },
+                            target: { __typename: 'GitObject', oid: '1234' },
                         },
                         path: '/testing/path',
                     })}
@@ -117,11 +119,12 @@ add('cached', () => (
                     item={mockWorkspace(2, {
                         cachedResultFound: true,
                         branch: {
+                            __typename: 'GitRef',
                             id: 'release 3.30',
                             abbrevName: 'release 3.30',
                             displayName: 'release 3.30',
                             url: 'idk.com',
-                            target: { oid: '1234' },
+                            target: { __typename: 'GitObject', oid: '1234' },
                         },
                         path: '/testing/path',
                     })}
@@ -149,11 +152,12 @@ add('stale', () => (
                     isStale={true}
                     item={mockWorkspace(2, {
                         branch: {
+                            __typename: 'GitRef',
                             id: 'release 3.30',
                             abbrevName: 'release 3.30',
                             displayName: 'release 3.30',
                             url: 'idk.com',
-                            target: { oid: '1234' },
+                            target: { __typename: 'GitObject', oid: '1234' },
                         },
                         path: '/testing/path',
                     })}

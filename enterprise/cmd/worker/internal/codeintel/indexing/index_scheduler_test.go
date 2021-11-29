@@ -113,20 +113,14 @@ func testIndexSchedulerMockDBStore() *MockDBStore {
 		return scannedIDs, nil
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) (filtered []dbstore.ConfigurationPolicy, _ error) {
+	getConfigurationPolicies := func(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) (filtered []dbstore.ConfigurationPolicy, _ int, _ error) {
 		for _, policy := range policies {
-			if opts.RepositoryID == 0 {
-				if policy.RepositoryID != nil {
-					continue
-				}
-			} else if policy.RepositoryID == nil || *policy.RepositoryID != opts.RepositoryID {
-				continue
+			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
+				filtered = append(filtered, policy)
 			}
-
-			filtered = append(filtered, policy)
 		}
 
-		return filtered, nil
+		return filtered, len(filtered), nil
 	}
 
 	dbStore := NewMockDBStore()

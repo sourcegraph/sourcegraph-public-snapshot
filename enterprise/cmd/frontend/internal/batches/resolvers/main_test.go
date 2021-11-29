@@ -22,10 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -174,11 +174,11 @@ func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
 
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitapi.Commit, error) {
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, id api.CommitID) (*gitdomain.Commit, error) {
 		if _, ok := byRev[id]; !ok {
 			t.Fatalf("GetCommit received unexpected ID: %s", id)
 		}
-		return &gitapi.Commit{ID: id}, nil
+		return &gitdomain.Commit{ID: id}, nil
 	}
 	t.Cleanup(func() { backend.Mocks.Repos.GetCommit = nil })
 }

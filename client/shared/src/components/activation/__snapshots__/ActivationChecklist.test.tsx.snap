@@ -3,34 +3,34 @@
 exports[`ActivationChecklist render 0/1 complete 1`] = `
 <DocumentFragment>
   <div
-    class="activation-checklist list-group list-group-flush"
+    class="list-group list-group-flush activationChecklist"
   >
     <div
       data-reach-accordion=""
     >
       <div
-        class="activation-checklist__container list-group-item"
+        class="list-group-item container"
         data-reach-accordion-item=""
         data-state="collapsed"
       >
         <button
           aria-controls="panel--1--0"
           aria-expanded="false"
-          class="activation-checklist__button list-group-item list-group-item-action btn-link"
+          class="list-group-item list-group-item-action btn-link button"
           data-reach-accordion-button=""
           id="button--1--0"
         >
           <div
-            class="activation-checklist-item d-flex justify-content-between"
+            class="d-flex justify-content-between activationChecklistItem"
           >
             <div
               class="d-flex align-items-center"
             >
               <span
-                class="activation-checklist-item__icon-container icon-inline icon-down"
+                class="icon-inline iconContainer iconDown"
               >
                 <svg
-                  class="mdi-icon activation-checklist-item__icon"
+                  class="mdi-icon icon"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -42,10 +42,10 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
                 </svg>
               </span>
               <span
-                class="activation-checklist-item__icon-container icon-inline icon-right"
+                class="icon-inline iconContainer iconRight"
               >
                 <svg
-                  class="mdi-icon activation-checklist-item__icon"
+                  class="mdi-icon icon"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -86,7 +86,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
           tabindex="-1"
         >
           <div
-            class="activation-checklist__detail pb-1"
+            class="pb-1 detail"
           >
             detail1
           </div>
@@ -100,34 +100,34 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
 exports[`ActivationChecklist render 0/1 complete 2`] = `
 <DocumentFragment>
   <div
-    class="activation-checklist list-group list-group-flush"
+    class="list-group list-group-flush activationChecklist"
   >
     <div
       data-reach-accordion=""
     >
       <div
-        class="activation-checklist__container list-group-item"
+        class="list-group-item container"
         data-reach-accordion-item=""
         data-state="collapsed"
       >
         <button
           aria-controls="panel--4--0"
           aria-expanded="false"
-          class="activation-checklist__button list-group-item list-group-item-action btn-link"
+          class="list-group-item list-group-item-action btn-link button"
           data-reach-accordion-button=""
           id="button--4--0"
         >
           <div
-            class="activation-checklist-item d-flex justify-content-between"
+            class="d-flex justify-content-between activationChecklistItem"
           >
             <div
               class="d-flex align-items-center"
             >
               <span
-                class="activation-checklist-item__icon-container icon-inline icon-down"
+                class="icon-inline iconContainer iconDown"
               >
                 <svg
-                  class="mdi-icon activation-checklist-item__icon"
+                  class="mdi-icon icon"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -139,10 +139,10 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
                 </svg>
               </span>
               <span
-                class="activation-checklist-item__icon-container icon-inline icon-right"
+                class="icon-inline iconContainer iconRight"
               >
                 <svg
-                  class="mdi-icon activation-checklist-item__icon"
+                  class="mdi-icon icon"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -183,7 +183,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
           tabindex="-1"
         >
           <div
-            class="activation-checklist__detail pb-1"
+            class="pb-1 detail"
           >
             detail1
           </div>
@@ -197,34 +197,34 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
 exports[`ActivationChecklist render 1/1 complete 1`] = `
 <DocumentFragment>
   <div
-    class="activation-checklist list-group list-group-flush"
+    class="list-group list-group-flush activationChecklist"
   >
     <div
       data-reach-accordion=""
     >
       <div
-        class="activation-checklist__container list-group-item"
+        class="list-group-item container"
         data-reach-accordion-item=""
         data-state="collapsed"
       >
         <button
           aria-controls="panel--6--0"
           aria-expanded="false"
-          class="activation-checklist__button list-group-item list-group-item-action btn-link"
+          class="list-group-item list-group-item-action btn-link button"
           data-reach-accordion-button=""
           id="button--6--0"
         >
           <div
-            class="activation-checklist-item d-flex justify-content-between"
+            class="d-flex justify-content-between activationChecklistItem"
           >
             <div
               class="d-flex align-items-center"
             >
               <span
-                class="activation-checklist-item__icon-container icon-inline icon-down"
+                class="icon-inline iconContainer iconDown"
               >
                 <svg
-                  class="mdi-icon activation-checklist-item__icon"
+                  class="mdi-icon icon"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -236,10 +236,10 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
                 </svg>
               </span>
               <span
-                class="activation-checklist-item__icon-container icon-inline icon-right"
+                class="icon-inline iconContainer iconRight"
               >
                 <svg
-                  class="mdi-icon activation-checklist-item__icon"
+                  class="mdi-icon icon"
                   fill="currentColor"
                   height="24"
                   viewBox="0 0 24 24"
@@ -280,7 +280,7 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
           tabindex="-1"
         >
           <div
-            class="activation-checklist__detail pb-1"
+            class="pb-1 detail"
           >
             detail1
           </div>

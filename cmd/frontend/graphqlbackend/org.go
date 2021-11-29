@@ -308,9 +308,17 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	Organization graphql.ID
 	Username     string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Do not allow direct add on cloud.
+	// get the organization ID as an integer first
+	var orgID int32
+	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("adding users to organization directly is not allowed")
+		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+			return nil, errors.Errorf("Must be a member of the organization to add members", err)
+		}
 	}
 	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
 	// invitation step).
@@ -318,16 +326,11 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
-		return nil, err
-	}
-
 	userToInvite, _, err := getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := database.OrgMembers(r.db).Create(ctx, orgID, userToInvite.ID); err != nil {
+	if _, err := r.db.OrgMembers().Create(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
 
@@ -356,65 +359,12 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
-		return nil, err
+	if EnterpriseResolvers.orgRepositoryResolver == nil {
+		return nil, errors.New("listing organization repositories is not supported")
 	}
-	// 🚨 SECURITY: Only org members can list the org repositories.
-	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
-		if err == backend.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view its repositories")
-		}
-		return nil, err
-	}
+	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org)
+}
 
-	opt := database.ReposListOptions{}
-	if args.Query != nil {
-		opt.Query = *args.Query
-	}
-	if args.First != nil {
-		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
-	}
-	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
-		if err != nil {
-			return nil, err
-		}
-		opt.Cursors = append(opt.Cursors, cursor)
-	} else {
-		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
-	}
-	if args.OrderBy == nil {
-		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      "name",
-			Descending: false,
-		}}
-	} else {
-		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(*args.OrderBy),
-			Descending: args.Descending,
-		}}
-	}
-
-	if args.ExternalServiceIDs == nil || len(*args.ExternalServiceIDs) == 0 {
-		opt.OrgID = o.org.ID
-	} else {
-		var idArray []int64
-		for i, externalServiceID := range *args.ExternalServiceIDs {
-			id, err := unmarshalExternalServiceID(*externalServiceID)
-			if err != nil {
-				return nil, err
-			}
-			idArray[i] = id
-		}
-		opt.ExternalServiceIDs = idArray
-	}
-
-	return &repositoryConnectionResolver{
-		db:         o.db,
-		opt:        opt,
-		cloned:     args.Cloned,
-		notCloned:  args.NotCloned,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
-	}, nil
+type OrgRepositoryResolver interface {
+	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org) (RepositoryConnectionResolver, error)
 }

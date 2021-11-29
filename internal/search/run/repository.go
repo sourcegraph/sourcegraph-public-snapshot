@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"math"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -64,8 +65,27 @@ func (s *RepoSearch) Run(ctx context.Context, stream streaming.Sender, repos sea
 
 	if s.Args.PatternInfo.Pattern != "" {
 		opts.RepoFilters = append(make([]string, 0, len(opts.RepoFilters)), opts.RepoFilters...)
-		opts.RepoFilters = append(opts.RepoFilters, s.Args.PatternInfo.Pattern)
 		opts.CaseSensitiveRepoFilters = s.Args.Query.IsCaseSensitive()
+
+		patternPrefix := strings.SplitN(s.Args.PatternInfo.Pattern, "@", 2)
+		if len(patternPrefix) == 0 {
+			// No "@" in pattern? We're good.
+			opts.RepoFilters = append(opts.RepoFilters, s.Args.PatternInfo.Pattern)
+		} else if patternPrefix[0] != "" {
+			// Extend the repo search using the pattern value, but
+			// since the pattern contains @, only search the part
+			// prefixed by the first @. This because downstream
+			// logic will get confused by the presence of @ and try
+			// to resolve repo revisions. See #27816.
+			opts.RepoFilters = append(opts.RepoFilters, patternPrefix[0])
+		} else {
+			// This pattern starts with @, of the form "@thing". We can't
+			// consistently handle search repos of this form, because
+			// downstream logic will attempt to interpret "thing" as a repo
+			// revision, may fail, and cause us to raise an alert for any
+			// non `type:repo` search. Better to not attempt a repo search.
+			return nil
+		}
 	}
 
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, s.Limit)

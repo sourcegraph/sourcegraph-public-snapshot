@@ -122,8 +122,8 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
-			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-				return nil, nil
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				return nil, 0, nil
 			},
 		},
 		GetUploadsFunc: &DBStoreGetUploadsFunc{
@@ -179,6 +179,108 @@ func NewMockDBStore() *MockDBStore {
 		UpdateUploadRetentionFunc: &DBStoreUpdateUploadRetentionFunc{
 			defaultHook: func(context.Context, []int, []int) error {
 				return nil
+			},
+		},
+	}
+}
+
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CommitsVisibleToUploadFunc: &DBStoreCommitsVisibleToUploadFunc{
+			defaultHook: func(context.Context, int, int, *string) ([]string, *string, error) {
+				panic("unexpected invocation of MockDBStore.CommitsVisibleToUpload")
+			},
+		},
+		DeleteIndexesWithoutRepositoryFunc: &DBStoreDeleteIndexesWithoutRepositoryFunc{
+			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteIndexesWithoutRepository")
+			},
+		},
+		DeleteSourcedCommitsFunc: &DBStoreDeleteSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteSourcedCommits")
+			},
+		},
+		DeleteUploadsStuckUploadingFunc: &DBStoreDeleteUploadsStuckUploadingFunc{
+			defaultHook: func(context.Context, time.Time) (int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteUploadsStuckUploading")
+			},
+		},
+		DeleteUploadsWithoutRepositoryFunc: &DBStoreDeleteUploadsWithoutRepositoryFunc{
+			defaultHook: func(context.Context, time.Time) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DeleteUploadsWithoutRepository")
+			},
+		},
+		DirtyRepositoriesFunc: &DBStoreDirtyRepositoriesFunc{
+			defaultHook: func(context.Context) (map[int]int, error) {
+				panic("unexpected invocation of MockDBStore.DirtyRepositories")
+			},
+		},
+		DoneFunc: &DBStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockDBStore.Done")
+			},
+		},
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				panic("unexpected invocation of MockDBStore.GetConfigurationPolicies")
+			},
+		},
+		GetUploadsFunc: &DBStoreGetUploadsFunc{
+			defaultHook: func(context.Context, dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
+				panic("unexpected invocation of MockDBStore.GetUploads")
+			},
+		},
+		HandleFunc: &DBStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockDBStore.Handle")
+			},
+		},
+		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, ...int) error {
+				panic("unexpected invocation of MockDBStore.HardDeleteUploadByID")
+			},
+		},
+		SelectPoliciesForRepositoryMembershipUpdateFunc: &DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.ConfigurationPolicy, error) {
+				panic("unexpected invocation of MockDBStore.SelectPoliciesForRepositoryMembershipUpdate")
+			},
+		},
+		SelectRepositoriesForRetentionScanFunc: &DBStoreSelectRepositoriesForRetentionScanFunc{
+			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
+				panic("unexpected invocation of MockDBStore.SelectRepositoriesForRetentionScan")
+			},
+		},
+		SoftDeleteExpiredUploadsFunc: &DBStoreSoftDeleteExpiredUploadsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockDBStore.SoftDeleteExpiredUploads")
+			},
+		},
+		StaleSourcedCommitsFunc: &DBStoreStaleSourcedCommitsFunc{
+			defaultHook: func(context.Context, time.Duration, int, time.Time) ([]dbstore.SourcedCommits, error) {
+				panic("unexpected invocation of MockDBStore.StaleSourcedCommits")
+			},
+		},
+		TransactFunc: &DBStoreTransactFunc{
+			defaultHook: func(context.Context) (DBStore, error) {
+				panic("unexpected invocation of MockDBStore.Transact")
+			},
+		},
+		UpdateReposMatchingPatternsFunc: &DBStoreUpdateReposMatchingPatternsFunc{
+			defaultHook: func(context.Context, []string, int, *int) error {
+				panic("unexpected invocation of MockDBStore.UpdateReposMatchingPatterns")
+			},
+		},
+		UpdateSourcedCommitsFunc: &DBStoreUpdateSourcedCommitsFunc{
+			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+				panic("unexpected invocation of MockDBStore.UpdateSourcedCommits")
+			},
+		},
+		UpdateUploadRetentionFunc: &DBStoreUpdateUploadRetentionFunc{
+			defaultHook: func(context.Context, []int, []int) error {
+				panic("unexpected invocation of MockDBStore.UpdateUploadRetention")
 			},
 		},
 	}
@@ -1037,24 +1139,24 @@ func (c DBStoreDoneFuncCall) Results() []interface{} {
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked.
 type DBStoreGetConfigurationPoliciesFunc struct {
-	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
-	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	history     []DBStoreGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetConfigurationPolicies delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
-	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+	r0, r1, r2 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // GetConfigurationPolicies method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1063,7 +1165,7 @@ func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
+func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1071,21 +1173,21 @@ func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
-	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
-		return r0, r1
+func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 int, r2 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1130,7 +1232,10 @@ type DBStoreGetConfigurationPoliciesFuncCall struct {
 	Result0 []dbstore.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1142,7 +1247,7 @@ func (c DBStoreGetConfigurationPoliciesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // DBStoreGetUploadsFunc describes the behavior when the GetUploads method
@@ -2429,6 +2534,38 @@ func NewMockLSIFStore() *MockLSIFStore {
 	}
 }
 
+// NewStrictMockLSIFStore creates a new mock of the LSIFStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLSIFStore() *MockLSIFStore {
+	return &MockLSIFStore{
+		ClearFunc: &LSIFStoreClearFunc{
+			defaultHook: func(context.Context, ...int) error {
+				panic("unexpected invocation of MockLSIFStore.Clear")
+			},
+		},
+		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
+			defaultHook: func(context.Context, time.Duration, int) (int, error) {
+				panic("unexpected invocation of MockLSIFStore.DeleteOldPrivateSearchRecords")
+			},
+		},
+		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
+			defaultHook: func(context.Context, time.Duration, int) (int, error) {
+				panic("unexpected invocation of MockLSIFStore.DeleteOldPublicSearchRecords")
+			},
+		},
+		DoneFunc: &LSIFStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockLSIFStore.Done")
+			},
+		},
+		TransactFunc: &LSIFStoreTransactFunc{
+			defaultHook: func(context.Context) (LSIFStore, error) {
+				panic("unexpected invocation of MockLSIFStore.Transact")
+			},
+		},
+	}
+}
+
 // NewMockLSIFStoreFrom creates a new mock of the MockLSIFStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
@@ -3019,6 +3156,18 @@ func NewMockPolicyMatcher() *MockPolicyMatcher {
 		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
 			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockPolicyMatcher creates a new mock of the PolicyMatcher
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPolicyMatcher() *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
+			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+				panic("unexpected invocation of MockPolicyMatcher.CommitsDescribedByPolicy")
 			},
 		},
 	}

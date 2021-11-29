@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -65,6 +67,9 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			Dependencies: []string{"placeholder"},
 		},
 	}
+	pagureConfig := schema.PagureConnection{
+		Url: "https://src.fedoraproject.org",
+	}
 	otherConfig := schema.OtherExternalServiceConnection{
 		Url:                   someSecret,
 		RepositoryPathPattern: "foo",
@@ -124,6 +129,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			kind:      extsvc.KindJVMPackages,
 			config:    &jvmPackagesConfig,
 			editField: func(cfg interface{}) *string { return &cfg.(*schema.JVMPackagesConnection).Maven.Dependencies[0] },
+		},
+		{
+			// Unlike the other test cases, this test covers skipping redaction of missing optional fields.
+			kind:      extsvc.KindPagure,
+			config:    &pagureConfig,
+			editField: func(cfg interface{}) *string { return &cfg.(*schema.PagureConnection).Pattern },
 		},
 		{
 			kind:   extsvc.KindOther,
@@ -224,5 +235,12 @@ func TestRoundTripRedactExternalServiceConfig(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestUnredactFieldsDeletion(t *testing.T) {
+	oldJson := `{"url":"https://src.fedoraproject.org", "token": "oldtoken"}`
+	newJson := `{"url":"https://src.fedoraproject.org"}`
+	pagureConfig := schema.PagureConnection{}
+	_, err := unredactFields(oldJson, newJson, &pagureConfig)
+	assert.Nil(t, err)
 }

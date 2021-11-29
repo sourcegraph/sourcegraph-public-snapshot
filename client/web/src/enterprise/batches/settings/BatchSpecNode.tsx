@@ -55,9 +55,7 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
                         {node.namespace.namespaceName}
                     </Link>
                     <span className="text-muted d-inline-block mx-1">/</span>
-                    <Link to={`${node.namespace.url}/batch-changes/executions/${node.id}`}>
-                        {node.description.name || '-'}
-                    </Link>
+                    <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
                 </h3>
                 <small className="text-muted d-block">
                     Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />

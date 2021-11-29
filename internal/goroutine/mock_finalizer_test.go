@@ -25,6 +25,18 @@ func NewMockFinalizer() *MockFinalizer {
 	}
 }
 
+// NewStrictMockFinalizer creates a new mock of the Finalizer interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockFinalizer() *MockFinalizer {
+	return &MockFinalizer{
+		OnShutdownFunc: &FinalizerOnShutdownFunc{
+			defaultHook: func() {
+				panic("unexpected invocation of MockFinalizer.OnShutdown")
+			},
+		},
+	}
+}
+
 // NewMockFinalizerFrom creates a new mock of the MockFinalizer interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockFinalizerFrom(i Finalizer) *MockFinalizer {

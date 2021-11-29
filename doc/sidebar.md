@@ -59,4 +59,4 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - <br/>
 - [★ Quick install](index.md#getting-started)
 - [★ Search query syntax](code_search/reference/queries.md)
-- [★ GraphQL API](api/graphql/index.md)
+- [★ API](api/index.md)

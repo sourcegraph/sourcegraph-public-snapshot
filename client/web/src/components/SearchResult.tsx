@@ -55,7 +55,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
     const renderBody = (): JSX.Element => {
         if (result.type === 'repo') {
             return (
-                <div>
+                <div data-testid="search-repo-result">
                     <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                         {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                         <div className="d-flex align-items-center flex-row">
@@ -126,6 +126,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}
+            resultType={result.type}
             expandedChildren={renderBody()}
         />
     )

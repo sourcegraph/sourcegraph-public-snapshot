@@ -5,10 +5,6 @@
 // box that renders the tooltip on GitHub is pure white.
 $body-bg-color-light: #ffffff;
 
-@import '../../shared/src/extensions/devtools';
-@import '../../shared/src/notifications/NotificationItem';
-@import '../../shared/src/notifications/Notifications';
-
 :root {
     --body-bg: #ffffff;
     --text-muted: #888888;

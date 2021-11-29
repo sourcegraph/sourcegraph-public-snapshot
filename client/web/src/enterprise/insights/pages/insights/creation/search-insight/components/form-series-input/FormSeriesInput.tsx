@@ -15,6 +15,8 @@ const requiredNameField = createRequiredValidator('Name is a required field for 
 const validQuery = createRequiredValidator('Query is a required field for data series.')
 
 interface FormSeriesInputProps {
+    id: string | null
+
     /** Series index. */
     index: number
 
@@ -53,6 +55,7 @@ interface FormSeriesInputProps {
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
     const {
+        id,
         index,
         isSearchQueryDisabled,
         showValidationErrorsOnMount = false,
@@ -79,6 +82,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         },
         onSubmit: values =>
             onSubmit({
+                id,
                 name: values.seriesName,
                 query: values.seriesQuery,
                 stroke: values.seriesColor,
@@ -88,6 +92,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
 
             onChange(
                 {
+                    id,
                     name: values.seriesName,
                     query: values.seriesQuery,
                     stroke: values.seriesColor,
