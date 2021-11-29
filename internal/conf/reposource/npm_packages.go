@@ -3,11 +3,11 @@ package reposource
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 const (
@@ -17,13 +17,13 @@ const (
 )
 
 var (
-	npmScopeRegex          = regexp.MustCompile(`^` + NPMScopeRegexString + `$`)
-	npmPackageNameRegex    = regexp.MustCompile(`^` + npmPackageNameRegexString + `$`)
-	scopedPackageNameRegex = regexp.MustCompile(
+	npmScopeRegex          = lazyregexp.New(`^` + NPMScopeRegexString + `$`)
+	npmPackageNameRegex    = lazyregexp.New(`^` + npmPackageNameRegexString + `$`)
+	scopedPackageNameRegex = lazyregexp.New(
 		`^(@` + NPMScopeRegexString + `/)?` +
 			npmPackageNameRegexString +
 			`@(?P<version>[0-9a-zA-Z_\\-]+(\.[0-9a-zA-Z_\\-]+)*)$`)
-	npmURLRegex = regexp.MustCompile(
+	npmURLRegex = lazyregexp.New(
 		`^npm/(` + NPMScopeRegexString + `/)?` +
 			npmPackageNameRegexString + `$`)
 )
