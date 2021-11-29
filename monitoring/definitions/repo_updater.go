@@ -301,6 +301,15 @@ func RepoUpdater() *monitoring.Container {
 								- Check if API rate limit quota is exhausted on the code host.
 							`,
 						},
+						{
+							Name:           "perms_syncer_scheduled_repos_total",
+							Description:    "total number of repos scheduled for permissions sync",
+							Query:          `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`,
+							NoAlert:        true,
+							Panel:          monitoring.Panel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservableOwnerCoreApplication,
+							Interpretation: "Indicates how many repositories have been scheduled a permissions sync",
+						},
 					},
 				},
 			},
