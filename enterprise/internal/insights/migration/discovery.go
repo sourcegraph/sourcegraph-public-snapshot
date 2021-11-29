@@ -345,7 +345,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		})
 		if err != nil {
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
-		} else if exists {
+		} else if exists && batch == backend {
 			oldId := discovery.Encode(timeSeries)
 			series = matched
 			log15.Info("insights migration: existing data series identified, attempting to preserve time series", "series_id", series.SeriesID, "unique_id", from.ID)
