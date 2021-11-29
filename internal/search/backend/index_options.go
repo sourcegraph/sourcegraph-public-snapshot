@@ -3,10 +3,11 @@ package backend
 import (
 	"bytes"
 	"encoding/json"
+	"regexp"
 	"sort"
 
 	"github.com/google/zoekt"
-
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -90,13 +91,14 @@ func GetIndexOptions(
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
 	// future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
-
 	results := make([][]byte, len(repos))
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
+
 	for i := range repos {
 		sema <- struct{}{}
 		go func(i int) {
 			defer func() { <-sema }()
-			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions)
+			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions, getSiteConfigRevisions)
 		}(i)
 	}
 
@@ -113,6 +115,7 @@ func getIndexOptions(
 	repoID int32,
 	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID int32) ([]string, error),
+	getSiteConfigRevisions revsRuleFunc,
 ) []byte {
 	opts, err := getRepoIndexOptions(repoID)
 	if err != nil {
@@ -133,9 +136,9 @@ func getIndexOptions(
 	// Set of branch names. Always index HEAD
 	branches := map[string]struct{}{"HEAD": {}}
 
-	// Add all branches that are referenced by version contexts
-	if c.ExperimentalFeatures != nil {
-		for _, rev := range c.ExperimentalFeatures.SearchIndexBranches[opts.Name] {
+	// Add all branches that are referenced by search.index.branches and search.index.revisions.
+	if getSiteConfigRevisions != nil {
+		for _, rev := range getSiteConfigRevisions(opts) {
 			branches[rev] = struct{}{}
 		}
 	}
@@ -187,6 +190,48 @@ func getIndexOptions(
 	}
 
 	return marshal(o)
+}
+
+type revsRuleFunc func(*RepoIndexOptions) (revs []string)
+
+func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
+	if c == nil || c.ExperimentalFeatures == nil {
+		return nil
+	}
+
+	rules := make([]revsRuleFunc, 0, len(c.ExperimentalFeatures.SearchIndexRevisions))
+	for _, rule := range c.ExperimentalFeatures.SearchIndexRevisions {
+		rule := rule
+		switch {
+		case rule.Name != "":
+			namePattern, err := regexp.Compile(rule.Name)
+			if err != nil {
+				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
+				continue
+			}
+
+			rules = append(rules, func(o *RepoIndexOptions) []string {
+				if !namePattern.MatchString(o.Name) {
+					return nil
+				}
+				return rule.Revisions
+			})
+		}
+	}
+
+	return func(o *RepoIndexOptions) (matched []string) {
+		cfg := c.ExperimentalFeatures
+
+		if len(cfg.SearchIndexBranches) != 0 {
+			matched = append(matched, cfg.SearchIndexBranches[o.Name]...)
+		}
+
+		for _, rule := range rules {
+			matched = append(matched, rule(o)...)
+		}
+
+		return matched
+	}
 }
 
 func getBoolPtr(b *bool, default_ bool) bool {
