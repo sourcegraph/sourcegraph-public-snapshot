@@ -50,9 +50,6 @@ type V4Client struct {
 
 	// rateLimit is our self imposed rate limiter.
 	rateLimit *rate.Limiter
-
-	// v3Client is an embedded V3Client to make REST API requests from the V4Client.
-	v3Client *V3Client
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
