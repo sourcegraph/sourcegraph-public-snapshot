@@ -95,7 +95,6 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
-		v3Client:         NewV3Client(apiURL, a, cli),
 	}
 }
 
@@ -330,8 +329,9 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 
 // fetchGitHubVersion will attempt to identify the GitHub Enterprise Server's version.  If the
 // method is called by a client configured to use github.com, it will return allMatchingSemver.
-// Additinally if it fails to parse the version. or the API request fails with an error, it defaults
-// to returning allMatchingSemver as well.
+//
+// Additionally if it fails to parse the version. or the API request fails with an error, it
+// defaults to returning allMatchingSemver as well.
 func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
 	version = allMatchingSemver
 
@@ -339,8 +339,10 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 		return
 	}
 
-	v, err := c.v3Client.GetVersion(ctx)
-	if err == nil {
+	// Initiate a v3Client since this requires a V3 API request.
+	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient)
+	v, err := v3Client.GetVersion(ctx)
+	if err != nil {
 		log15.Warn("Failed to fetch GitHub enterprise version", "fetchGitHubVersion", "apiURL", c.apiURL, "err", err)
 		return
 	}
