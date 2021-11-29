@@ -319,6 +319,11 @@
               "group": "Search"
             }
           }
+        },
+        "enableGithubInternalRepoVisibility": {
+          "description": "Enable support for visilibity of internal Github repositories",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
