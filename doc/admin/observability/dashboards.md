@@ -9480,16 +9480,40 @@ Query: `max(src_repoupdater_perms_syncer_queue_size)`
 
 <p class="subtitle">Permissions sync error rate</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors) for 1 alert related
+to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by
+the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
 Query: `max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: perms_syncer_scheduled_repos_total
+
+<p class="subtitle">Total number of repos scheduled for permissions sync</p>
+
+Indicates how many repositories have been scheduled for a permissions sync.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
+
+<sub>*Managed by
+the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`
 
 </details>
 
