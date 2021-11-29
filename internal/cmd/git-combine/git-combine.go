@@ -89,6 +89,7 @@ func Combine(path string, opt Options) error {
 			cand, err := storer.ResolveReference(r.Storer, plumbing.NewRemoteReferenceName(remote, name))
 			if err == nil {
 				ref = cand
+				break
 			}
 		}
 		if ref == nil {
