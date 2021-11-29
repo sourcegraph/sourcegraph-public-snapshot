@@ -171,7 +171,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 		return nil, err
 	}
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
+	commitID, err := backend.NewRepos(r.db.Repos()).ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
@@ -219,13 +219,13 @@ func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.db.Repos()).ResolveRev(ctx, repo, "")
 	if err != nil {
 		// Comment: Should we return a nil error?
 		return "", err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return "", err
 	}

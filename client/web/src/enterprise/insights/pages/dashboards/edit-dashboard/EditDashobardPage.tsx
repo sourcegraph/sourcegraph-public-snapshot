@@ -45,7 +45,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
     const dashboard = useObservable(
         useMemo(
-            () => getDashboardById(dashboardId),
+            () => getDashboardById({ dashboardId }),
             // Load only on first render to avoid UI flashing after settings update
             // eslint-disable-next-line react-hooks/exhaustive-deps
             [dashboardId]

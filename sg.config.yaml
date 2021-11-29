@@ -980,11 +980,14 @@ tests:
   bext:
     cmd: yarn --cwd client/browser test
 
+  bext-build:
+    cmd: yarn run download-puppeteer-browser && EXTENSION_PERMISSIONS_ALL_URLS=true yarn --cwd client/browser build
+
   bext-integration:
     cmd: yarn --cwd client/browser test-integration
 
   bext-e2e:
-    cmd: yarn run download-puppeteer-browser && yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
+    cmd: yarn --cwd client/browser mocha ./src/end-to-end/github.test.ts ./src/end-to-end/gitlab.test.ts
     env:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
       PERCY_BROWSER_EXECUTABLE: node_modules/puppeteer/.local-chromium/linux-901812/chrome-linux/chrome

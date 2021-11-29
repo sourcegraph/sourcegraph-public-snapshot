@@ -7,12 +7,12 @@ import (
 
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -164,8 +164,8 @@ func TestFileOrDir(t *testing.T) {
 		db := dbmock.NewMockDB()
 		db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-		git.Mocks.ExecSafe = func(params []string) ([]byte, []byte, int, error) {
-			return []byte("mybranch"), nil, 0, nil
+		git.Mocks.GetDefaultBranchShort = func(repo api.RepoName) (refName string, commit api.CommitID, err error) {
+			return "mybranch", "", nil
 		}
 		defer git.ResetMocks()
 

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -59,6 +60,7 @@ import { parseBrowserRepoURL } from '../util/url'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
 import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
+import styles from './RepoContainer.module.scss'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevisionContainer, RepoRevisionContainerRoute } from './RepoRevisionContainer'
@@ -254,7 +256,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             <button
                                 type="button"
                                 id="repo-popover"
-                                className="btn btn-sm btn-outline-secondary repo-container__repo-change"
+                                className={classNames('btn btn-sm btn-outline-secondary', styles.repoChange)}
                                 aria-label="Change repository"
                             >
                                 <ChevronDownIcon className="icon-inline" />
@@ -415,7 +417,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column">
+        <div className={classNames('w-100 d-flex flex-column', styles.repoContainer)}>
             {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

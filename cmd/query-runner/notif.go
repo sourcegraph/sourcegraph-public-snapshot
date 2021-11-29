@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 )
 
 // recipientSpec identifies a recipient of a saved search notification. Exactly one of its fields is
@@ -49,7 +50,7 @@ func getNotificationRecipients(ctx context.Context, spec api.SavedQueryIDSpec, q
 	case spec.Subject.Org != nil:
 		if query.Notify {
 			// Email all org members.
-			orgMembers, err := api.InternalClient.OrgsListUsers(ctx, *spec.Subject.Org)
+			orgMembers, err := internalapi.Client.OrgsListUsers(ctx, *spec.Subject.Org)
 			if err != nil {
 				return nil, err
 			}

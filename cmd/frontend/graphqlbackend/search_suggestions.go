@@ -313,7 +313,7 @@ func (r *searchResolver) showLangSuggestions(ctx context.Context) ([]SearchSugge
 	}
 
 	// Only care about the first found repository.
-	repos, err := backend.Repos.List(ctx, database.ReposListOptions{
+	repos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
 		IncludePatterns: validValues,
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
@@ -327,12 +327,12 @@ func (r *searchResolver) showLangSuggestions(ctx context.Context) ([]SearchSugge
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.db.Repos()).ResolveRev(ctx, repo, "")
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return nil, err
 	}

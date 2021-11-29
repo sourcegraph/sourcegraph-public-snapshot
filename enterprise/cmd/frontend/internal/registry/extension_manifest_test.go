@@ -6,22 +6,23 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry/stores/dbmocks"
 )
 
 func TestGetExtensionManifestWithBundleURL(t *testing.T) {
-	resetMocks()
 	ctx := context.Background()
 	t0 := time.Unix(1234, 0)
 
 	t.Run(`manifest with "url"`, func(t *testing.T) {
-		mocks.releases.GetLatest = func(registryExtensionID int32, releaseTag string, includeArtifacts bool) (*dbRelease, error) {
-			return &dbRelease{
-				Manifest:  `{"name":"x","url":"u"}`,
-				CreatedAt: t0,
-			}, nil
-		}
-		defer func() { mocks.releases.GetLatest = nil }()
-		release, err := getLatestRelease(ctx, "x", 1, "t")
+		s := dbmocks.NewMockReleaseStore()
+		s.GetLatestFunc.SetDefaultReturn(&stores.Release{
+			Manifest:  `{"name":"x","url":"u"}`,
+			CreatedAt: t0,
+		}, nil)
+
+		release, err := getLatestRelease(ctx, s, "x", 1, "t")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -34,14 +35,13 @@ func TestGetExtensionManifestWithBundleURL(t *testing.T) {
 	})
 
 	t.Run(`manifest without "url"`, func(t *testing.T) {
-		mocks.releases.GetLatest = func(registryExtensionID int32, releaseTag string, includeArtifacts bool) (*dbRelease, error) {
-			return &dbRelease{
-				Manifest:  `{"name":"x"}`,
-				CreatedAt: t0,
-			}, nil
-		}
-		defer func() { mocks.releases.GetLatest = nil }()
-		release, err := getLatestRelease(ctx, "x", 1, "t")
+		s := dbmocks.NewMockReleaseStore()
+		s.GetLatestFunc.SetDefaultReturn(&stores.Release{
+			Manifest:  `{"name":"x"}`,
+			CreatedAt: t0,
+		}, nil)
+
+		release, err := getLatestRelease(ctx, s, "x", 1, "t")
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -351,6 +351,213 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 	}
 }
 
+// NewStrictMockCodeMonitorStore creates a new mock of the CodeMonitorStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
+	return &MockCodeMonitorStore{
+		ClockFunc: &CodeMonitorStoreClockFunc{
+			defaultHook: func() func() time.Time {
+				panic("unexpected invocation of MockCodeMonitorStore.Clock")
+			},
+		},
+		CountActionJobsFunc: &CodeMonitorStoreCountActionJobsFunc{
+			defaultHook: func(context.Context, ListActionJobsOpts) (int, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountActionJobs")
+			},
+		},
+		CountEmailActionsFunc: &CodeMonitorStoreCountEmailActionsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountEmailActions")
+			},
+		},
+		CountMonitorsFunc: &CodeMonitorStoreCountMonitorsFunc{
+			defaultHook: func(context.Context, int32) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountMonitors")
+			},
+		},
+		CountQueryTriggerJobsFunc: &CodeMonitorStoreCountQueryTriggerJobsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountQueryTriggerJobs")
+			},
+		},
+		CountRecipientsFunc: &CodeMonitorStoreCountRecipientsFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CountRecipients")
+			},
+		},
+		CreateEmailActionFunc: &CodeMonitorStoreCreateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateEmailAction")
+			},
+		},
+		CreateMonitorFunc: &CodeMonitorStoreCreateMonitorFunc{
+			defaultHook: func(context.Context, MonitorArgs) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateMonitor")
+			},
+		},
+		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
+			defaultHook: func(context.Context, int64, string) error {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateQueryTrigger")
+			},
+		},
+		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
+			defaultHook: func(context.Context, int64, *int32, *int32) error {
+				panic("unexpected invocation of MockCodeMonitorStore.CreateRecipient")
+			},
+		},
+		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
+			defaultHook: func(context.Context, []int64, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteEmailActions")
+			},
+		},
+		DeleteMonitorFunc: &CodeMonitorStoreDeleteMonitorFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteMonitor")
+			},
+		},
+		DeleteObsoleteTriggerJobsFunc: &CodeMonitorStoreDeleteObsoleteTriggerJobsFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteObsoleteTriggerJobs")
+			},
+		},
+		DeleteOldTriggerJobsFunc: &CodeMonitorStoreDeleteOldTriggerJobsFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteOldTriggerJobs")
+			},
+		},
+		DeleteRecipientsFunc: &CodeMonitorStoreDeleteRecipientsFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.DeleteRecipients")
+			},
+		},
+		DoneFunc: &CodeMonitorStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockCodeMonitorStore.Done")
+			},
+		},
+		EnqueueActionJobsForQueryFunc: &CodeMonitorStoreEnqueueActionJobsForQueryFunc{
+			defaultHook: func(context.Context, int64, int) error {
+				panic("unexpected invocation of MockCodeMonitorStore.EnqueueActionJobsForQuery")
+			},
+		},
+		EnqueueQueryTriggerJobsFunc: &CodeMonitorStoreEnqueueQueryTriggerJobsFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockCodeMonitorStore.EnqueueQueryTriggerJobs")
+			},
+		},
+		ExecFunc: &CodeMonitorStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) error {
+				panic("unexpected invocation of MockCodeMonitorStore.Exec")
+			},
+		},
+		GetActionJobFunc: &CodeMonitorStoreGetActionJobFunc{
+			defaultHook: func(context.Context, int) (*ActionJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetActionJob")
+			},
+		},
+		GetActionJobMetadataFunc: &CodeMonitorStoreGetActionJobMetadataFunc{
+			defaultHook: func(context.Context, int) (*ActionJobMetadata, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetActionJobMetadata")
+			},
+		},
+		GetEmailActionFunc: &CodeMonitorStoreGetEmailActionFunc{
+			defaultHook: func(context.Context, int64) (*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetEmailAction")
+			},
+		},
+		GetMonitorFunc: &CodeMonitorStoreGetMonitorFunc{
+			defaultHook: func(context.Context, int64) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetMonitor")
+			},
+		},
+		GetQueryTriggerForJobFunc: &CodeMonitorStoreGetQueryTriggerForJobFunc{
+			defaultHook: func(context.Context, int) (*QueryTrigger, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetQueryTriggerForJob")
+			},
+		},
+		GetQueryTriggerForMonitorFunc: &CodeMonitorStoreGetQueryTriggerForMonitorFunc{
+			defaultHook: func(context.Context, int64) (*QueryTrigger, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.GetQueryTriggerForMonitor")
+			},
+		},
+		HandleFunc: &CodeMonitorStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockCodeMonitorStore.Handle")
+			},
+		},
+		ListActionJobsFunc: &CodeMonitorStoreListActionJobsFunc{
+			defaultHook: func(context.Context, ListActionJobsOpts) ([]*ActionJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListActionJobs")
+			},
+		},
+		ListEmailActionsFunc: &CodeMonitorStoreListEmailActionsFunc{
+			defaultHook: func(context.Context, ListActionsOpts) ([]*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListEmailActions")
+			},
+		},
+		ListMonitorsFunc: &CodeMonitorStoreListMonitorsFunc{
+			defaultHook: func(context.Context, ListMonitorsOpts) ([]*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListMonitors")
+			},
+		},
+		ListQueryTriggerJobsFunc: &CodeMonitorStoreListQueryTriggerJobsFunc{
+			defaultHook: func(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListQueryTriggerJobs")
+			},
+		},
+		ListRecipientsFunc: &CodeMonitorStoreListRecipientsFunc{
+			defaultHook: func(context.Context, ListRecipientsOpts) ([]*Recipient, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.ListRecipients")
+			},
+		},
+		NowFunc: &CodeMonitorStoreNowFunc{
+			defaultHook: func() time.Time {
+				panic("unexpected invocation of MockCodeMonitorStore.Now")
+			},
+		},
+		ResetQueryTriggerTimestampsFunc: &CodeMonitorStoreResetQueryTriggerTimestampsFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockCodeMonitorStore.ResetQueryTriggerTimestamps")
+			},
+		},
+		SetQueryTriggerNextRunFunc: &CodeMonitorStoreSetQueryTriggerNextRunFunc{
+			defaultHook: func(context.Context, int64, time.Time, time.Time) error {
+				panic("unexpected invocation of MockCodeMonitorStore.SetQueryTriggerNextRun")
+			},
+		},
+		TransactFunc: &CodeMonitorStoreTransactFunc{
+			defaultHook: func(context.Context) (CodeMonitorStore, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.Transact")
+			},
+		},
+		UpdateEmailActionFunc: &CodeMonitorStoreUpdateEmailActionFunc{
+			defaultHook: func(context.Context, int64, *EmailActionArgs) (*EmailAction, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateEmailAction")
+			},
+		},
+		UpdateMonitorFunc: &CodeMonitorStoreUpdateMonitorFunc{
+			defaultHook: func(context.Context, int64, MonitorArgs) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateMonitor")
+			},
+		},
+		UpdateMonitorEnabledFunc: &CodeMonitorStoreUpdateMonitorEnabledFunc{
+			defaultHook: func(context.Context, int64, bool) (*Monitor, error) {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateMonitorEnabled")
+			},
+		},
+		UpdateQueryTriggerFunc: &CodeMonitorStoreUpdateQueryTriggerFunc{
+			defaultHook: func(context.Context, int64, string) error {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateQueryTrigger")
+			},
+		},
+		UpdateTriggerJobWithResultsFunc: &CodeMonitorStoreUpdateTriggerJobWithResultsFunc{
+			defaultHook: func(context.Context, string, int, int) error {
+				panic("unexpected invocation of MockCodeMonitorStore.UpdateTriggerJobWithResults")
+			},
+		},
+	}
+}
+
 // NewMockCodeMonitorStoreFrom creates a new mock of the
 // MockCodeMonitorStore interface. All methods delegate to the given
 // implementation, unless overwritten.

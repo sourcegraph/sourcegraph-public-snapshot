@@ -164,7 +164,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 
 	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
-		return err
+		return wrapError(err, "failed to write virtual machine files")
 	}
 
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)

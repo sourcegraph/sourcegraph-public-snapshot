@@ -19,15 +19,22 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- Sourcegraph services now listen to SIGTERM signals. This allows smoother rollouts in kubernetes deployments. [#27958](https://github.com/sourcegraph/sourcegraph/pull/27958)
+- The sourcegraph-frontend ingress now uses the networking.k8s.io/v1 api. This adds support for k8s v1.22 and later, and deprecates support for versions older than v1.18.x [#4029](https://github.com/sourcegraph/deploy-sourcegraph/pull/4029)
 
 ### Fixed
 
--
+- Moving a changeset from draft state into published state was broken on GitLab code hosts. [#28239](https://github.com/sourcegraph/sourcegraph/pull/28239)
 
 ### Removed
 
 -
+
+## 3.34.1
+
+### Fixed
+
+- Fixed Redis alerting for docker-compose deployments [#28099](https://github.com/sourcegraph/sourcegraph/issues/28099)
 
 ## 3.34.0
 

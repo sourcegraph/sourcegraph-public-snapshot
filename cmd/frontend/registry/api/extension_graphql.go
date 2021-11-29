@@ -8,7 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 func init() {
@@ -45,9 +45,9 @@ func UnmarshalRegistryExtensionID(id graphql.ID) (registryExtensionID RegistryEx
 // RegistryExtensionByIDInt32 looks up and returns the registry extension in the database with the
 // given ID. If no such extension exists, an error is returned. The func is nil when there is no
 // local registry.
-var RegistryExtensionByIDInt32 func(context.Context, dbutil.DB, int32) (graphqlbackend.RegistryExtension, error)
+var RegistryExtensionByIDInt32 func(context.Context, database.DB, int32) (graphqlbackend.RegistryExtension, error)
 
-func registryExtensionByID(ctx context.Context, db dbutil.DB, id graphql.ID) (graphqlbackend.RegistryExtension, error) {
+func registryExtensionByID(ctx context.Context, db database.DB, id graphql.ID) (graphqlbackend.RegistryExtension, error) {
 	registryExtensionID, err := UnmarshalRegistryExtensionID(id)
 	if err != nil {
 		return nil, err

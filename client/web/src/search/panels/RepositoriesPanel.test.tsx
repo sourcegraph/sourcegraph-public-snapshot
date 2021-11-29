@@ -1,4 +1,5 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -36,7 +37,7 @@ describe('RepositoriesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
+        expect(render(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('consecutive searches with identical repo filters are correctly merged when rendered', () => {
@@ -74,7 +75,7 @@ describe('RepositoriesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
+        expect(render(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button is shown if more pages are available', () => {
@@ -112,7 +113,7 @@ describe('RepositoriesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RepositoriesPanel {...props} />)).toMatchSnapshot()
+        expect(render(<RepositoriesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button loads more items', () => {
@@ -198,10 +199,8 @@ describe('RepositoriesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RepositoriesPanel {...props} />)
-        const showMoreButton = component.find('button.test-repositories-panel-show-more')
-        showMoreButton.simulate('click')
-
-        expect(component).toMatchSnapshot()
+        const { asFragment } = render(<RepositoriesPanel {...props} />)
+        userEvent.click(screen.getByRole('button', { name: /Show more/ }))
+        expect(asFragment()).toMatchSnapshot()
     })
 })

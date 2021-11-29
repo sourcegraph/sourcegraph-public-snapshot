@@ -480,6 +480,7 @@ func parseGitBlame(r io.Reader) (b GitBlame, err error) {
 		line := sc.Text()
 		switch n {
 		case 0: // commit ID
+			//nolint:gocritic
 			l.Ref = line[:strings.Index(line, " ")]
 		case 1:
 			l.Author.Name = strings.TrimPrefix(line, "author ")

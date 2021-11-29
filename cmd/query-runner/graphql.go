@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
@@ -160,7 +161,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 }
 
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(api.InternalClient.URL)
+	u, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
 		return "", err
 	}

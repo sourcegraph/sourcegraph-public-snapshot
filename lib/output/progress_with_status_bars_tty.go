@@ -92,7 +92,6 @@ func (p *progressWithStatusBarsTTY) Complete() {
 		p.o.moveUp(1)
 		p.o.clearCurrentLine()
 	}
-	p.statusBars = p.statusBars[0:0]
 
 	for _, bar := range p.bars {
 		bar.Value = bar.Max

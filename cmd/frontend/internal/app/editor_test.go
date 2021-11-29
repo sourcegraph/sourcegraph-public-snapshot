@@ -48,7 +48,7 @@ func TestEditorRev(t *testing.T) {
 		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
 	}
 	for _, c := range cases {
-		got, err := editorRev(ctx, repoName, c.inputRev, c.beExplicit)
+		got, err := editorRev(ctx, dbmock.NewMockDB(), repoName, c.inputRev, c.beExplicit)
 		if err != nil {
 			t.Fatal(err)
 		}

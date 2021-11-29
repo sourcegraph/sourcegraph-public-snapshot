@@ -41,8 +41,13 @@ export function testSingleFilePage({
             // Make sure the tab is active, because it might not be active if the install page has opened.
             await closeInstallPageTab(getDriver().page.browser())
 
-            await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
-            expect(await getDriver().page.$$('.code-view-toolbar .open-on-sourcegraph')).toHaveLength(1)
+            await getDriver().page.waitForSelector(
+                '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]',
+                { timeout: 10000 }
+            )
+            expect(
+                await getDriver().page.$$('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
+            ).toHaveLength(1)
 
             // TODO: Uncomment this portion of the test once we migrate from puppeteer-firefox to puppeteer
             // We want to assert that Sourcegraph is opened in a new tab, but the old version of Firefox used
@@ -63,7 +68,10 @@ export function testSingleFilePage({
             await retry(async () => {
                 assert.strictEqual(
                     await getDriver().page.evaluate(
-                        () => document.querySelector<HTMLAnchorElement>('.code-view-toolbar .open-on-sourcegraph')?.href
+                        () =>
+                            document.querySelector<HTMLAnchorElement>(
+                                '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
+                            )?.href
                     ),
                     `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${
                         getDriver().browserType
@@ -74,7 +82,9 @@ export function testSingleFilePage({
 
         it('shows hover tooltips when hovering a token', async () => {
             await getDriver().page.goto(url)
-            await getDriver().page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
+            await getDriver().page.waitForSelector(
+                '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
+            )
 
             // Pause to give codeintellify time to register listeners for
             // tokenization (only necessary in CI, not sure why).

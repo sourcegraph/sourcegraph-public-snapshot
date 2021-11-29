@@ -18,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -37,7 +37,13 @@ func TestRedirects(t *testing.T) {
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
 		t.Helper()
 
-		InitRouter(dbmock.NewMockDB(), nil)
+		gss := dbmock.NewMockGlobalStateStore()
+		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+		db := dbmock.NewMockDB()
+		db.GlobalStateFunc.SetDefaultReturn(gss)
+
+		InitRouter(db, nil)
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
@@ -167,12 +173,18 @@ func TestNewCommon_repo_error(t *testing.T) {
 
 			code := 200
 			got := ""
-			serveError := func(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
+			serveError := func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
 				got = err.Error()
 				code = statusCode
 			}
 
-			_, err = newCommon(httptest.NewRecorder(), req, "test", index, serveError)
+			gss := dbmock.NewMockGlobalStateStore()
+			gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+			db := dbmock.NewMockDB()
+			db.GlobalStateFunc.SetDefaultReturn(gss)
+
+			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
 			if err != nil {
 				if got != "" || code != 200 {
 					t.Fatal("serveError called and error returned from newCommon")
@@ -401,7 +413,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r)
+			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, dbmock.NewMockDB())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -421,8 +433,10 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 
 func init() {
 	globals.ConfigurationServerFrontendOnly = &conf.Server{}
-	globalstatedb.Mock.Get = func(ctx context.Context) (*globalstatedb.State, error) {
-		return &globalstatedb.State{SiteID: "a"}, nil
-	}
-	siteid.Init()
+	gss := dbmock.NewMockGlobalStateStore()
+	gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.GlobalStateFunc.SetDefaultReturn(gss)
+	siteid.Init(db)
 }

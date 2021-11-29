@@ -4,14 +4,14 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
 import { ReachableInsight } from '../../../../../../core/backend/code-insights-backend-types'
+import { parseInsightFromSubject } from '../../../../../../core/backend/setting-based-api/utils/find-insight-by-id'
+import { getDashboardOwnerInfo } from '../../../../../../core/backend/setting-based-api/utils/get-insights-dashboards/utils'
 import { INSIGHTS_ALL_REPOS_SETTINGS_KEY } from '../../../../../../core/types'
 import {
     isSubjectInsightSupported,
     SUBJECT_SHARING_LEVELS,
     SupportedInsightSubject,
 } from '../../../../../../core/types/subjects'
-import { getDashboardOwnerInfo } from '../../../../../../hooks/use-dashboards/utils'
-import { parseInsightFromSubject } from '../../../../../../hooks/use-insight/use-insight'
 
 export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings> {
     /**

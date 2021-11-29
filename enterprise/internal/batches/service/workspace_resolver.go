@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -66,7 +67,7 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: api.InternalClient.URL + "/.internal"}
+	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {
@@ -552,9 +553,14 @@ func findWorkspaces(
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	var errs *multierror.Error
 	for _, conf := range spec.Workspaces {
-		g, err := glob.Compile(conf.In)
+		in := conf.In
+		// Empty `in` should fall back to matching all, instead of nothing.
+		if in == "" {
+			in = "*"
+		}
+		g, err := glob.Compile(in)
 		if err != nil {
-			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err)))
+			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
 		}
 		workspaceMatchers[conf] = g
 	}
