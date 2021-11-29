@@ -157,13 +157,17 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
 			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
-			{name: "docker", check: checkInPath("docker"), instructionsCommands: `brew install --cask docker`},
 			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
 			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
+			{
+				name:                 "docker",
+				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
+				instructionsCommands: `brew install --cask docker`,
+			},
 		},
 		autoFixing: true,
 	},
@@ -220,7 +224,7 @@ programming languages and tools.
 
 Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.html
 
-Once you have asdf, execute the command below.`,
+Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
 				instructionsCommands: `
 asdf plugin-add golang https://github.com/kennyp/asdf-golang.git
 asdf install golang
@@ -238,7 +242,7 @@ programming languages and tools.
 
 Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.html
 
-Once you have asdf, execute the command below.`,
+Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
 				instructionsCommands: `
 asdf plugin-add yarn
 asdf install yarn 
@@ -257,7 +261,7 @@ programming languages and tools.
 
 Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.html
 
-Once you have asdf, execute the command below.`,
+Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
 				instructionsCommands: `
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
 asdf install node 
@@ -429,9 +433,9 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 }
 
 func fixCategoryManually(ctx context.Context, category *dependencyCategory) error {
-	toFix := []int{}
-
 	for {
+		toFix := []int{}
+
 		for i, dep := range category.dependencies {
 			if dep.IsMet() {
 				continue
@@ -473,36 +477,35 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 		if dep.instructionsCommands == "" {
 			writeFingerPointingLine("Hit return once you're done")
 			waitForReturn()
-			return nil
-		}
-
-		// Otherwise we print the command(s) and ask the user whether we should run it or not
-		out.Write("")
-		out.Write("Run the following command(s):")
-		out.Write("")
-
-		out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
-
-		choice, err := getChoice(map[int]string{
-			1: "I'll fix this manually (either by running the command or doing something else)",
-			2: "You can run the command for me",
-			3: "Go back",
-		})
-		if err != nil {
-			return err
-		}
-
-		switch choice {
-		case 1:
-			writeFingerPointingLine("Hit return once you're done")
-			waitForReturn()
 			toFix = removeEntry(toFix, idx)
-		case 2:
-			if err := fixDependencyAutomatically(ctx, dep); err != nil {
+		} else {
+			// Otherwise we print the command(s) and ask the user whether we should run it or not
+			out.Write("")
+			out.Write("Run the following command(s):")
+			out.Write("")
+
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+
+			choice, err := getChoice(map[int]string{
+				1: "I'll fix this manually (either by running the command or doing something else)",
+				2: "You can run the command for me",
+				3: "Go back",
+			})
+			if err != nil {
 				return err
 			}
-		case 3:
-			return nil
+
+			switch choice {
+			case 1:
+				writeFingerPointingLine("Hit return once you're done")
+				waitForReturn()
+			case 2:
+				if err := fixDependencyAutomatically(ctx, dep); err != nil {
+					return err
+				}
+			case 3:
+				return nil
+			}
 		}
 
 		pending := out.Pending(output.Linef("", output.StylePending, "Determining status..."))
@@ -758,7 +761,7 @@ func getChoice(choices map[int]string) (int, error) {
 	return s, nil
 }
 
-func retryCheck(check func(context.Context) (bool, error), retries int, sleep time.Duration) func(context.Context) (bool, error) {
+func retryCheck(check dependencyCheck, retries int, sleep time.Duration) dependencyCheck {
 	return func(ctx context.Context) (ok bool, err error) {
 		for i := 0; i < retries; i++ {
 			ok, err = check(ctx)
@@ -766,6 +769,16 @@ func retryCheck(check func(context.Context) (bool, error), retries int, sleep ti
 				return true, nil
 			}
 			time.Sleep(sleep)
+		}
+		return ok, err
+	}
+}
+
+func wrapCheckErr(check dependencyCheck, message string) dependencyCheck {
+	return func(ctx context.Context) (bool, error) {
+		ok, err := check(ctx)
+		if err != nil {
+			return ok, errors.Wrap(err, message)
 		}
 		return ok, err
 	}
