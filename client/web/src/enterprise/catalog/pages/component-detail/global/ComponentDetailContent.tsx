@@ -89,17 +89,15 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
         )}
         <div className="py-4 border-top">
             <h2>Usage</h2>
-            <div className={styles.grid}>
-                <ComponentUsage
-                    {...props}
-                    catalogComponent={catalogComponent}
-                    className="card"
-                    headerClassName={classNames('card-header', styles.cardHeader)}
-                    titleClassName={classNames('card-title', styles.cardTitle)}
-                    bodyClassName={styles.cardBody}
-                    bodyScrollableClassName={styles.cardBodyScrollable}
-                />
-            </div>
+            <ComponentUsage
+                {...props}
+                catalogComponent={catalogComponent}
+                className="card"
+                headerClassName={classNames('card-header', styles.cardHeader)}
+                titleClassName={classNames('card-title', styles.cardTitle)}
+                bodyClassName={styles.cardBody}
+                bodyScrollableClassName={styles.cardBodyScrollable}
+            />
         </div>
     </div>
 )

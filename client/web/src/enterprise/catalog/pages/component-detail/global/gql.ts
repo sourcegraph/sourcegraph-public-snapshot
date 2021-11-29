@@ -53,7 +53,9 @@ const CATALOG_COMPONENT_AUTHORS_FRAGMENT = gql`
             authoredLineCount
             authoredLineProportion
             lastCommit {
-                ...GitCommitFields
+                author {
+                    date
+                }
             }
         }
     }
@@ -84,6 +86,18 @@ const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
                         repository {
                             name
                         }
+                    }
+                }
+            }
+            callers {
+                person {
+                    ...PersonLinkFields
+                    avatarURL
+                }
+                authoredLineCount
+                lastCommit {
+                    author {
+                        date
                     }
                 }
             }
