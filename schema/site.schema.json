@@ -217,9 +217,7 @@
             "title": "SearchIndexRevisionsRule",
             "additionalProperties": false,
             "required": ["revisions"],
-            "anyOf": [
-              { "required": ["name"] }
-            ],
+            "anyOf": [{ "required": ["name"] }],
             "properties": {
               "name": {
                 "description": "Regular expression which matches against the name of a repository (e.g. \"^github\\.com/owner/name$\").",
@@ -237,7 +235,12 @@
             }
           },
           "examples": [
-            [{ "name": "^github.com/org/.*", "revisions": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"] }]
+            [
+              {
+                "name": "^github.com/org/.*",
+                "revisions": ["3.17", "f6ca985c27486c2df5231ea3526caa4a4108ffb6", "v3.17.1"]
+              }
+            ]
           ]
         },
         "search.index.branches": {
