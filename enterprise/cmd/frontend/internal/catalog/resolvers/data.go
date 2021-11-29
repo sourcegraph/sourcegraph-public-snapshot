@@ -26,6 +26,10 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"cmd/gitserver"},
+			usagePatterns: []usagePattern{
+				{query: `lang:go \bgitserver\.Client\b patterntype:regexp`},
+				{query: `lang:go \bgit\.[A-Z]\w+\(ctx, patterntype:regexp`},
+			},
 		},
 		{
 			kind:         "SERVICE",

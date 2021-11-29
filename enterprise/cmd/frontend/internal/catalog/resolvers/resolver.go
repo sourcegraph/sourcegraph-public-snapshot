@@ -80,6 +80,7 @@ type catalogComponentResolver struct {
 
 	sourceRepo, sourceCommit string
 	sourcePaths              []string
+	usagePatterns            []usagePattern
 
 	db database.DB
 }

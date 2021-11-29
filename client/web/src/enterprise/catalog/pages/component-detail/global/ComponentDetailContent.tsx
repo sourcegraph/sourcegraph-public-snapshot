@@ -49,60 +49,45 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                 </ul>
             }
         />
-        <header className="d-none">
-            <h1>{catalogComponent.name}</h1>
-            <ul className="list-unstyled">
-                <li>
-                    <strong>Owner</strong> alice
-                </li>
-                <li>
-                    <strong>Lifecycle</strong> production
-                </li>
-            </ul>
-        </header>
-        <div className="py-4 border-top">
-            <h2>Implementation</h2>
-            <div className={styles.grid}>
-                {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
-                <ComponentSources
-                    {...props}
-                    catalogComponent={catalogComponent}
-                    className="card"
-                    headerClassName={classNames('card-header', styles.cardHeader)}
-                    titleClassName={classNames('card-title', styles.cardTitle)}
-                    bodyClassName={styles.cardBody}
-                    bodyScrollableClassName={styles.cardBodyScrollable}
-                />
-                <div className="d-flex flex-column">
-                    <ComponentAuthors
+        {false && (
+            <div className="py-4 border-top">
+                <h2>Implementation</h2>
+                <div className={styles.grid}>
+                    {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
+                    <ComponentSources
+                        {...props}
                         catalogComponent={catalogComponent}
-                        className="card mb-3"
+                        className="card"
                         headerClassName={classNames('card-header', styles.cardHeader)}
                         titleClassName={classNames('card-title', styles.cardTitle)}
                         bodyClassName={styles.cardBody}
                         bodyScrollableClassName={styles.cardBodyScrollable}
                     />
-                    <ComponentCommits
-                        catalogComponent={catalogComponent}
-                        className="card overflow-hidden"
-                        headerClassName={classNames('card-header', styles.cardHeader)}
-                        titleClassName={classNames('card-title', styles.cardTitle)}
-                        bodyClassName={styles.cardBody}
-                        bodyScrollableClassName={styles.cardBodyScrollable}
-                    />
+                    <div className="d-flex flex-column">
+                        <ComponentAuthors
+                            catalogComponent={catalogComponent}
+                            className="card mb-3"
+                            headerClassName={classNames('card-header', styles.cardHeader)}
+                            titleClassName={classNames('card-title', styles.cardTitle)}
+                            bodyClassName={styles.cardBody}
+                            bodyScrollableClassName={styles.cardBodyScrollable}
+                        />
+                        <ComponentCommits
+                            catalogComponent={catalogComponent}
+                            className="card overflow-hidden"
+                            headerClassName={classNames('card-header', styles.cardHeader)}
+                            titleClassName={classNames('card-title', styles.cardTitle)}
+                            bodyClassName={styles.cardBody}
+                            bodyScrollableClassName={styles.cardBodyScrollable}
+                        />
+                    </div>
                 </div>
+                {/* TODO(sqs): add "Depends on" */}
             </div>
-        </div>
-        <div className={styles.grid}>
-            <section className="card card-body">
-                <h3>Usage</h3>
-            </section>
-            <section className="card card-body">
-                <h3>Depends on</h3>
-            </section>
-            <section className="card card-body">
-                <h3>Used by</h3>
-            </section>
+        )}
+        <div className="py-4 border-top">
+            <h2>Usage</h2>
+            <div className={styles.grid}>asdf</div>
         </div>
     </div>
 )
