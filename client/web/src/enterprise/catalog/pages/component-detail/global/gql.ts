@@ -135,6 +135,7 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
         containerName
         kind
         language
+        fileLocal
         location {
             resource {
                 path

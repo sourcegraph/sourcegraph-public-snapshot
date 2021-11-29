@@ -30,9 +30,16 @@ export const ComponentAPI: React.FunctionComponent<Props> = ({
     const { symbols } = api
     return symbols && symbols.nodes.length > 0 ? (
         <ol className={classNames('list-group', className)}>
-            {symbols.nodes.map(symbol => (
-                <APISymbol key={symbol.id} symbol={symbol} />
-            ))}
+            {symbols.nodes
+                .filter(symbol => !symbol.fileLocal)
+                // .filter(symbol => !symbol.containerName)
+                .filter(
+                    // TODO(sqs): hack
+                    symbol => symbol.language === 'TypeScript' || symbol.language === 'Go' || symbol.language === 'tsx'
+                )
+                .map(symbol => (
+                    <APISymbol key={symbol.url} symbol={symbol} className="list-group-item" />
+                ))}
         </ol>
     ) : (
         <p>No uses found</p>
@@ -41,9 +48,10 @@ export const ComponentAPI: React.FunctionComponent<Props> = ({
 
 const APISymbol: React.FunctionComponent<{
     symbol: SymbolFields
-    tag: 'li'
-}> = ({ symbol, tag: Tag }) => (
-    <Tag>
+    tag?: 'li'
+    className?: string
+}> = ({ symbol, tag: Tag = 'li', className }) => (
+    <Tag className={className}>
         <Link to={symbol.url} className="d-flex align-items-center">
             <SymbolIcon kind={symbol.kind} className="icon-inline mr-1" />
             <span className={classNames('')}>{symbol.name}</span>
