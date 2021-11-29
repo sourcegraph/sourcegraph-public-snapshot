@@ -74,9 +74,6 @@ func (m *orgMemberStore) GetByUserID(ctx context.Context, userID int32) ([]*type
 }
 
 func (m *orgMemberStore) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-	if Mocks.OrgMembers.GetByOrgIDAndUserID != nil {
-		return Mocks.OrgMembers.GetByOrgIDAndUserID(ctx, orgID, userID)
-	}
 	return m.getOneBySQL(ctx, "INNER JOIN users ON org_members.user_id=users.id WHERE org_id=$1 AND user_id=$2 AND users.deleted_at IS NULL LIMIT 1", orgID, userID)
 }
 

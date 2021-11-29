@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
@@ -6,6 +5,7 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button } from '@sourcegraph/wildcard'
 
 import styles from './PreviewPrompt.module.scss'
+import { PreviewPromptIcon } from './PreviewPromptIcon'
 
 /** Example snippet show in preview prompt if user has not yet added an on: statement. */
 const ON_STATEMENT = `on:
@@ -44,7 +44,7 @@ export const PreviewPrompt: React.FunctionComponent<PreviewPromptProps> = ({ pre
         case 'Initial':
             return (
                 <>
-                    <div className={classNames(styles.icon, 'mt-4')} />
+                    <PreviewPromptIcon className="mt-4" />
                     <h4 className={styles.header}>
                         Use an <span className="text-monospace">on:</span> statement to preview repositories.
                     </h4>

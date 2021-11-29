@@ -163,7 +163,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             return (
                 <>
                     <PageTitle title="New extension" />
-                    <ModalPage className="mt-4 overflow-hidden">
+                    <ModalPage className="mt-4">
                         <h2 className="mb-4">
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>

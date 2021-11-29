@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import React from 'react'
 
 import { QuickLink } from '../../../schema/settings.schema'
@@ -22,6 +22,6 @@ describe('QuickLink', () => {
         ]
         const links = getQuickLinks({ subjects: [], final: { quicklinks } })
         expect(links.length).toBe(2)
-        expect(mount(<>{links}</>)).toMatchSnapshot()
+        expect(render(<>{links}</>).asFragment()).toMatchSnapshot()
     })
 })

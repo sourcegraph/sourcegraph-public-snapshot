@@ -195,9 +195,9 @@ The only mutable, privileged actions that do not go through Sourcegraph's `/.api
 
 Sourcegraph's API endpoints offer multiple forms of authentication for different use-cases:
 
-1. Session cookies, via the [`session.CookieMiddlewareWithCSRFSafety`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+CookieMiddlewareWithCSRFSafety%28&patternType=literal) middleware. This allows session cookie authentication iff one of the following is true AND the request is not [a "simple" CORS request](https://www.w3.org/TR/cors/#cross-origin-request-with-preflight-0) (`Content-Type` header is `application/json`, or the `X-Requested-With` header is present, implying that a CORS preflight check must have preceded the request successfully):
-   1. The request originates from the same origin.
-   2. OR the request is cross-origin, but passed the CORS preflight check (it is an allowed origin according to the site config `corsOrigins` setting)
+1. Session cookies, via the [`session.CookieMiddlewareWithCSRFSafety`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+CookieMiddlewareWithCSRFSafety%28&patternType=literal) middleware. This allows session cookie authentication iff one of the following is true:
+   1. The request originates from a trusted origin (same origin, browser extension, or an origin in the site config `corsOrigin` allow list.)
+   2. The `X-Requested-With` header is present, which is only possible to send in a browser if the CORS preflight check preceded the request successfully. ([see the cors standard for details](https://fetch.spec.whatwg.org/#http-access-control-allow-headers).)
 2. Authentication tokens, created in the Sourcegraph UI (also via the API) - checked through the [`AccessTokenAuthMiddleware`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40aefef0d+AccessTokenAuthMiddleware%28&patternType=literal) and specified by either:
    1. The basic auth `username` field.
    2. The `Authorization` header, in either `Authorization: token <token>` or `Authorization: token-sudo ...` form with a user to impersonate in the header value somewhere.

@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/cockroachdb/errors"
@@ -40,30 +42,27 @@ const (
 	java11MajorVersion = 53
 )
 
-func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+func createPlaceholderJar(t *testing.T, dir string, contents []byte, jarName, contentPath string) {
 	t.Helper()
-	sourcesPath, err := os.Create(path.Join(dir, jarName))
+	jarPath, err := os.Create(path.Join(dir, jarName))
 	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(sourcesPath)
-	exampleWriter, err := zipWriter.Create(exampleFilePath)
-	assert.Nil(t, err)
-	_, err = exampleWriter.Write([]byte(contents))
-	assert.Nil(t, err)
-	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, sourcesPath.Close())
-}
-
-func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
-	t.Helper()
-	byteCodePath, err := os.Create(path.Join(dir, jarName))
-	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(byteCodePath)
-	exampleWriter, err := zipWriter.Create(exampleClassfilePath)
+	zipWriter := zip.NewWriter(jarPath)
+	exampleWriter, err := zipWriter.Create(contentPath)
 	assert.Nil(t, err)
 	_, err = exampleWriter.Write(contents)
 	assert.Nil(t, err)
 	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, byteCodePath.Close())
+	assert.Nil(t, jarPath.Close())
+}
+
+func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+	t.Helper()
+	createPlaceholderJar(t, dir, []byte(contents), jarName, exampleFilePath)
+}
+
+func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
+	t.Helper()
+	createPlaceholderJar(t, dir, contents, jarName, exampleClassfilePath)
 }
 
 func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
@@ -118,6 +117,17 @@ func (s JVMPackagesSyncer) runCloneCommand(t *testing.T, bareGitDirectory string
 	assert.Nil(t, cmd.Run())
 }
 
+var maliciousPaths []string = []string{
+	// Absolute paths
+	"/sh", "/usr/bin/sh",
+	// Paths into .git which may trigger when git runs a hook
+	".git/blah", ".git/hooks/pre-commit",
+	// Relative paths which stray outside
+	"../foo/../bar", "../../../usr/bin/sh",
+}
+
+const harmlessPath = "src/harmless.java"
+
 func TestNoMaliciousFiles(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
@@ -139,9 +149,16 @@ func TestNoMaliciousFiles(t *testing.T) {
 	err = s.commitJar(ctx, reposource.MavenDependency{}, extractPath, jarPath, &schema.JVMPackagesConnection{Maven: &schema.Maven{}})
 	assert.NotNil(t, err)
 
-	files, err := os.ReadDir(extractPath)
+	dirEntries, err := os.ReadDir(extractPath)
+	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
 	assert.Nil(t, err)
-	assert.Equal(t, 2, len(files))
+	paths := map[string]int{}
+	for _, dirEntry := range dirEntries {
+		paths[dirEntry.Name()] = 0
+	}
+	if !reflect.DeepEqual(baseline, paths) {
+		t.Errorf("expected paths: %v\n   found paths:%v", baseline, paths)
+	}
 }
 
 func createMaliciousJar(t *testing.T, name string) {
@@ -151,15 +168,11 @@ func createMaliciousJar(t *testing.T, name string) {
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
-	_, err = writer.Create("/")
-	assert.Nil(t, err)
-	_, err = writer.Create("/hello/burger")
-	assert.Nil(t, err)
-	_, err = writer.Create("/hello/../../burger")
-	assert.Nil(t, err)
-	_, err = writer.Create("sample/burger")
-	assert.Nil(t, err)
-	_, err = writer.Create(".git/test")
+	for _, filepath := range maliciousPaths {
+		_, err = writer.Create(filepath)
+		assert.Nil(t, err)
+	}
+	_, err = writer.Create(harmlessPath)
 	assert.Nil(t, err)
 }
 

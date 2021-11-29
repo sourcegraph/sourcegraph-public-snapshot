@@ -40,7 +40,9 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { Owner } from '../cloud-ga'
 
+import { UserSettingReposContainer } from './components'
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
+import styles from './SettingsRepositoriesPage.module.scss'
 
 interface Props
     extends TelemetryProps,
@@ -295,9 +297,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="user-settings-repos">
+        <UserSettingReposContainer>
             <SelfHostedCtaLink
-                className="user-settings-repos__self-hosted-cta"
+                className={styles.selfHostedCta}
                 telemetryService={telemetryService}
                 page="settings/repositories"
             />
@@ -383,6 +385,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             ) : (
                 NoAddedReposBanner
             )}
-        </div>
+        </UserSettingReposContainer>
     )
 }

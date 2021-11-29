@@ -19,7 +19,7 @@ export function isWebpackChunkError(value: unknown): boolean {
 }
 
 function isAbortError(value: unknown): boolean {
-    return isErrorLike(value) && value.name === 'AbortError'
+    return isErrorLike(value) && (value.name === 'AbortError' || value.message.startsWith('AbortError'))
 }
 
 function isNotAuthenticatedError(value: unknown): boolean {

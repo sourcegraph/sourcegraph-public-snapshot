@@ -8,10 +8,11 @@ import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
 import {
     InsightDashboard,
     InsightDashboardOwner,
-    InsightsDashboardType,
     isGlobalDashboard,
     isOrganizationDashboard,
     isPersonalDashboard,
+    isRealDashboard,
+    isVirtualDashboard,
     RealInsightDashboard,
 } from '../../../../../core/types'
 
@@ -48,7 +49,8 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         }
     }
 
-    const organizationGroups = getDashboardOrganizationsGroups(dashboards, user.organizations.nodes)
+    const realDashboards = dashboards.filter(isRealDashboard)
+    const organizationGroups = getDashboardOrganizationsGroups(realDashboards, user.organizations.nodes)
 
     return (
         <div className={className}>
@@ -59,19 +61,22 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                 <ListboxPopover className={classNames(styles.popover)} portal={true}>
                     <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
-                        <SelectOption
-                            value={InsightsDashboardType.All}
-                            label="All Insights"
-                            className={styles.option}
-                        />
+                        {dashboards.filter(isVirtualDashboard).map(dashboard => (
+                            <SelectOption
+                                key={dashboard.id}
+                                value={dashboard.id}
+                                label={dashboard.title}
+                                className={styles.option}
+                            />
+                        ))}
 
-                        {dashboards.some(isPersonalDashboard) && (
+                        {realDashboards.some(isPersonalDashboard) && (
                             <ListboxGroup>
                                 <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     Private
                                 </ListboxGroupLabel>
 
-                                {dashboards.filter(isPersonalDashboard).map(dashboard => (
+                                {realDashboards.filter(isPersonalDashboard).map(dashboard => (
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
@@ -81,13 +86,13 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
                             </ListboxGroup>
                         )}
 
-                        {dashboards.some(isGlobalDashboard) && (
+                        {realDashboards.some(isGlobalDashboard) && (
                             <ListboxGroup>
                                 <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     Global
                                 </ListboxGroupLabel>
 
-                                {dashboards.filter(isGlobalDashboard).map(dashboard => (
+                                {realDashboards.filter(isGlobalDashboard).map(dashboard => (
                                     <SelectDashboardOption
                                         key={dashboard.id}
                                         dashboard={dashboard}
@@ -129,7 +134,7 @@ interface DashboardOrganizationGroup {
  * Returns organization dashboards grouped by dashboard owner id
  */
 const getDashboardOrganizationsGroups = (
-    dashboards: InsightDashboard[],
+    dashboards: RealInsightDashboard[],
     organizations: AuthenticatedUser['organizations']['nodes']
 ): DashboardOrganizationGroup[] => {
     // We need a map of the organization names when using the new GraphQL API
@@ -145,7 +150,7 @@ const getDashboardOrganizationsGroups = (
     )
 
     const groupsDictionary = dashboards
-        .map((dashboard: InsightDashboard) => {
+        .map(dashboard => {
             const owner =
                 ('owner' in dashboard && dashboard.owner) ||
                 ('grants' in dashboard &&

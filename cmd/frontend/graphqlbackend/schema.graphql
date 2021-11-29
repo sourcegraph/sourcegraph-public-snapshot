@@ -819,7 +819,7 @@ input AddExternalServiceInput {
     config: String!
     """
     The namespace this external service belongs to.
-    Currently, this can only be used for a user.
+    This can be used both for a user and an organization.
     """
     namespace: ID
 }
@@ -1451,6 +1451,122 @@ type Query {
         """
         until: DateTime
     ): WebhookLogConnection!
+
+    """
+    Retrieve active executor compute instances.
+    """
+    executors(
+        """
+        An (optional) search query that searches over the hostname, queue name, os, architecture, and
+        version properties.
+        """
+        query: String
+
+        """
+        Whether to show only executors that have sent a heartbeat in the last fifteen minutes.
+        """
+        active: Boolean
+
+        """
+        Returns the first n executors.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExecutorConnection!
+}
+
+"""
+A list of active executors compute instances.
+"""
+type ExecutorConnection {
+    """
+    A list of executors.
+    """
+    nodes: [Executor!]!
+
+    """
+    The total number of executors in this result set.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+An active executor compute instance.
+"""
+type Executor implements Node {
+    """
+    The unique identifier of this executor.
+    """
+    id: ID!
+
+    """
+    The hostname of the executor instance.
+    """
+    hostname: String!
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueName: String!
+
+    """
+    Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
+    """
+    active: Boolean!
+
+    """
+    The operating system running the executor.
+    """
+    os: String!
+
+    """
+    The machine architure running the executor.
+    """
+    architecture: String!
+
+    """
+    The version of Git used by the executor.
+    """
+    dockerVersion: String!
+
+    """
+    The version of the executor.
+    """
+    executorVersion: String!
+
+    """
+    The version of Docker used by the executor.
+    """
+    gitVersion: String!
+
+    """
+    The version of Ignite used by the executor.
+    """
+    igniteVersion: String!
+
+    """
+    The version of src-cli used by the executor.
+    """
+    srcCliVersion: String!
+
+    """
+    The first time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    firstSeenAt: DateTime!
+
+    """
+    The last time the executor sent a heartbeat to the Sourcegraph instance.
+    """
+    lastSeenAt: DateTime!
 }
 
 """
@@ -1820,11 +1936,11 @@ type SearchResults {
     """
     sparkline: [Int!]!
     """
-    Repositories that were eligible to be searched.
+    Repositories from results.
     """
     repositories: [Repository!]!
     """
-    The number of repositories that were eligible to be searched (for clients
+    The number of repositories that had results (for clients
     that just wish to know how many without querying the, sometimes extremely
     large, list).
     """
@@ -2117,9 +2233,10 @@ enum ExternalServiceKind {
     GITLAB
     GITOLITE
     JVMPACKAGES
+    OTHER
+    PAGURE
     PERFORCE
     PHABRICATOR
-    OTHER
 }
 
 """
@@ -4522,7 +4639,6 @@ type User implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For users, this is the username.
     """
     namespaceName: String!
-
     """
     Repositories from external services owned by this user.
     """
@@ -4900,44 +5016,6 @@ type Org implements Node & SettingsSubject & Namespace {
     The name of this user namespace's component. For organizations, this is the organization's name.
     """
     namespaceName: String!
-
-    """
-    Repositories from external services owned by this organization.
-    """
-    repositories(
-        """
-        Returns the first n repositories from the list.
-        """
-        first: Int
-        """
-        Return repositories whose names match the query.
-        """
-        query: String
-        """
-        An opaque cursor that is used for pagination.
-        """
-        after: String
-        """
-        Include cloned repositories.
-        """
-        cloned: Boolean = true
-        """
-        Include repositories that are not yet cloned and for which cloning is not in progress.
-        """
-        notCloned: Boolean = true
-        """
-        Include repositories that have a text search index.
-        """
-        indexed: Boolean = true
-        """
-        Include repositories that do not have a text search index.
-        """
-        notIndexed: Boolean = true
-        """
-        Only include repositories from these external services.
-        """
-        externalServiceIDs: [ID]
-    ): RepositoryConnection!
 }
 
 """

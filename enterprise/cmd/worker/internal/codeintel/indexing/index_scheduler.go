@@ -22,6 +22,7 @@ type IndexScheduler struct {
 	indexEnqueuer          IndexEnqueuer
 	repositoryProcessDelay time.Duration
 	repositoryBatchSize    int
+	policyBatchSize        int
 	operations             *schedulerOperations
 }
 
@@ -36,6 +37,7 @@ func NewIndexScheduler(
 	indexEnqueuer IndexEnqueuer,
 	repositoryProcessDelay time.Duration,
 	repositoryBatchSize int,
+	policyBatchSize int,
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
@@ -45,6 +47,7 @@ func NewIndexScheduler(
 		indexEnqueuer:          indexEnqueuer,
 		repositoryProcessDelay: repositoryProcessDelay,
 		repositoryBatchSize:    repositoryBatchSize,
+		policyBatchSize:        policyBatchSize,
 		operations:             newOperations(observationContext),
 	}
 
@@ -64,11 +67,22 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 		return nil
 	}
 
+	var repositoryMatchLimit *int
+	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
+		repositoryMatchLimit = &val
+	}
+
 	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
 	// set should contain repositories that have yet to be updated, or that have been updated least recently.
 	// This allows us to update every repository reliably, even if it takes a long time to process through
 	// the backlog.
-	repositories, err := s.dbStore.SelectRepositoriesForIndexScan(ctx, s.repositoryProcessDelay, s.repositoryBatchSize)
+	repositories, err := s.dbStore.SelectRepositoriesForIndexScan(
+		ctx,
+		s.repositoryProcessDelay,
+		conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		repositoryMatchLimit,
+		s.repositoryBatchSize,
+	)
 	if err != nil {
 		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
 	}
@@ -77,19 +91,10 @@ func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 		return nil
 	}
 
-	// Retrieve the set of global configuration policies that affect indexing. These policies are applied
-	// to all repositories.
-	globalPolicies, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		ForIndexing: true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
-	}
-
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
-		if repositoryErr := s.handleRepository(ctx, repositoryID, globalPolicies, now); repositoryErr != nil {
+		if repositoryErr := s.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -108,46 +113,46 @@ func (s *IndexScheduler) HandleError(err error) {
 func (s *IndexScheduler) handleRepository(
 	ctx context.Context,
 	repositoryID int,
-	globalPolicies []dbstore.ConfigurationPolicy,
 	now time.Time,
 ) error {
-	// Retrieve the set of configuration policies that affect indexing. These policies are applied
-	// only to this repository.
-	repositoryPolicies, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		RepositoryID:     repositoryID,
-		ConsiderPatterns: true,
-		ForIndexing:      true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
-	}
+	offset := 0
 
-	// Combine global and repository-specific policies. The resulting slice may be empty, but that
-	// condition is short-circuited in the call to CommitsDescribedByPolicy below.
-	combinedPolicies := make([]dbstore.ConfigurationPolicy, 0, len(globalPolicies)+len(repositoryPolicies))
-	combinedPolicies = append(combinedPolicies, globalPolicies...)
-	combinedPolicies = append(combinedPolicies, repositoryPolicies...)
+	for {
+		// Retrieve the set of configuration policies that affect indexing for this repository.
+		policies, totalCount, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+			RepositoryID: repositoryID,
+			ForIndexing:  true,
+			Limit:        s.policyBatchSize,
+			Offset:       offset,
+		})
+		if err != nil {
+			return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
+		}
+		offset += len(policies)
 
-	// Get the set of commits within this repository that match an indexing policy
-	commitMap, err := s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, combinedPolicies, now)
-	if err != nil {
-		return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
-	}
-
-	for commit, policyMatches := range commitMap {
-		if len(policyMatches) == 0 {
-			continue
+		// Get the set of commits within this repository that match an indexing policy
+		commitMap, err := s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+		if err != nil {
+			return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 		}
 
-		// Attempt to queue an index if one does not exist for each of the matching commits
-		if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		for commit, policyMatches := range commitMap {
+			if len(policyMatches) == 0 {
 				continue
 			}
 
-			return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+			// Attempt to queue an index if one does not exist for each of the matching commits
+			if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
+				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+					continue
+				}
+
+				return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+			}
+		}
+
+		if len(policies) == 0 || offset >= totalCount {
+			return nil
 		}
 	}
-
-	return nil
 }

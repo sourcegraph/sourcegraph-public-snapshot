@@ -15,28 +15,28 @@ import (
 	"go.uber.org/atomic"
 )
 
-type tracePolicy string
+type TracePolicy string
 
 const (
 	// TraceNone turns off tracing.
-	TraceNone tracePolicy = "none"
+	TraceNone TracePolicy = "none"
 
 	// TraceSelective turns on tracing only for requests with the X-Sourcegraph-Should-Trace header
 	// set to a truthy value.
-	TraceSelective tracePolicy = "selective"
+	TraceSelective TracePolicy = "selective"
 
-	// Comprehensive turns on tracing for all requests.
-	TraceAll tracePolicy = "all"
+	// TraceAll turns on tracing for all requests.
+	TraceAll TracePolicy = "all"
 )
 
 var trPolicy = atomic.NewString(string(TraceNone))
 
-func SetTracePolicy(newTracePolicy tracePolicy) {
+func SetTracePolicy(newTracePolicy TracePolicy) {
 	trPolicy.Store(string(newTracePolicy))
 }
 
-func GetTracePolicy() tracePolicy {
-	return tracePolicy(trPolicy.Load())
+func GetTracePolicy() TracePolicy {
+	return TracePolicy(trPolicy.Load())
 }
 
 // Middleware wraps the handler with the following:
@@ -147,7 +147,7 @@ func StartSpanFromContext(ctx context.Context, operationName string, opts ...ope
 	return StartSpanFromContextWithTracer(ctx, opentracing.GlobalTracer(), operationName, opts...)
 }
 
-// StartSpanFromContext starts a span using the tracer returned by invoking getTracer with the
+// StartSpanFromContextWithTracer starts a span using the tracer returned by invoking getTracer with the
 // passed-in tracer.
 func StartSpanFromContextWithTracer(ctx context.Context, tracer opentracing.Tracer, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
 	return opentracing.StartSpanFromContextWithTracer(ctx, getTracer(ctx, tracer), operationName, opts...)

@@ -233,6 +233,7 @@ export type PatternOf<Value, Data = unknown> =
 
 /**
  * Utility type to prevent TS from inferring the type from a function parameter
+ *
  * @see https://stackoverflow.com/questions/56687668
  */
 type NoInfer<A extends any> = [A][A extends any ? 0 : never]

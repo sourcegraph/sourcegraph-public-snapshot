@@ -372,15 +372,14 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, errors.Wrap(err, "IsViewOnDashboard")
 	}
-	if exists {
-		return nil, errors.New("this insight view is already attached to this dashboard")
+	if !exists {
+		log15.Debug("attempting to add insight view to dashboard", "dashboardId", dashboardID.Arg, "insightId", viewID)
+		err = tx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+		if err != nil {
+			return nil, errors.Wrap(err, "AddInsightViewToDashboard")
+		}
 	}
 
-	log15.Debug("attempting to add insight view to dashboard", "dashboardId", dashboardID.Arg, "insightId", viewID)
-	err = tx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
-	if err != nil {
-		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
-	}
 	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
 		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
 	if err != nil {

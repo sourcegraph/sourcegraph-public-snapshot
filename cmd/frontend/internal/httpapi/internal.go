@@ -25,19 +25,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
+func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		repoName := api.RepoName(mux.Vars(r)["RepoName"])
+		repo, err := backend.NewRepos(db.Repos()).GetByName(r.Context(), repoName)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(repo)
+		if err != nil {
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+		return nil
 	}
-	data, err := json.Marshal(repo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
 }
 
 func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {

@@ -203,7 +203,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncScheduler(ctx, scheduler, gitserver.DefaultClient, store)
+	go syncScheduler(ctx, scheduler, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -339,7 +339,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(authzBypass(handler))),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -419,7 +419,7 @@ func watchSyncer(
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+func syncScheduler(ctx context.Context, sched scheduler, store *repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {

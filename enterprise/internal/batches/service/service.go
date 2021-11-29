@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -90,7 +89,7 @@ var (
 // TODO: We should create one per observationContext.
 func newOperations(observationContext *observation.Context) *operations {
 	operationsOnce.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"batches_service",
 			metrics.WithLabels("op"),
@@ -215,12 +214,12 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		return nil, err
 	}
 
-	for _, changesetSpec := range cs {
-		changesetSpec.BatchSpecID = spec.ID
-
-		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
-			return nil, err
-		}
+	csIDs := make([]int64, 0, len(cs))
+	for _, c := range cs {
+		csIDs = append(csIDs, c.ID)
+	}
+	if err := tx.UpdateChangesetSpecBatchSpecID(ctx, csIDs, spec.ID); err != nil {
+		return nil, err
 	}
 
 	return spec, nil
@@ -285,8 +284,6 @@ type createBatchSpecForExecutionOpts struct {
 // transaction, possibly creating ChangesetSpecs if the spec contains
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
-	reposStore := tx.Repos()
-
 	opts.spec.CreatedFromRaw = true
 	opts.spec.AllowIgnored = opts.allowIgnored
 	opts.spec.AllowUnsupported = opts.allowUnsupported
@@ -294,42 +291,6 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
-	}
-
-	// If there are "importChangesets" statements in the spec we evaluate
-	// them now and create ChangesetSpecs for them.
-	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, opts.spec.Spec.ImportChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
-		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
-		// whether the user has access to the repository or not.
-		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
-		if err != nil {
-			return nil, err
-		}
-
-		repoNameIDs := make(map[string]string, len(repos))
-		for _, r := range repos {
-			repoNameIDs[string(r.Name)] = string(graphqlbackend.MarshalRepositoryID(r.ID))
-		}
-		return repoNameIDs, nil
-	})
-	if err != nil {
-		return err
-	}
-	for _, cs := range specs {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(cs.BaseRepository))
-		if err != nil {
-			return err
-		}
-		changesetSpec := &btypes.ChangesetSpec{
-			UserID:      opts.spec.UserID,
-			RepoID:      repoID,
-			Spec:        cs,
-			BatchSpecID: opts.spec.ID,
-		}
-
-		if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-			return err
-		}
 	}
 
 	// Return spec and enqueue resolution
@@ -520,15 +481,10 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Delete ChangesetSpecs that are associated with BatchSpec.
-	err = tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
-	if err != nil {
-		return nil, err
-	}
-
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
+	// - changeset_specs
 	// associated with it
 	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
 		return nil, err
@@ -1140,6 +1096,8 @@ func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.Bat
 
 // RetryBatchSpecWorkspaces retries the BatchSpecWorkspaceExecutionJobs
 // attached to the given BatchSpecWorkspaces.
+// It only deletes changeset_specs created by workspaces. The imported changeset_specs
+// will not be altered.
 func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
 	ctx, endObservation := s.operations.retryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -1203,7 +1161,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	var errs *multierror.Error
-	var jobIDs = make([]int64, len(jobs))
+	jobIDs := make([]int64, len(jobs))
 
 	for i, j := range jobs {
 		if !j.State.Retryable() {
@@ -1216,14 +1174,16 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 		return err
 	}
 
-	// Delete the old jobs
+	// Delete the old execution jobs.
 	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
 		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
 	}
 
-	// Delete the changeset specs they have created
-	if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
-		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	// Delete the changeset specs they have created.
+	if len(changesetSpecIDs) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
+			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+		}
 	}
 
 	// Create new jobs

@@ -1,6 +1,6 @@
-import { mount } from 'enzyme'
-import React, { ChangeEvent } from 'react'
-import { Button, Form, Input } from 'reactstrap'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import React from 'react'
 import sinon from 'sinon'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
@@ -64,9 +64,9 @@ describe('StreamingProgressSkippedPopover', () => {
                 },
             ],
         }
-
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element).toMatchSnapshot()
+        expect(
+            render(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />).asFragment()
+        ).toMatchSnapshot()
     })
 
     it('should not show Search Again section if no suggested searches are set', () => {
@@ -84,8 +84,8 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find(Form)).toHaveLength(0)
+        render(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        expect(screen.queryByTestId('popover-form')).not.toBeInTheDocument()
     })
 
     it('should have Search Again button disabled by default', () => {
@@ -107,10 +107,11 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
-        const searchAgainButton = element.find(Form).find(Button)
-        expect(searchAgainButton).toHaveLength(1)
-        expect(searchAgainButton.prop('disabled')).toBe(true)
+        render(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        const form = screen.getByTestId('popover-form')
+        const searchAgainButton = within(form).getByRole('button')
+        expect(searchAgainButton).toBeInTheDocument()
+        expect(searchAgainButton).toBeDisabled()
     })
 
     it('should enable Search Again button if at least one item is checked', () => {
@@ -152,18 +153,16 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        render(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
-        const checkboxes = element.find(Input)
+        const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
         expect(checkboxes).toHaveLength(3)
-        const checkbox = checkboxes.at(1)
-        checkbox.invoke('onChange')?.({
-            currentTarget: { checked: true, value: checkbox.props().value as string },
-        } as ChangeEvent<HTMLInputElement>)
+        userEvent.click(checkboxes[1])
 
-        const searchAgainButton = element.find(Form).find(Button)
-        expect(searchAgainButton).toHaveLength(1)
-        expect(searchAgainButton.prop('disabled')).toBe(false)
+        const form = screen.getByTestId('popover-form')
+        const searchAgainButton = within(form).getByRole('button')
+        expect(searchAgainButton).toBeInTheDocument()
+        expect(searchAgainButton).toBeEnabled()
     })
 
     it('should disable Search Again button if unchecking all items', () => {
@@ -205,24 +204,18 @@ describe('StreamingProgressSkippedPopover', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
+        render(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={sinon.spy()} />)
 
-        const checkboxes = element.find(Input)
+        const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
         expect(checkboxes).toHaveLength(3)
-        const checkbox = checkboxes.at(1)
-        checkbox.invoke('onChange')?.({
-            currentTarget: { checked: true, value: checkbox.props().value as string },
-        } as ChangeEvent<HTMLInputElement>)
+        userEvent.click(checkboxes[1])
 
-        let searchAgainButton = element.find(Form).find(Button)
-        expect(searchAgainButton.prop('disabled')).toBe(false)
+        const form = screen.getByTestId('popover-form')
+        const searchAgainButton = within(form).getByRole('button')
+        expect(searchAgainButton).toBeEnabled()
 
-        checkbox.invoke('onChange')?.({
-            currentTarget: { checked: false, value: checkbox.props().value as string },
-        } as ChangeEvent<HTMLInputElement>)
-
-        searchAgainButton = element.find(Form).find(Button)
-        expect(searchAgainButton.prop('disabled')).toBe(true)
+        userEvent.click(checkboxes[1])
+        expect(searchAgainButton).toBeDisabled()
     })
 
     it('should call onSearchAgain with selected items when button is clicked', () => {
@@ -266,26 +259,22 @@ describe('StreamingProgressSkippedPopover', () => {
 
         const searchAgain = sinon.spy()
 
-        const element = mount(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} />)
+        render(<StreamingProgressSkippedPopover progress={progress} onSearchAgain={searchAgain} />)
 
-        const checkboxes = element.find(Input)
+        const checkboxes = screen.getAllByTestId('streaming-progress-skipped-suggest-check')
+        expect(checkboxes).toHaveLength(3)
+        const checkbox1 = checkboxes[1]
+        userEvent.click(checkbox1)
 
         expect(checkboxes).toHaveLength(3)
-        const checkbox1 = checkboxes.at(0)
-        checkbox1.invoke('onChange')?.({
-            currentTarget: { checked: true, value: checkbox1.props().value as string },
-        } as ChangeEvent<HTMLInputElement>)
+        const checkbox2 = checkboxes[2]
+        userEvent.click(checkbox2)
 
-        expect(checkboxes).toHaveLength(3)
-        const checkbox2 = checkboxes.at(2)
-        checkbox2.invoke('onChange')?.({
-            currentTarget: { checked: true, value: checkbox2.props().value as string },
-        } as ChangeEvent<HTMLInputElement>)
-
-        const form = element.find(Form)
-        form.simulate('submit')
+        const form = screen.getByTestId('popover-form')
+        const submitButton = within(form).getByRole('button')
+        userEvent.click(submitButton)
 
         sinon.assert.calledOnce(searchAgain)
-        sinon.assert.calledWith(searchAgain, ['timeout:2m', 'archived:yes'])
+        sinon.assert.calledWith(searchAgain, ['forked:yes', 'archived:yes'])
     })
 })

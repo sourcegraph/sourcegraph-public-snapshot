@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -40,7 +40,7 @@ func (d dotcomRootResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFu
 
 var _ graphqlbackend.DotcomRootResolver = dotcomRootResolver{}
 
-func Init(ctx context.Context, db dbutil.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	stripeEnabled := stripeutil.ValidateAndPublishConfig()
 	// Only enabled on Sourcegraph.com or when Stripe is configured correctly.
 	if envvar.SourcegraphDotComMode() || stripeEnabled {

@@ -10,7 +10,6 @@ import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -18,6 +17,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
@@ -140,7 +140,7 @@ describe('codeHost', () => {
     describe('createGlobalDebugMount()', () => {
         it('should create the debug menu mount', () => {
             createGlobalDebugMount()
-            const mount = document.body.querySelector('.global-debug')
+            const mount = document.body.querySelector('[data-global-debug]')
             expect(mount).toBeDefined()
         })
     })
@@ -198,7 +198,7 @@ describe('codeHost', () => {
             expect(renderedCommandPalette).not.toBeUndefined()
         })
 
-        test('creates a .global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
+        test('creates a data-global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
@@ -214,7 +214,7 @@ describe('codeHost', () => {
                     showGlobalDebug: true,
                 })
             )
-            const globalDebugMount = document.body.querySelector('.global-debug')
+            const globalDebugMount = document.body.querySelector('[data-global-debug]')
             expect(globalDebugMount).toBeDefined()
             const renderedDebugElement = elementRenderedAtMount(globalDebugMount!)
             expect(renderedDebugElement).toBeDefined()

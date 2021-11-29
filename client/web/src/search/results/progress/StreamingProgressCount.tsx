@@ -35,6 +35,7 @@ export const StreamingProgressCount: React.FunctionComponent<
                 styles.count,
                 state === 'loading' && styles.countInProgress
             )}
+            data-testid="streaming-progress-count"
         >
             {abbreviateNumber(progress.matchCount)}
             {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}

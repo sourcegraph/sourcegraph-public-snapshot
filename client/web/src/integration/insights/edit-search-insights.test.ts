@@ -294,8 +294,10 @@ describe('Code insight edit insight page', () => {
 
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
+            const mockDate = new Date('June 1, 2021 00:00:00 UTC')
+            const offset = mockDate.getTimezoneOffset() * 60 * 1000
             // Number of ms between Unix epoch and June 31, 2021
-            const mockMs = new Date('June 1, 2021 00:00:00 UTC').getTime()
+            const mockMs = mockDate.getTime() + offset
             Date.now = () => mockMs
         })
 
@@ -342,7 +344,9 @@ describe('Code insight edit insight page', () => {
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[data-testid="search-insight-edit-page-content"]')
-        await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')
+        await driver.page.waitForSelector(
+            '[data-testid="line-chart__content"] [data-line-name="Imports of new graphql-operations types"] circle'
+        )
 
         await percySnapshotWithVariants(driver.page, 'Code insights edit page with search-based insight creation UI')
 

@@ -13,6 +13,7 @@ import { useTemporarySetting } from '../../settings/temporary/useTemporarySettin
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
+import styles from './UserSettingsSidebar.module.scss'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
     user: UserSettingsAreaUserFields
@@ -49,6 +50,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     const context: UserSettingsSidebarItemConditionContext = {
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
@@ -90,7 +92,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                                 About organizations
                             </SidebarNavItem>
                         ) : (
-                            <div className="user-settings-sidebar__new-org-btn-wrapper">
+                            <div className={styles.newOrgBtnWrapper}>
                                 <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
                                     <AddIcon className="icon-inline" /> New organization
                                 </Link>

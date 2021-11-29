@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/gosrc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -35,64 +36,66 @@ import (
 // serveGoSymbolURL handles Go symbol URLs (e.g.,
 // https://sourcegraph.com/go/github.com/gorilla/mux/-/Vars) by
 // redirecting them to the file and line/column URL of the definition.
-func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
-	ctx := r.Context()
+func serveGoSymbolURL(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		ctx := r.Context()
 
-	spec, err := parseGoSymbolURLPath(r.URL.Path)
-	if err != nil {
-		return err
-	}
-
-	dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer, spec.Pkg)
-	if err != nil {
-		return err
-	}
-	cloneURL := dir.CloneURL
-
-	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
-		return errors.Errorf("non-github clone URL resolved for import path %s", spec.Pkg)
-	}
-
-	repoName := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
-	repo, err := backend.Repos.GetByName(ctx, repoName)
-	if err != nil {
-		return err
-	}
-
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
-	if err != nil {
-		return err
-	}
-	_ = commitID
-
-	vfs, err := repoVFS(r.Context(), repoName, commitID)
-	if err != nil {
-		return err
-	}
-
-	pkgPath := path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, dir.ProjectRoot))
-	location, err := symbolLocation(r.Context(), vfs, commitID, spec, pkgPath)
-	if err != nil {
-		return err
-	}
-	if location == nil {
-		return &errcode.HTTPErr{
-			Status: http.StatusNotFound,
-			Err:    errors.New("symbol not found"),
+		spec, err := parseGoSymbolURLPath(r.URL.Path)
+		if err != nil {
+			return err
 		}
-	}
 
-	uri, err := url.Parse(string(location.URI))
-	if err != nil {
-		return err
+		dir, err := gosrc.ResolveImportPath(httpcli.ExternalDoer, spec.Pkg)
+		if err != nil {
+			return err
+		}
+		cloneURL := dir.CloneURL
+
+		if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
+			return errors.Errorf("non-github clone URL resolved for import path %s", spec.Pkg)
+		}
+
+		repoName := api.RepoName(strings.TrimSuffix(strings.TrimPrefix(cloneURL, "https://"), ".git"))
+		repo, err := backend.NewRepos(db.Repos()).GetByName(ctx, repoName)
+		if err != nil {
+			return err
+		}
+
+		commitID, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, "")
+		if err != nil {
+			return err
+		}
+		_ = commitID
+
+		vfs, err := repoVFS(r.Context(), repoName, commitID)
+		if err != nil {
+			return err
+		}
+
+		pkgPath := path.Join("/", dir.RepoPrefix, strings.TrimPrefix(dir.ImportPath, dir.ProjectRoot))
+		location, err := symbolLocation(r.Context(), vfs, commitID, spec, pkgPath)
+		if err != nil {
+			return err
+		}
+		if location == nil {
+			return &errcode.HTTPErr{
+				Status: http.StatusNotFound,
+				Err:    errors.New("symbol not found"),
+			}
+		}
+
+		uri, err := url.Parse(string(location.URI))
+		if err != nil {
+			return err
+		}
+		filePath := uri.Fragment
+		dest := &url.URL{
+			Path:     "/" + path.Join(string(repo.Name), "-/blob", filePath),
+			Fragment: fmt.Sprintf("L%d:%d$references", location.Range.Start.Line+1, location.Range.Start.Character+1),
+		}
+		http.Redirect(w, r, dest.String(), http.StatusFound)
+		return nil
 	}
-	filePath := uri.Fragment
-	dest := &url.URL{
-		Path:     "/" + path.Join(string(repo.Name), "-/blob", filePath),
-		Fragment: fmt.Sprintf("L%d:%d$references", location.Range.Start.Line+1, location.Range.Start.Character+1),
-	}
-	http.Redirect(w, r, dest.String(), http.StatusFound)
-	return nil
 }
 
 type goSymbolSpec struct {

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -177,10 +176,10 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := NewDB(dbtesting.GetDB(t))
 	ctx := context.Background()
 
-	if _, err := globalstatedb.Get(ctx); err != nil {
+	if _, err := db.GlobalState().Get(ctx); err != nil {
 		t.Fatal(err)
 	}
 

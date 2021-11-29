@@ -6,8 +6,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type gitCommitConnectionResolver struct {
@@ -24,12 +24,12 @@ type gitCommitConnectionResolver struct {
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
-	commits []*gitapi.Commit
+	commits []*gitdomain.Commit
 	err     error
 }
 
-func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitapi.Commit, error) {
-	do := func() ([]*gitapi.Commit, error) {
+func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain.Commit, error) {
+	do := func() ([]*gitdomain.Commit, error) {
 		var n int32
 		if r.first != nil {
 			n = *r.first
@@ -78,7 +78,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*GitCommitRe
 
 	resolvers := make([]*GitCommitResolver, len(commits))
 	for i, commit := range commits {
-		resolvers[i] = toGitCommitResolver(r.repo, r.db, commit.ID, commit)
+		resolvers[i] = NewGitCommitResolver(r.db, r.repo, commit.ID, commit)
 	}
 
 	return resolvers, nil

@@ -22,6 +22,7 @@ type uploadExpirer struct {
 	repositoryBatchSize    int
 	uploadProcessDelay     time.Duration
 	uploadBatchSize        int
+	policyBatchSize        int
 	commitBatchSize        int
 	branchesCacheMaxKeys   int
 }
@@ -41,6 +42,7 @@ func NewUploadExpirer(
 	repositoryBatchSize int,
 	uploadProcessDelay time.Duration,
 	uploadBatchSize int,
+	policyBatchSize int,
 	commitBatchSize int,
 	branchesCacheMaxKeys int,
 	interval time.Duration,
@@ -54,6 +56,7 @@ func NewUploadExpirer(
 		repositoryBatchSize:    repositoryBatchSize,
 		uploadProcessDelay:     uploadProcessDelay,
 		uploadBatchSize:        uploadBatchSize,
+		policyBatchSize:        policyBatchSize,
 		commitBatchSize:        commitBatchSize,
 		branchesCacheMaxKeys:   branchesCacheMaxKeys,
 	})
@@ -75,19 +78,10 @@ func (e *uploadExpirer) Handle(ctx context.Context) (err error) {
 		return nil
 	}
 
-	// Retrieve the set of global configuration policies that affect data retention. These policies are
-	// applied to all repositories.
-	globalPolicies, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		ForDataRetention: true,
-	})
-	if err != nil {
-		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
-	}
-
 	now := timeutil.Now()
 
 	for _, repositoryID := range repositories {
-		if repositoryErr := e.handleRepository(ctx, repositoryID, globalPolicies, now); repositoryErr != nil {
+		if repositoryErr := e.handleRepository(ctx, repositoryID, now); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -107,33 +101,17 @@ func (e *uploadExpirer) HandleError(err error) {
 func (e *uploadExpirer) handleRepository(
 	ctx context.Context,
 	repositoryID int,
-	globalPolicies []dbstore.ConfigurationPolicy,
 	now time.Time,
 ) error {
 	e.metrics.numRepositoriesScanned.Inc()
 
-	// Retrieve the set of configuration policies that affect data retention. These policies are applied
-	// only to this repository.
-	repositoryPolicies, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		RepositoryID:     repositoryID,
-		ConsiderPatterns: true,
-		ForDataRetention: true,
-	})
+	// Build a map from commits to the set of policies that affect them. Note that this map should
+	// never be empty as we have multiple protected data retention policies on the global scope so
+	// that all data visible from a tag or branch tip is protected for at least a short amount of
+	// time after upload.
+	commitMap, err := e.buildCommitMap(ctx, repositoryID, now)
 	if err != nil {
-		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
-	}
-
-	// Combine global and repository-specific policies. Note that this resulting slice should never be
-	// empty as we have a pair of protected data retention policies on the global scope so that all data
-	// visible from a tag or branch tip is protected for at least a short amount of time after upload.
-	combinedPolicies := make([]dbstore.ConfigurationPolicy, 0, len(globalPolicies)+len(repositoryPolicies))
-	combinedPolicies = append(combinedPolicies, globalPolicies...)
-	combinedPolicies = append(combinedPolicies, repositoryPolicies...)
-
-	// Get the set of commits within this repository that match a data retention policy
-	commitMap, err := e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, combinedPolicies, now)
-	if err != nil {
-		return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
+		return err
 	}
 
 	// Mark the time after which all unprocessed uploads for this repository will not be touched.
@@ -171,6 +149,38 @@ func (e *uploadExpirer) handleRepository(
 			return err
 		}
 	}
+}
+
+// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
+// repository and build a map from commits to the policies that apply to them.
+func (e *uploadExpirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policies.PolicyMatch, error) {
+	var (
+		offset   int
+		policies []dbstore.ConfigurationPolicy
+	)
+
+	for {
+		// Retrieve the complete set of configuration policies that affect data retention for this repository
+		policyBatch, totalCount, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+			RepositoryID:     repositoryID,
+			ForDataRetention: true,
+			Limit:            e.policyBatchSize,
+			Offset:           offset,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "dbstore.GetConfigurationPolicies")
+		}
+
+		offset += len(policyBatch)
+		policies = append(policies, policyBatch...)
+
+		if len(policyBatch) == 0 || offset >= totalCount {
+			break
+		}
+	}
+
+	// Get the set of commits within this repository that match a data retention policy
+	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
 }
 
 func (e *uploadExpirer) handleUploads(

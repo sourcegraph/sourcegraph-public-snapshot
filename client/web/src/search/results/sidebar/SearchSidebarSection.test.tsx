@@ -1,10 +1,11 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import sinon from 'sinon'
 
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 
-import { FilterLink, getDynamicFilterLinks } from './FilterLink'
+import { getDynamicFilterLinks } from './FilterLink'
 import { SearchSidebarSection } from './SearchSidebarSection'
 
 describe('SearchSidebarSection', () => {
@@ -21,81 +22,70 @@ describe('SearchSidebarSection', () => {
     const onFilterChosen = sinon.stub()
 
     it('should render all items initially', () => {
-        const element = mount(
+        render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
 
-        const items = element.find(FilterLink)
-        expect(items.length).toBe(9)
+        expect(screen.getAllByTestId('filter-link')).toHaveLength(9)
 
-        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
-        expect(searchbox.length).toBe(1)
+        expect(screen.getByTestId('sidebar-section-search-box')).toBeInTheDocument()
     })
 
     it('should filter items based on search', () => {
-        const element = mount(
+        render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
 
-        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
-        searchbox.getDOMNode().setAttribute('value', 'Script')
-        searchbox.simulate('change', { currentTarget: searchbox })
+        userEvent.type(screen.getByTestId('sidebar-section-search-box'), 'Script')
 
-        const items = element.find(FilterLink)
-        expect(items.length).toBe(2)
+        expect(screen.getAllByTestId('filter-link')).toHaveLength(2)
     })
 
     it('should clear search when items change', () => {
-        const element = mount(
+        const { rerender } = render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
 
-        let searchbox = element.find('[data-testid="sidebar-section-search-box"]')
-        searchbox.getDOMNode().setAttribute('value', 'Script')
-        searchbox.simulate('change', { currentTarget: searchbox })
+        userEvent.type(screen.getByTestId('sidebar-section-search-box'), 'Script')
 
-        element.setProps({ children: getDynamicFilterLinks([filters[0], filters[5], filters[3]], onFilterChosen) })
-        element.update()
+        rerender(
+            <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
+                {getDynamicFilterLinks([filters[0], filters[5], filters[3]], onFilterChosen)}
+            </SearchSidebarSection>
+        )
 
-        const items = element.find(FilterLink)
-        expect(items.length).toBe(3)
+        expect(screen.getAllByTestId('filter-link')).toHaveLength(3)
 
-        searchbox = element.find('[data-testid="sidebar-section-search-box"]')
-        const searchFilter = searchbox.getDOMNode().getAttribute('value')
-        expect(searchFilter).toBe('')
+        expect(screen.getByTestId('sidebar-section-search-box')).toHaveValue('')
     })
 
     it('should not show search if only one item in list', () => {
-        const element = mount(
+        render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters" showSearch={true}>
                 {getDynamicFilterLinks([filters[2]], onFilterChosen)}
             </SearchSidebarSection>
         )
 
-        const items = element.find(FilterLink)
-        expect(items.length).toBe(1)
+        expect(screen.getByTestId('filter-link')).toBeInTheDocument()
 
-        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
-        expect(searchbox.length).toBe(0)
+        expect(screen.queryByTestId('sidebar-section-search-box')).not.toBeInTheDocument()
     })
 
     it('should not show search if showSearch is false', () => {
-        const element = mount(
+        render(
             <SearchSidebarSection sectionId="id" header="Dynamic filters">
                 {getDynamicFilterLinks(filters, onFilterChosen)}
             </SearchSidebarSection>
         )
 
-        const items = element.find(FilterLink)
-        expect(items.length).toBe(9)
+        expect(screen.getAllByTestId('filter-link')).toHaveLength(9)
 
-        const searchbox = element.find('[data-testid="sidebar-section-search-box"]')
-        expect(searchbox.length).toBe(0)
+        expect(screen.queryByTestId('sidebar-section-search-box')).not.toBeInTheDocument()
     })
 })

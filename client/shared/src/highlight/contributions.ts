@@ -54,6 +54,8 @@ export function registerHighlightContributions(): void {
     registerLanguage('graphql', graphQLLanguage)
     // Apex is not supported by highlight.js, but it's very close to Java.
     registerLanguage('apex', require('highlight.js/lib/languages/java'))
+    // We use HTTP to render incoming webhook deliveries.
+    registerLanguage('http', require('highlight.js/lib/languages/http'))
     /* eslint-enable @typescript-eslint/no-require-imports */
     /* eslint-enable @typescript-eslint/no-var-requires */
 }

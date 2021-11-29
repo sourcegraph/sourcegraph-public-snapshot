@@ -135,7 +135,7 @@ func newGithubSource(svc *types.ExternalService, c *schema.GitHubConnection, cf 
 		searchClient = github.NewV3SearchClient(apiURL, token, cli)
 	)
 
-	if svc.NamespaceUserID == 0 {
+	if svc.IsSiteOwned() {
 		for resource, monitor := range map[string]*ratelimit.Monitor{
 			"rest":    v3Client.RateLimitMonitor(),
 			"graphql": v4Client.RateLimitMonitor(),

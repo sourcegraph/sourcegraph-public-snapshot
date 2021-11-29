@@ -5,7 +5,6 @@ import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
-import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
@@ -16,6 +15,7 @@ import {
 } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 
@@ -88,20 +88,21 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <ButtonLink className="btn repo-header__file-action" onSelect={this.onClick}>
+                <RepoHeaderActionButtonLink className="btn" file={true} onSelect={this.onClick}>
                     <HistoryIcon className="icon-inline" />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
-                </ButtonLink>
+                </RepoHeaderActionButtonLink>
             )
         }
         return (
-            <ButtonLink
-                className="btn btn-icon repo-header__action"
+            <RepoHeaderActionButtonLink
+                className="btn btn-icon"
+                file={false}
                 onSelect={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
                 <HistoryIcon className="icon-inline" />
-            </ButtonLink>
+            </RepoHeaderActionButtonLink>
         )
     }
 

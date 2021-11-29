@@ -1,30 +1,26 @@
 package graphqlbackend
 
 import (
-	"context"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestOrgs(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Orgs.List = func(ctx context.Context, opt *database.OrgsListOptions) ([]*types.Org, error) {
-		return []*types.Org{{Name: "org1"}, {Name: "org2"}}, nil
-	}
-	database.Mocks.Orgs.Count = func(context.Context, database.OrgsListOptions) (int, error) { return 2, nil }
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	t.Cleanup(func() {
-		resetMocks()
-	})
+	orgs := dbmock.NewMockOrgStore()
+	orgs.ListFunc.SetDefaultReturn([]*types.Org{{Name: "org1"}, {Name: "org2"}}, nil)
+	orgs.CountFunc.SetDefaultReturn(2, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgsFunc.SetDefaultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{
@@ -57,17 +53,16 @@ func TestOrgs(t *testing.T) {
 }
 
 func TestListOrgsForCloud(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
+	orig := envvar.SourcegraphDotComMode()
 	envvar.MockSourcegraphDotComMode(true)
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
+	defer envvar.MockSourcegraphDotComMode(orig)
 
-	t.Cleanup(func() {
-		resetMocks()
-		envvar.MockSourcegraphDotComMode(false)
-	})
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),

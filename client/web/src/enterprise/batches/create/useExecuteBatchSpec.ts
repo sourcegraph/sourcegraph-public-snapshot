@@ -38,9 +38,7 @@ export const useExecuteBatchSpec = (batchSpecID?: Scalars['ID']): UseExecuteBatc
         submitBatchSpec({ variables: { batchSpec: batchSpecID } })
             .then(({ data }) => {
                 if (data?.executeBatchSpec) {
-                    history.push(
-                        `${data.executeBatchSpec.namespace.url}/batch-changes/executions/${data.executeBatchSpec.id}`
-                    )
+                    history.push(`/batch-changes/executions/${data.executeBatchSpec.id}`)
                 }
             })
             .catch(setExecutionError)

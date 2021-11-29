@@ -8,15 +8,21 @@ import (
 	"github.com/inconshreveable/log15"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type handler struct {
 	QueueOptions
+	executorStore database.ExecutorStore
 }
 
 type QueueOptions struct {
+	// Name signifies the type of work the queue serves to executors.
+	Name string
+
 	// Store is a required dbworker store store for each registered queue.
 	Store store.Store
 
@@ -30,8 +36,11 @@ type QueueOptions struct {
 	CanceledRecordsFetcher func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
-func newHandler(queueOptions QueueOptions) *handler {
-	return &handler{queueOptions}
+func newHandler(executorStore database.ExecutorStore, queueOptions QueueOptions) *handler {
+	return &handler{
+		executorStore: executorStore,
+		QueueOptions:  queueOptions,
+	}
 }
 
 var ErrUnknownJob = errors.New("unknown job")
@@ -39,11 +48,11 @@ var ErrUnknownJob = errors.New("unknown job")
 // dequeue selects a job record from the database and stashes metadata including
 // the job record and the locking transaction. If no job is available for processing,
 // a false-valued flag is returned.
-func (h *handler) dequeue(ctx context.Context, executorName, executorHostname string) (_ apiclient.Job, dequeued bool, _ error) {
-	// We explicitly DON'T want to use executorHostname here, it is NOT guaranteed to be unique.
+func (h *handler) dequeue(ctx context.Context, executorName string) (_ apiclient.Job, dequeued bool, _ error) {
+	// executorName is supposed to be unique.
 	record, dequeued, err := h.Store.Dequeue(ctx, executorName, nil)
 	if err != nil {
-		return apiclient.Job{}, false, err
+		return apiclient.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
 	}
 	if !dequeued {
 		return apiclient.Job{}, false, nil
@@ -55,7 +64,7 @@ func (h *handler) dequeue(ctx context.Context, executorName, executorHostname st
 			log15.Error("Failed to mark record as failed", "recordID", record.RecordID(), "error", err)
 		}
 
-		return apiclient.Job{}, false, err
+		return apiclient.Job{}, false, errors.Wrap(err, "RecordTransformer")
 	}
 
 	return job, true, nil
@@ -74,7 +83,7 @@ func (h *handler) addExecutionLogEntry(ctx context.Context, executorName string,
 	if err == store.ErrExecutionLogEntryNotUpdated {
 		return 0, ErrUnknownJob
 	}
-	return entryID, err
+	return entryID, errors.Wrap(err, "dbworkerstore.AddExecutionLogEntry")
 }
 
 // updateExecutionLogEntry calls UpdateExecutionLogEntry for the given job and entry.
@@ -90,7 +99,7 @@ func (h *handler) updateExecutionLogEntry(ctx context.Context, executorName stri
 	if err == store.ErrExecutionLogEntryNotUpdated {
 		return ErrUnknownJob
 	}
-	return err
+	return errors.Wrap(err, "dbworkerstore.UpdateExecutionLogEntry")
 }
 
 // markComplete calls MarkComplete for the given job.
@@ -102,7 +111,7 @@ func (h *handler) markComplete(ctx context.Context, executorName string, jobID i
 		WorkerHostname: executorName,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "dbworkerstore.MarkComplete")
 	}
 	if !ok {
 		return ErrUnknownJob
@@ -119,7 +128,7 @@ func (h *handler) markErrored(ctx context.Context, executorName string, jobID in
 		WorkerHostname: executorName,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "dbworkerstore.MarkErrored")
 	}
 	if !ok {
 		return ErrUnknownJob
@@ -136,7 +145,7 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 		WorkerHostname: executorName,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "dbworkerstore.MarkFailed")
 	}
 	if !ok {
 		return ErrUnknownJob
@@ -145,13 +154,19 @@ func (h *handler) markFailed(ctx context.Context, executorName string, jobID int
 }
 
 // heartbeat calls Heartbeat for the given jobs.
-func (h *handler) heartbeat(ctx context.Context, executorName string, ids []int) (knownIDs []int, err error) {
-	return h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
+func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []int) (knownIDs []int, err error) {
+	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
+	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
+		log15.Error("Failed to upsert executor heartbeat", "err", err)
+	}
+
+	knownIDs, err = h.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
 		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
 		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
+		WorkerHostname: executor.Hostname,
 	})
+	return knownIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
 }
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
@@ -160,5 +175,7 @@ func (h *handler) canceled(ctx context.Context, executorName string) (knownIDs [
 	if h.CanceledRecordsFetcher == nil {
 		return nil, nil
 	}
-	return h.CanceledRecordsFetcher(ctx, executorName)
+
+	knownIDs, err = h.CanceledRecordsFetcher(ctx, executorName)
+	return knownIDs, errors.Wrap(err, "CanceledRecordsFetcher")
 }

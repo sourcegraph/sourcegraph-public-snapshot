@@ -580,6 +580,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  `regexp, filename, nonzero result`,
 				query: `file:doc.go patterntype:regexp`,
 			},
+			// Ensure repo resolution is correct in global. https://github.com/sourcegraph/sourcegraph/issues/27044
+			{
+				name:       `-repo excludes private repos`,
+				query:      `-repo:private // this is a change`,
+				zeroResult: true,
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {

@@ -136,6 +136,18 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		reposMap[repo.ID] = repo
 	}
 
+	// If we used MinLastChanged, we should only return information for the
+	// repositories that we found from List.
+	if !minLastChanged.IsZero() {
+		filtered := indexedIDs[:0]
+		for _, id := range indexedIDs {
+			if _, ok := reposMap[id]; ok {
+				filtered = append(filtered, id)
+			}
+		}
+		indexedIDs = filtered
+	}
+
 	getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 		if loadReposErr != nil {
 			return nil, loadReposErr
@@ -230,20 +242,16 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 	// 1. Changing the schema from object of arrays to array of objects.
 	// 2. Stream out each object marshalled rather than marshall the full list in memory.
 
-	names := make([]string, 0, len(indexable))
 	ids := make([]api.RepoID, 0, len(indexable))
 
 	for _, r := range indexable {
-		names = append(names, string(r.Name))
 		ids = append(ids, r.ID)
 	}
 
 	data := struct {
-		RepoNames []string
-		RepoIDs   []api.RepoID
+		RepoIDs []api.RepoID
 	}{
-		RepoNames: names,
-		RepoIDs:   ids,
+		RepoIDs: ids,
 	}
 
 	return json.NewEncoder(w).Encode(&data)

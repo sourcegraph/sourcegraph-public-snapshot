@@ -1,23 +1,21 @@
 package graphqlbackend
 
 import (
-	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestUsers(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Users.List = func(ctx context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
-		return []*types.User{{Username: "user1"}, {Username: "user2"}}, nil
-	}
-	database.Mocks.Users.Count = func(context.Context, *database.UsersListOptions) (int, error) { return 2, nil }
-	db := database.NewDB(nil)
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.ListFunc.SetDefaultReturn([]*types.User{{Username: "user1"}, {Username: "user2"}}, nil)
+	users.CountFunc.SetDefaultReturn(2, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),

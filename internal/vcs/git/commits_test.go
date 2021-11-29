@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestRepository_GetCommit(t *testing.T) {
@@ -21,17 +20,17 @@ func TestRepository_GetCommit(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantGitCommit := &gitapi.Commit{
+	wantGitCommit := &gitdomain.Commit{
 		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-		Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-		Committer: &gitapi.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+		Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+		Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 		Message:   "bar",
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
 		repo             api.RepoName
 		id               api.CommitID
-		wantCommit       *gitapi.Commit
+		wantCommit       *gitdomain.Commit
 		noEnsureRevision bool
 	}{
 		"git cmd with NoEnsureRevision false": {
@@ -55,7 +54,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		t.Cleanup(func() {
 			runCommitLog = oldRunCommitLog
 		})
-		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*gitapi.Commit, error) {
+		runCommitLog = func(ctx context.Context, cmd *gitserver.Cmd, opt CommitsOptions) ([]*gitdomain.Commit, error) {
 			// Track the value of NoEnsureRevision we pass to gitserver
 			noEnsureRevision = opt.NoEnsureRevision
 			return oldRunCommitLog(ctx, cmd, opt)
@@ -214,18 +213,18 @@ func TestRepository_Commits(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantGitCommits := []*gitapi.Commit{
+	wantGitCommits := []*gitdomain.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitapi.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 		{
 			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-			Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "foo",
 			Parents:   nil,
 		},
@@ -233,7 +232,7 @@ func TestRepository_Commits(t *testing.T) {
 	tests := map[string]struct {
 		repo        api.RepoName
 		id          api.CommitID
-		wantCommits []*gitapi.Commit
+		wantCommits []*gitdomain.Commit
 		wantTotal   uint
 	}{
 		"git cmd": {
@@ -266,7 +265,7 @@ func TestRepository_Commits(t *testing.T) {
 		}
 
 		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitapi.Commit
+			var gotC, wantC *gitdomain.Commit
 			if i < len(commits) {
 				gotC = commits[i]
 			}
@@ -294,20 +293,20 @@ func TestRepository_Commits_options(t *testing.T) {
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit --allow-empty -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
 	}
-	wantGitCommits := []*gitapi.Commit{
+	wantGitCommits := []*gitdomain.Commit{
 		{
 			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitapi.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 			Message:   "bar",
 			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 		},
 	}
-	wantGitCommits2 := []*gitapi.Commit{
+	wantGitCommits2 := []*gitdomain.Commit{
 		{
 			ID:        "ade564eba4cf904492fb56dcd287ac633e6e082c",
-			Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Committer: &gitapi.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
 			Message:   "qux",
 			Parents:   []api.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
 		},
@@ -315,7 +314,7 @@ func TestRepository_Commits_options(t *testing.T) {
 	tests := map[string]struct {
 		repo        api.RepoName
 		opt         CommitsOptions
-		wantCommits []*gitapi.Commit
+		wantCommits []*gitdomain.Commit
 		wantTotal   uint
 	}{
 		"git cmd": {
@@ -339,11 +338,11 @@ func TestRepository_Commits_options(t *testing.T) {
 				Range:  "HEAD",
 				N:      1,
 			},
-			wantCommits: []*gitapi.Commit{
+			wantCommits: []*gitdomain.Commit{
 				{
 					ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-					Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitapi.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
 					Message:   "bar",
 					Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 				},
@@ -374,7 +373,7 @@ func TestRepository_Commits_options(t *testing.T) {
 		}
 
 		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitapi.Commit
+			var gotC, wantC *gitdomain.Commit
 			if i < len(commits) {
 				gotC = commits[i]
 			}
@@ -400,11 +399,11 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
 	}
-	wantGitCommits := []*gitapi.Commit{
+	wantGitCommits := []*gitdomain.Commit{
 		{
 			ID:        "546a3ef26e581624ef997cb8c0ba01ee475fc1dc",
-			Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 			Message:   "commit2",
 			Parents:   []api.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
 		},
@@ -412,7 +411,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	tests := map[string]struct {
 		repo        api.RepoName
 		opt         CommitsOptions
-		wantCommits []*gitapi.Commit
+		wantCommits []*gitdomain.Commit
 		wantTotal   uint
 	}{
 		"git cmd Path 0": {
@@ -457,7 +456,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		}
 
 		for i := 0; i < len(commits) || i < len(test.wantCommits); i++ {
-			var gotC, wantC *gitapi.Commit
+			var gotC, wantC *gitdomain.Commit
 			if i < len(commits) {
 				gotC = commits[i]
 			}
@@ -473,7 +472,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 
 func TestMessage(t *testing.T) {
 	t.Run("Body", func(t *testing.T) {
-		tests := map[gitapi.Message]string{
+		tests := map[gitdomain.Message]string{
 			"hello":                 "",
 			"hello\n":               "",
 			"hello\n\n":             "",

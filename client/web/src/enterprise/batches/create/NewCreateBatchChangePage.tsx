@@ -17,7 +17,8 @@ import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import helloWorldSample from './examples/hello-world.batch.yaml'
+import helloWorldSample from './library/hello-world.batch.yaml'
+import { LibraryPane } from './library/LibraryPane'
 import { NamespaceSelector } from './NamespaceSelector'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { useBatchSpecCode } from './useBatchSpecCode'
@@ -25,7 +26,6 @@ import { usePreviewBatchSpec } from './useBatchSpecPreview'
 import { useExecuteBatchSpec } from './useExecuteBatchSpec'
 import { useNamespaces } from './useNamespaces'
 import { useBatchSpecWorkspaceResolution, WorkspacesPreview } from './workspaces-preview/WorkspacesPreview'
-import { hasOnStatement } from './yaml-util'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -104,11 +104,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     // Disable the preview button if the batch spec code is invalid or the on: statement
     // is missing, or if we're already processing a preview.
-    const previewDisabled = useMemo(() => isValid !== true || !hasOnStatement(debouncedCode) || isLoadingPreview, [
-        isValid,
-        isLoadingPreview,
-        debouncedCode,
-    ])
+    const previewDisabled = useMemo(() => isValid !== true || isLoadingPreview, [isValid, isLoadingPreview])
 
     const { resolution: workspacesPreviewResolution } = useBatchSpecWorkspaceResolution(
         batchSpecID,
@@ -216,6 +212,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                 </div>
             </div>
             <div className={classNames(styles.editorLayoutContainer, 'd-flex flex-1')}>
+                <LibraryPane onReplaceItem={clearErrorsAndHandleCodeChange} />
                 <div className={styles.editorContainer}>
                     <MonacoBatchSpecEditor
                         isLightTheme={isLightTheme}
@@ -234,7 +231,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         batchSpecID={batchSpecID}
                         currentPreviewRequestTime={currentPreviewRequestTime}
                         previewDisabled={previewDisabled}
-                        preview={() => previewBatchSpec(code)}
+                        preview={() => previewBatchSpec(debouncedCode)}
                         batchSpecStale={batchSpecStale}
                         excludeRepo={excludeRepo}
                     />

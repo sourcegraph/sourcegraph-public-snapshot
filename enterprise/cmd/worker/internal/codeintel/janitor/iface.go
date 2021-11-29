@@ -20,7 +20,7 @@ type DBStore interface {
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	HardDeleteUploadByID(ctx context.Context, ids ...int) error
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
 	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
@@ -32,8 +32,7 @@ type DBStore interface {
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
-	RepoIDsByGlobPattern(ctx context.Context, pattern string) ([]int, error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 }
 
 type DBStoreShim struct {

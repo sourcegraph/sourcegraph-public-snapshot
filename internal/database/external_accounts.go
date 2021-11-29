@@ -32,28 +32,66 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 	return true
 }
 
+// userExternalAccountsStore provides access to the `user_external_accounts` table.
 type UserExternalAccountsStore interface {
+	// AssociateUserAndSave is used for linking a new, additional external account with an existing
+	// Sourcegraph account.
+	//
+	// It creates a user external account and associates it with the specified user. If the external
+	// account already exists and is associated with:
+	//
+	// - the same user: it updates the data and returns a nil error; or
+	// - a different user: it performs no update and returns a non-nil error
 	AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error)
+
 	Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error)
+
+	// CreateUserAndSave is used to create a new Sourcegraph user account from an external account
+	// (e.g., "signup from SAML").
+	//
+	// It creates a new user and associates it with the specified external account. If the user to
+	// create already exists, it returns an error.
 	CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error)
+
+	// Delete deletes a user external account.
 	Delete(ctx context.Context, id int32) error
-	Done(error) error
+
+	// ExecResult performs a query without returning any rows, but includes the
+	// result of the execution.
 	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
+
+	// Get gets information about the user external account.
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
+
 	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
+
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
+
 	ListBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error)
+
+	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
+	// association with the external account already exist).
+	//
+	// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
+	// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
+	// CreateUserAndSave for that.
 	LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error)
-	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
+
+	// TouchExpired sets the given user external account to be expired now.
 	TouchExpired(ctx context.Context, id int32) error
+
+	// TouchLastValid sets last valid time of the given user external account to be now.
 	TouchLastValid(ctx context.Context, id int32) error
+
+	WithEncryptionKey(key encryption.Key) UserExternalAccountsStore
+
+	QueryRow(ctx context.Context, query *sqlf.Query) *sql.Row
 	Transact(ctx context.Context) (UserExternalAccountsStore, error)
 	With(other basestore.ShareableStore) UserExternalAccountsStore
-	WithEncryptionKey(key encryption.Key) UserExternalAccountsStore
+	Done(error) error
 	basestore.ShareableStore
 }
 
-// userExternalAccountsStore provides access to the `user_external_accounts` table.
 type userExternalAccountsStore struct {
 	*basestore.Store
 
@@ -90,7 +128,6 @@ func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
 	return keyring.Default().UserExternalAccountKey
 }
 
-// Get gets information about the user external account.
 func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
 	if Mocks.ExternalAccounts.Get != nil {
 		return Mocks.ExternalAccounts.Get(id)
@@ -98,12 +135,6 @@ func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.
 	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
 }
 
-// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
-// association with the external account already exist).
-//
-// It looks up the existing user associated with the external account's extsvc.AccountSpec. If
-// found, it updates the account's data and returns the user. It NEVER creates a user; you must call
-// CreateUserAndSave for that.
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
 	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
@@ -151,14 +182,6 @@ RETURNING user_id
 	return userID, err
 }
 
-// AssociateUserAndSave is used for linking a new, additional external account with an existing
-// Sourcegraph account.
-//
-// It creates a user external account and associates it with the specified user. If the external
-// account already exists and is associated with:
-//
-// - the same user: it updates the data and returns a nil error; or
-// - a different user: it performs no update and returns a non-nil error
 func (s *userExternalAccountsStore) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
 	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
 		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
@@ -251,11 +274,6 @@ AND deleted_at IS NULL
 	return nil
 }
 
-// CreateUserAndSave is used to create a new Sourcegraph user account from an external account
-// (e.g., "signup from SAML").
-//
-// It creates a new user and associates it with the specified external account. If the user to
-// create already exists, it returns an error.
 func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUserID int32, err error) {
 	if Mocks.ExternalAccounts.CreateUserAndSave != nil {
 		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
@@ -307,7 +325,6 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 `, userID, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID, data.AuthData, data.Data, keyID))
 }
 
-// TouchExpired sets the given user external account to be expired now.
 func (s *userExternalAccountsStore) TouchExpired(ctx context.Context, id int32) error {
 	if Mocks.ExternalAccounts.TouchExpired != nil {
 		return Mocks.ExternalAccounts.TouchExpired(ctx, id)
@@ -322,7 +339,6 @@ WHERE id = $1
 	return err
 }
 
-// TouchLastValid sets last valid time of the given user external account to be now.
 func (s *userExternalAccountsStore) TouchLastValid(ctx context.Context, id int32) error {
 	if Mocks.ExternalAccounts.TouchLastValid != nil {
 		return Mocks.ExternalAccounts.TouchLastValid(ctx, id)
@@ -339,7 +355,6 @@ WHERE id = $1
 	return err
 }
 
-// Delete deletes a user external account.
 func (s *userExternalAccountsStore) Delete(ctx context.Context, id int32) error {
 	if Mocks.ExternalAccounts.Delete != nil {
 		return Mocks.ExternalAccounts.Delete(id)

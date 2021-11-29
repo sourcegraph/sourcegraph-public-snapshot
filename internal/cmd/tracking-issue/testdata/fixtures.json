@@ -6230,7 +6230,7 @@
     {
       "ID": "MDU6SXNzdWU2ODY5ODA5MDU=",
       "Title": "Drop the sources column from the repo table",
-      "Body": "https://github.com/sourcegraph/sourcegraph/pull/13176 introduces a new table called `external_service_repos` that is used to denormalize the content of the `sources` column of the repo table.\r\nDropping that column while migrating the data to the new table is taking too long when the `repo` table is big, this caused the migration to timeout on Sourcegraph cloud.\r\nWe decided instead to keep that column in 3.20, make it read-only with a trigger, and remove it in 3.21.\r\n",
+      "Body": "https://github.com/sourcegraph/sourcegraph/pull/13176 introduces a new table called `external_service_repos` that is used to denormalize the content of the `sources` column of the repo table.\r\nDropping that column while migrating the data to the new table is taking too long when the `repo` table is big, this caused the migration to timeout on Sourcegraph Cloud.\r\nWe decided instead to keep that column in 3.20, make it read-only with a trigger, and remove it in 3.21.\r\n",
       "Number": 13401,
       "URL": "https://github.com/sourcegraph/sourcegraph/issues/13401",
       "State": "CLOSED",

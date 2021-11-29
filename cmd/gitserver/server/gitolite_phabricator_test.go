@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,14 +19,14 @@ func TestServer_handleGet(t *testing.T) {
 			Url:             "https://phab.mycompany.com",
 		},
 	}}
-	api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
+	internalapi.MockExternalServiceConfigs = func(kind string, result interface{}) error {
 		buf, err := json.Marshal(conn)
 		if err != nil {
 			return err
 		}
 		return json.Unmarshal(buf, result)
 	}
-	t.Cleanup(func() { api.MockExternalServiceConfigs = nil })
+	t.Cleanup(func() { internalapi.MockExternalServiceConfigs = nil })
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
@@ -62,14 +62,14 @@ func TestServer_handleGet_invalid(t *testing.T) {
 			CallsignCommand: `echo "Something went wrong this is not a valid callsign"`,
 		},
 	}}
-	api.MockExternalServiceConfigs = func(kind string, result interface{}) error {
+	internalapi.MockExternalServiceConfigs = func(kind string, result interface{}) error {
 		buf, err := json.Marshal(conn)
 		if err != nil {
 			return err
 		}
 		return json.Unmarshal(buf, result)
 	}
-	t.Cleanup(func() { api.MockExternalServiceConfigs = nil })
+	t.Cleanup(func() { internalapi.MockExternalServiceConfigs = nil })
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()

@@ -154,7 +154,7 @@ describe('ResultContainer', () => {
     it('displays only one result when collapsed, which is the equivalent of subsetMatches', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
-        const expandedItems = container.querySelectorAll('.file-match-children__item')
+        const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
     })
@@ -162,16 +162,16 @@ describe('ResultContainer', () => {
     it('expands to display all results when the expand button is clicked', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
-        let expandedItems = container.querySelectorAll('.file-match-children__item')
+        let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
 
         fireEvent.click(button!)
 
-        expandedItems = container.querySelectorAll('.file-match-children__item')
+        expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
     })
 
@@ -185,7 +185,7 @@ describe('ResultContainer', () => {
     it('displays the collapse label when expanded', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
 
         fireEvent.click(button!)
@@ -196,21 +196,21 @@ describe('ResultContainer', () => {
     it('displays all results by default, when allExpanded is true', () => {
         const { container } = render(<ResultContainer {...findReferencesProps} />)
 
-        const expandedItems = container.querySelectorAll('.file-match-children__item')
+        const expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
     })
 
     it('collapses to show no results when the collapse is clicked, when allExpanded is true', () => {
         const { container } = render(<ResultContainer {...findReferencesProps} />)
 
-        let expandedItems = container.querySelectorAll('.file-match-children__item')
+        let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
         fireEvent.click(button!)
 
-        expandedItems = container.querySelectorAll('.file-match-children__item')
+        expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(0)
     })
 })

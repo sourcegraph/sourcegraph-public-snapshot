@@ -163,7 +163,7 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
         className,
         value: optimisticEnabled,
         title: userCannotToggle || !subject ? undefined : optimisticEnabled ? 'Click to disable' : 'Click to enable',
-        dataTest: `extension-toggle-${extensionID}`,
+        ['data-testid']: `extension-toggle-${extensionID}`,
         disabled: userCannotToggle || !subject,
     }
 

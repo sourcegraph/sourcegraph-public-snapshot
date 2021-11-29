@@ -456,6 +456,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
                                                         this.state.settingsCascade
                                                     )}
+                                                    batchChangesWebhookLogsEnabled={
+                                                        window.context.batchChangesWebhookLogsEnabled
+                                                    }
                                                     // Search query
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                                     parsedSearchQuery={this.state.parsedSearchQuery}

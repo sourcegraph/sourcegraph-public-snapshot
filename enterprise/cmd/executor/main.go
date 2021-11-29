@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/ignite"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker"
@@ -46,9 +49,19 @@ func main() {
 	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
+	// Determine telemetry data.
+	telemetryOptions := func() apiclient.TelemetryOptions {
+		// Run for at most 5s to get telemetry options.
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		return apiclient.NewTelemetryOptions(ctx)
+	}()
+	log15.Info("Telemetry information gathered", "info", fmt.Sprintf("%+v", telemetryOptions))
+
 	nameSet := janitor.NewNameSet()
 	ctx, cancel := context.WithCancel(context.Background())
-	worker, canceler := worker.NewWorker(nameSet, config.APIWorkerOptions(), observationContext)
+	worker, canceler := worker.NewWorker(nameSet, config.APIWorkerOptions(telemetryOptions), observationContext)
 
 	routines := []goroutine.BackgroundRoutine{
 		worker,

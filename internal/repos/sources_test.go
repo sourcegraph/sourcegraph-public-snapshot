@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -42,7 +43,7 @@ func TestSources_ListRepos(t *testing.T) {
 		name   string
 		ctx    context.Context
 		svcs   types.ExternalServices
-		assert func(*types.ExternalService) types.ReposAssertion
+		assert func(*types.ExternalService) typestest.ReposAssertion
 		err    string
 	}
 
@@ -138,7 +139,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "excluded repos are never yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -284,7 +285,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "included repos that exist are yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -391,7 +392,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -492,7 +493,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "nameTransformations updates the repo name",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -531,7 +532,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "phabricator",
 			svcs: svcs,
-			assert: func(*types.ExternalService) types.ReposAssertion {
+			assert: func(*types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
@@ -586,7 +587,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "bitbucketserver archived",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) types.ReposAssertion {
+			assert: func(s *types.ExternalService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 

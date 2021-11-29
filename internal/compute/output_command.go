@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type Output struct {
@@ -52,11 +53,39 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func (c *Output) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
-	lines := make([]string, 0, len(fm.LineMatches))
-	for _, line := range fm.LineMatches {
-		lines = append(lines, line.Preview)
+func resultContent(ctx context.Context, r result.Match) (string, bool, error) {
+	switch m := r.(type) {
+	case *result.FileMatch:
+		contentBytes, err := git.ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, 0)
+		if err != nil {
+			return "", false, err
+		}
+		return string(contentBytes), true, nil
+	case *result.CommitMatch:
+		var content string
+		if m.DiffPreview != nil {
+			content = m.DiffPreview.Value
+		} else {
+			content = string(m.Commit.Message)
+		}
+		return content, true, nil
+	default:
+		return "", false, nil
 	}
-	fragment := strings.Join(lines, "\n")
-	return output(ctx, fragment, c.MatchPattern, c.OutputPattern, c.Separator)
+}
+
+func (c *Output) Run(ctx context.Context, r result.Match) (Result, error) {
+	content, ok, err := resultContent(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	env := NewMetaEnvironment(r, content)
+	outputPattern, err := substituteMetaVariables(c.OutputPattern, env)
+	if err != nil {
+		return nil, err
+	}
+	return output(ctx, content, c.MatchPattern, outputPattern, c.Separator)
 }
