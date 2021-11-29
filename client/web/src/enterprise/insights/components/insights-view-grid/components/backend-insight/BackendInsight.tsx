@@ -176,7 +176,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 </View.ErrorContent>
             ) : (
                 data && (
-                    <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
+                    <LineChartSettingsContext.Provider value={{ zeroYAxisMin, layout: 'vertical' }}>
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
