@@ -24,6 +24,16 @@ func (r *rootResolver) Catalog(context.Context) (gql.CatalogResolver, error) {
 	return &catalogResolver{db: r.db}, nil
 }
 
+func (r *rootResolver) CatalogComponent(ctx context.Context, args *gql.CatalogComponentArgs) (gql.CatalogComponentResolver, error) {
+	components := dummyData(r.db)
+	for _, c := range components {
+		if c.Name() == args.Name {
+			return c, nil
+		}
+	}
+	return nil, nil
+}
+
 func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"CatalogComponent": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
@@ -110,7 +120,7 @@ func (r *catalogComponentResolver) Tags() []string {
 }
 
 func (r *catalogComponentResolver) URL() string {
-	return "/catalog/" + string(r.ID())
+	return "/catalog/" + string(r.Name())
 }
 
 func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {

@@ -124,13 +124,10 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
     ${CATALOG_COMPONENT_USAGE_FRAGMENT}
 `
 
-export const CATALOG_COMPONENT_BY_ID = gql`
-    query CatalogComponentByID($id: ID!) {
-        node(id: $id) {
-            __typename
-            ... on CatalogComponent {
-                ...CatalogComponentDetailFields
-            }
+export const CATALOG_COMPONENT_BY_NAME = gql`
+    query CatalogComponentByName($name: String!) {
+        catalogComponent(name: $name) {
+            ...CatalogComponentDetailFields
         }
     }
     ${CATALOG_COMPONENT_DETAIL_FRAGMENT}

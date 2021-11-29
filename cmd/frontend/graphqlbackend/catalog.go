@@ -14,8 +14,13 @@ import (
 // CatalogRootResolver is the root resolver.
 type CatalogRootResolver interface {
 	Catalog(context.Context) (CatalogResolver, error)
+	CatalogComponent(context.Context, *CatalogComponentArgs) (CatalogComponentResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
+}
+
+type CatalogComponentArgs struct {
+	Name string
 }
 
 type CatalogResolver interface {

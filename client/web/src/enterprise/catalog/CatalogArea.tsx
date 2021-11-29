@@ -36,12 +36,12 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                         telemetryService={telemetryService}
                     />
                 </Route>
-                <Route path={`${match.url}/:id`}>
-                    {(matchProps: RouteComponentProps<{ id: string }>) => (
+                <Route path={`${match.url}/:name`}>
+                    {(matchProps: RouteComponentProps<{ name: string }>) => (
                         <ComponentDetailPage
                             key={1}
                             {...props}
-                            catalogComponentID={matchProps.match.params.id}
+                            catalogComponentName={matchProps.match.params.name}
                             filters={filters}
                             onFiltersChange={onFiltersChange}
                             telemetryService={telemetryService}

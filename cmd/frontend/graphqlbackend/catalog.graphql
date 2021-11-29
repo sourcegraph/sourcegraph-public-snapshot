@@ -3,6 +3,7 @@ extend type Query {
     [WIP]
     """
     catalog: Catalog!
+    catalogComponent(name: String!): CatalogComponent
 }
 
 type Catalog {

@@ -1,8 +1,7 @@
 import classNames from 'classnames'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { useConnection } from '../../../../../../components/FilteredConnection/hooks/useConnection'
@@ -28,8 +27,8 @@ import { ComponentListFilters } from './ComponentListFilters'
 import { CATALOG_COMPONENTS } from './gql'
 
 interface Props extends CatalogComponentFiltersProps {
-    /** The currently selected CatalogComponent, if any. */
-    selectedComponentID?: Scalars['ID']
+    /** The name of the currently selected CatalogComponent, if any. */
+    selectedComponentName?: string
 
     size: 'sm' | 'lg'
     className?: string
@@ -38,7 +37,7 @@ interface Props extends CatalogComponentFiltersProps {
 const FIRST = 20
 
 export const ComponentList: React.FunctionComponent<Props> = ({
-    selectedComponentID,
+    selectedComponentName,
     filters,
     onFiltersChange,
     size,
@@ -65,8 +64,6 @@ export const ComponentList: React.FunctionComponent<Props> = ({
         },
     })
 
-    useEffect(() => () => console.log('DESTROY ComponentList'), [])
-
     return (
         <>
             <ComponentListFilters
@@ -82,7 +79,7 @@ export const ComponentList: React.FunctionComponent<Props> = ({
                         <CatalogComponent
                             key={node.id}
                             node={node}
-                            selected={Boolean(selectedComponentID && node.id === selectedComponentID)}
+                            selected={Boolean(selectedComponentName && node.name === selectedComponentName)}
                             size={size}
                         />
                     ))}

@@ -2,20 +2,19 @@ import React, { useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CatalogComponentByIDResult, CatalogComponentByIDVariables } from '../../../../../graphql-operations'
+import { CatalogComponentByNameResult, CatalogComponentByNameVariables } from '../../../../../graphql-operations'
 import { CatalogComponentFiltersProps } from '../../../core/component-filters'
 import { ComponentList } from '../../overview/components/component-list/ComponentList'
 import { Sidebar } from '../sidebar/Sidebar'
 
 import { ComponentDetailContent } from './ComponentDetailContent'
-import { CATALOG_COMPONENT_BY_ID } from './gql'
+import { CATALOG_COMPONENT_BY_NAME } from './gql'
 
 export interface Props
     extends CatalogComponentFiltersProps,
@@ -23,15 +22,15 @@ export interface Props
         ExtensionsControllerProps,
         ThemeProps,
         SettingsCascadeProps {
-    /** The GraphQL ID of the CatalogComponent. */
-    catalogComponentID: Scalars['ID']
+    /** The name of the CatalogComponent. */
+    catalogComponentName: string
 }
 
 /**
  * The catalog component detail page.
  */
 export const ComponentDetailPage: React.FunctionComponent<Props> = ({
-    catalogComponentID,
+    catalogComponentName,
     filters,
     onFiltersChange,
     telemetryService,
@@ -41,10 +40,10 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
         telemetryService.logViewEvent('CatalogComponentDetail')
     }, [telemetryService])
 
-    const { data, error, loading } = useQuery<CatalogComponentByIDResult, CatalogComponentByIDVariables>(
-        CATALOG_COMPONENT_BY_ID,
+    const { data, error, loading } = useQuery<CatalogComponentByNameResult, CatalogComponentByNameVariables>(
+        CATALOG_COMPONENT_BY_NAME,
         {
-            variables: { id: catalogComponentID },
+            variables: { name: catalogComponentName },
 
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
@@ -57,8 +56,6 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
         }
     )
 
-    useEffect(() => () => console.log('DESTROY ComponentDetailPage'), [])
-
     return (
         <>
             <PageTitle
@@ -67,14 +64,14 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                         ? 'Error loading component'
                         : loading && !data
                         ? 'Loading component...'
-                        : !data || !data.node || data.node.__typename !== 'CatalogComponent'
+                        : !data || !data.catalogComponent
                         ? 'Component not found'
-                        : data.node.name
+                        : data.catalogComponent.name
                 }
             />
             <Sidebar>
                 <ComponentList
-                    selectedComponentID={catalogComponentID}
+                    selectedComponentName={catalogComponentName}
                     filters={filters}
                     onFiltersChange={onFiltersChange}
                     className="flex-1"
@@ -86,12 +83,12 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline" />
                 ) : error && !data ? (
                     <div className="alert alert-danger">Error: {error.message}</div>
-                ) : !data || !data.node || data.node.__typename !== 'CatalogComponent' ? (
+                ) : !data || !data.catalogComponent ? (
                     <div className="alert alert-danger">Component not found in catalog</div>
                 ) : (
                     <ComponentDetailContent
                         {...props}
-                        catalogComponent={data.node}
+                        catalogComponent={data.catalogComponent}
                         telemetryService={telemetryService}
                     />
                 )}
