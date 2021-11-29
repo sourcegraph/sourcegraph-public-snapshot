@@ -223,9 +223,7 @@ func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 		cfg := c.ExperimentalFeatures
 
 		if len(cfg.SearchIndexBranches) != 0 {
-			branchesRevs := cfg.SearchIndexBranches[o.Name]
-			matched = make([]string, 0, len(branchesRevs)*2)
-			matched = append(matched, branchesRevs...)
+			matched = append(matched, cfg.SearchIndexBranches[o.Name]...)
 		}
 
 		for _, rule := range rules {
