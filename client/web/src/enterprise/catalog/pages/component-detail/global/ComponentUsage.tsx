@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 import { useLocation } from 'react-router'
@@ -35,6 +36,22 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
     settingsCascade,
     telemetryService,
 }) => {
+    const { data, error, loading } = useQuery<CatalogComponentByNameResult, CatalogComponentByNameVariables>(
+        CATALOG_COMPONENT_BY_NAME,
+        {
+            variables: { name: catalogComponentName },
+
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+
+            // For subsequent requests while this page is open, make additional network
+            // requests; this is necessary for `refetch` to actually use the network. (see
+            // https://github.com/apollographql/apollo-client/issues/5515)
+            nextFetchPolicy: 'network-only',
+        }
+    )
+
     const location = useLocation()
 
     if (!usage) {
@@ -46,7 +63,6 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
     }
 
     const { locations, callers } = usage
-
     return locations && locations.nodes.length > 0 ? (
         <div className={className}>
             <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
