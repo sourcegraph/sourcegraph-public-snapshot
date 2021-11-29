@@ -34,6 +34,7 @@ type CatalogComponent implements Node {
     sourceLocations: [TreeEntry!]!
     commits(first: Int): GitCommitConnection
     authors: [CatalogComponentAuthorEdge!]
+    usage(query: String): CatalogComponentUsage!
 }
 
 type CatalogComponentAuthorEdge {
@@ -42,4 +43,8 @@ type CatalogComponentAuthorEdge {
     authoredLineCount: Int!
     authoredLineProportion: Float!
     lastCommit: GitCommit!
+}
+
+type CatalogComponentUsage {
+    locations: LocationConnection
 }

@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -16,7 +17,12 @@ import { Sidebar } from '../sidebar/Sidebar'
 import { ComponentDetailContent } from './ComponentDetailContent'
 import { CATALOG_COMPONENT_BY_ID } from './gql'
 
-export interface Props extends CatalogComponentFiltersProps, TelemetryProps, ExtensionsControllerProps, ThemeProps {
+export interface Props
+    extends CatalogComponentFiltersProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        SettingsCascadeProps {
     /** The GraphQL ID of the CatalogComponent. */
     catalogComponentID: Scalars['ID']
 }

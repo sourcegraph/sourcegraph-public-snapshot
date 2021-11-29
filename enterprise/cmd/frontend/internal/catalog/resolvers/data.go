@@ -6,6 +6,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
+type usagePattern struct {
+	query string
+}
+
+func newQueryUsagePattern(query string) usagePattern {
+	return usagePattern{
+		query: `repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
+	}
+}
+
 // TODO(sqs): dummy data
 func dummyData(db database.DB) []*catalogComponentResolver {
 	const (
@@ -27,8 +37,8 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"cmd/gitserver"},
 			usagePatterns: []usagePattern{
-				{query: `lang:go \bgitserver\.Client\b patterntype:regexp`},
-				{query: `lang:go \bgit\.[A-Z]\w+\(ctx, patterntype:regexp`},
+				newQueryUsagePattern(`lang:go \bgitserver\.Client\b patterntype:regexp`),
+				newQueryUsagePattern(`lang:go \bgit\.[A-Z]\w+\(ctx, patterntype:regexp`),
 			},
 		},
 		{
@@ -100,6 +110,10 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"dev/sg"},
+			usagePatterns: []usagePattern{
+				newQueryUsagePattern(`lang:markdown ` + "`" + `sg[` + "`" + `\s] patterntype:regexp`),
+				newQueryUsagePattern(`lang:markdown (^|\s*\$ )sg\s patterntype:regexp`),
+			},
 		},
 		{
 			kind:         "LIBRARY",
@@ -128,6 +142,9 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"client/wildcard"},
+			usagePatterns: []usagePattern{
+				newQueryUsagePattern(`lang:typescript import @sourcegraph/wildcard patterntype:regexp`),
+			},
 		},
 		{
 			kind:         "LIBRARY",
@@ -135,6 +152,9 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"client/extension-api"},
+			usagePatterns: []usagePattern{
+				newQueryUsagePattern(`lang:typescript import from ['"]sourcegraph['"] patterntype:regexp`),
+			},
 		},
 	}
 	sort.Slice(components, func(i, j int) bool { return components[i].name < components[j].name })

@@ -3,6 +3,7 @@ import React, { useEffect } from 'react'
 import { Switch, Route, useRouteMatch, RouteComponentProps } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -13,7 +14,7 @@ import { useCatalogComponentFilters } from './core/component-filters'
 import { ComponentDetailPage } from './pages/component-detail/global/ComponentDetailPage'
 import { OverviewPage } from './pages/overview/global/OverviewPage'
 
-interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps {}
+interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
 
 /**
  * The main entrypoint to the catalog UI.

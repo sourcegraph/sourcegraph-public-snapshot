@@ -41,10 +41,12 @@ type CatalogComponentResolver interface {
 	Owner(context.Context) (*PersonResolver, error)
 	System() *string
 	Tags() []string
+	URL() string
+
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
-	URL() string
+	Usage(context.Context, *CatalogComponentUsageArgs) (CatalogComponentUsageResolver, error)
 }
 
 type CatalogComponentKind string
@@ -55,4 +57,12 @@ type CatalogComponentAuthorEdgeResolver interface {
 	AuthoredLineCount() int32
 	AuthoredLineProportion() float64
 	LastCommit(context.Context) (*GitCommitResolver, error)
+}
+
+type CatalogComponentUsageArgs struct {
+	Query *string
+}
+
+type CatalogComponentUsageResolver interface {
+	Locations(context.Context) (LocationConnectionResolver, error)
 }

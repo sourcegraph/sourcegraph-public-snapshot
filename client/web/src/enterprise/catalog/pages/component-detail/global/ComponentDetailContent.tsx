@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader } from '@sourcegraph/wildcard'
@@ -14,8 +15,9 @@ import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
 import { ComponentSources } from './ComponentSources'
+import { ComponentUsage } from './ComponentUsage'
 
-interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps {
+interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     catalogComponent: CatalogComponentDetailFields
 }
 
@@ -87,7 +89,17 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
         )}
         <div className="py-4 border-top">
             <h2>Usage</h2>
-            <div className={styles.grid}>asdf</div>
+            <div className={styles.grid}>
+                <ComponentUsage
+                    {...props}
+                    catalogComponent={catalogComponent}
+                    className="card"
+                    headerClassName={classNames('card-header', styles.cardHeader)}
+                    titleClassName={classNames('card-title', styles.cardTitle)}
+                    bodyClassName={styles.cardBody}
+                    bodyScrollableClassName={styles.cardBodyScrollable}
+                />
+            </div>
         </div>
     </div>
 )

@@ -61,6 +61,36 @@ const CATALOG_COMPONENT_AUTHORS_FRAGMENT = gql`
     ${personLinkFieldsFragment}
 `
 
+const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
+    fragment CatalogComponentUsageFields on CatalogComponent {
+        usage {
+            locations {
+                nodes {
+                    range {
+                        start {
+                            line
+                            character
+                        }
+                        end {
+                            line
+                            character
+                        }
+                    }
+                    resource {
+                        path
+                        commit {
+                            oid
+                        }
+                        repository {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    }
+`
+
 const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
     fragment CatalogComponentDetailFields on CatalogComponent {
         id
@@ -72,10 +102,12 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         ...CatalogComponentSourcesFields
         ...CatalogComponentChangesFields
         ...CatalogComponentAuthorsFields
+        ...CatalogComponentUsageFields
     }
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
     ${CATALOG_COMPONENT_AUTHORS_FRAGMENT}
+    ${CATALOG_COMPONENT_USAGE_FRAGMENT}
 `
 
 export const CATALOG_COMPONENT_BY_ID = gql`
