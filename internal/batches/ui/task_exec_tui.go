@@ -455,7 +455,7 @@ func (ui stepsExecTUI) StepSkipped(step int) {
 	ui.updateStatusBar(fmt.Sprintf("Skipping step %d", step))
 }
 func (ui stepsExecTUI) StepPreparingStart(step int) {
-	ui.updateStatusBar(fmt.Sprintf("Preparing %d", step))
+	ui.updateStatusBar(fmt.Sprintf("Preparing step %d", step))
 }
 func (ui stepsExecTUI) StepPreparingSuccess(step int) {
 	// noop right now
