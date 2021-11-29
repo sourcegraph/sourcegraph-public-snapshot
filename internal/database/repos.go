@@ -1055,7 +1055,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user or org added repos.
 func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
@@ -1135,6 +1135,8 @@ WHERE
 				external_service_repos
 			WHERE
 				external_service_repos.user_id IS NOT NULL
+				OR
+				external_service_repos.org_id IS NOT NULL
 
 			UNION ALL
 
