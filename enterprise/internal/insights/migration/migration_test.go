@@ -9,6 +9,7 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/google/go-cmp/cmp"
+
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 )
@@ -177,7 +178,7 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 			t.Error(err)
 		}
 		// setting ID specifically for test determinism
-		(*got).ID = 1
+		got.ID = 1
 		autogold.Want("user special dashboard", types.Dashboard{
 			ID: 1, Title: "Samwise Gamgee's Insights",
 			InsightIDs: []string{
@@ -202,7 +203,7 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 			t.Error(err)
 		}
 		// setting ID specifically for test determinism
-		(*got).ID = 1
+		got.ID = 1
 		autogold.Want("user special dashboard with pretransformed insight Ids", types.Dashboard{
 			ID: 1, Title: "Samwise Gamgee's Insights",
 			InsightIDs: []string{
@@ -226,7 +227,7 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 			t.Error(err)
 		}
 		// setting ID specifically for test determinism
-		(*got).ID = 1
+		got.ID = 1
 		autogold.Want("org special dashboard", types.Dashboard{
 			ID: 1, Title: "The Shire's Insights",
 			InsightIDs: []string{
@@ -250,7 +251,7 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 			t.Error(err)
 		}
 		// setting ID specifically for test determinism
-		(*got).ID = 1
+		got.ID = 1
 		autogold.Want("global special dashboard", types.Dashboard{
 			ID: 1, Title: "Global Insights", InsightIDs: []string{
 				"istariInMiddleEarth",
@@ -269,7 +270,7 @@ func TestCreateSpecialCaseDashboard(t *testing.T) {
 			t.Error(err)
 		}
 		// setting ID specifically for test determinism
-		(*got).ID = 1
+		got.ID = 1
 		autogold.Want("global special dashboard with no insights", types.Dashboard{
 			ID: 1, Title: "Global Insights", UserIdGrants: []int64{},
 			OrgIdGrants: []int64{},
