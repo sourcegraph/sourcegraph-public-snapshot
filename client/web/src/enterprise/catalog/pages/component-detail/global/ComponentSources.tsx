@@ -31,9 +31,9 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                     <SettingsIcon className="icon-inline mr-1" /> Configure
                 </Link>
             </header>
-            <ol className={classNames('list-group list-group-flush', bodyClassName)}>
+            <ol className={classNames('list-unstyled', bodyClassName)}>
                 {sourceLocations.map(sourceLocation => (
-                    <li key={sourceLocation.url} className="list-group-item">
+                    <li key={sourceLocation.url} className="border p-2 m-2">
                         <RepoFileLink
                             repoName={sourceLocation.repository.name}
                             repoURL={sourceLocation.repository.url}
