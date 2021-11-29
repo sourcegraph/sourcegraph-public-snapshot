@@ -79,55 +79,21 @@ type RepoIndexOptions struct {
 	GetVersion func(branch string) (string, error)
 }
 
-func SiteConfigRevisionsGetter(c *schema.SiteConfiguration) func(name string) []string {
-	if c == nil || c.ExperimentalFeatures == nil {
-		return nil
-	}
-
-	searchIndexRegexps := make(map[string]*regexp.Regexp, len(c.ExperimentalFeatures.SearchIndexRevisions))
-	for regex := range c.ExperimentalFeatures.SearchIndexRevisions {
-		r, err := regexp.Compile(regex)
-		if err != nil {
-			log15.Error("error compiling regex from search.index.revisions", "regex", regex, "err", err)
-			continue
-		}
-		searchIndexRegexps[regex] = r
-	}
-
-	return func(name string) (matched []string) {
-		cfg := c.ExperimentalFeatures
-
-		if len(cfg.SearchIndexBranches) != 0 {
-			branchesRevs := cfg.SearchIndexBranches[name]
-			matched = make([]string, 0, len(branchesRevs)*2)
-			matched = append(matched, branchesRevs...)
-		}
-
-		for regex, revs := range cfg.SearchIndexRevisions {
-			if r := searchIndexRegexps[regex]; r != nil && r.MatchString(name) {
-				matched = append(matched, revs...)
-			}
-		}
-
-		return matched
-	}
-}
-
 // GetIndexOptions returns a json blob for consumption by
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
 	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID int32) ([]string, error),
-	getSiteConfigRevisions func(name string) []string,
 	repos ...int32,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
 	// future we want a more intelligent global limit based on scale.
 	sema := make(chan struct{}, 32)
-
 	results := make([][]byte, len(repos))
+	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
+
 	for i := range repos {
 		sema <- struct{}{}
 		go func(i int) {
@@ -149,7 +115,7 @@ func getIndexOptions(
 	repoID int32,
 	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID int32) ([]string, error),
-	getSiteConfigRevisions func(name string) []string,
+	getSiteConfigRevisions revsRuleFunc,
 ) []byte {
 	opts, err := getRepoIndexOptions(repoID)
 	if err != nil {
@@ -172,7 +138,7 @@ func getIndexOptions(
 
 	// Add all branches that are referenced by search.index.branches and search.index.revisions.
 	if getSiteConfigRevisions != nil {
-		for _, rev := range getSiteConfigRevisions(opts.Name) {
+		for _, rev := range getSiteConfigRevisions(opts) {
 			branches[rev] = struct{}{}
 		}
 	}
@@ -224,6 +190,50 @@ func getIndexOptions(
 	}
 
 	return marshal(o)
+}
+
+type revsRuleFunc func(*RepoIndexOptions) (revs []string)
+
+func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
+	if c == nil || c.ExperimentalFeatures == nil {
+		return nil
+	}
+
+	rules := make([]revsRuleFunc, 0, len(c.ExperimentalFeatures.SearchIndexRevisions))
+	for _, rule := range c.ExperimentalFeatures.SearchIndexRevisions {
+		rule := rule
+		switch {
+		case rule.Name != "":
+			namePattern, err := regexp.Compile(rule.Name)
+			if err != nil {
+				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
+				continue
+			}
+
+			rules = append(rules, func(o *RepoIndexOptions) []string {
+				if !namePattern.MatchString(o.Name) {
+					return nil
+				}
+				return rule.Revisions
+			})
+		}
+	}
+
+	return func(o *RepoIndexOptions) (matched []string) {
+		cfg := c.ExperimentalFeatures
+
+		if len(cfg.SearchIndexBranches) != 0 {
+			branchesRevs := cfg.SearchIndexBranches[o.Name]
+			matched = make([]string, 0, len(branchesRevs)*2)
+			matched = append(matched, branchesRevs...)
+		}
+
+		for _, rule := range rules {
+			matched = append(matched, rule(o)...)
+		}
+
+		return matched
+	}
 }
 
 func getBoolPtr(b *bool, default_ bool) bool {

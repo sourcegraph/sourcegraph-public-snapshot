@@ -102,7 +102,8 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "nosymbols",
 		conf: schema.SiteConfiguration{
-			SearchIndexSymbolsEnabled: boolPtr(false)},
+			SearchIndexSymbolsEnabled: boolPtr(false),
+		},
 		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID: 1,
@@ -142,7 +143,9 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "conf index revisions",
 		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexRevisions: map[string][]string{"repo-.*": {"a"}},
+			SearchIndexRevisions: []*schema.SearchIndexRevisionRule{
+				{Name: "repo-.*", Revisions: []string{"a"}},
+			},
 		}},
 		repo: REPO,
 		want: zoektIndexOptions{
@@ -160,7 +163,9 @@ func TestGetIndexOptions(t *testing.T) {
 			SearchIndexBranches: map[string][]string{
 				"repo-01": {"a", "b"},
 			},
-			SearchIndexRevisions: map[string][]string{"repo-.*": {"a", "c"}},
+			SearchIndexRevisions: []*schema.SearchIndexRevisionRule{
+				{Name: "repo-.*", Revisions: []string{"a", "c"}},
+			},
 		}},
 		repo: REPO,
 		want: zoektIndexOptions{
@@ -251,9 +256,8 @@ func TestGetIndexOptions(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			getSearchContextRevisions := func(int32) ([]string, error) { return tc.searchContextRevs, nil }
-			getSiteConfigRevisions := SiteConfigRevisionsGetter(&tc.conf)
 
-			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, getSiteConfigRevisions, tc.repo)
+			b := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -325,7 +329,7 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 				}, nil
 			}
 
-			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, nil, 1)
+			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
 
 			var got zoektIndexOptions
 			if err := json.Unmarshal(b, &got); err != nil {
@@ -380,7 +384,7 @@ func TestGetIndexOptions_batch(t *testing.T) {
 
 	getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
 
-	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, nil, repos...)
+	b := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
 	dec := json.NewDecoder(bytes.NewReader(b))
 	got := make([]zoektIndexOptions, len(repos))
 	for i := range repos {

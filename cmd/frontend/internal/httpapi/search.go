@@ -202,7 +202,6 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 		&siteConfig,
 		getRepoIndexOptions,
 		getSearchContextRevisions,
-		searchbackend.SiteConfigRevisionsGetter(&siteConfig),
 		repoIDs...,
 	)
 	_, _ = w.Write(b)
