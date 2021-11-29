@@ -21,6 +21,10 @@ This is very rarely deployed, so it can be done manually with the build.sh scrip
 This is the configuration of the repository running in production:
 
 ```shell
+git init --bare megarepo.git
+cd megarepo.git
+git checkout -b main
+
 git remote add --no-tags -t main freeCodeCamp https://github.com/freeCodeCamp/freeCodeCamp.git
 git remote add --no-tags -t main grafana https://github.com/grafana/grafana.git
 git remote add --no-tags -t main rails https://github.com/rails/rails.git
@@ -41,6 +45,9 @@ git remote add --no-tags -t master rust https://github.com/rust-lang/rust.git
 git remote add --no-tags -t master tensorflow https://github.com/tensorflow/tensorflow.git
 
 git remote add origin https://sourcegraph-bot:$ACCESS_TOKEN@github.com/sgtest/megarepo.git
+
+git-combine
+git push -u origin main
 ```
 
 Add a file called `PAUSE` in the git-combine working directory and the daemon mode will stop running. This is useful when adding more remotes.
