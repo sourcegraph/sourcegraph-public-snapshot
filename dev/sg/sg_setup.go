@@ -53,7 +53,7 @@ func setupExec(ctx context.Context, args []string) error {
 		categories = macOSDependencies
 	} else {
 		// DEPRECATED: The new 'sg setup' doesn't work on Linux yet, so we fall back to the old one.
-		out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' on Linux provides instructions for Ubuntu Linux. If you're using another distribution, instructions might need to be adjusted."))
+		writeWarningLine("'sg setup' on Linux provides instructions for Ubuntu Linux. If you're using another distribution, instructions might need to be adjusted.")
 		return deprecatedSetupForLinux(ctx)
 	}
 
@@ -65,6 +65,7 @@ func setupExec(ctx context.Context, args []string) error {
 	failed := []int{}
 	all := []int{}
 	skipped := []int{}
+	employeeFailed := []int{}
 	for i := range categories {
 		failed = append(failed, i)
 		all = append(all, i)
@@ -97,25 +98,38 @@ func setupExec(ctx context.Context, args []string) error {
 				writeSuccessLine("%d. %s", idx, category.name)
 				failed = removeEntry(failed, i)
 			} else {
-				writeFailureLine("%d. %s", idx, category.name)
+				nonEmployeeState := category.CombinedStateNonEmployees()
+				if nonEmployeeState {
+					writeWarningLine("%d. %s", idx, category.name)
+					employeeFailed = append(skipped, idx)
+				} else {
+					writeFailureLine("%d. %s", idx, category.name)
+				}
 			}
 		}
 
-		if len(failed) == 0 {
-			if len(skipped) == 0 {
+		if len(failed) == 0 && len(employeeFailed) == 0 {
+			if len(skipped) == 0 && len(employeeFailed) == 0 {
 				out.Write("")
 				out.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
-				return nil
-			} else {
-				out.Write("")
-				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository."))
-				writeFingerPointingLine("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
-				return nil
 			}
+
+			if len(skipped) != 0 {
+				out.Write("")
+				writeWarningLine("Some checks were skipped because 'sg setup' is not run in the 'sourcegraph' repository.")
+				writeFingerPointingLine("Restart 'sg setup' in the 'sourcegraph' repository to continue.")
+			}
+
+			return nil
 		}
 
 		out.Write("")
-		out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Some checks failed. Which one do you want to fix?"))
+
+		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
+			writeWarningLine("Some checks that are only relevant for Sourcegraph employees failed.\n\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
+		} else {
+			writeWarningLine("Some checks failed. Which one do you want to fix?")
+		}
 
 		idx, err := getNumberOutOf(all)
 		if err != nil {
@@ -661,10 +675,17 @@ func printCategoryHeaderAndDependencies(categoryIdx int, category *dependencyCat
 		if dep.IsMet() {
 			writeSuccessLine("%d. %s", idx, dep.name)
 		} else {
-			if dep.err != nil {
-				writeFailureLine("%d. %s: %s", idx, dep.name, dep.err)
+			var printer func(fmtStr string, args ...interface{})
+			if dep.onlyEmployees {
+				printer = writeWarningLine
 			} else {
-				writeFailureLine("%d. %s: %s", idx, dep.name, "check failed")
+				printer = writeFailureLine
+			}
+
+			if dep.err != nil {
+				printer("%d. %s: %s", idx, dep.name, dep.err)
+			} else {
+				printer("%d. %s: %s", idx, dep.name, "check failed")
 			}
 		}
 	}
@@ -989,9 +1010,16 @@ type dependencyCategory struct {
 
 func (cat *dependencyCategory) CombinedState() bool {
 	for _, dep := range cat.dependencies {
-		if dep.err != nil {
+		if !dep.IsMet() {
 			return false
-		} else if !dep.state {
+		}
+	}
+	return true
+}
+
+func (cat *dependencyCategory) CombinedStateNonEmployees() bool {
+	for _, dep := range cat.dependencies {
+		if !dep.IsMet() && !dep.onlyEmployees {
 			return false
 		}
 	}

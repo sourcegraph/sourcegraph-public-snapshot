@@ -14,6 +14,10 @@ func writeFailureLine(fmtStr string, args ...interface{}) {
 	out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, fmtStr, args...))
 }
 
+func writeWarningLine(fmtStr string, args ...interface{}) {
+	out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, fmtStr, args...))
+}
+
 func writeSkippedLine(fmtStr string, args ...interface{}) {
 	out.WriteLine(output.Linef(output.EmojiQuestionMark, output.StyleGrey, fmtStr, args...))
 }
