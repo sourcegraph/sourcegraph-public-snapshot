@@ -70,9 +70,9 @@ func Combine(path string, opt Options) error {
 	}
 
 	type dirCommit struct {
-		Dir    string
-		Commit *object.Commit
-		Seq    int
+		dir    string
+		commit *object.Commit
+		seq    int
 	}
 
 	rootTree := map[string]plumbing.Hash{}
@@ -121,9 +121,9 @@ func Combine(path string, opt Options) error {
 			}
 
 			commits = append(commits, &dirCommit{
-				Dir:    remote,
-				Seq:    i,
-				Commit: commit,
+				dir:    remote,
+				seq:    i,
+				commit: commit,
 			})
 		}
 	}
@@ -134,10 +134,10 @@ func Combine(path string, opt Options) error {
 		// not guaranteed to be monotonically increasing in git. We aren't
 		// necessarily looking to get 100% correctness when picking the order
 		// of commits, just a reasonable order.
-		if a.Dir == b.Dir {
-			return a.Seq > b.Seq
+		if a.dir == b.dir {
+			return a.seq > b.seq
 		}
-		return a.Commit.Committer.When.Before(b.Commit.Committer.When)
+		return a.commit.Committer.When.Before(b.commit.Committer.When)
 	})
 
 	for i, commit := range commits {
@@ -145,7 +145,7 @@ func Combine(path string, opt Options) error {
 		// this commit. We don't touch the other entries, so the other
 		// directories will have the same code as the previous commit we
 		// created.
-		rootTree[commit.Dir] = commit.Commit.TreeHash
+		rootTree[commit.dir] = commit.commit.TreeHash
 
 		var entries []object.TreeEntry
 		for dir, hash := range rootTree {
@@ -174,13 +174,13 @@ func Combine(path string, opt Options) error {
 		// TODO break links so we don't appear in upstream analytics. IE
 		// remove links from message, scrub author and committer, etc.
 		newCommit := &object.Commit{
-			Author: sanitizeSignature(commit.Commit.Author),
+			Author: sanitizeSignature(commit.commit.Author),
 			Committer: object.Signature{
 				Name:  "sourcegraph-bot",
 				Email: "no-reply@sourcegraph.com",
-				When:  commit.Commit.Committer.When,
+				When:  commit.commit.Committer.When,
 			},
-			Message:  sanitizeMessage(commit.Dir, commit.Commit),
+			Message:  sanitizeMessage(commit.dir, commit.commit),
 			TreeHash: treeHash,
 		}
 
@@ -199,7 +199,7 @@ func Combine(path string, opt Options) error {
 			return err
 		}
 
-		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.Commit.Hash, commitTitle(newCommit))
+		log.Printf("%d/%d created %s from %s %s", i+1, len(commits), parentHash, commit.commit.Hash, commitTitle(newCommit))
 	}
 
 	return nil
