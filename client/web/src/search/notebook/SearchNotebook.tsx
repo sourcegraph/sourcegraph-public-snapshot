@@ -42,10 +42,14 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     extensionsController,
     ...props
 }) => {
-    const notebook = useMemo(() => new Notebook(props.blocks, { extensionHostAPI: extensionsController.extHostAPI }), [
-        props.blocks,
-        extensionsController.extHostAPI,
-    ])
+    const notebook = useMemo(
+        () =>
+            new Notebook(props.blocks, {
+                extensionHostAPI: extensionsController.extHostAPI,
+                fetchHighlightedFileLineRanges: props.fetchHighlightedFileLineRanges,
+            }),
+        [props.blocks, props.fetchHighlightedFileLineRanges, extensionsController.extHostAPI]
+    )
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
