@@ -22,7 +22,7 @@ export const FeedbackBadge: React.FunctionComponent<FeedbackBadgeProps> = props 
     } = props
 
     return (
-        <div className={classNames('d-flex', 'align-items-center', className)}>
+        <div className={classNames('d-flex', 'align-items-center', 'badge', className)}>
             <Badge tooltip={tooltip} status={status} className="text-uppercase" />
             <a href={`mailto:${mailto}`} className="ml-2" target="_blank" rel="noopener noreferrer">
                 {text || 'Share feedback'}
