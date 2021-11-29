@@ -124,6 +124,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     suggestions={repoSuggestions}
                     suggestionsIcon={<SourceRepositoryIcon className="mr-1" size="1rem" />}
                     isValid={isRepositoryNameValid}
+                    dataTestId="file-block-repository-name-input"
                 />
                 <div className={styles.separator} />
                 <SearchNotebookFileBlockInput
@@ -137,6 +138,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     suggestions={fileSuggestions}
                     suggestionsIcon={<FileDocumentIcon className="mr-1" size="1rem" />}
                     isValid={isFilePathValid}
+                    dataTestId="file-block-file-path-input"
                 />
             </div>
             <div className="d-flex mt-2">
@@ -152,6 +154,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isRevisionValid}
+                            dataTestId="file-block-revision-input"
                         />
                     </div>
                 )}
@@ -173,6 +176,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isLineRangeValid}
+                            dataTestId="file-block-line-range-input"
                         />
                     </div>
                 )}

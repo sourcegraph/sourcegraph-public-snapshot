@@ -18,7 +18,10 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
     className,
     onAddBlock,
 }) => (
-    <div className={classNames(styles.addBlockButtonsWrapper, !alwaysVisible && styles.showOnHover, className)}>
+    <div
+        className={classNames(styles.addBlockButtonsWrapper, !alwaysVisible && styles.showOnHover, className)}
+        data-testid={alwaysVisible && 'always-visible-add-block-buttons'}
+    >
         <hr className="mx-3" />
         <div className={styles.addBlockButtons}>
             <button
@@ -46,7 +49,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
                         input: { repositoryName: '', revision: '', filePath: '', lineRange: null },
                     })
                 }
-                data-testid="add-md-button"
+                data-testid="add-file-button"
             >
                 + Code
             </button>

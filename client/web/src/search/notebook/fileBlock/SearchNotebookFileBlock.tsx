@@ -252,7 +252,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                         setLineRangeInput={setLineRangeInput}
                     />
                 ) : (
-                    <div className={styles.header}>
+                    <div className={styles.header} data-testid="file-block-header">
                         <FileDocumentIcon className="icon-inline mr-2" />
                         {areInputsValid ? (
                             <Link className={styles.headerFileLink} to={fileURL}>

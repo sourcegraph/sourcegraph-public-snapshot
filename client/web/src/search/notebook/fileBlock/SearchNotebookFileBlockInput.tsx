@@ -24,6 +24,7 @@ interface SearchNotebookFileBlockInputProps {
     suggestions?: string[]
     suggestionsIcon?: JSX.Element
     isValid?: boolean
+    dataTestId?: string
 }
 
 export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNotebookFileBlockInputProps> = ({
@@ -38,6 +39,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     suggestions,
     suggestionsIcon,
     isValid,
+    dataTestId,
 }) => {
     const [inputValue, setInputValue] = useState(value)
     const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange])
@@ -74,6 +76,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 onChange={event => onSelect(event.target.value)}
                 onFocus={onFocus}
                 onBlur={onBlur}
+                data-testid={dataTestId}
             />
             {/* Only show suggestions popover for the latest input value */}
             {suggestions && value === inputValue && (
