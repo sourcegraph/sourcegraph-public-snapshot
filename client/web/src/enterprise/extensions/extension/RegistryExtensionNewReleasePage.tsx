@@ -1,6 +1,6 @@
 import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import React, { useCallback, useState } from 'react'
 import { of, Observable, concat, from } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
@@ -125,7 +125,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
 
         return !extension.registryExtension || !extension.registryExtension.viewerCanAdminister ? (
             <HeroPage
-                icon={ErrorIcon}
+                icon={AlertCircleIcon}
                 title="Unauthorized"
                 subtitle="You are not authorized to adminster this extension."
             />

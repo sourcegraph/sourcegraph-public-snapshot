@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -7,9 +8,10 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 
-import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { createHoverifier, Hoverifier, HoverState } from '@sourcegraph/shared/src/codeintellify'
+import { HoveredToken } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -35,6 +37,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
+import styles from './RepositoryCompareArea.module.scss'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
@@ -185,7 +188,10 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             platformContext: this.props.platformContext,
         }
         return (
-            <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
+            <div
+                className={classNames('container', styles.repositoryCompareArea)}
+                ref={this.nextRepositoryCompareAreaElement}
+            >
                 <RepositoryCompareHeader className="my-3" {...commonProps} />
                 {spec === null ? (
                     <div className="alert alert-danger">Invalid comparison specifier</div>

@@ -58,7 +58,7 @@ export interface RepoRevisionContainerContext
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -77,6 +77,8 @@ export interface RepoRevisionContainerContext
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 /** A sub-route of {@link RepoRevisionContainer}. */
@@ -94,7 +96,7 @@ interface RepoRevisionContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         RevisionSpec,
         BreadcrumbSetters,
         ActionItemsBarProps,
@@ -123,6 +125,8 @@ interface RepoRevisionContainerProps
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, 'repo' | 'revision'> {

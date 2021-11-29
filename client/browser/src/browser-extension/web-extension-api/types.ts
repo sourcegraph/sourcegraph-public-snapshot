@@ -1,4 +1,5 @@
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { OptionFlagValues } from '../../shared/util/optionFlags'
 
@@ -42,23 +43,7 @@ export const featureFlagDefaults: FeatureFlags = {
 }
 
 interface SourcegraphURL {
-    /**
-     * Self-hosted Sourcegraph URL
-     */
-    sourcegraphURL?: string
-    /**
-     * rawRepoName => sourcegraphURL
-     */
-    cache: {
-        [key: string]: string | undefined
-    }
-    /**
-     * rawRepoNames which are blocked to use against Cloud Sourcegraph URL
-     */
-    blocklist: {
-        enabled: boolean
-        content: string
-    }
+    sourcegraphURL: string
 }
 
 export interface SyncStorageItems extends SourcegraphURL {
@@ -95,10 +80,11 @@ export interface BackgroundPageApi {
     requestGraphQL<T, V = object>(options: {
         request: string
         variables: V
-        sourcegraphURL: string
+        sourcegraphURL?: string
     }): Promise<GraphQLResult<T>>
     notifyPrivateCloudError(hasPrivateCloudError: boolean): Promise<void>
     checkPrivateCloudError(tabId: number): Promise<boolean>
+    fetchCache: typeof fetchCache
 }
 
 /**

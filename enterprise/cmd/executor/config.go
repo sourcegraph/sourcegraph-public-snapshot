@@ -33,6 +33,7 @@ type Config struct {
 	CleanupTaskInterval  time.Duration
 	NumTotalJobs         int
 	MaxActiveTime        time.Duration
+	WorkerHostname       string
 }
 
 func (c *Config) Load() {
@@ -52,6 +53,10 @@ func (c *Config) Load() {
 	c.CleanupTaskInterval = c.GetInterval("EXECUTOR_CLEANUP_TASK_INTERVAL", "1m", "The frequency with which to run periodic cleanup tasks.")
 	c.NumTotalJobs = c.GetInt("EXECUTOR_NUM_TOTAL_JOBS", "0", "The maximum number of jobs that will be dequeued by the worker.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
+
+	hn := hostname.Get()
+	// Be unique but also descriptive.
+	c.WorkerHostname = hn + "-" + uuid.New().String()
 }
 
 func (c *Config) Validate() error {
@@ -63,7 +68,7 @@ func (c *Config) Validate() error {
 	return c.BaseConfig.Validate()
 }
 
-func (c *Config) APIWorkerOptions() apiworker.Options {
+func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) apiworker.Options {
 	return apiworker.Options{
 		VMPrefix:             c.VMPrefix,
 		QueueName:            c.QueueName,
@@ -72,7 +77,7 @@ func (c *Config) APIWorkerOptions() apiworker.Options {
 		ResourceOptions:      c.ResourceOptions(),
 		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
 		GitServicePath:       "/.executors/git",
-		ClientOptions:        c.ClientOptions(),
+		ClientOptions:        c.ClientOptions(telemetryOptions),
 		RedactedValues: map[string]string{
 			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
 			// git repositories that make it into commands or stdout/stderr streams.
@@ -90,6 +95,7 @@ func (c *Config) WorkerOptions() workerutil.WorkerOptions {
 		Metrics:           makeWorkerMetrics(c.QueueName),
 		NumTotalJobs:      c.NumTotalJobs,
 		MaxActiveTime:     c.MaxActiveTime,
+		WorkerHostname:    c.WorkerHostname,
 	}
 }
 
@@ -109,16 +115,13 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 	}
 }
 
-func (c *Config) ClientOptions() apiclient.Options {
-	hn := hostname.Get()
-
+func (c *Config) ClientOptions(telemetryOptions apiclient.TelemetryOptions) apiclient.Options {
 	return apiclient.Options{
-		// Be unique but also descriptive.
-		ExecutorName:      hn + "-" + uuid.New().String(),
-		ExecutorHostname:  hn,
+		ExecutorName:      c.WorkerHostname,
 		PathPrefix:        "/.executors/queue",
 		EndpointOptions:   c.EndpointOptions(),
 		BaseClientOptions: c.BaseClientOptions(),
+		TelemetryOptions:  telemetryOptions,
 	}
 }
 

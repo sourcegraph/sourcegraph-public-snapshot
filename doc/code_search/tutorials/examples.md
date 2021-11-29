@@ -4,6 +4,11 @@ Below are examples that search repositories on [Sourcegraph.com](https://sourceg
 
 > See [**search query syntax**](../reference/queries.md) reference.
 
+[Find private keys and GitHub access tokens checked in to code](https://sourcegraph.com/search?q=context:global+%28-----BEGIN+%5BA-Z+%5D*PRIVATE+KEY------%29%7C%28%28%22gh%7C%27gh%29%5Bpousr%5D_%5BA-Za-z0-9_%5D%7B16%2C%7D%29&patternType=regexp&case=yes)
+```sgquery
+(-----BEGIN [A-Z ]*PRIVATE KEY------)|(("gh|'gh)[pousr]_[A-Za-z0-9_]{16,}) patternType:regexp case:yes
+```
+
 [Recent security-related changes on all branches](https://sourcegraph.com/search?q=type:diff+repo:github%5C.com/kubernetes/kubernetes%24+repo:%40*refs/heads/+after:"5+days+ago"+%5Cb%28auth%5B%5Eo%5D%5B%5Er%5D%7Csecurity%5Cb%7Ccve%7Cpassword%7Csecure%7Cunsafe%7Cperms%7Cpermissions%29&patternType=regexp)<br/>
 
 ```sgquery
@@ -81,7 +86,6 @@ Regex searches are also useful when searching boundaries that are not delimited 
 ```sgquery
 repo:^github\.com/sourcegraph/sourcegraph$ \bbtn-secondary\b
 ```
-
 
 ## When to use structural search mode
 

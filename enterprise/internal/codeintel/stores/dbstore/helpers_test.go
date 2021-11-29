@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -191,25 +192,6 @@ func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 	)
 	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while upserting repository: %s", err)
-	}
-}
-
-// addToSearchContext creates a search context and adds the given repository to it. This is used to include
-// repositories within tests for indexing candidacy.
-func addToSearchContext(t testing.TB, db *sql.DB, id int) {
-	query := sqlf.Sprintf(`
-		WITH
-		inserted AS (
-			INSERT INTO search_contexts (name, description, public)
-			VALUES (%s, '', false)
-			RETURNING id
-		)
-		INSERT INTO search_context_repos (search_context_id, repo_id, revision)
-		SELECT id, %s, '' FROM inserted
-	`, fmt.Sprintf("test-context-%d", id), id)
-
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while adding repository to search context: %s", err)
 	}
 }
 
@@ -476,5 +458,16 @@ func dumpToUpload(expected Dump) Upload {
 		RepositoryName:    expected.RepositoryName,
 		Indexer:           expected.Indexer,
 		AssociatedIndexID: expected.AssociatedIndexID,
+	}
+}
+
+func assertReferenceCounts(t *testing.T, store *Store, expectedReferenceCountsByID map[int]int) {
+	referenceCountsByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, reference_count FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying reference counts: %s", err)
+	}
+
+	if diff := cmp.Diff(expectedReferenceCountsByID, referenceCountsByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }

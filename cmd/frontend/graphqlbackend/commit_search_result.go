@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -11,7 +11,7 @@ import (
 type CommitSearchResultResolver struct {
 	result.CommitMatch
 
-	db dbutil.DB
+	db database.DB
 
 	// gitCommitResolver should not be used directly since it may be uninitialized.
 	// Use Commit() instead.
@@ -25,7 +25,7 @@ func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
 			return
 		}
 		repoResolver := NewRepositoryResolver(r.db, r.Repo.ToRepo())
-		r.gitCommitResolver = toGitCommitResolver(repoResolver, r.db, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
+		r.gitCommitResolver = NewGitCommitResolver(r.db, repoResolver, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
 	})
 	return r.gitCommitResolver
 }

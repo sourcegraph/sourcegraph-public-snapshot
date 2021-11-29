@@ -98,3 +98,21 @@ func (s *Store) Get(key string, target interface{}) error {
 	}
 	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
 }
+
+// Remove deletes a value from memory.
+func (s *Store) Remove(key string) error {
+	if _, exists := s.m[key]; exists {
+		delete(s.m, key)
+		return nil
+	}
+	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
+}
+
+// Keys returns out all keys
+func (s *Store) Keys() []string {
+	keys := make([]string, 0, len(s.m))
+	for key := range s.m {
+		keys = append(keys, key)
+	}
+	return keys
+}

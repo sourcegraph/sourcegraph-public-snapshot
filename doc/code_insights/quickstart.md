@@ -43,9 +43,11 @@ This creates a code insight tracking an arbitrary input that you could run a Sou
 
 If you are more interested in creating a language-based insight to show you language breakdown in your repositories, [follow this tutorial](language_insight_quickstart.md) instead.
 
-### 4. Once on the "Create New Code Insight" form fields page, enter the repositories you want to search
+### 4. Once on the "Create New Code Insight" form fields page, enter the repositories you want to search or check "all repositories"
 
-Enter repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
+If you want an insight running over up to ~50-70 repositories, enter the repositories in the repository URL format, like `github.com/Sourcegraph/Sourcegraph`. Separate multiple repositories with a comma. The form field will validate that you've entered the repository correctly.
+
+If you want to run an insight over all repositories, instead check the box to do so (available in Sourcegraph 3.31.1 and later). If you don't want to include fork or archived repositories, make sure to indicate `fork:no` and `archived:no` in your data series (step 5). If you otherwise want to exclude specific repositories, you can do so after creating the insight by using filters (step 10). 
 
 ### 5. Define a data series to track the incidence of `TODO`
 

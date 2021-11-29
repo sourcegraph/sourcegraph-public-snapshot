@@ -19,6 +19,7 @@ import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
 import { CodeIntelligenceProps } from './codeintel'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
+import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -33,6 +34,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
+import styles from './Layout.module.scss'
 import { SurveyToast } from './marketing/SurveyToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
@@ -45,6 +47,7 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
+import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
@@ -58,7 +61,6 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
-import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme } from './theme'
@@ -192,30 +194,23 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         searchContextSpec,
     ])
 
-    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
-    useEffect(() => {
-        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
-            setHasUsedNonGlobalContext(true)
-        }
-    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
-
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
-    const isSiteInit = props.location.pathname === '/site-admin/init'
+    const isSiteInit = props.location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        props.location.pathname === '/sign-in' ||
-        props.location.pathname === '/sign-up' ||
-        props.location.pathname === '/password-reset' ||
-        props.location.pathname === '/welcome'
+        props.location.pathname === PageRoutes.SignIn ||
+        props.location.pathname === PageRoutes.SignUp ||
+        props.location.pathname === PageRoutes.PasswordReset ||
+        props.location.pathname === PageRoutes.Welcome
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
     // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === '/survey/:score?' || routeMatch === '/insights'
+    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
 
     const authRequired = useObservable(authRequiredObservable)
 
@@ -245,7 +240,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }
 
     return (
-        <div className="layout">
+        <div className={styles.layout}>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
@@ -271,7 +266,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                             ? 'low-profile-with-logo'
                             : 'default'
                     }
-                    hideNavLinks={false}
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
@@ -296,9 +290,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div className="layout__app-router-container">
+                                            <AppRouterContainer>
                                                 {render({ ...context, ...routeComponentProps })}
-                                            </div>
+                                            </AppRouterContainer>
                                         )}
                                     />
                                 )
@@ -307,7 +301,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 </Suspense>
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== '/sign-in' && (
+                props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}
                         {...themeProps}

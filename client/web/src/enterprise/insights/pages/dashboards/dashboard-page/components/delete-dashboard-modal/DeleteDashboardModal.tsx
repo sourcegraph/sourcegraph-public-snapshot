@@ -5,18 +5,18 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { CustomInsightDashboard } from '../../../../../core/types'
 
 import styles from './DeleteDashobardModal.module.scss'
 import { useDeleteDashboardHandler } from './hooks/use-delete-dashboard-handler'
 
 export interface DeleteDashboardModalProps {
-    dashboard: SettingsBasedInsightDashboard
+    dashboard: CustomInsightDashboard
     onClose: () => void
 }
 
@@ -25,6 +25,12 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
     const history = useHistory()
 
     const handleDeleteSuccess = (): void => {
+        if (!dashboard.owner) {
+            history.push('/insights/dashboards')
+            onClose()
+            return
+        }
+
         history.push(`/insights/dashboards/${dashboard.owner.id}`)
         onClose()
     }

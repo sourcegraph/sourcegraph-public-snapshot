@@ -134,9 +134,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
                         error={isErrorLike(this.state.updatedOrError) ? this.state.updatedOrError : undefined}
                     />
                 )}
-                {this.state.updatedOrError === true && (
-                    <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
-                )}
+                {this.state.updatedOrError === true && <p className="alert alert-success">Updated!</p>}
             </div>
         )
     }

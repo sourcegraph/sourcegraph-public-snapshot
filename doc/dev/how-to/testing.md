@@ -29,7 +29,7 @@ Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sour
 [React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
 
 - See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
-- See [existing test files that use `react-test-renderer`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+react-test-renderer) for usage examples.
+- See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
 - Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `yarn test --updateSnapshot`) to update all snapshot files. Be sure to review the diff!
 
 ## Browser-based tests
@@ -37,7 +37,7 @@ Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sour
 Browser-based tests act like a user by opening a browser and clicking, typing, and navigating around in an automated fashion.
 We use [Puppeteer](https://pptr.dev/) to control the browser programmatically, while the test itself runs in the test runner [Mocha](https://mochajs.org/).
 
-We have two kinds of these tests in accordance with our [testing principles in the handbook](https://about.sourcegraph.com/handbook/engineering/testing#testing-pyramid).
+We have two kinds of these tests in accordance with our [testing principles in the handbook](../background-information/testing_principles.md#testing-pyramid).
 Please refer to the handbook for the trade-offs and use cases of each, and find specific instructions on how to run each further below.
 
 ### Debugging browser-based tests
@@ -99,7 +99,7 @@ Some common failure modes:
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
 
-Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](https://about.sourcegraph.com/handbook/engineering/testing#flaky-tests).
+Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
 #### Viewing browser-based tests live in CI
 
@@ -361,5 +361,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.33.0 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.34.1 ./dev/run-server-image.sh
 ```

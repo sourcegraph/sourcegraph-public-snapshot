@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import PlusIcon from 'mdi-react/PlusIcon'
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -8,35 +8,26 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import styles from './CodeMonitoringGettingStarted.module.scss'
 import { CodeMonitorSignUpLink } from './CodeMonitoringSignUpLink'
 
-export const HAS_SEEN_CODE_MONITORING_GETTING_STARTED = 'has-seen-code-monitoring-getting-started'
-
 interface CodeMonitoringGettingStartedProps extends ThemeProps {
     isSignedIn: boolean
-    setHasSeenGettingStarted: (value: boolean) => void
 }
 
 export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitoringGettingStartedProps> = ({
     isLightTheme,
     isSignedIn,
-    setHasSeenGettingStarted,
 }) => {
     const assetsRoot = window.context?.assetsRoot || ''
 
-    useEffect(() => {
-        setHasSeenGettingStarted(true)
-    }, [setHasSeenGettingStarted])
-
     return (
         <div>
-            <div className={classNames('mb-5 card flex-lg-row', styles.hero)}>
+            <div className={classNames('mb-5 card flex-column flex-lg-row', styles.hero)}>
                 <img
                     src={`${assetsRoot}/img/codemonitoring-illustration-${isLightTheme ? 'light' : 'dark'}.svg`}
-                    alt="A code monitor observes a bearer token being added to code and sends an email alert."
-                    className={classNames('flex-shrink-0', styles.heroImage)}
+                    alt="A code monitor observes a depcreated library being used in code and sends an email alert."
+                    className={classNames('mr-lg-5', styles.heroImage)}
                 />
-                <div>
+                <div className="align-self-center">
                     <h2 className={classNames('mb-3', styles.heading)}>Proactively monitor changes to your codebase</h2>
-
                     <p className={classNames('mb-4')}>
                         With code monitoring, you can automatically track changes made across multiple code hosts and
                         repositories.
@@ -44,7 +35,6 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
 
                     <h3>Common use cases</h3>
                     <ul>
-                        <li>Watch for secrets in commits</li>
                         <li>Identify when bad patterns are committed </li>
                         <li>Identify use of deprecated libraries</li>
                     </ul>
@@ -66,32 +56,29 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<CodeMonitorin
                 <h3 className="mb-3">Starting points for your first monitor</h3>
                 <div className="row no-gutters code-monitoring-page__start-points-panel-container mb-3">
                     <div className={classNames('col-6', styles.startingPoint)}>
-                        <div className="card">
-                            <div className="card-body p-3 d-flex">
+                        <div className="card h-100">
+                            <div className="card-body p-3 d-flex flex-column flex-md-row">
                                 <img
+                                    className="mr-3 mt-3 mb-3 pt-1 pb-1"
                                     src={`${assetsRoot}/img/codemonitoring-search-${
                                         isLightTheme ? 'light' : 'dark'
                                     }.svg`}
                                     alt=""
-                                    className="mr-3"
                                 />
-                                <div>
+                                <div className="flex">
                                     <h3 className="mb-3">
-                                        <a href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#watch-for-potential-secrets">
-                                            Watch for AWS secrets in commits
+                                        <a href="https://docs.sourcegraph.com/code_monitoring/how-tos/starting_points#get-notified-when-a-file-changes">
+                                            Get notified when a file changes
                                         </a>
                                     </h3>
-                                    <p className="text-muted">
-                                        Use a search query to watch for new search results, and choose how to receive
-                                        notifications in response.
-                                    </p>
+                                    <p className="text-muted">Use a search query to watch for changes to a file.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className={classNames('col-6', styles.startingPoint)}>
-                        <div className="card">
-                            <div className="card-body p-3 d-flex">
+                        <div className="card h-100">
+                            <div className="card-body p-3 d-flex flex-column flex-md-row">
                                 <img
                                     src={`${assetsRoot}/img/codemonitoring-notify-${
                                         isLightTheme ? 'light' : 'dark'

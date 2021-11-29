@@ -148,7 +148,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
-		f, err := s.cache.Open(bgctx, key, func(ctx context.Context) (io.ReadCloser, error) {
+		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			return s.fetch(ctx, repo, commit, largeFilePatterns)
 		})
 		var path string

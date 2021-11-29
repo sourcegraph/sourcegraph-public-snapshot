@@ -16,9 +16,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
+import { NavbarQueryState } from '../../../stores/navbarSearchQueryState'
 import { QueryChangeSource } from '../../helpers'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample, QueryExample } from '../../helpers/queryExample'
-import { NavbarQueryState } from '../../navbarSearchQueryState'
 
 import styles from './SearchReference.module.scss'
 import sidebarStyles from './SearchSidebarSection.module.scss'
@@ -164,12 +164,6 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
             'repo:alice/ -repo:old-repo',
             'repo:vscode@*refs/heads/:^refs/heads/master type:diff task',
         ],
-    },
-    {
-        ...createQueryExampleFromString('{group-name}'),
-        field: FilterType.repogroup,
-        description:
-            'Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group’s repositories. Use repo: unless you know that the group exists.',
     },
     {
         ...createQueryExampleFromString('contains.file({path})'),

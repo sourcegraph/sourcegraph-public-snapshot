@@ -10,8 +10,10 @@ import { SupportedInsightSubject } from '../types/subjects'
 import {
     BackendInsightData,
     DashboardCreateInput,
+    DashboardCreateResult,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    DashboardUpdateResult,
     FindInsightByNameInput,
     GetBuiltInsightInput,
     GetLangStatsInsightContentInput,
@@ -34,23 +36,33 @@ export interface CodeInsightsBackend {
      */
     getDashboards: () => Observable<InsightDashboard[]>
 
-    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
+    getDashboardById: (input: { dashboardId: string | undefined }) => Observable<InsightDashboard | null>
+
+    /**
+     * Returns all possible visibility options for dashboard. Dashboard can be stored
+     * as private (user subject), org level (organization subject) or global (site subject)
+     */
+    getDashboardSubjects: () => Observable<SupportedInsightSubject[]>
 
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
-    createDashboard: (input: DashboardCreateInput) => Observable<void>
+    createDashboard: (input: DashboardCreateInput) => Observable<DashboardCreateResult>
 
-    updateDashboard: (input: DashboardUpdateInput) => Observable<void>
+    updateDashboard: (input: DashboardUpdateInput) => Observable<DashboardUpdateResult>
 
     deleteDashboard: (input: DashboardDeleteInput) => Observable<void>
 
+    assignInsightsToDashboard: (input: DashboardUpdateInput) => Observable<unknown>
+
     /**
      * Return all accessible for a user insights that are filtered by ids param.
-     * If ids is nullable value then returns all insights.
+     * If ids is nullable value then returns all insights. Insights in this case
+     * present only insight configurations and meta data without actual data about
+     * data series or pie chart data.
      *
      * @param ids - list of insight ids
      */
-    getInsights: (ids?: string[]) => Observable<Insight[]>
+    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
 
     /**
      * Returns all reachable subject's insights from subject with subjectId.
@@ -58,17 +70,21 @@ export interface CodeInsightsBackend {
      * User subject has access to all insights from all organizations and global site settings.
      * Organization subject has access to only its insights.
      */
-    getReachableInsights: (subjectId: string) => Observable<ReachableInsight[]>
+    getReachableInsights: (input: { subjectId: string }) => Observable<ReachableInsight[]>
 
+    /**
+     * Return insight (meta and presentation data) by insight id.
+     * Note that insight model doesn't contain any data series points.
+     */
     getInsightById: (id: string) => Observable<Insight | null>
 
     findInsightByName: (input: FindInsightByNameInput) => Observable<Insight | null>
 
-    createInsight: (input: InsightCreateInput) => Observable<void>
+    createInsight: (input: InsightCreateInput) => Observable<unknown>
 
     updateInsight: (event: InsightUpdateInput) => Observable<void[]>
 
-    deleteInsight: (insightId: string) => Observable<void[]>
+    deleteInsight: (insightId: string) => Observable<unknown>
 
     /**
      * Returns all available for users subjects (sharing levels, historically it was introduced

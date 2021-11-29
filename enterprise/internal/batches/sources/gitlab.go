@@ -77,7 +77,7 @@ func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Au
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+func (s GitLabSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
 	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 
@@ -418,7 +418,17 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 
 // UndraftChangeset marks the changeset as *not* work in progress anymore.
 func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
+	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitLab merge request")
+	}
+
+	// Remove WIP prefix from title.
 	c.Title = gitlab.UnsetWIP(c.Title)
+	// And mark the mr as not WorkInProgress anymore, otherwise UpdateChangeset
+	// will prepend the WIP: prefix again.
+	mr.WorkInProgress = false
+
 	return s.UpdateChangeset(ctx, c)
 }
 

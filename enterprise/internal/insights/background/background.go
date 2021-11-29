@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/pings"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -72,6 +74,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 	}
 
 	routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
 
 	return routines
 }
@@ -85,7 +88,7 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 // Individual insights workers may then _also_ want to register their own metrics, if desired, in
 // their NewWorker functions.
 func newWorkerMetrics(observationContext *observation.Context, workerName string) (workerutil.WorkerMetrics, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor", nil)
+	workerMetrics := workerutil.NewMetrics(observationContext, workerName+"_processor")
 	resetterMetrics := dbworker.NewMetrics(observationContext, workerName)
 	return workerMetrics, *resetterMetrics
 }

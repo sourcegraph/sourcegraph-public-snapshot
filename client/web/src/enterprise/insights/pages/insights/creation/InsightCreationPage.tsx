@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { parseDashboardScope } from '../../../core/backend/utils/parse-dashboard-scope'
 import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
@@ -21,6 +22,11 @@ export enum InsightCreationPageType {
 const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string | undefined => {
     if (!dashboard || isVirtualDashboard(dashboard)) {
         return undefined
+    }
+
+    // If no owner, this is using the graphql api
+    if (!dashboard.owner) {
+        return parseDashboardScope(dashboard.grants)
     }
 
     return dashboard.owner.id
@@ -43,14 +49,14 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
 
     const { getDashboardById, getInsightSubjects, createInsight } = useContext(CodeInsightsBackendContext)
 
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
     if (dashboard === undefined || subjects === undefined) {
         return <LoadingSpinner />
     }
 
-    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<void> => {
+    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
         return createInsight({ insight, dashboard }).toPromise()
@@ -61,6 +67,11 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
             // Navigate to the dashboard page with new created dashboard
             history.push(`/insights/dashboards/${insight.visibility}`)
 
+            return
+        }
+
+        if (!dashboard.owner) {
+            history.push(`/insights/dashboards/${dashboard.id}`)
             return
         }
 

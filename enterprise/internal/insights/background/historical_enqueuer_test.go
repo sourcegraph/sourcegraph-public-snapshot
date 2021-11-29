@@ -15,8 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type testParams struct {
@@ -112,18 +112,18 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return nil
 	}
 
-	gitFirstEverCommit := func(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error) {
+	gitFirstEverCommit := func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 		if repoName == "repo/1" {
 			daysAgo := clock().Add(-3 * 24 * time.Hour)
-			return &gitapi.Commit{Committer: &gitapi.Signature{Date: daysAgo}}, nil
+			return &gitdomain.Commit{Committer: &gitdomain.Signature{Date: daysAgo}}, nil
 		}
 		yearsAgo := clock().Add(-2 * 365 * 24 * time.Hour)
-		return &gitapi.Commit{Committer: &gitapi.Signature{Date: yearsAgo}}, nil
+		return &gitdomain.Commit{Committer: &gitdomain.Signature{Date: yearsAgo}}, nil
 	}
 
-	gitFindRecentCommit := func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitapi.Commit, error) {
+	gitFindRecentCommit := func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 		nearby := target.Add(-2 * 24 * time.Hour)
-		return []*gitapi.Commit{{Committer: &gitapi.Signature{Date: nearby}}}, nil
+		return []*gitdomain.Commit{{Committer: &gitdomain.Signature{Date: nearby}}}, nil
 	}
 
 	limiter := rate.NewLimiter(10, 1)

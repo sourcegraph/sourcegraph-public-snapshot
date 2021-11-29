@@ -3,11 +3,10 @@ package compute
 import (
 	"fmt"
 	"regexp"
-	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 type Query struct {
@@ -16,45 +15,31 @@ type Query struct {
 }
 
 func (q Query) String() string {
+	if len(q.Parameters) == 0 {
+		return fmt.Sprintf("Command: `%s`", q.Command.String())
+	}
 	return fmt.Sprintf("Command: `%s`, Parameters: `%s`",
 		q.Command.String(),
 		query.Q(query.ToNodes(q.Parameters)).String())
 }
 
-type Command interface {
-	command()
-	String() string
-}
-
-func (MatchOnly) command()            {}
-func (ReplaceInPlace) command()       {}
-func (ReplaceWithSeparator) command() {}
-
-type MatchOnly struct {
-	MatchPattern MatchPattern
-}
-
-type ReplaceInPlace struct {
-	MatchPattern   MatchPattern
-	ReplacePattern string
-}
-
-type ReplaceWithSeparator struct {
-	MatchPattern   MatchPattern
-	ReplacePattern string
-	Separator      string
-}
-
-func (c MatchOnly) String() string {
-	return fmt.Sprintf("Match only: %s", c.MatchPattern.String())
-}
-
-func (c ReplaceInPlace) String() string {
-	return fmt.Sprintf("Replace in place: %s -> %s", c.MatchPattern.String(), c.ReplacePattern)
-}
-
-func (c ReplaceWithSeparator) String() string {
-	return fmt.Sprintf("Replace with separator: %s -> %s separator: %s", c.MatchPattern.String(), c.ReplacePattern, c.Separator)
+func (q Query) ToSearchQuery() (string, error) {
+	var searchPattern string
+	switch c := q.Command.(type) {
+	case *MatchOnly:
+		searchPattern = c.MatchPattern.String()
+	case *Replace:
+		searchPattern = c.MatchPattern.String()
+	case *Output:
+		searchPattern = c.MatchPattern.String()
+	default:
+		return "", errors.Errorf("unsupported query conversion for compute command %T", c)
+	}
+	basic := query.Basic{
+		Parameters: q.Parameters,
+		Pattern:    query.Pattern{Value: searchPattern},
+	}
+	return basic.StringHuman(), nil
 }
 
 type MatchPattern interface {
@@ -109,7 +94,7 @@ func extractPattern(basic query.Basic) (*query.Pattern, error) {
 	return pattern, nil
 }
 
-func toRegexpPattern(value string) (*Regexp, error) {
+func toRegexpPattern(value string) (MatchPattern, error) {
 	rp, err := regexp.Compile(value)
 	if err != nil {
 		return nil, errors.Wrap(err, "compute endpoint")
@@ -119,46 +104,128 @@ func toRegexpPattern(value string) (*Regexp, error) {
 
 var ComputePredicateRegistry = query.PredicateRegistry{
 	query.FieldContent: {
-		"replace": func() query.Predicate { return query.EmptyPredicate{} },
+		"replace":            func() query.Predicate { return query.EmptyPredicate{} },
+		"replace.regexp":     func() query.Predicate { return query.EmptyPredicate{} },
+		"replace.structural": func() query.Predicate { return query.EmptyPredicate{} },
+		"output":             func() query.Predicate { return query.EmptyPredicate{} },
+		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
+		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
-func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) {
+func parseContentPredicate(pattern *query.Pattern) (string, string, bool) {
 	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
 		// pattern is not set via `content:`, so it cannot be a replace command.
-		return nil, false, nil
+		return "", "", false
 	}
 	value, _, ok := query.ScanPredicate("content", []byte(pattern.Value), ComputePredicateRegistry)
 	if !ok {
+		return "", "", false
+	}
+	name, args := query.ParseAsPredicate(value)
+	return name, args, true
+}
+
+var arrowSyntax = lazyregexp.New(`\s*->\s*`)
+
+func parseArrowSyntax(args string) (string, string, error) {
+	parts := arrowSyntax.Split(args, 2)
+	if len(parts) != 2 {
+		return "", "", errors.New("invalid arrow statement, no left and right hand sides of `->`")
+	}
+	return parts[0], parts[1], nil
+}
+
+func parseReplace(pattern *query.Pattern) (Command, bool, error) {
+	name, args, ok := parseContentPredicate(pattern)
+	if !ok {
 		return nil, false, nil
 	}
-	_, args := query.ParseAsPredicate(value)
-	parts := strings.Split(args, "->")
-	if len(parts) != 2 {
-		return nil, false, errors.New("invalid replace statement, no left and right hand sides of `->`")
-	}
-	rp, err := toRegexpPattern(parts[0])
+	left, right, err := parseArrowSyntax(args)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "replace command")
+		return nil, false, err
 	}
-	return &ReplaceInPlace{MatchPattern: rp, ReplacePattern: parts[1]}, true, nil
+
+	var matchPattern MatchPattern
+	switch name {
+	case "replace", "replace.regexp":
+		var err error
+		matchPattern, err = toRegexpPattern(left)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "replace command")
+		}
+	case "replace.structural":
+		// structural search doesn't do any match pattern validation
+		matchPattern = &Comby{Value: left}
+	default:
+		// unrecognized name
+		return nil, false, nil
+	}
+
+	return &Replace{MatchPattern: matchPattern, ReplacePattern: right}, true, nil
 }
 
-func toCommand(pattern *query.Pattern) (Command, error) {
-	command, ok, err := parseReplaceInPlace(pattern)
-	if err != nil {
-		return nil, err
+func parseOutput(pattern *query.Pattern) (Command, bool, error) {
+	name, args, ok := parseContentPredicate(pattern)
+	if !ok {
+		return nil, false, nil
 	}
-	if ok {
-		return command, nil
+	left, right, err := parseArrowSyntax(args)
+	if err != nil {
+		return nil, false, err
 	}
 
+	var matchPattern MatchPattern
+	switch name {
+	case "output", "output.regexp":
+		var err error
+		matchPattern, err = toRegexpPattern(left)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "output command")
+		}
+	case "output.structural":
+		// structural search doesn't do any match pattern validation
+		matchPattern = &Comby{Value: left}
+	default:
+		// unrecognized name
+		return nil, false, nil
+	}
+
+	// The default separator is newline and cannot be changed currently.
+	return &Output{MatchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
+}
+
+func parseMatchOnly(pattern *query.Pattern) (Command, bool, error) {
 	rp, err := toRegexpPattern(pattern.Value)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &MatchOnly{MatchPattern: rp}, nil
+	return &MatchOnly{MatchPattern: rp}, true, nil
 }
+
+type commandParser func(pattern *query.Pattern) (Command, bool, error)
+
+// first returns the first parser that succeeds at parsing a command from a pattern.
+func first(parsers ...commandParser) commandParser {
+	return func(pattern *query.Pattern) (Command, bool, error) {
+		for _, parse := range parsers {
+			command, ok, err := parse(pattern)
+			if err != nil {
+				return nil, false, err
+			}
+			if ok {
+				return command, true, nil
+			}
+		}
+		return nil, false, errors.Errorf("could not parse valid compute command from pattern %s", pattern.Value)
+	}
+}
+
+var parseCommand = first(
+	parseReplace,
+	parseOutput,
+	parseMatchOnly,
+)
 
 func toComputeQuery(plan query.Plan) (*Query, error) {
 	if len(plan) != 1 {
@@ -168,7 +235,7 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	command, err := toCommand(pattern)
+	command, _, err := parseCommand(pattern)
 	if err != nil {
 		return nil, err
 	}

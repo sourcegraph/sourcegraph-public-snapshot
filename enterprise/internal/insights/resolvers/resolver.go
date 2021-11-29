@@ -54,6 +54,7 @@ type Resolver struct {
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
 
+	permissionsValidator *InsightPermissionsValidator
 	baseInsightResolver
 }
 
@@ -71,6 +72,7 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 		timeSeriesStore:      base.timeSeriesStore,
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
+		permissionsValidator: PermissionsValidatorFromBase(base),
 	}
 }
 
@@ -102,7 +104,7 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 // 🚨 SECURITY
 // only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
 // dashboards with a global grant.
-func getUserPermissions(ctx context.Context, orgStore *database.OrgStore) (userIds []int, orgIds []int, err error) {
+func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userIds []int, orgIds []int, err error) {
 	userId := actor.FromContext(ctx).UID
 	if userId != 0 {
 		var orgs []*types.Org

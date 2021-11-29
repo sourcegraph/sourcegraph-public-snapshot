@@ -1,7 +1,7 @@
 # How to add monitoring
 
 This guide documents how to add monitoring to Sourcegraph's source code.
-Sourcegraph employees should also refer to the [handbook's monitoring section](https://about.sourcegraph.com/handbook/engineering/observability/monitoring) for Sourcegraph-specific documentation.
+Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
 The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well.
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
@@ -33,7 +33,7 @@ The monitoring generator provides [a lot of features and integrations with the S
 This section documents how to use develop monitoring definitions for a Sourcegraph service.
 To get started, you should read:
 
-- the [Sourcegraph monitoring pillars](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars) for some of the principles we try to uphold when developing monitoring
+- the [Sourcegraph monitoring pillars](https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars) for some of the principles we try to uphold when developing monitoring
 - relevant [reference documentation for the monitoring generator](../background-information/observability/monitoring-generator.md)
 
 ### Set up an observable

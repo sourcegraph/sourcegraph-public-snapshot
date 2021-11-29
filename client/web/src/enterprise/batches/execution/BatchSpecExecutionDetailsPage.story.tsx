@@ -43,6 +43,21 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    description: {
+        name: 'super-thing',
+    },
+    workspaceResolution: {
+        workspaces: {
+            stats: {
+                completed: 1,
+                errored: 1,
+                ignored: 1,
+                processing: 1,
+                queued: 1,
+            },
+        },
+    },
+    __typename: 'BatchSpec',
 })
 
 const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
@@ -64,6 +79,20 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    description: {
+        name: 'super-thing',
+    },
+    workspaceResolution: {
+        workspaces: {
+            stats: {
+                completed: 1,
+                errored: 1,
+                ignored: 1,
+                processing: 1,
+                queued: 1,
+            },
+        },
+    },
 })
 
 add('Completed', () => (
@@ -71,8 +100,11 @@ add('Completed', () => (
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
+                queryBatchSpecWorkspaces={() =>
+                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                }
                 expandStage="srcPreview"
             />
         )}
@@ -84,8 +116,11 @@ add('Failed', () => (
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
+                queryBatchSpecWorkspaces={() =>
+                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                }
                 expandStage="srcPreview"
             />
         )}

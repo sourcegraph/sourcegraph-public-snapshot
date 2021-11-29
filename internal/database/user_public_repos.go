@@ -11,25 +11,34 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func UserPublicRepos(db dbutil.DB) *UserPublicRepoStore {
+func UserPublicRepos(db dbutil.DB) UserPublicRepoStore {
 	store := basestore.NewWithDB(db, sql.TxOptions{})
-	return &UserPublicRepoStore{
-		store: store,
-	}
+	return &userPublicRepoStore{store}
 }
 
-func UserPublicReposWithStore(store *basestore.Store) *UserPublicRepoStore {
-	return &UserPublicRepoStore{store: store}
+func UserPublicReposWith(other basestore.ShareableStore) UserPublicRepoStore {
+	return &userPublicRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-type UserPublicRepoStore struct {
-	store *basestore.Store
+func UserPublicReposWithStore(store *basestore.Store) UserPublicRepoStore {
+	return &userPublicRepoStore{store}
+}
+
+type UserPublicRepoStore interface {
+	basestore.ShareableStore
+	SetUserRepos(ctx context.Context, userID int32, repos []UserPublicRepo) error
+	SetUserRepo(context.Context, UserPublicRepo) error
+	ListByUser(context.Context, int32) ([]UserPublicRepo, error)
+}
+
+type userPublicRepoStore struct {
+	*basestore.Store
 }
 
 // SetUserRepos replaces all the repos in user_public_repos for the passed user ID
-func (s *UserPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, repos []UserPublicRepo) (err error) {
+func (s *userPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, repos []UserPublicRepo) (err error) {
 	var tx *basestore.Store
-	tx, err = s.store.Transact(ctx)
+	tx, err = s.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -62,8 +71,8 @@ func (s *UserPublicRepoStore) SetUserRepos(ctx context.Context, userID int32, re
 
 // SetUserRepo stores a UserPublicRepo record, if a record already exists for the same user_id & repo_id combo, the
 // repo_uri is updated
-func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, upr UserPublicRepo) error {
-	return s.store.Exec(ctx, sqlf.Sprintf(
+func (s *userPublicRepoStore) SetUserRepo(ctx context.Context, upr UserPublicRepo) error {
+	return s.Exec(ctx, sqlf.Sprintf(
 		`INSERT INTO
 			user_public_repos(user_id, repo_uri, repo_id)
 		VALUES (%s, %s,  %s)
@@ -74,11 +83,8 @@ func (s *UserPublicRepoStore) SetUserRepo(ctx context.Context, upr UserPublicRep
 	))
 }
 
-func (s *UserPublicRepoStore) ListByUser(ctx context.Context, userID int32) ([]UserPublicRepo, error) {
-	if mock := Mocks.UserPublicRepos.ListByUser; mock != nil {
-		return mock(ctx, userID)
-	}
-	rows, err := s.store.Query(ctx, sqlf.Sprintf(
+func (s *userPublicRepoStore) ListByUser(ctx context.Context, userID int32) ([]UserPublicRepo, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(
 		"SELECT user_id, repo_uri, repo_id FROM user_public_repos WHERE user_id = %v",
 		userID,
 	))

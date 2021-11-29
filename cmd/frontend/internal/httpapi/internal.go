@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -26,22 +25,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
+func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		repoName := api.RepoName(mux.Vars(r)["RepoName"])
+		repo, err := backend.NewRepos(db.Repos()).GetByName(r.Context(), repoName)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(repo)
+		if err != nil {
+			return err
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+		return nil
 	}
-	data, err := json.Marshal(repo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(data)
-	return nil
 }
 
-func servePhabricatorRepoCreate(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var repo api.PhabricatorRepoCreateRequest
 		err := json.NewDecoder(r.Body).Decode(&repo)
@@ -64,7 +65,7 @@ func servePhabricatorRepoCreate(db dbutil.DB) func(w http.ResponseWriter, r *htt
 
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
-func serveExternalServiceConfigs(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var req api.ExternalServiceConfigsRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -114,7 +115,7 @@ func serveExternalServiceConfigs(db dbutil.DB) func(w http.ResponseWriter, r *ht
 
 // serveExternalServicesList serves a JSON response that is an array of all external services
 // of the given kind
-func serveExternalServicesList(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var req api.ExternalServicesListRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -156,17 +157,7 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposListEnabled(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		names, err := database.Repos(db).ListEnabledNames(r.Context())
-		if err != nil {
-			return err
-		}
-		return json.NewEncoder(w).Encode(names)
-	}
-}
-
-func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveSavedQueriesListAll(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		// List settings for all users, orgs, etc.
 		settings, err := database.SavedSearches(db).ListAll(r.Context())
@@ -197,7 +188,7 @@ func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.
 	}
 }
 
-func serveSavedQueriesGetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveSavedQueriesGetInfo(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var query string
 		err := json.NewDecoder(r.Body).Decode(&query)
@@ -215,7 +206,7 @@ func serveSavedQueriesGetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.
 	}
 }
 
-func serveSavedQueriesSetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveSavedQueriesSetInfo(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var info *api.SavedQueryInfo
 		err := json.NewDecoder(r.Body).Decode(&info)
@@ -237,7 +228,7 @@ func serveSavedQueriesSetInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.
 	}
 }
 
-func serveSavedQueriesDeleteInfo(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveSavedQueriesDeleteInfo(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var query string
 		err := json.NewDecoder(r.Body).Decode(&query)
@@ -254,7 +245,7 @@ func serveSavedQueriesDeleteInfo(db dbutil.DB) func(w http.ResponseWriter, r *ht
 	}
 }
 
-func serveSettingsGetForSubject(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var subject api.SettingsSubject
 		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
@@ -271,7 +262,7 @@ func serveSettingsGetForSubject(db dbutil.DB) func(w http.ResponseWriter, r *htt
 	}
 }
 
-func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveOrgsListUsers(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var orgID int32
 		err := json.NewDecoder(r.Body).Decode(&orgID)
@@ -293,7 +284,7 @@ func serveOrgsListUsers(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var orgName string
 		err := json.NewDecoder(r.Body).Decode(&orgName)
@@ -311,7 +302,7 @@ func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveUsersGetByUsername(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+func serveUsersGetByUsername(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var username string
 		err := json.NewDecoder(r.Body).Decode(&username)
@@ -329,7 +320,7 @@ func serveUsersGetByUsername(db dbutil.DB) func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func serveUserEmailsGetEmail(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var userID int32
 		err := json.NewDecoder(r.Body).Decode(&userID)
@@ -413,7 +404,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveGitExec(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+func serveGitExec(db database.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		defer r.Body.Close()
 		req := protocol.ExecRequest{}

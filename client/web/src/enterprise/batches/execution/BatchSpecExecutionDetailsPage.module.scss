@@ -1,0 +1,26 @@
+.workspace-repo,
+.workspace-name {
+    word-wrap: break-word;
+}
+
+.batch-spec {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.workspaces-list {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.workspaces-list-container {
+    width: 40%;
+}
+
+.workspace-list-icon {
+    align-self: center;
+}
+
+.workspace-selected {
+    background-color: var(--color-bg-1);
+}

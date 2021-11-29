@@ -39,9 +39,9 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
+    batchChangesWebhookLogsEnabled: false,
     enableCodeMonitoring: false,
     telemetryService: {} as any,
-    hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
     showSearchBox: true,
     showSearchContext: false,

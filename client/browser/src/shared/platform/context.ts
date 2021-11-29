@@ -55,7 +55,6 @@ export function createPlatformContext(
     isExtension: boolean
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
-    console.log('createPlatformContext', sourcegraphURL)
     const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
     const context: BrowserPlatformContext = {

@@ -1,8 +1,9 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
+import { AuthenticatedUser } from '../../../../../../../auth'
 import { WebStory } from '../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../../../../core/types'
 
 import { DashboardSelect } from './DashboardSelect'
 
@@ -16,10 +17,10 @@ const { add } = storiesOf('web/insights/DashboardSelect', module)
 
 const DASHBOARDS: InsightDashboard[] = [
     {
-        type: InsightsDashboardType.Personal,
+        scope: InsightsDashboardScope.Personal,
+        type: InsightsDashboardType.BuiltIn,
         id: '101',
         title: 'Personal',
-        builtIn: true,
         insightIds: [],
         owner: {
             id: '101',
@@ -27,10 +28,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Personal,
+        scope: InsightsDashboardScope.Personal,
+        type: InsightsDashboardType.Custom,
         id: '102',
         title: 'Code Insights dashboard',
-        builtIn: false,
         settingsKey: 'codeInsightsDasbhoard',
         insightIds: [],
         owner: {
@@ -39,10 +40,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Personal,
+        scope: InsightsDashboardScope.Personal,
+        type: InsightsDashboardType.Custom,
         id: '103',
         title: 'Experimental Insights dashboard',
-        builtIn: false,
         settingsKey: 'experimentalInsightsDashboard',
         insightIds: [],
         owner: {
@@ -51,10 +52,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Organization,
+        scope: InsightsDashboardScope.Organization,
+        type: InsightsDashboardType.BuiltIn,
         id: '104',
         title: 'Sourcegraph',
-        builtIn: true,
         insightIds: [],
         owner: {
             id: '104',
@@ -62,10 +63,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Organization,
+        scope: InsightsDashboardScope.Organization,
+        type: InsightsDashboardType.Custom,
         id: '105',
         title: 'Loooong looo0000ong name of dashboard',
-        builtIn: false,
         settingsKey: 'looonglooongDashboard',
         insightIds: [],
         owner: {
@@ -74,10 +75,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Organization,
+        scope: InsightsDashboardScope.Organization,
+        type: InsightsDashboardType.Custom,
         id: '106',
         title: 'Loooong looo0000ong name of dashboard',
-        builtIn: false,
         settingsKey: 'looonglooongDashboard',
         insightIds: [],
         owner: {
@@ -87,8 +88,29 @@ const DASHBOARDS: InsightDashboard[] = [
     },
 ]
 
+const USER: Partial<AuthenticatedUser> = {
+    organizations: {
+        nodes: [
+            {
+                id: '1',
+                name: 'Sourcegraph',
+                displayName: 'Sourcegraph',
+                url: 'https://sourcegraph.com',
+                settingsURL: 'https://sourcegraph.com/settings',
+            },
+        ],
+    },
+}
+
 add('DashboardSelect', () => {
     const [value, setValue] = useState<string>()
 
-    return <DashboardSelect value={value} dashboards={DASHBOARDS} onSelect={dashboard => setValue(dashboard.id)} />
+    return (
+        <DashboardSelect
+            value={value}
+            dashboards={DASHBOARDS}
+            user={USER as AuthenticatedUser}
+            onSelect={dashboard => setValue(dashboard.id)}
+        />
+    )
 })

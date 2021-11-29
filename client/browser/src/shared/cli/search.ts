@@ -9,8 +9,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { SearchPatternType } from '../../graphql-operations'
 import { createSuggestionFetcher } from '../backend/search'
 import { createPlatformContext } from '../platform/context'
-import { SourcegraphUrlService } from '../platform/sourcegraphUrlService'
-import { getAssetsURL, CLOUD_SOURCEGRAPH_URL } from '../util/context'
+import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 
 const isURL = /^https?:\/\//
 const IS_EXTENSION = true // This feature is only supported in browser extension
@@ -23,8 +22,7 @@ export class SearchCommand {
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
     public getSuggestions = async (query: string): Promise<browser.omnibox.SuggestResult[]> => {
-        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
-
+        const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
         return new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)
@@ -53,9 +51,10 @@ export class SearchCommand {
 
     public action = async (
         query: string,
-        disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab'
+        disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab',
+        currentTabId?: number
     ): Promise<void> => {
-        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
+        const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
         const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
 
@@ -69,23 +68,27 @@ export class SearchCommand {
                   )}&utm_source=omnibox`,
         }
 
-        if (disposition === 'newForegroundTab') {
-            await browser.tabs.create(props)
-            return
-        }
-        if (disposition === 'newBackgroundTab') {
-            await browser.tabs.create({ ...props, active: false })
-            return
-        }
+        switch (disposition) {
+            case 'currentTab':
+                if (currentTabId) {
+                    // Note: this is done in order to blur browser omnibox and set focus on page
+                    await browser.tabs
+                        .get(currentTabId)
+                        .then(currentTab => currentTab.index)
+                        .then(currentTabIndex => browser.tabs.create({ ...props, index: currentTabIndex }))
+                        .then(() => browser.tabs.remove(currentTabId))
+                    break
+                }
 
-        const [currentTab] = await browser.tabs.query({ active: true, currentWindow: true })
-        if (!currentTab.id) {
-            await browser.tabs.update(props)
-            return
+                await browser.tabs.update(props)
+                break
+            case 'newForegroundTab':
+                await browser.tabs.create(props)
+                break
+            case 'newBackgroundTab':
+                await browser.tabs.create({ ...props, active: false })
+                break
         }
-
-        // Note: this is done in order to blur browser omnibox and set focus on page
-        await Promise.all([browser.tabs.create(props), browser.tabs.remove(currentTab.id)])
     }
 
     private lastSourcegraphUrl = ''
@@ -108,7 +111,7 @@ export class SearchCommand {
 
                 const platformContext = createPlatformContext(
                     { urlToFile: undefined },
-                    { sourcegraphURL, assetsURL: getAssetsURL(CLOUD_SOURCEGRAPH_URL) },
+                    { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
                     IS_EXTENSION
                 )
 

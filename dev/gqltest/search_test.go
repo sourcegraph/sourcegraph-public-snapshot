@@ -103,6 +103,10 @@ type searchClient interface {
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
+	Repository(repositoryName string) (*gqltestutil.Repository, error)
+	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
+	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
+	DeleteSearchContext(id string) error
 }
 
 func testSearchClient(t *testing.T, client searchClient) {
@@ -228,32 +232,40 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("repository groups", func(t *testing.T) {
-		const repoName = "github.com/sgtest/go-diff"
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), fmt.Sprintf(`{"search.repositoryGroups":{"gql_test_group": ["%s"]}}`, repoName))
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run("context: search", func(t *testing.T) {
+		repo1, err := client.Repository("github.com/sgtest/java-langserver")
+		require.NoError(t, err)
+		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+		require.NoError(t, err)
+
+		namespace := client.AuthenticatedUserID()
+		searchContextID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: "SearchContext", Namespace: &namespace, Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{
+				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+			})
+		require.NoError(t, err)
+
 		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
+			err = client.DeleteSearchContext(searchContextID)
+			require.NoError(t, err)
 		}()
 
-		results, err := client.SearchFiles("repogroup:gql_test_group diff.")
-		if err != nil {
-			t.Fatal(err)
+		searchContext, err := client.GetSearchContext(searchContextID)
+		require.NoError(t, err)
+
+		query := fmt.Sprintf("context:%s type:repo", searchContext.Spec)
+		results, err := client.SearchRepositories(query)
+		require.NoError(t, err)
+
+		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
+		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
+			t.Fatalf("Missing repositories: %v", missingRepos)
 		}
 
-		// Make sure there are results and all results are from the same repository
-		if len(results.Results) == 0 {
-			t.Fatal("Unexpected zero result")
-		}
-		for _, r := range results.Results {
-			if r.Repository.Name != repoName {
-				t.Fatalf("Repository: want %q but got %q", repoName, r.Repository.Name)
-			}
+		if len(wantRepos) != len(results) {
+			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
 		}
 	})
 
@@ -263,6 +275,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			query       string
 			zeroResult  bool
 			wantMissing []string
+			want        []string
 		}{
 			{
 				name:       `archived excluded, zero results`,
@@ -319,6 +332,26 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
 				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
 			},
+			{
+				name:       `case sensitive`,
+				query:      `case:yes type:repo Diff`,
+				zeroResult: true,
+			},
+			{
+				name:  `case insensitive`,
+				query: `case:no type:repo Diff`,
+				want: []string{
+					"github.com/sgtest/go-diff",
+				},
+			},
+			{
+				name:  `case insensitive regex`,
+				query: `case:no repo:Go-Diff|TypeScript`,
+				want: []string{
+					"github.com/sgtest/go-diff",
+					"github.com/sgtest/sourcegraph-typescript",
+				},
+			},
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -329,11 +362,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 				if test.zeroResult {
 					if len(results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results))
+						t.Errorf("Want zero result but got %d", len(results))
 					}
 				} else {
 					if len(results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
+						t.Errorf("Want non-zero results but got 0")
 					}
 				}
 
@@ -341,7 +374,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 					missing := results.Exists(test.wantMissing...)
 					sort.Strings(missing)
 					if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
-						t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+						t.Errorf("Missing mismatch (-want +got):\n%s", diff)
+					}
+				}
+
+				if test.want != nil {
+					var have []string
+					for _, r := range results {
+						have = append(have, r.Name)
+					}
+
+					sort.Strings(have)
+					if diff := cmp.Diff(test.want, have); diff != "" {
+						t.Errorf("Repos mismatch (-want +got):\n%s", diff)
 					}
 				}
 			})
@@ -534,6 +579,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `regexp, filename, nonzero result`,
 				query: `file:doc.go patterntype:regexp`,
+			},
+			// Ensure repo resolution is correct in global. https://github.com/sourcegraph/sourcegraph/issues/27044
+			{
+				name:       `-repo excludes private repos`,
+				query:      `-repo:private // this is a change`,
+				zeroResult: true,
 			},
 		}
 		for _, test := range tests {
@@ -898,7 +949,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:            `Or distributive property on commits deduplicates and merges`,
 				query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-				exactMatchCount: 21,
+				exactMatchCount: 35,
 				skip:            skipStream,
 			},
 		}

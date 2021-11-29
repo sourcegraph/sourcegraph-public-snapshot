@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -17,13 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
-	userToInvite, err = database.Users(db).GetByUsername(ctx, username)
+func getUserToInviteToOrganization(ctx context.Context, db database.DB, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
+	userToInvite, err = db.Users().GetByUsername(ctx, username)
 	if err != nil {
 		return nil, "", err
 	}
@@ -40,7 +42,7 @@ func getUserToInviteToOrganization(ctx context.Context, db dbutil.DB, username s
 		}
 	}
 
-	if _, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
+	if _, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userToInvite.ID); err == nil {
 		return nil, "", errors.New("user is already a member of the organization")
 	} else if !errors.HasType(err, &database.ErrOrgMemberNotFound{}) {
 		return nil, "", err
@@ -98,7 +100,6 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 		}
 		result.sentInvitationEmail = true
 	}
-
 	return result, nil
 }
 
@@ -138,6 +139,15 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		// The recipient accepted the invitation.
 		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, a.UID); err != nil {
 			return nil, err
+		}
+
+		// Schedule permission sync for user that accepted the invite
+		err = r.repoupdaterClient.SchedulePermsSync(ctx, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}})
+		if err != nil {
+			log15.Warn("schemaResolver.RespondToOrganizationInvitation.SchedulePermsSync",
+				"userID", a.UID,
+				"error", err,
+			)
 		}
 	}
 	return &EmptyResponse{}, nil

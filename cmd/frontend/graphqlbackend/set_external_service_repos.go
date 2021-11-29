@@ -19,7 +19,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 	Repos    *[]string
 	AllRepos bool
 }) (*EmptyResponse, error) {
-	id, err := unmarshalExternalServiceID(args.ID)
+	id, err := UnmarshalExternalServiceID(args.ID)
 	if err != nil {
 		return nil, err
 	}

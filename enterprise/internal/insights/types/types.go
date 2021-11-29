@@ -6,6 +6,7 @@ import (
 
 // InsightViewSeries is an abstraction of a complete Code Insight. This type materializes a view with any associated series.
 type InsightViewSeries struct {
+	ViewID                        int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string
@@ -25,14 +26,19 @@ type InsightViewSeries struct {
 	SampleIntervalValue           int
 	DefaultFilterIncludeRepoRegex *string
 	DefaultFilterExcludeRepoRegex *string
+	OtherThreshold                *float64
+	PresentationType              PresentationType
 }
 
 type Insight struct {
-	UniqueID    string
-	Title       string
-	Description string
-	Series      []InsightViewSeries
-	Filters     InsightViewFilters
+	ViewID           int
+	UniqueID         string
+	Title            string
+	Description      string
+	Series           []InsightViewSeries
+	Filters          InsightViewFilters
+	OtherThreshold   *float64
+	PresentationType PresentationType
 }
 
 type InsightViewFilters struct {
@@ -48,11 +54,13 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID          int
-	Title       string
-	Description string
-	UniqueID    string
-	Filters     InsightViewFilters
+	ID               int
+	Title            string
+	Description      string
+	UniqueID         string
+	Filters          InsightViewFilters
+	OtherThreshold   *float64
+	PresentationType PresentationType
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
@@ -118,3 +126,10 @@ type InsightSeriesStatus struct {
 	Failed     int
 	Completed  int
 }
+
+type PresentationType string
+
+const (
+	Line PresentationType = "LINE"
+	Pie  PresentationType = "PIE"
+)

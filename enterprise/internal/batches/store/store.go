@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -35,6 +36,16 @@ func (s SQLColumns) ToSqlf() []*sqlf.Query {
 		columns = append(columns, sqlf.Sprintf(col))
 	}
 	return columns
+}
+
+// FmtStr returns a sqlf format string that can be concatenated to a query and
+// contains as many `%s` as columns.
+func (s SQLColumns) FmtStr() string {
+	elems := make([]string, len(s))
+	for i := range s {
+		elems[i] = "%s"
+	}
+	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
 // seededRand is used in RandomID() to generate a "random" number.
@@ -83,6 +94,10 @@ func (s *Store) ObservationContext() *observation.Context {
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
 
+// DatabaseDB returns a database.DB with the same handle that this Store was
+// instantiated with.
+func (s *Store) DatabaseDB() database.DB { return database.NewDB(s.Handle().DB()) }
+
 // DB returns the underlying dbutil.DB that this Store was
 // instantiated with.
 // It's here for legacy reason to pass the dbutil.DB to a repos.Store while
@@ -126,17 +141,17 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
-func (s *Store) Repos() *database.RepoStore {
+func (s *Store) Repos() database.RepoStore {
 	return database.ReposWith(s)
 }
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
-func (s *Store) ExternalServices() *database.ExternalServiceStore {
+func (s *Store) ExternalServices() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s)
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
-func (s *Store) UserCredentials() *database.UserCredentialsStore {
+func (s *Store) UserCredentials() database.UserCredentialsStore {
 	return database.UserCredentialsWith(s, s.key)
 }
 
@@ -194,7 +209,7 @@ type operations struct {
 	getChangesetJob    *observation.Operation
 
 	createChangesetSpec                      *observation.Operation
-	updateChangesetSpec                      *observation.Operation
+	updateChangesetSpecBatchSpecID           *observation.Operation
 	deleteChangesetSpec                      *observation.Operation
 	countChangesetSpecs                      *observation.Operation
 	getChangesetSpec                         *observation.Operation
@@ -235,12 +250,16 @@ type operations struct {
 	createBatchSpecWorkspace       *observation.Operation
 	getBatchSpecWorkspace          *observation.Operation
 	listBatchSpecWorkspaces        *observation.Operation
+	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
 
-	createBatchSpecWorkspaceExecutionJobs *observation.Operation
-	getBatchSpecWorkspaceExecutionJob     *observation.Operation
-	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJobs *observation.Operation
+	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
+	getBatchSpecWorkspaceExecutionJob                  *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs                *observation.Operation
+	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -248,6 +267,11 @@ type operations struct {
 
 	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
 	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
+
+	listBatchSpecExecutionCacheEntries     *observation.Operation
+	markUsedBatchSpecExecutionCacheEntries *observation.Operation
+	createBatchSpecExecutionCacheEntry     *observation.Operation
+	cleanBatchSpecExecutionCacheEntries    *observation.Operation
 }
 
 var (
@@ -259,7 +283,7 @@ var (
 // TODO: We should create one per observationContext.
 func newOperations(observationContext *observation.Context) *operations {
 	operationsOnce.Do(func() {
-		m := metrics.NewOperationMetrics(
+		m := metrics.NewREDMetrics(
 			observationContext.Registerer,
 			"batches_dbstore",
 			metrics.WithLabels("op"),
@@ -275,7 +299,7 @@ func newOperations(observationContext *observation.Context) *operations {
 					if errors.Is(err, ErrNoResults) {
 						return observation.EmitForNone
 					}
-					return observation.EmitForAll
+					return observation.EmitForDefault
 				},
 			})
 		}
@@ -318,7 +342,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetJob:    op("GetChangesetJob"),
 
 			createChangesetSpec:                      op("CreateChangesetSpec"),
-			updateChangesetSpec:                      op("UpdateChangesetSpec"),
+			updateChangesetSpecBatchSpecID:           op("UpdateChangesetSpecBatchSpecID"),
 			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
 			countChangesetSpecs:                      op("CountChangesetSpecs"),
 			getChangesetSpec:                         op("GetChangesetSpec"),
@@ -359,12 +383,16 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
 			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
-			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
-			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
-			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJobs: op("CancelBatchSpecWorkspaceExecutionJobs"),
+			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
+			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
+			getBatchSpecWorkspaceExecutionJob:                  op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:                op("ListBatchSpecWorkspaceExecutionJobs"),
+			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
+			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
+			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
@@ -372,6 +400,12 @@ func newOperations(observationContext *observation.Context) *operations {
 
 			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
 			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
+
+			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
+			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),
+			createBatchSpecExecutionCacheEntry:     op("CreateBatchSpecExecutionCacheEntry"),
+
+			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
 		}
 	})
 

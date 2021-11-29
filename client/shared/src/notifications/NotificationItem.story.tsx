@@ -1,6 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { number, select, text } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
@@ -9,7 +9,6 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { NotificationItem } from './NotificationItem'
-import notificationItemStyles from './NotificationItem.scss'
 
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',
@@ -21,15 +20,19 @@ const notificationClassNames = {
 
 const onDismiss = action('onDismiss')
 
-const { add } = storiesOf('shared/NotificationItem', module).addDecorator(story => (
+const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
-        <style>{notificationItemStyles}</style>
         <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
     </>
-))
+)
+const config: Meta = {
+    title: 'shared/NotificationItem',
+    decorators: [decorator],
+}
+export default config
 
-add('Without Progress', () => {
+export const WithoutProgress: Story = () => {
     const message = text('Message', 'My *custom* message')
     const type = select<NotificationTypeType>(
         'Type',
@@ -44,9 +47,9 @@ add('Without Progress', () => {
             onDismiss={onDismiss}
         />
     )
-})
+}
 
-add('With progress', () => {
+export const WithProgress: Story = () => {
     const message = text('Message', 'My *custom* message')
     const type = select<NotificationTypeType>(
         'Type',
@@ -71,4 +74,6 @@ add('With progress', () => {
             onDismiss={onDismiss}
         />
     )
-})
+}
+
+WithProgress.storyName = 'With progress'

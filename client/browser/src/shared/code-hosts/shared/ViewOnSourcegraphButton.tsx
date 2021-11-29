@@ -6,7 +6,7 @@ import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { SourcegraphIconButton, SourcegraphIconButtonProps } from '../../components/SourcegraphIconButton'
-import { getPlatformName, CLOUD_SOURCEGRAPH_URL } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../util/context'
 
 import { CodeHostContext } from './codeHost'
 import { SignInButton } from './SignInButton'
@@ -18,7 +18,7 @@ export interface ViewOnSourcegraphButtonClassProps {
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     codeHostType: string
-    getContext: () => CodeHostContext
+    context: CodeHostContext
     sourcegraphURL: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
@@ -38,7 +38,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     codeHostType,
     repoExistsOrError,
     sourcegraphURL,
-    getContext,
+    context,
     minimalUI,
     onConfigureSourcegraphClick,
     showSignInButton,
@@ -54,10 +54,10 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         iconClassName,
     }
 
-    const { rawRepoName, revision, privateRepository } = getContext()
+    const { rawRepoName, revision, privateRepository } = context
 
     const isPrivateCloudError =
-        sourcegraphURL === CLOUD_SOURCEGRAPH_URL && repoExistsOrError === false && privateRepository
+        sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && repoExistsOrError === false && privateRepository
 
     useEffect(() => {
         onPrivateCloudError(isPrivateCloudError)

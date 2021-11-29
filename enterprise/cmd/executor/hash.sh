@@ -17,4 +17,4 @@ go build -trimpath -buildmode exe -tags dist -o "$artifact" "$pkg"
 md5sum <"$artifact"
 
 # Generate hash for entire build directory
-tar c ./enterprise/cmd/executor | md5sum
+tar c --exclude='./enterprise/cmd/executor/docker-mirror' ./enterprise/cmd/executor | md5sum

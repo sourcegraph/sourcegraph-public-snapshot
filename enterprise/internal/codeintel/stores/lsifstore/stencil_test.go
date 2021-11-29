@@ -7,18 +7,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestStencil(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := populateTestStore(t)
 
 	ranges, err := store.Stencil(context.Background(), testBundleID, "internal/index/indexer.go")
 	if err != nil {
@@ -257,6 +252,7 @@ func TestStencil(t *testing.T) {
 		"198:10-198:12",
 		"198:4-198:9",
 		"19:5-19:12",
+		"1:8-1:13",
 		"200:3-200:12",
 		"201:19-201:24",
 		"201:7-201:9",

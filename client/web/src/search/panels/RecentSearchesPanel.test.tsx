@@ -1,4 +1,5 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -42,7 +43,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RecentSearchesPanel {...props} />)).toMatchSnapshot()
+        expect(render(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('searches with no argument are skipped', () => {
@@ -79,7 +80,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RecentSearchesPanel {...props} />)).toMatchSnapshot()
+        expect(render(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button is shown if more pages are available', () => {
@@ -117,7 +118,7 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        expect(mount(<RecentSearchesPanel {...props} />)).toMatchSnapshot()
+        expect(render(<RecentSearchesPanel {...props} />).asFragment()).toMatchSnapshot()
     })
 
     test('Show More button loads more items', () => {
@@ -203,10 +204,8 @@ describe('RecentSearchesPanel', () => {
             telemetryService: NOOP_TELEMETRY_SERVICE,
         }
 
-        const component = mount(<RecentSearchesPanel {...props} />)
-        const showMoreButton = component.find('button.test-recent-searches-panel-show-more')
-        showMoreButton.simulate('click')
-
-        expect(component).toMatchSnapshot()
+        const { asFragment } = render(<RecentSearchesPanel {...props} />)
+        userEvent.click(screen.getByRole('button', { name: /Show more/ }))
+        expect(asFragment()).toMatchSnapshot()
     })
 })

@@ -89,7 +89,7 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 }
 
 func (r *bulkOperationResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.bulkOperation.UserID)
+	return graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.bulkOperation.UserID)
 }
 
 func (r *bulkOperationResolver) ChangesetCount() int32 {

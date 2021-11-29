@@ -80,7 +80,7 @@ const steps: Step[] = [
         description: 'Output help text about this tool',
         argNames: ['all'],
         run: (_config, all) => {
-            console.error('Sourcegraph release tool - https://about.sourcegraph.com/handbook/engineering/releases')
+            console.error('Sourcegraph release tool - https://handbook.sourcegraph.com/engineering/releases')
             console.error('\nUSAGE\n')
             console.error('\tyarn run release <step>')
             console.error('\nAVAILABLE STEPS\n')
@@ -401,7 +401,7 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
-                            `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`,
+                            `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`,
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease

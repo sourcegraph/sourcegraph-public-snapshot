@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useLayoutEffect, useRef } from 'react'
 import { Route, RouteComponentProps, Switch, useLocation } from 'react-router'
@@ -19,7 +18,6 @@ import { HeroPage } from '../components/HeroPage'
 import { Page } from '../components/Page'
 import { RouteDescriptor } from '../util/contributions'
 
-import styles from './SiteAdminArea.module.scss'
 import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
@@ -90,6 +88,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
@@ -99,13 +98,14 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
     return (
         <Page>
             <PageHeader path={[{ text: 'Site Admin' }]} />
-            <div className={classNames('d-flex my-3', styles.siteAdminArea)} ref={reference}>
+            <div className="d-flex my-3" ref={reference}>
                 <SiteAdminSidebar
                     className="flex-0 mr-3"
                     groups={props.sideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
+                    batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>

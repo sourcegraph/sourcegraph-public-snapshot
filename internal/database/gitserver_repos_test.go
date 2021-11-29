@@ -18,7 +18,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -43,10 +43,9 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "gitserver1",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     "gitserver1",
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create one GitServerRepo
@@ -103,7 +102,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	_, err := GitserverRepos(db).GetByID(ctx, 1)
@@ -126,10 +125,9 @@ func TestGitserverReposGetByID(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "test",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create GitServerRepo
@@ -153,7 +151,7 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	const shardID = "test"
 
@@ -253,7 +251,7 @@ func TestSetLastError(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	const shardID = "test"
 
@@ -347,7 +345,7 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -365,10 +363,9 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     "",
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create one GitServerRepo
@@ -382,7 +379,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	repo1 := &types.Repo{

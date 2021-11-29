@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -22,17 +22,19 @@ type operations struct {
 	documentationPage         *observation.Operation
 	documentationPathInfo     *observation.Operation
 	documentationReferences   *observation.Operation
+	documentationSearch       *observation.Operation
 	hover                     *observation.Operation
 	queryResolver             *observation.Operation
 	ranges                    *observation.Operation
 	references                *observation.Operation
+	implementations           *observation.Operation
 	stencil                   *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"codeintel_resolvers",
 		metrics.WithLabels("op"),
@@ -64,10 +66,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationPage:         op("DocumentationPage"),
 		documentationPathInfo:     op("DocumentationPathInfo"),
 		documentationReferences:   op("DocumentationReferences"),
+		documentationSearch:       op("DocumentationSearch"),
 		hover:                     op("Hover"),
 		queryResolver:             op("QueryResolver"),
 		ranges:                    op("Ranges"),
 		references:                op("References"),
+		implementations:           op("Implementations"),
 		stencil:                   op("Stencil"),
 
 		findClosestDumps: subOp("findClosestDumps"),
@@ -117,7 +121,7 @@ func createHoneyEvent(
 	observationArgs observation.Args,
 	err *error,
 	duration time.Duration,
-) *libhoney.Event {
+) honey.Event {
 	fields := map[string]interface{}{
 		"type":        name,
 		"duration_ms": duration.Milliseconds(),
@@ -126,13 +130,14 @@ func createHoneyEvent(
 	if err != nil && *err != nil {
 		fields["error"] = (*err).Error()
 	}
-	for key, value := range observationArgs.LogFieldMap() {
-		fields[key] = value
-	}
 	if traceID := trace.ID(ctx); traceID != "" {
-		fields["trace"] = trace.URL(traceID)
+		fields["trace"] = trace.URL(traceID, conf.ExternalURL())
 		fields["traceID"] = traceID
 	}
 
-	return honey.EventWithFields("codeintel", fields)
+	event := honey.NewEventWithFields("codeintel", fields)
+
+	event.AddLogFields(observationArgs.LogFields)
+
+	return event
 }

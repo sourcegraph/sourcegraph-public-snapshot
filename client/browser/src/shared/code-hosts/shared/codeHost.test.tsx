@@ -10,7 +10,6 @@ import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -18,6 +17,7 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { integrationTestContext } from '@sourcegraph/shared/src/api/integration-test/testHelpers'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { SuccessGraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import { IQuery } from '@sourcegraph/shared/src/graphql/schema'
@@ -27,7 +27,7 @@ import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockInter
 import { subtypeOf, allOf, check, isTaggedUnionMember } from '@sourcegraph/shared/src/util/types'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { CLOUD_SOURCEGRAPH_URL } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 
 import {
@@ -96,7 +96,7 @@ const commonArguments = () =>
         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
         showGlobalDebug: false,
         platformContext: createMockPlatformContext(),
-        sourcegraphURL: CLOUD_SOURCEGRAPH_URL,
+        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         render: RENDER,
         userSignedIn: true,
@@ -140,7 +140,7 @@ describe('codeHost', () => {
     describe('createGlobalDebugMount()', () => {
         it('should create the debug menu mount', () => {
             createGlobalDebugMount()
-            const mount = document.body.querySelector('.global-debug')
+            const mount = document.body.querySelector('[data-global-debug]')
             expect(mount).toBeDefined()
         })
     })
@@ -198,7 +198,7 @@ describe('codeHost', () => {
             expect(renderedCommandPalette).not.toBeUndefined()
         })
 
-        test('creates a .global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
+        test('creates a data-global-debug element and renders the debug menu if showGlobalDebug is true', async () => {
             const { extensionHostAPI } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
@@ -214,7 +214,7 @@ describe('codeHost', () => {
                     showGlobalDebug: true,
                 })
             )
-            const globalDebugMount = document.body.querySelector('.global-debug')
+            const globalDebugMount = document.body.querySelector('[data-global-debug]')
             expect(globalDebugMount).toBeDefined()
             const renderedDebugElement = elementRenderedAtMount(globalDebugMount!)
             expect(renderedDebugElement).toBeDefined()
@@ -373,8 +373,8 @@ describe('codeHost', () => {
                 ])
                 await decorated(editor)
                 await tick()
-                expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
-                expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration')
+                expect(line.querySelectorAll('[data-line-decoration-attachment]')).toHaveLength(1)
+                expect(line.querySelector('[data-line-decoration-attachment]')!).toHaveTextContent('test decoration')
 
                 // Decorate the code view again, and verify that previous decorations
                 // are cleaned up and replaced by the new decorations.
@@ -397,8 +397,8 @@ describe('codeHost', () => {
                         take(1)
                     )
                     .toPromise()
-                expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
-                expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration 2')
+                expect(line.querySelectorAll('[data-line-decoration-attachment]').length).toBe(1)
+                expect(line.querySelector('[data-line-decoration-attachment]')!).toHaveTextContent('test decoration 2')
             })
 
             it('decorates a diff code view', async () => {

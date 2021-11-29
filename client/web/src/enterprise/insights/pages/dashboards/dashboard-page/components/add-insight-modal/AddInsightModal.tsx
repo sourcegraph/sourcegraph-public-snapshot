@@ -10,7 +10,9 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
-import { SettingsBasedInsightDashboard } from '../../../../../core/types'
+import { parseDashboardScope } from '../../../../../core/backend/utils/parse-dashboard-scope'
+import { CustomInsightDashboard } from '../../../../../core/types'
+import { isGlobalSubject, SupportedInsightSubject } from '../../../../../core/types/subjects'
 
 import styles from './AddInsightModal.module.scss'
 import {
@@ -19,16 +21,22 @@ import {
 } from './components/add-insight-modal-content/AddInsightModalContent'
 
 export interface AddInsightModalProps {
-    dashboard: SettingsBasedInsightDashboard
+    dashboard: CustomInsightDashboard
     onClose: () => void
 }
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
     const { dashboard, onClose } = props
-    const { getReachableInsights, updateDashboard } = useContext(CodeInsightsBackendContext)
+    const { getReachableInsights, getDashboardSubjects, assignInsightsToDashboard } = useContext(
+        CodeInsightsBackendContext
+    )
 
+    const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const insights = useObservable(
-        useMemo(() => getReachableInsights(dashboard.owner.id), [dashboard.owner.id, getReachableInsights])
+        useMemo(() => getReachableInsights({ subjectId: dashboard.owner?.id || '' }), [
+            dashboard.owner,
+            getReachableInsights,
+        ])
     )
 
     const initialValues = useMemo<AddInsightFormValues>(
@@ -42,15 +50,19 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
+            const type = dashboard.grants && parseDashboardScope(dashboard.grants)
 
-            await updateDashboard({
+            await assignInsightsToDashboard({
+                id: dashboard.id,
                 previousDashboard: dashboard,
                 nextDashboardInput: {
                     name: dashboard.title,
-                    visibility: dashboard.owner.id,
+                    visibility: getDashboardVisibilityId(dashboard, subjects ?? []),
                     insightIds,
+                    type,
                 },
             }).toPromise()
+
             onClose()
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -88,4 +100,23 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
             )}
         </Dialog>
     )
+}
+
+function getDashboardVisibilityId(dashboard: CustomInsightDashboard, subjects: SupportedInsightSubject[]): string {
+    if (dashboard.owner) {
+        return dashboard.owner.id
+    }
+
+    if (dashboard.grants) {
+        const { users, organizations, global } = dashboard.grants
+        const globalSubject = subjects.find(isGlobalSubject)
+
+        if (global && globalSubject) {
+            return globalSubject.id
+        }
+
+        return users[0] ?? organizations[0] ?? 'unkown'
+    }
+
+    return 'unknown subject id'
 }

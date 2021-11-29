@@ -1,7 +1,7 @@
-import { StoryFn } from '@storybook/addons'
-import React, { ReactElement } from 'react'
+import { Story } from '@storybook/react'
+import React from 'react'
 
-export const CardsStory: StoryFn<ReactElement> = () => (
+export const CardsStory: Story = () => (
     <>
         <h1>Cards</h1>
         <p>

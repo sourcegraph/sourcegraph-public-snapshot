@@ -2,40 +2,43 @@
 import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
-import { without } from 'lodash'
-import { combineLatest, Observable, Subject, Subscription, timer } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
     groupBy,
-    switchMap,
     map,
     mergeMap,
+    switchMap,
+    take,
     concatMap,
     mapTo,
     catchError,
     distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
-import { patternToRegex } from 'webext-patterns'
 
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
 import { EndpointPair } from '@sourcegraph/shared/src/platform/context'
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
-import { SourcegraphUrlService } from '../../shared/platform/sourcegraphUrlService'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
+import { observeSourcegraphURL } from '../../shared/util/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
+import { checkUrlPermissions } from '../util'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
-import { observeStorageKey } from '../web-extension-api/storage'
+import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
+
+const IS_EXTENSION = true
 
 // Interval to check if the Sourcegraph URL is valid
 // This polling allows to detect if Sourcegraph instance is invalid or needs authentication.
@@ -44,8 +47,6 @@ const INTERVAL_FOR_SOURCEGRPAH_URL_CHECK = 5 /* minutes */ * 60 * 1000
 assertEnvironment('BACKGROUND')
 
 initSentry('background')
-
-let customServerOrigins: string[] = []
 
 /**
  * For each tab, we store a flag if we know that we are on a private
@@ -79,21 +80,6 @@ const tabPrivateCloudErrorCache = (() => {
     }
 })()
 
-const contentScripts = browser.runtime.getManifest().content_scripts
-
-// jsContentScriptOrigins are the required URLs inside of the manifest. When checking for permissions to inject
-// the content script on optional pages (inside browser.tabs.onUpdated) we need to skip manual injection of the
-// script since the browser extension will automatically inject it.
-const jsContentScriptOrigins: string[] = []
-if (contentScripts) {
-    for (const contentScript of contentScripts) {
-        if (!contentScript || !contentScript.js || !contentScript.matches) {
-            continue
-        }
-        jsContentScriptOrigins.push(...contentScript.matches)
-    }
-}
-
 const configureOmnibox = (serverUrl: string): void => {
     browser.omnibox.setDefaultSuggestion({
         description: `Search code on ${serverUrl}`,
@@ -107,15 +93,20 @@ const requestGraphQL = <T, V = object>({
 }: {
     request: string
     variables: V
-    sourcegraphURL: string
+    sourcegraphURL?: string
 }): Observable<GraphQLResult<T>> =>
-    requestGraphQLCommon<T, V>({
-        request,
-        variables,
-        baseUrl: sourcegraphURL,
-        headers: getHeaders(),
-        credentials: 'include',
-    })
+    (sourcegraphURL ? of(sourcegraphURL) : observeSourcegraphURL(IS_EXTENSION)).pipe(
+        take(1),
+        switchMap(sourcegraphURL =>
+            requestGraphQLCommon<T, V>({
+                request,
+                variables,
+                baseUrl: sourcegraphURL,
+                headers: getHeaders(),
+                credentials: 'include',
+            })
+        )
+    )
 
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
@@ -134,7 +125,7 @@ async function main(): Promise<void> {
         observeStorageKey('managed', 'sourcegraphURL')
             .pipe(
                 filter(isDefined),
-                concatMap(sourcegraphURL => SourcegraphUrlService.setSelfHostedSourcegraphURL(sourcegraphURL))
+                concatMap(sourcegraphURL => storage.sync.set({ sourcegraphURL }))
             )
             .subscribe()
     )
@@ -144,7 +135,7 @@ async function main(): Promise<void> {
 
         // Configure the omnibox when the sourcegraphURL changes.
         subscriptions.add(
-            SourcegraphUrlService.observeSelfHostedOrCloud().subscribe(sourcegraphURL => {
+            observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
                 configureOmnibox(sourcegraphURL)
             })
         )
@@ -159,50 +150,31 @@ async function main(): Promise<void> {
 
     const permissions = await browser.permissions.getAll()
     if (!permissions.origins) {
-        customServerOrigins = []
         return
     }
-    customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
 
-    // Not supported in Firefox
-    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded#Browser_compatibility
-    if (browser.permissions.onAdded) {
-        browser.permissions.onAdded.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            const origins = without(permissions.origins, ...jsContentScriptOrigins)
-            customServerOrigins.push(...origins)
-        })
-    }
-    if (browser.permissions.onRemoved) {
-        browser.permissions.onRemoved.addListener(permissions => {
-            if (!permissions.origins) {
-                return
-            }
-            customServerOrigins = without(customServerOrigins, ...permissions.origins)
-            const urlsToRemove: string[] = []
-            for (const url of permissions.origins) {
-                urlsToRemove.push(url.replace('/*', ''))
-            }
-        })
-    }
-
-    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
             tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
             return
         }
 
-        if (
-            changeInfo.status === 'complete' &&
-            customServerOrigins.some(
-                origin => origin === '<all_urls>' || (!!tab.url && urlMatchesPattern(tab.url, origin))
-            )
-        ) {
-            // Inject content script whenever a new tab was opened with a URL for which we have permission
-            await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+        if (tab.url && changeInfo.status === 'complete') {
+            checkUrlPermissions(tab.url)
+                .then(async hasPermissions => {
+                    if (hasPermissions) {
+                        /**
+                         * Loading content script dynamically
+                         * See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts#loading_content_scripts
+                         */
+                        await browser.tabs.executeScript(tabId, {
+                            file: 'js/inject.bundle.js',
+                            runAt: 'document_end',
+                        })
+                    }
+                })
+                .catch(console.warn)
         }
     })
 
@@ -222,7 +194,7 @@ async function main(): Promise<void> {
         }: {
             request: string
             variables: V
-            sourcegraphURL: string
+            sourcegraphURL?: string
         }): Promise<GraphQLResult<T>> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
@@ -241,6 +213,8 @@ async function main(): Promise<void> {
         async checkPrivateCloudError(tabId: number): Promise<boolean> {
             return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
         },
+
+        fetchCache,
     }
 
     // Handle calls from other scripts
@@ -396,8 +370,8 @@ function handleBrowserPortPair(
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()
 
-function validateSite(sourcegraphURL: string): Observable<boolean> {
-    return fetchSite(options => requestGraphQL({ ...options, sourcegraphURL })).pipe(
+function validateSite(): Observable<boolean> {
+    return fetchSite(requestGraphQL).pipe(
         mapTo(true),
         catchError(() => [false])
     )
@@ -423,10 +397,10 @@ function observeCurrentTabPrivateCloudError(): Observable<boolean> {
 }
 
 function observeSourcegraphUrlValidation(): Observable<boolean> {
-    // TODO: check if we need to check both URLs
-    return SourcegraphUrlService.getSelfHostedSourcegraphURL().pipe(
-        filter(url => !!url),
-        switchMap(url => timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(() => validateSite(url as string)))
+    return merge(
+        // Whenever the URL was persisted to storage, we can assume it was validated before-hand
+        observeStorageKey('sync', 'sourcegraphURL').pipe(mapTo(true)),
+        timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
     )
 }
 
@@ -449,17 +423,4 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
         }),
         distinctUntilChanged()
     )
-}
-
-function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
-    // Workaround for bug in `webext-patterns`. Remove workaround when fixed upstream.
-    // https://github.com/fregante/webext-patterns/issues/2
-    if (originPermissionPattern.includes('://*.')) {
-        const bareDomainPattern = originPermissionPattern.replace('://*.', '://')
-        if (patternToRegex(bareDomainPattern).test(url)) {
-            return true
-        }
-    }
-
-    return patternToRegex(originPermissionPattern).test(url)
 }

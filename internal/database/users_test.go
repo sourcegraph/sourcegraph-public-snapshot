@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -76,7 +75,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -102,7 +101,7 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	minPasswordRunes := conf.AuthMinPasswordLength()
@@ -177,10 +176,10 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
+	db := NewDB(dbtesting.GetDB(t))
 	ctx := context.Background()
 
-	if _, err := globalstatedb.Get(ctx); err != nil {
+	if _, err := db.GlobalState().Get(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -265,7 +264,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -315,7 +314,7 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -373,7 +372,7 @@ func TestUsers_Update(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -452,7 +451,7 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -487,7 +486,7 @@ func TestUsers_GetByUsername(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -533,7 +532,7 @@ func TestUsers_GetByUsernames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -577,7 +576,7 @@ func TestUsers_Delete(t *testing.T) {
 				t.Skip()
 			}
 			t.Parallel()
-			db := dbtest.NewDB(t, "")
+			db := dbtest.NewDB(t)
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -619,7 +618,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+			if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -736,7 +735,7 @@ func TestUsers_HasTag(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	var id int32
@@ -774,7 +773,7 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -817,7 +816,7 @@ func TestUsers_SetTag(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Create user.

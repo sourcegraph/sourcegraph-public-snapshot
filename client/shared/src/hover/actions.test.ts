@@ -6,9 +6,9 @@ import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import * as sourcegraph from 'sourcegraph'
 
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
+import { LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { ExposedToClient } from '../api/client/mainthread-api'
@@ -16,6 +16,7 @@ import { FlatExtensionHostAPI } from '../api/contract'
 import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { integrationTestContext } from '../api/integration-test/testHelpers'
 import { TextDocumentPositionParameters } from '../api/protocol'
+import { HoveredToken } from '../codeintellify/tokenPosition'
 import { GraphQLResult, SuccessGraphQLResult } from '../graphql/graphql'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
@@ -124,7 +125,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': null,
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Show loader
                     l: {
@@ -133,7 +136,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': null,
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Show find references button (same tick)
                     f: {
@@ -142,7 +147,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Show go to definition button, hide loader, show find references button
                     g: {
@@ -151,7 +158,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                 }))()
             )
@@ -187,7 +196,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': null,
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Not found
                     n: {
@@ -196,7 +207,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': true,
                         'goToDefinition.error': false,
                         'findReferences.url': null,
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Show loader
                     l: {
@@ -205,7 +218,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': null,
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Show find references button (same tick)
                     f: {
@@ -214,7 +229,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     // Show go to definition button, hide loader, show find references button
                     g: {
@@ -223,7 +240,9 @@ describe('getHoverActionsContext', () => {
                         'goToDefinition.notFound': false,
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
+                        'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                 }))()
             )
@@ -256,7 +275,9 @@ describe('getHoverActionsContext', () => {
                     'goToDefinition.notFound': false,
                     'goToDefinition.error': false,
                     'findReferences.url': null,
+                    'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                     hoverPosition: FIXTURE_PARAMS,
+                    hoveredOnDefinition: false,
                 },
                 // Go to definition
                 g: {
@@ -265,7 +286,9 @@ describe('getHoverActionsContext', () => {
                     'goToDefinition.notFound': false,
                     'goToDefinition.error': false,
                     'findReferences.url': null,
+                    'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                     hoverPosition: FIXTURE_PARAMS,
+                    hoveredOnDefinition: false,
                 },
                 // Find references
                 f: {
@@ -274,7 +297,9 @@ describe('getHoverActionsContext', () => {
                     'goToDefinition.notFound': false,
                     'goToDefinition.error': false,
                     'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
+                    'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                     hoverPosition: FIXTURE_PARAMS,
+                    hoveredOnDefinition: false,
                 },
             } as {
                 [key: string]: HoverActionsContext
@@ -308,7 +333,9 @@ describe('getHoverActionsContext', () => {
                     'goToDefinition.notFound': false,
                     'goToDefinition.error': false,
                     'findReferences.url': null,
+                    'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                     hoverPosition: FIXTURE_PARAMS,
+                    hoveredOnDefinition: false,
                 },
                 // Go to definition
                 g: {
@@ -317,7 +344,9 @@ describe('getHoverActionsContext', () => {
                     'goToDefinition.notFound': false,
                     'goToDefinition.error': false,
                     'findReferences.url': null,
+                    'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                     hoverPosition: FIXTURE_PARAMS,
+                    hoveredOnDefinition: false,
                 },
                 // Find references button
                 f: {
@@ -326,7 +355,9 @@ describe('getHoverActionsContext', () => {
                     'goToDefinition.notFound': false,
                     'goToDefinition.error': false,
                     'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
+                    'panel.url': '/r@v/-/blob/f?L2:2#tab=panelID',
                     hoverPosition: FIXTURE_PARAMS,
+                    hoveredOnDefinition: false,
                 },
             } as {
                 [key: string]: HoverActionsContext
@@ -541,6 +572,7 @@ describe('registerHoverContributions()', () => {
                 iconURL: undefined,
             },
             active: true,
+            disabledWhen: false,
             altAction: undefined,
         }
         const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemAction = {
@@ -549,8 +581,10 @@ describe('registerHoverContributions()', () => {
                 commandArguments: ['/r2@c2/-/blob/f2?L3:3'],
                 id: 'goToDefinition.preloaded',
                 title: 'Go to definition',
+                disabledTitle: 'You are at the definition',
             },
             active: true,
+            disabledWhen: false,
             altAction: undefined,
         }
         const FIND_REFERENCES_ACTION: ActionItemAction = {
@@ -561,6 +595,7 @@ describe('registerHoverContributions()', () => {
                 title: 'Find references',
             },
             active: true,
+            disabledWhen: false,
             altAction: undefined,
         }
 
@@ -574,6 +609,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': false,
                         'findReferences.url': null,
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -589,6 +625,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': true,
                         'findReferences.url': null,
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -604,6 +641,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': false,
                         'findReferences.url': null,
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -619,6 +657,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': false,
                         'findReferences.url': null,
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -634,6 +673,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -649,6 +689,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -664,6 +705,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': true,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()
@@ -679,6 +721,7 @@ describe('registerHoverContributions()', () => {
                         'goToDefinition.error': false,
                         'findReferences.url': '/r@v/-/blob/f?L2:2#tab=references',
                         hoverPosition: FIXTURE_PARAMS,
+                        hoveredOnDefinition: false,
                     },
                     extensionHostAPI
                 ).toPromise()

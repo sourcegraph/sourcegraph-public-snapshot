@@ -38,7 +38,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       srv.vm.provider :google do |g, o|
         g.service_account = ENV["VAGRANT_SERVICE_ACCOUNT"] || nil
         g.machine_type = server['machine_type']
-        g.image = 'e2e-2e61d9153-2021-06-22t15-18-00z'
+        g.image = 'e2e-a5705fc91-2021-10-21t15-43-16z'
         g.image_project_id = 'sourcegraph-ci'
         g.google_project_id = project_id
         g.name = "#{server['name']}-"+"#{Time.now.to_i}"
@@ -86,6 +86,8 @@ export BITBUCKET_SERVER_TOKEN=#{ENV['BITBUCKET_SERVER_TOKEN']}
 export BITBUCKET_SERVER_USERNAME=#{ENV['BITBUCKET_SERVER_USERNAME']}
 export SGDEV_OVERRIDE_AUTH_SECRET=#{ENV['SGDEV_OVERRIDE_AUTH_SECRET']}
 export VAGRANT_RUN_ENV=#{ENV['VAGRANT_RUN_ENV']}
+# Log output must have timestamps for sg ci logs --output to work
+export BUILDKITE_TIMESTAMP_LINES=true
 
 # Env vars required by the QA tests - see:
 # https://my.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/mn37wmu5dzhll6qxcnpmutvlq4
@@ -120,6 +122,7 @@ export VAGRANT_SERVICE_ACCOUNT=#{ENV['VAGRANT_SERVICE_ACCOUNT']}
 export MINIMUM_UPGRADEABLE_VERSION=#{ENV['MINIMUM_UPGRADEABLE_VERSION']}
 
 EOF
+gcloud auth configure-docker --quiet
       SHELL
 
         server['shell_commands'].each do |sh|

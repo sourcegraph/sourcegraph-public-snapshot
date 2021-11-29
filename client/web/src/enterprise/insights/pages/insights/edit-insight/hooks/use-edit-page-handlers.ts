@@ -29,7 +29,7 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
     const history = useHistory()
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+    const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
         if (!originalInsight) {
@@ -42,12 +42,17 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
                 newInsight,
             }).toPromise()
 
-            eventLogger.log('Insight Edit', { insightType: newInsight.type }, { insightType: newInsight.type })
+            eventLogger.log('InsightEdit', { insightType: newInsight.type }, { insightType: newInsight.type })
 
             if (!dashboard || isVirtualDashboard(dashboard)) {
                 // Navigate user to the dashboard page with new created dashboard
                 history.push(`/insights/dashboards/${newInsight.visibility}`)
 
+                return
+            }
+
+            if (!dashboard.owner) {
+                history.push(`/insights/dashboards/${dashboard.id}`)
                 return
             }
 

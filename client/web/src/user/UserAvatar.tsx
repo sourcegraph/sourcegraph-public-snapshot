@@ -3,6 +3,8 @@ import React from 'react'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 
+import styles from './UserAvatar.module.scss'
+
 interface Props {
     size?: number
     user: {
@@ -41,7 +43,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
         }
         return (
             <img
-                className={classNames('user-avatar', className)}
+                className={classNames(styles.userAvatar, className)}
                 src={url}
                 id={targetID}
                 alt=""
@@ -62,7 +64,7 @@ export const UserAvatar: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div id={targetID} className={classNames('user-avatar', className)}>
+        <div id={targetID} className={classNames(styles.userAvatar, className)}>
             {getInitials(name)}
         </div>
     )

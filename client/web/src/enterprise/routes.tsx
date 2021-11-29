@@ -6,6 +6,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
+import { EnterprisePageRoutes } from '../routes.constants'
 import { lazyComponent } from '../util/lazyComponent'
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
@@ -17,7 +18,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     {
         // Allow unauthenticated viewers to view the "new subscription" page to price out a subscription (instead
         // of just dumping them on a sign-in page).
-        path: '/subscriptions/new',
+        path: EnterprisePageRoutes.SubscriptionsNew,
         exact: true,
         render: lazyComponent(
             () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
@@ -26,12 +27,12 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     },
     {
         // Redirect from old /user/subscriptions/new -> /subscriptions/new.
-        path: '/user/subscriptions/new',
+        path: EnterprisePageRoutes.OldSubscriptionsNew,
         exact: true,
         render: () => <Redirect to="/subscriptions/new" />,
     },
     {
-        path: '/batch-changes',
+        path: EnterprisePageRoutes.BatchChanges,
         render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
         // We also render this route on sourcegraph.com as a precaution in case anyone
         // follows an in-app link to /batch-changes from sourcegraph.com; the component
@@ -39,40 +40,40 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
     },
     {
-        path: '/stats',
+        path: EnterprisePageRoutes.Stats,
         render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
     },
     {
-        path: '/code-monitoring',
+        path: EnterprisePageRoutes.CodeMonitoring,
         render: lazyComponent(
             () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
             'GlobalCodeMonitoringArea'
         ),
     },
     {
-        path: '/insights',
+        path: EnterprisePageRoutes.Insights,
         render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {
-        path: '/contexts',
+        path: EnterprisePageRoutes.Contexts,
         render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: '/contexts/new',
+        path: EnterprisePageRoutes.CreateContext,
         render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
         exact: true,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: '/contexts/:spec+/edit',
+        path: EnterprisePageRoutes.EditContext,
         render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: '/contexts/:spec+',
+        path: EnterprisePageRoutes.Context,
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },

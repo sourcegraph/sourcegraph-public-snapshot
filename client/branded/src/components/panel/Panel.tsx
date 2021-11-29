@@ -1,18 +1,19 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
+import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
-import { BehaviorSubject, from, Observable } from 'rxjs'
+import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { ActionsNavItems } from '@sourcegraph/shared/src/actions/ActionsNavItems'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/shared/src/api/protocol'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
@@ -24,6 +25,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { match } from '../../../../shared/src/api/client/types/textDocument'
+import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
 
 import styles from './Panel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
@@ -147,35 +151,50 @@ export const Panel = React.memo<Props>(props => {
             () =>
                 from(props.extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.getPanelViews()).pipe(
-                            map(panelViews => ({ panelViews, extensionHostAPI }))
-                        )
-                    ),
-                    map(({ panelViews, extensionHostAPI }) =>
-                        panelViews.map((panelView: PanelViewWithComponent) => {
-                            const locationProviderID = panelView.component?.locationProvider
-                            if (locationProviderID) {
-                                const panelViewWithProvider: PanelViewWithComponent = {
-                                    ...panelView,
-                                    locationProvider: wrapRemoteObservable(
-                                        extensionHostAPI.getActiveCodeEditorPosition()
-                                    ).pipe(
-                                        switchMap(parameters => {
-                                            if (!parameters) {
-                                                return [{ isLoading: false, result: [] }]
-                                            }
-
-                                            return wrapRemoteObservable(
-                                                extensionHostAPI.getLocations(locationProviderID, parameters)
-                                            )
-                                        })
-                                    ),
+                        combineLatest([
+                            wrapRemoteObservable(extensionHostAPI.getPanelViews()),
+                            wrapRemoteObservable(extensionHostAPI.getActiveViewComponentChanges()),
+                        ]).pipe(
+                            switchMap(async ([panelViews, viewer]) => {
+                                if ((await viewer?.type) !== 'CodeEditor') {
+                                    return undefined
                                 }
-                                return panelViewWithProvider
-                            }
 
-                            return panelView
-                        })
+                                const document = await (viewer as Remote<ExtensionCodeEditor>).document
+
+                                return panelViews
+                                    .filter(panelView =>
+                                        panelView.selector !== null ? match(panelView.selector, document) : true
+                                    )
+                                    .map((panelView: PanelViewWithComponent) => {
+                                        const locationProviderID = panelView.component?.locationProvider
+                                        if (locationProviderID) {
+                                            const panelViewWithProvider: PanelViewWithComponent = {
+                                                ...panelView,
+                                                locationProvider: wrapRemoteObservable(
+                                                    extensionHostAPI.getActiveCodeEditorPosition()
+                                                ).pipe(
+                                                    switchMap(parameters => {
+                                                        if (!parameters) {
+                                                            return [{ isLoading: false, result: [] }]
+                                                        }
+
+                                                        return wrapRemoteObservable(
+                                                            extensionHostAPI.getLocations(
+                                                                locationProviderID,
+                                                                parameters
+                                                            )
+                                                        )
+                                                    })
+                                                ),
+                                            }
+                                            return panelViewWithProvider
+                                        }
+
+                                        return panelView
+                                    })
+                            })
+                        )
                     )
                 ),
             [props.extensionsController]
@@ -187,22 +206,25 @@ export const Panel = React.memo<Props>(props => {
         extensionPanels,
     ])
 
+    const trackTabClick = useCallback((label: string) => props.telemetryService.log(`ReferencePanelClicked${label}`), [
+        props.telemetryService,
+    ])
+
     const items = useMemo(
         () =>
             panelViews
                 ? panelViews
-                      .map(
-                          (panelView): PanelItem => ({
-                              label: panelView.title,
-                              id: panelView.id,
-                              priority: panelView.priority,
-                              element: <PanelView {...props} panelView={panelView} location={location} />,
-                              hasLocations: !!panelView.locationProvider,
-                          })
-                      )
+                      .map((panelView): PanelItem & { trackTabClick: () => void } => ({
+                          label: panelView.title,
+                          id: panelView.id,
+                          priority: panelView.priority,
+                          element: <PanelView {...props} panelView={panelView} location={location} />,
+                          hasLocations: !!panelView.locationProvider,
+                          trackTabClick: () => trackTabClick(panelView.title),
+                      }))
                       .sort((a, b) => b.priority - a.priority)
                 : [],
-        [location, panelViews, props]
+        [location, panelViews, props, trackTabClick]
     )
 
     useEffect(() => {
@@ -236,9 +258,11 @@ export const Panel = React.memo<Props>(props => {
             <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top', styles.header)}>
                 <TabList>
                     <div className="d-flex w-100">
-                        {items.map(({ label, id }) => (
+                        {items.map(({ label, id, trackTabClick }) => (
                             <Tab key={id}>
-                                <span className="tablist-wrapper--tab-label">{label}</span>
+                                <span className="tablist-wrapper--tab-label" onClick={trackTabClick} role="none">
+                                    {label}
+                                </span>
                             </Tab>
                         ))}
                     </div>

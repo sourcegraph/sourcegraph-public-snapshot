@@ -18,9 +18,23 @@ This job periodically removes expired and unreachable code intelligence data and
 
 #### `codeintel-auto-indexing`
 
-This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform.
+This job periodically checks for repositories that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_intelligence/how-to/enable_auto_indexing.md) and [configure](../code_intelligence/how-to/configure_auto_indexing.md) auto-indexing.
 
-_This job currently no-ops outside of our public Cloud instance_. Keep an eye on our release notes for when this feature becomes generally available.
+#### `insights-job`
+This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
+1. Commit indexer
+2. Background query executor
+3. Historical data recorder
+4. Data clean up jobs
+5. Settings file insight definition migrations
+
+#### `webhook-log-janitor`
+
+This job periodically removes stale log entries for incoming webhooks.
+
+#### `executors-janitor`
+
+This job periodically removes old heartbeat records for inactive executor instances.
 
 ## Deploying workers
 

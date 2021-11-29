@@ -31,7 +31,7 @@ const APIDocsSearchMigrationID = 12
 func NewAPIDocsSearchMigrator(
 	store *lsifstore.Store,
 	dbStore *dbstore.Store,
-	repoStore *database.RepoStore,
+	repoStore database.RepoStore,
 	gitserverClient GitserverClient,
 	batchSize int,
 ) oobmigration.Migrator {
@@ -49,7 +49,7 @@ func NewAPIDocsSearchMigrator(
 type apiDocsSearchMigrator struct {
 	store           *lsifstore.Store
 	dbStore         *dbstore.Store
-	repoStore       *database.RepoStore
+	repoStore       database.RepoStore
 	gitserverClient GitserverClient
 	serializer      *lsifstore.Serializer
 	batchSize       int

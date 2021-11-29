@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
@@ -10,7 +11,8 @@ import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql
 import { Owner } from '../cloud-ga'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
-import { hints } from './modalHints'
+import styles from './CodeHostItem.module.scss'
+import { scopes } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
@@ -79,7 +81,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     ownerID={owner.id}
                     serviceKind={kind}
                     serviceName={name}
-                    hintFragment={hints[kind]}
+                    hintFragment={scopes[kind]}
                     onDidAdd={onDidAdd}
                     onDidCancel={toggleAddConnectionModal}
                     onDidError={onDidError}
@@ -104,7 +106,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     serviceName={service.displayName}
                     orgName={owner.name || 'organization'}
                     kind={kind}
-                    hintFragment={hints[kind]}
+                    hintFragment={scopes[kind]}
                     onDidCancel={toggleUpdateModal}
                     onDidUpdate={onDidUpsert}
                     onDidError={onDidError}
@@ -116,7 +118,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 ) : service?.id ? (
                     <CheckCircleIcon className="icon-inline mb-0 mr-2 text-success" />
                 ) : (
-                    <CircleDashedIcon className="icon-inline mb-0 mr-2 user-code-hosts-page__icon--dashed" />
+                    <CircleDashedIcon className={classNames('icon-inline mb-0 mr-2', styles.iconDashed)} />
                 )}
                 <Icon className="mb-0 mr-1" />
             </div>

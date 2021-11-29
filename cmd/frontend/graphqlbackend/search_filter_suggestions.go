@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 )
 
 // SearchFilterSuggestions provides search filter and default value suggestions.
@@ -16,17 +15,8 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 		return nil, err
 	}
 
-	groupsByName, err := searchrepos.ResolveRepoGroups(ctx, r.db, settings)
-	if err != nil {
-		return nil, err
-	}
-	repoGroups := make([]string, 0, len(groupsByName))
-	for name := range groupsByName {
-		repoGroups = append(repoGroups, name)
-	}
-
 	// List at most 10 repositories as default suggestions.
-	repos, err := backend.Repos.List(ctx, database.ReposListOptions{
+	repos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{
 			{
 				Field:      database.RepoListStars,
@@ -54,20 +44,13 @@ func (r *schemaResolver) SearchFilterSuggestions(ctx context.Context) (*searchFi
 	}
 
 	return &searchFilterSuggestions{
-		repogroups: repoGroups,
-		repos:      repoNames,
+		repos: repoNames,
 	}, nil
 }
 
 // searchFilterSuggestions holds suggestions of search filters and their default values.
 type searchFilterSuggestions struct {
-	repogroups []string
-	repos      []string
-}
-
-// Repogroup returns all repository groups defined in the settings.
-func (s *searchFilterSuggestions) Repogroup() []string {
-	return s.repogroups
+	repos []string
 }
 
 // Repo returns a list of repositories as the default value for suggestion.

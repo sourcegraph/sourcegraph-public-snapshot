@@ -2,10 +2,18 @@
 
 echo "--- shfmt (ensure shell-scripts are formatted consistently)"
 
-trap "echo ^^^ +++" ERR
-
-set -ex
-
+set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-shfmt -d .
+set +e
+OUT=$(shfmt -d .)
+EXIT_CODE=$?
+set -e
+echo -e "$OUT"
+
+if [ $EXIT_CODE -ne 0 ]; then
+  echo -e "$OUT" | ./dev/ci/annotate.sh -s "shfmt"
+  echo "^^^ +++"
+fi
+
+exit $EXIT_CODE

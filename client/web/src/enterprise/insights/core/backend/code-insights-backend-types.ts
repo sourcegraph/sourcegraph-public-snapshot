@@ -3,23 +3,34 @@ import { LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
-import { SearchBasedInsightSeries } from '../types/insight/search-insight'
+import { ExtensionInsight, Insight, InsightDashboard, CustomInsightDashboard } from '../types'
+import { SearchBasedBackendFilters, SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 export interface DashboardCreateInput {
     name: string
     visibility: string
     insightIds?: string[]
+    type?: string
+}
+
+export interface DashboardCreateResult {
+    id: string
 }
 
 export interface DashboardUpdateInput {
-    previousDashboard: SettingsBasedInsightDashboard
+    previousDashboard: CustomInsightDashboard
     nextDashboardInput: DashboardCreateInput
+    id?: string
+}
+
+export interface DashboardUpdateResult {
+    id: string
 }
 
 export interface DashboardDeleteInput {
     dashboardSettingKey: string
     dashboardOwnerId: string
+    id?: string
 }
 
 export interface FindInsightByNameInput {
@@ -33,7 +44,7 @@ export interface InsightCreateInput {
 
 export interface InsightUpdateInput {
     oldInsight: Insight
-    newInsight: Insight
+    newInsight: Insight & { filters?: SearchBasedBackendFilters }
 }
 
 export interface SearchInsightSettings {

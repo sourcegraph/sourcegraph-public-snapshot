@@ -7,12 +7,12 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/jsonx"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Deprecated: The GraphQL type Configuration is deprecated.
@@ -38,15 +38,17 @@ type settingsMutationGroupInput struct {
 }
 
 type settingsMutation struct {
-	db      dbutil.DB
+	db      database.DB
 	input   *settingsMutationGroupInput
 	subject *settingsSubject
 }
 
-// SettingsMutation defines the Mutation.settingsMutation field.
-func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
+type settingsMutationArgs struct {
 	Input *settingsMutationGroupInput
-}) (*settingsMutation, error) {
+}
+
+// SettingsMutation defines the Mutation.settingsMutation field.
+func (r *schemaResolver) SettingsMutation(ctx context.Context, args *settingsMutationArgs) (*settingsMutation, error) {
 	n, err := r.nodeByID(ctx, args.Input.Subject)
 	if err != nil {
 		return nil, err
@@ -76,9 +78,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 }
 
 // Deprecated: in the GraphQL API
-func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
-	Input *settingsMutationGroupInput
-}) (*settingsMutation, error) {
+func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *settingsMutationArgs) (*settingsMutation, error) {
 	return r.SettingsMutation(ctx, args)
 }
 
@@ -197,7 +197,7 @@ func (r *settingsMutation) doUpdateSettings(ctx context.Context, computeEdits fu
 
 func (r *settingsMutation) getCurrentSettings(ctx context.Context) (string, error) {
 	// Get the settings file whose contents to mutate.
-	settings, err := database.Settings(r.db).GetLatest(ctx, r.subject.toSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, r.subject.toSubject())
 	if err != nil {
 		return "", err
 	}

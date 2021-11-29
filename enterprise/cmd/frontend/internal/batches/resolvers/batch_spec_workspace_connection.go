@@ -5,10 +5,13 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type batchSpecWorkspaceConnectionResolver struct {
@@ -46,23 +49,35 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 	for _, e := range executions {
 		executionsByWorkspaceID[e.BatchSpecWorkspaceID] = e
 	}
+
+	repoIDs := make([]api.RepoID, len(nodes))
+	for _, w := range nodes {
+		repoIDs = append(repoIDs, w.RepoID)
+	}
+	repos, err := r.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(nodes))
 	for _, w := range nodes {
 		res := &batchSpecWorkspaceResolver{
-			store:     r.store,
-			workspace: w,
+			store:         r.store,
+			workspace:     w,
+			preloadedRepo: repos[w.RepoID],
 		}
 		if ex, ok := executionsByWorkspaceID[w.ID]; ok {
 			res.execution = ex
 		}
 		resolvers = append(resolvers, res)
 	}
+
 	return resolvers, nil
 }
 
 func (r *batchSpecWorkspaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// TODO(ssbc): not implemented
-	return 0, nil
+	count, err := r.store.CountBatchSpecWorkspaces(ctx, r.opts)
+	return int32(count), err
 }
 
 func (r *batchSpecWorkspaceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
@@ -83,7 +98,21 @@ func (r *batchSpecWorkspaceConnectionResolver) compute(ctx context.Context) ([]*
 	return r.workspaces, r.next, r.err
 }
 
-func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) graphqlbackend.BatchSpecWorkspacesStatsResolver {
-	// TODO(ssbc): not implemented
-	return nil
+func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) (graphqlbackend.BatchSpecWorkspacesStatsResolver, error) {
+	stats, err := r.store.GetBatchSpecStats(ctx, []int64{r.opts.BatchSpecID})
+	if err != nil {
+		return nil, err
+	}
+	stat, ok := stats[r.opts.BatchSpecID]
+	if !ok {
+		return nil, errors.New("stats not found")
+	}
+	return &batchSpecWorkspacesStatsResolver{
+		errored:    int32(stat.Failed),
+		completed:  int32(stat.Completed),
+		processing: int32(stat.Processing),
+		queued:     int32(stat.Queued),
+		// TODO: Handle more ignored cases here.
+		ignored: int32(stat.SkippedWorkspaces),
+	}, nil
 }

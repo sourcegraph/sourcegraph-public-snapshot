@@ -20,6 +20,14 @@
             "pointer": true
           }
         },
+        "codeInsightsGqlApi": {
+          "description": "Enables gql api instead of using setting cascade as a main storage fro code insights entities",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsAllRepos": {
           "deprecated": true,
           "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
@@ -173,14 +181,6 @@
             "pointer": true
           }
         },
-        "acceptSearchSuggestionOnEnter": {
-          "description": "Whether the search bar should select completion suggestions when pressing enter",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
@@ -228,7 +228,7 @@
       }
     },
     "search.globbing": {
-      "description": "Enables globbing for supported field values",
+      "description": "REMOVED. Previously an experimental setting to interpret file and repo patterns as glob syntax.",
       "type": "boolean",
       "default": false,
       "!go": {
@@ -268,7 +268,7 @@
       }
     },
     "codeIntelligence.autoIndexPopularRepoLimit": {
-      "description": "Up to this number of repos are auto indexed automatically. Ordered by star count.",
+      "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
       "type": "integer",
       "minimum": 0,
       "default": 0

@@ -439,6 +439,11 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	})
 
 	t.Run("CreateBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
+		cacheEntry := &btypes.BatchSpecExecutionCacheEntry{Key: "one", Value: "two"}
+		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, cacheEntry); err != nil {
+			t.Fatal(err)
+		}
+
 		singleStep := []batches.Step{{Run: "echo lol", Container: "alpine:3"}}
 		createWorkspaces := func(t *testing.T, batchSpec *btypes.BatchSpec, workspaces ...*btypes.BatchSpecWorkspace) {
 			t.Helper()
@@ -485,10 +490,11 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			ignoredWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Ignored: true}
 			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Unsupported: true}
 			noStepsWorkspace := &btypes.BatchSpecWorkspace{Steps: []batches.Step{}}
+			cachedResultWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, CachedResultFound: true}
 
 			batchSpec := &btypes.BatchSpec{}
 
-			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, noStepsWorkspace)
+			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, noStepsWorkspace, cachedResultWorkspace)
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID})
 		})
 
@@ -524,4 +530,152 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID, unsupportedWorkspace.ID})
 		})
 	})
+
+	t.Run("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			workspaces := createWorkspaces(t, ctx, s)
+			ids := workspacesIDs(t, workspaces)
+
+			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if have, want := len(jobs), len(workspaces); have != want {
+				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			}
+		})
+	})
+
+	t.Run("DeleteBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			workspaces := createWorkspaces(t, ctx, s)
+			ids := workspacesIDs(t, workspaces)
+
+			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), len(workspaces); have != want {
+				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			}
+
+			jobIDs := make([]int64, len(jobs))
+			for i, j := range jobs {
+				jobIDs[i] = j.ID
+			}
+
+			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				IDs: jobIDs,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), 0; have != want {
+				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("with wrong IDs", func(t *testing.T) {
+			workspaces := createWorkspaces(t, ctx, s)
+			ids := workspacesIDs(t, workspaces)
+
+			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), len(workspaces); have != want {
+				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			}
+
+			jobIDs := make([]int64, len(jobs))
+			for i, j := range jobs {
+				jobIDs[i] = j.ID
+			}
+
+			jobIDs = append(jobIDs, 999, 888, 777)
+
+			err = s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs)
+			if err == nil {
+				t.Fatal("error is nil")
+			}
+
+			want := fmt.Sprintf("wrong number of jobs deleted: %d instead of %d", len(workspaces), len(workspaces)+3)
+			if err.Error() != want {
+				t.Fatalf("wrong error message. want=%q, have=%q", want, err.Error())
+			}
+
+			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				IDs: jobIDs,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), 0; have != want {
+				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			}
+		})
+	})
+}
+
+func createWorkspaces(t *testing.T, ctx context.Context, s *Store) []*btypes.BatchSpecWorkspace {
+	t.Helper()
+
+	batchSpec := &btypes.BatchSpec{NamespaceUserID: 1}
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	singleStep := []batches.Step{{Run: "echo lol", Container: "alpine:3"}}
+	workspaces := []*btypes.BatchSpecWorkspace{
+		{Steps: singleStep},
+		{Steps: singleStep, Ignored: true},
+		{Steps: singleStep, Unsupported: true},
+		{Steps: []batches.Step{}},
+	}
+	for i, workspace := range workspaces {
+		workspace.BatchSpecID = batchSpec.ID
+		workspace.RepoID = 1
+		workspace.Branch = fmt.Sprintf("refs/heads/main-%d", i)
+		workspace.Commit = fmt.Sprintf("commit-%d", i)
+	}
+
+	if err := s.CreateBatchSpecWorkspace(ctx, workspaces...); err != nil {
+		t.Fatal(err)
+	}
+
+	return workspaces
+}
+
+func workspacesIDs(t *testing.T, workspaces []*btypes.BatchSpecWorkspace) []int64 {
+	ids := make([]int64, len(workspaces))
+	for i, w := range workspaces {
+		ids[i] = w.ID
+	}
+	return ids
 }

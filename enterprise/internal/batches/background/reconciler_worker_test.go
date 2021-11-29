@@ -26,7 +26,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }

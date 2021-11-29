@@ -8,7 +8,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -20,7 +21,7 @@ import (
 
 type janitorJob struct{}
 
-func NewJanitorJob() shared.Job {
+func NewJanitorJob() job.Job {
 	return &janitorJob{}
 }
 
@@ -35,7 +36,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := shared.InitDatabase()
+	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}

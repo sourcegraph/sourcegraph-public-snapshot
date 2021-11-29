@@ -12,6 +12,7 @@ import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util
 import { RepositoryFields } from '../../graphql-operations'
 import { toDocumentationURL } from '../../util/url'
 
+import styles from './DocumentationIndexNode.module.scss'
 import { DocumentationNodeChild, GQLDocumentationNode, isExcluded, Tag } from './graphql'
 
 /**
@@ -154,17 +155,26 @@ export const DocumentationIndexNode: React.FunctionComponent<Props> = React.memo
             >
                 <span
                     className={classNames(
-                        'd-flex align-items-center text-nowrap documentation-index-node-row',
-                        (styleAsActive || styleAsExpandable) && 'documentation-index-node-row--shift-left'
+                        'd-flex align-items-center text-nowrap',
+                        styles.documentationIndexNodeRow,
+                        (styleAsActive || styleAsExpandable) && styles.documentationIndexNodeRowShiftLeft
                     )}
                 >
                     {styleAsActive && (
-                        <CircleMediumIcon className="d-flex flex-shrink-0 mr-1 icon-inline documentation-index-node-active-circle" />
+                        <CircleMediumIcon
+                            className={classNames(
+                                'd-flex flex-shrink-0 mr-1 icon-inline',
+                                styles.documentationIndexNodeActiveCircle
+                            )}
+                        />
                     )}
                     {styleAsExpandable && (
                         <button
                             type="button"
-                            className="d-flex flex-shrink-0 mr-1 btn btn-icon documentation-index-node-expand-button"
+                            className={classNames(
+                                'd-flex flex-shrink-0 mr-1 btn btn-icon',
+                                styles.documentationIndexNodeExpandButton
+                            )}
                             aria-label={expanded ? 'Collapse section' : 'Expand section'}
                             onClick={toggleExpanded}
                         >

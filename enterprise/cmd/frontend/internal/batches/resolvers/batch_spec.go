@@ -51,10 +51,6 @@ type batchSpecResolver struct {
 	resolution     *btypes.BatchSpecResolutionJob
 	resolutionErr  error
 
-	workspacesOnce sync.Once
-	workspaces     []*btypes.BatchSpecWorkspace
-	workspacesErr  error
-
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
@@ -159,7 +155,7 @@ func (r *batchSpecResolver) Description() graphqlbackend.BatchChangeDescriptionR
 }
 
 func (r *batchSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -309,6 +305,13 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		return nil, err
 	}
 
+	repoIDs := specs.RepoIDs()
+
+	// If no changeset specs match, we don't need to compute anything.
+	if len(repoIDs) == 0 {
+		return &emptyEatchChangesCodeHostConnectionResolver{}, nil
+	}
+
 	offset := 0
 	if args.After != nil {
 		offset, err = strconv.Atoi(*args.After)
@@ -322,7 +325,8 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{
-			RepoIDs: specs.RepoIDs(),
+			RepoIDs:             repoIDs,
+			OnlyWithoutWebhooks: args.OnlyWithoutWebhooks,
 		},
 		limitOffset: database.LimitOffset{
 			Limit:  int(args.First),
@@ -380,7 +384,7 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	return graphqlbackend.DateTimeOrNil(&stats.StartedAt), nil
+	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
 }
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -405,7 +409,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	return graphqlbackend.DateTimeOrNil(&stats.FinishedAt), nil
+	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
@@ -452,26 +456,7 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 }
 
 func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	uniqueCSIDs := make(map[int64]struct{})
-	for _, w := range workspaces {
-		for _, id := range w.ChangesetSpecIDs {
-			if _, ok := uniqueCSIDs[id]; !ok {
-				uniqueCSIDs[id] = struct{}{}
-			}
-		}
-	}
-	specIDs := make([]int64, 0, len(uniqueCSIDs))
-	for id := range uniqueCSIDs {
-		specIDs = append(specIDs, id)
-	}
-
 	opts := store.ListChangesetSpecsOpts{
-		IDs:         specIDs,
 		BatchSpecID: r.batchSpec.ID,
 		Type:        batches.ChangesetSpecDescriptionTypeExisting,
 	}
@@ -517,9 +502,9 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 		)
 
 		if r.batchSpec.NamespaceUserID != 0 {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceUserID)
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchSpec.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DatabaseDB(), r.batchSpec.NamespaceOrgID)
 		}
 
 		if errcode.IsNotFound(err) {
@@ -554,13 +539,6 @@ func (r *batchSpecResolver) validateChangesetSpecs(ctx context.Context) error {
 		r.validateSpecsErr = svc.ValidateChangesetSpecs(ctx, r.batchSpec.ID)
 	})
 	return r.validateSpecsErr
-}
-
-func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*btypes.BatchSpecWorkspace, error) {
-	r.workspacesOnce.Do(func() {
-		r.workspaces, _, r.workspacesErr = r.store.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: r.batchSpec.ID})
-	})
-	return r.workspaces, r.workspacesErr
 }
 
 func (r *batchSpecResolver) computeStats(ctx context.Context) (btypes.BatchSpecStats, error) {

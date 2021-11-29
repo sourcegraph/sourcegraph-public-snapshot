@@ -1,6 +1,8 @@
+import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import AccountIcon from 'mdi-react/AccountIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
@@ -9,7 +11,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
@@ -56,6 +57,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+import styles from './TreePage.module.scss'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -177,10 +179,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         filePath={filePath}
                         isDir={true}
                         repoUrl={repo.url}
+                        telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [repo.name, repo.url, revision, filePath])
+        }, [repo.name, repo.url, revision, filePath, props.telemetryService])
     )
 
     const [showOlderCommits, setShowOlderCommits] = useState(false)
@@ -323,13 +326,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="tree-page">
-            <Container className="tree-page__container">
+        <div className={styles.treePage}>
+            <Container className={styles.container}>
                 <PageTitle title={getPageTitle()} />
                 {treeOrError === undefined ? (
                     <div>
-                        <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and
-                        directories
+                        <LoadingSpinner className="icon-inline" /> Loading files and directories
                     </div>
                 ) : isErrorLike(treeOrError) ? (
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
@@ -355,7 +357,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 className="btn btn-outline-secondary"
                                                 to={`${treeOrError.url}/-/docs`}
                                             >
-                                                <BookOpenVariantIcon className="icon-inline" /> API docs
+                                                <BookOpenBlankVariantIcon className="icon-inline" /> API docs
                                             </Link>
                                         )}
                                         <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
@@ -389,7 +391,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             className="btn btn-outline-secondary"
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
                                         >
-                                            <UserIcon className="icon-inline" /> Contributors
+                                            <AccountIcon className="icon-inline" /> Contributors
                                         </Link>
                                         {codeIntelligenceEnabled && (
                                             <Link
@@ -424,7 +426,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
 
                         <ExtensionViewsSection
-                            className="tree-page__section mb-3"
+                            className={classNames('mb-3', styles.section)}
                             telemetryService={props.telemetryService}
                             settingsCascade={settingsCascade}
                             platformContext={props.platformContext}
@@ -433,7 +435,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             uri={uri}
                         />
 
-                        <section className="tree-page__section test-tree-entries mb-3">
+                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
                             <h2>Files and directories</h2>
                             <TreeEntriesSection
                                 parentPath={filePath}
@@ -444,7 +446,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </section>
                         <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
                             {items => (
-                                <section className="tree-page__section">
+                                <section className={styles.section}>
                                     <h2>Actions</h2>
                                     {items.map(item => (
                                         <ActionItem
@@ -458,18 +460,22 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </ActionsContainer>
 
-                        <div className="tree-page__section">
+                        <div className={styles.section}>
                             <h2>Changes</h2>
-                            <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                            <FilteredConnection<
+                                GitCommitFields,
+                                Pick<GitCommitNodeProps, 'className' | 'compact' | 'messageSubjectClassName'>
+                            >
                                 location={props.location}
-                                className="mt-2 tree-page__section--commits"
+                                className="mt-2"
                                 listClassName="list-group list-group-flush"
                                 noun="commit in this tree"
                                 pluralNoun="commits in this tree"
                                 queryConnection={queryCommits}
                                 nodeComponent={GitCommitNode}
                                 nodeComponentProps={{
-                                    className: 'list-group-item',
+                                    className: classNames('list-group-item', styles.gitCommitNode),
+                                    messageSubjectClassName: styles.gitCommitNodeMessageSubject,
                                     compact: true,
                                 }}
                                 updateOnChange={`${repo.name}:${revision}:${filePath}:${String(showOlderCommits)}`}

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import FileTreeIcon from 'mdi-react/FileTreeIcon'
@@ -15,6 +16,7 @@ import { toDocumentationURL } from '../../util/url'
 
 import { DocumentationIndexNode, IndexNode } from './DocumentationIndexNode'
 import { GQLDocumentationNode, GQLDocumentationPathInfo, isExcluded, Tag } from './graphql'
+import styles from './RepositoryDocumentationSidebar.module.scss'
 
 interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec {
     repo: RepositoryFields
@@ -80,11 +82,7 @@ const SubpagesList: React.FunctionComponent<Props> = ({ ...props }) => {
                 )
             })}
             {remaining && (
-                <Collapsible
-                    title="..."
-                    titleAtStart={true}
-                    buttonClassName="repository-documentation-sidebar__show-more-button"
-                >
+                <Collapsible title="..." titleAtStart={true} buttonClassName={styles.showMoreButton}>
                     {remaining.map(pathID => {
                         const url = toDocumentationURL({
                             repoName: props.repo.name,
@@ -172,7 +170,10 @@ export const RepositoryDocumentationSidebar: React.FunctionComponent<Props> = ({
                             <ChevronDoubleLeftIcon className="icon-inline" />
                         </Button>
                     </div>
-                    <div aria-hidden={true} className="repository-documentation-sidebar-scroller overflow-auto px-3">
+                    <div
+                        aria-hidden={true}
+                        className={classNames('overflow-auto px-3', styles.repositoryDocumentationSidebarScroller)}
+                    >
                         {props.pathInfo.isIndex && (
                             <>
                                 <h4 className="text-nowrap">Index</h4>

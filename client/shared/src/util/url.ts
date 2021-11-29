@@ -102,7 +102,8 @@ export interface ModeSpec {
     mode: string
 }
 
-type BlobViewState = 'def' | 'references' | 'impl'
+// `panelID` is intended for substitution (e.g. `sub(panel.url, 'panelID', 'implementations')`)
+type BlobViewState = 'def' | 'references' | 'panelID'
 
 export interface ViewStateSpec {
     /**
@@ -535,7 +536,12 @@ export function toPrettyBlobURL(
  */
 export function toAbsoluteBlobURL(
     sourcegraphURL: string,
-    context: RepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+    context: RepoSpec &
+        RevisionSpec &
+        FileSpec &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec>
 ): string {
     // toPrettyBlobURL() always returns an URL starting with a forward slash,
     // no need to add one here
@@ -576,13 +582,7 @@ const positionString = (position: Position): string =>
  * `%`-encoding for URLs.
  */
 export const encodeURIPathComponent = (component: string): string =>
-    component
-        .split('/')
-        .map(encodeURIComponent)
-        .join('/')
-        .replace(/%2B/g, '+')
-        .replace(/%5B/g, '[')
-        .replace(/%5D/g, ']')
+    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.

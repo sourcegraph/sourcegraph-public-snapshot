@@ -25,43 +25,46 @@
 
 ```
 
-`sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
-Learn more about the tool's overall vision in [`sg` Vision](./vision.md).
-
-## QUICKEST Quickstart
-
-Copy & paste & run:
-
-```sh
-curl --proto '=https' --tlsv1.2 -sSf 'https://raw.githubusercontent.com/sourcegraph/sourcegraph/sg/install-binary-script/dev/sg/bootstrap.sh' | sh
-```
+[`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
+Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and how to use it in the [usage section](#usage).
 
 ## Quickstart
 
-1. Install the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies).
-2. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), run:
+1. Run the following to download and install `sg`:
 
    ```sh
-   ./dev/sg/install.sh
+   curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
    ```
 
-3. Start the default Sourcegraph environment:
+2. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), start the default Sourcegraph environment:
 
    ```sh
    sg start
    ```
 
-   Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+3. Once the `enterprise-web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+
+A more detailed introduction is available in the [development quickstart guide](../../getting-started/quickstart.md).
 
 ## Installation
 
 **`sg` requires the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies) to be installed.**
 
-### Using install script (recommended)
+### Using pre-built binaries (recommended)
+
+Run the following command in a terminal:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
+```
+
+That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
+
+### Using install script
 
 Run the following in the root of `sourcegraph/sourcegraph`:
 
-```
+```sh
 ./dev/sg/install.sh
 ```
 
@@ -89,7 +92,7 @@ If you want full control over where the `sg` binary ends up, use this option.
 
 In the root of `sourcegraph/sourcegraph`, run:
 
-```
+```sh
 go build -o ~/my/path/sg ./dev/sg
 ```
 
@@ -157,7 +160,7 @@ sg doctor
 
 ```bash
 # See which version is deployed on a preset environment
-sg live dot-com
+sg live cloud
 sg live k8s
 
 # See which version is deployed on a custom environment
@@ -218,12 +221,21 @@ sg ci status
 sg ci status --branch my-branch
 # Block until the build has completed (it will send a system notification)
 sg ci status --wait
+# Get status for a specific build number
+sg ci status --build 123456 
 
 # Pull logs of failed jobs to stdout
 sg ci logs
 # Push logs of most recent main failure to local Loki for analysis
 # You can spin up a Loki instance with 'sg run loki grafana'
 sg ci logs --branch main --out http://127.0.0.1:3100
+# Get the logs for a specific build number, useful when debugging
+sg ci logs --build 123456 
+
+# Manually trigger a build on the CI with the current branch
+sg ci build 
+# Manually trigger a build on the CI on the current branch, but with a specific commit
+sg ci build --commit my-commit
 ```
 
 ### `sg teammate` - Get current time or open their handbook page
@@ -237,6 +249,16 @@ sg teammate time thorsten ball
 
 # Open their handbook bio
 sg teammate handbook asdine
+```
+
+### `sg secret` - Interact with `sg` secrets
+
+```bash
+# List all secrets stored in your local configuration. 
+sg secret list
+
+# Remove the secrets associated with buildkite (sg ci build)
+sg secret reset buildkite
 ```
 
 ## Configuration
@@ -296,12 +318,17 @@ commandsets:
 
 With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batches`.
 
+### Attach a debugger
+
+To attach the [Delve](https://github.com/go-delve/delve) debugger, pass the environment variable `DELVE=true` into `sg`. [Read more here](https://docs.sourcegraph.com/dev/how-to/debug_live_code#debug-go-code)
+
 ## Contributing to `sg`
 
 Want to hack on `sg`? Great! Here's how:
 
 1. Read through the [`sg` Vision](./vision.md) to get an idea of what `sg` should be in the long term.
-2. Look at the open [`sg` issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Asg)
+2. Explore the [`sg` source code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg).
+3. Look at the open [`sg` issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Asg).
 
 When you want to hack on `sg` it's best to be in the `dev/sg` directory and run it from there:
 

@@ -63,17 +63,18 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[:int(*args.First)]
 	}
 
-	hasSingleChild := len(entries) == 1
-	var l []*GitTreeEntryResolver
+	l := make([]*GitTreeEntryResolver, 0, len(entries))
 	for _, entry := range entries {
+		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			l = append(l, &GitTreeEntryResolver{
-				db:            r.db,
-				commit:        r.commit,
-				stat:          entry,
-				isSingleChild: &hasSingleChild,
-			})
+			l = append(l, NewGitTreeEntryResolver(r.db, r.commit, entry))
 		}
+	}
+
+	// Update after filtering
+	hasSingleChild := len(l) == 1
+	for i := range l {
+		l[i].isSingleChild = &hasSingleChild
 	}
 
 	if !args.Recursive && args.RecursiveSingleChild && len(l) == 1 {

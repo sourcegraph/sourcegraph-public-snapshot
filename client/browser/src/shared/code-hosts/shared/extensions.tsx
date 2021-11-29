@@ -4,7 +4,6 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 
-import { DiffPart } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
@@ -13,6 +12,7 @@ import {
     groupDecorationsByLine,
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListPopoverButton,
     CommandListPopoverButtonProps,
@@ -103,7 +103,9 @@ export const renderGlobalDebug = ({
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''
-    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${String(part)}]`)
+    const previousAttachments = codeElement.querySelectorAll(
+        `[data-line-decoration-attachment][data-part=${String(part)}]`
+    )
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
@@ -213,7 +215,8 @@ export const applyDecorations = (
 
                 const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
                 annotation.dataset.part = String(part)
-                annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
+                annotation.className = 'sourcegraph-extension-element'
+                annotation.dataset.lineDecorationAttachment = 'true'
                 codeElement.append(annotation)
             }
         }

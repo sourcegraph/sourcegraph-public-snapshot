@@ -18,14 +18,7 @@ import {
 } from '../../../graphql-operations'
 import { Description } from '../Description'
 
-import {
-    queryChangesets as _queryChangesets,
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
-    queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    deleteBatchChange as _deleteBatchChange,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
-    BATCH_CHANGE_BY_NAMESPACE,
-} from './backend'
+import { deleteBatchChange as _deleteBatchChange, BATCH_CHANGE_BY_NAMESPACE } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
 import { BatchChangeInfoByline } from './BatchChangeInfoByline'
@@ -35,6 +28,7 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     /** The namespace ID. */
@@ -145,6 +139,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <ChangesetsArchivedNotice history={history} location={location} />
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

@@ -1,7 +1,7 @@
+import { render, act } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
-import renderer, { act } from 'react-test-renderer'
 import { of } from 'rxjs'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -12,16 +12,12 @@ jest.mock('mdi-react/ArrowLeftIcon', () => 'ArrowLeftIcon')
 
 jest.mock('mdi-react/AddIcon', () => 'AddIcon')
 
-jest.mock('./SiteAdminProductLicenseNode', () => ({ SiteAdminProductLicenseNode: 'SiteAdminProductLicenseNode' }))
-
-jest.mock('../../../dotcom/productSubscriptions/AccountName', () => ({ AccountName: 'AccountName' }))
-
 const history = H.createMemoryHistory()
 const location = H.createLocation('/')
 
 describe('SiteAdminProductSubscriptionPage', () => {
     test('renders', () => {
-        const component = renderer.create(
+        const component = render(
             <MemoryRouter>
                 <SiteAdminProductSubscriptionPage
                     match={{ isExact: true, params: { subscriptionUUID: 's' }, path: '/p', url: '/p' }}
@@ -62,6 +58,6 @@ describe('SiteAdminProductSubscriptionPage', () => {
             </MemoryRouter>
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

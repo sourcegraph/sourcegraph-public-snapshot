@@ -1,7 +1,7 @@
 import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
 import { Observable, of } from 'rxjs'
 import { catchError, map, startWith } from 'rxjs/operators'
@@ -108,7 +108,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                     <>&mdash;</>
                 ) : isErrorLike(previewInvoice) ? (
                     <span className="text-danger">
-                        <ErrorIcon className="icon-inline" data-tooltip={previewInvoice.message} /> Error
+                        <AlertCircleIcon className="icon-inline" data-tooltip={previewInvoice.message} /> Error
                     </span>
                 ) : previewInvoice.beforeInvoiceItem ? (
                     <>

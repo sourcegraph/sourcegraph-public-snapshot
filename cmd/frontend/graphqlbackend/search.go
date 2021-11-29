@@ -7,11 +7,9 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
-	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -58,7 +56,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -85,12 +83,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	}
 
 	var plan query.Plan
-	globbing := getBoolPtr(settings.SearchGlobbing, false)
-	tr.LogFields(otlog.Bool("globbing", globbing))
-	plan, err = query.Pipeline(
-		query.Init(args.Query, searchType),
-		query.With(globbing, query.Globbing),
-	)
+	plan, err = query.Pipeline(query.Init(args.Query, searchType))
 	if err != nil {
 		return alertForQuery(args.Query, err).wrapSearchImplementer(db), nil
 	}
@@ -129,7 +122,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 	return NewSearchImplementer(ctx, r.db, args)
 }
 
-// detectSearchType returns the search type to perfrom ("regexp", or
+// detectSearchType returns the search type to perform ("regexp", or
 // "literal"). The search type derives from three sources: the version and
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
@@ -191,7 +184,7 @@ func getBoolPtr(b *bool, def bool) bool {
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	*run.SearchInputs
-	db                  dbutil.DB
+	db                  database.DB
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// stream if non-nil will send all search events we receive down it.
@@ -234,7 +227,7 @@ const (
 var mockDecodedViewerFinalSettings *schema.Settings
 
 // decodedViewerFinalSettings returns the final (merged) settings for the viewer
-func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Settings, err error) {
+func decodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
 	defer func() {
 		tr.SetError(err)
@@ -278,6 +271,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 		tr.Finish()
 	}()
 
+	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
+	//  which are the last call sites of resolveRepositories (which does caching).
 	if options.CacheLookup {
 		// Cache if opts are empty, so that multiple calls to resolveRepositories only
 		// hit the database once.
@@ -296,10 +291,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 	tr.LazyPrintf("resolveRepositories - start")
 	defer tr.LazyPrintf("resolveRepositories - done")
 
-	repositoryResolver := &searchrepos.Resolver{
-		DB:                  r.db,
-		SearchableReposFunc: backend.Repos.ListSearchable,
-	}
+	repositoryResolver := &searchrepos.Resolver{DB: r.db}
 
 	return repositoryResolver.Resolve(ctx, options)
 }
@@ -329,6 +321,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		return nil, nil
 	}
 
+	// TODO(tsenart): Remove old resolve repositories caching logic once we deprecate GraphQL suggestions
+	//  which are the last call sites of resolveRepositories (which does caching).
 	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 	resolved, err := r.resolveRepositories(ctx, repoOptions)
 	if err != nil {
@@ -343,7 +337,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args.Repos = resolved.RepoRevs
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		return nil, err
 	}

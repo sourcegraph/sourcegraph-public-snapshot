@@ -12,6 +12,7 @@ import { useTemporarySetting } from '../../settings/temporary/useTemporarySettin
 import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
+import styles from './SearchContextDropdown.module.scss'
 import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
@@ -22,6 +23,7 @@ export interface SearchContextDropdownProps
     authenticatedUser: AuthenticatedUser | null
     query: string
     className?: string
+    onEscapeMenuClose?: () => void
 }
 
 export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdownProps> = props => {
@@ -38,9 +40,10 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         fetchSearchContexts,
         className,
         telemetryService,
+        onEscapeMenuClose,
     } = props
 
-    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    const [contextCtaDismissed, setContextCtaDismissed] = useTemporarySetting('search.contexts.ctaDismissed', false)
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -79,27 +82,42 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
+    const onCtaDismissed = (): void => {
+        setContextCtaDismissed(true)
+    }
+    const isUserAnOrgMember = authenticatedUser && authenticatedUser.organizations.nodes.length !== 0
+
+    const onCloseMenu = useCallback(
+        (isEscapeKey?: boolean) => {
+            if (isEscapeKey) {
+                onEscapeMenuClose?.()
+            }
+            toggleOpen()
+        },
+        [toggleOpen, onEscapeMenuClose]
+    )
+
     return (
         <Dropdown
             isOpen={isOpen}
+            data-testid="dropdown"
             toggle={toggleOpen}
             a11y={false} /* Override default keyboard events in reactstrap */
-            className={classNames('search-context-dropdown ', className)}
+            className={className}
         >
             <DropdownToggle
                 className={classNames(
-                    'search-context-dropdown__button',
+                    styles.button,
                     'dropdown-toggle',
                     'test-search-context-dropdown',
-                    {
-                        'search-context-dropdown__button--open': isOpen,
-                    }
+                    isOpen && styles.buttonOpen
                 )}
+                data-testid="dropdown-toggle"
                 color="link"
                 disabled={isContextFilterInQuery}
                 data-tooltip={disabledTooltipText}
             >
-                <code className="search-context-dropdown__button-content test-selected-search-context-spec">
+                <code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
                     <span className="search-filter-keyword">context:</span>
                     {selectedSearchContextSpec?.startsWith('@') ? (
                         <>
@@ -111,20 +129,20 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     )}
                 </code>
             </DropdownToggle>
-            <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
+            <DropdownMenu positionFixed={true} className={styles.menu}>
+                <SearchContextMenu
+                    {...props}
+                    selectSearchContextSpec={selectSearchContextSpec}
+                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                    fetchSearchContexts={fetchSearchContexts}
+                    closeMenu={onCloseMenu}
+                />
+                {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !contextCtaDismissed && (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
-                    />
-                ) : (
-                    <SearchContextMenu
-                        {...props}
-                        selectSearchContextSpec={selectSearchContextSpec}
-                        fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                        fetchSearchContexts={fetchSearchContexts}
-                        closeMenu={toggleOpen}
+                        onDismiss={onCtaDismissed}
                     />
                 )}
             </DropdownMenu>

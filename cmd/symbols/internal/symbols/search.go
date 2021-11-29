@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"regexp"
 	"regexp/syntax"
 	"strings"
@@ -14,6 +17,7 @@ import (
 	"github.com/mattn/go-sqlite3"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 
 	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
@@ -112,14 +116,61 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (*result
 // specified in `args`. If the database doesn't already exist in the disk cache,
 // it will create a new one and write all the symbols into it.
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
-	diskcacheFile, err := s.cache.OpenWithPath(ctx, fmt.Sprintf("%d-%s@%s", symbolsDBVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
-		err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+	diskcacheFile, err := s.cache.OpenWithPath(ctx, []string{string(args.Repo), fmt.Sprintf("%s-%d", args.CommitID, symbolsDBVersion)}, func(fetcherCtx context.Context, tempDBFile string) error {
+		newest, commit, err := findNewestFile(filepath.Join(s.cache.Dir, diskcache.EncodeKeyComponent(string(args.Repo))))
 		if err != nil {
-			if err == context.Canceled {
-				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
-			}
 			return err
 		}
+
+		var changes *Changes
+		if commit != "" && s.GitDiff != nil {
+			var err error
+			changes, err = s.GitDiff(ctx, args.Repo, commit, args.CommitID)
+			if err != nil {
+				return err
+			}
+
+			// Avoid sending more files than will fit in HTTP headers.
+			totalPathsLength := 0
+			paths := []string{}
+			paths = append(paths, changes.Added...)
+			paths = append(paths, changes.Modified...)
+			paths = append(paths, changes.Deleted...)
+			for _, path := range paths {
+				totalPathsLength += len(path)
+			}
+
+			if totalPathsLength > MAX_TOTAL_PATHS_LENGTH {
+				changes = nil
+			}
+		}
+
+		if changes == nil {
+			// There are no existing SQLite DBs to reuse, or the diff is too big, so write a completely
+			// new one.
+			err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+			if err != nil {
+				if err == context.Canceled {
+					log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
+				}
+				return err
+			}
+		} else {
+			// Copy the existing DB to a new DB and update the new DB
+			err = copyFile(newest, tempDBFile)
+			if err != nil {
+				return err
+			}
+
+			err = s.updateSymbols(fetcherCtx, tempDBFile, args.Repo, args.CommitID, *changes)
+			if err != nil {
+				if err == context.Canceled {
+					log15.Error("updateSymbols: unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
+				}
+				return err
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -230,7 +281,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 // filenames to prevent a newer version of the symbols service from attempting
 // to read from a database created by an older (and likely incompatible) symbols
 // service. Increment this when you change the database schema.
-const symbolsDBVersion = 3
+const symbolsDBVersion = 4
 
 // symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
 // namelowercase and pathlowercase, which enable indexed case insensitive
@@ -248,6 +299,7 @@ type symbolInDB struct {
 	Signature     string
 	Pattern       string
 
+	// Whether or not the symbol is local to the file.
 	FileLimited bool
 }
 
@@ -307,6 +359,22 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		err = tx.Commit()
 	}()
 
+	_, err = tx.Exec(
+		`CREATE TABLE IF NOT EXISTS meta (
+    		id INTEGER PRIMARY KEY CHECK (id = 0),
+			revision TEXT NOT NULL
+		)`)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(
+		`INSERT INTO meta (id, revision) VALUES (0, ?)`,
+		string(commitID))
+	if err != nil {
+		return err
+	}
+
 	// The column names are the lowercase version of fields in `symbolInDB`
 	// because sqlx lowercases struct fields by default. See
 	// http://jmoiron.github.io/sqlx/#query
@@ -350,21 +418,78 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 		return err
 	}
 
-	insertStatement, err := tx.PrepareNamed(
-		fmt.Sprintf(
-			"INSERT INTO symbols %s VALUES %s",
-			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
-			"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"))
+	insertStatement, err := tx.PrepareNamed(insertQuery)
 	if err != nil {
 		return err
 	}
 
-	return s.parseUncached(ctx, repoName, commitID, func(symbol result.Symbol) error {
+	return s.parseUncached(ctx, repoName, commitID, []string{}, func(symbol result.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
 		return err
 	})
 }
+
+// updateSymbols adds/removes rows from the DB based on a `git diff` between the meta.revision within the
+// DB and the given commitID.
+func (s *Service) updateSymbols(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID, changes Changes) (err error) {
+	db, err := sqlx.Open("sqlite3_with_regexp", dbFile)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
+	tx, err := db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// Write new commit
+	_, err = tx.Exec(`UPDATE meta SET revision = ?`, string(commitID))
+	if err != nil {
+		return err
+	}
+
+	deleteStatement, err := tx.Prepare("DELETE FROM symbols WHERE path = ?")
+	if err != nil {
+		return err
+	}
+
+	insertStatement, err := tx.PrepareNamed(insertQuery)
+	if err != nil {
+		return err
+	}
+
+	paths := []string{}
+	paths = append(paths, changes.Added...)
+	paths = append(paths, changes.Modified...)
+	paths = append(paths, changes.Deleted...)
+
+	for _, path := range paths {
+		_, err := deleteStatement.Exec(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.parseUncached(ctx, repoName, commitID, append(changes.Added, changes.Modified...), func(symbol result.Symbol) error {
+		symbolInDBValue := symbolToSymbolInDB(symbol)
+		_, err := insertStatement.Exec(&symbolInDBValue)
+		return err
+	})
+}
+
+const insertQuery = `
+	INSERT INTO symbols ( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)
+	VALUES              (:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)`
 
 // SanityCheck makes sure that go-sqlite3 was compiled with cgo by
 // seeing if we can actually create a table.
@@ -384,3 +509,91 @@ func SanityCheck() error {
 
 	return nil
 }
+
+// findNewestFile lists the directory and returns the newest file's path (prepended with dir) and the
+// commit.
+func findNewestFile(dir string) (string, api.CommitID, error) {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return "", "", nil
+	}
+
+	var mostRecentTime time.Time
+	newest := ""
+	for _, fi := range files {
+		if fi.Type().IsRegular() {
+			if !strings.HasSuffix(fi.Name(), ".zip") {
+				continue
+			}
+
+			info, err := fi.Info()
+			if err != nil {
+				return "", "", err
+			}
+
+			if newest == "" || info.ModTime().After(mostRecentTime) {
+				mostRecentTime = info.ModTime()
+				newest = filepath.Join(dir, fi.Name())
+			}
+		}
+	}
+
+	if newest == "" {
+		return "", "", nil
+	}
+
+	db, err := sqlx.Open("sqlite3_with_regexp", newest)
+	if err != nil {
+		return "", "", err
+	}
+	defer db.Close()
+
+	// Read old commit
+	row := db.QueryRow(`SELECT revision FROM meta`)
+	commit := api.CommitID("")
+	if err = row.Scan(&commit); err != nil {
+		return "", "", err
+	}
+
+	return newest, commit, nil
+}
+
+// copyFile is like the cp command.
+func copyFile(from string, to string) error {
+	fromFile, err := os.Open(from)
+	if err != nil {
+		return err
+	}
+	defer fromFile.Close()
+
+	toFile, err := os.OpenFile(to, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer toFile.Close()
+
+	_, err = io.Copy(toFile, fromFile)
+	return err
+}
+
+// Changes are added and deleted paths.
+type Changes struct {
+	Added    []string
+	Modified []string
+	Deleted  []string
+}
+
+func NewChanges() Changes {
+	return Changes{
+		Added:    []string{},
+		Modified: []string{},
+		Deleted:  []string{},
+	}
+}
+
+// The maximum sum of bytes in paths in a diff when doing incremental indexing. Diffs bigger than this
+// will not be incrementally indexed, and instead we will process all symbols. Without this limit, we
+// could hit HTTP 431 (header fields too large) when sending the list of paths `git archive paths...`.
+// The actual limit is somewhere between 372KB and 450KB, and we want to be well under that. 100KB seems
+// safe.
+const MAX_TOTAL_PATHS_LENGTH = 100000

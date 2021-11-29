@@ -60,7 +60,7 @@ with `gcc` or `g++`.)
   with the following substitutions:
   * `SRC_ACCESS_TOKEN=`: the Sourcegraph access token you just created
   * `SRC_ENDPOINT=`: the URL to your Sourcegraph instance
-  * `PROJECT_REV=`: the revision of you repository to be indexed
+  * `PROJECT_REV=`: the revision of your repository to be indexed
   * `$IMAGE_ID`: the ID of the Docker image you just built
 
 If successful, you should see the upload visible in [the repository settings page like

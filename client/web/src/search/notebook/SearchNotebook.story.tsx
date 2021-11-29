@@ -10,13 +10,13 @@ import { WebStory } from '../../components/WebStory'
 
 import { SearchNotebook } from './SearchNotebook'
 
-import { BlockInitializer } from '.'
+import { BlockInput } from '.'
 
 const { add } = storiesOf('web/search/notebook/SearchNotebook', module).addDecorator(story => (
     <div className="p-3 container">{story()}</div>
 ))
 
-const blocks: BlockInitializer[] = [
+const blocks: BlockInput[] = [
     { type: 'md', input: '# Markdown' },
     { type: 'query', input: 'Query' },
     { type: 'md', input: '# Markdown 1' },
@@ -28,6 +28,9 @@ add('default', () => (
             <SearchNotebook
                 {...props}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
@@ -48,6 +51,9 @@ add('default read-only', () => (
                 {...props}
                 isReadOnly={true}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}

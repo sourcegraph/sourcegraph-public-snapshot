@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -62,26 +63,19 @@ var Authz = func(db dbutil.DB) AuthzStore {
 	return &authzStore{}
 }
 
+var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
+	return &authzStore{}
+}
+
 // authzStore is a no-op placeholder for the OSS version.
 type authzStore struct{}
 
-func (*authzStore) GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error {
-	if Mocks.Authz.GrantPendingPermissions != nil {
-		return Mocks.Authz.GrantPendingPermissions(ctx, args)
-	}
+func (*authzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
 	return nil
 }
-
-func (*authzStore) AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
-	if Mocks.Authz.AuthorizedRepos != nil {
-		return Mocks.Authz.AuthorizedRepos(ctx, args)
-	}
+func (*authzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
 	return []*types.Repo{}, nil
 }
-
-func (*authzStore) RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error {
-	if Mocks.Authz.RevokeUserPermissions != nil {
-		return Mocks.Authz.RevokeUserPermissions(ctx, args)
-	}
+func (*authzStore) RevokeUserPermissions(_ context.Context, _ *RevokeUserPermissionsArgs) error {
 	return nil
 }

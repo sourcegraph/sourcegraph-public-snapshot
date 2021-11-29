@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -68,7 +68,7 @@ export const useTheme = (
     )
 
     const isLightTheme = themePreference === 'system' ? systemIsLightTheme : themePreference === 'light'
-    useEffect(() => {
+    useMemo(() => {
         documentElement.classList.toggle('theme-light', isLightTheme)
         documentElement.classList.toggle('theme-dark', !isLightTheme)
     }, [documentElement.classList, isLightTheme])

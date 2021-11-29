@@ -1,11 +1,11 @@
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useState } from 'react'
 
@@ -55,9 +55,7 @@ export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ nod
                         {node.namespace.namespaceName}
                     </Link>
                     <span className="text-muted d-inline-block mx-1">/</span>
-                    <Link to={`${node.namespace.url}/batch-changes/executions/${node.id}`}>
-                        {node.description.name || '-'}
-                    </Link>
+                    <Link to={`/batch-changes/executions/${node.id}`}>{node.description.name || '-'}</Link>
                 </h3>
                 <small className="text-muted d-block">
                     Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />
@@ -91,7 +89,7 @@ const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }
 
         case BatchSpecState.FAILED:
         default:
-            return <ErrorIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
+            return <AlertCircleIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
     }
 }
 

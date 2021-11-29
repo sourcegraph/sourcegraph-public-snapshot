@@ -15,6 +15,12 @@ const { add } = storiesOf('web/batches/CreateBatchChangePage', module).addDecora
     <div className="p-3 container">{story()}</div>
 ))
 
+add('experimental execution disabled', () => (
+    <WebStory>
+        {props => <CreateBatchChangePage headingElement="h1" {...props} settingsCascade={EMPTY_SETTINGS_CASCADE} />}
+    </WebStory>
+))
+
 const FIXTURE_ORG: SettingsOrgSubject = {
     __typename: 'Org',
     name: 'sourcegraph',
@@ -31,29 +37,25 @@ const FIXTURE_USER: SettingsUserSubject = {
     viewerCanAdminister: true,
 }
 
-add('experimental execution disabled', () => (
-    <WebStory>
-        {props => <CreateBatchChangePage headingElement="h1" {...props} settingsCascade={EMPTY_SETTINGS_CASCADE} />}
-    </WebStory>
-))
-
 add('experimental execution enabled', () => (
     <WebStory>
         {props => (
-            <CreateBatchChangePage
-                headingElement="h1"
-                {...props}
-                settingsCascade={{
-                    ...EMPTY_SETTINGS_CASCADE,
-                    final: {
-                        experimentalFeatures: { batchChangesExecution: true },
-                    },
-                    subjects: [
-                        { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
-                        { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
-                    ],
-                }}
-            />
+            <div style={{ height: '95vh', width: '100%' }}>
+                <CreateBatchChangePage
+                    headingElement="h1"
+                    {...props}
+                    settingsCascade={{
+                        ...EMPTY_SETTINGS_CASCADE,
+                        final: {
+                            experimentalFeatures: { batchChangesExecution: true },
+                        },
+                        subjects: [
+                            { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
+                            { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
+                        ],
+                    }}
+                />
+            </div>
         )}
     </WebStory>
 ))

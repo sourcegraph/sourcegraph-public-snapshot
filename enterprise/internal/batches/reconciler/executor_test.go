@@ -15,10 +15,10 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -36,7 +36,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -54,7 +54,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	defer state.Unmock()
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
 	githubHeadRef := git.EnsureRefPrefix(githubPR.HeadRefName)
@@ -594,7 +594,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -633,9 +633,52 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 }
 
+func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
+	ctx := context.Background()
+	db := dbtest.NewDB(t)
+	cstore := store.New(db, &observation.TestContext, et.TestKey{})
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	changesetSpec := ct.BuildChangesetSpec(t, ct.TestSpecOpts{
+		Repo:      repo.ID,
+		HeadRef:   "refs/heads/my-pr",
+		Published: true,
+	})
+	changeset := ct.BuildChangeset(ct.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
+
+	ourError := errors.New("this should not be returned")
+	sourcer := sources.NewFakeSourcer(ourError, &sources.FakeChangesetSource{})
+
+	t.Run("plan requires changeset source", func(t *testing.T) {
+		plan := &Plan{}
+		plan.ChangesetSpec = changesetSpec
+		plan.Changeset = changeset
+
+		plan.AddOp(btypes.ReconcilerOperationClose)
+
+		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		if err != ourError {
+			t.Fatalf("executePlan did not return expected error: %s", err)
+		}
+	})
+
+	t.Run("plan does not require changeset source", func(t *testing.T) {
+		plan := &Plan{}
+		plan.ChangesetSpec = changesetSpec
+		plan.Changeset = changeset
+
+		plan.AddOp(btypes.ReconcilerOperationDetach)
+
+		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		if err != nil {
+			t.Fatalf("executePlan returned unexpected error: %s", err)
+		}
+	})
+}
+
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
@@ -795,7 +838,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -998,13 +1041,13 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 }
 
 func TestDecorateChangesetBody(t *testing.T) {
-	database.Mocks.Namespaces.GetByID = func(ctx context.Context, org, user int32) (*database.Namespace, error) {
+	ns := dbmock.NewMockNamespaceStore()
+	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
-	}
-	defer func() { database.Mocks.Namespaces.GetByID = nil }()
+	})
 
 	internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-	defer func() { internalClient = api.InternalClient }()
+	defer func() { internalClient = internalapi.Client }()
 
 	fs := &FakeStore{
 		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
@@ -1016,7 +1059,7 @@ func TestDecorateChangesetBody(t *testing.T) {
 
 	body := "body"
 	rcs := &sources.Changeset{Body: body, Changeset: cs}
-	if err := decorateChangesetBody(context.Background(), fs, database.Namespaces(new(dbtesting.MockDB)), rcs); err != nil {
+	if err := decorateChangesetBody(context.Background(), fs, ns, rcs); err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 	if want := body + "\n\n[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"; rcs.Body != want {
@@ -1034,7 +1077,7 @@ func TestBatchChangeURL(t *testing.T) {
 		} {
 			t.Run(name, func(t *testing.T) {
 				internalClient = tc
-				defer func() { internalClient = api.InternalClient }()
+				defer func() { internalClient = internalapi.Client }()
 
 				if _, err := batchChangeURL(ctx, nil, nil); err == nil {
 					t.Error("unexpected nil error")
@@ -1045,7 +1088,7 @@ func TestBatchChangeURL(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		internalClient = &mockInternalClient{externalURL: "https://sourcegraph.test"}
-		defer func() { internalClient = api.InternalClient }()
+		defer func() { internalClient = internalapi.Client }()
 
 		url, err := batchChangeURL(
 			ctx,

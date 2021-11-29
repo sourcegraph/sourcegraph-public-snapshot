@@ -22,13 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
-	db_ "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
-	db dbutil.DB
+	db database.DB
 	v  *dbSubscription
 }
 
@@ -56,10 +57,10 @@ func productSubscriptionByDBID(ctx context.Context, db dbutil.DB, id string) (*p
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, v.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), v.UserID); err != nil {
 		return nil, err
 	}
-	return &productSubscription{v: v, db: db}, nil
+	return &productSubscription{v: v, db: database.NewDB(db)}, nil
 }
 
 func (r *productSubscription) ID() graphql.ID {
@@ -86,7 +87,15 @@ func (r *productSubscription) Name() string {
 }
 
 func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.db, r.v.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.v.UserID)
+	if errcode.IsNotFound(err) {
+		// NOTE: It is possible that the user has been deleted, but we do not want to
+		// lose information of the product subscription because of that.
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *productSubscription) Events(ctx context.Context) ([]graphqlbackend.ProductSubscriptionEvent, error) {
@@ -118,7 +127,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 	// Return newest license.
 	licenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: r.v.ID,
-		LimitOffset:           &db_.LimitOffset{Limit: 1},
+		LimitOffset:           &database.LimitOffset{Limit: 1},
 	})
 	if err != nil {
 		return nil, err
@@ -132,7 +141,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list historical product licenses (to reduce confusion
 	// around old license reuse). Other viewers should use ProductSubscription.activeLicense.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +167,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 	// 🚨 SECURITY: Only site admins may see this URL. Currently it does not contain any sensitive
 	// info, but there is no need to show it to non-site admins.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil
 	}
 	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.v.ID)
@@ -167,7 +176,7 @@ func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 
 func (r *productSubscription) URLForSiteAdminBilling(ctx context.Context) (*string, error) {
 	// 🚨 SECURITY: Only site admins may see this URL, which might contain the subscription's billing ID.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil, err
 	}
 	if id := r.v.BillingSubscriptionID; id != nil {
@@ -179,11 +188,11 @@ func (r *productSubscription) URLForSiteAdminBilling(ctx context.Context) (*stri
 
 func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx context.Context, args *graphqlbackend.CreateProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
 	// 🚨 SECURITY: Only site admins may create product subscriptions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 		return nil, err
 	}
 
-	user, err := graphqlbackend.UserByID(ctx, r.DB, args.AccountID)
+	user, err := graphqlbackend.UserByID(ctx, database.NewDB(r.DB), args.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +205,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 
 func (r ProductSubscriptionLicensingResolver) SetProductSubscriptionBilling(ctx context.Context, args *graphqlbackend.SetProductSubscriptionBillingArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may update product subscriptions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 		return nil, err
 	}
 
@@ -230,14 +239,14 @@ func (r ProductSubscriptionLicensingResolver) SetProductSubscriptionBilling(ctx 
 }
 
 func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx context.Context, args *graphqlbackend.CreatePaidProductSubscriptionArgs) (*graphqlbackend.CreatePaidProductSubscriptionResult, error) {
-	user, err := graphqlbackend.UserByID(ctx, r.DB, args.AccountID)
+	user, err := graphqlbackend.UserByID(ctx, database.NewDB(r.DB), args.AccountID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Users may only create paid product subscriptions for themselves. Site admins may
 	// create them for any user.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, user.DatabaseID()); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.DB), user.DatabaseID()); err != nil {
 		return nil, err
 	}
 
@@ -324,7 +333,7 @@ func (r ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx 
 
 	// 🚨 SECURITY: Only site admins and the subscription's account owner may update product
 	// subscriptions.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, subToUpdate.v.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.DB), subToUpdate.v.UserID); err != nil {
 		return nil, err
 	}
 
@@ -439,7 +448,7 @@ func (r ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx 
 
 func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may archive product subscriptions.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 		return nil, err
 	}
 
@@ -463,7 +472,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 	var accountUser *graphqlbackend.UserResolver
 	if args.Account != nil {
 		var err error
-		accountUser, err = graphqlbackend.UserByID(ctx, r.DB, *args.Account)
+		accountUser, err = graphqlbackend.UserByID(ctx, database.NewDB(r.DB), *args.Account)
 		if err != nil {
 			return nil, err
 		}
@@ -472,11 +481,11 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 	// 🚨 SECURITY: Users may only list their own product subscriptions. Site admins may list
 	// licenses for all users, or for any other user.
 	if accountUser == nil {
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, accountUser.DatabaseID()); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.DB), accountUser.DatabaseID()); err != nil {
 			return nil, err
 		}
 	}
@@ -490,7 +499,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 		// 🚨 SECURITY: Only site admins may query or view license for all users, or for any other user.
 		// Note this check is currently repetitive with the check above. However, it is duplicated here to
 		// ensure it remains in effect if the code path above chagnes.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 			return nil, err
 		}
 		opt.Query = *args.Query
@@ -536,7 +545,7 @@ func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbac
 
 	var l []graphqlbackend.ProductSubscription
 	for _, result := range results {
-		l = append(l, &productSubscription{db: r.db, v: result})
+		l = append(l, &productSubscription{db: database.NewDB(r.db), v: result})
 	}
 	return l, nil
 }

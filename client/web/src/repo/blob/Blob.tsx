@@ -31,8 +31,6 @@ import {
 } from 'rxjs/operators'
 import useDeepCompareEffect from 'use-deep-compare-effect'
 
-import { createHoverifier, findPositionsFromEvents, HoveredToken } from '@sourcegraph/codeintellify'
-import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -41,6 +39,8 @@ import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { createHoverifier, findPositionsFromEvents } from '@sourcegraph/shared/src/codeintellify'
+import { getCodeElementsInRange, HoveredToken, locateTarget } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
@@ -75,6 +75,7 @@ import { StatusBar } from '../../extensions/components/StatusBar'
 import { observeResize } from '../../util/dom'
 import { HoverThresholdProps } from '../RepoContainer'
 
+import styles from './Blob.module.scss'
 import { LineDecorator } from './LineDecorator'
 
 /**
@@ -109,8 +110,8 @@ const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
         // If the target is part of the line decoration attachment, return null.
         if (
-            target.classList.contains('line-decoration-attachment') ||
-            target.classList.contains('line-decoration-attachment__contents')
+            target.hasAttribute('data-line-decoration-attachment') ||
+            target.hasAttribute('data-line-decoration-attachment-content')
         ) {
             return null
         }
@@ -598,9 +599,9 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
 
     return (
         <>
-            <div className={classNames('blob', props.className)} ref={nextBlobElement}>
+            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement}>
                 <code
-                    className={classNames('blob__code test-blob', props.wrapCode && 'blob__code--wrapped')}
+                    className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
                     dangerouslySetInnerHTML={{
                         __html: blobInfo.html,
@@ -638,7 +639,7 @@ export const Blob: React.FunctionComponent<BlobProps> = props => {
                 extensionsController={extensionsController}
                 uri={toURIWithPath(blobInfo)}
                 location={location}
-                className="blob-status-bar__body"
+                className={styles.blobStatusBarBody}
                 statusBarRef={nextStatusBarElement}
                 hideWhileInitializing={true}
             />

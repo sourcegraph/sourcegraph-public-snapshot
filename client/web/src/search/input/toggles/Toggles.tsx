@@ -17,6 +17,7 @@ import { SubmitSearchProps } from '../../helpers'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
+import styles from './Toggles.module.scss'
 
 export interface TogglesProps
     extends PatternTypeProps,
@@ -26,6 +27,13 @@ export interface TogglesProps
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
+    showCopyQueryButton?: boolean
+    /**
+     * If set to false makes all buttons non-actionable. The main use case for
+     * this prop is showing the toggles in examples. This is different from
+     * being disabled, because the buttons still render normally.
+     */
+    interactive?: boolean
 }
 
 export const getFullQuery = (
@@ -54,6 +62,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         className,
         selectedSearchContextSpec,
         submitSearch,
+        showCopyQueryButton = true,
     } = props
 
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
@@ -102,7 +111,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
-        <div className={classNames('toggle-container', className)}>
+        <div className={classNames(className, styles.toggleContainer)}>
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
@@ -160,13 +169,17 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     ]}
                 />
             )}
-            <div className="toggle-container__separator" />
-            <CopyQueryButton
-                fullQuery={fullQuery}
-                keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                isMacPlatform={isMacPlatform}
-                className="toggle-container__toggle toggle-container__copy-query-button"
-            />
+            {showCopyQueryButton && (
+                <>
+                    <div className={styles.separator} />
+                    <CopyQueryButton
+                        fullQuery={fullQuery}
+                        keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+                        isMacPlatform={isMacPlatform}
+                        className={classNames(styles.toggle, styles.copyQueryButton)}
+                    />
+                </>
+            )}
         </div>
     )
 }

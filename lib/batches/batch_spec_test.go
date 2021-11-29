@@ -164,10 +164,44 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			fmt.Printf("len(batchSpec.Steps)=%d", len(batchSpec.Steps))
 			if batchSpec.Steps[0].IfCondition() != tt.want {
 				t.Fatalf("wrong IfCondition. want=%q, got=%q", tt.want, batchSpec.Steps[0].IfCondition())
 			}
+		}
+	})
+	t.Run("uses unsupported files attribute", func(t *testing.T) {
+		const spec = `
+name: hello-world
+description: Add Hello World to READMEs
+on:
+  - repositoriesMatchingQuery: file:README.md
+steps:
+  - run: echo Hello World | tee -a $(find -name README.md)
+    container: alpine:3
+    files:
+      /tmp/horse.txt: yipeeee
+
+changesetTemplate:
+  title: Hello World
+  body: My first batch change!
+  branch: hello-world
+  commit:
+    message: Append Hello World to all README.md files
+  published: false
+`
+
+		_, err := ParseBatchSpec([]byte(spec), ParseBatchSpecOptions{AllowFiles: false})
+		if err == nil {
+			t.Fatal("no error returned")
+		}
+
+		wantErr := `1 error occurred:
+	* step 1 in batch spec uses the 'files' attribute to create files in the step container, which is not supported in this Batch Changes version
+
+`
+		haveErr := err.Error()
+		if haveErr != wantErr {
+			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
 		}
 	})
 }

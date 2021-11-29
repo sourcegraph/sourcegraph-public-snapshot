@@ -1,7 +1,8 @@
 import { ApolloError, useQuery } from '@apollo/client'
-import React, { useState, Dispatch, SetStateAction } from 'react'
+import React, { useState, useEffect, Dispatch, SetStateAction } from 'react'
 
 import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
 import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
@@ -11,8 +12,10 @@ import { FuzzyModal } from './FuzzyModal'
 
 const DEFAULT_MAX_RESULTS = 100
 
-export interface FuzzyFinderProps {
+export interface FuzzyFinderProps extends TelemetryProps {
     setIsVisible: Dispatch<SetStateAction<boolean>>
+
+    isVisible: boolean
 
     /**
      * The maximum number of files a repo can have to use case-insensitive fuzzy finding.
@@ -31,6 +34,16 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
     const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
     const { repoName = '', commitID = '' } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
     const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID)
+
+    useEffect(() => {
+        if (props.isVisible) {
+            props.telemetryService.log('FuzzyFinderViewed', { action: 'shortcut open' })
+        }
+    }, [props.telemetryService, props.isVisible])
+
+    if (!props.isVisible) {
+        return null
+    }
 
     return (
         <FuzzyModal

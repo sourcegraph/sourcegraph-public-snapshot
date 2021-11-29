@@ -73,7 +73,7 @@ func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 	return matches
 }
 
-func toFileMatch(combyMatch comby.FileMatch) protocol.FileMatch {
+func toFileMatch(combyMatch *comby.FileMatch) protocol.FileMatch {
 	var lineMatches []protocol.LineMatch
 	for _, r := range combyMatch.Matches {
 		lineMatches = append(lineMatches, highlightMultipleLines(&r)...)
@@ -259,7 +259,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		Input:         comby.ZipPath(zipPath),
 		Matcher:       matcher,
 		MatchTemplate: pattern,
-		MatchOnly:     true,
+		ResultKind:    comby.MatchOnly,
 		FilePatterns:  filePatterns,
 		Rule:          rule,
 		NumWorkers:    numWorkers,

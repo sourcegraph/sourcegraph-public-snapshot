@@ -1,11 +1,11 @@
-import * as sentry from '@sentry/browser'
 import * as H from 'history'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
 
-import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
-import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError } from '@sourcegraph/shared/src/util/errors'
+
+import { isWebpackChunkError } from '../sentry/shouldErrorBeReported'
 
 import { HeroPage } from './HeroPage'
 
@@ -51,12 +51,12 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     }
 
     public componentDidCatch(error: unknown, errorInfo: React.ErrorInfo): void {
-        if (shouldErrorBeReported(error)) {
-            sentry.withScope(scope => {
+        if (typeof Sentry !== 'undefined') {
+            Sentry.withScope(scope => {
                 for (const [key, value] of Object.entries(errorInfo)) {
                     scope.setExtra(key, value)
                 }
-                sentry.captureException(error)
+                Sentry.captureException(error)
             })
         }
     }
@@ -98,7 +98,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 
             return (
                 <HeroPage
-                    icon={ErrorIcon}
+                    icon={AlertCircleIcon}
                     title="Error"
                     className={this.props.className}
                     subtitle={
@@ -123,17 +123,4 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     private onReloadClick: React.MouseEventHandler<HTMLElement> = () => {
         window.location.reload() // hard page reload
     }
-}
-
-function shouldErrorBeReported(error: unknown): boolean {
-    if (error instanceof HTTPStatusError) {
-        // Ignore Server error responses (5xx)
-        return error.status < 500
-    }
-
-    return true
-}
-
-function isWebpackChunkError(value: unknown): boolean {
-    return isErrorLike(value) && value.name === 'ChunkLoadError'
 }

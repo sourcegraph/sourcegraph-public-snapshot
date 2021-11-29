@@ -118,3 +118,10 @@ export function updateOrganization(id: Scalars['ID'], displayName: string): Prom
         )
         .toPromise()
 }
+
+export const GET_ORG_FEATURE_FLAG_VALUE = gql`
+    query OrgFeatureFlagValue($orgID: ID!, $flagName: String!) {
+        organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
+    }
+`
+export const ORG_CODE_FEATURE_FLAG_NAME = 'org-code'

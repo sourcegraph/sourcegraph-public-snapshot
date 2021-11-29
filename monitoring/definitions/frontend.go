@@ -121,6 +121,7 @@ func Frontend() *monitoring.Container {
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+								- Check that gitserver containers have enough CPU/memory and are not getting throttled.
 							`,
 						},
 					},
@@ -290,6 +291,7 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewIndexDBWorkerStoreGroup(containerName),
 			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
+			shared.CodeIntelligence.NewRepoUpdaterClientGroup(containerName),
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
 
 			shared.Batches.NewDBStoreGroup(containerName),
@@ -371,7 +373,7 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "internal_api_error_responses",
+							Name:        "internalapi_error_responses",
 							Description: "internal API error responses every 5m by route",
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),
@@ -409,7 +411,7 @@ func Frontend() *monitoring.Container {
 							Query:             `max by(owner) (observability_test_metric_warning)`,
 							Warning:           monitoring.Alert().GreaterOrEqual(1, nil),
 							Panel:             monitoring.Panel().Max(1),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
 						},
 						{
@@ -418,8 +420,29 @@ func Frontend() *monitoring.Container {
 							Query:             `max by(owner) (observability_test_metric_critical)`,
 							Critical:          monitoring.Alert().GreaterOrEqual(1, nil),
 							Panel:             monitoring.Panel().Max(1),
-							Owner:             monitoring.ObservableOwnerDistribution,
+							Owner:             monitoring.ObservableOwnerDevOps,
 							PossibleSolutions: "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
+						},
+					},
+				},
+			},
+
+			{
+				Title:  "Cloud KMS",
+				Hidden: true,
+				Rows: []monitoring.Row{
+					{
+						{
+							Name:        "cloudkms_cryptographic_requests",
+							Description: "cryptographic requests to Cloud KMS every 1m",
+							Query:       `sum(increase(src_cloudkms_cryptographic_total[1m]))`,
+							Warning:     monitoring.Alert().GreaterOrEqual(15000, nil).For(5 * time.Minute),
+							Critical:    monitoring.Alert().GreaterOrEqual(30000, nil).For(5 * time.Minute),
+							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: `
+								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+							`,
 						},
 					},
 				},
@@ -427,10 +450,10 @@ func Frontend() *monitoring.Container {
 
 			// Resource monitoring
 			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 
 			{
 				Title:  "Sentinel queries (only on sourcegraph.com)",

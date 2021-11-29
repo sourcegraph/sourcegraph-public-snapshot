@@ -5,7 +5,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
@@ -20,8 +21,8 @@ func InitCodeIntelDatabase() (*sql.DB, error) {
 	return conn.(*sql.DB), err
 }
 
-var initCodeIntelDatabaseMemo = shared.NewMemoizedConstructor(func() (interface{}, error) {
-	postgresDSN := shared.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
+	postgresDSN := workerdb.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 

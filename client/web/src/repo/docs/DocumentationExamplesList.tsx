@@ -1,5 +1,5 @@
 import * as H from 'history'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationIcon from 'mdi-react/InformationIcon'
 import React, { useMemo } from 'react'
 import { Observable } from 'rxjs'
@@ -73,7 +73,7 @@ export const DocumentationExamplesList: React.FunctionComponent<Props> = ({
             )}
             {referencesLocations !== LOADING && isErrorLike(referencesLocations) && (
                 <span className="ml-2">
-                    <ErrorIcon className="icon-inline" /> Error: {referencesLocations}
+                    <AlertCircleIcon className="icon-inline" /> Error: {referencesLocations}
                 </span>
             )}
             {referencesLocations !== LOADING &&

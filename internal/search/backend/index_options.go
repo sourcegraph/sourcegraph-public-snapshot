@@ -82,9 +82,9 @@ type RepoIndexOptions struct {
 // sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
 func GetIndexOptions(
 	c *schema.SiteConfiguration,
-	getRepoIndexOptions func(repo string) (*RepoIndexOptions, error),
+	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
 	getSearchContextRevisions func(repoID int32) ([]string, error),
-	repos ...string,
+	repos ...int32,
 ) []byte {
 	// Limit concurrency to 32 to avoid too many active network requests and
 	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
@@ -110,11 +110,11 @@ func GetIndexOptions(
 
 func getIndexOptions(
 	c *schema.SiteConfiguration,
-	repoName string,
-	getRepoIndexOptions func(repo string) (*RepoIndexOptions, error),
-	getSearchContextRevisions func(repo int32) ([]string, error),
+	repoID int32,
+	getRepoIndexOptions func(repoID int32) (*RepoIndexOptions, error),
+	getSearchContextRevisions func(repoID int32) ([]string, error),
 ) []byte {
-	opts, err := getRepoIndexOptions(repoName)
+	opts, err := getRepoIndexOptions(repoID)
 	if err != nil {
 		return marshal(&zoektIndexOptions{Error: err.Error()})
 	}
@@ -135,7 +135,7 @@ func getIndexOptions(
 
 	// Add all branches that are referenced by version contexts
 	if c.ExperimentalFeatures != nil {
-		for _, rev := range c.ExperimentalFeatures.SearchIndexBranches[repoName] {
+		for _, rev := range c.ExperimentalFeatures.SearchIndexBranches[opts.Name] {
 			branches[rev] = struct{}{}
 		}
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -540,11 +541,17 @@ fragment RepositoryFields on Repository {
 }
 	`
 	}
-	ghe300Fields := []string{}
+	conditionalGHEFields := []string{}
 	version := c.determineGitHubVersion(ctx)
+
 	if ghe300PlusOrDotComSemver.Check(version) {
-		ghe300Fields = append(ghe300Fields, "stargazerCount")
+		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
 	}
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+		conditionalGHEFields = append(conditionalGHEFields, "visibility")
+	}
+
 	// Some fields are not yet available on GitHub Enterprise yet
 	// or are available but too new to expect our customers to have updated:
 	// - viewerPermission
@@ -563,5 +570,5 @@ fragment RepositoryFields on Repository {
 	forkCount
 	%s
 }
-	`, strings.Join(ghe300Fields, "\n	"))
+	`, strings.Join(conditionalGHEFields, "\n	"))
 }

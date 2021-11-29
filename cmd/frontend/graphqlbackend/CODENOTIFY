@@ -13,7 +13,6 @@ site_monitoring.go @bobheadxi
 batches.go @eseliger
 
 # Insights
-insights.go @slimsag
 insights.go @sourcegraph/code-insights-backend
 
 # Code intelligence

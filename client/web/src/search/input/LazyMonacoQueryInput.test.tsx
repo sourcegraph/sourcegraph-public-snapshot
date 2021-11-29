@@ -1,35 +1,31 @@
+import { render } from '@testing-library/react'
 import { noop } from 'lodash'
 import React from 'react'
-import renderer from 'react-test-renderer'
 
 import { PlainQueryInput } from './LazyMonacoQueryInput'
 
 describe('PlainQueryInput', () => {
     test('empty', () =>
         expect(
-            renderer
-                .create(
-                    <PlainQueryInput
-                        queryState={{
-                            query: '',
-                        }}
-                        onChange={noop}
-                    />
-                )
-                .toJSON()
+            render(
+                <PlainQueryInput
+                    queryState={{
+                        query: '',
+                    }}
+                    onChange={noop}
+                />
+            ).asFragment()
         ).toMatchSnapshot())
 
     test('with query', () =>
         expect(
-            renderer
-                .create(
-                    <PlainQueryInput
-                        queryState={{
-                            query: 'repo:jsonrpc2 file:async.go asyncHandler',
-                        }}
-                        onChange={noop}
-                    />
-                )
-                .toJSON()
+            render(
+                <PlainQueryInput
+                    queryState={{
+                        query: 'repo:jsonrpc2 file:async.go asyncHandler',
+                    }}
+                    onChange={noop}
+                />
+            ).asFragment()
         ).toMatchSnapshot())
 })

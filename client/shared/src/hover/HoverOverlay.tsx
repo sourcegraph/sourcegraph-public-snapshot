@@ -16,6 +16,7 @@ import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './H
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
 import style from './HoverOverlayContents.module.scss'
+import { HoverOverlayLogo } from './HoverOverlayLogo'
 import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
 const LOADING = 'loading' as const
@@ -53,6 +54,7 @@ export interface HoverOverlayProps
     hoverRef?: React.Ref<HTMLDivElement>
     /** Called when the close button is clicked */
     onCloseButtonClick?: (event: MouseEvent) => void
+    isBranded?: boolean
 }
 
 const getOverlayStyle = (overlayPosition: HoverOverlayProps['overlayPosition']): CSSProperties =>
@@ -91,6 +93,8 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
         getAlertClassName,
         onAlertDismissed,
         onCloseButtonClick,
+
+        isBranded,
     } = props
 
     useLogTelemetryEvent(props)
@@ -154,28 +158,32 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 actionsOrError !== LOADING &&
                 !isErrorLike(actionsOrError) &&
                 actionsOrError.length > 0 && (
-                    <div className={classNames(hoverOverlayStyle.actions)}>
-                        {actionsOrError.map((action, index) => (
-                            <ActionItem
-                                key={index}
-                                {...action}
-                                className={classNames(
-                                    hoverOverlayStyle.action,
-                                    actionItemClassName,
-                                    `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
-                                )}
-                                iconClassName={iconClassName}
-                                pressedClassName={actionItemPressedClassName}
-                                variant="actionItem"
-                                disabledDuringExecution={true}
-                                showLoadingSpinnerDuringExecution={true}
-                                showInlineError={true}
-                                platformContext={platformContext}
-                                telemetryService={telemetryService}
-                                extensionsController={extensionsController}
-                                location={location}
-                            />
-                        ))}
+                    <div className={hoverOverlayStyle.actions}>
+                        <div className={hoverOverlayStyle.actionsInner}>
+                            {actionsOrError.map((action, index) => (
+                                <ActionItem
+                                    key={index}
+                                    {...action}
+                                    className={classNames(
+                                        hoverOverlayStyle.action,
+                                        actionItemClassName,
+                                        `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                    )}
+                                    iconClassName={iconClassName}
+                                    pressedClassName={actionItemPressedClassName}
+                                    variant="actionItem"
+                                    disabledDuringExecution={true}
+                                    showLoadingSpinnerDuringExecution={true}
+                                    showInlineError={true}
+                                    platformContext={platformContext}
+                                    telemetryService={telemetryService}
+                                    extensionsController={extensionsController}
+                                    location={location}
+                                />
+                            ))}
+                        </div>
+
+                        {isBranded && <HoverOverlayLogo className={hoverOverlayStyle.overlayLogo} />}
                     </div>
                 )}
         </div>

@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -27,16 +29,20 @@ import (
 )
 
 type UploadHandler struct {
+	db          dbutil.DB
 	dbStore     DBStore
 	uploadStore uploadstore.Store
+	validators  AuthValidatorMap
 	internal    bool
 }
 
-func NewUploadHandler(dbStore DBStore, uploadStore uploadstore.Store, internal bool) http.Handler {
+func NewUploadHandler(db dbutil.DB, dbStore DBStore, uploadStore uploadstore.Store, internal bool, authValidators AuthValidatorMap) http.Handler {
 	handler := &UploadHandler{
+		db:          db,
 		dbStore:     dbStore,
 		uploadStore: uploadStore,
 		internal:    internal,
+		validators:  authValidators,
 	}
 
 	return http.HandlerFunc(handler.handleEnqueue)
@@ -61,14 +67,14 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
 		// token proving contributor access to the repository.
-		if !h.internal && conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx) && !enforceAuth(ctx, w, r, repoName) {
+		if !h.internal && conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx, h.db) && !enforceAuth(ctx, w, r, repoName, h.validators) {
 			return
 		}
 
 		// 🚨 SECURITY: It is critical to ensure if repository and commit exists after
 		// the above authz check. Otherwise, it is possible to use this endpoint to
 		// brute-force existence of repositories.
-		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
+		repo, ok := ensureRepoAndCommitExist(ctx, database.NewDB(h.db), w, repoName, commit)
 		if !ok {
 			return
 		}
@@ -382,11 +388,11 @@ func inferIndexer(r *http.Request) (string, error) {
 // 🚨 SECURITY: It is critical to call this function after necessary authz check
 // because this function would bypass authz to for testing if the repository and
 // commit exists in Sourcegraph.
-func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoName, commit string) (*types.Repo, bool) {
+func ensureRepoAndCommitExist(ctx context.Context, db database.DB, w http.ResponseWriter, repoName, commit string) (*types.Repo, bool) {
 	// This function won't be able to see all repositories without bypassing authz.
 	ctx = actor.WithInternalActor(ctx)
 
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
+	repo, err := backend.NewRepos(db.Repos()).GetByName(ctx, api.RepoName(repoName))
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			http.Error(w, fmt.Sprintf("unknown repository %q", repoName), http.StatusNotFound)
@@ -397,7 +403,7 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 		return nil, false
 	}
 
-	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
+	if _, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, commit); err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false

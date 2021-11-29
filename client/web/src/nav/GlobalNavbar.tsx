@@ -7,8 +7,8 @@ import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -51,7 +51,7 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
+import { useGlobalStore } from '../stores/global'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -102,9 +102,6 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
-
-    /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
-    hideNavLinks: boolean
 }
 
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
@@ -112,7 +109,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     showSearchBox,
     caseSensitive,
     patternType,
-    hideNavLinks,
     variant,
     isLightTheme,
     branding,
@@ -152,7 +148,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         )
     )
 
-    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -217,8 +213,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 <NavGroup>
                     <NavDropdown
                         toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        mobileHomeItem={{ content: 'Search home' }}
                         items={[
-                            { path: '/search', content: 'Search home' },
                             {
                                 path: '/contexts',
                                 content: (

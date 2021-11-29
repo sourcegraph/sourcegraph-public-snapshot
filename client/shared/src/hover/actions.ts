@@ -16,8 +16,8 @@ import {
     mapTo,
 } from 'rxjs/operators'
 
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
+import { LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/shared/src/codeintellify'
 
 import { ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -27,6 +27,7 @@ import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { ContributableMenu, TextDocumentPositionParameters } from '../api/protocol'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
+import { HoveredToken } from '../codeintellify/tokenPosition'
 import { getContributedActionItems } from '../contributions/contributions'
 import { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
@@ -98,7 +99,9 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
     ['goToDefinition.notFound']: boolean
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
+    ['panel.url']: string
     hoverPosition: TextDocumentPositionParameters & URLToFileContext
+    hoveredOnDefinition: boolean
 }
 
 /**
@@ -158,30 +161,48 @@ export function getHoverActionsContext(
         ),
     ]).pipe(
         map(
-            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
-                'goToDefinition.showLoading': definitionURLOrError === LOADING,
-                'goToDefinition.url':
-                    (definitionURLOrError !== LOADING &&
+            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
+                const fileUrl =
+                    definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
+                        ? definitionURLOrError.url
+                        : ''
+
+                const hoveredFileUrl = urlToFile(
+                    { ...hoverContext, position: hoverContext },
+                    { part: hoverContext.part }
+                )
+
+                return {
+                    'goToDefinition.showLoading': definitionURLOrError === LOADING,
+                    'goToDefinition.url':
+                        (definitionURLOrError !== LOADING &&
+                            !isErrorLike(definitionURLOrError) &&
+                            definitionURLOrError?.url) ||
+                        null,
+                    'goToDefinition.notFound':
+                        definitionURLOrError !== LOADING &&
                         !isErrorLike(definitionURLOrError) &&
-                        definitionURLOrError?.url) ||
-                    null,
-                'goToDefinition.notFound':
-                    definitionURLOrError !== LOADING &&
-                    !isErrorLike(definitionURLOrError) &&
-                    definitionURLOrError === null,
-                'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
+                        definitionURLOrError === null,
+                    'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
-                'findReferences.url':
-                    hasReferenceProvider && showFindReferences
-                        ? urlToFile(
-                              { ...hoverContext, position: hoverContext, viewState: 'references' },
-                              { part: hoverContext.part }
-                          )
-                        : null,
+                    'findReferences.url':
+                        hasReferenceProvider && showFindReferences
+                            ? urlToFile(
+                                  { ...hoverContext, position: hoverContext, viewState: 'references' },
+                                  { part: hoverContext.part }
+                              )
+                            : null,
 
-                // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
-                hoverPosition: parameters,
-            })
+                    'panel.url': urlToFile(
+                        { ...hoverContext, position: hoverContext, viewState: 'panelID' },
+                        { part: hoverContext.part }
+                    ),
+
+                    // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
+                    hoverPosition: parameters,
+                    hoveredOnDefinition: hoveredFileUrl === fileUrl,
+                }
+            }
         ),
         distinctUntilChanged((a, b) => isEqual(a, b))
     )
@@ -343,6 +364,7 @@ export function registerHoverContributions({
                         // definition was found.
                         id: 'goToDefinition.preloaded',
                         title: 'Go to definition',
+                        disabledTitle: 'You are at the definition',
                         command: 'open',
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${goToDefinition.url}'],
@@ -355,10 +377,12 @@ export function registerHoverContributions({
                         {
                             action: 'goToDefinition',
                             when: 'goToDefinition.error || goToDefinition.showLoading',
+                            disabledWhen: 'hoveredOnDefinition',
                         },
                         {
                             action: 'goToDefinition.preloaded',
                             when: 'goToDefinition.url',
+                            disabledWhen: 'hoveredOnDefinition',
                         },
                     ],
                 },
@@ -445,6 +469,7 @@ export function registerHoverContributions({
                             action: 'findReferences',
                             when:
                                 'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            disabledWhen: 'false',
                         },
                     ],
                 },

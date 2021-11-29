@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // The historical enqueuer takes regular search insights like a search for `errorf` and runs them
@@ -66,7 +65,7 @@ import (
 // to backfill them by enqueueing work for executing searches with `before:` and `after:` filter
 // ranges.
 func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, dataSeriesStore store.DataSeriesStore, insightsStore *store.Store, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"insights_historical_enqueuer",
 		metrics.WithCountHelp("Total number of insights historical enqueuer executions"),
@@ -134,7 +133,7 @@ func newInsightHistoricalEnqueuer(ctx context.Context, workerBaseStore *basestor
 			return err
 		},
 		gitFirstEverCommit: (&cachedGitFirstEverCommit{impl: git.FirstEverCommit}).gitFirstEverCommit,
-		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitapi.Commit, error) {
+		gitFindRecentCommit: func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error) {
 			return git.Commits(ctx, repoName, git.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true})
 		},
 
@@ -218,8 +217,8 @@ type historicalEnqueuer struct {
 	dataSeriesStore       store.DataSeriesStore
 	repoStore             RepoStore
 	enqueueQueryRunnerJob func(ctx context.Context, job *queryrunner.Job) error
-	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error)
-	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitapi.Commit, error)
+	gitFirstEverCommit    func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
+	gitFindRecentCommit   func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitdomain.Commit, error)
 	frameFilter           compression.DataFrameFilter
 
 	// framesToBackfill describes the number of historical timeframes to backfill data for.
@@ -390,7 +389,7 @@ type buildSeriesContext struct {
 	repo *types.Repo
 
 	// The first commit made in the repository on the default branch.
-	firstHEADCommit *gitapi.Commit
+	firstHEADCommit *gitdomain.Commit
 
 	// The series we're building historical data for.
 	seriesID string
@@ -490,7 +489,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 			hardErr = errors.Wrap(err, "FindNearestCommit")
 			return
 		}
-		var nearestCommit *gitapi.Commit
+		var nearestCommit *gitdomain.Commit
 		if len(recentCommits) > 0 {
 			nearestCommit = recentCommits[0]
 		}
@@ -519,17 +518,17 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 // using a map, and entries are never evicted because they are expected to be small and in general
 // unchanging.
 type cachedGitFirstEverCommit struct {
-	impl func(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error)
+	impl func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
 
 	mu    sync.Mutex
-	cache map[api.RepoName]*gitapi.Commit
+	cache map[api.RepoName]*gitdomain.Commit
 }
 
-func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error) {
+func (c *cachedGitFirstEverCommit) gitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.cache == nil {
-		c.cache = map[api.RepoName]*gitapi.Commit{}
+		c.cache = map[api.RepoName]*gitdomain.Commit{}
 	}
 	if cached, ok := c.cache[repoName]; ok {
 		return cached, nil

@@ -10,19 +10,20 @@ import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import { ResultContainer } from '@sourcegraph/shared/src/components/ResultContainer'
 import { SearchResultStar } from '@sourcegraph/shared/src/components/SearchResultStar'
 import { CommitMatch, getMatchTitle, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import styles from './SearchResult.module.scss'
 
-interface Props {
+interface Props extends TelemetryProps {
     result: CommitMatch | RepositoryMatch
     repoName: string
     icon: React.ComponentType<{ className?: string }>
 }
 
-export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName }) => {
+export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, repoName, telemetryService }) => {
     const renderTitle = (): JSX.Element => {
         const formattedRepositoryStarCount = formatRepositoryStarCount(result.repoStars)
         return (
@@ -54,7 +55,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
     const renderBody = (): JSX.Element => {
         if (result.type === 'repo') {
             return (
-                <div>
+                <div data-testid="search-repo-result">
                     <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                         {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                         <div className="d-flex align-items-center flex-row">
@@ -125,6 +126,7 @@ export const SearchResult: React.FunctionComponent<Props> = ({ result, icon, rep
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}
+            resultType={result.type}
             expandedChildren={renderBody()}
         />
     )

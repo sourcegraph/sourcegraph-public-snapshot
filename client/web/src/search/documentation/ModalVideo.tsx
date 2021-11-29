@@ -11,9 +11,19 @@ interface ModalVideoProps {
     src: string
     thumbnail: { src: string; alt: string }
     onToggle?: (isOpen: boolean) => void
+    showCaption?: boolean
+    className?: string
 }
 
-export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title, src, thumbnail, onToggle }) => {
+export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
+    id,
+    title,
+    src,
+    thumbnail,
+    onToggle,
+    showCaption = false,
+    className,
+}) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
@@ -26,16 +36,31 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title
         [onToggle]
     )
 
+    let thumbnailElement = (
+        <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
+            <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
+            <div className={styles.playIconWrapper}>
+                <PlayIcon />
+            </div>
+        </button>
+    )
+
+    if (showCaption) {
+        thumbnailElement = (
+            <figure>
+                {thumbnailElement}
+                <figcaption>
+                    <button type="button" className="btn btn-link" onClick={() => toggleDialog(true)}>
+                        {title}
+                    </button>
+                </figcaption>
+            </figure>
+        )
+    }
+
     return (
         <>
-            <div className={styles.wrapper}>
-                <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
-                    <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
-                    <div className={styles.playIconWrapper}>
-                        <PlayIcon />
-                    </div>
-                </button>
-            </div>
+            <div className={classNames(styles.wrapper, className)}>{thumbnailElement}</div>
             {isOpen && (
                 <Dialog
                     className={classNames(styles.modal, 'modal-body modal-body--centered p-4 rounded border')}
@@ -74,32 +99,45 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title
 }
 
 const PlayIcon = React.memo(() => (
-    <svg width="33" height="33" viewBox="0 0 49 53" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g filter="url(#filter0_dd)">
-            <path d="M37 26.5L12.25 40.79V12.21L37 26.5z" fill="#fff" />
+    <svg width="50" height="53" viewBox="0 0 50 53" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g filter="url(#filter0_dd_268:5695)">
+            <path d="M37.5 26.5L12.75 40.7894L12.75 12.2106L37.5 26.5Z" fill="white" />
         </g>
         <defs>
             <filter
-                id="filter0_dd"
-                x=".25"
-                y=".211"
+                id="filter0_dd_268:5695"
+                x="0.75"
+                y="0.210449"
                 width="48.75"
-                height="52.579"
+                height="52.5791"
                 filterUnits="userSpaceOnUse"
                 colorInterpolationFilters="sRGB"
             >
                 <feFlood floodOpacity="0" result="BackgroundImageFix" />
-                <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                <feColorMatrix
+                    in="SourceAlpha"
+                    type="matrix"
+                    values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+                    result="hardAlpha"
+                />
                 <feOffset />
                 <feGaussianBlur stdDeviation="6" />
-                <feColorMatrix values="0 0 0 0 0.00505209 0 0 0 0 0.0449636 0 0 0 0 0.404167 0 0 0 0.25 0" />
-                <feBlend in2="BackgroundImageFix" result="effect1_dropShadow" />
-                <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha" />
+                <feColorMatrix
+                    type="matrix"
+                    values="0 0 0 0 0.00505209 0 0 0 0 0.0449636 0 0 0 0 0.404167 0 0 0 0.25 0"
+                />
+                <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_268:5695" />
+                <feColorMatrix
+                    in="SourceAlpha"
+                    type="matrix"
+                    values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+                    result="hardAlpha"
+                />
                 <feOffset dy="4" />
                 <feGaussianBlur stdDeviation="2" />
-                <feColorMatrix values="0 0 0 0 0 0 0 0 0 0.055 0 0 0 0 0.25 0 0 0 0.25 0" />
-                <feBlend in2="effect1_dropShadow" result="effect2_dropShadow" />
-                <feBlend in="SourceGraphic" in2="effect2_dropShadow" result="shape" />
+                <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0.055 0 0 0 0 0.25 0 0 0 0.25 0" />
+                <feBlend mode="normal" in2="effect1_dropShadow_268:5695" result="effect2_dropShadow_268:5695" />
+                <feBlend mode="normal" in="SourceGraphic" in2="effect2_dropShadow_268:5695" result="shape" />
             </filter>
         </defs>
     </svg>

@@ -22,8 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -34,7 +36,7 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db dbutil.DB) http.Handler {
+func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		newSearchResolver:   defaultNewSearchResolver,
@@ -44,8 +46,8 @@ func StreamHandler(db dbutil.DB) http.Handler {
 }
 
 type streamHandler struct {
-	db                  dbutil.DB
-	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                  database.DB
+	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -103,16 +105,13 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        trace.URL(trace.ID(ctx)),
+		Trace:        trace.URL(trace.ID(ctx), conf.ExternalURL()),
 		DisplayLimit: displayLimit,
+		RepoNamer:    repoNamer(ctx, h.db),
 	}
 
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
-	}
-
-	filters := &streaming.SearchFilters{
-		Globbing: false, // TODO
 	}
 
 	// Store marshalled matches and flush periodically or when we go over
@@ -137,6 +136,8 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pingTicker := time.NewTicker(h.pingTickerInterval)
 	defer pingTicker.Stop()
 
+	filters := &streaming.SearchFilters{}
+
 	first := true
 	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
@@ -157,13 +158,17 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Error("failed to get repo metadata", "error", err)
 			return
 		}
+
 		for i, match := range event.Results {
+			repo := match.RepoName()
+
 			// Don't send matches which we cannot map to a repo the actor has access to. This
 			// check is expected to always pass. Missing metadata is a sign that we have
 			// searched repos that user shouldn't have access to.
-			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+			if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
 				continue
 			}
+
 			eventMatch := fromMatch(match, repoMetadata)
 			if args.DecorationLimit == -1 || args.DecorationLimit > i {
 				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
@@ -181,7 +186,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
 		}
-
 	}
 
 LOOP:
@@ -254,7 +258,7 @@ LOOP:
 
 	isSlow := time.Since(start) > searchlogs.LogSlowSearchesThreshold()
 	if honey.Enabled() || isSlow {
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: inputs.OriginalQuery,
 			Typ:           "stream",
 			Source:        string(trace.RequestSource(ctx)),
@@ -321,7 +325,7 @@ type searchResolver interface {
 	Inputs() run.SearchInputs
 }
 
-func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+func defaultNewSearchResolver(ctx context.Context, db database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
 	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 
@@ -668,7 +672,6 @@ func batchEvents(source <-chan streaming.SearchEvent, delay time.Duration) <-cha
 				}
 			}
 		}
-
 	}()
 	return results
 }

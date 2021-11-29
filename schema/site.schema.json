@@ -50,6 +50,11 @@
       "default": 1.0,
       "additionalProperties": false
     },
+    "cloneProgress.log": {
+      "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
+      "type": "boolean",
+      "default": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -119,6 +124,35 @@
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
+        },
+        "pagure": {
+          "description": "Allow adding Pagure code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "subRepoPermissions": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "description": "Enables sub-repo permission checking",
+              "type": "boolean",
+              "default": false
+            },
+            "userCacheSize": {
+              "description": "The number of user permissions to cache",
+              "type": "integer",
+              "default": 1000,
+              "minimum": 1
+            },
+            "userCacheTTLSeconds": {
+              "description": "The TTL in seconds for cached user permissions",
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          }
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
@@ -285,6 +319,11 @@
               "group": "Search"
             }
           }
+        },
+        "enableGithubInternalRepoVisibility": {
+          "description": "Enable support for visilibity of internal Github repositories",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
@@ -376,8 +415,28 @@
         }
       }
     },
+    "batchChanges.disableWebhooksWarning": {
+      "description": "Hides Batch Changes warnings about webhooks not being configured.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "codeIntelAutoIndexing.enabled": {
-      "description": "Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
+      "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
+      "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
+      "type": "integer",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": -1
+    },
+    "codeIntelAutoIndexing.allowGlobalPolicies": {
+      "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
@@ -1081,6 +1140,9 @@
         },
         "userExternalAccountKey": {
           "$ref": "#/definitions/EncryptionKey"
+        },
+        "webhookLogKey": {
+          "$ref": "#/definitions/EncryptionKey"
         }
       }
     },
@@ -1127,6 +1189,22 @@
               }
             }
           }
+        }
+      }
+    },
+    "webhook.logging": {
+      "description": "Configuration for logging incoming webhooks.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Whether incoming webhooks are logged. If omitted, logging is enabled on sites without encryption. If one or more encryption keys are present, this setting must be enabled manually; as webhooks may contain sensitive data, admins of encrypted sites may want to enable webhook encryption via encryption.keys.webhookLogKey.",
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "retention": {
+          "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is \"72h\", or three days.",
+          "type": "string",
+          "default": "72h"
         }
       }
     }

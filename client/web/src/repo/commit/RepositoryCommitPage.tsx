@@ -1,13 +1,15 @@
+import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 
-import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
+import { createHoverifier, Hoverifier, HoverState } from '@sourcegraph/shared/src/codeintellify'
+import { HoveredToken } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -48,6 +50,8 @@ import {
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+
+import styles from './RepositoryCommitPage.module.scss'
 
 const queryCommit = memoizeObservable(
     (args: { repo: Scalars['ID']; revspec: string }): Observable<GitCommitFields> =>
@@ -233,7 +237,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page p-3" ref={this.nextRepositoryCommitPageElement}>
+            <div className={classNames('p-3', styles.repositoryCommitPage)} ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -255,6 +259,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     showSHAAndParentsRow={true}
                                     diffMode={this.state.diffMode}
                                     onHandleDiffMode={this.onHandleDiffMode}
+                                    className={styles.gitCommitNode}
                                 />
                             </div>
                         </div>

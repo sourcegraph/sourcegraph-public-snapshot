@@ -1,8 +1,8 @@
 import { Remote, ProxyMarked } from 'comlink'
 import * as sourcegraph from 'sourcegraph'
 
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
+import { MaybeLoadingResult } from '@sourcegraph/shared/src/codeintellify'
 
 import { ConfiguredExtension } from '../extensions/extension'
 import { GraphQLResult } from '../graphql/graphql'
@@ -26,7 +26,7 @@ import {
     ContributionOptions,
 } from './extension/extensionHostApi'
 import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from './protocol'
-import { TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -44,7 +44,6 @@ export interface FlatExtensionHostAPI {
     getWorkspaceRoots: () => ProxySubscribable<clientType.WorkspaceRoot[]>
     removeWorkspaceRoot: (uri: string) => void
 
-    setVersionContext: (versionContext: string | undefined) => void
     setSearchContext: (searchContext: string | undefined) => void
 
     // Search
@@ -107,6 +106,8 @@ export interface FlatExtensionHostAPI {
     addTextDocumentIfNotExists: (textDocumentData: TextDocumentData) => void
 
     // VIEWERS
+    getActiveViewComponentChanges: () => ProxySubscribable<ExtensionViewer | undefined>
+
     getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParameters | null>
 
     getTextDecorations: (viewerId: ViewerId) => ProxySubscribable<clientType.TextDocumentDecoration[]>

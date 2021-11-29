@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -22,7 +23,7 @@ func TestDocumentColumnSplitMigrator(t *testing.T) {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
-	store := lsifstore.NewStore(db, &observation.TestContext)
+	store := lsifstore.NewStore(db, conf.DefaultClient(), &observation.TestContext)
 	migrator := NewDocumentColumnSplitMigrator(store, 250)
 	serializer := lsifstore.NewSerializer()
 

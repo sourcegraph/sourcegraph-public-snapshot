@@ -41,7 +41,7 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
      * @param event - creation event with subject id and updated settings content
      * info.
      */
-    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<void>
+    onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
 
     /**
      * Whenever insight was created and all operations after creation were completed.
@@ -80,7 +80,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
                 telemetryService.log(
-                    'Insight Addition',
+                    'InsightAddition',
                     { insightType: 'codeStatsInsights' },
                     { insightType: 'codeStatsInsights' }
                 )

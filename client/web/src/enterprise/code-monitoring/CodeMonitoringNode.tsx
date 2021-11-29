@@ -96,7 +96,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                             {showCodeMonitoringTestEmailButton && isSiteAdminUser && hasEnabledAction && node.enabled && (
                                 <button
                                     type="button"
-                                    className="btn btn-link p-0 border-0 ml-2 test-send-test-email"
+                                    className="btn btn-link p-0 border-0 ml-2"
                                     onClick={sendEmailRequest}
                                 >
                                     Send test email
@@ -107,7 +107,7 @@ export const CodeMonitorNode: React.FunctionComponent<CodeMonitorNodeProps> = ({
                 </div>
                 <div className="d-flex">
                     {toggleMonitorOrError === LOADING && <LoadingSpinner className="icon-inline mr-2" />}
-                    <div className={classNames('test-toggle-monitor-enabled', styles.toggleWrapper)}>
+                    <div className={styles.toggleWrapper} data-testid="toggle-monitor-enabled">
                         <Toggle
                             onClick={toggleMonitor}
                             value={enabled}

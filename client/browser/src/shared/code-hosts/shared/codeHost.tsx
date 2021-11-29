@@ -35,15 +35,6 @@ import {
 } from 'rxjs/operators'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
-import {
-    ContextResolver,
-    createHoverifier,
-    findPositionsFromEvents,
-    Hoverifier,
-    HoverState,
-    MaybeLoadingResult,
-    DiffPart,
-} from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -52,6 +43,15 @@ import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/d
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
+import {
+    ContextResolver,
+    createHoverifier,
+    findPositionsFromEvents,
+    Hoverifier,
+    HoverState,
+    MaybeLoadingResult,
+} from '@sourcegraph/shared/src/codeintellify'
+import { DiffPart } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -88,10 +88,9 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { CLOUD_SOURCEGRAPH_URL, getPlatformName } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -114,7 +113,6 @@ import {
     registerNativeTooltipContributions,
 } from './nativeTooltips'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import { logger } from './util/logger'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
@@ -167,7 +165,7 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * Basic contextual information for the current code host.
      */
-    getContext?: () => CodeHostContext
+    getContext?: () => Promise<CodeHostContext>
 
     /**
      * An Observable for whether the code host is in light theme (vs dark theme).
@@ -349,7 +347,7 @@ export const createOverlayMount = (codeHostName: string, container: HTMLElement)
 
 export const createGlobalDebugMount = (): HTMLElement => {
     const mount = document.createElement('div')
-    mount.className = 'global-debug'
+    mount.dataset.globalDebug = 'true'
     document.body.append(mount)
     return mount
 }
@@ -520,6 +518,7 @@ function initCodeIntelligence({
                     location={H.createLocation(window.location)}
                     onCloseButtonClick={this.nextCloseButtonClick}
                     onAlertDismissed={onHoverAlertDismissed}
+                    isBranded={true}
                 />
             ) : null
         }
@@ -682,11 +681,11 @@ export function handleCodeHost({
      * is a private repository that hasn't been added to Sourcegraph Cloud
      * (no side effects, doesn't notify `privateCloudErrors`)
      * */
-    const checkPrivateCloudError = (error: any): boolean =>
+    const checkPrivateCloudError = async (error: any): Promise<boolean> =>
         !!(
             isRepoNotFoundErrorLike(error) &&
-            sourcegraphURL === CLOUD_SOURCEGRAPH_URL &&
-            codeHost.getContext?.().privateRepository
+            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
+            (await codeHost.getContext?.())?.privateRepository
         )
 
     if (codeHost.nativeTooltipResolvers) {
@@ -767,16 +766,14 @@ export function handleCodeHost({
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
 
         /** Whether or not the repo exists on the configured Sourcegraph instance. */
-        const repoExistsOrErrors = signInCloses.pipe(
-            startWith(null),
-            switchMap(() => {
-                const { rawRepoName, revision } = getContext()
-                return resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
+        const repoExistsOrErrors = combineLatest([signInCloses.pipe(startWith(null)), from(getContext())]).pipe(
+            switchMap(([, { rawRepoName, revision }]) =>
+                resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
                     mapTo(true),
                     startWith(undefined)
                 )
-            }),
+            ),
             catchError(error => {
                 if (isRepoNotFoundErrorLike(error) || error instanceof RepoURLParseError) {
                     return [false]
@@ -812,12 +809,13 @@ export function handleCodeHost({
                     map(count => count === 0),
                     distinctUntilChanged()
                 ),
-            ]).subscribe(([repoExistsOrError, mount, showSignInButton]) => {
+                from(getContext()),
+            ]).subscribe(([repoExistsOrError, mount, showSignInButton, context]) => {
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
                         codeHostType={codeHost.type}
-                        getContext={getContext}
+                        context={context}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
@@ -894,13 +892,15 @@ export function handleCodeHost({
                         }))
                     )
                 ),
-                catchError(error => {
+                catchError(error =>
                     // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
-                    if (checkPrivateCloudError(error)) {
-                        return EMPTY
-                    }
-                    throw error
-                }),
+                    from(checkPrivateCloudError(error)).pipe(hasPrivateCloudError => {
+                        if (hasPrivateCloudError) {
+                            return EMPTY
+                        }
+                        throw error
+                    })
+                ),
                 tap({
                     error: error => {
                         if (codeViewEvent.getToolbarMount) {
@@ -1294,7 +1294,33 @@ const CODE_HOSTS: CodeHost[] = [
     gerritCodeHost,
 ]
 
-export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
+const CLOUD_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
+
+export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined => {
+    const codeHost = CODE_HOSTS.find(codeHost => codeHost.check())
+
+    if (!codeHost) {
+        return undefined
+    }
+
+    // Prevent repo lookups for code hosts that we know cannot have repositories
+    // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
+    // inevitably fail in this case.
+    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+        const { hostname } = new URL(location.href)
+        const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
+        if (!validCodeHost) {
+            console.log(
+                `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${DEFAULT_SOURCEGRAPH_URL}.\n List of supported code hosts on ${DEFAULT_SOURCEGRAPH_URL}: ${CLOUD_CODE_HOST_HOSTS.join(
+                    ', '
+                )}`
+            )
+            return undefined
+        }
+    }
+
+    return codeHost
+}
 
 export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
@@ -1312,7 +1338,7 @@ export function injectCodeIntelligenceToCodeHost(
     const { requestGraphQL } = platformContext
     subscriptions.add(extensionsController)
 
-    const overrideSendTelemetry = SourcegraphUrlService.observe(isExtension).pipe(
+    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
         map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
     )
 
@@ -1348,7 +1374,7 @@ export function injectCodeIntelligenceToCodeHost(
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
-                logger.info('Browser extension is disabled')
+                console.log('Browser extension is disabled')
             } else {
                 codeHostSubscription = handleCodeHost({
                     mutations,
@@ -1363,7 +1389,7 @@ export function injectCodeIntelligenceToCodeHost(
                     background,
                 })
                 subscriptions.add(codeHostSubscription)
-                logger.info(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
+                console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
             }
         })
     )

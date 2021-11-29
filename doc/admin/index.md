@@ -4,7 +4,7 @@
 Administration guides and documentation for <a href="install">self-hosted Sourcegraph instances</a>.
 </p>
 
-Administration is usually handled by site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on a Sourcegraph instance.
+Administration is usually handled by site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on a Sourcegraph instance. Check out this [quickstart guide](how-to/site-admin-quickstart.md) for more info on Site Administration.
 
 ## [Install Sourcegraph](install/index.md)
 
@@ -14,6 +14,7 @@ Administration is usually handled by site administrators are the admins responsi
 - [Upgrading PostgreSQL](postgres.md)
 - [Using external services (PostgreSQL, Redis, S3/GCS)](external_services/index.md)
 - <span class="badge badge-experimental">Experimental</span> [Validation](validation.md)
+- <span class="badge badge-experimental">Experimental</span> [Executors](executors.md)
 - <span class="badge badge-experimental">Experimental</span> [Deploy executors](deploy_executors.md)
 
 ## [Upgrade Sourcegraph](updates/index.md)
@@ -22,6 +23,7 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Configuration](config/index.md)
 
+- [Site Administrator Quickstart](how-to/site-admin-quickstart.md)
 - [Integrations](../integration/index.md)
 - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
   - [Monorepo](monorepo.md)
@@ -33,7 +35,8 @@ Administration is usually handled by site administrators are the admins responsi
 - [Setting the URL for your instance](url.md)
 - [Repository permissions](repo/permissions.md)
   - [Row-level security](repo/row_level_security.md)
-  
+- [Batch Changes](../batch_changes/how-tos/site_admin_configuration.md)
+
 For deployment configuration, please refer to the relevant [installation guide](./install/index.md).
 
 ## [Observability](observability.md)
@@ -47,6 +50,7 @@ For deployment configuration, please refer to the relevant [installation guide](
 - [Code intelligence and language servers](../code_intelligence/index.md)
 - [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Search](search.md)
+- [Batch Changes](../batch_changes/index.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
 - [Usage statistics](usage_statistics.md)

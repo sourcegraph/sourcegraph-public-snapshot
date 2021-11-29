@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { of } from 'rxjs'
@@ -11,10 +11,6 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { BrandedStory } from '../../BrandedStory'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
-
-const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
-))
 
 const LOCATIONS: Location[] = [
     {
@@ -83,7 +79,6 @@ const LOCATIONS: Location[] = [
         },
     },
 ]
-
 const PROPS: HierarchicalLocationsViewProps = {
     extensionsController,
     settingsCascade: { subjects: null, final: null },
@@ -95,16 +90,33 @@ const PROPS: HierarchicalLocationsViewProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-add('Single repo', () => (
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
+)
+const config: Meta = {
+    title: 'branded/HierarchicalLocationsView',
+    decorators: [decorator],
+}
+
+export default config
+
+export const SingleRepo: Story = () => (
     <HierarchicalLocationsView
         {...PROPS}
-        locations={of({ isLoading: false, result: LOCATIONS.filter(({ uri }) => uri.includes('github.com/foo/bar')) })}
+        locations={of({
+            isLoading: false,
+            result: LOCATIONS.filter(({ uri }) => uri.includes('github.com/foo/bar')),
+        })}
     />
-))
+)
 
-add('Grouped by repo', () => <HierarchicalLocationsView {...PROPS} />)
+SingleRepo.storyName = 'Single repo'
 
-add('Grouped by repo and file', () => (
+export const GroupedByRepo: Story = () => <HierarchicalLocationsView {...PROPS} />
+
+GroupedByRepo.storyName = 'Grouped by repo'
+
+export const GroupedByRepoAndFile: Story = () => (
     <HierarchicalLocationsView
         {...PROPS}
         settingsCascade={{
@@ -114,4 +126,6 @@ add('Grouped by repo and file', () => (
             },
         }}
     />
-))
+)
+
+GroupedByRepoAndFile.storyName = 'Grouped by repo and file'

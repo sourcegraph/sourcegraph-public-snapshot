@@ -7,15 +7,22 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// OperationMetrics contains three common metrics for any operation.
-type OperationMetrics struct {
-	Duration *prometheus.HistogramVec // How long did it take?
+// REDMetrics contains three common metrics for any operation.
+// It is modeled after the RED method, which defines three characteristics for
+// monitoring services:
+//
+//  - number (rate) of requests per second
+//  - number of errors/failed operations
+//  - amount of time per operation
+// https://thenewstack.io/monitoring-microservices-red-method/.
+type REDMetrics struct {
 	Count    *prometheus.CounterVec   // How many things were processed?
 	Errors   *prometheus.CounterVec   // How many errors occurred?
+	Duration *prometheus.HistogramVec // How long did it take?
 }
 
 // Observe registers an observation of a single operation.
-func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...string) {
+func (m *REDMetrics) Observe(secs, count float64, err *error, lvals ...string) {
 	if m == nil {
 		return
 	}
@@ -28,53 +35,64 @@ func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...str
 	}
 }
 
-type operationMetricOptions struct {
-	subsystem    string
-	durationHelp string
-	countHelp    string
-	errorsHelp   string
-	labels       []string
+type redMetricOptions struct {
+	subsystem       string
+	durationHelp    string
+	countHelp       string
+	errorsHelp      string
+	labels          []string
+	durationBuckets []float64
 }
 
-// OperationMetricsOption alter the default behavior of NewOperationMetrics.
-type OperationMetricsOption func(o *operationMetricOptions)
+// REDMetricsOption alter the default behavior of NewREDMetrics.
+type REDMetricsOption func(o *redMetricOptions)
 
 // WithSubsystem overrides the default subsystem for all metrics.
-func WithSubsystem(subsystem string) OperationMetricsOption {
-	return func(o *operationMetricOptions) { o.subsystem = subsystem }
+func WithSubsystem(subsystem string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.subsystem = subsystem }
 }
 
 // WithDurationHelp overrides the default help text for duration metrics.
-func WithDurationHelp(text string) OperationMetricsOption {
-	return func(o *operationMetricOptions) { o.durationHelp = text }
+func WithDurationHelp(text string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.durationHelp = text }
+}
+
+// WithDurationBuckets overrides the default histogram bucket values for duration metrics.
+func WithDurationBuckets(buckets []float64) REDMetricsOption {
+	return func(o *redMetricOptions) {
+		if len(buckets) != 0 {
+			o.durationBuckets = buckets
+		}
+	}
 }
 
 // WithCountHelp overrides the default help text for count metrics.
-func WithCountHelp(text string) OperationMetricsOption {
-	return func(o *operationMetricOptions) { o.countHelp = text }
+func WithCountHelp(text string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.countHelp = text }
 }
 
 // WithErrorsHelp overrides the default help text for errors metrics.
-func WithErrorsHelp(text string) OperationMetricsOption {
-	return func(o *operationMetricOptions) { o.errorsHelp = text }
+func WithErrorsHelp(text string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.errorsHelp = text }
 }
 
 // WithLabels overrides the default labels for all metrics.
-func WithLabels(labels ...string) OperationMetricsOption {
-	return func(o *operationMetricOptions) { o.labels = labels }
+func WithLabels(labels ...string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.labels = labels }
 }
 
-// NewOperationMetrics creates an OperationMetrics value. The metrics will be
+// NewREDMetrics creates an REDMetrics value. The metrics will be
 // immediately registered to the given registerer. This method panics on registration
 // error. The supplied metricPrefix should be underscore_cased as it is used in the
 // metric name.
-func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...OperationMetricsOption) *OperationMetrics {
-	options := &operationMetricOptions{
-		subsystem:    "",
-		durationHelp: fmt.Sprintf("Time in seconds spent performing successful %s operations", metricPrefix),
-		countHelp:    fmt.Sprintf("Total number of successful %s operations", metricPrefix),
-		errorsHelp:   fmt.Sprintf("Total number of %s operations resulting in an unexpected error", metricPrefix),
-		labels:       nil,
+func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetricsOption) *REDMetrics {
+	options := &redMetricOptions{
+		subsystem:       "",
+		durationHelp:    fmt.Sprintf("Time in seconds spent performing successful %s operations", metricPrefix),
+		countHelp:       fmt.Sprintf("Total number of successful %s operations", metricPrefix),
+		errorsHelp:      fmt.Sprintf("Total number of %s operations resulting in an unexpected error", metricPrefix),
+		labels:          nil,
+		durationBuckets: prometheus.DefBuckets,
 	}
 
 	for _, fn := range fns {
@@ -87,6 +105,7 @@ func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...Op
 			Name:      fmt.Sprintf("%s_duration_seconds", metricPrefix),
 			Subsystem: options.subsystem,
 			Help:      options.durationHelp,
+			Buckets:   options.durationBuckets,
 		},
 		options.labels,
 	)
@@ -114,22 +133,22 @@ func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...Op
 	)
 	r.MustRegister(errors)
 
-	return &OperationMetrics{
+	return &REDMetrics{
 		Duration: duration,
 		Count:    count,
 		Errors:   errors,
 	}
 }
 
-type SingletonOperationMetrics struct {
+type SingletonREDnMetrics struct {
 	sync.Once
-	metrics *OperationMetrics
+	metrics *REDMetrics
 }
 
-// SingletonOperationMetrics returns an operation metrics instance. If no instance has been
+// Get returns a RED metrics instance. If no instance has been
 // created yet, one is constructed with the given create function. This method is safe to
 // access concurrently.
-func (m *SingletonOperationMetrics) Get(create func() *OperationMetrics) *OperationMetrics {
+func (m *SingletonREDnMetrics) Get(create func() *REDMetrics) *REDMetrics {
 	m.Do(func() {
 		m.metrics = create()
 	})

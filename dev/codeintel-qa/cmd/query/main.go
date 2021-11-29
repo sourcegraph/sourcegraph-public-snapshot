@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -90,21 +89,8 @@ loop:
 				continue
 			}
 
-			ps := make([]string, 0, len(durations))
-			for queryName := range durations {
-				ps = append(ps, fmt.Sprintf(
-					"queryName=%s\trequests=%d\tp50=%s\tp95=%s\tp99=%s",
-					queryName,
-					len(durations[queryName]),
-					percentile(queryName, 0.50),
-					percentile(queryName, 0.95),
-					percentile(queryName, 0.99),
-				))
-			}
-			sort.Strings(ps)
-
 			val := atomic.LoadUint64(&numRequestsFinished)
-			fmt.Printf("[%5s] %s %d queries completed\n\t%s\n", internal.TimeSince(start), internal.EmojiSuccess, val, strings.Join(ps, "\n\t"))
+			fmt.Printf("[%5s] %s %d queries completed\n\t%s\n", internal.TimeSince(start), internal.EmojiSuccess, val, strings.Join(formatPercentiles(), "\n\t"))
 		}
 	}
 

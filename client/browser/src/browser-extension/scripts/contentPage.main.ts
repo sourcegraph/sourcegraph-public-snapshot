@@ -5,16 +5,17 @@ import { first } from 'rxjs/operators'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/shared/src/components/Link'
 
-import { determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
+import { CodeHost, determineCodeHost } from '../../shared/code-hosts/shared/codeHost'
 import { injectCodeIntelligence } from '../../shared/code-hosts/shared/inject'
-import { logger } from '../../shared/code-hosts/shared/util/logger'
 import {
+    checkIsSourcegraph,
     EXTENSION_MARKER_ID,
     injectExtensionMarker,
     NATIVE_INTEGRATION_ACTIVATED,
+    signalBrowserExtensionInstalled,
 } from '../../shared/code-hosts/sourcegraph/inject'
 import { initSentry } from '../../shared/sentry'
-import { CLOUD_SOURCEGRAPH_URL, getAssetsURL } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getAssetsURL, observeSourcegraphURL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnvironment } from '../environmentAssertion'
 
@@ -27,6 +28,8 @@ const codeHost = determineCodeHost()
 initSentry('content', codeHost?.type)
 
 setLinkComponent(AnchorLink)
+
+const IS_EXTENSION = true
 
 // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
 // annoying flash/jitter when the stylesheet loads shortly thereafter).
@@ -62,7 +65,7 @@ async function waitForStyleSheet(styleSheet: HTMLLinkElement): Promise<void> {
  * Main entry point into browser extension.
  */
 async function main(): Promise<void> {
-    logger.info('Browser extension is running')
+    console.log('Sourcegraph browser extension is running')
 
     // Make sure DOM is fully loaded
     if (document.readyState !== 'complete' && document.readyState !== 'interactive') {
@@ -77,7 +80,7 @@ async function main(): Promise<void> {
     // If the native integration was activated before the content script, we can
     // synchronously check for the presence of the extension marker.
     if (document.querySelector(`#${EXTENSION_MARKER_ID}`) !== null) {
-        logger.info('Native integration is already running')
+        console.log('Sourcegraph native integration is already running')
         return
     }
     // If the extension marker isn't present, inject it and listen for a custom event sent by the native
@@ -87,28 +90,60 @@ async function main(): Promise<void> {
         .pipe(first())
         .toPromise()
 
+    let previousSubscription: Subscription
     subscriptions.add(
-        await injectCodeIntelligence(getAssetsURL(CLOUD_SOURCEGRAPH_URL), true, async function onCodeHostFound() {
-            const styleSheets = [
-                {
-                    id: 'ext-style-sheet',
-                    path: 'css/style.bundle.css',
-                },
-                {
-                    id: 'ext-style-sheet-css-modules',
-                    path: 'css/inject.bundle.css',
-                },
-            ]
+        // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises
+        observeSourcegraphURL(IS_EXTENSION).subscribe(async sourcegraphURL => {
+            if (previousSubscription) {
+                console.log('Sourcegraph detached code intelligence')
+                previousSubscription.unsubscribe()
+            }
 
-            await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
+            const isSourcegraphServer = checkIsSourcegraph(sourcegraphURL)
+            if (isSourcegraphServer) {
+                signalBrowserExtensionInstalled()
+                return
+            }
+
+            try {
+                previousSubscription = await injectCodeIntelligence(
+                    { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
+                    IS_EXTENSION,
+                    async function onCodeHostFound(codeHost: CodeHost) {
+                        if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && codeHost.getContext) {
+                            const { privateRepository } = await codeHost.getContext()
+                            if (privateRepository) {
+                                throw new Error(
+                                    `Code intelligence for private repository is not supported when using Sourcegraph URL ${DEFAULT_SOURCEGRAPH_URL}`
+                                )
+                            }
+                        }
+                        const styleSheets = [
+                            {
+                                id: 'ext-style-sheet',
+                                path: 'css/style.bundle.css',
+                            },
+                            {
+                                id: 'ext-style-sheet-css-modules',
+                                path: 'css/inject.bundle.css',
+                            },
+                        ]
+
+                        await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
+                    }
+                )
+                console.log('Sourcegraph attached code intelligence')
+            } catch (error) {
+                console.log('Sourcegraph code host integration stopped initialization. Reason:', error?.message)
+            }
         })
     )
 
     // Clean up susbscription if the native integration gets activated
     // later in the lifetime of the content script.
     await nativeIntegrationActivationEventReceived
-    logger.info('Native integration activation event received')
+    console.log('Native integration activation event received')
     subscriptions.unsubscribe()
 }
 
-main().catch(console.error)
+main().catch(console.error.bind(console))

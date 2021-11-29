@@ -50,8 +50,8 @@ import {
     searchQueryForRepoRevision,
     SearchStreamingProps,
 } from '../search'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
+import { useGlobalStore } from '../stores/global'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -83,7 +83,7 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
@@ -106,6 +106,8 @@ export interface RepoContainerContext
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -126,7 +128,7 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -144,6 +146,7 @@ interface RepoContainerProps
     globbing: boolean
     showSearchNotebook: boolean
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
@@ -265,12 +268,15 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                             fade={false}
                             popperClassName="border-0"
                         >
-                            <RepositoriesPopover currentRepo={repoOrError.id} />
+                            <RepositoriesPopover
+                                currentRepo={repoOrError.id}
+                                telemetryService={props.telemetryService}
+                            />
                         </UncontrolledPopover>
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError])
+        }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
@@ -310,7 +316,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
-    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
+    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {

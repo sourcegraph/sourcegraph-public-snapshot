@@ -22,14 +22,16 @@ type CodeIntelResolver interface {
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
 	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) ([]CodeIntelligenceConfigurationPolicyResolver, error)
+	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (CodeIntelligenceConfigurationPolicyConnectionResolver, error)
 	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
 	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) (RepositoryFilterPreviewResolver, error)
 	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
+	DocumentationSearch(ctx context.Context, args *DocumentationSearchArgs) (DocumentationSearchResultsResolver, error)
 }
 
 type LSIFUploadsQueryArgs struct {
@@ -152,6 +154,7 @@ type GitBlobLSIFDataResolver interface {
 	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
 }
@@ -202,6 +205,7 @@ type CodeIntelligenceRangeResolver interface {
 	Range(ctx context.Context) (RangeResolver, error)
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)
+	Implementations(ctx context.Context) (LocationConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
 	Documentation(ctx context.Context) (DocumentationResolver, error)
 }
@@ -236,6 +240,8 @@ type DiagnosticResolver interface {
 
 type CodeIntelConfigurationPolicy struct {
 	Name                      string
+	RepositoryID              *int32
+	RepositoryPatterns        *[]string
 	Type                      GitObjectType
 	Pattern                   string
 	RetentionEnabled          bool
@@ -247,7 +253,12 @@ type CodeIntelConfigurationPolicy struct {
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
-	Repository *graphql.ID
+	graphqlutil.ConnectionArgs
+	Repository       *graphql.ID
+	Query            *string
+	ForDataRetention *bool
+	ForIndexing      *bool
+	After            *string
 }
 
 type CreateCodeIntelligenceConfigurationPolicyArgs struct {
@@ -256,7 +267,8 @@ type CreateCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
-	ID graphql.ID
+	ID         graphql.ID
+	Repository *graphql.ID
 	CodeIntelConfigurationPolicy
 }
 
@@ -274,6 +286,20 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 	Configuration string
 }
 
+type PreviewRepositoryFilterArgs struct {
+	graphqlutil.ConnectionArgs
+	Patterns []string
+	After    *string
+}
+
+type RepositoryFilterPreviewResolver interface {
+	Nodes() []*RepositoryResolver
+	TotalCount() int32
+	Limit() *int32
+	TotalMatches() int32
+	PageInfo() *graphqlutil.PageInfo
+}
+
 type PreviewGitObjectFilterArgs struct {
 	Type    GitObjectType
 	Pattern string
@@ -284,8 +310,16 @@ type GitObjectFilterPreviewResolver interface {
 	Rev() string
 }
 
+type CodeIntelligenceConfigurationPolicyConnectionResolver interface {
+	Nodes(ctx context.Context) ([]CodeIntelligenceConfigurationPolicyResolver, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	RepositoryPatterns() *[]string
 	Name() string
 	Type() (GitObjectType, error)
 	Pattern() string

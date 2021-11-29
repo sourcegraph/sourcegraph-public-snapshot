@@ -36,10 +36,11 @@ type credentials struct {
 	Password        string `json:"password"`
 	AnonymousUserID string `json:"anonymousUserId"`
 	FirstSourceURL  string `json:"firstSourceUrl"`
+	LastSourceURL   string `json:"lastSourceUrl"`
 }
 
 // HandleSignUp handles submission of the user signup form.
-func HandleSignUp(db dbutil.DB) http.HandlerFunc {
+func HandleSignUp(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -53,7 +54,7 @@ func HandleSignUp(db dbutil.DB) http.HandlerFunc {
 }
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func HandleSiteInit(db dbutil.DB) http.HandlerFunc {
+func HandleSiteInit(db database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 		// allow signups after those conditions become true, so we don't need to check the builtin auth
@@ -64,8 +65,8 @@ func HandleSiteInit(db dbutil.DB) http.HandlerFunc {
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, db dbutil.DB, addr string) (abused bool, reason string, err error) {
-	email, err := database.UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
+func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused bool, reason string, err error) {
+	email, err := db.UserEmails().GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return false, "", nil
@@ -89,7 +90,7 @@ func checkEmailAbuse(ctx context.Context, db dbutil.DB, addr string) (abused boo
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func handleSignUp(db dbutil.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -203,7 +204,7 @@ func handleSignUp(db dbutil.DB, w http.ResponseWriter, r *http.Request, failIfNe
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, DatabaseID: usr.ID})
+		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
 	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
@@ -220,7 +221,7 @@ func getByEmailOrUsername(ctx context.Context, db dbutil.DB, emailOrUsername str
 
 // HandleSignIn accepts a POST containing username-password credentials and authenticates the
 // current session if the credentials are valid.
-func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleSignIn(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -281,7 +282,7 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *database.SecurityEventName) {
+func logSignInEvent(r *http.Request, db database.DB, usr *types.User, name *database.SecurityEventName) {
 	var anonymousID string
 	event := &database.SecurityEvent{
 		Name:            *name,

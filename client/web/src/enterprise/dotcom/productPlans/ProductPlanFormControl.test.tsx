@@ -1,22 +1,14 @@
+import { render, act } from '@testing-library/react'
 import React from 'react'
-import renderer, { act } from 'react-test-renderer'
 import { of } from 'rxjs'
 
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 
 import { ProductPlanFormControl } from './ProductPlanFormControl'
 
-jest.mock('./ProductPlanPrice', () => ({
-    ProductPlanPrice: 'ProductPlanPrice',
-}))
-
-jest.mock('./ProductPlanTiered', () => ({
-    ProductPlanTiered: 'ProductPlanTiered',
-}))
-
 describe('ProductPlanFormControl', () => {
     test('new subscription', () => {
-        const component = renderer.create(
+        const component = render(
             <ProductPlanFormControl
                 value="p"
                 onChange={() => undefined}
@@ -51,6 +43,6 @@ describe('ProductPlanFormControl', () => {
             />
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 })

@@ -5,9 +5,10 @@ import (
 )
 
 type CreateSearchContextInput struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Public      bool   `json:"public"`
+	Name        string  `json:"name"`
+	Namespace   *string `json:"namespace"`
+	Description string  `json:"description"`
+	Public      bool    `json:"public"`
 }
 
 type UpdateSearchContextInput struct {

@@ -140,6 +140,10 @@ func (b Basic) String() string {
 	return fmt.Sprintf("%s %s", Q(ToNodes(b.Parameters)).String(), Q([]Node{b.Pattern}).String())
 }
 
+func (b Basic) StringHuman() string {
+	return fmt.Sprintf("%s %s", StringHuman(ToNodes(b.Parameters)), StringHuman([]Node{b.Pattern}))
+}
+
 func (b Basic) VisitParameter(field string, f func(value string, negated bool, annotation Annotation)) {
 	for _, p := range b.Parameters {
 		if p.Field == field {
@@ -376,7 +380,6 @@ func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
-		FieldRepoGroup, "g",
 		FieldContext:
 		return []*Value{{String: &value}}
 

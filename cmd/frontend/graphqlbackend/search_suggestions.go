@@ -89,12 +89,15 @@ func (g gitTreeSuggestionResolver) Label() string { return g.gitTreeEntry.Path()
 func (g gitTreeSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, true
 }
+
 func (g gitTreeSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsRegular()
 }
+
 func (g gitTreeSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
 	return g.gitTreeEntry, g.gitTreeEntry.stat.Mode().IsDir()
 }
+
 func (g gitTreeSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
 		repoName: g.gitTreeEntry.Commit().Repository().Name(),
@@ -114,6 +117,7 @@ func (s symbolSuggestionResolver) Score() int { return s.score }
 func (s symbolSuggestionResolver) Length() int {
 	return len(s.symbol.Symbol.Name) + len(s.symbol.Symbol.Parent)
 }
+
 func (s symbolSuggestionResolver) Label() string {
 	return s.symbol.Symbol.Name + " " + s.symbol.Symbol.Parent
 }
@@ -172,6 +176,7 @@ func (s searchContextSuggestionResolver) Label() string { return s.searchContext
 func (s searchContextSuggestionResolver) ToSearchContext() (SearchContextResolver, bool) {
 	return s.searchContext, true
 }
+
 func (s searchContextSuggestionResolver) Key() suggestionKey {
 	return suggestionKey{
 		searchContextSpec: s.searchContext.Spec(),
@@ -213,17 +218,16 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 		return mockShowRepoSuggestions()
 	}
 
-	// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
+	// * If query contains only a single term, treat it as a repo field here and ignore the other repo queries.
 	// * If only repo fields (except 1 term in query), show repo suggestions.
 
 	hasSingleField := len(r.Query.Fields()) == 1
 	hasTwoFields := len(r.Query.Fields()) == 2
 	hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
-	hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
 	var effectiveRepoFieldValues []string
-	if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
+	if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && hasSingleContextField)) {
 		effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
-	} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
+	} else if len(r.Query.Values(query.FieldRepo)) > 0 && hasSingleField {
 		effectiveRepoFieldValues, _ = r.Query.Repositories()
 	}
 
@@ -244,6 +248,8 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 				limit:                    maxSearchSuggestions,
 			})
 
+		// TODO(tsenart): Figure out what to do with this instance of resolveRepositories.
+		//  I think we're getting rid of GraphQL suggestions code, so this might be a non-issue.
 		resolved, err := r.resolveRepositories(ctx, repoOptions)
 		resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
 		for i, rev := range resolved.RepoRevs {
@@ -264,11 +270,11 @@ func (r *searchResolver) showFileSuggestions(ctx context.Context) ([]SearchSugge
 		return mockShowFileSuggestions()
 	}
 
-	// If only repos/repogroups and files are specified (and at most 1 term), then show file
+	// If only repos and files are specified (and at most 1 term), then show file
 	// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 	// make it easy to jump to files by just typing in their name, not `file:<their name>`).
 	hasOnlyEmptyRepoField := len(r.Query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.Query.RegexpPatterns(query.FieldRepo)) && len(r.Query.Fields()) == 1
-	hasRepoOrFileFields := len(r.Query.Values(query.FieldRepoGroup)) > 0 || len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
+	hasRepoOrFileFields := len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
 	if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.Query.Values(query.FieldDefault)) <= 1 {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
@@ -307,7 +313,7 @@ func (r *searchResolver) showLangSuggestions(ctx context.Context) ([]SearchSugge
 	}
 
 	// Only care about the first found repository.
-	repos, err := backend.Repos.List(ctx, database.ReposListOptions{
+	repos, err := backend.NewRepos(r.db.Repos()).List(ctx, database.ReposListOptions{
 		IncludePatterns: validValues,
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
@@ -321,12 +327,12 @@ func (r *searchResolver) showLangSuggestions(ctx context.Context) ([]SearchSugge
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
+	commitID, err := backend.NewRepos(r.db.Repos()).ResolveRev(ctx, repo, "")
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
+	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, commitID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -402,9 +408,9 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 			suggestions = append(suggestions, symbolSuggestionResolver{
 				symbol: symbolResolver{
 					db: r.db,
-					commit: toGitCommitResolver(
-						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
+					commit: NewGitCommitResolver(
 						r.db,
+						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
 						fileMatch.CommitID,
 						nil,
 					),
@@ -459,6 +465,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 				for i, res := range results.Matches {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
+							db:           r.db,
 							FileMatch:    *fm,
 							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}
@@ -530,17 +537,6 @@ func (r *searchResolver) showSearchContextSuggestions(ctx context.Context) ([]Se
 type suggester func(ctx context.Context) ([]SearchSuggestionResolver, error)
 
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {
-
-	// If globbing is activated, convert regex patterns of repo, file, and repohasfile
-	// from "field:^foo$" to "field:^foo".
-	globbing := false
-	if getBoolPtr(r.UserSettings.SearchGlobbing, false) {
-		globbing = true
-	}
-	if globbing {
-		r.Query = query.FuzzifyRegexPatterns(r.Query)
-	}
-
 	args.applyDefaultsAndConstraints()
 
 	if len(r.Query) == 0 {
