@@ -145,7 +145,6 @@ var macOSDependencies = []dependencyCategory{
 			{
 				name:  "brew",
 				check: checkInPath("brew"),
-				// instructionsCommands: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
 				instructionsComment: `We depend on having the Homebrew package manager available on macOS.
 
 Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.`,
@@ -179,8 +178,10 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
 				instructionsComment: `` +
 					`Make sure that you can clone git repositories from GitHub via SSH.
+See here on how to set that up:
 
-See here on how to set that up: https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
+https://docs.github.com/en/authentication/connecting-to-github-with-ssh
+`,
 			},
 			{
 				name:                 "github.com/sourcegraph/sourcegraph",
@@ -194,14 +195,20 @@ See here on how to set that up: https://docs.github.com/en/authentication/connec
 				check:                checkDevPrivateInParentOrInCurrentDirectory,
 				instructionsCommands: `git clone git@github.com:sourcegraph/dev-private.git`,
 				instructionsComment: `` +
-					`In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: github.com/sourcegraph/dev-private. It contains convenient preconfigured settings and code host connections.
+					`In order to run the local development environment as a Sourcegraph employee,
+you'll need to clone another repository: github.com/sourcegraph/dev-private.
 
-It needs to be cloned into the same folder as sourcegraph/sourcegraph, so they sit alongside each other.
-To illustrate:
+It contains convenient preconfigured settings and code host connections.
+
+It needs to be cloned into the same folder as sourcegraph/sourcegraph,
+so they sit alongside each other, like this:
+
    /dir
    |-- dev-private
    +-- sourcegraph
-NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-private as the secrets are updated from time to time.`,
+
+NOTE: You can ignore this if you're not a Sourcegraph employee.
+`,
 				onlyEmployees: true,
 			},
 		},
@@ -210,8 +217,8 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 	{
 		name:               "Programming languages & tooling",
 		requiresRepository: true,
+		// TODO: Can we provide an autofix here that installs asdf, reloads shell, installs language versions?
 		dependencies: []*dependency{
-			// TODO: install asdf
 			{
 				name: "go", check: checkInPath("go"),
 				instructionsComment: `` +
@@ -270,13 +277,6 @@ asdf install node js
 `,
 			},
 		},
-		// TODO: customAllInOnecommand
-		// - install asdf
-		// - reload asdf
-		// - check for sourcegraph repository
-		// - go into sourcegraph repository
-		// - run the other commands
-
 	},
 	{
 		name:               "Setup PostgreSQL database",
@@ -289,13 +289,16 @@ asdf install node js
 				name:  "Connection to 'sourcegraph' database",
 				check: checkPostgresConnection,
 				instructionsComment: `` +
-					`Sourcegraph requires the PostgreSQL database to be running. We recommend installing it with Homebrew and starting it as a system service.
+					`Sourcegraph requires the PostgreSQL database to be running.
 
+We recommend installing it with Homebrew and starting it as a system service.
 If you know what you're doing, you can also install PostgreSQL another way.
+For example: you can use Postgres.app by following the instructions at
+https://postgresapp.com but you also need to run the commands listed below
+that create users and databsaes: 'createdb', 'createuser', ...
 
-Alternative 1: Installing Postgres.app and following instructions at https://postgresapp.com/
-
-If you're not sure: use the recommended commands to install PostgreSQL and start it`,
+If you're not sure: use the recommended commands to install PostgreSQL, start it
+and create the 'sourcegraph' database.`,
 				instructionsCommands: `brew reinstall postgresql && brew services start postgresql 
 sleep 10
 createdb
@@ -325,7 +328,8 @@ If you used another method, make sure psql is available.`,
 				name:  "Connection to Redis",
 				check: retryCheck(checkRedisConnection, 5, 500*time.Millisecond),
 				instructionsComment: `` +
-					`Sourcegraph requires the Redis database to be running. We recommend installing it with Homebrew and starting it as a system service.`,
+					`Sourcegraph requires the Redis database to be running.
+					We recommend installing it with Homebrew and starting it as a system service.`,
 				instructionsCommands: "brew reinstall redis && brew services start redis",
 			},
 		},
@@ -338,18 +342,16 @@ If you used another method, make sure psql is available.`,
 				name:  "/etc/hosts contains sourcegraph.test",
 				check: checkFileContains("/etc/hosts", "sourcegraph.test"),
 				instructionsComment: `` +
-					`Sourcegraph should be reachable under https://sourcegraph.test:3443. To do that, we need to add sourcegraph.test to the /etc/hosts file.
-
-The command needs to be run inside the 'sourcegraph' repository.`,
+					`Sourcegraph should be reachable under https://sourcegraph.test:3443.
+					To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
 				instructionsCommands: `./dev/add_https_domain_to_hosts.sh`,
 			},
 			{
 				name:  "Caddy root certificate is trusted by system",
 				check: checkCaddyTrusted,
 				instructionsComment: `` +
-					`In order to use TLS to access your local Sourcegraph instance, you need to trust the certificate created by Caddy, the proxy we use locally.
-
-The command needs to be run inside the 'sourcegraph' repository.
+					`In order to use TLS to access your local Sourcegraph instance, you need to
+trust the certificate created by Caddy, the proxy we use locally.
 
 YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 				instructionsCommands:   `./dev/caddy.sh trust`,
@@ -461,14 +463,22 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			break
 		}
 
-		writeFingerPointingLine("Which one do you want to fix?")
-		idx, err := getNumberOutOf(toFix)
-		if err != nil {
-			if err == io.EOF {
-				return nil
+		var idx int
+
+		if len(toFix) == 1 {
+			idx = 0
+		} else {
+			writeFingerPointingLine("Which one do you want to fix?")
+			var err error
+			idx, err = getNumberOutOf(toFix)
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
 			}
-			return err
 		}
+
 		dep := category.dependencies[idx]
 
 		out.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", dep.name))
