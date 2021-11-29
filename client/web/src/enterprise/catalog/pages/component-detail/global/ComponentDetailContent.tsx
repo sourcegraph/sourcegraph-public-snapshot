@@ -51,7 +51,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                 </ul>
             }
         />
-        {false && (
+        {true && (
             <div className="py-4 border-top">
                 <h2>Implementation</h2>
                 <div className={styles.grid}>

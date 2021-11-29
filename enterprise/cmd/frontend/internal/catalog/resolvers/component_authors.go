@@ -13,7 +13,6 @@ import (
 	pathpkg "path"
 	"sort"
 	"sync"
-	"time"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -47,7 +46,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 		go func(e fs.FileInfo) {
 			defer wg.Done()
 
-			authorsByEmail, lineCount, err := getBlameAuthorsCached(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
+			authorsByEmail, lineCount, err := getFileBlameAuthorsCached(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
 			if err != nil {
 				mu.Lock()
 				if allErr == nil {
@@ -97,50 +96,8 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 	return &edges, nil
 }
 
-type blameAuthor struct {
-	Name, Email    string
-	LineCount      int
-	LastCommit     api.CommitID
-	LastCommitDate time.Time
-}
-
-// TODO(sqs): the "reduce" step is duplicated in this getBlameAuthors func body and above in the
-// Authors method, maybe make this func return raw-er data to avoid the duplication?
-func getBlameAuthors(ctx context.Context, repoName api.RepoName, commit api.CommitID, path string) (authorsByEmail map[string]*blameAuthor, totalLineCount int, err error) {
-	// TODO(sqs): SECURITY does this check perms?
-	hunks, err := git.BlameFile(ctx, repoName, path, &git.BlameOptions{NewestCommit: commit})
-	if err != nil {
-		return nil, 0, err
-	}
-
-	// TODO(sqs): normalize email (eg case-insensitive?)
-	authorsByEmail = map[string]*blameAuthor{}
-	for _, hunk := range hunks {
-		a := authorsByEmail[hunk.Author.Email]
-		if a == nil {
-			a = &blameAuthor{
-				Name:  hunk.Author.Name,
-				Email: hunk.Author.Email,
-			}
-			authorsByEmail[hunk.Author.Email] = a
-		}
-
-		lineCount := hunk.EndLine - hunk.StartLine
-		totalLineCount += lineCount
-		a.LineCount += lineCount
-
-		if hunk.Author.Date.After(a.LastCommitDate) {
-			a.Name = hunk.Author.Name // use latest name in case it changed over time
-			a.LastCommit = hunk.CommitID
-			a.LastCommitDate = hunk.Author.Date
-		}
-	}
-
-	return authorsByEmail, totalLineCount, nil
-}
-
 // TODO(sqs): HACK SECURITY this bypasses repo perms and is just a hack for perf
-func getBlameAuthorsCached(ctx context.Context, repoName api.RepoName, commit api.CommitID, path string) (authorsByEmail map[string]*blameAuthor, totalLineCount int, err error) {
+func getFileBlameAuthorsCached(ctx context.Context, repoName api.RepoName, commit api.CommitID, path string) (authorsByEmail map[string]*blameAuthor, totalLineCount int, err error) {
 	type cacheEntry struct {
 		AuthorsByEmail map[string]*blameAuthor
 		TotalLineCount int
@@ -188,7 +145,7 @@ func getBlameAuthorsCached(ctx context.Context, repoName api.RepoName, commit ap
 	}
 	// log.Println("MISS")
 
-	authorsByEmail, totalLineCount, err = getBlameAuthors(ctx, repoName, commit, path)
+	authorsByEmail, totalLineCount, err = getBlameAuthors(ctx, repoName, path, git.BlameOptions{NewestCommit: commit})
 	if err == nil {
 		set(key, cacheEntry{AuthorsByEmail: authorsByEmail, TotalLineCount: totalLineCount})
 	}
