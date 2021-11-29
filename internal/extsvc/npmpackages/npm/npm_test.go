@@ -1,6 +1,7 @@
 package npm
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
@@ -44,9 +45,9 @@ func TestNPMPackOutput(t *testing.T) {
 		output, err := parseNPMPackOutput(entry.input)
 		if entry.expect != nil {
 			assert.Nil(t, err)
-			assert.Equal(t, output, *entry.expect)
+			assert.Equal(t, *entry.expect, output)
 		} else {
-			assert.NotNil(t, err)
+			assert.NotNil(t, err, fmt.Sprintf("with output = '%s' for input = '%s'", output, entry.input))
 		}
 	}
 }

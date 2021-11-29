@@ -162,41 +162,32 @@ func runNPMCommand(ctx context.Context, config *schema.NPMPackagesConnection, ar
 	return stdout.String(), nil
 }
 
+type npmPackOutput = []struct {
+	Filename string `json:"filename"`
+}
+
 func parseNPMPackOutput(output string) (filename string, err error) {
-	var parsedJson interface{}
+	var parsedJson npmPackOutput
 	var errInfo string
 	if err = json.Unmarshal([]byte(output), &parsedJson); err != nil {
 		errInfo = err.Error()
-	} else if array, ok := parsedJson.([]interface{}); ok {
-		if len(array) == 1 {
-			if object, ok := array[0].(map[string]interface{}); ok {
-				if filename, ok := object["filename"]; ok {
-					if filenameStr, ok := filename.(string); ok {
-						// [NOTE: npm-tarball-filename-workaround]
-						// For scoped packages, npm gives the wrong output
-						// (tested with 7.20.1 and 8.1.2). The actual file will
-						// be saved at scope-package-version.tgz, but the
-						// filename field is @scope/package-version.tgz
-						//
-						// See https://github.com/npm/cli/issues/3405
-						if len(filenameStr) > 0 && filenameStr[0] == '@' {
-							filenameStr = incorrectTarballNameRegex.ReplaceAllString(filenameStr, "$1-")
-						}
-						return filenameStr, nil
-					} else {
-						errInfo = "expected string value for \"filename\" key"
-					}
-				} else {
-					errInfo = "missing filename key"
-				}
-			} else {
-				errInfo = "failed to create map[string] from first element"
-			}
-		} else {
-			errInfo = "expected output array to have 1 element"
-		}
+	} else if len(parsedJson) != 1 {
+		errInfo = "expected output array to have 1 element"
+	} else if parsedJson[0].Filename == "" {
+		errInfo = "expected non-empty filename field in first object"
 	} else {
-		errInfo = "expected output to be an array"
+		filename = parsedJson[0].Filename
+		// [NOTE: npm-tarball-filename-workaround]
+		// For scoped packages, npm gives the wrong output
+		// (tested with 7.20.1 and 8.1.2). The actual file will
+		// be saved at scope-package-version.tgz, but the
+		// filename field is @scope/package-version.tgz
+		//
+		// See https://github.com/npm/cli/issues/3405
+		if filename[0] == '@' {
+			filename = incorrectTarballNameRegex.ReplaceAllString(filename, "$1-")
+		}
+		return filename, nil
 	}
 	return "", fmt.Errorf("failed to parse npm pack's JSON output (%s): %s", errInfo, output)
 }
