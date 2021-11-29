@@ -305,6 +305,7 @@ func (s *JVMPackagesSyncer) commitJar(ctx context.Context, dependency reposource
 		return err
 	}
 
+	// See [NOTE: LSIF-config-json] for details on why we use this JSON file.
 	jsonContents, err := json.Marshal(&lsifJavaJSON{
 		Kind:         dependency.MavenModule.LsifJavaKind(),
 		JVM:          jvmVersion,

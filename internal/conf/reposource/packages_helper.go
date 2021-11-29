@@ -20,8 +20,10 @@ package reposource
 // situations where there is no connotation of a dependency edge.
 
 type PackageDependency interface {
-	// Give the name of the dependency as used by the package manager, including version information.
-	PackageSyntax() string
+	// Give the name of the dependency as used by the package manager,
+	// including version information.
+	PackageManagerSyntax() string
 }
 
 var _ PackageDependency = MavenDependency{}
+var _ PackageDependency = NPMDependency{}
