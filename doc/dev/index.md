@@ -27,22 +27,18 @@ body.theme-dark .markdown-body ul li:before {
 }
 </style>
 
-> This documentation is for *developers contributing to the Sourcegraph code base*.
-> Sourcegraph development is open source at:
-
-> - [GitHub repository](https://github.com/sourcegraph/sourcegraph)
-> - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+<p class="subtitle">Documentation for <b>developers contributing to the Sourcegraph code base</b></p>
 
 <div class="cta-group">
 <a class="btn btn-primary" href="setup/quickstart">★ Quickstart: develop Sourcegraph on your machine</a>
-<a class="btn" href="setup/how-to">Languages</a>
-<a class="btn" href="setup/troubleshooting">Testing</a>
+<a class="btn" href="https://github.com/sourcegraph/sourcegraph">GitHub repository</a>
+<a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
 </div>
 
 
-## [Getting Started](setup/index.md)
+## [Setup](setup/index.md)
 
-<p class="subtitle">Working on Sourcegraph code on your local machine.</p>
+<p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
 
 <div class="getting-started">
   <a href="setup/quickstart" class="btn" alt="Run through the Quickstart guide">
@@ -54,17 +50,15 @@ body.theme-dark .markdown-body ul li:before {
   <a href="setup/how-to" class="btn" alt="How-to guides">
    <span>How-to guides</span>
    </br>
-  <b>Context specific</b> guides: debugging live code, m1 mac workarounds, ...
+  <b>Context specific</b> guides: debugging live code, Apple M1 workarounds, ...
   </a>
 
   <a href="setup/troubleshooting" class="btn" alt="Troubleshooting">
    <span>Troubleshooting</span>
    </br>
-  List of the <b>most common</b> local environment problems and their solutions.
+  Help for the <b>most common</b> problems.
   </a>
 </div>
-
-<br/>
 
 ## [Background information](background-information/index.md)
 
