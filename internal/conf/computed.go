@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -247,6 +248,11 @@ func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
 	}
 
 	return *val
+}
+
+func CodeInsightsGQLApiEnabled() bool {
+	enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
+	return !enabled
 }
 
 func ProductResearchPageEnabled() bool {
