@@ -725,7 +725,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		var idx int
 
 		if len(toFix) == 1 {
-			idx = 0
+			idx = toFix[0]
 		} else {
 			writeFingerPointingLine("Which one do you want to fix?")
 			var err error
