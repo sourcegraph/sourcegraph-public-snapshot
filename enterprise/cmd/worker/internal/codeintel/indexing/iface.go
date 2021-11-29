@@ -24,8 +24,8 @@ type DBStore interface {
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
-	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
-	SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
+	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
+	SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, allowGlobalPolicies bool, repositoryMatchLimit *int, limit int) ([]int, error)
 }
 
 type DBStoreShim struct {
@@ -46,7 +46,7 @@ func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
 }
 
 type RepoUpdaterClient interface {
-	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+	RepoLookup(ctx context.Context, name api.RepoName) (info *protocol.RepoInfo, err error)
 }
 
 type ExternalServiceStore interface {

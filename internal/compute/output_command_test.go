@@ -7,8 +7,12 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func Test_output(t *testing.T) {
@@ -44,21 +48,30 @@ train(commuter, lightrail)`).
 		}))
 }
 
-func contentAsFileMatch(data string) *result.FileMatch {
+func fileMatch(content string) result.Match {
+	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+		return []byte(content), nil
+	}
 	return &result.FileMatch{
 		File: result.File{Path: "my/awesome/path"},
-		LineMatches: []*result.LineMatch{
-			{
-				Preview: data,
-			},
+	}
+}
+
+func commitMatch(content string) result.Match {
+	return &result.CommitMatch{
+		Commit: gitdomain.Commit{
+			Author:    gitdomain.Signature{Name: "bob"},
+			Committer: &gitdomain.Signature{},
+			Message:   gitdomain.Message(content),
 		},
 	}
 }
 
 func TestRun(t *testing.T) {
-	test := func(q, content string) string {
+	test := func(q string, m result.Match) string {
+		defer git.ResetMocks()
 		computeQuery, _ := Parse(q)
-		res, err := computeQuery.Command.Run(context.Background(), contentAsFileMatch(content))
+		res, err := computeQuery.Command.Run(context.Background(), m)
 		if err != nil {
 			return err.Error()
 		}
@@ -66,7 +79,23 @@ func TestRun(t *testing.T) {
 	}
 
 	autogold.Want(
-		"template substitution",
+		"template substitution regexp",
 		"(1)\n(2)\n(3)\n").
-		Equal(t, test(`content:output((\d) -> ($1))`, "a 1 b 2 c 3"))
+		Equal(t, test(`content:output((\d) -> ($1))`, fileMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
+		"template substitution regexp with commit author",
+		"bob: (1)\nbob: (2)\nbob: (3)\n").
+		Equal(t, test(`content:output((\d) -> $author: ($1))`, commitMatch("a 1 b 2 c 3")))
+
+	// If we are not on CI skip the test if comby is not installed.
+	if os.Getenv("CI") == "" && !comby.Exists() {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
+	autogold.Want(
+		"template substitution structural",
+		">bar<").
+		Equal(t, test(`content:output.structural(foo(:[arg]) -> >:[arg]<)`, fileMatch("foo(bar)")))
+
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,8 +22,10 @@ import (
 )
 
 const (
-	DefaultUploadPageSize = 50
-	DefaultIndexPageSize  = 50
+	DefaultUploadPageSize                  = 50
+	DefaultIndexPageSize                   = 50
+	DefaultConfigurationPolicyPageSize     = 50
+	DefaultRepositoryFilterPreviewPageSize = 50
 )
 
 var errAutoIndexingNotEnabled = errors.New("precise code intelligence auto-indexing is not enabled")
@@ -264,30 +267,46 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
-// 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
-func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) ([]gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	opts := store.GetConfigurationPoliciesOptions{}
+// 🚨 SECURITY: configuration policies contain only repository ids and patterns
+func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) (gql.CodeIntelligenceConfigurationPolicyConnectionResolver, error) {
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	pageSize := DefaultConfigurationPolicyPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	opts := store.GetConfigurationPoliciesOptions{
+		Limit:  pageSize,
+		Offset: offset,
+	}
+
 	if args.Repository != nil {
 		id64, err := unmarshalRepositoryID(*args.Repository)
 		if err != nil {
 			return nil, err
 		}
 		opts.RepositoryID = int(id64)
-	} else {
-		opts.ConsiderPatterns = true
+	}
+	if args.Query != nil {
+		opts.Term = *args.Query
+	}
+	if args.ForDataRetention != nil {
+		opts.ForDataRetention = *args.ForDataRetention
+	}
+	if args.ForIndexing != nil {
+		opts.ForIndexing = *args.ForIndexing
 	}
 
-	policies, err := r.resolver.GetConfigurationPolicies(ctx, opts)
+	policies, totalCount, err := r.resolver.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]gql.CodeIntelligenceConfigurationPolicyResolver, 0, len(policies))
-	for _, policy := range policies {
-		resolvers = append(resolvers, NewConfigurationPolicyResolver(policy))
-	}
-
-	return resolvers, nil
+	return NewCodeIntelligenceConfigurationPolicyConnectionResolver(policies, totalCount), nil
 }
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
@@ -418,23 +437,45 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) ([]*gql.RepositoryResolver, error) {
-	ids, err := r.resolver.PreviewRepositoryFilter(ctx, args.Pattern)
+func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) (gql.RepositoryFilterPreviewResolver, error) {
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
 
+	pageSize := DefaultRepositoryFilterPreviewPageSize
+	if args.First != nil {
+		pageSize = int(*args.First)
+	}
+
+	ids, totalCount, repositoryMatchLimit, err := r.resolver.PreviewRepositoryFilter(ctx, args.Patterns, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	db := database.NewDB(dbconn.Global)
 	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.Repos.Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(db.Repos()).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo))
+		resolvers = append(resolvers, gql.NewRepositoryResolver(db, repo))
 	}
 
-	return resolvers, nil
+	limitedCount := totalCount
+	if repositoryMatchLimit != nil && *repositoryMatchLimit < limitedCount {
+		limitedCount = *repositoryMatchLimit
+	}
+
+	return &repositoryFilterPreviewResolver{
+		repositoryResolvers: resolvers,
+		totalCount:          limitedCount,
+		offset:              offset,
+		totalMatches:        totalCount,
+		limit:               repositoryMatchLimit,
+	}, nil
 }
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {
@@ -489,7 +530,7 @@ func makeGetUploadsOptions(ctx context.Context, args *gql.LSIFRepositoryUploadsQ
 		}
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetUploadsOptions{}, err
 	}
@@ -515,7 +556,7 @@ func makeGetIndexesOptions(ctx context.Context, args *gql.LSIFRepositoryIndexesQ
 		return store.GetIndexesOptions{}, err
 	}
 
-	offset, err := decodeIntCursor(args.After)
+	offset, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
 		return store.GetIndexesOptions{}, err
 	}

@@ -33,10 +33,16 @@ type Actor struct {
 	user     *types.User
 	userErr  error
 	userOnce sync.Once
+
+	// mockUser indicates this user was created in the context of a test.
+	mockUser bool
 }
 
 // FromUser returns an actor corresponding to a user
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
+
+// FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
+func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
 
 // UIDString is a helper method that returns the UID as a string.
 func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
@@ -55,6 +61,11 @@ func (a *Actor) IsInternal() bool {
 	return a != nil && a.Internal
 }
 
+// IsMockUser returns true if the Actor is a test user.
+func (a *Actor) IsMockUser() bool {
+	return a != nil && a.mockUser
+}
+
 type userFetcher interface {
 	GetByID(context.Context, int32) (*types.User, error)
 }
@@ -71,9 +82,9 @@ func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, err
 	return a.user, a.userErr
 }
 
-type key int
+type contextKey int
 
-const actorKey key = iota
+const actorKey contextKey = iota
 
 // FromContext returns a new Actor instance from a given context.
 func FromContext(ctx context.Context) *Actor {

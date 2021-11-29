@@ -1,6 +1,6 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
-import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
 
 import { AuthenticatedUser } from '../../../auth'
@@ -18,7 +18,7 @@ describe('FormActionArea', () => {
     }
 
     test('Error is shown if code monitor has empty description', () => {
-        let component = mount(
+        const { asFragment } = render(
             <FormActionArea
                 actions={mockActions}
                 actionsCompleted={true}
@@ -29,11 +29,9 @@ describe('FormActionArea', () => {
                 description=""
             />
         )
-        act(() => {
-            const triggerButton = component.find('.test-action-button')
-            triggerButton.simulate('click')
-        })
-        component = component.update()
-        expect(component).toMatchSnapshot()
+
+        userEvent.click(screen.getByTestId('form-action-toggle-email-notification'))
+
+        expect(asFragment()).toMatchSnapshot()
     })
 })

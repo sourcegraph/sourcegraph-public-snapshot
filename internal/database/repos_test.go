@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -345,15 +346,15 @@ func TestRepos_Create(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	svcs := types.MakeExternalServices()
+	svcs := typestest.MakeExternalServices()
 	if err := ExternalServices(db).Upsert(ctx, svcs...); err != nil {
 		t.Fatalf("Upsert error: %s", err)
 	}
 
-	msvcs := types.ExternalServicesToMap(svcs)
+	msvcs := typestest.ExternalServicesToMap(svcs)
 
-	repo1 := types.MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
-	repo2 := types.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
+	repo1 := typestest.MakeGithubRepo(msvcs[extsvc.KindGitHub], msvcs[extsvc.KindBitbucketServer])
+	repo2 := typestest.MakeGitlabRepo(msvcs[extsvc.KindGitLab])
 
 	t.Run("no repos should not fail", func(t *testing.T) {
 		if err := Repos(db).Create(ctx); err != nil {
@@ -362,7 +363,7 @@ func TestRepos_Create(t *testing.T) {
 	})
 
 	t.Run("many repos", func(t *testing.T) {
-		want := types.GenerateRepos(7, repo1, repo2)
+		want := typestest.GenerateRepos(7, repo1, repo2)
 
 		if err := Repos(db).Create(ctx, want...); err != nil {
 			t.Fatalf("Create error: %s", err)

@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -58,7 +59,7 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}

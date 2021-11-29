@@ -1,6 +1,8 @@
 import Dialog from '@reach/dialog'
 import React, { useState, useCallback } from 'react'
 
+import { Link } from '@sourcegraph/shared/src/components/Link'
+
 import { Form } from '../../../../../branded/src/components/Form'
 import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
 import { updateExternalService } from '../../../components/externalServices/backend'
@@ -8,6 +10,7 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
 import { EncryptedDataIcon } from './components/EncryptedDataIcon'
+import { getMachineUserFragment } from './modalHints'
 
 interface CodeHostConfig {
     url: string
@@ -34,8 +37,10 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
 }> = ({ serviceID, serviceConfig, serviceName, hintFragment, onDidUpdate, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
+    const [didAckMachineUserHint, setAckMachineUserHint] = useState(false)
 
     const onChangeToken: React.ChangeEventHandler<HTMLInputElement> = event => setToken(event.target.value)
+    const machineUserFragment = getMachineUserFragment(serviceName)
 
     const handleError = useCallback(
         (error: ErrorLike | string): void => {
@@ -77,38 +82,67 @@ export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
         >
             <div className="web-content">
                 <h3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
-                    Update {serviceName} token
+                    Update {serviceName} connection
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
-                        <label htmlFor="code-host-token">Personal access token</label>
-                        <div className="position-relative">
-                            <input
-                                id="code-host-token"
-                                name="code-host-token"
-                                type="text"
-                                value={token}
-                                onChange={onChangeToken}
-                                className="form-control pr-4"
-                                autoComplete="off"
-                            />
-                            <EncryptedDataIcon />
+                        <div className="alert alert-info" role="alert">
+                            Updating the access token may affect which repositories can be synced with Sourcegraph.{' '}
+                            <Link
+                                to="https://docs.sourcegraph.com/cloud/access_tokens_on_cloud"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-weight-normal"
+                            >
+                                Learn more
+                            </Link>
+                            .
                         </div>
-
-                        <p className="mt-1">{hintFragment}</p>
+                        {didAckMachineUserHint ? (
+                            <>
+                                {' '}
+                                <label htmlFor="code-host-token">Access token</label>
+                                <div className="position-relative">
+                                    <input
+                                        id="code-host-token"
+                                        name="code-host-token"
+                                        type="text"
+                                        value={token}
+                                        onChange={onChangeToken}
+                                        className="form-control pr-4"
+                                        autoComplete="off"
+                                    />
+                                    <EncryptedDataIcon />
+                                </div>
+                                <p className="mt-1">{hintFragment}</p>
+                            </>
+                        ) : (
+                            machineUserFragment
+                        )}
                     </div>
                     <div className="d-flex justify-content-end">
                         <button type="button" className="btn btn-outline-secondary mr-2" onClick={onDidCancel}>
                             Cancel
                         </button>
-                        <LoaderButton
-                            type="submit"
-                            className="btn btn-primary"
-                            loading={isLoading}
-                            disabled={!token || isLoading}
-                            label="Update token"
-                            alwaysShowLabel={true}
-                        />
+
+                        {didAckMachineUserHint ? (
+                            <LoaderButton
+                                type="submit"
+                                className="btn btn-primary"
+                                loading={isLoading}
+                                disabled={!token || isLoading}
+                                label="Update code host connection"
+                                alwaysShowLabel={true}
+                            />
+                        ) : (
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={() => setAckMachineUserHint(previousAckStatus => !previousAckStatus)}
+                            >
+                                I understand, continue
+                            </button>
+                        )}
                     </div>
                 </Form>
             </div>

@@ -47,6 +47,28 @@ func NewMockRunner() *MockRunner {
 	}
 }
 
+// NewStrictMockRunner creates a new mock of the Runner interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockRunner() *MockRunner {
+	return &MockRunner{
+		RunFunc: &RunnerRunFunc{
+			defaultHook: func(context.Context, command.CommandSpec) error {
+				panic("unexpected invocation of MockRunner.Run")
+			},
+		},
+		SetupFunc: &RunnerSetupFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRunner.Setup")
+			},
+		},
+		TeardownFunc: &RunnerTeardownFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRunner.Teardown")
+			},
+		},
+	}
+}
+
 // NewMockRunnerFrom creates a new mock of the MockRunner interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockRunnerFrom(i command.Runner) *MockRunner {

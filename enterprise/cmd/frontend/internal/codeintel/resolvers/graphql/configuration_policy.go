@@ -34,15 +34,16 @@ func (r *configurationPolicyResolver) Name() string {
 }
 
 func (r *configurationPolicyResolver) Repository(ctx context.Context) (*gql.RepositoryResolver, error) {
+	db := database.NewDB(dbconn.Global)
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
-	repo, err := backend.Repos.Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo), nil
+	return gql.NewRepositoryResolver(db, repo), nil
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {

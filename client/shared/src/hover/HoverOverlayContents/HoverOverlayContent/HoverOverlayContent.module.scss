@@ -20,4 +20,14 @@
         // which would prevent wrapping around the floating buttons.
         overflow: visible;
     }
+
+    // Table styles (see https://github.com/sourcegraph/sourcegraph/pull/27599)
+    td {
+        padding-right: 1rem;
+    }
+    tbody {
+        tr {
+            border-top: 1px solid var(--border-color);
+        }
+    }
 }

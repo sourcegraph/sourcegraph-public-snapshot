@@ -536,7 +536,12 @@ export function toPrettyBlobURL(
  */
 export function toAbsoluteBlobURL(
     sourcegraphURL: string,
-    context: RepoSpec & RevisionSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+    context: RepoSpec &
+        RevisionSpec &
+        FileSpec &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec>
 ): string {
     // toPrettyBlobURL() always returns an URL starting with a forward slash,
     // no need to add one here

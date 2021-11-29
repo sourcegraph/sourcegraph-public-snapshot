@@ -21,7 +21,9 @@ type Gauge interface {
 }
 
 type operations struct {
-	handle *observation.Operation
+	handle     *observation.Operation
+	postHandle *observation.Operation
+	preHandle  *observation.Operation
 }
 
 type metricOptions struct {
@@ -85,7 +87,7 @@ func NewMetrics(observationContext *observation.Context, prefix string, opts ...
 }
 
 func newOperations(observationContext *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		prefix,
 		metrics.WithLabels(append(keys, "op")...),
@@ -102,7 +104,9 @@ func newOperations(observationContext *observation.Context, prefix string, keys,
 	}
 
 	return &operations{
-		handle: op("Handle"),
+		handle:     op("Handle"),
+		postHandle: op("PostHandle"),
+		preHandle:  op("PreHandle"),
 	}
 }
 

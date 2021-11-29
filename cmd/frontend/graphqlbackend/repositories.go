@@ -34,7 +34,7 @@ type repositoryArgs struct {
 func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(args.OrderBy),
+			Field:      ToDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
 	}
@@ -45,14 +45,14 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		opt.Query = *args.Query
 	}
 	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
+		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
 		cursor := types.Cursor{
-			Column: string(toDBRepoListColumn(args.OrderBy)),
+			Column: string(ToDBRepoListColumn(args.OrderBy)),
 		}
 
 		if args.Descending {
@@ -86,6 +86,17 @@ type RepositoryConnectionResolver interface {
 	Nodes(ctx context.Context) ([]*RepositoryResolver, error)
 	TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+func NewRepositoryConnectionResolver(db database.DB, opt database.ReposListOptions, cloned, notCloned, indexed, notIndexed bool) RepositoryConnectionResolver {
+	return &repositoryConnectionResolver{
+		db:         db,
+		opt:        opt,
+		cloned:     cloned,
+		notCloned:  notCloned,
+		indexed:    indexed,
+		notIndexed: notIndexed,
+	}
 }
 
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
@@ -160,7 +171,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
-			repos, err := backend.Repos.List(ctx, opt2)
+			repos, err := backend.NewRepos(r.db.Repos()).List(ctx, opt2)
 			if err != nil {
 				r.err = err
 				return
@@ -284,7 +295,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	case string(database.RepoListCreatedAt):
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
-	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
+	return graphqlutil.NextPageCursor(MarshalRepositoryCursor(
 		&types.Cursor{
 			Column:    cursor.Column,
 			Value:     value,
@@ -293,7 +304,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	)), nil
 }
 
-func toDBRepoListColumn(ob string) database.RepoListColumn {
+func ToDBRepoListColumn(ob string) database.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":
 		return database.RepoListName

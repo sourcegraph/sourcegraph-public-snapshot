@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -10,17 +11,12 @@ import (
 )
 
 func TestSubRepoPermsPermissions(t *testing.T) {
-	baseGetter := func() *MockSubRepoPermissionsGetter {
-		getter := NewMockSubRepoPermissionsGetter()
-		getter.RepoSupportedFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-			return true, nil
-		})
-		return getter
-	}
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableSubRepoPermissions: true,
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
 			},
 		},
 	})
@@ -30,25 +26,9 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		name     string
 		userID   int32
 		content  RepoContent
-		clientFn func() *subRepoPermsClient
+		clientFn func() (*SubRepoPermsClient, error)
 		want     Perms
 	}{
-		{
-			name:   "Not supported",
-			userID: 1,
-			content: RepoContent{
-				Repo: "sample",
-				Path: "",
-			},
-			clientFn: func() *subRepoPermsClient {
-				getter := NewMockSubRepoPermissionsGetter()
-				getter.RepoSupportedFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-					return false, nil
-				})
-				return NewSubRepoPermsClient(getter)
-			},
-			want: Read,
-		},
 		{
 			name:   "Empty path",
 			userID: 1,
@@ -56,9 +36,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
-				return NewSubRepoPermsClient(getter)
+			clientFn: func() (*SubRepoPermsClient, error) {
+				return NewSubRepoPermsClient(NewMockSubRepoPermissionsGetter())
 			},
 			want: Read,
 		},
@@ -69,8 +48,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() (*SubRepoPermsClient, error) {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -90,8 +69,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() (*SubRepoPermsClient, error) {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -111,8 +90,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() (*SubRepoPermsClient, error) {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -131,8 +110,8 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() *subRepoPermsClient {
-				getter := baseGetter()
+			clientFn: func() (*SubRepoPermsClient, error) {
+				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
 					return map[api.RepoName]SubRepoPermissions{
 						"sample": {
@@ -149,7 +128,11 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			have, err := tc.clientFn().Permissions(context.Background(), tc.userID, tc.content)
+			client, err := tc.clientFn()
+			if err != nil {
+				t.Fatal(err)
+			}
+			have, err := client.Permissions(context.Background(), tc.userID, tc.content)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -157,5 +140,58 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				t.Fatalf("have %v, want %v", have, tc.want)
 			}
 		})
+	}
+}
+
+func TestSubRepoPermsPermissionsCache(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	getter := NewMockSubRepoPermissionsGetter()
+	client, err := NewSubRepoPermsClient(getter)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	content := RepoContent{
+		Repo: api.RepoName("thing"),
+		Path: "/stuff",
+	}
+
+	// Should hit DB only once
+	for i := 0; i < 3; i++ {
+		_, err = client.Permissions(ctx, 1, content)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		h := getter.GetByUserFunc.History()
+		if len(h) != 1 {
+			t.Fatal("Should have been called once")
+		}
+	}
+
+	// Trigger expiry
+	client.since = func(time time.Time) time.Duration {
+		return defaultCacheTTL + 1
+	}
+
+	_, err = client.Permissions(ctx, 1, content)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := getter.GetByUserFunc.History()
+	if len(h) != 2 {
+		t.Fatal("Should have been called twice")
 	}
 }

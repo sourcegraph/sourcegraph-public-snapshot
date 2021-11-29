@@ -11,26 +11,23 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	if err := initServices(ctx, db); err != nil {
+func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
+	if err := registerMigrations(ctx, db, outOfBandMigrationRunner, services); err != nil {
 		return err
 	}
 
-	if err := registerMigrations(ctx, db, outOfBandMigrationRunner); err != nil {
-		return err
-	}
-
-	resolver, err := newResolver(ctx, db, observationContext)
+	resolver, err := newResolver(ctx, db, observationContext, services)
 	if err != nil {
 		return err
 	}
 
-	uploadHandler, err := newUploadHandler(ctx, db)
+	uploadHandler, err := newUploadHandler(ctx, conf, db, services)
 	if err != nil {
 		return err
 	}
@@ -40,7 +37,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	return nil
 }
 
-func newResolver(ctx context.Context, db dbutil.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, db database.DB, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
 	policyMatcher := policies.NewMatcher(
 		services.gitserverClient,
 		policies.NoopExtractor,
@@ -66,13 +63,13 @@ func newResolver(ctx context.Context, db dbutil.DB, observationContext *observat
 	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
 }
 
-func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {
-	internalHandler, err := NewCodeIntelUploadHandler(ctx, db, true)
+func newUploadHandler(ctx context.Context, conf conftypes.SiteConfigQuerier, db database.DB, services *Services) (func(internal bool) http.Handler, error) {
+	internalHandler, err := NewCodeIntelUploadHandler(ctx, conf, db, true, services)
 	if err != nil {
 		return nil, err
 	}
 
-	externalHandler, err := NewCodeIntelUploadHandler(ctx, db, false)
+	externalHandler, err := NewCodeIntelUploadHandler(ctx, conf, db, false, services)
 	if err != nil {
 		return nil, err
 	}

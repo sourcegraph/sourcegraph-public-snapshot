@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -65,8 +66,8 @@ func main() {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	if reposDir == "" {
@@ -121,62 +122,7 @@ func main() {
 			return "", errors.Errorf("no sources for %q", repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			// We need an internal actor in case we are trying to access a private repo. We
-			// only need access in order to find out the type of code host we're using, so
-			// it's safe.
-			r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
-			if err != nil {
-				return nil, errors.Wrap(err, "get repository")
-			}
-
-			switch r.ExternalRepo.ServiceType {
-			case extsvc.TypePerforce:
-				// Extract options from external service config
-				var c schema.PerforceConnection
-				for _, info := range r.Sources {
-					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-					if err != nil {
-						return nil, errors.Wrap(err, "get external service")
-					}
-
-					normalized, err := jsonc.Parse(es.Config)
-					if err != nil {
-						return nil, errors.Wrap(err, "normalize JSON")
-					}
-
-					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-						return nil, errors.Wrap(err, "unmarshal JSON")
-					}
-					break
-				}
-
-				return &server.PerforceDepotSyncer{
-					MaxChanges:   int(c.MaxChanges),
-					Client:       c.P4Client,
-					FusionConfig: configureFusionClient(c),
-				}, nil
-			case extsvc.TypeJVMPackages:
-				var c schema.JVMPackagesConnection
-				for _, info := range r.Sources {
-					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-					if err != nil {
-						return nil, errors.Wrap(err, "get external service")
-					}
-
-					normalized, err := jsonc.Parse(es.Config)
-					if err != nil {
-						return nil, errors.Wrap(err, "normalize JSON")
-					}
-
-					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
-						return nil, errors.Wrap(err, "unmarshal JSON")
-					}
-					break
-				}
-
-				return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
-			}
-			return &server.GitRepoSyncer{}, nil
+			return getVCSSyncer(ctx, externalServiceStore, repoStore, codeintelDB, repo)
 		},
 		Hostname:   hostname.Get(),
 		DB:         db,
@@ -195,7 +141,7 @@ func main() {
 	// Create Handler now since it also initializes state
 
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
+	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -230,16 +176,23 @@ func main() {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+
+	// Once we receive one of the signals from above, continues with the shutdown
+	// process.
 	<-c
 	go func() {
+		// If a second signal is received, exit immediately.
 		<-c
 		os.Exit(0)
 	}()
 
-	// Stop accepting requests. In the future we should use graceful shutdown.
-	if err := srv.Close(); err != nil {
-		log15.Error("closing http server", "error", err)
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel = context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
+	defer cancel()
+	// Stop accepting requests.
+	if err := srv.Shutdown(ctx); err != nil {
+		log15.Error("shutting down http server", "error", err)
 	}
 
 	// The most important thing this does is kill all our clones. If we just
@@ -250,7 +203,7 @@ func main() {
 func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	// Set up default settings first
 	fc := server.FusionConfig{
-		Enabled:             conn.UseFusionClient,
+		Enabled:             false,
 		Client:              conn.P4Client,
 		LookAhead:           2000,
 		NetworkThreads:      12,
@@ -266,14 +219,29 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		return fc
 	}
 
-	fc.Enabled = conn.FusionClient.Enabled || conn.UseFusionClient
+	// Required
+	fc.Enabled = conn.FusionClient.Enabled
 	fc.LookAhead = conn.FusionClient.LookAhead
-	fc.NetworkThreads = conn.FusionClient.NetworkThreads
-	fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
-	fc.PrintBatch = conn.FusionClient.PrintBatch
-	fc.Refresh = conn.FusionClient.Refresh
-	fc.Retries = conn.FusionClient.Retries
-	fc.MaxChanges = conn.FusionClient.MaxChanges
+
+	// Optional
+	if conn.FusionClient.NetworkThreads > 0 {
+		fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	}
+	if conn.FusionClient.NetworkThreadsFetch > 0 {
+		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
+	}
+	if conn.FusionClient.PrintBatch > 0 {
+		fc.PrintBatch = conn.FusionClient.PrintBatch
+	}
+	if conn.FusionClient.Refresh > 0 {
+		fc.Refresh = conn.FusionClient.Refresh
+	}
+	if conn.FusionClient.Retries > 0 {
+		fc.Retries = conn.FusionClient.Retries
+	}
+	if conn.FusionClient.MaxChanges > 0 {
+		fc.MaxChanges = conn.FusionClient.MaxChanges
+	}
 	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
 
 	return fc
@@ -292,7 +260,6 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
-
 	//
 	// START FLAILING
 
@@ -305,9 +272,9 @@ func getDB() (dbutil.DB, error) {
 	// END FLAILING
 	//
 
-	dsn := conf.Get().ServiceConnections.PostgresDSN
+	dsn := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		newDSN := conf.Get().ServiceConnections().PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do
@@ -318,4 +285,53 @@ func getDB() (dbutil.DB, error) {
 	})
 
 	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+}
+
+func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
+	codeintelDB *codeinteldbstore.Store, repo api.RepoName) (server.VCSSyncer, error) {
+	// We need an internal actor in case we are trying to access a private repo. We
+	// only need access in order to find out the type of code host we're using, so
+	// it's safe.
+	r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		return nil, errors.Wrap(err, "get repository")
+	}
+
+	extractOptions := func(connection interface{}) error {
+		for _, info := range r.Sources {
+			extSvc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+			if err != nil {
+				return errors.Wrap(err, "get external service")
+			}
+			normalized, err := jsonc.Parse(extSvc.Config)
+			if err != nil {
+				return errors.Wrap(err, "normalize JSON")
+			}
+			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
+				return errors.Wrap(err, "unmarshal JSON")
+			}
+			return nil
+		}
+		return errors.Errorf("unexpected empty Sources map in %v", r)
+	}
+
+	switch r.ExternalRepo.ServiceType {
+	case extsvc.TypePerforce:
+		var c schema.PerforceConnection
+		if err := extractOptions(c); err != nil {
+			return nil, err
+		}
+		return &server.PerforceDepotSyncer{
+			MaxChanges:   int(c.MaxChanges),
+			Client:       c.P4Client,
+			FusionConfig: configureFusionClient(c),
+		}, nil
+	case extsvc.TypeJVMPackages:
+		var c schema.JVMPackagesConnection
+		if err := extractOptions(c); err != nil {
+			return nil, err
+		}
+		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
+	}
+	return &server.GitRepoSyncer{}, nil
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -53,5 +54,5 @@ func populateTestStore(t testing.TB) *Store {
 		}
 	}
 
-	return NewStore(db, &observation.TestContext)
+	return NewStore(db, conf.DefaultClient(), &observation.TestContext)
 }

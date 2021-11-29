@@ -6,7 +6,7 @@ import { BatchChangesIcon } from '../../batches/icons'
 import {
     apiConsoleGroup,
     configurationGroup as ossConfigurationGroup,
-    maintenanceGroup,
+    maintenanceGroup as ossMaintenanceGroup,
     overviewGroup,
     repositoriesGroup,
     usersGroup,
@@ -21,6 +21,18 @@ const configurationGroup: SiteAdminSideBarGroup = {
         {
             label: 'License',
             to: '/site-admin/license',
+        },
+    ],
+}
+
+const maintenanceGroup: SiteAdminSideBarGroup = {
+    ...ossMaintenanceGroup,
+    items: [
+        ...ossMaintenanceGroup.items,
+        {
+            to: '/site-admin/executors',
+            label: 'Executors',
+            condition: () => Boolean(window.context?.executorsEnabled),
         },
     ],
 }
@@ -52,6 +64,11 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             label: 'Batch specs',
             to: '/site-admin/batch-changes/specs',
             condition: props => props.batchChangesExecutionEnabled,
+        },
+        {
+            label: 'Incoming webhooks',
+            to: '/site-admin/batch-changes/webhook-logs',
+            condition: props => props.batchChangesWebhookLogsEnabled,
         },
     ],
     condition: ({ batchChangesEnabled }) => batchChangesEnabled,

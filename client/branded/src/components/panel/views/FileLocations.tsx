@@ -186,6 +186,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
             showAllMatches={true}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
             settingsCascade={this.props.settingsCascade}
+            containerClassName={styles.resultContainer}
         />
     )
 }

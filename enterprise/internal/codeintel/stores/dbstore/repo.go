@@ -12,48 +12,83 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// PolicyRepositoryMatchLimit is the maximum number of repositories we'll allow a single configuration
-// policy to match. If there are more than this number of repositories, ones with a GitHub higher star
-// count will be applied over those with a lower star count (to maintain relevance in Cloud).
-//
-// See #26852 for improvement ideas.
-const PolicyRepositoryMatchLimit = 10000
-
-// RepoIDsByGlobPattern returns a slice of IDs from the repo table that matches the pattern string.
-func (s *Store) RepoIDsByGlobPattern(ctx context.Context, pattern string) (_ []int, err error) {
-	ctx, endObservation := s.operations.repoIDsByGlobPattern.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("pattern", pattern),
+// RepoIDsByGlobPatterns returns a page of repository identifiers and a total count of repositories matching
+// one of the given patterns.
+func (s *Store) RepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
+	ctx, endObservation := s.operations.repoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("patterns", strings.Join(patterns, ", ")),
+		log.Int("limit", limit),
+		log.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
-	if err != nil {
-		return nil, err
+	if len(patterns) == 0 {
+		return nil, 0, nil
 	}
 
-	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternQuery, makeWildcardPattern(pattern), authzConds, PolicyRepositoryMatchLimit)))
+	conds := make([]*sqlf.Query, 0, len(patterns))
+	for _, pattern := range patterns {
+		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", makeWildcardPattern(pattern)))
+	}
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	authzConds, err := database.AuthzQueryConds(ctx, tx.Handle().DB())
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsCountQuery, sqlf.Join(conds, "OR"), authzConds)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	ids, err := basestore.ScanInts(tx.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternsQuery, sqlf.Join(conds, "OR"), authzConds, limit, offset)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return ids, totalCount, nil
 }
 
-const repoIDsByGlobPatternQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPattern
-SELECT id
+const repoIDsByGlobPatternsCountQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPatterns
+SELECT COUNT(*)
 FROM repo
 WHERE
-	lower(name) LIKE %s AND
+	(%s) AND
 	deleted_at IS NULL AND
 	blocked IS NULL AND
 	(%s)
-ORDER BY stars DESC, id
-LIMIT %s
+`
+
+const repoIDsByGlobPatternsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPatterns
+SELECT id
+FROM repo
+WHERE
+	(%s) AND
+	deleted_at IS NULL AND
+	blocked IS NULL AND
+	(%s)
+ORDER BY stars DESC NULLS LAST, id
+LIMIT %s OFFSET %s
 `
 
 // UpdateReposMatchingPatterns updates the values of the repository pattern lookup table for the
 // given configuration policy identifier. Each repository matching one of the given patterns will
 // be associated with the target configuration policy. If the patterns list is empty, the lookup
-// table will remove any data associated with the target configuration policy.
-func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error) {
+// table will remove any data associated with the target configuration policy. If the number of
+// matches exceeds the given limit (if supplied), then only top ranked repositories by star count
+// will be associated to the policy in the database and the remainder will be dropped.
+func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
 	ctx, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("pattern", strings.Join(patterns, ",")),
+		log.Int("policyID", policyID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -73,7 +108,12 @@ func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 		conds = append(conds, sqlf.Sprintf("FALSE"))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), PolicyRepositoryMatchLimit, policyID, policyID, policyID))
+	limitExpression := sqlf.Sprintf("")
+	if repositoryMatchLimit != nil {
+		limitExpression = sqlf.Sprintf("LIMIT %s", *repositoryMatchLimit)
+	}
+
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), limitExpression, policyID, policyID, policyID))
 }
 
 const updateReposMatchingPatternsQuery = `
@@ -86,8 +126,8 @@ matching_repositories AS (
 		(%s) AND
 		deleted_at IS NULL AND
 		blocked IS NULL
-	ORDER BY stars DESC, id
-	LIMIT %s
+	ORDER BY stars DESC NULLS LAST, id
+	%s
 ),
 inserted AS (
 	-- Insert records that match the policy but don't yet exist

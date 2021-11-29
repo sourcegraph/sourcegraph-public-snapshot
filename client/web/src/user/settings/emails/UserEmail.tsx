@@ -15,6 +15,8 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
+import styles from './UserEmail.module.scss'
+
 interface Props {
     user: string
     email: (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
@@ -130,7 +132,7 @@ export const UserEmail: FunctionComponent<Props> = ({
     return (
         <>
             <div className="d-flex align-items-center justify-content-between">
-                <div>
+                <div className="d-flex align-items-center">
                     <span className="mr-2">{email}</span>
                     {verified && <span className="badge badge-success mr-1">Verified</span>}
                     {!verified && !verificationPending && (
@@ -139,7 +141,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                     {isPrimary && <span className="badge badge-primary mr-1">Primary</span>}
                     {!verified && verificationPending && (
                         <span>
-                            <span className="user-settings-emails-page__dot">&bull;&nbsp;</span>
+                            <span className={styles.dot}>&bull;&nbsp;</span>
                             <button
                                 type="button"
                                 className="btn btn-link p-0"
@@ -151,7 +153,7 @@ export const UserEmail: FunctionComponent<Props> = ({
                         </span>
                     )}
                 </div>
-                <div>
+                <div className="d-flex align-items-center">
                     {viewerCanManuallyVerify && (
                         <button
                             type="button"

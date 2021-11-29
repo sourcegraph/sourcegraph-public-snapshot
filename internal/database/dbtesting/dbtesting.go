@@ -51,9 +51,9 @@ var (
 	connectErr  error
 )
 
-// SetupGlobalTestDB creates a temporary test DB handle, sets
+// setupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
-func SetupGlobalTestDB(t testing.TB) {
+func setupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -84,7 +84,7 @@ func SetupGlobalTestDB(t testing.TB) {
 // New callers and callers actually wishing to migrate fully away from a global DB connection
 // should use the new ../dbtest package instead of this one.
 func GetDB(t testing.TB) *sql.DB {
-	SetupGlobalTestDB(t)
+	setupGlobalTestDB(t)
 	return dbconn.Global
 }
 
@@ -234,16 +234,27 @@ func testPkgName() string {
 
 // MockDB implements the dbutil.DB interface and is intended to be used
 // in tests that require the database handle but never call it.
-type MockDB struct{}
+type MockDB struct {
+	T *testing.T
+}
 
 func (db *MockDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+	if db.T != nil {
+		db.T.Fatal("mock db methods are not supposed to be called")
+	}
 	panic("mock db methods are not supposed to be called")
 }
 
 func (db *MockDB) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
+	if db.T != nil {
+		db.T.Fatal("mock db methods are not supposed to be called")
+	}
 	panic("mock db methods are not supposed to be called")
 }
 
 func (db *MockDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+	if db.T != nil {
+		db.T.Fatal("mock db methods are not supposed to be called")
+	}
 	panic("mock db methods are not supposed to be called")
 }

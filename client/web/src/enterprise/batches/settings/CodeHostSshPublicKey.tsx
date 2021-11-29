@@ -17,6 +17,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
     [ExternalServiceKind.OTHER]: 'unsupported',
     [ExternalServiceKind.PERFORCE]: 'unsupported',
+    [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
 }
 

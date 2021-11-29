@@ -25,7 +25,17 @@ import (
 //
 type Unified struct {
 	schema.SiteConfiguration
-	ServiceConnections conftypes.ServiceConnections
+	ServiceConnectionConfig conftypes.ServiceConnections
+}
+
+var _ conftypes.UnifiedQuerier = Unified{}
+
+func (u Unified) SiteConfig() schema.SiteConfiguration {
+	return u.SiteConfiguration
+}
+
+func (u Unified) ServiceConnections() conftypes.ServiceConnections {
+	return u.ServiceConnectionConfig
 }
 
 type configurationMode int
@@ -66,9 +76,7 @@ func getMode() configurationMode {
 	}
 }
 
-var (
-	configurationServerFrontendOnlyInitialized = make(chan struct{})
-)
+var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
 	clientStore := newStore()
@@ -163,9 +171,9 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// Install the passthrough configuration source for defaultClient. This is
 	// so that the frontend does not request configuration from itself via HTTP
 	// and instead only relies on the DB.
-	defaultClient().passthrough = source
+	DefaultClient().passthrough = source
 
-	go defaultClient().continuouslyUpdate(nil)
+	go DefaultClient().continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)
 
 	startSiteConfigEscapeHatchWorker(source)

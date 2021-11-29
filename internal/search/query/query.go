@@ -38,15 +38,6 @@ func succeeds(passes ...pass) step {
 	}
 }
 
-// With returns step if enabled is true. Use it to compose a pipeline that
-// conditionally run steps.
-func With(enabled bool, step step) step {
-	if !enabled {
-		return identity
-	}
-	return step
-}
-
 // For runs processing steps for a given search type. This includes
 // normalization, substitution for whitespace, and pattern labeling.
 func For(searchType SearchType) step {

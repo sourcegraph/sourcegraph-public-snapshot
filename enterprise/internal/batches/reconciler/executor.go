@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -550,7 +551,7 @@ func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getN
 // internalClient is here for mocking reasons.
 var internalClient interface {
 	ExternalURL(context.Context) (string, error)
-} = api.InternalClient
+} = internalapi.Client
 
 func batchChangeURL(ctx context.Context, ns *database.Namespace, c *btypes.BatchChange) (string, error) {
 	// To build the absolute URL, we need to know where Sourcegraph is!

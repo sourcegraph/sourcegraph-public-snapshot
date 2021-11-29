@@ -25,6 +25,18 @@ func NewMockErrorHandler() *MockErrorHandler {
 	}
 }
 
+// NewStrictMockErrorHandler creates a new mock of the ErrorHandler
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockErrorHandler() *MockErrorHandler {
+	return &MockErrorHandler{
+		HandleErrorFunc: &ErrorHandlerHandleErrorFunc{
+			defaultHook: func(error) {
+				panic("unexpected invocation of MockErrorHandler.HandleError")
+			},
+		},
+	}
+}
+
 // NewMockErrorHandlerFrom creates a new mock of the MockErrorHandler
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -37,9 +38,17 @@ func (e ErrRepoSeeOther) Error() string {
 	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
 }
 
-var Repos = &repos{
-	store: database.GlobalRepos,
-	cache: dbcache.NewIndexableReposLister(database.GlobalRepos),
+// NewRepos uses the provided `database.RepoStore` to initialize a new repos
+// store for the backend.
+//
+// NOTE: The underlying cache is reused from Repos global variable to actually
+// make cache be useful. This is mostly a workaround for now until we come up a
+// more idiomatic solution.
+func NewRepos(repoStore database.RepoStore) *repos {
+	return &repos{
+		store: repoStore,
+		cache: dbcache.NewIndexableReposLister(repoStore),
+	}
 }
 
 type repos struct {
@@ -87,7 +96,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 			Scheme:   "https",
 			Host:     "sourcegraph.com",
 			Path:     string(name),
-			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
 		}).String()}
 	default:
 		return nil, err

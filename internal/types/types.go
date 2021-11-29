@@ -454,8 +454,6 @@ type GitserverRepo struct {
 	// Usually represented by a gitserver hostname
 	ShardID     string
 	CloneStatus CloneStatus
-	// The last external service used to sync or clone this repo
-	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
@@ -504,6 +502,9 @@ func (e *ExternalService) URN() string {
 
 // IsDeleted returns true if the external service is deleted.
 func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+
+// IsSiteOwned returns true if the external service is owned by the site.
+func (e *ExternalService) IsSiteOwned() bool { return e.NamespaceUserID == 0 && e.NamespaceOrgID == 0 }
 
 // Update updates ExternalService e with the fields from the given newer ExternalService n,
 // returning true if modified.
@@ -1120,6 +1121,7 @@ type CodeInsightsUsageStatistics struct {
 	WeeklyAggregatedUsage          []AggregatedPingStats
 	InsightTimeIntervals           []InsightTimeIntervalPing
 	InsightOrgVisible              []OrgVisibleInsightPing
+	InsightTotalCounts             InsightTotalCounts
 }
 
 // Usage statistics for a type of code insight
@@ -1150,6 +1152,28 @@ type InsightTimeIntervalPing struct {
 type OrgVisibleInsightPing struct {
 	Type       string
 	TotalCount int
+}
+
+type InsightViewsCountPing struct {
+	ViewType   string
+	TotalCount int
+}
+
+type InsightSeriesCountPing struct {
+	GenerationType string
+	TotalCount     int
+}
+
+type InsightViewSeriesCountPing struct {
+	GenerationType string
+	ViewType       string
+	TotalCount     int
+}
+
+type InsightTotalCounts struct {
+	ViewCounts       []InsightViewsCountPing
+	SeriesCounts     []InsightSeriesCountPing
+	ViewSeriesCounts []InsightViewSeriesCountPing
 }
 
 type CodeMonitoringUsageStatistics struct {

@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var ErrExtensionsDisabled = errors.New("extensions are disabled in site configuration (contact the site admin to enable extensions)")
@@ -29,7 +29,7 @@ func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (ExtensionRegist
 
 // ExtensionRegistry is the implementation of the GraphQL types ExtensionRegistry and
 // ExtensionRegistryMutation.
-var ExtensionRegistry func(db dbutil.DB) ExtensionRegistryResolver
+var ExtensionRegistry func(db database.DB) ExtensionRegistryResolver
 
 // ExtensionRegistryResolver is the interface for the GraphQL types ExtensionRegistry and
 // ExtensionRegistryMutation.
@@ -103,7 +103,7 @@ var NodeToRegistryExtension func(interface{}) (RegistryExtension, bool)
 
 // RegistryExtensionByID is called to look up values of GraphQL type RegistryExtension. It is
 // assigned at init time.
-var RegistryExtensionByID func(context.Context, dbutil.DB, graphql.ID) (RegistryExtension, error)
+var RegistryExtensionByID func(context.Context, database.DB, graphql.ID) (RegistryExtension, error)
 
 // RegistryExtension is the interface for the GraphQL type RegistryExtension.
 type RegistryExtension interface {

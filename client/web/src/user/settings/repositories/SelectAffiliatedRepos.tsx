@@ -20,7 +20,15 @@ import {
     SetExternalServiceReposResult,
 } from '../../../graphql-operations'
 
+import {
+    FilterInput,
+    ListItemContainer,
+    RepositoryNodeContainer,
+    ShimmerContainer,
+    UserSettingReposContainer,
+} from './components'
 import { CheckboxRepositoryNode } from './RepositoryNode'
+
 export interface AffiliatedReposReference {
     submit: () => Promise<FetchResult<SetExternalServiceReposResult>[] | void>
 }
@@ -308,7 +316,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 <input type="radio" value="all" checked={selectionState.radio === 'all'} onChange={handleRadioSelect} />
                 <div className="d-flex flex-column ml-2">
                     <p className="mb-0">Sync all repositories</p>
-                    <p className="user-settings-repos__text-light text-muted">
+                    <p className="font-weight-normal text-muted">
                         Will sync all current and future public and private repositories
                     </p>
                 </div>
@@ -343,8 +351,8 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                     ))}
                 </select>
             </div>
-            <input
-                className="form-control user-settings-repos__filter-input"
+            <FilterInput
+                className="form-control"
                 type="search"
                 placeholder="Filter..."
                 name="query"
@@ -455,7 +463,10 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const rows: JSX.Element = (
         <tbody>
             <tr className="align-items-baseline d-flex" key="header">
-                <td className="user-settings-repos__repositorynode p-2 w-100 d-flex align-items-center border-top-0 border-bottom">
+                <RepositoryNodeContainer
+                    as="td"
+                    className="p-2 w-100 d-flex align-items-center border-top-0 border-bottom"
+                >
                     <input
                         id="select-all-repos"
                         className="mr-3"
@@ -477,7 +488,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                             } selected`}</small>
                         )) || <small>Select all</small>}
                     </label>
-                </td>
+                </RepositoryNodeContainer>
             </tr>
             {filteredRepos.map((repo, index) => {
                 if (index < (currentPage - 1) * PER_PAGE || index >= currentPage * PER_PAGE) {
@@ -503,24 +514,24 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
     const modeSelectShimmer: JSX.Element = (
         <div className="container">
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
+                <ShimmerContainer circle={true} className="mr-2" />
+                <ShimmerContainer className="mb-1 p-2 border-top-0 col-sm-2" />
             </div>
             <div className="mt-1 ml-2 row">
-                <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
+                <ShimmerContainer className="mb-3 p-2 ml-1 border-top-0 col-sm-6" />
             </div>
             <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer p-2 mb-1 border-top-0 col-sm-3" />
+                <ShimmerContainer circle={true} className="mr-2" />
+                <ShimmerContainer className="p-2 mb-1 border-top-0 col-sm-3" />
             </div>
         </div>
     )
 
     return (
-        <div className="user-settings-repos mb-0">
+        <UserSettingReposContainer className="mb-0">
             <Container>
                 <ul className="list-group">
-                    <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
+                    <ListItemContainer key="from-code-hosts">
                         <div>
                             {/* display type of repo sync radio buttons or shimmer when appropriate */}
                             {hasCodeHosts && selectionState.loaded ? modeSelect : modeSelectShimmer}
@@ -545,7 +556,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                                 </div>
                             )}
                         </div>
-                    </li>
+                    </ListItemContainer>
                 </ul>
             </Container>
             <AwayPrompt
@@ -554,6 +565,6 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
                 button_ok_text="Discard"
                 when={didSelectionChange}
             />
-        </div>
+        </UserSettingReposContainer>
     )
 }

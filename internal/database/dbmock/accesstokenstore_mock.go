@@ -129,6 +129,78 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 	}
 }
 
+// NewStrictMockAccessTokenStore creates a new mock of the AccessTokenStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
+	return &MockAccessTokenStore{
+		CountFunc: &AccessTokenStoreCountFunc{
+			defaultHook: func(context.Context, database.AccessTokensListOptions) (int, error) {
+				panic("unexpected invocation of MockAccessTokenStore.Count")
+			},
+		},
+		CreateFunc: &AccessTokenStoreCreateFunc{
+			defaultHook: func(context.Context, int32, []string, string, int32) (int64, string, error) {
+				panic("unexpected invocation of MockAccessTokenStore.Create")
+			},
+		},
+		CreateInternalFunc: &AccessTokenStoreCreateInternalFunc{
+			defaultHook: func(context.Context, int32, []string, string, int32) (int64, string, error) {
+				panic("unexpected invocation of MockAccessTokenStore.CreateInternal")
+			},
+		},
+		DeleteByIDFunc: &AccessTokenStoreDeleteByIDFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockAccessTokenStore.DeleteByID")
+			},
+		},
+		DeleteByTokenFunc: &AccessTokenStoreDeleteByTokenFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockAccessTokenStore.DeleteByToken")
+			},
+		},
+		GetByIDFunc: &AccessTokenStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (*database.AccessToken, error) {
+				panic("unexpected invocation of MockAccessTokenStore.GetByID")
+			},
+		},
+		GetByTokenFunc: &AccessTokenStoreGetByTokenFunc{
+			defaultHook: func(context.Context, string) (*database.AccessToken, error) {
+				panic("unexpected invocation of MockAccessTokenStore.GetByToken")
+			},
+		},
+		HandleFunc: &AccessTokenStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockAccessTokenStore.Handle")
+			},
+		},
+		HardDeleteByIDFunc: &AccessTokenStoreHardDeleteByIDFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockAccessTokenStore.HardDeleteByID")
+			},
+		},
+		ListFunc: &AccessTokenStoreListFunc{
+			defaultHook: func(context.Context, database.AccessTokensListOptions) ([]*database.AccessToken, error) {
+				panic("unexpected invocation of MockAccessTokenStore.List")
+			},
+		},
+		LookupFunc: &AccessTokenStoreLookupFunc{
+			defaultHook: func(context.Context, string, string) (int32, error) {
+				panic("unexpected invocation of MockAccessTokenStore.Lookup")
+			},
+		},
+		TransactFunc: &AccessTokenStoreTransactFunc{
+			defaultHook: func(context.Context) (database.AccessTokenStore, error) {
+				panic("unexpected invocation of MockAccessTokenStore.Transact")
+			},
+		},
+		WithFunc: &AccessTokenStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.AccessTokenStore {
+				panic("unexpected invocation of MockAccessTokenStore.With")
+			},
+		},
+	}
+}
+
 // NewMockAccessTokenStoreFrom creates a new mock of the
 // MockAccessTokenStore interface. All methods delegate to the given
 // implementation, unless overwritten.

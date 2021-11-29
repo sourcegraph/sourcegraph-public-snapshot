@@ -19,10 +19,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -88,8 +89,11 @@ type JSContext struct {
 
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	CodeIntelAutoIndexingEnabled bool `json:"codeIntelAutoIndexingEnabled"`
+	ExecutorsEnabled                         bool `json:"executorsEnabled"`
+	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
+	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
@@ -98,7 +102,7 @@ type JSContext struct {
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request) JSContext {
+func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	actor := actor.FromContext(req.Context())
 
 	headers := make(map[string]string)
@@ -118,7 +122,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	siteID := siteid.Get()
 
 	// Show the site init screen?
-	globalState, err := globalstatedb.Get(req.Context())
+	globalState, err := db.GlobalState().Get(req.Context())
 	needsSiteInit := err == nil && !globalState.Initialized
 
 	// Auth providers
@@ -165,7 +169,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Site:              publicSiteConfiguration(),
 		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
-		DeployType:        conf.DeployType(),
+		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
@@ -185,10 +189,13 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		Branding: globals.Branding(),
 
-		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), dbconn.Global) == nil,
+		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(req.Context(), db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
+		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodeIntelAutoIndexingEnabled: conf.CodeIntelAutoIndexingEnabled(),
+		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
+		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
+		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 

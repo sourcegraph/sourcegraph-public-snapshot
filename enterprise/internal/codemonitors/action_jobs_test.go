@@ -14,30 +14,30 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1)
+	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var got *ActionJob
-	got, err = s.ActionJobForIDInt(ctx, 1)
+	got, err = s.GetActionJob(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := &ActionJob{
-		Id:             1,
-		Email:          1,
+		ID:             1,
+		Email:          int64Ptr(1),
 		TriggerEvent:   1,
 		State:          "queued",
 		FailureMessage: nil,
@@ -53,18 +53,20 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	}
 }
 
+func int64Ptr(i int64) *int64 { return &i }
+
 func TestGetActionJobMetadata(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,11 +76,11 @@ func TestGetActionJobMetadata(t *testing.T) {
 		wantQuery            = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 		wantMonitorID  int64 = 1
 	)
-	err = s.LogSearch(ctx, wantQuery, wantNumResults, 1)
+	err = s.UpdateTriggerJobWithResults(ctx, wantQuery, wantNumResults, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueActionEmailsForQueryIDInt64(ctx, 1, 1)
+	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,23 +111,23 @@ func TestScanActionJobs(t *testing.T) {
 		testQueryID        int64 = 1
 	)
 
-	ctx, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueTriggerQueries(ctx)
+	err = s.EnqueueQueryTriggerJobs(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.EnqueueActionEmailsForQueryIDInt64(ctx, testQueryID, testTriggerEventID)
+	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, testTriggerEventID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, testRecordID))
-	record, _, err := ScanActionJobs(rows, err)
+	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
+	record, _, err := ScanActionJobRecord(rows, err)
 	if err != nil {
 		t.Fatal(err)
 	}

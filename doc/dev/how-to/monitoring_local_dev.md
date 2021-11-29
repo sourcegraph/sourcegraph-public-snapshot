@@ -4,7 +4,7 @@ This guide documents how to spin up and develop Sourcegraph's monitoring stack l
 Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
 The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well, including background about the components listed here.
 
-> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
+> NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](index.md).
 
 ## Running monitoring components
 
@@ -12,7 +12,7 @@ The [developing observability page](../background-information/observability/inde
 
 The monitoring stack is not included in `sg start` (or `sg start oss` and `sg start enterprise`) scripts.
 It needs to be started separately with `sg start monitoring`.
-Learn more about these in the [general development getting started guide](../getting-started/index.md).
+Learn more about these in the [general development getting started guide](../setup/index.md).
 
 ### Without all services
 
@@ -21,7 +21,7 @@ For convenience, there are a number of ways to spin up Sourcegraph's monitoring 
 You can follow the instructions below for spinning up individual monitoring components, or use one of the following:
 
 - `sg start monitoring`: Spin up just monitoring components
-- `sg start monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../admin/observability/alerting.md#setting-up-alerting).
+- `sg start monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../../admin/observability/alerting.md#setting-up-alerting).
 
 #### Grafana
 
@@ -87,18 +87,18 @@ This should be sufficient to access the frontend API and the admin console (`/si
 
 #### Docsite
 
-The docsite is used to serve generated monitoring documentation, such as the [alert solutions reference](../../admin/observability/alert_solutions.md).
+The docsite is used to serve generated monitoring documentation, such as the [alert solutions reference](../../../admin/observability/alert_solutions.md).
 You can spin it up by running:
 
 ```sh
 yarn docsite:serve
 ```
 
-Learn more about docsite development in the [product documentation implementation guide](./documentation_implementation.md).
+Learn more about docsite development in the [product documentation implementation guide](documentation_implementation.md).
 
 ## Using the monitoring generator
 
-> NOTE: Looking to add monitoring first? Refer to the [how to add monitoring](./add_monitoring.md) guide!
+> NOTE: Looking to add monitoring first? Refer to the [how to add monitoring](add_monitoring.md) guide!
 
 The dev startup scripts used in this guide all mount relevant configuration directories into each monitoring service.
 This means that you can:

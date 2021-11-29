@@ -107,7 +107,7 @@ type ScopeCache interface {
 // Currently only GitHub and GitLab external services with user or org namespace are supported,
 // other code hosts will simply return an empty slice
 func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalService) ([]string, error) {
-	if (svc.NamespaceUserID == 0 && svc.NamespaceOrgID == 0) || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
+	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
 	src, err := NewSource(svc, nil)

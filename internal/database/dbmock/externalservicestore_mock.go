@@ -182,6 +182,109 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 	}
 }
 
+// NewStrictMockExternalServiceStore creates a new mock of the
+// ExternalServiceStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
+	return &MockExternalServiceStore{
+		CountFunc: &ExternalServiceStoreCountFunc{
+			defaultHook: func(context.Context, database.ExternalServicesListOptions) (int, error) {
+				panic("unexpected invocation of MockExternalServiceStore.Count")
+			},
+		},
+		CreateFunc: &ExternalServiceStoreCreateFunc{
+			defaultHook: func(context.Context, func() *conf.Unified, *types.ExternalService) error {
+				panic("unexpected invocation of MockExternalServiceStore.Create")
+			},
+		},
+		DeleteFunc: &ExternalServiceStoreDeleteFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockExternalServiceStore.Delete")
+			},
+		},
+		DistinctKindsFunc: &ExternalServiceStoreDistinctKindsFunc{
+			defaultHook: func(context.Context) ([]string, error) {
+				panic("unexpected invocation of MockExternalServiceStore.DistinctKinds")
+			},
+		},
+		DoneFunc: &ExternalServiceStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockExternalServiceStore.Done")
+			},
+		},
+		GetAffiliatedSyncErrorsFunc: &ExternalServiceStoreGetAffiliatedSyncErrorsFunc{
+			defaultHook: func(context.Context, *types.User) (map[int64]string, error) {
+				panic("unexpected invocation of MockExternalServiceStore.GetAffiliatedSyncErrors")
+			},
+		},
+		GetByIDFunc: &ExternalServiceStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (*types.ExternalService, error) {
+				panic("unexpected invocation of MockExternalServiceStore.GetByID")
+			},
+		},
+		GetLastSyncErrorFunc: &ExternalServiceStoreGetLastSyncErrorFunc{
+			defaultHook: func(context.Context, int64) (string, error) {
+				panic("unexpected invocation of MockExternalServiceStore.GetLastSyncError")
+			},
+		},
+		GetSyncJobsFunc: &ExternalServiceStoreGetSyncJobsFunc{
+			defaultHook: func(context.Context) ([]*types.ExternalServiceSyncJob, error) {
+				panic("unexpected invocation of MockExternalServiceStore.GetSyncJobs")
+			},
+		},
+		HandleFunc: &ExternalServiceStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockExternalServiceStore.Handle")
+			},
+		},
+		ListFunc: &ExternalServiceStoreListFunc{
+			defaultHook: func(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+				panic("unexpected invocation of MockExternalServiceStore.List")
+			},
+		},
+		RepoCountFunc: &ExternalServiceStoreRepoCountFunc{
+			defaultHook: func(context.Context, int64) (int32, error) {
+				panic("unexpected invocation of MockExternalServiceStore.RepoCount")
+			},
+		},
+		SyncDueFunc: &ExternalServiceStoreSyncDueFunc{
+			defaultHook: func(context.Context, []int64, time.Duration) (bool, error) {
+				panic("unexpected invocation of MockExternalServiceStore.SyncDue")
+			},
+		},
+		TransactFunc: &ExternalServiceStoreTransactFunc{
+			defaultHook: func(context.Context) (database.ExternalServiceStore, error) {
+				panic("unexpected invocation of MockExternalServiceStore.Transact")
+			},
+		},
+		UpdateFunc: &ExternalServiceStoreUpdateFunc{
+			defaultHook: func(context.Context, []schema.AuthProviders, int64, *database.ExternalServiceUpdate) error {
+				panic("unexpected invocation of MockExternalServiceStore.Update")
+			},
+		},
+		UpsertFunc: &ExternalServiceStoreUpsertFunc{
+			defaultHook: func(context.Context, ...*types.ExternalService) error {
+				panic("unexpected invocation of MockExternalServiceStore.Upsert")
+			},
+		},
+		ValidateConfigFunc: &ExternalServiceStoreValidateConfigFunc{
+			defaultHook: func(context.Context, database.ValidateExternalServiceConfigOptions) ([]byte, error) {
+				panic("unexpected invocation of MockExternalServiceStore.ValidateConfig")
+			},
+		},
+		WithFunc: &ExternalServiceStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.ExternalServiceStore {
+				panic("unexpected invocation of MockExternalServiceStore.With")
+			},
+		},
+		WithEncryptionKeyFunc: &ExternalServiceStoreWithEncryptionKeyFunc{
+			defaultHook: func(encryption.Key) database.ExternalServiceStore {
+				panic("unexpected invocation of MockExternalServiceStore.WithEncryptionKey")
+			},
+		},
+	}
+}
+
 // NewMockExternalServiceStoreFrom creates a new mock of the
 // MockExternalServiceStore interface. All methods delegate to the given
 // implementation, unless overwritten.

@@ -368,13 +368,13 @@ export const gerritCodeHost: CodeHost = {
     codeViewsRequireTokenization: true,
     // This overrides the default observeMutations because we need to handle shadow DOMS.
     observeMutations,
-    getContext() {
+    getContext: async () => {
         const { repoName, changeId, patchsetId } = parseGerritChange()
-        return {
+        return Promise.resolve({
             privateRepository: true, // Gerrit is always private. Despite the fact that permissions can be set to be publicly viewable.
             rawRepoName: repoName,
             revision: patchsetId && buildGerritChangeString(changeId, patchsetId),
-        }
+        })
     },
     check: checkIsGerrit,
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },

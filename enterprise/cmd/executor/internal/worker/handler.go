@@ -11,7 +11,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
@@ -30,8 +29,10 @@ type handler struct {
 	runnerFactory func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner
 }
 
-var _ workerutil.Handler = &handler{}
-var _ workerutil.WithPreDequeue = &handler{}
+var (
+	_ workerutil.Handler        = &handler{}
+	_ workerutil.WithPreDequeue = &handler{}
+)
 
 // PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
 // the maximum number of concurrent handlers. If so, then a new job can be dequeued. Otherwise,
@@ -86,7 +87,16 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	// variables, and the user-specified commands (which could leak their environment) are
 	// run in a clean VM.
 	logger := command.NewLogger(h.store, job, record.RecordID(), union(h.options.RedactedValues, job.RedactedValues))
-	defer logger.Flush()
+	defer func() {
+		flushErr := logger.Flush()
+		if flushErr != nil {
+			if err != nil {
+				err = multierror.Append(err, flushErr)
+			} else {
+				err = flushErr
+			}
+		}
+	}()
 
 	// Create a working directory for this job which will be removed once the job completes.
 	// If a repository is supplied as part of the job configuration, it will be cloned into
@@ -154,7 +164,7 @@ func (h *handler) Handle(ctx context.Context, record workerutil.Record) (err err
 	}
 
 	if err := writeFiles(workspaceFileContentsByPath, logger); err != nil {
-		return err
+		return wrapError(err, "failed to write virtual machine files")
 	}
 
 	log15.Info("Setting up VM", "jobID", job.ID, "repositoryName", job.RepositoryName, "commit", job.Commit)
@@ -257,7 +267,7 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.L
 	return nil
 }
 
-func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) *libhoney.Event {
+func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration time.Duration) honey.Event {
 	fields := map[string]interface{}{
 		"duration_ms":    duration.Milliseconds(),
 		"recordID":       job.RecordID(),
@@ -271,5 +281,5 @@ func createHoneyEvent(ctx context.Context, job executor.Job, err error, duration
 		fields["error"] = err.Error()
 	}
 
-	return honey.EventWithFields("executor", fields)
+	return honey.NewEventWithFields("executor", fields)
 }

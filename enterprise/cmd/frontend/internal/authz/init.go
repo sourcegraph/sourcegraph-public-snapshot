@@ -15,13 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
-	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -33,7 +33,7 @@ import (
 
 var clock = timeutil.Now
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	database.ExternalServices = edb.NewExternalServicesStore
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)
@@ -44,10 +44,11 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 
 	extsvcStore := database.ExternalServices(db)
 
+	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
-	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
+	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			eauthz.ProvidersFromConfig(context.Background(), &cfg, extsvcStore)
+			eiauthz.ProvidersFromConfig(context.Background(), cfg, extsvcStore)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems
@@ -65,7 +66,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 		}
 
 		// We can ignore problems returned here because they would have been surfaced in other places.
-		_, providers, _, _ := eauthz.ProvidersFromConfig(context.Background(), conf.Get(), extsvcStore)
+		_, providers, _, _ := eiauthz.ProvidersFromConfig(context.Background(), conf.Get(), extsvcStore)
 		if len(providers) == 0 {
 			return nil
 		}
@@ -133,7 +134,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 			}
 
 			siteadminOrHandler := func(handler func()) {
-				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), database.NewDB(db))
+				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
 				if err == nil {
 					// User is site admin, let them proceed.
 					next.ServeHTTP(w, r)

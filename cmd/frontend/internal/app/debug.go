@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -24,8 +26,10 @@ import (
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
-var grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
-var jaegerURLFromEnv = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+var (
+	grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
+	jaegerURLFromEnv  = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+)
 
 func init() {
 	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
@@ -57,7 +61,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 			})
 		}
 		rph.Populate(db, peps)
-	} else if conf.IsDeployTypeKubernetes(conf.DeployType()) {
+	} else if deploy.IsDeployTypeKubernetes(deploy.Type()) {
 		err := debugproxies.StartClusterScanner(func(endpoints []debugproxies.Endpoint) {
 			rph.Populate(db, endpoints)
 		})
@@ -195,7 +199,7 @@ func adminOnly(next http.Handler, db database.DB) http.Handler {
 // It also accepts the error from creating `srcprometheus.Client` as an parameter, to validate
 // Prometheus configuration.
 func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
-	return func(c conf.Unified) conf.Problems {
+	return func(c conftypes.SiteConfigQuerier) conf.Problems {
 		// surface new prometheus client error if it was unexpected
 		prometheusUnavailable := errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
 		if promErr != nil && !prometheusUnavailable {
@@ -203,7 +207,7 @@ func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Valid
 		}
 
 		// no need to validate prometheus config if no `observability.*` settings are configured
-		observabilityNotConfigured := len(c.ObservabilityAlerts) == 0 && len(c.ObservabilitySilenceAlerts) == 0
+		observabilityNotConfigured := len(c.SiteConfig().ObservabilityAlerts) == 0 && len(c.SiteConfig().ObservabilitySilenceAlerts) == 0
 		if observabilityNotConfigured {
 			// no observability configuration, no checks to make
 			return nil

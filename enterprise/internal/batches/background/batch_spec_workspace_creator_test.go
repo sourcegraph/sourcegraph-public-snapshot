@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -165,12 +166,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 		},
 	}
 
-	opts := []cmp.Option{
-		cmpopts.IgnoreFields(btypes.BatchSpecWorkspace{}, "ID", "CreatedAt", "UpdatedAt"),
-	}
-	if diff := cmp.Diff(want, have, opts...); diff != "" {
-		t.Fatalf("wrong diff: %s", diff)
-	}
+	assertWorkspacesEqual(t, have, want)
 }
 
 func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
@@ -225,11 +221,12 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
-		key, err := cacheKeyForWorkspace(batchSpec, workspace)
+		key := service.CacheKeyForWorkspace(batchSpec, workspace)
+		rawKey, err := key.Key()
 		if err != nil {
 			t.Fatal(err)
 		}
-		entry, err := btypes.NewCacheEntryFromResult(key, executionResult)
+		entry, err := btypes.NewCacheEntryFromResult(rawKey, executionResult)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -289,10 +286,14 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
 
-		reloadedEntry, err := s.GetBatchSpecExecutionCacheEntry(context.Background(), store.GetBatchSpecExecutionCacheEntryOpts{Key: entry.Key})
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
 		if !reloadedEntry.LastUsedAt.Equal(now) {
 			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
 		}
@@ -330,14 +331,77 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			},
 		})
 
-		reloadedEntry, err := s.GetBatchSpecExecutionCacheEntry(context.Background(), store.GetBatchSpecExecutionCacheEntryOpts{Key: entry.Key})
+		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if len(reloadedEntries) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloadedEntries[0]
 		if !reloadedEntry.LastUsedAt.IsZero() {
 			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
 		}
 	})
+}
+
+func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
+	db := dbtest.NewDB(t)
+
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 1)
+
+	user := ct.CreateTestUser(t, db, true)
+
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
+	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+
+	var testSpecYAML = `
+name: my-unique-name
+importChangesets:
+  - repository: ` + string(repos[0].Name) + `
+    externalIDs:
+      - 123
+`
+
+	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: testSpecYAML}
+	if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+
+	resolver := &dummyWorkspaceResolver{}
+
+	creator := &batchSpecWorkspaceCreator{store: s}
+	if err := creator.process(context.Background(), s, resolver.DummyBuilder, job); err != nil {
+		t.Fatalf("proces failed: %s", err)
+	}
+
+	have, _, err := s.ListChangesetSpecs(context.Background(), store.ListChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		t.Fatalf("listing specs failed: %s", err)
+	}
+
+	want := btypes.ChangesetSpecs{
+		{
+			ID:          have[0].ID,
+			RandID:      have[0].RandID,
+			UserID:      user.ID,
+			RepoID:      repos[0].ID,
+			BatchSpecID: batchSpec.ID,
+			Spec: &batcheslib.ChangesetSpec{
+				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repos[0].ID)),
+				ExternalID:     "123",
+			},
+			CreatedAt: now,
+			UpdatedAt: now,
+		},
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatal(diff)
+	}
 }
 
 type dummyWorkspaceResolver struct {

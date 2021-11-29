@@ -19,12 +19,16 @@ $body-color: var(--body-color);
 $body-bg: var(--body-bg);
 $text-muted: var(--text-muted);
 
+// Exception that's used in $theme-colors.
+$gray-02: #eff2f5;
 // Exception that's used in [data-reach-dialog-overlay] background.
 $gray-04: #dbe2f0;
 // Exception that's used in $custom-select-indicator as SVG icon fill color.
 $gray-06: #798baf;
 // Exception that's used in $theme-colors and in --box-shadow variable.
 $gray-08: #343a4d;
+// Exception that's used in $theme-colors.
+$gray-09: #262b38;
 
 // Core semantic base colors.
 $primary: $blue;
@@ -48,14 +52,14 @@ $theme-colors: (
     // Gray (blueish) root palette.
     --white: #ffffff;
     --gray-01: #f9fafb;
-    --gray-02: #eff2f5;
+    --gray-02: #{$gray-02};
     --gray-03: #e6ebf2;
     --gray-04: #{$gray-04};
     --gray-05: #a6b6d9;
     --gray-06: #{$gray-06};
     --gray-07: #5e6e8c;
     --gray-08: #{$gray-08};
-    --gray-09: #262b38;
+    --gray-09: #{$gray-09};
     --gray-10: #1d212f;
     --gray-11: #181b26;
     --gray-12: #14171f;
@@ -145,6 +149,7 @@ $theme-colors: (
     --code-bg: var(--white);
     --intel-bg: var(--white);
     --subtle-bg: var(--gray-02);
+    --subtle-bg-2: #{rgba($gray-02, 0.6)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
     --code-line-highlight-color: var(--color-bg-2);
     --diff-add-bg: #eeffec;
@@ -200,6 +205,7 @@ $theme-colors: (
     --code-bg: var(--gray-10);
     --intel-bg: var(--gray-12);
     --subtle-bg: var(--gray-09);
+    --subtle-bg-2: #{rgba($gray-09, 0.2)};
     --search-input-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     --code-line-highlight-color: var(--body-bg);
     --diff-add-bg: #224035;
