@@ -26,7 +26,6 @@ git remote add --no-tags -t main grafana https://github.com/grafana/grafana.git
 git remote add --no-tags -t main rails https://github.com/rails/rails.git
 git remote add --no-tags -t main sourcegraph https://github.com/sourcegraph/sourcegraph.git
 git remote add --no-tags -t main vscode https://github.com/microsoft/vscode.git
-git remote add --no-tags -t master azure-docs https://github.com/MicrosoftDocs/azure-docs.git
 git remote add --no-tags -t master chromium https://github.com/chromium/chromium.git
 git remote add --no-tags -t master elastic https://github.com/elastic/elasticsearch.git
 git remote add --no-tags -t master flutter https://github.com/flutter/flutter.git
