@@ -18,32 +18,24 @@ import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
 import { ComponentDetailContentCardProps } from './ComponentDetailContent'
 
-interface Props extends ComponentDetailContentCardProps, ExtensionsControllerProps, ThemeProps {
+interface Props
+    extends Pick<ComponentDetailContentCardProps, 'className' | 'bodyScrollableClassName'>,
+        ExtensionsControllerProps,
+        ThemeProps {
     catalogComponent: CatalogComponentSourcesFields
 }
 
 export const ComponentSources: React.FunctionComponent<Props> = ({
     catalogComponent: { sourceLocations },
     className,
-    headerClassName,
-    titleClassName,
-    bodyClassName,
     bodyScrollableClassName,
     ...props
 }) =>
     sourceLocations.length > 0 ? (
         <div className={className}>
-            {false && (
-                <header className={classNames('d-flex align-items-center justify-content-between', headerClassName)}>
-                    <h3 className={titleClassName}>Sources</h3>
-                    <Link to="TODO(sqs)" className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center">
-                        <SettingsIcon className="icon-inline mr-1" /> Configure
-                    </Link>
-                </header>
-            )}
-            <ol className={classNames('list-unstyled mb-0', bodyClassName)}>
+            <ol className={classNames('list-unstyled mb-0')}>
                 {sourceLocations.map(sourceLocation => (
-                    <li key={sourceLocation.url} className="border p-2 m-2">
+                    <li key={sourceLocation.url} className="border p-2 mb-3">
                         <RepoFileLink
                             repoName={sourceLocation.repository.name}
                             repoURL={sourceLocation.repository.url}
@@ -59,10 +51,15 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                     </li>
                 ))}
             </ol>
+            <div className="d-flex align-items-center justify-content-end">
+                <Link to="TODO(sqs)" className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center">
+                    <SettingsIcon className="icon-inline mr-1" /> Configure sources
+                </Link>
+            </div>
             <ComponentFiles
                 {...props}
                 sourceLocations={sourceLocations}
-                className={classNames(bodyClassName, bodyScrollableClassName)}
+                className={classNames(bodyScrollableClassName)}
             />
         </div>
     ) : (
@@ -103,7 +100,7 @@ const ComponentFiles: React.FunctionComponent<
     return (
         <ul className={classNames('list-group list-group-flush', className)}>
             {groupByParentDirectories(files).map(({ dir, files }) => (
-                <li key={dir} className="list-group-item small">
+                <li key={dir} className="list-group-item small border-0">
                     <div className="text-muted">{dir}:</div>
                     <div className="ml-3">
                         <TreeEntriesSection

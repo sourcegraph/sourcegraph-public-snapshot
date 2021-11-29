@@ -48,10 +48,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                         <ComponentSources
                             {...props}
                             catalogComponent={catalogComponent}
-                            className="cardNO"
-                            headerClassName={classNames('card-header', styles.cardHeader)}
-                            titleClassName={classNames('card-title', styles.cardTitle)}
-                            bodyClassName={styles.cardBody}
+                            className=""
                             bodyScrollableClassName={styles.cardBodyScrollable}
                         />
                         <div className="d-flex flex-column">

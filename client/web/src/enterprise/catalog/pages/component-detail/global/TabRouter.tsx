@@ -25,7 +25,7 @@ export const TabRouter: React.FunctionComponent<Props> = ({ tabs }) => {
                 defaultIndex={tabs.findIndex(tab =>
                     matchPath(location.pathname, { path: tabPath(match.url, tab), exact: tab.exact })
                 )}
-                className="mb-2"
+                className="mb-3"
             >
                 <TabList>
                     {tabs.map(tab => (

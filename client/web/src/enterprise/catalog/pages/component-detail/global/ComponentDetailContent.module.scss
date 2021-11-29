@@ -1,9 +1,7 @@
 .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(36rem, 1fr));
-    //grid-template-rows: repeat(auto-fill, 32rem);
+    grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr));
     grid-gap: 1rem;
-    // align-items: start;
     overflow: hidden;
 }
 
