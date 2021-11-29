@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs
     total_dashboards int NOT NULL DEFAULT 0,
     migrated_dashboards int NOT NULL DEFAULT 0,
     runs int NOT NULL DEFAULT 0,
-    error_msg TEXT,
     completed_at timestamp
 );
 
@@ -20,11 +19,12 @@ CREATE TABLE IF NOT EXISTS insights_settings_migration_jobs
 -- we can just go in the order of id rather than have a secondary index.
 
 -- global
-INSERT INTO insights_settings_migration_jobs (global, settings_id)
-SELECT TRUE, MAX(id)
+INSERT INTO insights_settings_migration_jobs (settings_id, global)
+SELECT id, TRUE
 FROM settings
-WHERE user_id IS NULL
-  AND org_id IS NULL;
+WHERE user_id IS NULL AND org_id IS NULL
+ORDER BY id DESC
+LIMIT 1;
 
 -- org
 INSERT INTO insights_settings_migration_jobs (settings_id, org_id)
@@ -45,6 +45,7 @@ INSERT INTO out_of_band_migrations(id, team, component, description, non_destruc
                                    apply_reverse, is_enterprise, introduced_version_major, introduced_version_minor)
 VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs',
         'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.',
-        TRUE, FALSE, TRUE, 3, 34);
+        TRUE, FALSE, TRUE, 3, 34)
+ON CONFLICT DO NOTHING;
 
 COMMIT;
