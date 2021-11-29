@@ -47,15 +47,6 @@ The quick start guide above provides a standard approach, focused on simplicity 
 
 - [Dependencies](dependencies.md)
 
-## How-tos
-
-The following how-tos are optional and will guide you to set up your local environment for specific and less common scenarios:
-
-- [How to debug live code](how-to/debug_live_code.md)
-- [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
-- [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
-- [Use `golangci-lint`](how-to/use-golangci-lint.md)
-
 ## Troubleshooting
 
 The following pages list common problems with the local environment and their solutions:

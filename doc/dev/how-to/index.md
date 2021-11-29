@@ -16,6 +16,13 @@
   - [How to find monitoring](find_monitoring.md)
   - [How to add monitoring](add_monitoring.md)
 
+## Local Environment
+
+- [Set up local development with Zoekt and Sourcegraph](zoekt_local_dev.md)
+- [How to debug live code](debug_live_code.md)
+- [Ignoring editor config files in Git](ignoring_editor_config_files.md)
+- [Use `golangci-lint`](use-golangci-lint.md)
+
 ## Testing Sourcegraph & CI
 
 - [How to run tests](testing.md)
