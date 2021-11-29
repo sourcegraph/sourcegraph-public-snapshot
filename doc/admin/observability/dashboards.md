@@ -9480,13 +9480,11 @@ Query: `max(src_repoupdater_perms_syncer_queue_size)`
 
 <p class="subtitle">Permissions sync error rate</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors) for 1 alert related
-to this panel.
+Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
 
-<sub>*Managed by
-the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -9507,8 +9505,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100131` on your Sourcegraph instance.
 
-<sub>*Managed by
-the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <details>
 <summary>Technical details</summary>
