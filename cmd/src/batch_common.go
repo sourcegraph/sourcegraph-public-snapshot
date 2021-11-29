@@ -250,9 +250,9 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 
 	var workspaceCreator workspace.Creator
 
-	if svc.HasDockerImages(batchSpec) {
+	if len(batchSpec.Steps) > 0 {
 		ui.PreparingContainerImages()
-		images, err := svc.EnsureDockerImages(ctx, batchSpec, ui.PreparingContainerImagesProgress)
+		images, err := svc.EnsureDockerImages(ctx, batchSpec.Steps, ui.PreparingContainerImagesProgress)
 		if err != nil {
 			return err
 		}

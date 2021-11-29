@@ -480,14 +480,14 @@ func TestExecutor_CachedStepResults(t *testing.T) {
 			},
 		}
 
-		cachedDiff := []byte(`diff --git README.md README.md
+		cachedDiff := `diff --git README.md README.md
 index 02a19af..c9644dd 100644
 --- README.md
 +++ README.md
 @@ -1 +1,2 @@
  # Welcome to the README
 +foobar
-`)
+`
 
 		task := &Task{
 			BatchChangeAttributes: &template.BatchChangeAttributes{},
@@ -516,7 +516,7 @@ index 02a19af..c9644dd 100644
 		// We want the diff to be the same as the cached one, since we only had to
 		// execute a single step
 		executionResult := results[0].result
-		if diff := cmp.Diff(executionResult.Diff, string(cachedDiff)); diff != "" {
+		if diff := cmp.Diff(executionResult.Diff, cachedDiff); diff != "" {
 			t.Fatalf("wrong diff: %s", diff)
 		}
 
@@ -543,7 +543,7 @@ This repository is used to test opening and closing pull request with Automation
 			},
 		}
 
-		cachedDiff := []byte(`diff --git README.md README.md
+		cachedDiff := `diff --git README.md README.md
 index 1914491..cd2ccbf 100644
 --- README.md
 +++ README.md
@@ -562,7 +562,7 @@ index 0000000..888e1ec
 +++ README.txt
 @@ -0,0 +1 @@
 +this is step 1
-`)
+`
 
 		wantFinalDiff := `diff --git README.md README.md
 index 1914491..d6782d3 100644

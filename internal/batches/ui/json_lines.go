@@ -339,13 +339,13 @@ func (ui *stepsExecutionJSONLines) StepOutputWriter(ctx context.Context, task *e
 	return NewIntervalProcessWriter(ctx, stepFlushDuration, sink)
 }
 
-func (ui *stepsExecutionJSONLines) StepFinished(step int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
+func (ui *stepsExecutionJSONLines) StepFinished(step int, diff string, changes *git.Changes, outputs map[string]interface{}) {
 	logOperationSuccess(
 		batcheslib.LogEventOperationTaskStep,
 		&batcheslib.TaskStepMetadata{
 			TaskID:  ui.linesTask.ID,
 			Step:    step,
-			Diff:    string(diff),
+			Diff:    diff,
 			Outputs: outputs,
 		},
 	)

@@ -78,12 +78,12 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		// If we have cached results and don't need to execute any more steps,
 		// we can quit
 		if lastStep == len(opts.task.Steps)-1 {
-			changes, err := git.ChangesInDiff(opts.task.CachedResult.Diff)
+			changes, err := git.ChangesInDiff([]byte(opts.task.CachedResult.Diff))
 			if err != nil {
 				return execResult, nil, errors.Wrap(err, "parsing cached step diff")
 			}
 
-			execResult.Diff = string(opts.task.CachedResult.Diff)
+			execResult.Diff = opts.task.CachedResult.Diff
 			execResult.ChangedFiles = &changes
 			stepResults = append(stepResults, opts.task.CachedResult)
 
@@ -119,7 +119,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			stepContext.Steps.Changes = previousStepResult.Files
 			stepContext.Outputs = opts.task.CachedResult.Outputs
 
-			if err := workspace.ApplyDiff(ctx, opts.task.CachedResult.Diff); err != nil {
+			if err := workspace.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
 				return execResult, nil, errors.Wrap(err, "getting changed files in step")
 			}
 		}
@@ -178,7 +178,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		}
 		stepResult := execution.AfterStepResult{
 			StepIndex:          i,
-			Diff:               stepDiff,
+			Diff:               string(stepDiff),
 			Outputs:            make(map[string]interface{}),
 			PreviousStepResult: stepContext.PreviousStep,
 		}

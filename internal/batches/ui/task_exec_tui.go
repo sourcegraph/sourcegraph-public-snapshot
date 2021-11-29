@@ -477,7 +477,7 @@ func (ui stepsExecTUI) CalculatingDiffStarted() {
 func (ui stepsExecTUI) CalculatingDiffFinished() {
 	// noop right now
 }
-func (ui stepsExecTUI) StepFinished(idx int, diff []byte, changes *git.Changes, outputs map[string]interface{}) {
+func (ui stepsExecTUI) StepFinished(idx int, diff string, changes *git.Changes, outputs map[string]interface{}) {
 	// noop right now
 }
 func (ui stepsExecTUI) StepFailed(idx int, err error, exitCode int) {

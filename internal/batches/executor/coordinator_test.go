@@ -376,9 +376,9 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 			Path:         "",
 		},
 		stepResults: []execution.AfterStepResult{
-			{StepIndex: 0, Diff: []byte(`step-0-diff`)},
-			{StepIndex: 1, Diff: []byte(`step-1-diff`)},
-			{StepIndex: 2, Diff: []byte(`step-2-diff`)},
+			{StepIndex: 0, Diff: `step-0-diff`},
+			{StepIndex: 1, Diff: `step-1-diff`},
+			{StepIndex: 2, Diff: `step-2-diff`},
 		},
 	}}
 

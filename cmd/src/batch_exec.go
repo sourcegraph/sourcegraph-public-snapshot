@@ -8,7 +8,6 @@ import (
 	"io"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -109,27 +108,11 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 	// we can convert it to a RepoWorkspace and build a task only for that one.
 	repoWorkspace := convertWorkspace(input.Workspace)
 
-	// Parse the raw batch spec contained in the input
-	ui.ParsingBatchSpec()
-	batchSpec, err := svc.ParseBatchSpec([]byte(input.RawSpec))
-	if err != nil {
-		var multiErr *multierror.Error
-		if errors.As(err, &multiErr) {
-			ui.ParsingBatchSpecFailure(multiErr)
-			return cmderrors.ExitCode(2, nil)
-		} else {
-			// This shouldn't happen; let's just punt and let the normal
-			// rendering occur.
-			return err
-		}
-	}
-	ui.ParsingBatchSpecSuccess()
-
 	var workspaceCreator workspace.Creator
 
-	if svc.HasDockerImages(batchSpec) {
+	if len(input.Workspace.Steps) > 0 {
 		ui.PreparingContainerImages()
-		images, err := svc.EnsureDockerImages(ctx, batchSpec, ui.PreparingContainerImagesProgress)
+		images, err := svc.EnsureDockerImages(ctx, input.Workspace.Steps, ui.PreparingContainerImagesProgress)
 		if err != nil {
 			return err
 		}
@@ -162,13 +145,13 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 	// `src batch exec` uses server-side caching for changeset specs, so we
 	// only need to call `CheckStepResultsCache` to make sure that per-step cache entries
 	// are loaded and set on the tasks.
-	tasks := svc.BuildTasks(ctx, batchSpec, []service.RepoWorkspace{repoWorkspace})
+	tasks := svc.BuildTasks(ctx, input.Spec, []service.RepoWorkspace{repoWorkspace})
 	if err := coord.CheckStepResultsCache(ctx, tasks); err != nil {
 		return err
 	}
 
 	taskExecUI := ui.ExecutingTasks(*verbose, opts.flags.parallelism)
-	specs, _, err := coord.Execute(ctx, tasks, batchSpec, taskExecUI)
+	_, _, err = coord.Execute(ctx, tasks, input.Spec, taskExecUI)
 	if err == nil || opts.flags.skipErrors {
 		if err == nil {
 			taskExecUI.Success()
@@ -181,18 +164,6 @@ func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts ex
 			return err
 		}
 	}
-	ids := make([]graphql.ChangesetSpecID, len(specs))
-
-	ui.UploadingChangesetSpecs(len(specs))
-	for i, spec := range specs {
-		id, err := svc.CreateChangesetSpec(ctx, spec)
-		if err != nil {
-			return err
-		}
-		ids[i] = id
-		ui.UploadingChangesetSpecsProgress(i+1, len(specs))
-	}
-	ui.UploadingChangesetSpecsSuccess(ids)
 
 	return nil
 }

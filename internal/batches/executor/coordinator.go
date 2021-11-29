@@ -174,9 +174,8 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 
 func (c Coordinator) buildChangesetSpecs(task *Task, result execution.Result) ([]*batcheslib.ChangesetSpec, error) {
 	input := &batcheslib.ChangesetSpecInput{
-		BaseRepositoryID: task.Repository.ID,
-		HeadRepositoryID: task.Repository.ID,
-		Repository: batcheslib.ChangesetSpecRepository{
+		Repository: batcheslib.Repository{
+			ID:          task.Repository.ID,
 			Name:        task.Repository.Name,
 			FileMatches: task.Repository.SortedFileMatches(),
 			BaseRef:     task.Repository.BaseRef(),

@@ -158,28 +158,24 @@ func (svc *Service) CreateChangesetSpec(ctx context.Context, spec *batcheslib.Ch
 //
 // Progress information is reported back to the given progress function: perc
 // will be a value between 0.0 and 1.0, inclusive.
-func (svc *Service) EnsureDockerImages(ctx context.Context, spec *batcheslib.BatchSpec, progress func(done, total int)) (map[string]docker.Image, error) {
-	total := len(spec.Steps)
+func (svc *Service) EnsureDockerImages(ctx context.Context, steps []batcheslib.Step, progress func(done, total int)) (map[string]docker.Image, error) {
+	total := len(steps)
 	progress(0, total)
 
 	// TODO: this _really_ should be parallelised, since the image cache takes
 	// care to only pull the same image once.
 	images := make(map[string]docker.Image)
-	for i := range spec.Steps {
-		img, err := svc.EnsureImage(ctx, spec.Steps[i].Container)
+	for i := range steps {
+		img, err := svc.EnsureImage(ctx, steps[i].Container)
 		if err != nil {
 			return nil, err
 		}
-		images[spec.Steps[i].Container] = img
+		images[steps[i].Container] = img
 
 		progress(i+1, total)
 	}
 
 	return images, nil
-}
-
-func (svc *Service) HasDockerImages(spec *batcheslib.BatchSpec) bool {
-	return len(spec.Steps) > 0
 }
 
 func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image, error) {

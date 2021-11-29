@@ -25,8 +25,9 @@ github.com/cockroachdb/datadriven v1.0.0/go.mod h1:5Ib8Meh+jk1RlHIXej6Pzevx/NLlN
 github.com/cockroachdb/errors v1.6.1/go.mod h1:tm6FTP5G81vwJ5lC0SizQo374JNCOPrHyXGitRJoDqM=
 github.com/cockroachdb/errors v1.8.6 h1:Am9evxl/po3RzpokemQvq7S7Cd0mxv24xy0B/trlQF4=
 github.com/cockroachdb/errors v1.8.6/go.mod h1:hOm5fabihW+xEyY1kuypGwqT+Vt7rafg04ytBtIpeIQ=
-github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f h1:o/kfcElHqOiXqcou5a3rIlMc7oJbMQkeLk0VQJ7zgqY=
 github.com/cockroachdb/logtags v0.0.0-20190617123548-eb05cc24525f/go.mod h1:i/u985jwjWRlyHXQbwatDASoW0RMlZ/3i9yJHE2xLkI=
+github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f h1:6jduT9Hfc0njg5jJ1DdKCFPdMBrp/mdZfCpa5h+WM74=
+github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f/go.mod h1:Vz9DsVWQQhf3vs21MhPMZpMGSht7O/2vFW2xusFUVOs=
 github.com/cockroachdb/redact v1.1.1/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
 github.com/cockroachdb/redact v1.1.3 h1:AKZds10rFSIj7qADf0g46UixK8NNLwWTNdCIGS5wfSQ=
 github.com/cockroachdb/redact v1.1.3/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
@@ -258,8 +259,8 @@ github.com/sourcegraph/go-diff v0.6.1 h1:hmA1LzxW0n1c3Q4YbrFgg4P99GSnebYa3x8gr0H
 github.com/sourcegraph/go-diff v0.6.1/go.mod h1:iBszgVvyxdc8SFZ7gm69go2KDdt3ag071iBaWPF6cjs=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20211126224101-2ada4911722e h1:BZpmejyF9KR5h7U9U/lfg4PfcPQZc29fuNGn0c1kT+c=
-github.com/sourcegraph/sourcegraph/lib v0.0.0-20211126224101-2ada4911722e/go.mod h1:4WdX5odo9YL0GD0Wg9OZJJtIJIn1jIsh+UWrQ4MEcaw=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20211129161320-80f1543dd742 h1:8IegMj6lV20zSCt4f+fjOKRD7ef3/hONH9MmZ9OMYp4=
+github.com/sourcegraph/sourcegraph/lib v0.0.0-20211129161320-80f1543dd742/go.mod h1:4WdX5odo9YL0GD0Wg9OZJJtIJIn1jIsh+UWrQ4MEcaw=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
