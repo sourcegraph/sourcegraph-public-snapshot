@@ -275,7 +275,7 @@ Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
 echo 'legacy_version_file = yes' >> ~/.asdfrc
-asdf install node js
+asdf install nodejs
 `,
 			},
 		},
