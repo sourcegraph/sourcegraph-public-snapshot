@@ -486,7 +486,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
 			},
 		},
-		"workspace configuration without in matches all": {
+		"workspace configuration without 'in' matches all": {
 			spec: &batcheslib.BatchSpec{
 				Steps: steps,
 				Workspaces: []batcheslib.WorkspaceConfiguration{
