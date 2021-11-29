@@ -33,12 +33,14 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
 }) =>
     sourceLocations.length > 0 ? (
         <div className={className}>
-            <header className={classNames('d-flex align-items-center justify-content-between', headerClassName)}>
-                <h3 className={titleClassName}>Sources</h3>
-                <Link to="TODO(sqs)" className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center">
-                    <SettingsIcon className="icon-inline mr-1" /> Configure
-                </Link>
-            </header>
+            {false && (
+                <header className={classNames('d-flex align-items-center justify-content-between', headerClassName)}>
+                    <h3 className={titleClassName}>Sources</h3>
+                    <Link to="TODO(sqs)" className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center">
+                        <SettingsIcon className="icon-inline mr-1" /> Configure
+                    </Link>
+                </header>
+            )}
             <ol className={classNames('list-unstyled mb-0', bodyClassName)}>
                 {sourceLocations.map(sourceLocation => (
                     <li key={sourceLocation.url} className="border p-2 m-2">

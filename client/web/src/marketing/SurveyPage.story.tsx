@@ -10,7 +10,7 @@ import { submitSurveyMock } from './SurveyPage.mocks'
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
-    title: 'web/Survey',
+    title: 'web/SurveyPage',
     decorators: [decorator],
 }
 

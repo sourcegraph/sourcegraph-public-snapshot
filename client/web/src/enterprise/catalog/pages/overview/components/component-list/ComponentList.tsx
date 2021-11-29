@@ -55,7 +55,7 @@ export const ComponentList: React.FunctionComponent<Props> = ({
             after: null,
         },
         options: {
-            useURL: true,
+            useURL: size === 'lg',
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {

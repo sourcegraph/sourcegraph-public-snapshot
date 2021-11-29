@@ -1,7 +1,7 @@
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(36rem, 1fr));
-    grid-template-rows: repeat(auto-fill, 32rem);
+    //grid-template-rows: repeat(auto-fill, 32rem);
     grid-gap: 1rem;
     // align-items: start;
     overflow: hidden;
@@ -17,5 +17,4 @@
 }
 .card-body--scrollable {
     overflow: auto;
-    max-height: 36rem;
 }

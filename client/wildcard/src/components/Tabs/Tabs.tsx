@@ -1,12 +1,10 @@
 import {
     Tab as ReachTab,
     TabList as ReachTabList,
-    TabListProps as ReachTabListProps,
     TabPanel as ReachTabPanel,
     TabPanelProps as ReachTabPanelProps,
     TabPanels as ReachTabPanels,
     TabPanelsProps as ReachTabPanelsProps,
-    TabProps as ReachTabProps,
     Tabs as ReachTabs,
     TabsProps as ReachTabsProps,
 } from '@reach/tabs'
@@ -23,7 +21,7 @@ interface TabsProps extends ReachTabsProps, TabsState {
     className?: string
 }
 
-interface TabListProps extends ReachTabListProps {
+interface TabListProps extends Omit<React.ComponentPropsWithoutRef<typeof ReachTabList>, 'actions'> {
     /*
      * action is used to render content in the left side of
      * the component. e.g. a close button or a list of links.
@@ -31,7 +29,7 @@ interface TabListProps extends ReachTabListProps {
     actions?: React.ReactNode
 }
 
-interface TabProps extends ReachTabProps {}
+interface TabProps extends React.ComponentPropsWithoutRef<typeof ReachTab> {}
 interface TabPanelsProps extends ReachTabPanelsProps {}
 interface TabPanelProps extends ReachTabPanelProps {}
 
@@ -68,14 +66,14 @@ export const TabList: React.FunctionComponent<TabListProps> = props => {
     )
 }
 
-export const Tab: React.FunctionComponent<TabProps> = props => {
+export const Tab: React.FunctionComponent<TabProps> = ({ className, ...props }) => {
     const { state } = useTabsContext()
 
     const { size = 'small' } = state
     const styleSize = styles[size]
 
     return (
-        <ReachTab className={styleSize} data-testid="wildcard-tab" {...props}>
+        <ReachTab className={classNames(styleSize, className)} data-testid="wildcard-tab" {...props}>
             <span className={styles.tabLabel}>{props.children}</span>
         </ReachTab>
     )

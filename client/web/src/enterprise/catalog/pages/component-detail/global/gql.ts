@@ -34,7 +34,7 @@ const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
 
 const CATALOG_COMPONENT_CHANGES_FRAGMENT = gql`
     fragment CatalogComponentChangesFields on CatalogComponent {
-        commits(first: 20) {
+        commits(first: 10) {
             nodes {
                 ...GitCommitFields
             }

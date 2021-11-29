@@ -107,9 +107,14 @@ export const BatchChangeTabs: React.FunctionComponent<BatchChangeTabsProps> = pr
     )
 }
 
-export const BatchChangeTabList: React.FunctionComponent = ({ children }) => (
+export const BatchChangeTabList: React.FunctionComponent<Omit<React.ComponentProps<typeof TabList>, 'className'>> = ({
+    children,
+    ...props
+}) => (
     <div className="overflow-auto mb-2">
-        <TabList className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">{children}</TabList>
+        <TabList {...props} className="nav nav-tabs d-inline-flex d-sm-flex flex-nowrap text-nowrap">
+            {children}
+        </TabList>
     </div>
 )
 
