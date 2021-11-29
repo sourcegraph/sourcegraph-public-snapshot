@@ -43,9 +43,14 @@ func findWorkspaces(
 	// Pre-compile all globs.
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	for _, conf := range spec.Workspaces {
-		g, err := glob.Compile(conf.In)
+		in := conf.In
+		// Empty `in` should fall back to matching all, instead of nothing.
+		if in == "" {
+			in = "*"
+		}
+		g, err := glob.Compile(in)
 		if err != nil {
-			return nil, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err))
+			return nil, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err))
 		}
 		workspaceMatchers[conf] = g
 	}

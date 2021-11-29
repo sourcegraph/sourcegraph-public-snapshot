@@ -118,6 +118,24 @@ func TestFindWorkspaces(t *testing.T) {
 				{Repo: repos[2], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
 			},
 		},
+		"workspace configuration without 'in' matches all": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						RootAtLocationOf: "package.json",
+					},
+				},
+			},
+			finderResults: finderResults{
+				repos[0]: {"a/b"},
+				repos[2]: {"a/b"},
+			},
+			wantWorkspaces: []RepoWorkspace{
+				{Repo: repos[0], Steps: steps, Path: "a/b"},
+				{Repo: repos[2], Steps: steps, Path: "a/b"},
+			},
+		},
 	}
 
 	for name, tt := range tests {

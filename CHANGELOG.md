@@ -21,6 +21,7 @@ All notable changes to `src-cli` are documented in this file.
 
 - Excess newlines in between outputs in logfiles written when `--keep-logs` is used have been fixed. [#665](https://github.com/sourcegraph/src-cli/pull/665)
 - `src` would sometimes panic when Ctrl-C was pressed while executing batch change steps due to a bug in the library used to render the execution progress bars. This has been fixed. [🤘 #666](https://github.com/sourcegraph/src-cli/pull/666)
+- In batch changes, when using `workspaces` src would incorrectly treat `in` not being set as _don't match anything_. This is fixed and it matches everything like `*`. [#664](https://github.com/sourcegraph/src-cli/pull/664)
 
 ### Removed
 
