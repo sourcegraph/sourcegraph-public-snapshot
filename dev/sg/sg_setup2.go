@@ -220,11 +220,11 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 Check the .tool-versions file for which version.
 
 We *highly recommend* using the asdf version manager to install and manage
-programming languages and tools.
+programming languages and tools. Find out how to install asdf here:
 
-Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.html
+	https://asdf-vm.com/guide/getting-started.html
 
-Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
+Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 asdf plugin-add golang https://github.com/kennyp/asdf-golang.git
 asdf install golang
@@ -238,11 +238,11 @@ asdf install golang
 Check the .tool-versions file for which version.
 
 We *highly recommend* using the asdf version manager to install and manage
-programming languages and tools.
+programming languages and tools. Find out how to install asdf here:
 
-Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.html
+	https://asdf-vm.com/guide/getting-started.html
 
-Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
+Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 brew install gpg
 asdf plugin-add yarn
@@ -258,14 +258,15 @@ asdf install yarn
 Check the .tool-versions file for which version.
 
 We *highly recommend* using the asdf version manager to install and manage
-programming languages and tools.
+programming languages and tools. Find out how to install asdf here:
 
-Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.html
+	https://asdf-vm.com/guide/getting-started.html
 
-Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
+Once you have asdf, execute the commands below.`,
 				instructionsCommands: `
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
-asdf install node 
+echo 'legacy_version_file = yes' >> ~/.asdfrc
+asdf install node js
 `,
 			},
 		},
@@ -281,6 +282,9 @@ asdf install node
 		name:               "Setup PostgreSQL database",
 		requiresRepository: true,
 		dependencies: []*dependency{
+			// TODO: We could probably split this check up into two:
+			// 1. Check whether Postgres is running
+			// 2. Check whether Sourcegraph database exists
 			{
 				name:  "Connection to 'sourcegraph' database",
 				check: checkPostgresConnection,
@@ -292,7 +296,13 @@ If you know what you're doing, you can also install PostgreSQL another way.
 Alternative 1: Installing Postgres.app and following instructions at https://postgresapp.com/
 
 If you're not sure: use the recommended commands to install PostgreSQL and start it`,
-				instructionsCommands: "brew reinstall postgresql && brew services start postgresql",
+				instructionsCommands: `brew reinstall postgresql && brew services start postgresql 
+sleep 10
+createdb
+createuser --superuser sourcegraph || true
+psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+`,
 			},
 			{
 				name:  "psql",
@@ -308,6 +318,7 @@ If you used another method, make sure psql is available.`,
 	},
 	{
 		name:               "Setup Redis database",
+		autoFixing:         true,
 		requiresRepository: true,
 		dependencies: []*dependency{
 			{
@@ -369,7 +380,7 @@ func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, cate
 
 	switch choice {
 	case 1:
-		err = fixCategoryManually(ctx, category)
+		err = fixCategoryManually(ctx, categoryIdx, category)
 	case 2:
 		out.ClearScreen()
 		err = fixCategoryAutomatically(ctx, category)
@@ -434,7 +445,7 @@ func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	return nil
 }
 
-func fixCategoryManually(ctx context.Context, category *dependencyCategory) error {
+func fixCategoryManually(ctx context.Context, categoryIdx int, category *dependencyCategory) error {
 	for {
 		toFix := []int{}
 
@@ -483,7 +494,11 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 		} else {
 			// Otherwise we print the command(s) and ask the user whether we should run it or not
 			out.Write("")
-			out.Write("Run the following command(s):")
+			if category.requiresRepository {
+				out.Writef("Run the following command(s) %sin the 'sourcegraph' repository%s:", output.StyleBold, output.StyleReset)
+			} else {
+				out.Write("Run the following command(s):")
+			}
 			out.Write("")
 
 			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
@@ -515,6 +530,8 @@ func fixCategoryManually(ctx context.Context, category *dependencyCategory) erro
 			dep.Update(ctx)
 		}
 		pending.Destroy()
+
+		printCategoryHeaderAndDependencies(categoryIdx, category)
 	}
 
 	return nil
