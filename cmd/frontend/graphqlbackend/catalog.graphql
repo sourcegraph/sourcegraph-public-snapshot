@@ -51,21 +51,22 @@ type CatalogComponentAuthorEdge {
 
 type CatalogComponentUsage {
     locations: LocationConnection
-    people: [CatalogComponentUsagePersonEdge!]!
-    components: [CatalogComponentUsageComponentEdge!]!
+    people: [CatalogComponentUsedByPersonEdge!]!
+    components: [CatalogComponentUsedByComponentEdge!]!
 }
 
-type CatalogComponentUsagePersonEdge {
-    component: CatalogComponent!
-    person: Person!
+type CatalogComponentUsedByPersonEdge {
+    node: Person!
     locations: LocationConnection!
     authoredLineCount: Int!
     lastCommit: GitCommit!
 }
 
-type CatalogComponentUsageComponentEdge {
-    outComponent: CatalogComponent!
-    inComponent: CatalogComponent!
+type CatalogComponentUsedByComponentEdge {
+    """
+    A component that uses the query parent's component.
+    """
+    node: CatalogComponent!
     locations: LocationConnection!
 }
 

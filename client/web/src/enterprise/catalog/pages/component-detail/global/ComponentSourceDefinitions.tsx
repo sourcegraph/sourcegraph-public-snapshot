@@ -35,7 +35,7 @@ export const ComponentSourceDefinitions: React.FunctionComponent<Props> = ({
                 ))}
             </ol>
         ) : (
-            <div className="alert-warning">No sources defined</div>
+            <div className="alert alert-warning">No sources defined</div>
         )}
     </div>
 )

@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 import { useLocation } from 'react-router'
+import { Link } from 'react-router-dom'
 import { of } from 'rxjs'
 
 import { FileLocations } from '@sourcegraph/branded/src/components/panel/views/FileLocations'
@@ -16,6 +17,7 @@ import { CatalogComponentUsageFields } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
 import { UserAvatar } from '../../../../../user/UserAvatar'
+import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
 
 import { ComponentDetailContentCardProps } from './ComponentDetailContent'
 import styles from './ComponentUsage.module.scss'
@@ -40,33 +42,47 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
     if (!usage) {
         return (
             <div className={className}>
-                <div className="alert-warning">Unable to determine usage information (no usage patterns specified)</div>
+                <div className="alert alert-warning">
+                    Unable to determine usage information (no usage patterns specified)
+                </div>
             </div>
         )
     }
 
-    const { locations, callers } = usage
+    const { people: peopleEdges, components: componentEdges, locations } = usage
     return locations && locations.nodes.length > 0 ? (
         <div className={className}>
             <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
-                {callers.map(caller => (
-                    <li
-                        key={caller.person.email}
-                        className={classNames('list-group-item text-center pt-2', styles.author)}
-                    >
+                {peopleEdges.map(edge => (
+                    <li key={edge.node.email} className={classNames('list-group-item text-center pt-2', styles.author)}>
                         <div>
-                            <UserAvatar className="icon-inline" user={caller.person} />
+                            <UserAvatar className="icon-inline" user={edge.node} />
                         </div>
-                        <PersonLink person={caller.person} className="text-muted small text-truncate d-block" />
+                        <PersonLink person={edge.node} className="text-muted small text-truncate d-block" />
                         <div className={classNames(styles.lineCount)}>
-                            {caller.authoredLineCount} {pluralize('use', caller.authoredLineCount)}
+                            {edge.authoredLineCount} {pluralize('use', edge.authoredLineCount)}
                         </div>
                         <div className={classNames('text-muted', styles.lastCommit)}>
-                            <Timestamp date={caller.lastCommit.author.date} noAbout={true} />
+                            <Timestamp date={edge.lastCommit.author.date} noAbout={true} />
                         </div>
                     </li>
                 ))}
             </ol>
+            <br className="mb-3" />
+            <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
+                {componentEdges.map(edge => (
+                    <li key={edge.node.id} className={classNames('list-group-item')}>
+                        <Link to={edge.node.url} className="d-flex align-items-center text-body">
+                            <CatalogComponentIcon
+                                catalogComponent={edge.node}
+                                className="icon-inline text-muted mr-1"
+                            />
+                            {edge.node.name}
+                        </Link>
+                    </li>
+                ))}
+            </ol>
+            <br className="mb-3" />
             <style>
                 {
                     'td.line { display: none; } .code-excerpt .code { padding-left: 0.25rem !important; } .result-container { border: solid 1px var(--border-color) !important; border-left: none !important; border-right: none !important; margin: 0; } .result-container small { display: none; } .result-container__header > .mdi-icon { display: none; } .result-container__header-divider { display: none; } .result-container__header { padding-left: 0.25rem; } .FileMatchChildren-module__file-match-children { border: none !important; } .result-container { border: none !important; }'

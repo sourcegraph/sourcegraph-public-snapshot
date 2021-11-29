@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func (r *catalogComponentUsageResolver) Components(ctx context.Context) ([]gql.CatalogComponentUsageComponentEdgeResolver, error) {
+func (r *catalogComponentUsageResolver) Components(ctx context.Context) ([]gql.CatalogComponentUsedByComponentEdgeResolver, error) {
 	results, err := r.cachedResults(ctx)
 	if err != nil {
 		return nil, err
@@ -32,22 +32,21 @@ func (r *catalogComponentUsageResolver) Components(ctx context.Context) ([]gql.C
 		return nil
 	}
 
-	edgesByComponentID := map[graphql.ID]*catalogComponentUsageComponentEdgeResolver{}
+	edgesByComponentID := map[graphql.ID]*catalogComponentUsedByComponentEdgeResolver{}
 	for _, res := range results.Results() {
 		if fm, ok := res.ToFileMatch(); ok {
-			inC := componentForPath(fm.RepoName().Name, fm.Path)
-			if inC == nil {
+			usedByC := componentForPath(fm.RepoName().Name, fm.Path)
+			if usedByC == nil {
 				continue
 			}
 
-			edge := edgesByComponentID[inC.ID()]
+			edge := edgesByComponentID[usedByC.ID()]
 			if edge == nil {
-				edge = &catalogComponentUsageComponentEdgeResolver{
-					db:   r.db,
-					outC: r.component,
-					inC:  inC,
+				edge = &catalogComponentUsedByComponentEdgeResolver{
+					db:      r.db,
+					usedByC: usedByC,
 				}
-				edgesByComponentID[inC.ID()] = edge
+				edgesByComponentID[usedByC.ID()] = edge
 			}
 
 			for _, m := range fm.LineMatches() {
@@ -59,28 +58,24 @@ func (r *catalogComponentUsageResolver) Components(ctx context.Context) ([]gql.C
 		}
 	}
 
-	edges := make([]gql.CatalogComponentUsageComponentEdgeResolver, 0, len(edgesByComponentID))
-	for _, edge := range edges {
+	edges := make([]gql.CatalogComponentUsedByComponentEdgeResolver, 0, len(edgesByComponentID))
+	for _, edge := range edgesByComponentID {
 		edges = append(edges, edge)
 	}
 	return edges, nil
 }
 
-type catalogComponentUsageComponentEdgeResolver struct {
-	db        database.DB
-	outC      *catalogComponentResolver
-	inC       *catalogComponentResolver
+type catalogComponentUsedByComponentEdgeResolver struct {
+	usedByC   *catalogComponentResolver
 	locations []gql.LocationResolver
+
+	db database.DB
 }
 
-func (r *catalogComponentUsageComponentEdgeResolver) OutComponent() gql.CatalogComponentResolver {
-	return r.outC
+func (r *catalogComponentUsedByComponentEdgeResolver) Node() gql.CatalogComponentResolver {
+	return r.usedByC
 }
 
-func (r *catalogComponentUsageComponentEdgeResolver) InComponent() gql.CatalogComponentResolver {
-	return r.inC
-}
-
-func (r *catalogComponentUsageComponentEdgeResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
+func (r *catalogComponentUsedByComponentEdgeResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
 	return gql.NewStaticLocationConnectionResolver(r.locations, false), nil
 }

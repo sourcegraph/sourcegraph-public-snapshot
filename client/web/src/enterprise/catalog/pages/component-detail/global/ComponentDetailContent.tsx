@@ -113,7 +113,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                     <ComponentUsage
                         {...props}
                         catalogComponent={catalogComponent}
-                        className="card"
+                        className=""
                         bodyClassName={styles.cardBody}
                         bodyScrollableClassName={styles.cardBodyScrollable}
                     />

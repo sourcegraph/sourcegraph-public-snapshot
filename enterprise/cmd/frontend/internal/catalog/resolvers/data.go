@@ -12,7 +12,7 @@ type usagePattern struct {
 
 func newQueryUsagePattern(query string) usagePattern {
 	return usagePattern{
-		query: `count:3 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
+		query: `count:13 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
 	}
 }
 
@@ -40,6 +40,7 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			usagePatterns: []usagePattern{
 				newQueryUsagePattern(`lang:go \bgitserver\.Client\b patterntype:regexp`),
 				newQueryUsagePattern(`lang:go \bgit\.[A-Z]\w+\(ctx, patterntype:regexp`),
+				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/vcs/git" patterntype:literal`),
 			},
 		},
 		{
@@ -48,6 +49,17 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
+		},
+		{
+			kind:         "SERVICE",
+			name:         "searcher",
+			description:  "Provides on-demand unindexed search for repositories",
+			sourceRepo:   sourceRepo,
+			sourceCommit: sourceCommit,
+			sourcePaths:  []string{"cmd/searcher"},
+			usagePatterns: []usagePattern{
+				newQueryUsagePattern(`lang:go \bsearcher\.Search(\b patterntype:regexp`),
+			},
 		},
 		{
 			kind:         "SERVICE",

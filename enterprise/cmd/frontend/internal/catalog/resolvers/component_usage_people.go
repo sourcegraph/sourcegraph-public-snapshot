@@ -19,7 +19,7 @@ type blameLocation struct {
 	startLine, startCharacter, endLine, endCharacter int
 }
 
-func (r *catalogComponentUsageResolver) People(ctx context.Context) ([]gql.CatalogComponentUsagePersonEdgeResolver, error) {
+func (r *catalogComponentUsageResolver) People(ctx context.Context) ([]gql.CatalogComponentUsedByPersonEdgeResolver, error) {
 	results, err := r.cachedResults(ctx)
 	if err != nil {
 		return nil, err
@@ -75,9 +75,9 @@ func (r *catalogComponentUsageResolver) People(ctx context.Context) ([]gql.Catal
 		}
 	}
 
-	edges := make([]gql.CatalogComponentUsagePersonEdgeResolver, 0, len(all))
+	edges := make([]gql.CatalogComponentUsedByPersonEdgeResolver, 0, len(all))
 	for _, a := range all {
-		edges = append(edges, &catalogComponentUsagePersonEdgeResolver{
+		edges = append(edges, &catalogComponentUsedByPersonEdgeResolver{
 			db:        r.db,
 			component: r.component,
 			data:      &a.blameAuthor,
@@ -92,22 +92,18 @@ func (r *catalogComponentUsageResolver) People(ctx context.Context) ([]gql.Catal
 	return edges, nil
 }
 
-type catalogComponentUsagePersonEdgeResolver struct {
+type catalogComponentUsedByPersonEdgeResolver struct {
 	db        database.DB
 	component *catalogComponentResolver
 	data      *blameAuthor
 	locations []blameLocation
 }
 
-func (r *catalogComponentUsagePersonEdgeResolver) Component() gql.CatalogComponentResolver {
-	return r.component
-}
-
-func (r *catalogComponentUsagePersonEdgeResolver) Person() *gql.PersonResolver {
+func (r *catalogComponentUsedByPersonEdgeResolver) Node() *gql.PersonResolver {
 	return gql.NewPersonResolver(r.db, r.data.Name, r.data.Email, true)
 }
 
-func (r *catalogComponentUsagePersonEdgeResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
+func (r *catalogComponentUsedByPersonEdgeResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
 	var locationResolvers []gql.LocationResolver
 	for _, loc := range r.locations {
 		// TODO(sqs): SECURITY does this bypass repo perms?
@@ -122,11 +118,12 @@ func (r *catalogComponentUsagePersonEdgeResolver) Locations(ctx context.Context)
 	return gql.NewStaticLocationConnectionResolver(locationResolvers, false), nil
 }
 
-func (r *catalogComponentUsagePersonEdgeResolver) AuthoredLineCount() int32 {
+func (r *catalogComponentUsedByPersonEdgeResolver) AuthoredLineCount() int32 {
 	return int32(r.data.LineCount)
 }
 
-func (r *catalogComponentUsagePersonEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
+func (r *catalogComponentUsedByPersonEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
+	// TODO(sqs): assumes usage site is in same repo as component, which is not generally true
 	repoResolver, err := r.component.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err

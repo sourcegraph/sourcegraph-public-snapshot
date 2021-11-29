@@ -73,21 +73,19 @@ type CatalogComponentUsageArgs struct {
 
 type CatalogComponentUsageResolver interface {
 	Locations(context.Context) (LocationConnectionResolver, error)
-	People(context.Context) ([]CatalogComponentUsagePersonEdgeResolver, error)
-	Components(context.Context) ([]CatalogComponentUsageComponentEdgeResolver, error)
+	People(context.Context) ([]CatalogComponentUsedByPersonEdgeResolver, error)
+	Components(context.Context) ([]CatalogComponentUsedByComponentEdgeResolver, error)
 }
 
-type CatalogComponentUsagePersonEdgeResolver interface {
-	Component() CatalogComponentResolver
-	Person() *PersonResolver
+type CatalogComponentUsedByPersonEdgeResolver interface {
+	Node() *PersonResolver
 	Locations(context.Context) (LocationConnectionResolver, error)
 	AuthoredLineCount() int32
 	LastCommit(context.Context) (*GitCommitResolver, error)
 }
 
-type CatalogComponentUsageComponentEdgeResolver interface {
-	OutComponent() CatalogComponentResolver
-	InComponent() CatalogComponentResolver
+type CatalogComponentUsedByComponentEdgeResolver interface {
+	Node() CatalogComponentResolver
 	Locations(context.Context) (LocationConnectionResolver, error)
 }
 

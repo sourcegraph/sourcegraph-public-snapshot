@@ -1,10 +1,5 @@
 .author {
     min-width: 8rem;
-
-    border: none;
-    &:not(:last-child) {
-        border-right: 1px solid var(--border-color);
-    }
 }
 
 .line-count {

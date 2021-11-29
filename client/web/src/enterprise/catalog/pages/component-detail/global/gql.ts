@@ -98,8 +98,8 @@ const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
                     }
                 }
             }
-            callers {
-                person {
+            people {
+                node {
                     ...PersonLinkFields
                     avatarURL
                 }
@@ -108,6 +108,14 @@ const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
                     author {
                         date
                     }
+                }
+            }
+            components {
+                node {
+                    id
+                    name
+                    kind
+                    url
                 }
             }
         }

@@ -22,7 +22,7 @@ export const ComponentAPI: React.FunctionComponent<Props> = ({
     if (!api) {
         return (
             <div className={className}>
-                <div className="alert-warning">Unable to determine API</div>
+                <div className="alert alert-warning">Unable to determine API</div>
             </div>
         )
     }
