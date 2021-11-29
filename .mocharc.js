@@ -7,4 +7,5 @@ module.exports = {
   // location.
   timeout: '60s',
   slow: '2s',
+  reporter: 'mocha-junit-reporter',
 }
