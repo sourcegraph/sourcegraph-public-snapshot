@@ -51,9 +51,10 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
     return (
         <Dialog
             isOpen={isOpen}
-            className="modal-body modal-body--centered p-4 rounded border test-delete-modal"
+            className="modal-body modal-body--centered p-4 rounded border"
             onDismiss={toggleDeleteModal}
             aria-labelledby={deleteLabelId}
+            data-testid="delete-modal"
         >
             <h3 className="text-danger" id={deleteLabelId}>
                 Delete code monitor?
@@ -68,7 +69,12 @@ export const DeleteMonitorModal: React.FunctionComponent<DeleteModalProps> = ({
                     <button type="button" className="btn btn-outline-secondary mr-2" onClick={toggleDeleteModal}>
                         Cancel
                     </button>
-                    <button type="button" className="btn btn-danger test-confirm-delete-monitor" onClick={onDelete}>
+                    <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={onDelete}
+                        data-testid="confirm-delete-monitor"
+                    >
                         Yes, delete code monitor
                     </button>
                     {isErrorLike(deleteCompletedOrError) && (

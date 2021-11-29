@@ -1,15 +1,23 @@
-import { mount } from 'enzyme'
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
-import { act } from 'react-dom/test-utils'
-import { ButtonDropdown } from 'reactstrap'
 import sinon from 'sinon'
 
 import { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
-import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
 
 describe('StreamingProgressSkippedButton', () => {
+    beforeAll(() => {
+        ;(global as any).document.createRange = () => ({
+            setStart: () => {},
+            setEnd: () => {},
+            commonAncestorContainer: {
+                nodeName: 'BODY',
+                ownerDocument: document,
+            },
+        })
+    })
     it('should not show if no skipped items', () => {
         const progress: Progress = {
             durationMs: 0,
@@ -17,9 +25,9 @@ describe('StreamingProgressSkippedButton', () => {
             skipped: [],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find('[data-testid="streaming-progress-skipped"]')).toHaveLength(0)
-        expect(element.find('[data-testid="streaming-progress-skipped-popover"]')).toHaveLength(0)
+        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        expect(screen.queryByTestId('streaming-progress-skipped')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('streaming-progress-skipped-popover')).not.toBeInTheDocument()
     })
 
     it('should be in info state with only info items', () => {
@@ -51,9 +59,9 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find('.btn.btn-outline-secondary[data-testid="streaming-progress-skipped"]')).toHaveLength(1)
-        expect(element.find('.btn.btn-outline-danger[data-testid="streaming-progress-skipped"]')).toHaveLength(0)
+        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        expect(screen.getByTestId('streaming-progress-skipped')).toBeInTheDocument()
+        expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('outline-danger')
     })
 
     it('should be in warning state with at least one warning item', () => {
@@ -95,12 +103,12 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
-        expect(element.find('.btn.btn-outline-danger[data-testid="streaming-progress-skipped"]')).toHaveLength(1)
-        expect(element.find('.btn.btn-outline-secondary[data-testid="streaming-progress-skipped"]')).toHaveLength(0)
+        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btn-outline-danger')
+        expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btn-outline-secondary')
     })
 
-    it('should open and close popover when button is clicked', () => {
+    it('should open and close popover when button is clicked', async () => {
         const progress: Progress = {
             durationMs: 1500,
             matchCount: 2,
@@ -129,24 +137,22 @@ describe('StreamingProgressSkippedButton', () => {
             ],
         }
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
+        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={sinon.spy()} />)
 
-        let popover = element.find(ButtonDropdown)
-        expect(popover.prop('isOpen')).toBe(false)
+        const button = screen.getByTestId('streaming-progress-skipped')
 
-        const button = element.find('.btn[data-testid="streaming-progress-skipped"]')
-        button.simulate('click')
+        expect(button).toHaveAttribute('aria-expanded', 'false')
 
-        popover = element.find(ButtonDropdown)
-        expect(popover.prop('isOpen')).toBe(true)
+        userEvent.click(button)
 
-        button.simulate('click')
+        await waitFor(() => expect(button).toHaveAttribute('aria-expanded', 'true'))
 
-        popover = element.find(ButtonDropdown)
-        expect(popover.prop('isOpen')).toBe(false)
+        userEvent.click(button)
+
+        await waitFor(() => expect(button).toHaveAttribute('aria-expanded', 'false'))
     })
 
-    it('should close popup and call onSearchAgain callback when popover raises event', () => {
+    it('should close popup and call onSearchAgain callback when popover raises event', async () => {
         const progress: Progress = {
             durationMs: 1500,
             matchCount: 2,
@@ -177,19 +183,25 @@ describe('StreamingProgressSkippedButton', () => {
 
         const onSearchAgain = sinon.spy()
 
-        const element = mount(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />)
+        render(<StreamingProgressSkippedButton progress={progress} onSearchAgain={onSearchAgain} />)
+        const toggleButton = screen.getByTestId('streaming-progress-skipped')
 
-        // Open dropdown
-        const button = element.find('.btn[data-testid="streaming-progress-skipped"]')
-        button.simulate('click')
+        userEvent.click(toggleButton)
+
+        await waitFor(() => {
+            // dropdown is opened
+            expect(toggleButton).toHaveAttribute('aria-expanded', 'true')
+        })
 
         // Trigger onSearchAgain event and check for changes
-        const skippedPopover = element.find(StreamingProgressSkippedPopover)
-        act(() => skippedPopover.prop('onSearchAgain')(['archived:yes']))
-        element.update()
+        // Find `archived:yes` checkbox
+        userEvent.click(screen.getAllByTestId('streaming-progress-skipped-suggest-check')[1])
+        userEvent.click(screen.getByTestId('skipped-popover-form-submit-btn'))
 
-        const dropdown = element.find(ButtonDropdown)
-        expect(dropdown.prop('isOpen')).toBe(false)
+        await waitFor(() => {
+            // dropdown is closed
+            expect(toggleButton).toHaveAttribute('aria-expanded', 'false')
+        })
 
         sinon.assert.calledOnce(onSearchAgain)
         sinon.assert.calledWith(onSearchAgain, ['archived:yes'])
