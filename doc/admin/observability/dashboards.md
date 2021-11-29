@@ -132,11 +132,11 @@ Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",
 
 <p class="subtitle">90th percentile page load latency over all routes over 10m</p>
 
+Investigate potential sources of latency by selecting Explore and modifying the `sum by(le)` section to include additional labels: for example, `sum by(le, job)` or `sum by (le, instance)`.
+
 Refer to the [alert solutions reference](./alert_solutions.md#frontend-page-load-latency) for 1 alert related to this panel.
 
 To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=100020` on your Sourcegraph instance.
-
-More details can be found by selecting Explore and modifying the `sum by(le)` section to include additional labels: for example, `sum by(le, job)` or `sum by (le, instance)`.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
