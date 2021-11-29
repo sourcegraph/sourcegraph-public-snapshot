@@ -89,10 +89,10 @@ export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
             }
 
             return getHTMLPage({
-                appBundle,
-                cssBundle: getBundleFromPath(files.css, 'styles/app'),
-                runtimeBundle: getBundleFromPath(files.js, 'scripts/runtime'),
-                reactBundle: getBundleFromPath(files.js, 'scripts/react'),
+                'app.js': appBundle,
+                'app.css': getBundleFromPath(files.css, 'styles/app'),
+                'runtime.js': getBundleFromPath(files.js, 'scripts/runtime'),
+                'react.js': getBundleFromPath(files.js, 'scripts/react'),
             })
         }) as Options['templateContent'],
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),
