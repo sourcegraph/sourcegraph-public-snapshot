@@ -1,4 +1,4 @@
-# Development quickstart
+# Quickstart for setting up the local enviroment
 
 This is the quickstart guide for [developing Sourcegraph](../index.md).
 
@@ -12,6 +12,8 @@ This is the quickstart guide for [developing Sourcegraph](../index.md).
 <span class="virtual-br"></span>
 
 > NOTE: Looking for how to deploy or use Sourcegraph? See our [getting started](../../index.md#getting-started) options.
+
+<span class="virtual-br"></span>
 
 ## Install `sg`
 
@@ -27,7 +29,7 @@ See the [`sg` documentation](../background-information/sg/index.md) for more inf
 
 ## Run `sg setup`
 
-Open a terminal and run the following comming:
+Open a terminal and run the following command:
 
 ```sh
 sg setup
@@ -95,6 +97,6 @@ sg start monitoring
 
 Here are some additional resources to help you go further:
 
-- [How-to guides](../how-to/index.md), particularly:
-  - [Troubleshooting local development](../how-to/troubleshooting_local_development.md)
+- [How-to guides](how-to/index.md), particularly:
+  - [Troubleshooting local development](troubleshooting.md)
 - [Background information](../background-information/index.md) for more context on various topics.

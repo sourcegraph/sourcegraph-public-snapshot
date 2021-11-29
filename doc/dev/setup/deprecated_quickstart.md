@@ -489,7 +489,7 @@ This will continuously compile your code and live reload your locally running in
 
 Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
 
-If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](../how-to/troubleshooting_local_development.md) or ask in the `#dev-experience` Slack channel.
+If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](troubleshooting.md) or ask in the `#dev-experience` Slack channel.
 
 ### Running the server in different configurations
 
@@ -519,7 +519,7 @@ Congratulations on making it to the end of the quickstart guide!
 Here are some additional resources to help you go further:
 
 - [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md)
-- [How-to guides](../how-to/index.md), particularly:
-  - [Troubleshooting local development](../how-to/troubleshooting_local_development.md)
+- [How-to guides](how-to/index.md), particularly:
+  - [Troubleshooting local development](troubleshooting.md)
 - [Background information](../background-information/index.md) for more context
 
