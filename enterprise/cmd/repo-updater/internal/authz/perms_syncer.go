@@ -11,6 +11,8 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -29,6 +31,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
+
+var scheduleReposCounter = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_repoupdater_perms_syncer_schedule_repos_total",
+	Help: "Counts number of repos for which permissions syncing request has been scheduled.",
+})
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
 // permissions up-to-date for users and repositories.
@@ -118,14 +125,15 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 //
 // This method implements the repoupdater.Server.PermsSyncer in the OSS namespace.
 func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) {
-	if len(repoIDs) == 0 {
+	numberOfRepos := len(repoIDs)
+	if numberOfRepos == 0 {
 		return
 	} else if s.isDisabled() {
 		log15.Warn("PermsSyncer.ScheduleRepos.disabled", "repoIDs", repoIDs)
 		return
 	}
 
-	repos := make([]scheduledRepo, len(repoIDs))
+	repos := make([]scheduledRepo, numberOfRepos)
 	for i := range repoIDs {
 		repos[i] = scheduledRepo{
 			priority: priorityHigh,
@@ -135,6 +143,7 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID) 
 		}
 	}
 
+	scheduleReposCounter.Add(float64(numberOfRepos))
 	s.scheduleRepos(ctx, repos...)
 }
 

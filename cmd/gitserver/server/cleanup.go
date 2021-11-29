@@ -793,7 +793,7 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
 // file is missing, no error is returned.
 func removeFileOlderThan(path string, maxAge time.Duration) error {
-	fi, err := os.Stat(filepath.Join(path))
+	fi, err := os.Stat(filepath.Clean(path))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil

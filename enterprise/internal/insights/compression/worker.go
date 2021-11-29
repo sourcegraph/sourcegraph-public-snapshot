@@ -5,26 +5,23 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/cockroachdb/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type RepoStore interface {
@@ -35,7 +32,7 @@ type CommitIndexer struct {
 	limiter           *rate.Limiter
 	allReposIterator  func(ctx context.Context, each func(repoName string) error) error
 	getRepoID         func(ctx context.Context, name api.RepoName) (*types.Repo, error)
-	getCommits        func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitapi.Commit, error)
+	getCommits        func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitdomain.Commit, error)
 	commitStore       CommitStore
 	maxHistoricalTime time.Time
 	background        context.Context
@@ -178,7 +175,7 @@ func (i *CommitIndexer) index(name string) (err error) {
 }
 
 //getCommits fetches the commits from the remote gitserver for a repository after a certain time.
-func getCommits(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*gitapi.Commit, err error) {
+func getCommits(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
 	ctx, endObservation := operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

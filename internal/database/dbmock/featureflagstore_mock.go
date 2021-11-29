@@ -194,6 +194,118 @@ func NewMockFeatureFlagStore() *MockFeatureFlagStore {
 	}
 }
 
+// NewStrictMockFeatureFlagStore creates a new mock of the FeatureFlagStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockFeatureFlagStore() *MockFeatureFlagStore {
+	return &MockFeatureFlagStore{
+		CreateBoolFunc: &FeatureFlagStoreCreateBoolFunc{
+			defaultHook: func(context.Context, string, bool) (*featureflag.FeatureFlag, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.CreateBool")
+			},
+		},
+		CreateFeatureFlagFunc: &FeatureFlagStoreCreateFeatureFlagFunc{
+			defaultHook: func(context.Context, *featureflag.FeatureFlag) (*featureflag.FeatureFlag, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.CreateFeatureFlag")
+			},
+		},
+		CreateOverrideFunc: &FeatureFlagStoreCreateOverrideFunc{
+			defaultHook: func(context.Context, *featureflag.Override) (*featureflag.Override, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.CreateOverride")
+			},
+		},
+		CreateRolloutFunc: &FeatureFlagStoreCreateRolloutFunc{
+			defaultHook: func(context.Context, string, int32) (*featureflag.FeatureFlag, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.CreateRollout")
+			},
+		},
+		DeleteFeatureFlagFunc: &FeatureFlagStoreDeleteFeatureFlagFunc{
+			defaultHook: func(context.Context, string) error {
+				panic("unexpected invocation of MockFeatureFlagStore.DeleteFeatureFlag")
+			},
+		},
+		DeleteOverrideFunc: &FeatureFlagStoreDeleteOverrideFunc{
+			defaultHook: func(context.Context, *int32, *int32, string) error {
+				panic("unexpected invocation of MockFeatureFlagStore.DeleteOverride")
+			},
+		},
+		GetAnonymousUserFlagsFunc: &FeatureFlagStoreGetAnonymousUserFlagsFunc{
+			defaultHook: func(context.Context, string) (map[string]bool, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetAnonymousUserFlags")
+			},
+		},
+		GetFeatureFlagFunc: &FeatureFlagStoreGetFeatureFlagFunc{
+			defaultHook: func(context.Context, string) (*featureflag.FeatureFlag, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetFeatureFlag")
+			},
+		},
+		GetFeatureFlagsFunc: &FeatureFlagStoreGetFeatureFlagsFunc{
+			defaultHook: func(context.Context) ([]*featureflag.FeatureFlag, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetFeatureFlags")
+			},
+		},
+		GetGlobalFeatureFlagsFunc: &FeatureFlagStoreGetGlobalFeatureFlagsFunc{
+			defaultHook: func(context.Context) (map[string]bool, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetGlobalFeatureFlags")
+			},
+		},
+		GetOrgFeatureFlagFunc: &FeatureFlagStoreGetOrgFeatureFlagFunc{
+			defaultHook: func(context.Context, int32, string) (bool, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetOrgFeatureFlag")
+			},
+		},
+		GetOrgOverrideForFlagFunc: &FeatureFlagStoreGetOrgOverrideForFlagFunc{
+			defaultHook: func(context.Context, int32, string) (*featureflag.Override, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetOrgOverrideForFlag")
+			},
+		},
+		GetOrgOverridesForUserFunc: &FeatureFlagStoreGetOrgOverridesForUserFunc{
+			defaultHook: func(context.Context, int32) ([]*featureflag.Override, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetOrgOverridesForUser")
+			},
+		},
+		GetOverridesForFlagFunc: &FeatureFlagStoreGetOverridesForFlagFunc{
+			defaultHook: func(context.Context, string) ([]*featureflag.Override, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetOverridesForFlag")
+			},
+		},
+		GetUserFlagsFunc: &FeatureFlagStoreGetUserFlagsFunc{
+			defaultHook: func(context.Context, int32) (map[string]bool, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetUserFlags")
+			},
+		},
+		GetUserOverridesFunc: &FeatureFlagStoreGetUserOverridesFunc{
+			defaultHook: func(context.Context, int32) ([]*featureflag.Override, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.GetUserOverrides")
+			},
+		},
+		HandleFunc: &FeatureFlagStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockFeatureFlagStore.Handle")
+			},
+		},
+		TransactFunc: &FeatureFlagStoreTransactFunc{
+			defaultHook: func(context.Context) (database.FeatureFlagStore, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.Transact")
+			},
+		},
+		UpdateFeatureFlagFunc: &FeatureFlagStoreUpdateFeatureFlagFunc{
+			defaultHook: func(context.Context, *featureflag.FeatureFlag) (*featureflag.FeatureFlag, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.UpdateFeatureFlag")
+			},
+		},
+		UpdateOverrideFunc: &FeatureFlagStoreUpdateOverrideFunc{
+			defaultHook: func(context.Context, *int32, *int32, string, bool) (*featureflag.Override, error) {
+				panic("unexpected invocation of MockFeatureFlagStore.UpdateOverride")
+			},
+		},
+		WithFunc: &FeatureFlagStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.FeatureFlagStore {
+				panic("unexpected invocation of MockFeatureFlagStore.With")
+			},
+		},
+	}
+}
+
 // NewMockFeatureFlagStoreFrom creates a new mock of the
 // MockFeatureFlagStore interface. All methods delegate to the given
 // implementation, unless overwritten.

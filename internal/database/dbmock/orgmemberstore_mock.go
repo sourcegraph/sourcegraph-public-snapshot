@@ -106,6 +106,63 @@ func NewMockOrgMemberStore() *MockOrgMemberStore {
 	}
 }
 
+// NewStrictMockOrgMemberStore creates a new mock of the OrgMemberStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockOrgMemberStore() *MockOrgMemberStore {
+	return &MockOrgMemberStore{
+		CreateFunc: &OrgMemberStoreCreateFunc{
+			defaultHook: func(context.Context, int32, int32) (*types.OrgMembership, error) {
+				panic("unexpected invocation of MockOrgMemberStore.Create")
+			},
+		},
+		CreateMembershipInOrgsForAllUsersFunc: &OrgMemberStoreCreateMembershipInOrgsForAllUsersFunc{
+			defaultHook: func(context.Context, []string) error {
+				panic("unexpected invocation of MockOrgMemberStore.CreateMembershipInOrgsForAllUsers")
+			},
+		},
+		GetByOrgIDFunc: &OrgMemberStoreGetByOrgIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.OrgMembership, error) {
+				panic("unexpected invocation of MockOrgMemberStore.GetByOrgID")
+			},
+		},
+		GetByOrgIDAndUserIDFunc: &OrgMemberStoreGetByOrgIDAndUserIDFunc{
+			defaultHook: func(context.Context, int32, int32) (*types.OrgMembership, error) {
+				panic("unexpected invocation of MockOrgMemberStore.GetByOrgIDAndUserID")
+			},
+		},
+		GetByUserIDFunc: &OrgMemberStoreGetByUserIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.OrgMembership, error) {
+				panic("unexpected invocation of MockOrgMemberStore.GetByUserID")
+			},
+		},
+		HandleFunc: &OrgMemberStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockOrgMemberStore.Handle")
+			},
+		},
+		MemberCountFunc: &OrgMemberStoreMemberCountFunc{
+			defaultHook: func(context.Context, int32) (int, error) {
+				panic("unexpected invocation of MockOrgMemberStore.MemberCount")
+			},
+		},
+		RemoveFunc: &OrgMemberStoreRemoveFunc{
+			defaultHook: func(context.Context, int32, int32) error {
+				panic("unexpected invocation of MockOrgMemberStore.Remove")
+			},
+		},
+		TransactFunc: &OrgMemberStoreTransactFunc{
+			defaultHook: func(context.Context) (database.OrgMemberStore, error) {
+				panic("unexpected invocation of MockOrgMemberStore.Transact")
+			},
+		},
+		WithFunc: &OrgMemberStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.OrgMemberStore {
+				panic("unexpected invocation of MockOrgMemberStore.With")
+			},
+		},
+	}
+}
+
 // NewMockOrgMemberStoreFrom creates a new mock of the MockOrgMemberStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

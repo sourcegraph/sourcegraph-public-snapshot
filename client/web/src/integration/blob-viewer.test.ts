@@ -1169,7 +1169,7 @@ describe('Blob viewer', () => {
                 // After this point, we know whether or not the alert will be displayed for this page load.
                 await driver.page.waitFor(500)
                 assert(
-                    !(await driver.page.$('.install-browser-extension-alert')),
+                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user dismisses it once'
                 )
             })

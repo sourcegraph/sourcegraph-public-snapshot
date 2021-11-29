@@ -3,6 +3,10 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 set -e
 
+if [[ -z "$BUILDKITE" ]]; then
+  exit 0
+fi
+
 SECTION=''
 MARKDOWN='false'
 

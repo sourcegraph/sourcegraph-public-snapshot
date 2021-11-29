@@ -59,6 +59,34 @@ func NewMockTemporarySettingsStore() *MockTemporarySettingsStore {
 	}
 }
 
+// NewStrictMockTemporarySettingsStore creates a new mock of the
+// TemporarySettingsStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockTemporarySettingsStore() *MockTemporarySettingsStore {
+	return &MockTemporarySettingsStore{
+		EditTemporarySettingsFunc: &TemporarySettingsStoreEditTemporarySettingsFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockTemporarySettingsStore.EditTemporarySettings")
+			},
+		},
+		GetTemporarySettingsFunc: &TemporarySettingsStoreGetTemporarySettingsFunc{
+			defaultHook: func(context.Context, int32) (*temporarysettings.TemporarySettings, error) {
+				panic("unexpected invocation of MockTemporarySettingsStore.GetTemporarySettings")
+			},
+		},
+		HandleFunc: &TemporarySettingsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockTemporarySettingsStore.Handle")
+			},
+		},
+		OverwriteTemporarySettingsFunc: &TemporarySettingsStoreOverwriteTemporarySettingsFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockTemporarySettingsStore.OverwriteTemporarySettings")
+			},
+		},
+	}
+}
+
 // NewMockTemporarySettingsStoreFrom creates a new mock of the
 // MockTemporarySettingsStore interface. All methods delegate to the given
 // implementation, unless overwritten.

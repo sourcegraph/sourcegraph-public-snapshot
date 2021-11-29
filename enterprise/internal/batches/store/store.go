@@ -209,7 +209,7 @@ type operations struct {
 	getChangesetJob    *observation.Operation
 
 	createChangesetSpec                      *observation.Operation
-	updateChangesetSpec                      *observation.Operation
+	updateChangesetSpecBatchSpecID           *observation.Operation
 	deleteChangesetSpec                      *observation.Operation
 	countChangesetSpecs                      *observation.Operation
 	getChangesetSpec                         *observation.Operation
@@ -268,10 +268,10 @@ type operations struct {
 	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
 	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
 
-	getBatchSpecExecutionCacheEntry      *observation.Operation
-	markUsedBatchSpecExecutionCacheEntry *observation.Operation
-	createBatchSpecExecutionCacheEntry   *observation.Operation
-	cleanBatchSpecExecutionCacheEntries  *observation.Operation
+	listBatchSpecExecutionCacheEntries     *observation.Operation
+	markUsedBatchSpecExecutionCacheEntries *observation.Operation
+	createBatchSpecExecutionCacheEntry     *observation.Operation
+	cleanBatchSpecExecutionCacheEntries    *observation.Operation
 }
 
 var (
@@ -299,7 +299,7 @@ func newOperations(observationContext *observation.Context) *operations {
 					if errors.Is(err, ErrNoResults) {
 						return observation.EmitForNone
 					}
-					return observation.EmitForAll
+					return observation.EmitForDefault
 				},
 			})
 		}
@@ -342,7 +342,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetJob:    op("GetChangesetJob"),
 
 			createChangesetSpec:                      op("CreateChangesetSpec"),
-			updateChangesetSpec:                      op("UpdateChangesetSpec"),
+			updateChangesetSpecBatchSpecID:           op("UpdateChangesetSpecBatchSpecID"),
 			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
 			countChangesetSpecs:                      op("CountChangesetSpecs"),
 			getChangesetSpec:                         op("GetChangesetSpec"),
@@ -401,9 +401,9 @@ func newOperations(observationContext *observation.Context) *operations {
 			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
 			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 
-			getBatchSpecExecutionCacheEntry:      op("GetBatchSpecExecutionCacheEntry"),
-			markUsedBatchSpecExecutionCacheEntry: op("MarkUsedBatchSpecExecutionCacheEntry"),
-			createBatchSpecExecutionCacheEntry:   op("CreateBatchSpecExecutionCacheEntry"),
+			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
+			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),
+			createBatchSpecExecutionCacheEntry:     op("CreateBatchSpecExecutionCacheEntry"),
 
 			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
 		}

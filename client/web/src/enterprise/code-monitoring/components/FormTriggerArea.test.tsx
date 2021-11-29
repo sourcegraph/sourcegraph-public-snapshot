@@ -1,4 +1,5 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import React from 'react'
 import { act } from 'react-dom/test-utils'
 import sinon from 'sinon'
@@ -17,7 +18,7 @@ describe('FormTriggerArea', () => {
     })
 
     test('Correct checkboxes shown when query does not fulfill requirements', () => {
-        let component = mount(
+        const { asFragment } = render(
             <FormTriggerArea
                 query="test repo:test"
                 triggerCompleted={false}
@@ -26,14 +27,12 @@ describe('FormTriggerArea', () => {
                 startExpanded={false}
             />
         )
+        userEvent.click(screen.getByTestId('trigger-button'))
         act(() => {
-            const triggerButton = component.find('.test-trigger-button')
-            triggerButton.simulate('click')
             clock.tick(600)
         })
-        component = component.update()
 
-        expect(component).toMatchSnapshot()
+        expect(asFragment()).toMatchSnapshot()
     })
 
     const testCases = [
@@ -99,7 +98,7 @@ describe('FormTriggerArea', () => {
 
     for (const testCase of testCases) {
         test(`Correct checkboxes checked for query '${testCase.query}'`, () => {
-            let component = mount(
+            render(
                 <FormTriggerArea
                     query={testCase.query}
                     triggerCompleted={false}
@@ -108,30 +107,44 @@ describe('FormTriggerArea', () => {
                     startExpanded={false}
                 />
             )
+            userEvent.click(screen.getByTestId('trigger-button'))
             act(() => {
-                const triggerButton = component.find('.test-trigger-button')
-                triggerButton.simulate('click')
                 clock.tick(600)
             })
-            component = component.update()
 
-            const patternTypeCheckbox = component.find('.test-patterntype-checkbox input[type="checkbox"]')
-            expect(patternTypeCheckbox.get(0).props?.checked).toBe(testCase.patternTypeChecked)
+            const patternTypeCheckbox = screen.getByTestId('patterntype-checkbox')
+            if (testCase.patternTypeChecked) {
+                expect(patternTypeCheckbox).toBeChecked()
+            } else {
+                expect(patternTypeCheckbox).not.toBeChecked()
+            }
 
-            const typeCheckbox = component.find('.test-type-checkbox input[type="checkbox"]')
-            expect(typeCheckbox.get(0).props?.checked).toBe(testCase.typeChecked)
+            const typeCheckbox = screen.getByTestId('type-checkbox')
+            if (testCase.typeChecked) {
+                expect(typeCheckbox).toBeChecked()
+            } else {
+                expect(typeCheckbox).not.toBeChecked()
+            }
 
-            const repoCheckbox = component.find('.test-repo-checkbox input[type="checkbox"]')
-            expect(repoCheckbox.get(0).props?.checked).toBe(testCase.repoChecked)
+            const repoCheckbox = screen.getByTestId('repo-checkbox')
+            if (testCase.repoChecked) {
+                expect(repoCheckbox).toBeChecked()
+            } else {
+                expect(repoCheckbox).not.toBeChecked()
+            }
 
-            const validCheckbox = component.find('.test-valid-checkbox input[type="checkbox"]')
-            expect(validCheckbox.get(0).props?.checked).toBe(testCase.validChecked)
+            const validCheckbox = screen.getByTestId('valid-checkbox')
+            if (testCase.validChecked) {
+                expect(validCheckbox).toBeChecked()
+            } else {
+                expect(validCheckbox).not.toBeChecked()
+            }
         })
     }
 
     test('Append patternType:literal if no patternType is present', () => {
         const onQueryChange = sinon.spy()
-        let component = mount(
+        render(
             <FormTriggerArea
                 query=""
                 triggerCompleted={false}
@@ -140,24 +153,21 @@ describe('FormTriggerArea', () => {
                 startExpanded={false}
             />
         )
-        const triggerButton = component.find('.test-trigger-button')
-        triggerButton.simulate('click')
+        userEvent.click(screen.getByTestId('trigger-button'))
 
+        const triggerInput = screen.getByTestId('trigger-query-edit')
+        userEvent.type(triggerInput, 'test type:diff repo:test')
         act(() => {
-            const triggerInput = component.find('.test-trigger-input')
-            triggerInput.simulate('change', { target: { value: 'test type:diff repo:test' } })
             clock.tick(600)
         })
-        component = component.update()
-        const submitButton = component.find('.test-submit-trigger')
-        submitButton.simulate('click')
+        userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test type:diff repo:test patternType:literal')
     })
 
     test('Do not append patternType:literal if patternType is present', () => {
         const onQueryChange = sinon.spy()
-        let component = mount(
+        render(
             <FormTriggerArea
                 query=""
                 triggerCompleted={false}
@@ -166,17 +176,14 @@ describe('FormTriggerArea', () => {
                 startExpanded={false}
             />
         )
-        const triggerButton = component.find('.test-trigger-button')
-        triggerButton.simulate('click')
+        userEvent.click(screen.getByTestId('trigger-button'))
 
+        const triggerInput = screen.getByTestId('trigger-query-edit')
+        userEvent.type(triggerInput, 'test patternType:regexp type:diff repo:test')
         act(() => {
-            const triggerInput = component.find('.test-trigger-input')
-            triggerInput.simulate('change', { target: { value: 'test patternType:regexp type:diff repo:test' } })
             clock.tick(600)
         })
-        component = component.update()
-        const submitButton = component.find('.test-submit-trigger')
-        submitButton.simulate('click')
+        userEvent.click(screen.getByTestId('submit-trigger'))
 
         sinon.assert.calledOnceWithExactly(onQueryChange, 'test patternType:regexp type:diff repo:test')
     })

@@ -34,7 +34,7 @@ Note that the extension host execution context varies depending on the client ap
 - Think about the UI through which users will interact with this feature
 	- If this feature significantly affects the Sourcegraph UI, consider [consulting a designer](https://handbook.sourcegraph.com/product/design#working-with-design-requesting-design-work).
 - Think about the API through which extension authors will interact with this feature. 
-	- Add type definitions for this API to [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/packages/sourcegraph-extension-api/src/sourcegraph.d.ts). Try to write detailed docstrings so extension authors can learn this API from their IDE or with Sourcegraph.
+	- Add type definitions for this API to [`sourcegraph.d.ts`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/extension-api/src/sourcegraph.d.ts). Try to write detailed docstrings so extension authors can learn this API from their IDE or with Sourcegraph.
 
 ### Implementing
 

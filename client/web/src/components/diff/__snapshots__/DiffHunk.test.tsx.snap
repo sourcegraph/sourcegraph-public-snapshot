@@ -2,1071 +2,1083 @@
 
 exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
 <DocumentFragment>
-  <tr>
-    <td
-      class="num"
-      colspan="2"
-      data-diff-boundary-num="true"
-    />
-    <td
-      class="content content"
-      data-diff-boundary-content="true"
-      data-diff-marker=" "
-    >
-      <code
-        class="content"
+  <table>
+    <tbody>
+      <tr>
+        <td
+          class="num"
+          colspan="2"
+          data-diff-boundary-num="true"
+        />
+        <td
+          class="content content"
+          data-diff-boundary-content="true"
+          data-diff-marker=" "
+        >
+          <code
+            class="content"
+          >
+            @@ -159,7 +159,7 @@ export async function register({
+          </code>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        @@ -159,7 +159,7 @@ export async function register({
-      </code>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="159"
-      data-part="base"
-      id="anchor_L159"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L159"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="159"
+          data-part="base"
+          id="anchor_L159"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L159"
+          >
+            159
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="159"
+          data-part="head"
+          id="anchor_R159"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R159"
+          >
+            159
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const subscriptions = new Subscription()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        159
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="159"
-      data-part="head"
-      id="anchor_R159"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R159"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="160"
+          data-part="base"
+          id="anchor_L160"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L160"
+          >
+            160
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="160"
+          data-part="head"
+          id="anchor_R160"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R160"
+          >
+            160
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const decorationType = sourcegraph.app.createDecorationType()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        159
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="161"
+          data-part="base"
+          id="anchor_L161"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L161"
+          >
+            161
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="161"
+          data-part="head"
+          id="anchor_R161"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R161"
+          >
+            161
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const connection = await createConnection()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineDeletion"
+        data-hunk-line-kind="DELETED"
       >
-                const subscriptions = new Subscription()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="160"
-      data-part="base"
-      id="anchor_L160"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L160"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="162"
+          data-part="base"
+          id="anchor_L162"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L162"
+          >
+            162
+          </a>
+        </td>
+        <td
+          class="num numEmpty"
+        />
+        <td
+          class="content"
+          data-diff-marker="-"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    logger.log(\`WebSocket connection to TypeScript backend opened\`)
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineAddition"
+        data-hunk-line-kind="ADDED"
       >
-        160
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="160"
-      data-part="head"
-      id="anchor_R160"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R160"
+        <td
+          class="num numEmpty"
+        />
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="162"
+          data-part="head"
+          id="anchor_R162"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R162"
+          >
+            162
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker="+"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    logger.log(\`WebSocket connection to language server opened\`)
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        160
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="163"
+          data-part="base"
+          id="anchor_L163"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L163"
+          >
+            163
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="163"
+          data-part="head"
+          id="anchor_R163"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R163"
+          >
+            163
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    subscriptions.add(
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-                const decorationType = sourcegraph.app.createDecorationType()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="161"
-      data-part="base"
-      id="anchor_L161"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L161"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="164"
+          data-part="base"
+          id="anchor_L164"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L164"
+          >
+            164
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="164"
+          data-part="head"
+          id="anchor_R164"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R164"
+          >
+            164
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                            connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        161
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="161"
-      data-part="head"
-      id="anchor_R161"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R161"
-      >
-        161
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                const connection = await createConnection()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineDeletion"
-    data-hunk-line-kind="DELETED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="162"
-      data-part="base"
-      id="anchor_L162"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L162"
-      >
-        162
-      </a>
-    </td>
-    <td
-      class="num numEmpty"
-    />
-    <td
-      class="content"
-      data-diff-marker="-"
-    >
-      <div
-        class="d-inline-block"
-      >
-                logger.log(\`WebSocket connection to TypeScript backend opened\`)
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineAddition"
-    data-hunk-line-kind="ADDED"
-  >
-    <td
-      class="num numEmpty"
-    />
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="162"
-      data-part="head"
-      id="anchor_R162"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R162"
-      >
-        162
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker="+"
-    >
-      <div
-        class="d-inline-block"
-      >
-                logger.log(\`WebSocket connection to language server opened\`)
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="163"
-      data-part="base"
-      id="anchor_L163"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L163"
-      >
-        163
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="163"
-      data-part="head"
-      id="anchor_R163"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R163"
-      >
-        163
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                subscriptions.add(
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="164"
-      data-part="base"
-      id="anchor_L164"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L164"
-      >
-        164
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="164"
-      data-part="head"
-      id="anchor_R164"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R164"
-      >
-        164
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                        connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="165"
-      data-part="base"
-      id="anchor_L165"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L165"
-      >
-        165
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="165"
-      data-part="head"
-      id="anchor_R165"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R165"
-      >
-        165
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                            const method = LSP_TO_LOG_LEVEL[type]
-      </div>
-    </td>
-  </tr>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="165"
+          data-part="base"
+          id="anchor_L165"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L165"
+          >
+            165
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="165"
+          data-part="head"
+          id="anchor_R165"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R165"
+          >
+            165
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                                const method = LSP_TO_LOG_LEVEL[type]
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </DocumentFragment>
 `;
 
 exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
 <DocumentFragment>
-  <tr>
-    <td
-      class="num"
-      colspan="2"
-      data-diff-boundary-num="true"
-    />
-    <td
-      class="content content"
-      data-diff-boundary-content="true"
-      data-diff-marker=" "
-    >
-      <code
-        class="content"
+  <table>
+    <tbody>
+      <tr>
+        <td
+          class="num"
+          colspan="2"
+          data-diff-boundary-num="true"
+        />
+        <td
+          class="content content"
+          data-diff-boundary-content="true"
+          data-diff-marker=" "
+        >
+          <code
+            class="content"
+          >
+            @@ -159,7 +159,7 @@ export async function register({
+          </code>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        @@ -159,7 +159,7 @@ export async function register({
-      </code>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="159"
-      data-part="base"
-      id="anchor_L159"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L159"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="159"
+          data-part="base"
+          id="anchor_L159"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L159"
+          >
+            159
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="159"
+          data-part="head"
+          id="anchor_R159"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R159"
+          >
+            159
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+          style="background-color: red; border: 1px solid blue;"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const subscriptions = new Subscription()
+          </div>
+           
+          <span
+            class=""
+            data-tooltip="base hover msg"
+            style="background-color: black;"
+          >
+            head content
+          </span>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        159
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="159"
-      data-part="head"
-      id="anchor_R159"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R159"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="160"
+          data-part="base"
+          id="anchor_L160"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L160"
+          >
+            160
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="160"
+          data-part="head"
+          id="anchor_R160"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R160"
+          >
+            160
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const decorationType = sourcegraph.app.createDecorationType()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        159
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-      style="background-color: red; border: 1px solid blue;"
-    >
-      <div
-        class="d-inline-block"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="161"
+          data-part="base"
+          id="anchor_L161"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L161"
+          >
+            161
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="161"
+          data-part="head"
+          id="anchor_R161"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R161"
+          >
+            161
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const connection = await createConnection()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineDeletion"
+        data-hunk-line-kind="DELETED"
       >
-                const subscriptions = new Subscription()
-      </div>
-       
-      <span
-        class=""
-        data-tooltip="base hover msg"
-        style="background-color: black;"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="162"
+          data-part="base"
+          id="anchor_L162"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L162"
+          >
+            162
+          </a>
+        </td>
+        <td
+          class="num numEmpty"
+        />
+        <td
+          class="content"
+          data-diff-marker="-"
+          style="background-color: blue; border: 1px solid blue;"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    logger.log(\`WebSocket connection to TypeScript backend opened\`)
+          </div>
+           
+          <span
+            class=""
+            data-tooltip="base hover msg"
+            style="background-color: black;"
+          >
+            base content
+          </span>
+        </td>
+      </tr>
+      <tr
+        class="lineAddition"
+        data-hunk-line-kind="ADDED"
       >
-        head content
-      </span>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="160"
-      data-part="base"
-      id="anchor_L160"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L160"
+        <td
+          class="num numEmpty"
+        />
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="162"
+          data-part="head"
+          id="anchor_R162"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R162"
+          >
+            162
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker="+"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    logger.log(\`WebSocket connection to language server opened\`)
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        160
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="160"
-      data-part="head"
-      id="anchor_R160"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R160"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="163"
+          data-part="base"
+          id="anchor_L163"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L163"
+          >
+            163
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="163"
+          data-part="head"
+          id="anchor_R163"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R163"
+          >
+            163
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    subscriptions.add(
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        160
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="164"
+          data-part="base"
+          id="anchor_L164"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L164"
+          >
+            164
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="164"
+          data-part="head"
+          id="anchor_R164"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R164"
+          >
+            164
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                            connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-                const decorationType = sourcegraph.app.createDecorationType()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="161"
-      data-part="base"
-      id="anchor_L161"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L161"
-      >
-        161
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="161"
-      data-part="head"
-      id="anchor_R161"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R161"
-      >
-        161
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                const connection = await createConnection()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineDeletion"
-    data-hunk-line-kind="DELETED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="162"
-      data-part="base"
-      id="anchor_L162"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L162"
-      >
-        162
-      </a>
-    </td>
-    <td
-      class="num numEmpty"
-    />
-    <td
-      class="content"
-      data-diff-marker="-"
-      style="background-color: blue; border: 1px solid blue;"
-    >
-      <div
-        class="d-inline-block"
-      >
-                logger.log(\`WebSocket connection to TypeScript backend opened\`)
-      </div>
-       
-      <span
-        class=""
-        data-tooltip="base hover msg"
-        style="background-color: black;"
-      >
-        base content
-      </span>
-    </td>
-  </tr>
-  <tr
-    class="lineAddition"
-    data-hunk-line-kind="ADDED"
-  >
-    <td
-      class="num numEmpty"
-    />
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="162"
-      data-part="head"
-      id="anchor_R162"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R162"
-      >
-        162
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker="+"
-    >
-      <div
-        class="d-inline-block"
-      >
-                logger.log(\`WebSocket connection to language server opened\`)
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="163"
-      data-part="base"
-      id="anchor_L163"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L163"
-      >
-        163
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="163"
-      data-part="head"
-      id="anchor_R163"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R163"
-      >
-        163
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                subscriptions.add(
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="164"
-      data-part="base"
-      id="anchor_L164"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L164"
-      >
-        164
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="164"
-      data-part="head"
-      id="anchor_R164"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R164"
-      >
-        164
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                        connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="165"
-      data-part="base"
-      id="anchor_L165"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L165"
-      >
-        165
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="165"
-      data-part="head"
-      id="anchor_R165"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R165"
-      >
-        165
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                            const method = LSP_TO_LOG_LEVEL[type]
-      </div>
-    </td>
-  </tr>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="165"
+          data-part="base"
+          id="anchor_L165"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L165"
+          >
+            165
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="165"
+          data-part="head"
+          id="anchor_R165"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R165"
+          >
+            165
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                                const method = LSP_TO_LOG_LEVEL[type]
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </DocumentFragment>
 `;
 
 exports[`DiffHunk renders decorations if given 1`] = `
 <DocumentFragment>
-  <tr>
-    <td
-      class="num"
-      colspan="2"
-      data-diff-boundary-num="true"
-    />
-    <td
-      class="content content"
-      data-diff-boundary-content="true"
-      data-diff-marker=" "
-    >
-      <code
-        class="content"
+  <table>
+    <tbody>
+      <tr>
+        <td
+          class="num"
+          colspan="2"
+          data-diff-boundary-num="true"
+        />
+        <td
+          class="content content"
+          data-diff-boundary-content="true"
+          data-diff-marker=" "
+        >
+          <code
+            class="content"
+          >
+            @@ -159,7 +159,7 @@ export async function register({
+          </code>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        @@ -159,7 +159,7 @@ export async function register({
-      </code>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="159"
-      data-part="base"
-      id="anchor_L159"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L159"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="159"
+          data-part="base"
+          id="anchor_L159"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L159"
+          >
+            159
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="159"
+          data-part="head"
+          id="anchor_R159"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R159"
+          >
+            159
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+          style="background-color: red;"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const subscriptions = new Subscription()
+          </div>
+           
+          <span
+            class=""
+            data-tooltip="base hover msg"
+            style="background-color: black;"
+          >
+            head content
+          </span>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        159
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="159"
-      data-part="head"
-      id="anchor_R159"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R159"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="160"
+          data-part="base"
+          id="anchor_L160"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L160"
+          >
+            160
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="160"
+          data-part="head"
+          id="anchor_R160"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R160"
+          >
+            160
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const decorationType = sourcegraph.app.createDecorationType()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        159
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-      style="background-color: red;"
-    >
-      <div
-        class="d-inline-block"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="161"
+          data-part="base"
+          id="anchor_L161"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L161"
+          >
+            161
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="161"
+          data-part="head"
+          id="anchor_R161"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R161"
+          >
+            161
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    const connection = await createConnection()
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineDeletion"
+        data-hunk-line-kind="DELETED"
       >
-                const subscriptions = new Subscription()
-      </div>
-       
-      <span
-        class=""
-        data-tooltip="base hover msg"
-        style="background-color: black;"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="162"
+          data-part="base"
+          id="anchor_L162"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L162"
+          >
+            162
+          </a>
+        </td>
+        <td
+          class="num numEmpty"
+        />
+        <td
+          class="content"
+          data-diff-marker="-"
+          style="background-color: blue;"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    logger.log(\`WebSocket connection to TypeScript backend opened\`)
+          </div>
+           
+          <span
+            class=""
+            data-tooltip="base hover msg"
+            style="background-color: black;"
+          >
+            base content
+          </span>
+        </td>
+      </tr>
+      <tr
+        class="lineAddition"
+        data-hunk-line-kind="ADDED"
       >
-        head content
-      </span>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="160"
-      data-part="base"
-      id="anchor_L160"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L160"
+        <td
+          class="num numEmpty"
+        />
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="162"
+          data-part="head"
+          id="anchor_R162"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R162"
+          >
+            162
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker="+"
+        >
+          <div
+            class="d-inline-block"
+          >
+                    logger.log(\`WebSocket connection to language server opened\`)
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        160
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="160"
-      data-part="head"
-      id="anchor_R160"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R160"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="163"
+          data-part="base"
+          id="anchor_L163"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L163"
+          >
+            163
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="163"
+          data-part="head"
+          id="anchor_R163"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R163"
+          >
+            163
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                    subscriptions.add(
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-        160
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="164"
+          data-part="base"
+          id="anchor_L164"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L164"
+          >
+            164
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="164"
+          data-part="head"
+          id="anchor_R164"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R164"
+          >
+            164
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                            connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
+          </div>
+        </td>
+      </tr>
+      <tr
+        class="lineBoth"
+        data-hunk-line-kind="UNCHANGED"
       >
-                const decorationType = sourcegraph.app.createDecorationType()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="161"
-      data-part="base"
-      id="anchor_L161"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L161"
-      >
-        161
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="161"
-      data-part="head"
-      id="anchor_R161"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R161"
-      >
-        161
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                const connection = await createConnection()
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineDeletion"
-    data-hunk-line-kind="DELETED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="162"
-      data-part="base"
-      id="anchor_L162"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L162"
-      >
-        162
-      </a>
-    </td>
-    <td
-      class="num numEmpty"
-    />
-    <td
-      class="content"
-      data-diff-marker="-"
-      style="background-color: blue;"
-    >
-      <div
-        class="d-inline-block"
-      >
-                logger.log(\`WebSocket connection to TypeScript backend opened\`)
-      </div>
-       
-      <span
-        class=""
-        data-tooltip="base hover msg"
-        style="background-color: black;"
-      >
-        base content
-      </span>
-    </td>
-  </tr>
-  <tr
-    class="lineAddition"
-    data-hunk-line-kind="ADDED"
-  >
-    <td
-      class="num numEmpty"
-    />
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="162"
-      data-part="head"
-      id="anchor_R162"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R162"
-      >
-        162
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker="+"
-    >
-      <div
-        class="d-inline-block"
-      >
-                logger.log(\`WebSocket connection to language server opened\`)
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="163"
-      data-part="base"
-      id="anchor_L163"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L163"
-      >
-        163
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="163"
-      data-part="head"
-      id="anchor_R163"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R163"
-      >
-        163
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                subscriptions.add(
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="164"
-      data-part="base"
-      id="anchor_L164"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L164"
-      >
-        164
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="164"
-      data-part="head"
-      id="anchor_R164"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R164"
-      >
-        164
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                        connection.observeNotification(LogMessageNotification.type).subscribe(({ type, message }) =&gt; {
-      </div>
-    </td>
-  </tr>
-  <tr
-    class="lineBoth"
-    data-hunk-line-kind="UNCHANGED"
-  >
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="165"
-      data-part="base"
-      id="anchor_L165"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_L165"
-      >
-        165
-      </a>
-    </td>
-    <td
-      class="num"
-      data-hunk-num=" "
-      data-line="165"
-      data-part="head"
-      id="anchor_R165"
-    >
-      <a
-        class="numLine"
-        href="/#anchor_R165"
-      >
-        165
-      </a>
-    </td>
-    <td
-      class="content"
-      data-diff-marker=" "
-    >
-      <div
-        class="d-inline-block"
-      >
-                            const method = LSP_TO_LOG_LEVEL[type]
-      </div>
-    </td>
-  </tr>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="165"
+          data-part="base"
+          id="anchor_L165"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_L165"
+          >
+            165
+          </a>
+        </td>
+        <td
+          class="num"
+          data-hunk-num=" "
+          data-line="165"
+          data-part="head"
+          id="anchor_R165"
+        >
+          <a
+            class="numLine"
+            href="/#anchor_R165"
+          >
+            165
+          </a>
+        </td>
+        <td
+          class="content"
+          data-diff-marker=" "
+        >
+          <div
+            class="d-inline-block"
+          >
+                                const method = LSP_TO_LOG_LEVEL[type]
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </DocumentFragment>
 `;

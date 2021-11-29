@@ -20,7 +20,7 @@ export const getDashboardTitle = (dashboard: InsightDashboard): string => {
             return 'Global Insights'
         }
 
-        return `${dashboard.owner!.name}'s Insights`
+        return `${dashboard.owner.name}'s Insights`
     }
 
     return dashboard.title

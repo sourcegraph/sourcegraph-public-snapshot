@@ -2233,9 +2233,10 @@ enum ExternalServiceKind {
     GITLAB
     GITOLITE
     JVMPACKAGES
+    OTHER
+    PAGURE
     PERFORCE
     PHABRICATOR
-    OTHER
 }
 
 """
