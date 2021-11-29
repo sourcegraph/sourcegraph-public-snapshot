@@ -57,7 +57,7 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
                     id="component-list-filters__query"
                     className={classNames('form-control', sizeStyles.input)}
                     type="search"
-                    placeholder="Search..."
+                    placeholder="Search catalog..."
                     defaultValue={filters.query}
                     ref={queryElement}
                 />

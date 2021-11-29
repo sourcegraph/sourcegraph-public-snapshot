@@ -12,7 +12,10 @@ interface Props {
     className?: string
 }
 
-const ICON_BY_KIND: Record<CatalogComponentKind, React.ElementType<{ className?: string }>> = {
+export const CATALOG_COMPONENT_ICON_BY_KIND: Record<
+    CatalogComponentKind,
+    React.ComponentType<{ className?: string }>
+> = {
     SERVICE: ApplicationCogOutlineIcon,
     WEBSITE: ApplicationOutlineIcon,
     LIBRARY: BookMultipleIcon,
@@ -21,6 +24,6 @@ const ICON_BY_KIND: Record<CatalogComponentKind, React.ElementType<{ className?:
 }
 
 export const CatalogComponentIcon: React.FunctionComponent<Props> = ({ catalogComponent: { kind }, className }) => {
-    const Icon = ICON_BY_KIND[kind]
+    const Icon = CATALOG_COMPONENT_ICON_BY_KIND[kind]
     return <Icon className={className} />
 }

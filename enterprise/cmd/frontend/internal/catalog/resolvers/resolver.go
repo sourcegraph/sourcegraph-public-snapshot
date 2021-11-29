@@ -108,6 +108,10 @@ func (r *catalogComponentResolver) Tags() []string {
 	return []string{"my-tag1", "my-tag2"}
 }
 
+func (r *catalogComponentResolver) URL() string {
+	return "/catalog/" + string(r.ID())
+}
+
 func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {
 	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.

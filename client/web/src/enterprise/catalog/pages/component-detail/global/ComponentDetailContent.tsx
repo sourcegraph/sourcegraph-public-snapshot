@@ -2,9 +2,11 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { PageHeader } from '@sourcegraph/wildcard'
 
+import { CatalogIcon } from '../../../../../catalog'
 import { CatalogComponentDetailFields } from '../../../../../graphql-operations'
-import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
+import { CATALOG_COMPONENT_ICON_BY_KIND } from '../../../components/CatalogComponentIcon'
 
 import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentCommits } from './ComponentCommits'
@@ -17,11 +19,28 @@ interface Props extends TelemetryProps {
 
 export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalogComponent }) => (
     <div>
-        <header>
-            <h1>
-                <CatalogComponentIcon catalogComponent={catalogComponent} className="icon-inline mr-1" />{' '}
-                {catalogComponent.name}
-            </h1>
+        <PageHeader
+            path={[
+                { icon: CatalogIcon, to: '/catalog' },
+                {
+                    icon: CATALOG_COMPONENT_ICON_BY_KIND[catalogComponent.kind],
+                    text: catalogComponent.name,
+                },
+            ]}
+            className="mb-3"
+            description={
+                <ul className="list-unstyled">
+                    <li>
+                        <strong>Owner</strong> alice
+                    </li>
+                    <li>
+                        <strong>Lifecycle</strong> production
+                    </li>
+                </ul>
+            }
+        />
+        <header className="d-none">
+            <h1>{catalogComponent.name}</h1>
             <ul className="list-unstyled">
                 <li>
                     <strong>Owner</strong> alice

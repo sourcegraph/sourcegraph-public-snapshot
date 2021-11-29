@@ -17,5 +17,6 @@ export const CATALOG_COMPONENTS = gql`
         name
         system
         tags
+        url
     }
 `

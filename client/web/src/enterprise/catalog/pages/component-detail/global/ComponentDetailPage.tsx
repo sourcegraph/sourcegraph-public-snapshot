@@ -75,7 +75,7 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                     size="sm"
                 />
             </Sidebar>
-            <div className="p-2 overflow-auto w-100">
+            <div className="pt-2 px-3 pb-4 overflow-auto w-100">
                 {loading && !data ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : error && !data ? (

@@ -40,27 +40,32 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                             filePath={sourceLocation.path}
                             fileURL={sourceLocation.url}
                             className="d-inline"
-                        />
+                        />{' '}
                         {'files' in sourceLocation && sourceLocation.files && (
-                            <>
-                                <span className="text-muted small ml-1">
-                                    {sourceLocation.files.length} {pluralize('file', sourceLocation.files.length)}
-                                </span>
-                                <ol className="list-unstyled ml-3">
-                                    {sourceLocation.files.slice(0, 15 /* TODO(sqs) */).map(file => (
-                                        <li key={file.url} className="small">
-                                            <Link to={file.url} className="text-muted">
-                                                {file.path.slice(sourceLocation.path.length + 1)}
-                                            </Link>
-                                        </li>
-                                    ))}
-                                </ol>
-                            </>
+                            <span className="text-muted small ml-1">
+                                {sourceLocation.files.length} {pluralize('file', sourceLocation.files.length)}
+                            </span>
                         )}
                     </li>
                 ))}
             </ol>
-            <p className="card-body">All files</p>
+            <p className={classNames('card-body', bodyClassName)}>
+                All files:
+                <ol className="list-unstyled">
+                    {sourceLocations.map(
+                        sourceLocation =>
+                            'files' in sourceLocation &&
+                            sourceLocation.files &&
+                            sourceLocation.files.slice(0, 15 /* TODO(sqs) */).map(file => (
+                                <li key={file.url} className="small">
+                                    <Link to={file.url} className="text-muted">
+                                        {file.path}
+                                    </Link>
+                                </li>
+                            ))
+                    )}
+                </ol>
+            </p>
         </div>
     ) : (
         <p className={classNames('mb-0', className)}>No source locations</p>

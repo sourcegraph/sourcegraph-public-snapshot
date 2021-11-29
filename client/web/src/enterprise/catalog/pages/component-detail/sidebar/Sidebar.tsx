@@ -28,8 +28,8 @@ export const Sidebar: React.FunctionComponent<Props> = props => (
 
 const SidebarContent: React.FunctionComponent<Props & { className?: string }> = ({ className, children }) => (
     <div className={classNames('d-flex flex-column', className)}>
-        <h2 className="h5 font-weight-bold pt-2 px-2 pb-0 mb-0">
-            <Link to="/catalog" className="d-flex align-items-center text-body">
+        <h2 className="h6 font-weight-bold pt-2 px-2 pb-0 mb-0 d-none">
+            <Link to="/catalog" className="d-flex align-items-center text-muted">
                 <CatalogIcon className="icon-inline mr-1" /> Catalog
             </Link>
         </h2>

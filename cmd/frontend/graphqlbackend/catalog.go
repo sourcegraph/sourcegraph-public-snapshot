@@ -44,6 +44,7 @@ type CatalogComponentResolver interface {
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
+	URL() string
 }
 
 type CatalogComponentKind string

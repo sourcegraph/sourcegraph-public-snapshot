@@ -115,7 +115,7 @@ const CatalogComponent: React.FunctionComponent<{
     <li className={classNames('list-group-item d-flex', { active: selected })}>
         <h3 className="h6 font-weight-bold mb-0 overflow-hidden">
             <Link
-                to={`/catalog/${node.id}`}
+                to={node.url}
                 className={classNames('d-block text-truncate', {
                     'text-body': selected,
                     'stretched-link': size === 'sm',

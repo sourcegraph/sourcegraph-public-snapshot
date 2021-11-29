@@ -66,6 +66,7 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         name
         system
         tags
+        url
         ...CatalogComponentSourcesFields
         ...CatalogComponentChangesFields
         ...CatalogComponentAuthorsFields
