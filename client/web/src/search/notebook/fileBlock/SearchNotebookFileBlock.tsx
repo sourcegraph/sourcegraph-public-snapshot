@@ -6,11 +6,11 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import PencilIcon from 'mdi-react/PencilIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
-import { Observable, of } from 'rxjs'
+import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { CodeExcerpt, FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -27,12 +27,15 @@ import { useCommonBlockMenuActions } from '../useCommonBlockMenuActions'
 
 import styles from './SearchNotebookFileBlock.module.scss'
 import { SearchNotebookFileBlockInputs } from './SearchNotebookFileBlockInputs'
-import { useFileBlockInputValidation } from './useFileBlockInputValidation'
+import { FileBlockValidationFunctions, useFileBlockInputValidation } from './useFileBlockInputValidation'
 
-interface SearchNotebookFileBlockProps extends BlockProps, Omit<FileBlock, 'type'>, TelemetryProps {
+interface SearchNotebookFileBlockProps
+    extends BlockProps,
+        Omit<FileBlock, 'type'>,
+        FileBlockValidationFunctions,
+        TelemetryProps {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
-    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 const LOADING = 'loading' as const
@@ -57,6 +60,8 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
     isMacPlatform,
     isReadOnly,
     fetchHighlightedFileLineRanges,
+    resolveRevision,
+    fetchRepository,
     onRunBlock,
     onSelectBlock,
     onBlockInputChange,
@@ -78,7 +83,11 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
     const { isRepositoryNameValid, isFilePathValid, isRevisionValid, isLineRangeValid } = useFileBlockInputValidation(
         input,
         lineRangeInput,
-        fetchHighlightedFileLineRanges
+        {
+            fetchHighlightedFileLineRanges,
+            resolveRevision,
+            fetchRepository,
+        }
     )
 
     const { onSelect } = useBlockSelection({

@@ -6,7 +6,7 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FileBlockInput } from '..'
-import { fetchRepository, resolveRevision } from '../../../repo/backend'
+import { fetchRepository as _fetchRepository, resolveRevision as _resolveRevision } from '../../../repo/backend'
 import { parseLineRange } from '../serialize'
 
 function validateInput<T>(
@@ -21,6 +21,12 @@ function validateInput<T>(
         : of(undefined)
 }
 
+export interface FileBlockValidationFunctions {
+    fetchRepository: typeof _fetchRepository
+    resolveRevision: typeof _resolveRevision
+    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+}
+
 export interface FileBlockInputValidationResult {
     isRepositoryNameValid: boolean | undefined
     isFilePathValid: boolean | undefined
@@ -31,10 +37,11 @@ export interface FileBlockInputValidationResult {
 export function useFileBlockInputValidation(
     input: Omit<FileBlockInput, 'lineRange'>,
     lineRangeInput: string,
-    fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    { fetchRepository, resolveRevision, fetchHighlightedFileLineRanges }: FileBlockValidationFunctions
 ): FileBlockInputValidationResult {
     const isRepositoryNameValid = useObservable(
         useMemo(() => validateInput(input.repositoryName, repoName => fetchRepository({ repoName })), [
+            fetchRepository,
             input.repositoryName,
         ])
     )
@@ -61,7 +68,7 @@ export function useFileBlockInputValidation(
                 validateInput(input.revision, revision =>
                     resolveRevision({ repoName: input.repositoryName, revision })
                 ),
-            [input.repositoryName, input.revision]
+            [input.repositoryName, input.revision, resolveRevision]
         )
     )
 

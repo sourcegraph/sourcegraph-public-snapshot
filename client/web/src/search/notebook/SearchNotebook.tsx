@@ -13,6 +13,7 @@ import { StreamingSearchResultsListProps } from '../results/StreamingSearchResul
 import { useQueryIntelligence } from '../useQueryIntelligence'
 
 import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
+import { FileBlockValidationFunctions } from './fileBlock/useFileBlockInputValidation'
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
@@ -26,7 +27,8 @@ export interface SearchNotebookProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'> {
+        ExtensionsControllerProps<'extHostAPI'>,
+        FileBlockValidationFunctions {
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
