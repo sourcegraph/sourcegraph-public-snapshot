@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const CurrentCacheVersion = 1
+const CurrentCacheVersion = 2
 
 type BatchSpecExecutionCacheEntry struct {
 	ID int64
