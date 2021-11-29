@@ -10,4 +10,4 @@ interface BlobStatusBarContainerProps {
 export const BlobStatusBarContainer: React.FunctionComponent<BlobStatusBarContainerProps> = ({
     children,
     className,
-}) => <div className={classNames(className, styles.blobStatusBarContainer)}>{children}</div>
+}) => <div className={classNames(className, styles.blobStatusBarContainer, styles.content)}>{children}</div>
