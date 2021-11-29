@@ -1,5 +1,17 @@
 # Workarounds for M1 Mac local development
 
+## sg
+
+`sg` seems to run into "too many open file" errors if downloaded with `curl` as described in "[Quickstart](../quickstart.md)".
+
+The current workaround is to build `sg` yourself. To do that, run the following in the [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph) repository:
+
+```
+./dev/sg/install.sh
+```
+
+This will print a location to where `sg` was installed. Use that `sg` to run `sg start`.
+
 ## Rosetta
 
 Docker [requires Rosetta](https://docs.docker.com/desktop/mac/apple-silicon/#system-requirements) to run `amd64` binaries. It should be installed by default, but if that wasn't the case, run `softwareupdate --install-rosetta`.
