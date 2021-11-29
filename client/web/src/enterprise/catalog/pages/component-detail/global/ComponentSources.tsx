@@ -2,16 +2,21 @@ import path from 'path'
 
 import classNames from 'classnames'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
+import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import { getFileDecorations } from '../../../../../backend/features'
 import { CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
-interface Props {
+interface Props extends ExtensionsControllerProps, ThemeProps {
     catalogComponent: CatalogComponentSourcesFields
     className?: string
     headerClassName?: string
@@ -25,6 +30,7 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
     headerClassName,
     titleClassName,
     bodyClassName,
+    ...props
 }) =>
     sourceLocations.length > 0 ? (
         <div className={className}>
@@ -52,27 +58,61 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                     </li>
                 ))}
             </ol>
-            <ul className={classNames('list-group list-group-flush', bodyClassName)}>
-                {groupByParentDirectories(
-                    sourceLocations.flatMap(sourceLocation => ('files' in sourceLocation ? sourceLocation.files : []))
-                ).map(({ dir, files }) => (
-                    <li key={dir} className="list-group-item small">
-                        <div className="text-muted">{dir}:</div>
-                        <div className="ml-3">
-                            <TreeEntriesSection
-                                parentPath={dir}
-                                entries={files}
-                                fileDecorationsByPath={{} /* TODO(sqs) */}
-                                isLightTheme={false /* TODO(sqs) */}
-                            />
-                        </div>
-                    </li>
-                ))}
-            </ul>
+            <ComponentFiles {...props} sourceLocations={sourceLocations} className={bodyClassName} />
         </div>
     ) : (
         <p className={classNames('mb-0', className)}>No source locations</p>
     )
+
+const ComponentFiles: React.FunctionComponent<
+    {
+        sourceLocations: CatalogComponentSourcesFields['sourceLocations']
+        className?: string
+    } & ExtensionsControllerProps &
+        ThemeProps
+> = ({ sourceLocations, className, extensionsController, isLightTheme }) => {
+    const files = useMemo(
+        () => sourceLocations.flatMap(sourceLocation => ('files' in sourceLocation ? sourceLocation.files : [])),
+        [sourceLocations]
+    )
+
+    const fileDecorationsByPath =
+        useObservable<FileDecorationsByPath>(
+            useMemo(
+                () =>
+                    getFileDecorations({
+                        files,
+                        extensionsController,
+
+                        // TODO(sqs): HACK assumes that all files are from the same repo...so hardcode it for now
+                        repoName: 'github.com/sourcegraph/sourcegraph',
+                        commitID: '2ada4911722e2c812cc4f1bbfb6d5d1756891392',
+
+                        // TODO(sqs): HACK this is used for caching, this value is hacky and probably incorrect
+                        parentNodeUri: sourceLocations.map(({ path }) => path).join(':'),
+                    }),
+                [extensionsController, files, sourceLocations]
+            )
+        ) ?? {}
+
+    return (
+        <ul className={classNames('list-group list-group-flush', className)}>
+            {groupByParentDirectories(files).map(({ dir, files }) => (
+                <li key={dir} className="list-group-item small">
+                    <div className="text-muted">{dir}:</div>
+                    <div className="ml-3">
+                        <TreeEntriesSection
+                            parentPath={dir}
+                            entries={files}
+                            fileDecorationsByPath={fileDecorationsByPath}
+                            isLightTheme={isLightTheme}
+                        />
+                    </div>
+                </li>
+            ))}
+        </ul>
+    )
+}
 
 function groupByParentDirectories<F extends { path: string }>(files: F[]): { dir: string; files: F[] }[] {
     files.sort((a, b) => {

@@ -1,7 +1,9 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../../catalog'
@@ -13,11 +15,11 @@ import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
 import { ComponentSources } from './ComponentSources'
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps {
     catalogComponent: CatalogComponentDetailFields
 }
 
-export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalogComponent }) => (
+export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalogComponent, ...props }) => (
     <div>
         <PageHeader
             path={[
@@ -55,6 +57,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             <div className={styles.grid}>
                 {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
                 <ComponentSources
+                    {...props}
                     catalogComponent={catalogComponent}
                     className="card"
                     headerClassName={classNames('card-header', styles.cardHeader)}

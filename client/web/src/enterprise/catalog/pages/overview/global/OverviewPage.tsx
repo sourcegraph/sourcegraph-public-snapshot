@@ -4,23 +4,16 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogComponentFiltersProps } from '../../../core/component-filters'
 import { OverviewContent } from '../components/overview-content/OverviewContent'
 
-export interface OverviewPageProps extends CatalogComponentFiltersProps, TelemetryProps {
-    authenticatedUser: AuthenticatedUser
-}
+interface Props extends CatalogComponentFiltersProps, TelemetryProps {}
 
 /**
  * The catalog overview page.
  */
-export const OverviewPage: React.FunctionComponent<OverviewPageProps> = ({
-    filters,
-    onFiltersChange,
-    telemetryService,
-}) => {
+export const OverviewPage: React.FunctionComponent<Props> = ({ filters, onFiltersChange, telemetryService }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CatalogOverview')
     }, [telemetryService])

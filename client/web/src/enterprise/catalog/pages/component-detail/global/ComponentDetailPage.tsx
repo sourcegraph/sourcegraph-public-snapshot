@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { AuthenticatedUser } from '../../../../../auth'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CatalogComponentByIDResult, CatalogComponentByIDVariables } from '../../../../../graphql-operations'
 import { CatalogComponentFiltersProps } from '../../../core/component-filters'
@@ -15,11 +16,9 @@ import { Sidebar } from '../sidebar/Sidebar'
 import { ComponentDetailContent } from './ComponentDetailContent'
 import { CATALOG_COMPONENT_BY_ID } from './gql'
 
-export interface Props extends CatalogComponentFiltersProps, TelemetryProps {
+export interface Props extends CatalogComponentFiltersProps, TelemetryProps, ExtensionsControllerProps, ThemeProps {
     /** The GraphQL ID of the CatalogComponent. */
     catalogComponentID: Scalars['ID']
-
-    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -30,6 +29,7 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
     filters,
     onFiltersChange,
     telemetryService,
+    ...props
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CatalogComponentDetail')
@@ -83,7 +83,11 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                 ) : !data || !data.node || data.node.__typename !== 'CatalogComponent' ? (
                     <div className="alert alert-danger">Component not found in catalog</div>
                 ) : (
-                    <ComponentDetailContent catalogComponent={data.node} telemetryService={telemetryService} />
+                    <ComponentDetailContent
+                        {...props}
+                        catalogComponent={data.node}
+                        telemetryService={telemetryService}
+                    />
                 )}
             </div>
         </>
