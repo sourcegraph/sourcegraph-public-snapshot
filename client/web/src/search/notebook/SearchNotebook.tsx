@@ -12,6 +12,7 @@ import { SearchStreamingProps } from '..'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 import { useQueryIntelligence } from '../useQueryIntelligence'
 
+import { SearchNotebookFileBlock } from './fileBlock/SearchNotebookFileBlock'
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
 import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
@@ -179,14 +180,19 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     useEffect(() => {
         const handleEventOutsideBlockWrapper = (event: MouseEvent | FocusEvent): void => {
             const target = event.target as HTMLElement | null
-            if (target && !target.closest('.block-wrapper')) {
+            if (!target?.closest('.block-wrapper') && !target?.closest('[data-reach-combobox-list]')) {
                 setSelectedBlockId(null)
             }
         }
         const handleKeyDown = (event: KeyboardEvent): void => {
+            const target = event.target as HTMLElement
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (event.key === 'Escape' && !isMonacoEditorDescendant(event.target as HTMLElement)) {
+            } else if (
+                event.key === 'Escape' &&
+                !isMonacoEditorDescendant(target) &&
+                target.tagName.toLowerCase() !== 'input'
+            ) {
                 setSelectedBlockId(null)
             }
         }
@@ -215,15 +221,51 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         return () => disposable.dispose()
     }, [])
 
-    const blockCallbackProps = {
-        onSelectBlock,
-        onRunBlock,
-        onBlockInputChange,
-        onMoveBlockSelection,
-        onDeleteBlock,
-        onMoveBlock,
-        onDuplicateBlock,
-    }
+    const renderBlock = useCallback(
+        (block: Block) => {
+            const blockProps = {
+                ...props,
+                onSelectBlock,
+                onRunBlock,
+                onBlockInputChange,
+                onMoveBlockSelection,
+                onDeleteBlock,
+                onMoveBlock,
+                onDuplicateBlock,
+                isReadOnly,
+                isSelected: selectedBlockId === block.id,
+                isOtherBlockSelected: selectedBlockId !== null && selectedBlockId !== block.id,
+            }
+
+            switch (block.type) {
+                case 'md':
+                    return <SearchNotebookMarkdownBlock {...block} {...blockProps} />
+                case 'file':
+                    return <SearchNotebookFileBlock {...block} {...blockProps} />
+                case 'query':
+                    return (
+                        <SearchNotebookQueryBlock
+                            {...block}
+                            {...blockProps}
+                            sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
+                        />
+                    )
+            }
+        },
+        [
+            isReadOnly,
+            onBlockInputChange,
+            onDeleteBlock,
+            onDuplicateBlock,
+            onMoveBlock,
+            onMoveBlockSelection,
+            onRunBlock,
+            onSelectBlock,
+            props,
+            selectedBlockId,
+            sourcegraphSearchLanguageId,
+        ]
+    )
 
     return (
         <div className={styles.searchNotebook}>
@@ -234,29 +276,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                     ) : (
                         <div className="mb-2" />
                     )}
-                    <>
-                        {block.type === 'md' && (
-                            <SearchNotebookMarkdownBlock
-                                {...props}
-                                {...block}
-                                {...blockCallbackProps}
-                                isReadOnly={isReadOnly}
-                                isSelected={selectedBlockId === block.id}
-                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
-                            />
-                        )}
-                        {block.type === 'query' && (
-                            <SearchNotebookQueryBlock
-                                {...props}
-                                {...block}
-                                {...blockCallbackProps}
-                                sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
-                                isReadOnly={isReadOnly}
-                                isSelected={selectedBlockId === block.id}
-                                isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
-                            />
-                        )}
-                    </>
+                    {renderBlock(block)}
                 </div>
             ))}
             {!isReadOnly && (

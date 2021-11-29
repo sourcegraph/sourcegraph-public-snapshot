@@ -1,0 +1,20 @@
+.suggestions-list {
+    // Reach Combobox uses bold font to highlight non-matching parts of suggestions.
+    // We invert that here.
+    [data-suggested-value] {
+        font-weight: normal;
+    }
+
+    [data-user-value] {
+        font-weight: bold;
+    }
+}
+
+.suggestions-option {
+    display: block;
+    padding: 0.5rem;
+
+    &:hover {
+        background-color: var(--body-bg);
+    }
+}

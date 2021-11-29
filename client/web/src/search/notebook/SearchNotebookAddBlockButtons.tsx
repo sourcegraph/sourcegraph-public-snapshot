@@ -23,7 +23,7 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
         <div className={styles.addBlockButtons}>
             <button
                 type="button"
-                className={classNames('btn btn-outline-secondary btn-sm mr-2', styles.addBlockButton)}
+                className={classNames('btn btn-outline-secondary btn-sm', styles.addBlockButton)}
                 onClick={() => onAddBlock(index, { type: 'query', input: '// Enter search query' })}
                 data-testid="add-query-button"
             >
@@ -31,11 +31,24 @@ export const SearchNotebookAddBlockButtons: React.FunctionComponent<SearchNotebo
             </button>
             <button
                 type="button"
-                className={classNames('btn btn-outline-secondary btn-sm', styles.addBlockButton)}
+                className={classNames('btn btn-outline-secondary btn-sm ml-2', styles.addBlockButton)}
                 onClick={() => onAddBlock(index, { type: 'md', input: '*Enter markdown*' })}
                 data-testid="add-md-button"
             >
                 + Markdown
+            </button>
+            <button
+                type="button"
+                className={classNames('btn btn-outline-secondary btn-sm ml-2', styles.addBlockButton)}
+                onClick={() =>
+                    onAddBlock(index, {
+                        type: 'file',
+                        input: { repositoryName: '', revision: '', filePath: '', lineRange: null },
+                    })
+                }
+                data-testid="add-md-button"
+            >
+                + Code
             </button>
         </div>
     </div>
