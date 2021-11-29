@@ -308,7 +308,7 @@ func RepoUpdater() *monitoring.Container {
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Number),
 							Owner:          monitoring.ObservableOwnerCoreApplication,
-							Interpretation: "Indicates how many repositories have been scheduled a permissions sync",
+							Interpretation: "Indicates how many repositories have been scheduled for a permissions sync",
 						},
 					},
 				},
