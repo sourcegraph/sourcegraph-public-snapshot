@@ -77,6 +77,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [How `src` executes a batch spec](explanations/how_src_executes_a_batch_spec.md)
 - [Re-executing batch specs multiple times](explanations/reexecuting_batch_specs_multiple_times.md)
 - [Running batch changes server-side](explanations/server_side.md)
+
 ## How-tos
 
 - [Creating a batch change](how-tos/creating_a_batch_change.md)
