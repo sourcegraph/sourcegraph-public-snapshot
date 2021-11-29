@@ -95,7 +95,7 @@ func npmPackages(connection schema.NPMPackagesConnection) ([]reposource.NPMPacka
 	isAdded := make(map[reposource.NPMPackage]bool)
 	for _, dep := range dependencies {
 		npmPackage := dep.NPMPackage
-		if _, added := isAdded[npmPackage]; !added {
+		if !isAdded[npmPackage] {
 			npmPackages = append(npmPackages, npmPackage)
 		}
 		isAdded[npmPackage] = true
