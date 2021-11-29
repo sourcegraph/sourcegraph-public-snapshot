@@ -12,6 +12,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 <!-- START CHANGELOG -->
 
 ## Unreleased
+- Fix code host tooltip displaying issue [#issues/19560](https://github.com/sourcegraph/sourcegraph/issues/19560), [#pull/27381](https://github.com/sourcegraph/sourcegraph/pull/27381)
 
 ## Chrome / Firefox v21.11.8.1804, Safari v1.7
 
