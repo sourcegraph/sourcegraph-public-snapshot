@@ -17,6 +17,8 @@ type symbolsArgs struct {
 	IncludePatterns *[]string
 }
 
+type SymbolsArgs = symbolsArgs
+
 func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := symbol.Compute(ctx, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
@@ -70,6 +72,8 @@ type symbolConnectionResolver struct {
 	first   *int32
 	symbols []symbolResolver
 }
+
+type SymbolConnectionResolver = symbolConnectionResolver
 
 func limitOrDefault(first *int32) int {
 	if first == nil {

@@ -54,6 +54,7 @@ type CatalogComponentResolver interface {
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
 	Usage(context.Context, *CatalogComponentUsageArgs) (CatalogComponentUsageResolver, error)
+	API(context.Context, *CatalogComponentAPIArgs) (CatalogComponentAPIResolver, error)
 }
 
 type CatalogComponentKind string
@@ -81,4 +82,17 @@ type CatalogComponentCallerEdgeResolver interface {
 	Locations(context.Context) (LocationConnectionResolver, error)
 	AuthoredLineCount() int32
 	LastCommit(context.Context) (*GitCommitResolver, error)
+}
+
+type CatalogComponentAPIArgs struct {
+	Query *string
+}
+
+type CatalogComponentAPIResolver interface {
+	Symbols(context.Context, *CatalogComponentAPISymbolsArgs) (*SymbolConnectionResolver, error)
+}
+
+type CatalogComponentAPISymbolsArgs struct {
+	graphqlutil.ConnectionArgs
+	Query *string
 }

@@ -11,6 +11,7 @@ import { CatalogIcon } from '../../../../../catalog'
 import { CatalogComponentDetailFields } from '../../../../../graphql-operations'
 import { CATALOG_COMPONENT_ICON_BY_KIND } from '../../../components/CatalogComponentIcon'
 
+import { ComponentAPI } from './ComponentApi'
 import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
@@ -103,7 +104,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             {
                 path: 'api',
                 label: 'API',
-                element: <p>API</p>,
+                element: <ComponentAPI {...props} catalogComponent={catalogComponent} className="" />,
             },
             {
                 path: 'usage',
@@ -113,8 +114,6 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                         {...props}
                         catalogComponent={catalogComponent}
                         className="card"
-                        headerClassName={classNames('card-header', styles.cardHeader)}
-                        titleClassName={classNames('card-title', styles.cardTitle)}
                         bodyClassName={styles.cardBody}
                         bodyScrollableClassName={styles.cardBodyScrollable}
                     />
@@ -134,9 +133,9 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                                             name: catalogComponent.name,
                                             description: catalogComponent.description,
                                             kind: catalogComponent.kind,
-                                            sourceLocations: catalogComponent.sourceLocations.map(s => ({
-                                                repo: s.repository.name,
-                                                path: s.path,
+                                            sourceLocations: catalogComponent.sourceLocations.map(location_ => ({
+                                                repo: location_.repository.name,
+                                                path: location_.path,
                                             })),
                                             system: catalogComponent.system,
                                             tags: catalogComponent.tags,

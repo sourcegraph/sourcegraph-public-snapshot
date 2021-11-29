@@ -114,6 +114,46 @@ const CATALOG_COMPONENT_USAGE_FRAGMENT = gql`
     }
 `
 
+const CATALOG_COMPONENT_API_FRAGMENT = gql`
+    fragment CatalogComponentAPIFields on CatalogComponent {
+        api {
+            symbols {
+                __typename
+                nodes {
+                    ...SymbolFields
+                }
+                pageInfo {
+                    hasNextPage
+                }
+            }
+        }
+    }
+
+    fragment SymbolFields on Symbol {
+        __typename
+        name
+        containerName
+        kind
+        language
+        location {
+            resource {
+                path
+            }
+            range {
+                start {
+                    line
+                    character
+                }
+                end {
+                    line
+                    character
+                }
+            }
+        }
+        url
+    }
+`
+
 const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
     fragment CatalogComponentDetailFields on CatalogComponent {
         id
@@ -128,12 +168,14 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         ...CatalogComponentChangesFields
         ...CatalogComponentAuthorsFields
         ...CatalogComponentUsageFields
+        ...CatalogComponentAPIFields
     }
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
     ${CATALOG_COMPONENT_AUTHORS_FRAGMENT}
     ${CATALOG_COMPONENT_USAGE_FRAGMENT}
+    ${CATALOG_COMPONENT_API_FRAGMENT}
 `
 
 export const CATALOG_COMPONENT_BY_NAME = gql`

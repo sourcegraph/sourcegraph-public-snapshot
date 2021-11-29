@@ -38,6 +38,7 @@ type CatalogComponent implements Node {
     commits(first: Int): GitCommitConnection
     authors: [CatalogComponentAuthorEdge!]
     usage(query: String): CatalogComponentUsage
+    api(query: String): CatalogComponentAPI
 }
 
 type CatalogComponentAuthorEdge {
@@ -59,4 +60,8 @@ type CatalogComponentCallerEdge {
     locations: LocationConnection!
     authoredLineCount: Int!
     lastCommit: GitCommit!
+}
+
+type CatalogComponentAPI {
+    symbols(first: Int): SymbolConnection!
 }
