@@ -50,6 +50,9 @@ type V4Client struct {
 
 	// rateLimit is our self imposed rate limiter.
 	rateLimit *rate.Limiter
+
+	// v3Client is an embedded V3Client to make REST API requests from the V4Client.
+	v3Client *V3Client
 }
 
 // NewV4Client creates a new GitHub GraphQL API client with an optional default
@@ -92,6 +95,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		httpClient:       cli,
 		rateLimit:        rl,
 		rateLimitMonitor: rlm,
+		v3Client:         NewV3Client(apiURL, a, cli),
 	}
 }
 
@@ -324,29 +328,29 @@ func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
 	return version
 }
 
-func (c *V4Client) fetchGitHubVersion(ctx context.Context) *semver.Version {
+// fetchGitHubVersion will attempt to identify the GitHub Enterprise Server's version.  If the
+// method is called by a client configured to use github.com, it will return allMatchingSemver.
+// Additinally if it fails to parse the version. or the API request fails with an error, it defaults
+// to returning allMatchingSemver as well.
+func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
+	version = allMatchingSemver
+
 	if c.githubDotCom {
-		return allMatchingSemver
+		return
 	}
 
-	var resp struct {
-		InstalledVersion string `json:"installed_version"`
-	}
-	req, err := http.NewRequest("GET", "/meta", nil)
-	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "build request", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
-	}
-	if _, err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version: doRequest", "apiURL", c.apiURL, "err", err)
-		return allMatchingSemver
-	}
-	version, err := semver.NewVersion(resp.InstalledVersion)
+	v, err := c.v3Client.GetVersion(ctx)
 	if err == nil {
-		return version
+		log15.Warn("Failed to fetch GitHub enterprise version", "fetchGitHubVersion", "apiURL", c.apiURL, "err", err)
+		return
 	}
-	log15.Warn("Failed to fetch GitHub enterprise version", "parse version", "apiURL", c.apiURL, "resp.InstalledVersion", resp.InstalledVersion, "err", err)
-	return allMatchingSemver
+
+	version, err = semver.NewVersion(v)
+	if err != nil {
+		return
+	}
+
+	return version
 }
 
 func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
