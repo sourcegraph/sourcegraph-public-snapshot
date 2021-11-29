@@ -73,15 +73,22 @@ type CatalogComponentUsageArgs struct {
 
 type CatalogComponentUsageResolver interface {
 	Locations(context.Context) (LocationConnectionResolver, error)
-	Callers(context.Context) ([]CatalogComponentCallerEdgeResolver, error)
+	People(context.Context) ([]CatalogComponentUsagePersonEdgeResolver, error)
+	Components(context.Context) ([]CatalogComponentUsageComponentEdgeResolver, error)
 }
 
-type CatalogComponentCallerEdgeResolver interface {
+type CatalogComponentUsagePersonEdgeResolver interface {
 	Component() CatalogComponentResolver
 	Person() *PersonResolver
 	Locations(context.Context) (LocationConnectionResolver, error)
 	AuthoredLineCount() int32
 	LastCommit(context.Context) (*GitCommitResolver, error)
+}
+
+type CatalogComponentUsageComponentEdgeResolver interface {
+	OutComponent() CatalogComponentResolver
+	InComponent() CatalogComponentResolver
+	Locations(context.Context) (LocationConnectionResolver, error)
 }
 
 type CatalogComponentAPIArgs struct {

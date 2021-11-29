@@ -20,8 +20,8 @@ func (r *catalogComponentResolver) Commits(ctx context.Context, args *graphqluti
 	var combinedCommits []*gitdomain.Commit
 	for _, sourcePath := range r.sourcePaths {
 		isDir := true
-		commits, err := git.Commits(ctx, api.RepoName(r.sourceRepo), git.CommitsOptions{
-			Range:  r.sourceCommit,
+		commits, err := git.Commits(ctx, r.sourceRepo, git.CommitsOptions{
+			Range:  string(r.sourceCommit),
 			Path:   sourcePath,
 			Follow: !isDir,
 			N:      uint(args.GetFirst()),

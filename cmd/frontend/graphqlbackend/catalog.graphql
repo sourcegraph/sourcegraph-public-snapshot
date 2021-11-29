@@ -51,15 +51,22 @@ type CatalogComponentAuthorEdge {
 
 type CatalogComponentUsage {
     locations: LocationConnection
-    callers: [CatalogComponentCallerEdge!]!
+    people: [CatalogComponentUsagePersonEdge!]!
+    components: [CatalogComponentUsageComponentEdge!]!
 }
 
-type CatalogComponentCallerEdge {
+type CatalogComponentUsagePersonEdge {
     component: CatalogComponent!
     person: Person!
     locations: LocationConnection!
     authoredLineCount: Int!
     lastCommit: GitCommit!
+}
+
+type CatalogComponentUsageComponentEdge {
+    outComponent: CatalogComponent!
+    inComponent: CatalogComponent!
+    locations: LocationConnection!
 }
 
 type CatalogComponentAPI {

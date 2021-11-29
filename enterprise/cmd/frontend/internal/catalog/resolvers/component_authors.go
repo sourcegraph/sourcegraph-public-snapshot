@@ -23,7 +23,7 @@ import (
 func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogComponentAuthorEdgeResolver, error) {
 	var allEntries []fs.FileInfo
 	for _, sourcePath := range r.sourcePaths {
-		entries, err := git.ReadDir(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), sourcePath, true)
+		entries, err := git.ReadDir(ctx, r.sourceRepo, r.sourceCommit, sourcePath, true)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 		go func(e fs.FileInfo) {
 			defer wg.Done()
 
-			authorsByEmail, lineCount, err := getFileBlameAuthorsCached(ctx, api.RepoName(r.sourceRepo), api.CommitID(r.sourceCommit), e.Name())
+			authorsByEmail, lineCount, err := getFileBlameAuthorsCached(ctx, r.sourceRepo, r.sourceCommit, e.Name())
 			if err != nil {
 				mu.Lock()
 				if allErr == nil {

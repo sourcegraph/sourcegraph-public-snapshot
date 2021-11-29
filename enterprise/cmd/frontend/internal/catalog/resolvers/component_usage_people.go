@@ -19,7 +19,7 @@ type blameLocation struct {
 	startLine, startCharacter, endLine, endCharacter int
 }
 
-func (r *catalogComponentUsageResolver) Callers(ctx context.Context) ([]gql.CatalogComponentCallerEdgeResolver, error) {
+func (r *catalogComponentUsageResolver) People(ctx context.Context) ([]gql.CatalogComponentUsagePersonEdgeResolver, error) {
 	results, err := r.cachedResults(ctx)
 	if err != nil {
 		return nil, err
@@ -75,9 +75,9 @@ func (r *catalogComponentUsageResolver) Callers(ctx context.Context) ([]gql.Cata
 		}
 	}
 
-	edges := make([]gql.CatalogComponentCallerEdgeResolver, 0, len(all))
+	edges := make([]gql.CatalogComponentUsagePersonEdgeResolver, 0, len(all))
 	for _, a := range all {
-		edges = append(edges, &catalogComponentCallerEdgeResolver{
+		edges = append(edges, &catalogComponentUsagePersonEdgeResolver{
 			db:        r.db,
 			component: r.component,
 			data:      &a.blameAuthor,
@@ -92,22 +92,22 @@ func (r *catalogComponentUsageResolver) Callers(ctx context.Context) ([]gql.Cata
 	return edges, nil
 }
 
-type catalogComponentCallerEdgeResolver struct {
+type catalogComponentUsagePersonEdgeResolver struct {
 	db        database.DB
 	component *catalogComponentResolver
 	data      *blameAuthor
 	locations []blameLocation
 }
 
-func (r *catalogComponentCallerEdgeResolver) Component() gql.CatalogComponentResolver {
+func (r *catalogComponentUsagePersonEdgeResolver) Component() gql.CatalogComponentResolver {
 	return r.component
 }
 
-func (r *catalogComponentCallerEdgeResolver) Person() *gql.PersonResolver {
+func (r *catalogComponentUsagePersonEdgeResolver) Person() *gql.PersonResolver {
 	return gql.NewPersonResolver(r.db, r.data.Name, r.data.Email, true)
 }
 
-func (r *catalogComponentCallerEdgeResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
+func (r *catalogComponentUsagePersonEdgeResolver) Locations(ctx context.Context) (gql.LocationConnectionResolver, error) {
 	var locationResolvers []gql.LocationResolver
 	for _, loc := range r.locations {
 		// TODO(sqs): SECURITY does this bypass repo perms?
@@ -122,11 +122,11 @@ func (r *catalogComponentCallerEdgeResolver) Locations(ctx context.Context) (gql
 	return gql.NewStaticLocationConnectionResolver(locationResolvers, false), nil
 }
 
-func (r *catalogComponentCallerEdgeResolver) AuthoredLineCount() int32 {
+func (r *catalogComponentUsagePersonEdgeResolver) AuthoredLineCount() int32 {
 	return int32(r.data.LineCount)
 }
 
-func (r *catalogComponentCallerEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
+func (r *catalogComponentUsagePersonEdgeResolver) LastCommit(ctx context.Context) (*gql.GitCommitResolver, error) {
 	repoResolver, err := r.component.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err

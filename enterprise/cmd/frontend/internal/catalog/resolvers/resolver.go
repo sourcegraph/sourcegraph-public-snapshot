@@ -89,9 +89,10 @@ type catalogComponentResolver struct {
 	description string
 	system      *string
 
-	sourceRepo, sourceCommit string
-	sourcePaths              []string
-	usagePatterns            []usagePattern
+	sourceRepo    api.RepoName
+	sourceCommit  api.CommitID
+	sourcePaths   []string
+	usagePatterns []usagePattern
 
 	db database.DB
 }
@@ -134,7 +135,7 @@ func (r *catalogComponentResolver) URL() string {
 func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {
 	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	repo, err := r.db.Repos().GetByName(ctx, api.RepoName(r.sourceRepo))
+	repo, err := r.db.Repos().GetByName(ctx, r.sourceRepo)
 	if err != nil {
 		return nil, err
 	}
