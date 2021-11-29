@@ -54,7 +54,7 @@ func setupExec(ctx context.Context, args []string) error {
 	} else {
 		// DEPRECATED: The new 'sg setup' doesn't work on Linux yet, so we fall back to the old one.
 		out.WriteLine(output.Linef("", output.StyleWarning, "'sg setup' on Linux provides instructions for Ubuntu Linux. If you're using another distribution, instructions might need to be adjusted."))
-		return errors.Newf("sg setup currently does not support %s", currentOS)
+		return deprecatedSetupForLinux(ctx)
 	}
 
 	// Check whether we're in the sourcegraph/sourcegraph repository so we can
@@ -759,7 +759,6 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 		if dep.instructionsCommands == "" {
 			writeFingerPointingLine("Hit return once you're done")
 			waitForReturn()
-			toFix = removeEntry(toFix, idx)
 		} else {
 			// Otherwise we print the command(s) and ask the user whether we should run it or not
 			out.Write("")
@@ -904,8 +903,7 @@ func checkPostgresConnection(ctx context.Context) (bool, error) {
 			return val
 		}
 		// Otherwise check in globalConf.Env
-		val, _ = globalConf.Env[key]
-		return val
+		return globalConf.Env[key]
 	}
 
 	dns := postgresdsn.New("", "", getEnv)
