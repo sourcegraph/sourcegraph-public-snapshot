@@ -72,7 +72,6 @@ func Combine(path string, opt Options) error {
 	type dirCommit struct {
 		dir    string
 		commit *object.Commit
-		seq    int
 	}
 
 	rootTree := map[string]plumbing.Hash{}
@@ -123,22 +122,13 @@ func Combine(path string, opt Options) error {
 
 			commits = append(commits, &dirCommit{
 				dir:    remote,
-				seq:    i,
 				commit: commit,
 			})
 		}
 	}
 
 	sort.Slice(commits, func(i, j int) bool {
-		a, b := commits[i], commits[j]
-		// Note: This less is not transitive since committer timestamps are
-		// not guaranteed to be monotonically increasing in git. We aren't
-		// necessarily looking to get 100% correctness when picking the order
-		// of commits, just a reasonable order.
-		if a.dir == b.dir {
-			return a.seq > b.seq
-		}
-		return a.commit.Committer.When.Before(b.commit.Committer.When)
+		return commits[i].commit.Committer.When.Before(commits[j].commit.Committer.When)
 	})
 
 	for i, commit := range commits {
