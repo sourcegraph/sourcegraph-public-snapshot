@@ -52,9 +52,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
-    const chartLegendOrintation = isSearchBasedInsight(insight) && insight.series.length > 3
-        ? 'horizontal'
-        : 'vertical'
+    const chartLegendOrintation = isSearchBasedInsight(insight) && insight.series.length > 3 ? 'horizontal' : 'vertical'
 
     return (
         <View.Root

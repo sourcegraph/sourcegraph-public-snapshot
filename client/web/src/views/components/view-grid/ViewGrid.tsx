@@ -75,7 +75,13 @@ interface ViewGridCommonProps extends TelemetryProps {
  * Renders drag and drop and resizable views grid.
  */
 export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
-    const { layouts, customLayoutGenerator = DEFAULT_VIEWS_LAYOUT_GENERATOR, telemetryService, children, className } = props
+    const {
+        layouts,
+        customLayoutGenerator = DEFAULT_VIEWS_LAYOUT_GENERATOR,
+        telemetryService,
+        children,
+        className,
+    } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {

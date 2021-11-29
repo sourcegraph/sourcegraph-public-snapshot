@@ -69,7 +69,7 @@ const insights2: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
-            { id: '', query: '', stroke: '', name: ''},
+            { id: '', query: '', stroke: '', name: '' },
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
@@ -90,10 +90,10 @@ const insights2: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #1',
         series: [
-            { id: '', query: '', stroke: '', name: ''},
-            { id: '', query: '', stroke: '', name: ''},
-            { id: '', query: '', stroke: '', name: ''},
-            { id: '', query: '', stroke: '', name: ''},
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
         ],
         visibility: 'personal',
     },
@@ -103,7 +103,7 @@ const insights2: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
-            { id: '', query: '', stroke: '', name: ''},
+            { id: '', query: '', stroke: '', name: '' },
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
@@ -116,7 +116,7 @@ const insights2: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
-            { id: '', query: '', stroke: '', name: ''},
+            { id: '', query: '', stroke: '', name: '' },
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
@@ -129,7 +129,7 @@ const insights2: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
-            { id: '', query: '', stroke: '', name: ''},
+            { id: '', query: '', stroke: '', name: '' },
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
@@ -142,7 +142,7 @@ const insights2: Insight[] = [
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
         series: [
-            { id: '', query: '', stroke: '', name: ''},
+            { id: '', query: '', stroke: '', name: '' },
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},
             // { id: '', query: '', stroke: '', name: ''},

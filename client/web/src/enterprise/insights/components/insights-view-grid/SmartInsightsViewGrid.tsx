@@ -18,7 +18,6 @@ import { Insight, isSearchBasedInsight } from '../../core/types'
 import { SmartInsight } from './components/smart-insight/SmartInsight'
 
 const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts => {
-
     return Object.fromEntries(
         BREAKPOINTS_NAMES.map(breakpointName => [breakpointName, generateLayout(breakpointName)] as const)
     )
@@ -43,48 +42,53 @@ const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts => {
             }
 
             case 'lg': {
-                return insights.reduce<Layout[][]>((grid, insight) => {
-                    const isManySeriesChart = isSearchBasedInsight(insight) && insight.series.length > 3
-                    const itemsPerRow = isManySeriesChart ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
-                    const columnsPerRow = COLUMNS[breakpointName]
-                    const width = columnsPerRow / itemsPerRow
-                    const lastRow = grid[grid.length - 1]
-                    const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
+                return insights
+                    .reduce<Layout[][]>(
+                        (grid, insight) => {
+                            const isManySeriesChart = isSearchBasedInsight(insight) && insight.series.length > 3
+                            const itemsPerRow = isManySeriesChart ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
+                            const columnsPerRow = COLUMNS[breakpointName]
+                            const width = columnsPerRow / itemsPerRow
+                            const lastRow = grid[grid.length - 1]
+                            const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
 
-                    // Move element on new line (row)
-                    if (lastRowCurrentWidth + width > columnsPerRow) {
-                        const newRow = [
-                            {
-                                i: insight.id,
-                                h: DEFAULT_HEIGHT,
-                                w: width,
-                                x: 0,
-                                y: grid.length,
-                                minW: MIN_WIDTHS[breakpointName],
-                                minH: 2,
+                            // Move element on new line (row)
+                            if (lastRowCurrentWidth + width > columnsPerRow) {
+                                const newRow = [
+                                    {
+                                        i: insight.id,
+                                        h: DEFAULT_HEIGHT,
+                                        w: width,
+                                        x: 0,
+                                        y: grid.length,
+                                        minW: MIN_WIDTHS[breakpointName],
+                                        minH: 2,
+                                    },
+                                ]
+
+                                for (const [index, element] of lastRow.entries()) {
+                                    element.w = columnsPerRow / lastRow.length
+                                    element.x = (index * columnsPerRow) / lastRow.length
+                                }
+
+                                grid.push(newRow)
+                            } else {
+                                lastRow.push({
+                                    i: insight.id,
+                                    h: DEFAULT_HEIGHT,
+                                    w: width,
+                                    x: lastRowCurrentWidth,
+                                    y: grid.length - 1,
+                                    minW: MIN_WIDTHS[breakpointName],
+                                    minH: 2,
+                                })
                             }
-                        ]
 
-                        for (const [index, element] of lastRow.entries()) {
-                            element.w = columnsPerRow / lastRow.length
-                            element.x = index * columnsPerRow / lastRow.length
-                        }
-
-                        grid.push(newRow)
-                    } else {
-                        lastRow.push({
-                            i: insight.id,
-                            h: DEFAULT_HEIGHT,
-                            w: width,
-                            x: lastRowCurrentWidth,
-                            y: grid.length - 1,
-                            minW: MIN_WIDTHS[breakpointName],
-                            minH: 2,
-                        })
-                    }
-
-                    return grid
-                }, [[]]).flat()
+                            return grid
+                        },
+                        [[]]
+                    )
+                    .flat()
             }
         }
     }
@@ -108,10 +112,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
     const { telemetryService, insights } = props
 
     return (
-        <ViewGrid
-            layouts={insightLayoutGenerator(insights)}
-            telemetryService={telemetryService}
-         >
+        <ViewGrid layouts={insightLayoutGenerator(insights)} telemetryService={telemetryService}>
             {insights.map(insight => (
                 <SmartInsight
                     key={insight.id}
