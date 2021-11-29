@@ -705,8 +705,16 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
-	// TODO: Instead of bash we should probably use the users shell?
-	cmd := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
+	// Look up which shell the user is using, because that's most likely the
+	// one that has all the environment correctly setup.
+	shell, ok := os.LookupEnv("SHELL")
+	if !ok {
+		// If we can't find the shell in the environment, we fall back to `bash`
+		shell = "bash"
+	}
+
+	// The most common shells (bash, zsh, fish, ash) support the `-c` flag.
+	cmd := exec.CommandContext(ctx, shell, "-c", dep.instructionsCommands)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -970,7 +978,6 @@ type dependency struct {
 
 	check dependencyCheck
 
-	// TODO: Still unused
 	onlyEmployees bool
 
 	state bool
