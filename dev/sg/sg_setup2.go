@@ -244,6 +244,7 @@ Find out how to install asdf here: https://asdf-vm.com/guide/getting-started.htm
 
 Once you have asdf, execute the commands below **in the sourcegraph repository**.`,
 				instructionsCommands: `
+brew install gpg
 asdf plugin-add yarn
 asdf install yarn 
 `,
@@ -412,17 +413,18 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 }
 
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
-	// TODO: Would it be better if we show the output of the commands here?
-	pending := out.Pending(output.Linef("", output.StylePending, "Trying my hardest to fix %q automatically...", dep.name))
+	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
 	// TODO: Instead of bash we should probably use the users shell?
-	cmdOut, err := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands).CombinedOutput()
-	if err != nil {
-		pending.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning, "failed to run command: %s\n\noutput: %s", err, cmdOut))
+	cmd := exec.CommandContext(ctx, "bash", "-c", dep.instructionsCommands)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		writeFailureLine("Failed to run command: %s", err)
 		return err
 	}
 
-	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done! %q should be fixed now!", dep.name))
+	writeSuccessLine("Done! %q should be fixed now!", dep.name)
 
 	if dep.requiresSgSetupRestart {
 		writeFingerPointingLine("This command requires restarting of 'sg setup' to pick up the changes.")
@@ -738,27 +740,32 @@ func getNumberOutOf(numbers []int) (int, error) {
 func waitForReturn() { fmt.Scanln() }
 
 func getChoice(choices map[int]string) (int, error) {
-	out.Write("")
-	writeFingerPointingLine("What do you want to do?")
+	for {
+		out.Write("")
+		writeFingerPointingLine("What do you want to do?")
 
-	for i := 0; i < len(choices); i++ {
-		num := i + 1
-		desc, ok := choices[num]
-		if !ok {
-			return 0, errors.Newf("internal error: %d not found in provided choices", i)
+		for i := 0; i < len(choices); i++ {
+			num := i + 1
+			desc, ok := choices[num]
+			if !ok {
+				return 0, errors.Newf("internal error: %d not found in provided choices", i)
+			}
+			out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
 		}
-		out.Writef("%s[%d]%s: %s", output.StyleBold, num, output.StyleReset, desc)
+
+		fmt.Printf("Enter choice: ")
+
+		var s int
+		_, err := fmt.Scan(&s)
+		if err != nil {
+			return 0, err
+		}
+
+		if _, ok := choices[s]; ok {
+			return s, nil
+		}
+		writeFailureLine("Invalid choice")
 	}
-
-	fmt.Printf("Enter choice: ")
-
-	var s int
-	_, err := fmt.Scan(&s)
-	if err != nil {
-		return 0, err
-	}
-
-	return s, nil
 }
 
 func retryCheck(check dependencyCheck, retries int, sleep time.Duration) dependencyCheck {
