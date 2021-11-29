@@ -43,6 +43,7 @@ type CatalogComponentResolver interface {
 	ID() graphql.ID
 	Kind() CatalogComponentKind
 	Name() string
+	Description() *string
 	Owner(context.Context) (*PersonResolver, error)
 	System() *string
 	Tags() []string

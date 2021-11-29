@@ -126,6 +126,5 @@ const CatalogComponent: React.FunctionComponent<{
             </Link>
         </h3>
         <div className="flex-1" />
-        {size === 'lg' && <Link to="TODO">Source</Link>}
     </li>
 )

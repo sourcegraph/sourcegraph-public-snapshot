@@ -5,7 +5,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogComponentDetailFields } from '../../../../../graphql-operations'
@@ -15,6 +15,7 @@ import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
 import { ComponentDocumentation } from './ComponentDocumentation'
+import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
 import { ComponentUsage } from './ComponentUsage'
 import { TabRouter } from './TabRouter'
@@ -37,12 +38,32 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             {
                 path: '',
                 exact: true,
-                label: 'Documentation',
-                element: <ComponentDocumentation catalogComponent={catalogComponent} />,
+                label: 'Overview',
+                element: (
+                    <div className="d-flex flex-column">
+                        <ComponentSourceDefinitions catalogComponent={catalogComponent} />
+                        <ComponentAuthors
+                            catalogComponent={catalogComponent}
+                            className="card mb-3"
+                            headerClassName={classNames('card-header', styles.cardHeader)}
+                            titleClassName={classNames('card-title', styles.cardTitle)}
+                            bodyClassName={styles.cardBody}
+                            bodyScrollableClassName={styles.cardBodyScrollable}
+                        />
+                        <ComponentCommits
+                            catalogComponent={catalogComponent}
+                            className="card overflow-hidden"
+                            headerClassName={classNames('card-header', styles.cardHeader)}
+                            titleClassName={classNames('card-title', styles.cardTitle)}
+                            bodyClassName={styles.cardBody}
+                            bodyScrollableClassName={styles.cardBodyScrollable}
+                        />
+                    </div>
+                ),
             },
             {
-                path: 'impl',
-                label: 'Implementation',
+                path: 'code',
+                label: 'Code',
                 element: (
                     <div className={styles.grid}>
                         {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
@@ -75,6 +96,11 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                 ),
             },
             {
+                path: 'docs',
+                label: 'Docs',
+                element: <ComponentDocumentation catalogComponent={catalogComponent} />,
+            },
+            {
                 path: 'api',
                 label: 'API',
                 element: <p>API</p>,
@@ -97,7 +123,32 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
             {
                 path: 'spec',
                 label: 'Spec',
-                element: <p>Spec</p>,
+                element: (
+                    <>
+                        <p>Edit the JSON specification for this component in source control.</p>
+                        <Container>
+                            <pre>
+                                <code>
+                                    {JSON.stringify(
+                                        {
+                                            name: catalogComponent.name,
+                                            description: catalogComponent.description,
+                                            kind: catalogComponent.kind,
+                                            sourceLocations: catalogComponent.sourceLocations.map(s => ({
+                                                repo: s.repository.name,
+                                                path: s.path,
+                                            })),
+                                            system: catalogComponent.system,
+                                            tags: catalogComponent.tags,
+                                        },
+                                        null,
+                                        2
+                                    )}
+                                </code>
+                            </pre>
+                        </Container>
+                    </>
+                ),
             },
         ],
         [catalogComponent, props]
@@ -112,16 +163,10 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                         text: catalogComponent.name,
                     },
                 ]}
-                className="mb-3"
+                className="mb-1"
             />
-            <ul className="list-unstyled">
-                <li>
-                    <strong>Owner</strong> alice
-                </li>
-                <li>
-                    <strong>Lifecycle</strong> production
-                </li>
-            </ul>
+            {catalogComponent.description && <p className="mb-0 text-muted">{catalogComponent.description}</p>}
+            <div className="mb-4" />
             <TabRouter tabs={tabs} />
         </div>
     )

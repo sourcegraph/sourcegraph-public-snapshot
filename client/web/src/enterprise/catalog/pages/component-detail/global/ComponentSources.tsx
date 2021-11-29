@@ -6,65 +6,49 @@ import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { getFileDecorations } from '../../../../../backend/features'
-import { CatalogComponentSourcesFields } from '../../../../../graphql-operations'
+import { CatalogComponentDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
 import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 
 interface Props
     extends Pick<ComponentDetailContentCardProps, 'className' | 'bodyScrollableClassName'>,
         ExtensionsControllerProps,
         ThemeProps {
-    catalogComponent: CatalogComponentSourcesFields
+    catalogComponent: CatalogComponentSourcesFields & Pick<CatalogComponentDetailFields, 'url'>
 }
 
 export const ComponentSources: React.FunctionComponent<Props> = ({
-    catalogComponent: { sourceLocations },
+    catalogComponent,
     className,
     bodyScrollableClassName,
     ...props
-}) =>
-    sourceLocations.length > 0 ? (
-        <div className={className}>
-            <ol className={classNames('list-unstyled mb-0')}>
-                {sourceLocations.map(sourceLocation => (
-                    <li key={sourceLocation.url} className="border p-2 mb-3">
-                        <RepoFileLink
-                            repoName={sourceLocation.repository.name}
-                            repoURL={sourceLocation.repository.url}
-                            filePath={sourceLocation.path}
-                            fileURL={sourceLocation.url}
-                            className="d-inline"
-                        />{' '}
-                        {'files' in sourceLocation && sourceLocation.files && (
-                            <span className="text-muted small ml-1">
-                                {sourceLocation.files.length} {pluralize('file', sourceLocation.files.length)}
-                            </span>
-                        )}
-                    </li>
-                ))}
-            </ol>
-            <div className="d-flex align-items-center justify-content-end">
-                <Link to="TODO(sqs)" className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center">
-                    <SettingsIcon className="icon-inline mr-1" /> Configure sources
-                </Link>
-            </div>
+}) => (
+    <div className={className}>
+        <ComponentSourceDefinitions catalogComponent={catalogComponent} />
+        <div className="d-flex align-items-center justify-content-end">
+            <Link
+                to={`${catalogComponent.url}/spec`}
+                className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center"
+            >
+                <SettingsIcon className="icon-inline mr-1" /> Configure sources
+            </Link>
+        </div>
+        {catalogComponent.sourceLocations.length > 0 && (
             <ComponentFiles
                 {...props}
-                sourceLocations={sourceLocations}
+                sourceLocations={catalogComponent.sourceLocations}
                 className={classNames(bodyScrollableClassName)}
             />
-        </div>
-    ) : (
-        <p className={classNames('mb-0', className)}>No source locations</p>
-    )
+        )}
+    </div>
+)
 
 const ComponentFiles: React.FunctionComponent<
     {

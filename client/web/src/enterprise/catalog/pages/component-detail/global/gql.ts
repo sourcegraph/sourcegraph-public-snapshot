@@ -119,6 +119,7 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         id
         kind
         name
+        description
         system
         tags
         url

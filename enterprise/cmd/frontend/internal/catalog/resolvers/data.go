@@ -12,7 +12,7 @@ type usagePattern struct {
 
 func newQueryUsagePattern(query string) usagePattern {
 	return usagePattern{
-		query: `repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
+		query: `count:3 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
 	}
 }
 
@@ -33,6 +33,7 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 		{
 			kind:         "SERVICE",
 			name:         "gitserver",
+			description:  "Mirrors repositories from their code host.",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"cmd/gitserver"},
@@ -107,12 +108,26 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 		{
 			kind:         "TOOL",
 			name:         "sg",
+			description:  "The Sourcegraph developer tool",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"dev/sg"},
 			usagePatterns: []usagePattern{
 				newQueryUsagePattern(`lang:markdown ` + "`" + `sg[` + "`" + `\s] patterntype:regexp`),
 				newQueryUsagePattern(`lang:markdown (^|\s*\$ )sg\s patterntype:regexp`),
+			},
+		},
+		{
+			kind:        "TOOL",
+			name:        "src-cli",
+			description: "Sourcegraph CLI",
+			// Only the gitlab mirror of this repo is loaded by the default dev-private config.
+			sourceRepo:    "gitlab.sgdev.org/sourcegraph/src-cli",
+			sourceCommit:  "4a4341bc1c53fc5306f09bdcb31e8892ee40e6c7",
+			sourcePaths:   []string{"."},
+			usagePatterns: []usagePattern{
+				// newQueryUsagePattern(`lang:markdown ` + "`" + `src[` + "`" + `\s] patterntype:regexp`),
+				// newQueryUsagePattern(`lang:markdown (^|\s*\$ )src\s patterntype:regexp`),
 			},
 		},
 		{
@@ -139,6 +154,7 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 		{
 			kind:         "LIBRARY",
 			name:         "wildcard",
+			description:  "The Wildcard component library is a collection of design-approved reusable components that are suitable for use within the Sourcegraph codebase.",
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"client/wildcard"},

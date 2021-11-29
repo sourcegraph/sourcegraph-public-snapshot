@@ -28,6 +28,7 @@ type CatalogComponent implements Node {
     id: ID!
     kind: CatalogComponentKind!
     name: String!
+    description: String
     owner: Person
     system: String
     tags: [String!]!

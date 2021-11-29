@@ -84,9 +84,10 @@ func (r *catalogComponentConnectionResolver) PageInfo(ctx context.Context) (*gra
 }
 
 type catalogComponentResolver struct {
-	kind   gql.CatalogComponentKind
-	name   string
-	system *string
+	kind        gql.CatalogComponentKind
+	name        string
+	description string
+	system      *string
 
 	sourceRepo, sourceCommit string
 	sourcePaths              []string
@@ -105,6 +106,13 @@ func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {
 
 func (r *catalogComponentResolver) Name() string {
 	return r.name
+}
+
+func (r *catalogComponentResolver) Description() *string {
+	if r.description == "" {
+		return nil
+	}
+	return &r.description
 }
 
 func (r *catalogComponentResolver) Owner(context.Context) (*gql.PersonResolver, error) {
