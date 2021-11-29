@@ -4,8 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -27,6 +32,20 @@ func NewWorker(
 ) *workerutil.Worker {
 	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
 
+	observationContext := observation.Context{
+		Tracer: &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		HoneyDataset: &honey.Dataset{
+			Name: "codeintel-worker",
+		},
+	}
+
+	op := observationContext.Operation(observation.Op{
+		Name: "codeintel.uploadHandler",
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			return observation.EmitForTraces | observation.EmitForHoney
+		},
+	})
+
 	handler := &handler{
 		dbStore:         dbStore,
 		workerStore:     workerStore,
@@ -35,6 +54,7 @@ func NewWorker(
 		gitserverClient: gitserverClient,
 		enableBudget:    budgetMax > 0,
 		budgetRemaining: budgetMax,
+		handleOp:        op,
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{

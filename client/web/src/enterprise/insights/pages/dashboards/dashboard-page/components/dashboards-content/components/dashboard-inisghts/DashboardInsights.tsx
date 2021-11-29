@@ -8,12 +8,9 @@ import { SmartInsightsViewGrid } from '../../../../../../../components/insights-
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
 import { InsightDashboard } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
-import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 import { DashboardInsightsContext } from './DashboardInsightsContext'
-
-const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
@@ -26,10 +23,9 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
-    const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
-    const insightIds = useDistinctValue(dashboardInsightIds)
-
-    const insights = useObservable(useMemo(() => getInsights(insightIds), [getInsights, insightIds]))
+    const insights = useObservable(
+        useMemo(() => getInsights({ dashboardId: dashboard.id }), [getInsights, dashboard.id])
+    )
 
     if (insights === undefined) {
         return <LoadingSpinner />

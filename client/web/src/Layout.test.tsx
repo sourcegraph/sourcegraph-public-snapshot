@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
@@ -57,7 +57,7 @@ describe('Layout', () => {
 
         const setParsedSearchQuery = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -65,14 +65,11 @@ describe('Layout', () => {
                     location={history.location}
                     setParsedSearchQuery={setParsedSearchQuery}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.called(setParsedSearchQuery)
         sinon.assert.calledWith(setParsedSearchQuery, 'r:golang/oauth2 test f:travis2')
-
-        element.unmount()
     })
 
     it('should not update parsedSearchQuery if URL and context are the same', () => {
@@ -81,7 +78,7 @@ describe('Layout', () => {
 
         const setParsedSearchQuery = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -89,13 +86,10 @@ describe('Layout', () => {
                     location={history.location}
                     setParsedSearchQuery={setParsedSearchQuery}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setParsedSearchQuery)
-
-        element.unmount()
     })
 
     it('should update parsedSearchQuery if changing to empty', () => {
@@ -104,7 +98,7 @@ describe('Layout', () => {
 
         const setParsedSearchQuery = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -112,14 +106,11 @@ describe('Layout', () => {
                     location={history.location}
                     setParsedSearchQuery={setParsedSearchQuery}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.called(setParsedSearchQuery)
         sinon.assert.calledWith(setParsedSearchQuery, '')
-
-        element.unmount()
     })
 
     it('should update patternType if different between URL and context', () => {
@@ -128,7 +119,7 @@ describe('Layout', () => {
 
         const setPatternTypeSpy = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -137,14 +128,11 @@ describe('Layout', () => {
                     patternType={SearchPatternType.literal}
                     setPatternType={setPatternTypeSpy}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.called(setPatternTypeSpy)
         sinon.assert.calledWith(setPatternTypeSpy, SearchPatternType.regexp)
-
-        element.unmount()
     })
 
     it('should not update patternType if URL and context are the same', () => {
@@ -153,7 +141,7 @@ describe('Layout', () => {
 
         const setPatternTypeSpy = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -162,13 +150,10 @@ describe('Layout', () => {
                     patternType={SearchPatternType.regexp}
                     setPatternType={setPatternTypeSpy}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setPatternTypeSpy)
-
-        element.unmount()
     })
 
     it('should not update patternType if query is empty', () => {
@@ -177,7 +162,7 @@ describe('Layout', () => {
 
         const setPatternTypeSpy = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -186,13 +171,10 @@ describe('Layout', () => {
                     patternType={SearchPatternType.literal}
                     setPatternType={setPatternTypeSpy}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setPatternTypeSpy)
-
-        element.unmount()
     })
 
     it('should update caseSensitive if different between URL and context', () => {
@@ -201,7 +183,7 @@ describe('Layout', () => {
 
         const setCaseSensitivitySpy = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -210,14 +192,11 @@ describe('Layout', () => {
                     caseSensitive={false}
                     setCaseSensitivity={setCaseSensitivitySpy}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.called(setCaseSensitivitySpy)
         sinon.assert.calledWith(setCaseSensitivitySpy, true)
-
-        element.unmount()
     })
 
     it('should not update caseSensitive if URL and context are the same', () => {
@@ -226,7 +205,7 @@ describe('Layout', () => {
 
         const setCaseSensitivitySpy = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -235,13 +214,10 @@ describe('Layout', () => {
                     caseSensitive={true}
                     setCaseSensitivity={setCaseSensitivitySpy}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setCaseSensitivitySpy)
-
-        element.unmount()
     })
 
     it('should not update caseSensitive if query is empty', () => {
@@ -250,7 +226,7 @@ describe('Layout', () => {
 
         const setCaseSensitivitySpy = sinon.spy()
 
-        const element = mount(
+        render(
             <BrowserRouter>
                 <Layout
                     {...defaultProps}
@@ -259,12 +235,9 @@ describe('Layout', () => {
                     caseSensitive={false}
                     setCaseSensitivity={setCaseSensitivitySpy}
                 />
-            </BrowserRouter>,
-            { attachTo: document.querySelector('#root') as HTMLElement }
+            </BrowserRouter>
         )
 
         sinon.assert.notCalled(setCaseSensitivitySpy)
-
-        element.unmount()
     })
 })

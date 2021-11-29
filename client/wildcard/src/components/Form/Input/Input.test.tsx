@@ -21,7 +21,7 @@ describe('Input', () => {
               class="w-100"
             >
               <div
-                class="loader-input__container d-flex"
+                class="container d-flex"
               >
                 <input
                   class="input form-control with-invalid-icon"
@@ -31,7 +31,7 @@ describe('Input', () => {
                   value="Input value"
                 />
                 <div
-                  class="loading-spinner loader-input__spinner"
+                  class="loading-spinner spinner"
                 />
               </div>
               <small

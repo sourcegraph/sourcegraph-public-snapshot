@@ -6,16 +6,18 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type UploadConnectionResolver struct {
+	db               database.DB
 	resolver         resolvers.Resolver
 	uploadsResolver  *resolvers.UploadsResolver
 	prefetcher       *Prefetcher
 	locationResolver *CachedLocationResolver
 }
 
-func NewUploadConnectionResolver(resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFUploadConnectionResolver {
+func NewUploadConnectionResolver(db database.DB, resolver resolvers.Resolver, uploadsResolver *resolvers.UploadsResolver, prefetcher *Prefetcher, locationResolver *CachedLocationResolver) gql.LSIFUploadConnectionResolver {
 	return &UploadConnectionResolver{
 		resolver:         resolver,
 		uploadsResolver:  uploadsResolver,
@@ -31,7 +33,7 @@ func (r *UploadConnectionResolver) Nodes(ctx context.Context) ([]gql.LSIFUploadR
 
 	resolvers := make([]gql.LSIFUploadResolver, 0, len(r.uploadsResolver.Uploads))
 	for i := range r.uploadsResolver.Uploads {
-		resolvers = append(resolvers, NewUploadResolver(r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver))
+		resolvers = append(resolvers, NewUploadResolver(r.db, r.resolver, r.uploadsResolver.Uploads[i], r.prefetcher, r.locationResolver))
 	}
 	return resolvers, nil
 }
@@ -47,5 +49,5 @@ func (r *UploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 	if err := r.uploadsResolver.Resolve(ctx); err != nil {
 		return nil, err
 	}
-	return encodeIntCursor(toInt32(r.uploadsResolver.NextOffset)), nil
+	return graphqlutil.EncodeIntCursor(toInt32(r.uploadsResolver.NextOffset)), nil
 }

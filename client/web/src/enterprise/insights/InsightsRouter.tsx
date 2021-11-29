@@ -16,8 +16,8 @@ import { Settings } from '../../schema/settings.schema'
 import { lazyComponent } from '../../util/lazyComponent'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from './core/backend/code-insights-gql-backend'
-import { CodeInsightsSettingsCascadeBackend } from './core/backend/code-insights-setting-cascade-backend'
+import { CodeInsightsGqlBackend } from './core/backend/gql-api/code-insights-gql-backend'
+import { CodeInsightsSettingsCascadeBackend } from './core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
@@ -51,15 +51,14 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const match = useRouteMatch()
     const apolloClient = useApolloClient()
 
+    const gqlApi = useMemo(() => new CodeInsightsGqlBackend(apolloClient), [apolloClient])
     const api = useMemo(() => {
         // Disabled by default condition
         const isNewGqlApiEnabled =
             !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
 
-        return isNewGqlApiEnabled
-            ? new CodeInsightsGqlBackend(apolloClient)
-            : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade, apolloClient])
+        return isNewGqlApiEnabled ? gqlApi : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
+    }, [platformContext, settingsCascade, gqlApi])
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>

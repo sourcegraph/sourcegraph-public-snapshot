@@ -27,7 +27,7 @@ import (
 
 var (
 	observationContext *observation.Context
-	operationMetrics   *metrics.OperationMetrics
+	operationMetrics   *metrics.REDMetrics
 	once               sync.Once
 )
 
@@ -60,7 +60,7 @@ func (s *JVMPackagesSource) SetDB(db dbutil.DB) {
 			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 			Registerer: prometheus.DefaultRegisterer,
 		}
-		operationMetrics = dbstore.NewOperationsMetrics(observationContext)
+		operationMetrics = dbstore.NewREDMetrics(observationContext)
 	})
 	s.dbStore = dbstore.NewWithDB(db, observationContext, operationMetrics)
 }

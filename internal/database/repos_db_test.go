@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 /*
@@ -757,10 +758,10 @@ func TestRepos_List_ids(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo()))
-	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo())...)
+	mine := types.Repos(mustCreate(ctx, t, db, typestest.MakeGithubRepo()))
+	mine = append(mine, mustCreate(ctx, t, db, typestest.MakeGitlabRepo())...)
 
-	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo()))
+	yours := types.Repos(mustCreate(ctx, t, db, typestest.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -997,6 +998,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		{Name: "c/d"},
 		{Name: "e/f"},
 		{Name: "g/h"},
+		{Name: "I/J"},
 	}
 	for _, repo := range createdRepos {
 		createRepo(ctx, t, db, repo)
@@ -1004,6 +1006,7 @@ func TestRepos_List_patterns(t *testing.T) {
 	tests := []struct {
 		includePatterns []string
 		excludePattern  string
+		caseSensitive   bool
 		want            []api.RepoName
 	}{
 		{
@@ -1021,13 +1024,23 @@ func TestRepos_List_patterns(t *testing.T) {
 		},
 		{
 			excludePattern: "(d|e)",
-			want:           []api.RepoName{"a/b", "g/h"},
+			want:           []api.RepoName{"a/b", "g/h", "I/J"},
+		},
+		{
+			includePatterns: []string{"(A|c|I)"},
+			want:            []api.RepoName{"a/b", "c/d", "I/J"},
+		},
+		{
+			includePatterns: []string{"I", "J"},
+			caseSensitive:   true,
+			want:            []api.RepoName{"I/J"},
 		},
 	}
 	for _, test := range tests {
 		repos, err := Repos(db).List(ctx, ReposListOptions{
-			IncludePatterns: test.includePatterns,
-			ExcludePattern:  test.excludePattern,
+			IncludePatterns:       test.includePatterns,
+			ExcludePattern:        test.excludePattern,
+			CaseSensitivePatterns: test.caseSensitive,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -1072,7 +1085,8 @@ func TestRepos_createRepo(t *testing.T) {
 	// Add a repo.
 	createRepo(ctx, t, db, &types.Repo{
 		Name:        "a/b",
-		Description: "test"})
+		Description: "test",
+	})
 
 	repo, err := Repos(db).GetByName(ctx, "a/b")
 	if err != nil {
@@ -1096,11 +1110,11 @@ func TestRepos_List_useOr(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
+	archived := types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
 	archived = mustCreate(ctx, t, db, archived[0])
-	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
+	forks := types.Repos{typestest.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
 	forks = mustCreate(ctx, t, db, forks[0])
-	cloned := types.Repos{types.MakeGithubRepo()}
+	cloned := types.Repos{typestest.MakeGithubRepo()}
 	cloned = mustCreateGitserverRepo(ctx, t, db, cloned[0], types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	archivedAndForks := append(archived, forks...)
@@ -1141,7 +1155,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := types.MakeExternalServices()
+	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
 	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
@@ -1151,12 +1165,12 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mine := types.Repos{types.MakeGithubRepo(service1)}
+	mine := types.Repos{typestest.MakeGithubRepo(service1)}
 	if err := Repos(db).Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
-	yours := types.Repos{types.MakeGitlabRepo(service2)}
+	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
 	if err := Repos(db).Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
@@ -1310,10 +1324,10 @@ func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo()))
-	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo())...)
+	mine := types.Repos(mustCreate(ctx, t, db, typestest.MakeGithubRepo()))
+	mine = append(mine, mustCreate(ctx, t, db, typestest.MakeGitlabRepo())...)
 
-	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo()))
+	yours := types.Repos(mustCreate(ctx, t, db, typestest.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -1633,11 +1647,11 @@ func TestRepos_ListMinimalRepos_useOr(t *testing.T) {
 	db := dbtest.NewDB(t)
 	ctx := actor.WithInternalActor(context.Background())
 
-	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
+	archived := types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
 	archived = mustCreate(ctx, t, db, archived[0])
-	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
+	forks := types.Repos{typestest.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
 	forks = mustCreate(ctx, t, db, forks[0])
-	cloned := types.Repos{types.MakeGithubRepo()}
+	cloned := types.Repos{typestest.MakeGithubRepo()}
 	cloned = mustCreateGitserverRepo(ctx, t, db, cloned[0], types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	archivedAndForks := append(archived, forks...)
@@ -1678,7 +1692,7 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := types.MakeExternalServices()
+	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	service2 := services[1]
 	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
@@ -1688,12 +1702,12 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mine := types.Repos{types.MakeGithubRepo(service1)}
+	mine := types.Repos{typestest.MakeGithubRepo(service1)}
 	if err := Repos(db).Create(ctx, mine...); err != nil {
 		t.Fatal(err)
 	}
 
-	yours := types.Repos{types.MakeGitlabRepo(service2)}
+	yours := types.Repos{typestest.MakeGitlabRepo(service2)}
 	if err := Repos(db).Create(ctx, yours...); err != nil {
 		t.Fatal(err)
 	}
@@ -2121,13 +2135,13 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 		return &conf.Unified{}
 	}
 
-	services := types.MakeExternalServices()
+	services := typestest.MakeExternalServices()
 	service1 := services[0]
 	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
 		t.Fatal(err)
 	}
 
-	repo1 := types.MakeGithubRepo(service1)
+	repo1 := typestest.MakeGithubRepo(service1)
 	if err := Repos(db).Create(ctx, repo1); err != nil {
 		t.Fatal(err)
 	}

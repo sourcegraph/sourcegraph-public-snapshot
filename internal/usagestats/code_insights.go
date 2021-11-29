@@ -2,8 +2,13 @@ package usagestats
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
@@ -131,7 +136,38 @@ func GetCodeInsightsUsageStatistics(ctx context.Context, db dbutil.DB) (*types.C
 	}
 	stats.InsightOrgVisible = orgVisible
 
+	totalCounts, err := GetTotalInsightCounts(ctx, db)
+	if err != nil {
+		return nil, errors.Wrap(err, "GetTotalInsightCounts")
+	}
+	stats.InsightTotalCounts = totalCounts
+
 	return &stats, nil
+}
+
+func GetTotalInsightCounts(ctx context.Context, db dbutil.DB) (types.InsightTotalCounts, error) {
+	store := database.EventLogs(db)
+	name := InsightsTotalCountPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
+	if err != nil {
+		return types.InsightTotalCounts{}, err
+	} else if len(all) == 0 {
+		return types.InsightTotalCounts{}, nil
+	}
+
+	latest := all[0]
+	var totalCounts types.InsightTotalCounts
+	err = json.Unmarshal([]byte(latest.Argument), &totalCounts)
+	if err != nil {
+		return types.InsightTotalCounts{}, errors.Wrap(err, "Unmarshal")
+	}
+	return totalCounts, err
 }
 
 func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIntervalPing, error) {
@@ -294,3 +330,5 @@ WHERE name = ANY($2)
 AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
 GROUP BY name;
 `
+
+const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/inconshreveable/log15"
 
@@ -13,25 +14,41 @@ import (
 )
 
 type server struct {
-	server       *http.Server
-	makeListener func() (net.Listener, error)
-	once         sync.Once
+	server           *http.Server
+	makeListener     func() (net.Listener, error)
+	once             sync.Once
+	preShutdownPause time.Duration
+}
+
+type ServerOptions func(s *server)
+
+func WithPreShutdownPause(d time.Duration) ServerOptions {
+	return func(s *server) { s.preShutdownPause = d }
 }
 
 // New returns a BackgroundRoutine that serves the given server on the given listener.
-func New(listener net.Listener, httpServer *http.Server) goroutine.BackgroundRoutine {
-	return &server{
-		server:       httpServer,
-		makeListener: func() (net.Listener, error) { return listener, nil },
-	}
+func New(listener net.Listener, httpServer *http.Server, options ...ServerOptions) goroutine.BackgroundRoutine {
+	makeListener := func() (net.Listener, error) { return listener, nil }
+	return newServer(httpServer, makeListener, options...)
 }
 
 // New returns a BackgroundRoutine that serves the given handler on the given address.
-func NewFromAddr(addr string, httpServer *http.Server) goroutine.BackgroundRoutine {
-	return &server{
+func NewFromAddr(addr string, httpServer *http.Server, options ...ServerOptions) goroutine.BackgroundRoutine {
+	makeListener := func() (net.Listener, error) { return NewListener(addr) }
+	return newServer(httpServer, makeListener, options...)
+}
+
+func newServer(httpServer *http.Server, makeListener func() (net.Listener, error), options ...ServerOptions) goroutine.BackgroundRoutine {
+	s := &server{
 		server:       httpServer,
-		makeListener: func() (net.Listener, error) { return NewListener(addr) },
+		makeListener: makeListener,
 	}
+
+	for _, option := range options {
+		option(s)
+	}
+
+	return s
 }
 
 func (s *server) Start() {
@@ -49,7 +66,14 @@ func (s *server) Start() {
 
 func (s *server) Stop() {
 	s.once.Do(func() {
-		if err := s.server.Shutdown(context.Background()); err != nil {
+		if s.preShutdownPause > 0 {
+			time.Sleep(s.preShutdownPause)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
+		defer cancel()
+
+		if err := s.server.Shutdown(ctx); err != nil {
 			log15.Error("Failed to shutdown server", "error", err)
 		}
 	})

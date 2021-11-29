@@ -27,9 +27,10 @@ func init() {
 }
 
 type event struct {
-	at       time.Time
-	state    string
-	buildURL string
+	at          time.Time
+	state       string
+	buildURL    string
+	buildNumber int
 }
 
 type report struct {
@@ -108,9 +109,10 @@ func main() {
 				continue
 			}
 			ends = append(ends, &event{
-				at:       b.FinishedAt.Time,
-				state:    *b.State,
-				buildURL: *b.WebURL,
+				at:          b.FinishedAt.Time,
+				state:       *b.State,
+				buildURL:    *b.WebURL,
+				buildNumber: *b.Number,
 			})
 		}
 	}
@@ -120,19 +122,23 @@ func main() {
 	red := time.Duration(0)
 	var report report
 	for _, event := range ends {
+		buildLink := slackLink(fmt.Sprintf("build %d", event.buildNumber), event.buildURL)
 		if event.state == "failed" {
 			// if a build failed, compute how much time until the next green
 			lastRed = event
-			report.details = append(report.details, fmt.Sprintf("Failure on %s, %s", event.at.Format(longDateFormat), event.buildURL))
+			report.details = append(report.details, fmt.Sprintf("Failure on %s: %s",
+				event.at.Format(longDateFormat), buildLink))
 		}
 		if event.state == "passed" && lastRed != nil {
 			// if a build passed and we previously were red, stop recording the duration.
 			red += event.at.Sub(lastRed.at)
 			lastRed = nil
-			report.details = append(report.details, fmt.Sprintf("Fixed on %s, %s", event.at.Format(longDateFormat), event.buildURL))
+			report.details = append(report.details, fmt.Sprintf("Fixed on %s: %s",
+				event.at.Format(longDateFormat), buildLink))
 		}
 	}
-	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s*", t.Format(shortDateFormat), red.String())
+	report.summary = fmt.Sprintf("On %s, the pipeline was red for *%s* - see the %s for more details.",
+		t.Format(shortDateFormat), red.Round(time.Second).String(), slackLink("CI dashboard", ciDashboardURL(BoD(t), EoD(t))))
 
 	if slack == "" {
 		// If we're meant to print the results on stdout.
@@ -208,4 +214,17 @@ func BoD(t time.Time) time.Time {
 
 func EoD(t time.Time) time.Time {
 	return BoD(t).Add(time.Hour * 24).Add(-1 * time.Nanosecond)
+}
+
+// slackLink returns Slack's weird markdown link format thing.
+// https://api.slack.com/reference/surfaces/formatting#linking-urls
+func slackLink(title, url string) string {
+	return fmt.Sprintf("<%s|%s>", url, title)
+}
+
+// ciDashboardURL returns a link to our CI overview dashboard.
+func ciDashboardURL(start, end time.Time) string {
+	const dashboard = "https://sourcegraph.grafana.net/d/iBBWbxFnk/ci"
+	return fmt.Sprintf("%s?from=%d&to=%d",
+		dashboard, start.UnixMilli(), end.UnixMilli())
 }

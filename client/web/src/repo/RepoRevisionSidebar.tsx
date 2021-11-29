@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
 import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
@@ -8,15 +9,17 @@ import { Button } from 'reactstrap'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
 import { Tree } from '../tree/Tree'
 
+import styles from './RepoRevisionSidebar.module.scss'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
 
-interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     repoID: Scalars['ID']
     isDir: boolean
     defaultBranch: string
@@ -36,13 +39,22 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
-    const handleSidebarToggle = useCallback(() => setToggleSidebar(!toggleSidebar), [setToggleSidebar, toggleSidebar])
+    const handleSidebarToggle = useCallback(() => {
+        props.telemetryService.log('FileTreeViewClicked', {
+            action: 'click',
+            label: 'expand / collapse file tree view',
+        })
+        setToggleSidebar(!toggleSidebar)
+    }, [setToggleSidebar, toggleSidebar, props.telemetryService])
 
     if (!toggleSidebar) {
         return (
             <button
                 type="button"
-                className="position-absolute btn btn-icon border-top border-bottom border-right mt-4 repo-revision-sidebar__toggle"
+                className={classNames(
+                    'position-absolute btn btn-icon border-top border-bottom border-right mt-4',
+                    styles.toggle
+                )}
                 onClick={handleSidebarToggle}
                 data-tooltip="Show sidebar"
             >
@@ -79,10 +91,10 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                 data-tooltip="Collapse panel"
                                 data-placement="right"
                             >
-                                <ChevronDoubleLeftIcon className="icon-inline repo-revision-sidebar__close-icon" />
+                                <ChevronDoubleLeftIcon className={classNames('icon-inline', styles.closeIcon)} />
                             </Button>
                         </div>
-                        <div aria-hidden={true} className="d-flex repo-revision-sidebar__tabpanels explorer">
+                        <div aria-hidden={true} className={classNames('d-flex explorer', styles.tabpanels)}>
                             <TabPanels className="w-100 overflow-auto">
                                 <TabPanel tabIndex={-1}>
                                     {tabIndex === 0 && (

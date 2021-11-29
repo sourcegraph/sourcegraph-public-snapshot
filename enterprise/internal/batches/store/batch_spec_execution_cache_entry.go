@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -79,78 +80,130 @@ var createBatchSpecExecutionCacheEntryQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CreateBatchSpecExecutionCacheEntry
 INSERT INTO batch_spec_execution_cache_entries (%s)
 VALUES ` + batchSpecExecutionCacheEntryInsertColumns.FmtStr() + `
+ON CONFLICT ON CONSTRAINT batch_spec_execution_cache_entries_key_unique
+DO UPDATE SET
+	value = EXCLUDED.value,
+	version = EXCLUDED.version,
+	created_at = EXCLUDED.created_at
 RETURNING %s
 `
 
-// GetBatchSpecExecutionCacheEntryOpts captures the query options needed for getting a BatchSpecExecutionCacheEntry
-type GetBatchSpecExecutionCacheEntryOpts struct {
-	Key string
+// ListBatchSpecExecutionCacheEntriesOpts captures the query options needed for getting a BatchSpecExecutionCacheEntry
+type ListBatchSpecExecutionCacheEntriesOpts struct {
+	Keys []string
 }
 
-// GetBatchSpecExecutionCacheEntry gets a BatchSpecExecutionCacheEntry matching the given options.
-func (s *Store) GetBatchSpecExecutionCacheEntry(ctx context.Context, opts GetBatchSpecExecutionCacheEntryOpts) (job *btypes.BatchSpecExecutionCacheEntry, err error) {
-	ctx, endObservation := s.operations.getBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("Key", opts.Key),
+// ListBatchSpecExecutionCacheEntries gets the BatchSpecExecutionCacheEntries matching the given options.
+func (s *Store) ListBatchSpecExecutionCacheEntries(ctx context.Context, opts ListBatchSpecExecutionCacheEntriesOpts) (cs []*btypes.BatchSpecExecutionCacheEntry, err error) {
+	ctx, endObservation := s.operations.listBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("Count", len(opts.Keys)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := getBatchSpecExecutionCacheEntryQuery(&opts)
-	var c btypes.BatchSpecExecutionCacheEntry
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanBatchSpecExecutionCacheEntry(&c, sc)
+	q := listBatchSpecExecutionCacheEntriesQuery(&opts)
+
+	cs = make([]*btypes.BatchSpecExecutionCacheEntry, 0, len(opts.Keys))
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		var c btypes.BatchSpecExecutionCacheEntry
+		if err := scanBatchSpecExecutionCacheEntry(&c, sc); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	if c.ID == 0 {
-		return nil, ErrNoResults
-	}
-
-	return &c, nil
+	return cs, err
 }
 
-var getBatchSpecExecutionCacheEntrysQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:GetBatchSpecExecutionCacheEntry
+var listBatchSpecExecutionCacheEntriesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:ListBatchSpecExecutionCacheEntries
 SELECT %s FROM batch_spec_execution_cache_entries
 WHERE %s
-LIMIT 1
 `
 
-func getBatchSpecExecutionCacheEntryQuery(opts *GetBatchSpecExecutionCacheEntryOpts) *sqlf.Query {
+func listBatchSpecExecutionCacheEntriesQuery(opts *ListBatchSpecExecutionCacheEntriesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("batch_spec_execution_cache_entries.key = %s", opts.Key),
+		sqlf.Sprintf("batch_spec_execution_cache_entries.key = ANY (%s)", pq.Array(opts.Keys)),
+		// Only consider records that are in the current cache version.
+		sqlf.Sprintf("batch_spec_execution_cache_entries.version = %s", btypes.CurrentCacheVersion),
 	}
 
 	return sqlf.Sprintf(
-		getBatchSpecExecutionCacheEntrysQueryFmtstr,
+		listBatchSpecExecutionCacheEntriesQueryFmtstr,
 		sqlf.Join(BatchSpecExecutionCacheEntryColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-const markUsedBatchSpecExecutionCacheEntryQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:MarkUsedBatchSpecExecutionCacheEntry
+const markUsedBatchSpecExecutionCacheEntriesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:MarkUsedBatchSpecExecutionCacheEntries
 UPDATE
 	batch_spec_execution_cache_entries
 SET last_used_at = %s
 WHERE
-	batch_spec_execution_cache_entries.id = %s
+	batch_spec_execution_cache_entries.id = ANY (%s)
 `
 
-// MarkUsedBatchSpecExecutionCacheEntry updates the LastUsedAt of the given cache entry.
-func (s *Store) MarkUsedBatchSpecExecutionCacheEntry(ctx context.Context, id int64) (err error) {
-	ctx, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntry.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+// MarkUsedBatchSpecExecutionCacheEntries updates the LastUsedAt of the given cache entries.
+func (s *Store) MarkUsedBatchSpecExecutionCacheEntries(ctx context.Context, ids []int64) (err error) {
+	ctx, endObservation := s.operations.markUsedBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("count", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(
-		markUsedBatchSpecExecutionCacheEntryQueryFmtstr,
+		markUsedBatchSpecExecutionCacheEntriesQueryFmtstr,
 		s.now(),
-		id,
+		pq.Array(ids),
 	)
 	return s.Exec(ctx, q)
+}
+
+// cleanBatchSpecExecutionEntriesQueryFmtstr collects cache entries to delete by
+// collecting enough so that if we were to delete them we'd be under
+// maxCacheSize again. Also, cache entries from older cache versions are always
+// deleted.
+const cleanBatchSpecExecutionEntriesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:CleanBatchSpecExecutionEntries
+WITH total_size AS (
+  SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries
+),
+candidates AS (
+  SELECT
+    id
+  FROM (
+    SELECT
+      entries.id,
+      entries.created_at,
+      entries.last_used_at,
+      SUM(octet_length(entries.value)) OVER (ORDER BY COALESCE(entries.last_used_at, entries.created_at) ASC, entries.id ASC) AS running_size
+    FROM batch_spec_execution_cache_entries entries
+  ) t
+  WHERE
+    ((SELECT total FROM total_size) - t.running_size) >= %s
+),
+outdated AS (
+	SELECT
+		id
+	FROM batch_spec_execution_cache_entries
+	WHERE
+		version < %s
+),
+ids AS (
+	SELECT id FROM outdated
+	UNION ALL
+	SELECT id FROM candidates
+)
+DELETE FROM batch_spec_execution_cache_entries WHERE id IN (SELECT id FROM ids)
+`
+
+func (s *Store) CleanBatchSpecExecutionCacheEntries(ctx context.Context, maxCacheSize int64) (err error) {
+	ctx, endObservation := s.operations.cleanBatchSpecExecutionCacheEntries.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("MaxTableSize", int(maxCacheSize)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Exec(ctx, sqlf.Sprintf(cleanBatchSpecExecutionEntriesQueryFmtstr, maxCacheSize, btypes.CurrentCacheVersion))
 }
 
 func scanBatchSpecExecutionCacheEntry(wj *btypes.BatchSpecExecutionCacheEntry, s dbutil.Scanner) error {

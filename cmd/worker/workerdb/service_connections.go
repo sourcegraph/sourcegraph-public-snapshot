@@ -14,9 +14,9 @@ import (
 //
 // This method should only be called for critical values like database connection config.
 func WatchServiceConnectionValue(f func(serviceConnections conftypes.ServiceConnections) string) string {
-	value := f(conf.Get().ServiceConnections)
+	value := f(conf.Get().ServiceConnections())
 	conf.Watch(func() {
-		if newValue := f(conf.Get().ServiceConnections); value != newValue {
+		if newValue := f(conf.Get().ServiceConnections()); value != newValue {
 			log.Fatalf("Detected settings change change, restarting to take effect: %s", newValue)
 		}
 	})

@@ -1,19 +1,14 @@
-@import 'wildcard/src/global-styles/breakpoints';
-
 .hero {
     padding: 1.5rem;
+    display: flex;
+}
+
+.hero-image {
+    flex: 0;
 }
 
 .heading {
     font-size: 1.5rem !important;
-}
-
-.alert {
-    width: 100%;
-
-    @media (--lg-breakpoint-up) {
-        width: 75%;
-    }
 }
 
 .create-button {

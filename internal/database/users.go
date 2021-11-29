@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -293,7 +292,7 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser) (newU
 	// creation and site initialization operations occur atomically (to guarantee to the legitimate
 	// site admin that if they successfully initialize the server, then no attacker's account could
 	// have been created as a site admin).
-	alreadyInitialized, err := globalstatedb.EnsureInitialized(ctx, u)
+	alreadyInitialized, err := GlobalStateWith(u).EnsureInitialized(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -950,6 +949,9 @@ var (
 )
 
 func (u *userStore) RenewPasswordResetCode(ctx context.Context, id int32) (string, error) {
+	if Mocks.Users.RenewPasswordResetCode != nil {
+		return Mocks.Users.RenewPasswordResetCode(ctx, id)
+	}
 	if _, err := u.GetByID(ctx, id); err != nil {
 		return "", err
 	}
@@ -1097,6 +1099,10 @@ WHERE id=%s
 // A randomized password is used (instead of an empty password) to avoid bugs where an empty password
 // is considered to be no password. The random password is expected to be irretrievable.
 func (u *userStore) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Context, id int32) error {
+	if Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit != nil {
+		return Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit(ctx, id)
+	}
+
 	passwd, err := hashPassword(randstring.NewLen(36))
 	if err != nil {
 		return err

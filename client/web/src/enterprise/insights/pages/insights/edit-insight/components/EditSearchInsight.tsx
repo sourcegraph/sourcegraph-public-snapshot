@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
-import { InsightType, SearchBasedInsight } from '../../../../core/types'
+import { InsightExecutionType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
@@ -20,7 +20,7 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
     const { insight, subjects, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
-        if (insight.type === InsightType.Backend) {
+        if (insight.type === InsightExecutionType.Backend) {
             return {
                 title: insight.title,
                 visibility: insight.visibility,

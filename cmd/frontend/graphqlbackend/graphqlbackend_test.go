@@ -20,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -50,8 +49,9 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 
 func TestRepository(t *testing.T) {
 	db := dbmock.NewMockDB()
-	resetMocks()
-	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
+	repos := dbmock.NewMockRepoStore()
+	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),

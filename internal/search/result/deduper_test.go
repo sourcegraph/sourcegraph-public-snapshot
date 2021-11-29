@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestDeduper(t *testing.T) {
@@ -16,7 +16,7 @@ func TestDeduper(t *testing.T) {
 			Repo: types.MinimalRepo{
 				Name: api.RepoName(repo),
 			},
-			Commit: gitapi.Commit{
+			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
 			},
 		}
@@ -27,7 +27,7 @@ func TestDeduper(t *testing.T) {
 			Repo: types.MinimalRepo{
 				Name: api.RepoName(repo),
 			},
-			Commit: gitapi.Commit{
+			Commit: gitdomain.Commit{
 				ID: api.CommitID(id),
 			},
 			DiffPreview: &HighlightedString{},

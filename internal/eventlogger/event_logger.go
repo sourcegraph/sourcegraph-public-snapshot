@@ -6,7 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 
 	"golang.org/x/net/context"
 )
@@ -23,7 +23,7 @@ type TelemetryRequest struct {
 //
 // This method should be invoked after the frontend service has started. It is
 // safe to not do so (it will just log an error), but logging the actual event
-// will fail otherwise. Consider using e.g. api.InternalClient.RetryPingUntilAvailable
+// will fail otherwise. Consider using e.g. internalapi.Client.RetryPingUntilAvailable
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
@@ -47,5 +47,5 @@ func logEvent(userID int32, name string, argument json.RawMessage) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	return api.InternalClient.LogTelemetry(ctx, reqBody)
+	return internalapi.Client.LogTelemetry(ctx, reqBody)
 }

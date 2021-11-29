@@ -129,6 +129,78 @@ func NewMockOrgStore() *MockOrgStore {
 	}
 }
 
+// NewStrictMockOrgStore creates a new mock of the OrgStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockOrgStore() *MockOrgStore {
+	return &MockOrgStore{
+		CountFunc: &OrgStoreCountFunc{
+			defaultHook: func(context.Context, database.OrgsListOptions) (int, error) {
+				panic("unexpected invocation of MockOrgStore.Count")
+			},
+		},
+		CreateFunc: &OrgStoreCreateFunc{
+			defaultHook: func(context.Context, string, *string) (*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.Create")
+			},
+		},
+		DeleteFunc: &OrgStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockOrgStore.Delete")
+			},
+		},
+		DoneFunc: &OrgStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockOrgStore.Done")
+			},
+		},
+		GetByIDFunc: &OrgStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.GetByID")
+			},
+		},
+		GetByNameFunc: &OrgStoreGetByNameFunc{
+			defaultHook: func(context.Context, string) (*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.GetByName")
+			},
+		},
+		GetByUserIDFunc: &OrgStoreGetByUserIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.GetByUserID")
+			},
+		},
+		GetOrgsWithRepositoriesByUserIDFunc: &OrgStoreGetOrgsWithRepositoriesByUserIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.GetOrgsWithRepositoriesByUserID")
+			},
+		},
+		HandleFunc: &OrgStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockOrgStore.Handle")
+			},
+		},
+		ListFunc: &OrgStoreListFunc{
+			defaultHook: func(context.Context, *database.OrgsListOptions) ([]*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.List")
+			},
+		},
+		TransactFunc: &OrgStoreTransactFunc{
+			defaultHook: func(context.Context) (database.OrgStore, error) {
+				panic("unexpected invocation of MockOrgStore.Transact")
+			},
+		},
+		UpdateFunc: &OrgStoreUpdateFunc{
+			defaultHook: func(context.Context, int32, *string) (*types.Org, error) {
+				panic("unexpected invocation of MockOrgStore.Update")
+			},
+		},
+		WithFunc: &OrgStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.OrgStore {
+				panic("unexpected invocation of MockOrgStore.With")
+			},
+		},
+	}
+}
+
 // NewMockOrgStoreFrom creates a new mock of the MockOrgStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockOrgStoreFrom(i database.OrgStore) *MockOrgStore {

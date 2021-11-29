@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react'
 
 import { formatRepositoryStarCount } from '@sourcegraph/shared/src/util/stars'
 
+import styles from './ResultContainer.module.scss'
 import { SearchResultStar } from './SearchResultStar'
 
 export interface Props {
@@ -77,6 +78,11 @@ export interface Props {
     children?: never
 
     /**
+     * The result type
+     */
+    resultType?: string
+
+    /**
      * The number of stars for the result's associated repo
      */
     repoStars?: number
@@ -85,6 +91,16 @@ export interface Props {
      * The time the repo was last updated from the code host
      */
     repoLastFetched?: string
+
+    /**
+     * Click event for when the result is clicked
+     */
+    onResultClicked?: () => void
+
+    /**
+     * CSS class name to be applied to the component
+     */
+    className?: string
 }
 
 /**
@@ -104,6 +120,9 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
     description,
     matchCountLabel,
     repoStars,
+    onResultClicked,
+    className,
+    resultType,
 }) => {
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -116,29 +135,39 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
         }
     }
 
+    const trackReferencePanelClick = (): void => {
+        if (onResultClicked) {
+            onResultClicked()
+        }
+    }
     const Icon = icon
     return (
-        <div className="test-search-result result-container" data-testid="result-container">
-            <div className="result-container__header">
+        <div
+            className={classNames('test-search-result', styles.resultContainer, className)}
+            data-testid="result-container"
+            data-result-type={resultType}
+            data-expanded={allExpanded}
+            onClick={trackReferencePanelClick}
+            role="none"
+        >
+            <div className={styles.header}>
                 <Icon className="icon-inline flex-shrink-0" />
-                <div className="result-container__header-divider mx-1" />
-                <div
-                    className={classNames('result-container__header-title', titleClassName)}
-                    data-testid="result-container-header"
-                >
+                <div className={classNames('mx-1', styles.headerDivider)} />
+                <div className={classNames(styles.headerTitle, titleClassName)} data-testid="result-container-header">
                     {title}
-                    {description && <span className="result-container__header-description ml-2">{description}</span>}
+                    {description && <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>}
                 </div>
                 {matchCountLabel && (
                     <>
                         <small>{matchCountLabel}</small>
-                        {collapsible && <div className="result-container__header-divider mx-2" />}
+                        {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
                     </>
                 )}
                 {collapsible && (
                     <button
                         type="button"
-                        className="result-container__toggle-matches-container btn btn-sm btn-link py-0"
+                        data-testid="toggle-matches-container"
+                        className={classNames('btn btn-sm btn-link py-0', styles.toggleMatchesContainer)}
                         onClick={toggle}
                     >
                         {expanded ? (
@@ -157,7 +186,7 @@ export const ResultContainer: React.FunctionComponent<Props> = ({
                     </button>
                 )}
                 {matchCountLabel && formattedRepositoryStarCount && (
-                    <div className="result-container__header-divider mx-2" />
+                    <div className={classNames('mx-2', styles.headerDivider)} />
                 )}
                 {formattedRepositoryStarCount && (
                     <>

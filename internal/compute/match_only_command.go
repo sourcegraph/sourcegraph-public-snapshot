@@ -66,6 +66,10 @@ func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 	return &MatchContext{Matches: matches, Path: fm.Path}
 }
 
-func (c *MatchOnly) Run(_ context.Context, fm *result.FileMatch) (Result, error) {
-	return matchOnly(fm, c.MatchPattern.(*Regexp).Value), nil
+func (c *MatchOnly) Run(_ context.Context, r result.Match) (Result, error) {
+	switch m := r.(type) {
+	case *result.FileMatch:
+		return matchOnly(m, c.MatchPattern.(*Regexp).Value), nil
+	}
+	return nil, nil
 }

@@ -65,7 +65,7 @@ func TestService(t *testing.T) {
 
 	files := map[string]string{"a.js": "var x = 1"}
 	service := Service{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
 			return createTar(files)
 		},
 		NewParser: func() (ctags.Parser, error) {

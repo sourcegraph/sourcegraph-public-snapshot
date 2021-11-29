@@ -108,6 +108,8 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 		"replace.regexp":     func() query.Predicate { return query.EmptyPredicate{} },
 		"replace.structural": func() query.Predicate { return query.EmptyPredicate{} },
 		"output":             func() query.Predicate { return query.EmptyPredicate{} },
+		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
+		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -175,12 +177,15 @@ func parseOutput(pattern *query.Pattern) (Command, bool, error) {
 
 	var matchPattern MatchPattern
 	switch name {
-	case "output":
+	case "output", "output.regexp":
 		var err error
 		matchPattern, err = toRegexpPattern(left)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "output command")
 		}
+	case "output.structural":
+		// structural search doesn't do any match pattern validation
+		matchPattern = &Comby{Value: left}
 	default:
 		// unrecognized name
 		return nil, false, nil

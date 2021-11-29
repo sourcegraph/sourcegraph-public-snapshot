@@ -47,7 +47,7 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
         >
             {/* Render extension views for the search page */}
             {extensionViews.map(view => (
-                <StaticView key={view.id} view={view} telemetryService={props.telemetryService} />
+                <StaticView key={view.id} content={view} telemetryService={props.telemetryService} />
             ))}
         </ViewGrid>
     )

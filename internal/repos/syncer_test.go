@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -44,7 +46,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 			},
 		}).With(
-			types.Opt.RepoSources(githubService.URN()),
+			typestest.Opt.RepoSources(githubService.URN()),
 		)
 
 		gitlabService := servicesPerKind[extsvc.KindGitLab]
@@ -58,7 +60,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 				ServiceType: extsvc.TypeGitLab,
 			},
 		}).With(
-			types.Opt.RepoSources(gitlabService.URN()),
+			typestest.Opt.RepoSources(gitlabService.URN()),
 		)
 
 		bitbucketServerService := servicesPerKind[extsvc.KindBitbucketServer]
@@ -72,7 +74,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 				ServiceType: "bitbucketServer",
 			},
 		}).With(
-			types.Opt.RepoSources(bitbucketServerService.URN()),
+			typestest.Opt.RepoSources(bitbucketServerService.URN()),
 		)
 
 		awsCodeCommitService := servicesPerKind[extsvc.KindAWSCodeCommit]
@@ -86,7 +88,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 				ServiceType: extsvc.TypeAWSCodeCommit,
 			},
 		}).With(
-			types.Opt.RepoSources(awsCodeCommitService.URN()),
+			typestest.Opt.RepoSources(awsCodeCommitService.URN()),
 		)
 
 		otherService := servicesPerKind[extsvc.KindOther]
@@ -100,7 +102,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 			},
 			Metadata: &extsvc.OtherRepoMetadata{},
 		}).With(
-			types.Opt.RepoSources(otherService.URN()),
+			typestest.Opt.RepoSources(otherService.URN()),
 		)
 
 		gitoliteService := servicesPerKind[extsvc.KindGitolite]
@@ -114,7 +116,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 				ServiceType: extsvc.TypeGitolite,
 			},
 		}).With(
-			types.Opt.RepoSources(gitoliteService.URN()),
+			typestest.Opt.RepoSources(gitoliteService.URN()),
 		)
 
 		bitbucketCloudService := servicesPerKind[extsvc.KindBitbucketCloud]
@@ -128,7 +130,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 				ServiceType: extsvc.TypeBitbucketCloud,
 			},
 		}).With(
-			types.Opt.RepoSources(bitbucketCloudService.URN()),
+			typestest.Opt.RepoSources(bitbucketCloudService.URN()),
 		)
 
 		clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -165,14 +167,14 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 			r.Name += "-2"
 			r.ExternalRepo.ID += "-2"
 		},
-			types.Opt.RepoSources(userAddedGithubSvc.URN()),
+			typestest.Opt.RepoSources(userAddedGithubSvc.URN()),
 		)
 
 		userAddedGitlabRepo := gitlabRepo.With(func(r *types.Repo) {
 			r.Name += "-2"
 			r.ExternalRepo.ID += "-2"
 		},
-			types.Opt.RepoSources(userAddedGitlabSvc.URN()),
+			typestest.Opt.RepoSources(userAddedGitlabSvc.URN()),
 		)
 
 		type testCase struct {
@@ -212,8 +214,8 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					stored: types.Repos{},
 					now:    clock.Now,
 					diff: repos.Diff{Added: types.Repos{tc.repo.With(
-						types.Opt.RepoCreatedAt(clock.Time(1)),
-						types.Opt.RepoSources(tc.svc.Clone().URN()),
+						typestest.Opt.RepoCreatedAt(clock.Time(1)),
+						typestest.Opt.RepoSources(tc.svc.Clone().URN()),
 					)}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
@@ -223,11 +225,11 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 			var diff repos.Diff
 			if tc.svc.NamespaceUserID > 0 {
 				diff.Deleted = append(diff.Deleted, tc.repo.With(
-					types.Opt.RepoSources(tc.svc.URN()),
+					typestest.Opt.RepoSources(tc.svc.URN()),
 				))
 			} else {
 				diff.Unmodified = append(diff.Unmodified, tc.repo.With(
-					types.Opt.RepoSources(tc.svc.URN()),
+					typestest.Opt.RepoSources(tc.svc.URN()),
 				))
 			}
 
@@ -243,7 +245,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN()),
 					)},
 					now:  clock.Now,
 					diff: diff,
@@ -261,7 +263,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN()),
 					)},
 					now:  clock.Now,
 					diff: diff,
@@ -279,7 +281,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN()),
 					)},
 					now:  clock.Now,
 					diff: diff,
@@ -294,11 +296,11 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN()),
 					)},
 					now: clock.Now,
 					diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN()),
 					)}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  io.EOF.Error(),
@@ -312,11 +314,11 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 					)},
 					now: clock.Now,
 					diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 					)}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
@@ -328,11 +330,11 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{tc.repo.With(
-						types.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
+						typestest.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 					)},
 					now: clock.Now,
 					diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
-						types.Opt.RepoDeletedAt(clock.Time(1)),
+						typestest.Opt.RepoDeletedAt(clock.Time(1)),
 					)}},
 					svcs: []*types.ExternalService{tc.svc, &svcdup},
 					err:  "<nil>",
@@ -347,7 +349,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					now: clock.Now,
 					diff: repos.Diff{Modified: types.Repos{
 						tc.repo.With(
-							types.Opt.RepoModifiedAt(clock.Time(1))),
+							typestest.Opt.RepoModifiedAt(clock.Time(1))),
 					}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
@@ -378,7 +380,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 						},
 						Modified: types.Repos{
 							tc.repo.With(
-								types.Opt.RepoModifiedAt(clock.Time(1)),
+								typestest.Opt.RepoModifiedAt(clock.Time(1)),
 								func(r *types.Repo) { r.ExternalRepo.ID = "another-id" },
 							),
 						},
@@ -395,14 +397,14 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{
-						tc.repo.With(types.Opt.RepoExternalID("another-id")),
+						tc.repo.With(typestest.Opt.RepoExternalID("another-id")),
 					},
 					now: clock.Now,
 					diff: repos.Diff{
 						Added: types.Repos{
 							tc.repo.With(
-								types.Opt.RepoCreatedAt(clock.Time(1)),
-								types.Opt.RepoModifiedAt(clock.Time(1)),
+								typestest.Opt.RepoCreatedAt(clock.Time(1)),
+								typestest.Opt.RepoModifiedAt(clock.Time(1)),
 							),
 						},
 						Deleted: types.Repos{
@@ -426,15 +428,15 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					),
 					store: s,
 					stored: types.Repos{
-						tc.repo.With(types.Opt.RepoName("old-name")),  // same external id as sourced
-						tc.repo.With(types.Opt.RepoExternalID("bar")), // same name as sourced
-					}.With(types.Opt.RepoCreatedAt(clock.Time(1))),
+						tc.repo.With(typestest.Opt.RepoName("old-name")),  // same external id as sourced
+						tc.repo.With(typestest.Opt.RepoExternalID("bar")), // same name as sourced
+					}.With(typestest.Opt.RepoCreatedAt(clock.Time(1))),
 					now: clock.Now,
 					diff: repos.Diff{
 						Modified: types.Repos{
 							tc.repo.With(
-								types.Opt.RepoCreatedAt(clock.Time(1)),
-								types.Opt.RepoModifiedAt(clock.Time(1)),
+								typestest.Opt.RepoCreatedAt(clock.Time(1)),
+								typestest.Opt.RepoModifiedAt(clock.Time(1)),
 							),
 						},
 						Deleted: types.Repos{
@@ -462,7 +464,7 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					now: clock.Now,
 					diff: repos.Diff{Added: types.Repos{
 						tc.repo.With(
-							types.Opt.RepoCreatedAt(clock.Time(1))),
+							typestest.Opt.RepoCreatedAt(clock.Time(1))),
 					}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
@@ -512,14 +514,14 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					name: string(tc.repo.Name) + "/case insensitive name",
 					sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
 						tc.repo.Clone(),
-						tc.repo.With(types.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
+						tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
 					)),
 					store: s,
 					stored: types.Repos{
-						tc.repo.With(types.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
+						tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
 					},
 					now:  clock.Now,
-					diff: repos.Diff{Modified: types.Repos{tc.repo.With(types.Opt.RepoModifiedAt(clock.Time(0)))}},
+					diff: repos.Diff{Modified: types.Repos{tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(0)))}},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
 				},
@@ -578,12 +580,12 @@ func testSyncerSync(s *repos.Store) func(*testing.T) {
 					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
 					have, _ = st.RepoStore.List(ctx, database.ReposListOptions{})
 
-					want = want.With(types.Opt.RepoID(0))
-					have = have.With(types.Opt.RepoID(0))
+					want = want.With(typestest.Opt.RepoID(0))
+					have = have.With(typestest.Opt.RepoID(0))
 					sort.Sort(want)
 					sort.Sort(have)
 
-					types.Assert.ReposEqual(want...)(t, have)
+					typestest.Assert.ReposEqual(want...)(t, have)
 				}
 			}))
 		}
@@ -648,23 +650,23 @@ func testSyncRepo(s *repos.Store) func(*testing.T) {
 		}, {
 			name:     "update name",
 			repo:     repo.Name,
-			before:   types.Repos{repo.With(types.Opt.RepoName("old/name"))},
+			before:   types.Repos{repo.With(typestest.Opt.RepoName("old/name"))},
 			returned: repo,
 			after:    types.Repos{repo},
 		}, {
 			name:     "delete conflicting name",
 			repo:     repo.Name,
-			before:   types.Repos{repo.With(types.Opt.RepoExternalID("old id"))},
-			returned: repo.With(types.Opt.RepoExternalID("old id")),
+			before:   types.Repos{repo.With(typestest.Opt.RepoExternalID("old id"))},
+			returned: repo.With(typestest.Opt.RepoExternalID("old id")),
 			after:    types.Repos{repo},
 		}, {
 			name: "rename and delete conflicting name",
 			repo: repo.Name,
 			before: types.Repos{
-				repo.With(types.Opt.RepoExternalID("old id")),
-				repo.With(types.Opt.RepoName("old name")),
+				repo.With(typestest.Opt.RepoExternalID("old id")),
+				repo.With(typestest.Opt.RepoName("old name")),
 			},
-			returned: repo.With(types.Opt.RepoExternalID("old id")),
+			returned: repo.With(typestest.Opt.RepoExternalID("old id")),
 			after:    types.Repos{repo},
 		}}
 
@@ -745,7 +747,7 @@ func testSyncRun(store *repos.Store) func(t *testing.T) {
 		}
 
 		// Our test will have 1 initial repo, and discover a new repo on sourcing.
-		stored := types.Repos{mk("initial")}.With(types.Opt.RepoSources(svc.URN()))
+		stored := types.Repos{mk("initial")}.With(typestest.Opt.RepoSources(svc.URN()))
 		sourced := types.Repos{
 			mk("initial").With(func(r *types.Repo) { r.Description = "updated" }),
 			mk("new"),
@@ -846,7 +848,7 @@ func testSyncerMultipleServices(store *repos.Store) func(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 			},
 		}).With(
-			types.Opt.RepoSources(githubService.URN()),
+			typestest.Opt.RepoSources(githubService.URN()),
 		)
 
 		gitlabRepo := (&types.Repo{
@@ -858,7 +860,7 @@ func testSyncerMultipleServices(store *repos.Store) func(t *testing.T) {
 				ServiceType: extsvc.TypeGitLab,
 			},
 		}).With(
-			types.Opt.RepoSources(gitlabService.URN()),
+			typestest.Opt.RepoSources(gitlabService.URN()),
 		)
 
 		bitbucketCloudRepo := (&types.Repo{
@@ -870,7 +872,7 @@ func testSyncerMultipleServices(store *repos.Store) func(t *testing.T) {
 				ServiceType: extsvc.TypeBitbucketCloud,
 			},
 		}).With(
-			types.Opt.RepoSources(bitbucketCloudService.URN()),
+			typestest.Opt.RepoSources(bitbucketCloudService.URN()),
 		)
 
 		removeSources := func(r *types.Repo) {

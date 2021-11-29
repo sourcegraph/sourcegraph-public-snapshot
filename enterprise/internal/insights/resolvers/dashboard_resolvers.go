@@ -341,9 +341,9 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 	return emptyResponse, nil
 }
 
-func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (_ graphqlbackend.InsightsDashboardPayloadResolver, err error) {
 	var viewID string
-	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	err = relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
 	}
@@ -351,33 +351,43 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
-	err = r.permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+
+	tx, err := r.dashboardStore.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	err = r.permissionsValidator.validateUserAccessForView(ctx, viewID)
+	defer func() { err = tx.Done(err) }()
+
+	txValidator := r.permissionsValidator.WithBaseStore(tx.Store)
+	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
+	err = txValidator.validateUserAccessForView(ctx, viewID)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := r.dashboardStore.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
+	exists, err := tx.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsViewOnDashboard")
 	}
-	if exists {
-		return nil, errors.New("this insight view is already attached to this dashboard")
+	if !exists {
+		log15.Debug("attempting to add insight view to dashboard", "dashboardId", dashboardID.Arg, "insightId", viewID)
+		err = tx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+		if err != nil {
+			return nil, errors.Wrap(err, "AddInsightViewToDashboard")
+		}
 	}
 
-	log15.Debug("attempting to add insight view to dashboard", "dashboardId", dashboardID.Arg, "insightId", viewID)
-	err = r.dashboardStore.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
 	if err != nil {
-		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
-	}
-	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
-		UserID: r.permissionsValidator.userIds, OrgID: r.permissionsValidator.orgIds})
-	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
+	} else if len(dashboards) < 1 {
+		return nil, errors.New("dashboard not found")
 	}
+
 	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
@@ -391,19 +401,29 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
-	err = r.permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+
+	tx, err := r.dashboardStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	txValidator := r.permissionsValidator.WithBaseStore(tx.Store)
+	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.dashboardStore.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+	err = tx.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
 	if err != nil {
 		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
 	}
-	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
-		UserID: r.permissionsValidator.userIds, OrgID: r.permissionsValidator.orgIds})
-	if err != nil || len(dashboards) < 1 {
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg),
+		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
+	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
+	} else if len(dashboards) < 1 {
+		return nil, errors.New("dashboard not found")
 	}
 	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }

@@ -22,7 +22,7 @@ func TestSavedSearches(t *testing.T) {
 
 	ss := dbmock.NewMockSavedSearchStore()
 	ss.ListSavedSearchesByUserIDFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]*types.SavedSearch, error) {
-		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", Notify: true, NotifySlack: false, UserID: &userID, OrgID: nil}}, nil
+		return []*types.SavedSearch{{ID: key, Description: "test query", Query: "test type:diff patternType:regexp", UserID: &userID, OrgID: nil}}, nil
 	})
 
 	db := dbmock.NewMockDB()
@@ -37,8 +37,6 @@ func TestSavedSearches(t *testing.T) {
 		ID:          key,
 		Description: "test query",
 		Query:       "test type:diff patternType:regexp",
-		Notify:      true,
-		NotifySlack: false,
 		UserID:      &key,
 		OrgID:       nil,
 	}}}
@@ -64,8 +62,6 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 				UserID:      &userID,
 				Description: "test query",
 				Query:       "test type:diff patternType:regexp",
-				Notify:      true,
-				NotifySlack: false,
 				OrgID:       nil,
 			},
 		},
@@ -90,8 +86,6 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 			ID:          userID,
 			Description: "test query",
 			Query:       "test type:diff patternType:regexp",
-			Notify:      true,
-			NotifySlack: false,
 			UserID:      &userID,
 			OrgID:       nil,
 		},
@@ -119,8 +113,6 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 				UserID:      &userID,
 				Description: "test query",
 				Query:       "test type:diff patternType:regexp",
-				Notify:      true,
-				NotifySlack: false,
 				OrgID:       nil,
 			},
 		},
@@ -241,7 +233,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 		NotifySlack bool
 		OrgID       *graphql.ID
 		UserID      *graphql.ID
-	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff patternType:regexp", NotifyOwner: true, NotifySlack: false, OrgID: nil, UserID: &userID})
+	}{ID: marshalSavedSearchID(key), Description: "updated query description", Query: "test type:diff patternType:regexp", OrgID: nil, UserID: &userID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,8 +242,6 @@ func TestUpdateSavedSearch(t *testing.T) {
 		ID:          key,
 		Description: "updated query description",
 		Query:       "test type:diff patternType:regexp",
-		Notify:      true,
-		NotifySlack: false,
 		OrgID:       nil,
 		UserID:      &key,
 	}}
@@ -294,8 +284,6 @@ func TestDeleteSavedSearch(t *testing.T) {
 			Key:         "1",
 			Description: "test query",
 			Query:       "test type:diff",
-			Notify:      true,
-			NotifySlack: false,
 			UserID:      &key,
 			OrgID:       nil,
 		},

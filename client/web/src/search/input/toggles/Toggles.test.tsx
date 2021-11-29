@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
 import React from 'react'
 
 import { SearchPatternType } from '../../../graphql-operations'
@@ -34,51 +34,49 @@ describe('Toggles', () => {
 
     describe('Query input toggle state', () => {
         test('case toggle for case subexpressions', () => {
-            expect(
-                mount(
-                    <Toggles
-                        navbarSearchQuery="(case:yes foo) or (case:no bar)"
-                        patternType={SearchPatternType.literal}
-                        setPatternType={() => undefined}
-                        caseSensitive={false}
-                        setCaseSensitivity={() => undefined}
-                        settingsCascade={{ subjects: null, final: {} }}
-                        selectedSearchContextSpec="global"
-                    />
-                ).find('.test-case-sensitivity-toggle')
-            ).toMatchSnapshot()
+            render(
+                <Toggles
+                    navbarSearchQuery="(case:yes foo) or (case:no bar)"
+                    patternType={SearchPatternType.literal}
+                    setPatternType={() => undefined}
+                    caseSensitive={false}
+                    setCaseSensitivity={() => undefined}
+                    settingsCascade={{ subjects: null, final: {} }}
+                    selectedSearchContextSpec="global"
+                />
+            )
+
+            expect(screen.getAllByRole('checkbox', { name: 'Case sensitivity toggle' })).toMatchSnapshot()
         })
 
         test('case toggle for patterntype subexpressions', () => {
-            expect(
-                mount(
-                    <Toggles
-                        navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                        patternType={SearchPatternType.literal}
-                        setPatternType={() => undefined}
-                        caseSensitive={false}
-                        setCaseSensitivity={() => undefined}
-                        settingsCascade={{ subjects: null, final: {} }}
-                        selectedSearchContextSpec="global"
-                    />
-                ).find('.test-case-sensitivity-toggle')
-            ).toMatchSnapshot()
+            render(
+                <Toggles
+                    navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
+                    patternType={SearchPatternType.literal}
+                    setPatternType={() => undefined}
+                    caseSensitive={false}
+                    setCaseSensitivity={() => undefined}
+                    settingsCascade={{ subjects: null, final: {} }}
+                    selectedSearchContextSpec="global"
+                />
+            )
+            expect(screen.getAllByRole('checkbox', { name: 'Case sensitivity toggle' })).toMatchSnapshot()
         })
 
         test('regexp toggle for patterntype subexpressions', () => {
-            expect(
-                mount(
-                    <Toggles
-                        navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                        patternType={SearchPatternType.literal}
-                        setPatternType={() => undefined}
-                        caseSensitive={false}
-                        setCaseSensitivity={() => undefined}
-                        settingsCascade={{ subjects: null, final: {} }}
-                        selectedSearchContextSpec="global"
-                    />
-                ).find('.test-regexp-toggle')
-            ).toMatchSnapshot()
+            render(
+                <Toggles
+                    navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
+                    patternType={SearchPatternType.literal}
+                    setPatternType={() => undefined}
+                    caseSensitive={false}
+                    setCaseSensitivity={() => undefined}
+                    settingsCascade={{ subjects: null, final: {} }}
+                    selectedSearchContextSpec="global"
+                />
+            )
+            expect(screen.getAllByRole('checkbox', { name: 'Regular expression toggle' })).toMatchSnapshot()
         })
     })
 })

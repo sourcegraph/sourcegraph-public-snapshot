@@ -18,7 +18,7 @@ type environment struct {
 }
 
 var environments = []environment{
-	{Name: "dot-com", URL: "https://sourcegraph.com"},
+	{Name: "cloud", URL: "https://sourcegraph.com"},
 	{Name: "k8s", URL: "https://k8s.sgdev.org"},
 }
 
@@ -83,7 +83,7 @@ func printDeployedVersion(e environment) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done updating list of commits"))
 
-	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%h|%ar|%an|%s`, "origin/main")
+	log, err := run.GitCmd("log", "--oneline", "-n", "20", `--pretty=format:%h|%cr|%an|%s`, "origin/main")
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err
@@ -107,8 +107,8 @@ func printDeployedVersion(e environment) error {
 		author := elems[2]
 		message := elems[3]
 
-		var emoji string = "  "
-		var style output.Style = output.StylePending
+		var emoji = "  "
+		var style = output.StylePending
 		if sha[0:len(buildSha)] == buildSha {
 			emoji = "🚀"
 			style = output.StyleLogo

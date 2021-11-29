@@ -21,6 +21,7 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -66,7 +67,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		requireProgressEqual(1)
 
 		// Create 10 external services
-		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
+		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
@@ -128,7 +129,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		migrator.BatchSize = 10
 
 		// Create 10 external services
-		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
+		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
@@ -196,7 +197,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		migrator.AllowDecrypt = true
 
 		// Create 10 external services
-		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
+		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
@@ -257,7 +258,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		migrator.BatchSize = 10
 
 		// Create 10 external services
-		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
+		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
@@ -288,7 +289,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 		migrator.BatchSize = 10
 
 		// Create 10 external services
-		svcs := types.GenerateExternalServices(10, types.MakeExternalServices()...)
+		svcs := typestest.GenerateExternalServices(10, typestest.MakeExternalServices()...)
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}

@@ -40,7 +40,7 @@ func TestActionRunner(t *testing.T) {
 	now := time.Now()
 	clock := func() time.Time { return now }
 	s := codemonitors.NewStoreWithClock(db, clock)
-	ctx, ts := storetest.NewTestStoreWithStore(t, s)
+	ctx, ts := storetest.NewTestStore(t)
 
 	tests := []struct {
 		name               string
@@ -74,28 +74,28 @@ func TestActionRunner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//Empty database, preserve schema.
-			dbtesting.SetupGlobalTestDB(t)
+			db := dbtesting.GetDB(t)
 
-			_, _, _, userCtx := storetest.NewTestUser(ctx, t)
+			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
 			_, err = ts.InsertTestMonitor(userCtx, t)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueTriggerQueries(ctx)
+			err = ts.EnqueueQueryTriggerJobs(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.LogSearch(ctx, testQuery, tt.numResults, triggerEvent)
+			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = ts.EnqueueActionEmailsForQueryIDInt64(ctx, queryID, triggerEvent)
+			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEvent)
 			if err != nil {
 				t.Fatal(err)
 			}
-			record, err = ts.ActionJobForIDInt(ctx, 1)
+			record, err = ts.GetActionJob(ctx, 1)
 			if err != nil {
 				t.Fatal(err)
 			}

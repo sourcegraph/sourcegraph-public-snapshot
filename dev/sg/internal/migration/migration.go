@@ -27,7 +27,7 @@ import (
 )
 
 var once sync.Once
-var out *output.Output = stdout.Out
+var out = stdout.Out
 
 // RunUp will migrate up the given number of steps.
 // If n is nil then all migrations are ran.

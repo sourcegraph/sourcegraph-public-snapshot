@@ -35,6 +35,8 @@ var codeIntelRequests = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
+//
+// Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
 	db     database.DB
 	commit *GitCommitResolver
@@ -51,7 +53,7 @@ type GitTreeEntryResolver struct {
 	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
-func NewGitTreeEntryResolver(commit *GitCommitResolver, db database.DB, stat fs.FileInfo) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(db database.DB, commit *GitCommitResolver, stat fs.FileInfo) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{db: db, commit: commit, stat: stat}
 }
 

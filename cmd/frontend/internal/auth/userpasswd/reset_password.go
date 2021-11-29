@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -13,14 +14,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
+func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
+	return txemail.Send(ctx, txemail.Message{
+		To:       []string{email},
+		Template: resetPasswordEmailTemplates,
+		Data: struct {
+			Username string
+			URL      string
+			Host     string
+		}{
+			Username: username,
+			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
+			Host:     globals.ExternalURL().Host,
+		},
+	})
+}
+
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
-func HandleResetPasswordInit(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleResetPasswordInit(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(w) {
 			return
@@ -66,19 +82,7 @@ func HandleResetPasswordInit(db dbutil.DB) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		if err := txemail.Send(r.Context(), txemail.Message{
-			To:       []string{formData.Email},
-			Template: resetPasswordEmailTemplates,
-			Data: struct {
-				Username string
-				URL      string
-				Host     string
-			}{
-				Username: usr.Username,
-				URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
-				Host:     globals.ExternalURL().Host,
-			},
-		}); err != nil {
+		if err := SendResetPasswordURLEmail(r.Context(), formData.Email, usr.Username, resetURL); err != nil {
 			httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
 			return
 		}
@@ -106,13 +110,13 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 })
 
 // HandleSetPasswordEmail sends the password reset email directly to the user for users created by site admins.
-func HandleSetPasswordEmail(ctx context.Context, db dbutil.DB, id int32) (string, error) {
-	e, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, id)
+func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32) (string, error) {
+	e, _, err := db.UserEmails().GetPrimaryEmail(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user primary email")
 	}
 
-	usr, err := database.Users(db).GetByID(ctx, id)
+	usr, err := db.Users().GetByID(ctx, id)
 	if err != nil {
 		return "", errors.Wrap(err, "get user by ID")
 	}

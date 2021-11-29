@@ -68,8 +68,8 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	// Signals health of startup
@@ -108,9 +108,9 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	dsn := conf.Get().ServiceConnections.PostgresDSN
+	dsn := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections.PostgresDSN
+		newDSN := conf.Get().ServiceConnections().PostgresDSN
 		if dsn != newDSN {
 			// The DSN was changed (e.g. by someone modifying the env vars on
 			// the frontend). We need to respect the new DSN. Easiest way to do
@@ -203,7 +203,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	}()
 	server.Syncer = syncer
 
-	go syncScheduler(ctx, scheduler, gitserver.DefaultClient, store)
+	go syncScheduler(ctx, scheduler, store)
 
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
@@ -339,7 +339,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(authzBypass(handler))),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(authzBypass(handler), conf.DefaultClient())),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -419,7 +419,7 @@ func watchSyncer(
 // syncScheduler will periodically list the cloned repositories on gitserver and
 // update the scheduler with the list. It also ensures that if any of our default
 // repos are missing from the cloned list they will be added for cloning ASAP.
-func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitserver.Client, store *repos.Store) {
+func syncScheduler(ctx context.Context, sched scheduler, store *repos.Store) {
 	baseRepoStore := database.ReposWith(store)
 
 	doSync := func() {

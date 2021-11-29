@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/cockroachdb/errors"
@@ -12,13 +14,17 @@ import (
 
 type InsightPermissionsValidator struct {
 	insightStore   *store.InsightStore
-	dashboardStore store.DashboardStore
+	dashboardStore *store.DBDashboardStore
 	orgStore       database.OrgStore
 
 	once    sync.Once
 	userIds []int
 	orgIds  []int
 	err     error
+
+	// loaded allows the cached values to be pre-populated. This can be useful to reuse the validator in some cases
+	// where these have already been loaded.
+	loaded bool
 }
 
 func PermissionsValidatorFromBase(base *baseInsightResolver) *InsightPermissionsValidator {
@@ -31,6 +37,9 @@ func PermissionsValidatorFromBase(base *baseInsightResolver) *InsightPermissions
 
 func (v *InsightPermissionsValidator) loadUserContext(ctx context.Context) error {
 	v.once.Do(func() {
+		if v.loaded {
+			return
+		}
 		userIds, orgIds, err := getUserPermissions(ctx, v.orgStore)
 		if err != nil {
 			v.err = errors.Wrap(err, "unable to load user permissions context")
@@ -38,6 +47,7 @@ func (v *InsightPermissionsValidator) loadUserContext(ctx context.Context) error
 		}
 		v.userIds = userIds
 		v.orgIds = orgIds
+		v.loaded = true
 	})
 
 	return v.err
@@ -81,4 +91,20 @@ func (v *InsightPermissionsValidator) validateUserAccessForView(ctx context.Cont
 	}
 
 	return nil
+}
+
+// WithBaseStore sets the base store for any insight related stores. Used to propagate a transaction into this validator
+// for permission checks against code insights tables.
+func (v *InsightPermissionsValidator) WithBaseStore(base basestore.ShareableStore) *InsightPermissionsValidator {
+	return &InsightPermissionsValidator{
+		insightStore:   v.insightStore.With(base),
+		dashboardStore: v.dashboardStore.With(base),
+		orgStore:       v.orgStore,
+
+		once:    sync.Once{},
+		userIds: v.userIds,
+		orgIds:  v.orgIds,
+		err:     v.err,
+		loaded:  v.loaded,
+	}
 }

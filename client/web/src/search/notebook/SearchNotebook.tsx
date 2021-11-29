@@ -18,7 +18,7 @@ import { SearchNotebookMarkdownBlock } from './SearchNotebookMarkdownBlock'
 import { SearchNotebookQueryBlock } from './SearchNotebookQueryBlock'
 import { isMonacoEditorDescendant } from './useBlockSelection'
 
-import { Block, BlockDirection, BlockInitializer, BlockType, Notebook } from '.'
+import { Block, BlockDirection, BlockInput, Notebook } from '.'
 
 export interface SearchNotebookProps
     extends SearchStreamingProps,
@@ -30,7 +30,7 @@ export interface SearchNotebookProps
     isMacPlatform: boolean
     isReadOnly?: boolean
     onSerializeBlocks: (blocks: Block[]) => void
-    blocks: BlockInitializer[]
+    blocks: BlockInput[]
 }
 
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
@@ -76,20 +76,19 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     )
 
     const onBlockInputChange = useCallback(
-        (id: string, value: string) => {
-            notebook.setBlockInputById(id, value)
+        (id: string, blockInput: BlockInput) => {
+            notebook.setBlockInputById(id, blockInput)
             updateBlocks(false)
         },
         [notebook, updateBlocks]
     )
 
     const onAddBlock = useCallback(
-        (index: number, type: BlockType, input: string) => {
+        (index: number, blockInput: BlockInput) => {
             if (isReadOnly) {
                 return
             }
-
-            const addedBlock = notebook.insertBlockAtIndex(index, type, input)
+            const addedBlock = notebook.insertBlockAtIndex(index, blockInput)
             if (addedBlock.type === 'md') {
                 notebook.runBlockById(addedBlock.id)
             }

@@ -1,7 +1,10 @@
 import { existsSync, readdirSync } from 'fs'
 
+import fetch from 'jest-fetch-mock'
 import { startCase } from 'lodash'
 import { readFile } from 'mz/fs'
+
+import { disableFetchCache, enableFetchCache, fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 import { CodeView } from '../shared/codeViews'
@@ -11,6 +14,7 @@ import {
     createFileLineContainerToolbarMount,
     githubCodeHost,
     checkIsGitHubDotCom,
+    isPrivateRepository,
 } from './codeHost'
 
 const testCodeHost = (fixturePath: string): void => {
@@ -190,6 +194,89 @@ describe('github/codeHost', () => {
             expect(checkIsGitHubDotCom('https://wwwwgithub.com')).toBe(false)
             expect(checkIsGitHubDotCom('https://www.githubccom')).toBe(false)
             expect(checkIsGitHubDotCom('http://githubccom')).toBe(false)
+        })
+    })
+})
+
+describe('isPrivateRepository', () => {
+    beforeAll(() => {
+        disableFetchCache()
+    })
+
+    afterAll(() => {
+        enableFetchCache()
+    })
+
+    it('returns [private=true] if not on "github.com"', async () => {
+        expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+    })
+
+    describe('when on "github.com"', () => {
+        const { location } = window
+
+        beforeAll(() => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            delete window.location
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            window.location = new URL('https://github.com')
+        })
+
+        beforeEach(() => {
+            fetch.enableMocks()
+            fetch.mockClear()
+        })
+
+        afterAll(() => {
+            fetch.disableMocks()
+
+            window.location = location
+        })
+
+        it('returns [private=true] on unsuccessful request', async () => {
+            fetch.mockRejectOnce(new Error('Error happened'))
+
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('fallbacks to DOM check on unsuccessful request', async () => {
+            fetch.mockRejectOnce(new Error('Error happened'))
+
+            document.body.innerHTML = '<span id="public-flag">Public</span>'
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeFalsy()
+
+            document.body.innerHTML = '<span>Public</span>'
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache, '#public-flag')).toBeTruthy()
+
+            expect(fetch).toHaveBeenCalledTimes(2)
+        })
+
+        it('returns [private=true] if empty response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({}))
+
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('returns [private=true] if rate-limit exceeded', async () => {
+            fetch.mockResponseOnce(JSON.stringify({ private: false }), {
+                headers: { 'X-RateLimit-Remaining': '0' },
+            })
+
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+            expect(fetch).toHaveBeenCalledTimes(1)
+        })
+
+        it('returns correctly from API response', async () => {
+            fetch.mockResponseOnce(JSON.stringify({ private: true }))
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeTruthy()
+
+            fetch.mockResponseOnce(JSON.stringify({ private: false }))
+            expect(await isPrivateRepository('test-org/test-repo', fetchCache)).toBeFalsy()
+
+            expect(fetch).toHaveBeenCalledTimes(2)
         })
     })
 })

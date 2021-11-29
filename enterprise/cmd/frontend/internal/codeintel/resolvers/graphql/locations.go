@@ -206,7 +206,7 @@ func (r *CachedLocationResolver) cachedPath(ctx context.Context, id api.RepoID, 
 // repo that has since been deleted. This method must be called only when constructing a resolver to
 // populate the cache.
 func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.RepoID) (*gql.RepositoryResolver, error) {
-	repo, err := backend.Repos.Get(ctx, id)
+	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -240,11 +240,11 @@ func (r *CachedLocationResolver) resolveCommit(ctx context.Context, repositoryRe
 // Path resolves the git tree entry with the given commit resolver and relative path. This method must be
 // called only when constructing a resolver to populate the cache.
 func (r *CachedLocationResolver) resolvePath(ctx context.Context, commitResolver *gql.GitCommitResolver, path string) (*gql.GitTreeEntryResolver, error) {
-	return gql.NewGitTreeEntryResolver(commitResolver, r.db, gql.CreateFileInfo(path, true)), nil
+	return gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(path, true)), nil
 }
 
 // resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
-// resulting list may be smaller than the the input list as any locations with a commit not known by
+// resulting list may be smaller than the input list as any locations with a commit not known by
 // gitserver will be skipped.
 func resolveLocations(ctx context.Context, locationResolver *CachedLocationResolver, locations []resolvers.AdjustedLocation) ([]gql.LocationResolver, error) {
 	resolvedLocations := make([]gql.LocationResolver, 0, len(locations))

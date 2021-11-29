@@ -9,6 +9,7 @@ import * as React from 'react'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
+import styles from './ActivationChecklist.module.scss'
 
 interface ActivationChecklistItemProps extends ActivationStep {
     done: boolean
@@ -22,13 +23,13 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
     className = '',
     ...props
 }: ActivationChecklistItemProps) => (
-    <div className={classNames('activation-checklist-item d-flex justify-content-between', className)}>
+    <div className={classNames('d-flex justify-content-between', styles.activationChecklistItem, className)}>
         <div className="d-flex align-items-center">
-            <span className="activation-checklist-item__icon-container icon-inline icon-down">
-                <ChevronDownIcon className="activation-checklist-item__icon" />
+            <span className={classNames('icon-inline', styles.iconContainer, styles.iconDown)}>
+                <ChevronDownIcon className={styles.icon} />
             </span>
-            <span className="activation-checklist-item__icon-container icon-inline icon-right">
-                <ChevronRightIcon className="activation-checklist-item__icon" />
+            <span className={classNames('icon-inline', styles.iconContainer, styles.iconRight)}>
+                <ChevronRightIcon className={styles.icon} />
             </span>
             <span>{props.title}</span>
         </div>
@@ -63,11 +64,13 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
     }
 
     return (
-        <div className={classNames('activation-checklist list-group list-group-flush', className)}>
+        <div className={classNames('list-group list-group-flush', styles.activationChecklist, className)}>
             <Accordion collapsible={true}>
                 {steps.map(step => (
-                    <AccordionItem key={step.id} className="activation-checklist__container list-group-item">
-                        <AccordionButton className="activation-checklist__button list-group-item list-group-item-action btn-link">
+                    <AccordionItem key={step.id} className={classNames('list-group-item', styles.container)}>
+                        <AccordionButton
+                            className={classNames('list-group-item list-group-item-action btn-link', styles.button)}
+                        >
                             <ActivationChecklistItem
                                 key={step.id}
                                 {...step}
@@ -76,7 +79,7 @@ export const ActivationChecklist: React.FunctionComponent<ActivationChecklistPro
                             />
                         </AccordionButton>
                         <AccordionPanel className="px-2">
-                            <div className="activation-checklist__detail pb-1">{step.detail}</div>
+                            <div className={classNames('pb-1', styles.detail)}>{step.detail}</div>
                         </AccordionPanel>
                     </AccordionItem>
                 ))}

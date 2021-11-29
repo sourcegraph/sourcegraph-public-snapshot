@@ -393,7 +393,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions', error)
+            console.error('Error sending search context to extensions!', error)
         })
 
         this.userRepositoriesUpdates.next()
@@ -456,6 +456,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
                                                         this.state.settingsCascade
                                                     )}
+                                                    batchChangesWebhookLogsEnabled={
+                                                        window.context.batchChangesWebhookLogsEnabled
+                                                    }
                                                     // Search query
                                                     fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                                     parsedSearchQuery={this.state.parsedSearchQuery}

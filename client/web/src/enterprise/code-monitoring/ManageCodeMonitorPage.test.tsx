@@ -1,7 +1,7 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import * as React from 'react'
-import { act } from 'react-dom/test-utils'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -47,32 +47,29 @@ describe('ManageCodeMonitorPage', () => {
     }
 
     test('Form is pre-loaded with code monitor data', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
+        render(<ManageCodeMonitorPage {...props} />)
         expect(props.fetchCodeMonitor.calledOnce).toBe(true)
 
-        const nameInput = component.find('.test-name-input')
-        expect(nameInput.length).toBe(1)
-        const nameValue = nameInput.getDOMNode().getAttribute('value')
-        expect(nameValue).toBe('Test code monitor')
-        const currentQueryValue = component.find('.test-existing-query')
-        const currentActionEmailValue = component.find('.test-existing-action-email')
-        expect(currentQueryValue.getDOMNode().innerHTML).toBe('test')
-        expect(currentActionEmailValue.getDOMNode().innerHTML).toBe('user@me.com')
-        component.unmount()
+        const nameInput = screen.getByTestId('name-input')
+        expect(nameInput).toBeInTheDocument()
+        expect(nameInput).toHaveValue('Test code monitor')
+
+        const currentQueryValue = screen.getByTestId('trigger-query-existing')
+        const currentActionEmailValue = screen.getByTestId('existing-action-email')
+        expect(currentQueryValue).toHaveTextContent('test')
+        expect(currentActionEmailValue).toHaveTextContent('user@me.com')
         props.fetchCodeMonitor.resetHistory()
     })
 
     test('Updating the form executes the update request', () => {
-        let component = mount(<ManageCodeMonitorPage {...props} />)
-        const nameInput = component.find('.test-name-input')
-        const nameValue = nameInput.getDOMNode().getAttribute('value')
-        expect(nameValue).toBe('Test code monitor')
-        act(() => {
-            nameInput.simulate('change', { target: { value: 'Test updated' } })
-        })
-        component = component.update()
-        const submitButton = component.find('.test-submit-monitor')
-        submitButton.simulate('submit')
+        render(<ManageCodeMonitorPage {...props} />)
+        const nameInput = screen.getByTestId('name-input')
+        expect(nameInput).toHaveValue('Test code monitor')
+
+        userEvent.clear(nameInput)
+        userEvent.type(nameInput, 'Test updated')
+        const submitButton = screen.getByTestId('submit-monitor')
+        userEvent.click(submitButton)
         sinon.assert.called(props.updateCodeMonitor)
         sinon.assert.calledWith(
             props.updateCodeMonitor,
@@ -96,68 +93,61 @@ describe('ManageCodeMonitorPage', () => {
             ]
         )
         props.updateCodeMonitor.resetHistory()
-        component.unmount()
     })
 
     test('Clicking Edit in the trigger area opens the query form', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
-        let triggerInput = component.find('.test-trigger-input')
-        expect(triggerInput.length).toBe(0)
-        const editTrigger = component.find('.test-trigger-button')
-        editTrigger.simulate('click')
-        triggerInput = component.find('.test-trigger-input')
-        expect(triggerInput.length).toBe(1)
+        render(<ManageCodeMonitorPage {...props} />)
+        expect(screen.queryByTestId('trigger-query-edit')).not.toBeInTheDocument()
+        userEvent.click(screen.getByTestId('trigger-button'))
+        expect(screen.getByTestId('trigger-query-edit')).toBeInTheDocument()
     })
 
     test('Clicking Edit in the action area opens the action form', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
-        let triggerInput = component.find('.test-action-form')
-        expect(triggerInput.length).toBe(0)
-        const editTrigger = component.find('.test-action-button')
-        editTrigger.simulate('click')
-        triggerInput = component.find('.test-action-form')
-        expect(triggerInput.length).toBe(1)
+        render(<ManageCodeMonitorPage {...props} />)
+        expect(screen.queryByTestId('action-form')).not.toBeInTheDocument()
+        const editTrigger = screen.getByTestId('form-action-toggle-email-notification')
+        userEvent.click(editTrigger)
+        expect(screen.queryByTestId('action-form')).toBeInTheDocument()
     })
 
     test('Save button is disabled when no changes have been made, enabled when changes have been made', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
-        let submitButton = component.find('.test-submit-monitor')
-        expect(submitButton.prop('disabled')).toBe(true)
-        const nameInput = component.find('.test-name-input')
-        nameInput.simulate('change', { target: { value: 'Test code monitor updated' } })
-        submitButton = component.find('.test-submit-monitor')
-        expect(submitButton.prop('disabled')).toBe(false)
+        render(<ManageCodeMonitorPage {...props} />)
+        const submitButton = screen.getByTestId('submit-monitor')
+        expect(submitButton).toBeDisabled()
+
+        userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
+        expect(submitButton).toBeEnabled()
     })
 
     test('Cancelling after changes have been made shows confirmation prompt', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
+        render(<ManageCodeMonitorPage {...props} />)
         const confirmStub = sinon.stub(window, 'confirm')
-        const nameInput = component.find('.test-name-input')
-        nameInput.simulate('change', { target: { value: 'Test code monitor updated' } })
-        const cancelButton = component.find('.test-cancel-monitor')
-        cancelButton.simulate('click')
+
+        userEvent.type(screen.getByTestId('name-input'), 'Test code monitor updated')
+        userEvent.click(screen.getByTestId('cancel-monitor'))
+
         sinon.assert.calledOnce(confirmStub)
         confirmStub.restore()
     })
 
     test('Cancelling without any changes made does not show confirmation prompt', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
+        render(<ManageCodeMonitorPage {...props} />)
         const confirmStub = sinon.stub(window, 'confirm')
-        const cancelButton = component.find('.test-cancel-monitor')
-        cancelButton.simulate('click')
+        userEvent.click(screen.getByTestId('cancel-monitor'))
+
         sinon.assert.notCalled(confirmStub)
         confirmStub.restore()
     })
 
     test('Clicking delete code monitor opens deletion confirmation modal', () => {
-        const component = mount(<ManageCodeMonitorPage {...props} />)
-        const deleteButton = component.find('.test-delete-monitor')
-        deleteButton.simulate('click')
-        const deleteModal = component.find('.test-delete-modal')
-        expect(deleteModal.length).toBeGreaterThan(0)
-        const confirmDeleteButton = component.find('.test-confirm-delete-monitor')
-        expect(confirmDeleteButton.length).toBe(1)
-        confirmDeleteButton.simulate('click')
+        render(<ManageCodeMonitorPage {...props} />)
+        userEvent.click(screen.getByTestId('delete-monitor'))
+        expect(screen.getByTestId('delete-modal')).toBeInTheDocument()
+
+        const confirmDeleteButton = screen.getByTestId('confirm-delete-monitor')
+        expect(confirmDeleteButton).toBeInTheDocument()
+        userEvent.click(confirmDeleteButton)
+
         sinon.assert.calledOnce(props.deleteCodeMonitor)
         expect(props.history.location.pathname).toEqual('/code-monitoring')
     })

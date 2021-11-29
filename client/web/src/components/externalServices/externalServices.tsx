@@ -18,6 +18,7 @@ import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
+import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
 import perforceSchemaJSON from '../../../../../schema/perforce.schema.json'
 import phabricatorSchemaJSON from '../../../../../schema/phabricator.schema.json'
 import { ExternalServiceKind } from '../../graphql-operations'
@@ -1211,6 +1212,27 @@ const JVM_PACKAGES: AddExternalServiceOptions = {
     editorActions: [],
 }
 
+const PAGURE: AddExternalServiceOptions = {
+    kind: ExternalServiceKind.PAGURE,
+    title: 'Pagure',
+    icon: GitIcon,
+    jsonSchema: pagureSchemaJSON,
+    defaultDisplayName: 'Pagure',
+    defaultConfig: `{
+  "url": "https://pagure.example.com",
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <Field>url</Field> to the URL of Pagure instance.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [],
+}
+
 export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
@@ -1224,6 +1246,7 @@ export const codeHostExternalServices: Record<string, AddExternalServiceOptions>
     git: GENERIC_GIT,
     ...(window.context?.experimentalFeatures?.perforce === 'enabled' ? { perforce: PERFORCE } : {}),
     ...(window.context?.experimentalFeatures?.jvmPackages === 'enabled' ? { jvmPackages: JVM_PACKAGES } : {}),
+    ...(window.context?.experimentalFeatures?.pagure === 'enabled' ? { pagure: PAGURE } : {}),
 }
 
 export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
@@ -1246,4 +1269,5 @@ export const defaultExternalServices: Record<ExternalServiceKind, AddExternalSer
     [ExternalServiceKind.AWSCODECOMMIT]: AWS_CODE_COMMIT,
     [ExternalServiceKind.PERFORCE]: PERFORCE,
     [ExternalServiceKind.JVMPACKAGES]: JVM_PACKAGES,
+    [ExternalServiceKind.PAGURE]: PAGURE,
 }

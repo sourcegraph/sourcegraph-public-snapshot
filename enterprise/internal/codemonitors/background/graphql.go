@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
@@ -21,7 +23,7 @@ type graphQLQuery struct {
 	Variables interface{} `json:"variables"`
 }
 
-const gqlSearchQuery = `query Search(
+const gqlSearchQuery = `query CodeMonitorSearch(
 	$query: String!,
 ) {
 	search(query: $query) {
@@ -120,7 +122,7 @@ type gqlSearchResponse struct {
 	Errors []interface{}
 }
 
-func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
+func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse, error) {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(graphQLQuery{
 		Query:     gqlSearchQuery,
@@ -130,7 +132,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "Encode")
 	}
 
-	url, err := gqlURL("Search")
+	url, err := gqlURL("CodeMonitorSearch")
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
@@ -141,6 +143,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Sourcegraph-User-ID", strconv.FormatInt(int64(userID), 10))
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
@@ -158,7 +161,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 }
 
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(api.InternalClient.URL)
+	u, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
 		return "", err
 	}

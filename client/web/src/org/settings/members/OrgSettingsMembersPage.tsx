@@ -36,7 +36,7 @@ interface UserNodeProps {
     authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
-    onDidUpdate?: () => void
+    onDidUpdate?: (didRemoveSelf: boolean) => void
     onRemoveOnlyMember?: () => void
     history: H.History
 }
@@ -85,7 +85,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             map(removalOrError => ({ removalOrError: removalOrError || null })),
                             tap(() => {
                                 if (this.props.onDidUpdate) {
-                                    this.props.onDidUpdate()
+                                    this.props.onDidUpdate(this.isSelf)
                                 }
                             }),
                             startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: undefined })
@@ -253,7 +253,13 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateUser = (): void => this.userUpdates.next()
+    private onDidUpdateUser = (didRemoveSelf: boolean): void => {
+        if (didRemoveSelf) {
+            this.props.history.push('/user/settings')
+            return
+        }
+        this.userUpdates.next()
+    }
 
     private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
 

@@ -1,23 +1,27 @@
 package graphqlbackend
 
 import (
-	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/graph-gophers/graphql-go/errors"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestOrgs(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.Orgs.List = func(ctx context.Context, opt *database.OrgsListOptions) ([]*types.Org, error) {
-		return []*types.Org{{Name: "org1"}, {Name: "org2"}}, nil
-	}
-	database.Mocks.Orgs.Count = func(context.Context, database.OrgsListOptions) (int, error) { return 2, nil }
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.ListFunc.SetDefaultReturn([]*types.Org{{Name: "org1"}, {Name: "org2"}}, nil)
+	orgs.CountFunc.SetDefaultReturn(2, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgsFunc.SetDefaultReturn(orgs)
+
 	RunTests(t, []*Test{
 		{
 			Schema: mustParseGraphQLSchema(t, db),
@@ -41,6 +45,60 @@ func TestOrgs(t *testing.T) {
 							}
 						],
 						"totalCount": 2
+					}
+				}
+			`,
+		},
+	})
+}
+
+func TestListOrgsForCloud(t *testing.T) {
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	orgs := dbmock.NewMockOrgStore()
+	orgs.CountFunc.SetDefaultReturn(42, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgsFunc.SetDefaultReturn(orgs)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					organizations {
+						nodes { name },
+						totalCount
+					}
+				}
+			`,
+			ExpectedResult: "null",
+			ExpectedErrors: []*errors.QueryError{
+				{
+					Message: "listing organizations is not allowed",
+					Path:    []interface{}{string("organizations"), string("nodes")},
+				},
+			},
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					organizations {
+						totalCount
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"organizations": {
+						"totalCount": 42
 					}
 				}
 			`,
