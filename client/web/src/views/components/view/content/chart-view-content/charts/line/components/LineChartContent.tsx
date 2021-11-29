@@ -117,9 +117,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
 
     // callbacks
     const renderTooltip = useCallback(
-        (renderProps: RenderTooltipParams<Point>) => (
-            <TooltipContent {...renderProps} series={seriesWithData} className={styles.tooltipContent} />
-        ),
+        (renderProps: RenderTooltipParams<Point>) => <TooltipContent {...renderProps} series={seriesWithData} />,
         [seriesWithData]
     )
 
