@@ -208,18 +208,21 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return false, err
 	}
 
-	executionResults, stepResults, err := extractCacheEntries(ctx, events)
-	if err != nil {
+	rollbackAndMarkFailed := func(err error, fmtStr string, args ...interface{}) (bool, error) {
 		// Rollback transaction but ignore rollback errors
 		tx.Done(err)
-		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract cache entries: %s", err), options)
+		return s.Store.MarkFailed(ctx, id, fmt.Sprintf(fmtStr, args...), options)
+	}
+
+	executionResults, stepResults, err := extractCacheEntries(ctx, events)
+	if err != nil {
+		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to extract cache entries: %s", err))
 	}
 
 	for _, entry := range stepResults {
 		// Store the cache entry.
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			tx.Done(err)
-			return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to save cache entry: %s", err), options)
+			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
 		}
 	}
 
@@ -227,15 +230,13 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	for _, entry := range executionResults {
 		// Store the cache entry.
 		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			tx.Done(err)
-			return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to save cache entry: %s", err), options)
+			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to save cache entry: %s", err))
 		}
 
 		// And now build changeset specs from it.
 		var executionResult execution.Result
 		if err := json.Unmarshal([]byte(entry.Value), &executionResult); err != nil {
-			tx.Done(err)
-			return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to parse cache entry: %s", err), options)
+			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to parse cache entry: %s", err))
 		}
 
 		rawSpecs, err := cache.ChangesetSpecsFromCache(
@@ -250,16 +251,14 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			executionResult,
 		)
 		if err != nil {
-			tx.Done(err)
-			return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to build changeset specs from cache: %s", err), options)
+			return rollbackAndMarkFailed(err, fmt.Sprintf("failed to build changeset specs from cache: %s", err))
 		}
 
 		var specs []*btypes.ChangesetSpec
 		for _, rawSpec := range rawSpecs {
 			changesetSpec, err := btypes.NewChangesetSpecFromSpec(rawSpec)
 			if err != nil {
-				tx.Done(err)
-				return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to build db changeset specs: %s", err), options)
+				return rollbackAndMarkFailed(err, fmt.Sprintf("failed to build db changeset specs: %s", err))
 			}
 			changesetSpec.BatchSpecID = batchSpec.ID
 			changesetSpec.RepoID = repo.ID
@@ -270,8 +269,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 		if len(specs) > 0 {
 			if err := tx.CreateChangesetSpec(ctx, specs...); err != nil {
-				tx.Done(err)
-				return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to store changeset specs: %s", err), options)
+				return rollbackAndMarkFailed(err, fmt.Sprintf("failed to store changeset specs: %s", err))
 			}
 			for _, spec := range specs {
 				changesetSpecIDs = append(changesetSpecIDs, spec.ID)
@@ -281,11 +279,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 
 	err = deleteAccessToken(ctx, tx, job.AccessTokenID)
 	if err != nil {
-		// Rollback transaction but ignore rollback errors
-		tx.Done(err)
-		// If we failed do delete the access token, we don't need to try again
-		// in our MarkFailed method.
-		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to delete internal access token: %s", err), options)
+		return rollbackAndMarkFailed(err, fmt.Sprintf("failed to delete internal access token: %s", err))
 	}
 
 	if err = s.setChangesetSpecIDs(ctx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {
