@@ -79,7 +79,14 @@ export const SearchNotebookMarkdownBlock: React.FunctionComponent<SearchNotebook
         ...props,
     })
 
-    const { onKeyDown } = useBlockShortcuts({ id, isMacPlatform, onEnterBlock, ...props, onRunBlock: runBlock })
+    const { onKeyDown } = useBlockShortcuts({
+        id,
+        isMacPlatform,
+        isReadOnly,
+        onEnterBlock,
+        ...props,
+        onRunBlock: runBlock,
+    })
 
     useEffect(() => {
         if (isEditing) {
