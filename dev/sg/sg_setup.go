@@ -126,7 +126,7 @@ func setupExec(ctx context.Context, args []string) error {
 		out.Write("")
 
 		if len(employeeFailed) != 0 && len(failed) == len(employeeFailed) {
-			writeWarningLine("Some checks that are only relevant for Sourcegraph employees failed.\n\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
+			writeWarningLine("Some checks that are only relevant for Sourcegraph employees failed.\nIf you're not a Sourcegraph employee you're good to go. Hit Ctrl-C.\n\nIf you're a Sourcegraph employee: which one do you want to fix?")
 		} else {
 			writeWarningLine("Some checks failed. Which one do you want to fix?")
 		}
@@ -636,9 +636,6 @@ func getBool() bool {
 
 func presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *dependencyCategory) error {
 	printCategoryHeaderAndDependencies(categoryIdx, category)
-
-	// TODO: It doesn't make a lot of sense to give a choice here if
-	// there's only one dependency
 
 	choices := map[int]string{1: "I want to fix these manually"}
 	if category.autoFixing {
