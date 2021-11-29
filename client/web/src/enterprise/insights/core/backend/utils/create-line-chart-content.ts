@@ -3,27 +3,25 @@ import { LineChartContent } from 'sourcegraph'
 import { InsightDataSeries } from '../../../../../graphql-operations'
 import { SearchBasedInsightSeries } from '../../types/insight/search-insight'
 
-interface InsightData {
+interface SeriesDataset {
+    dateTime: number
+    [seriesKey: string]: number
+}
+
+export interface InsightData {
     series: {
         label: string
         points: { dateTime: string; value: number }[]
-        status: {
-            __typename?: 'InsightSeriesStatus'
-            pendingJobs: number
-            completedJobs: number
-            failedJobs: number
-            backfillQueuedAt: string | null
-        }
     }[]
 }
 
 export function createLineChartContent(
     seriesData: InsightData,
     seriesDefinition: SearchBasedInsightSeries[] = []
-): LineChartContent<{ dateTime: number; [seriesKey: string]: number }, 'dateTime'> {
+): LineChartContent<SeriesDataset, 'dateTime'> {
     // Immutable sort is required to avoid breaking useCallback memoziation in BackendInsight component
     const sortedSeriesSettings = [...seriesDefinition].sort((a, b) => a.query.localeCompare(b.query))
-    const dataByXValue = new Map<string, { dateTime: number; [seriesKey: string]: number }>()
+    const dataByXValue = new Map<string, SeriesDataset>()
 
     for (const [seriesIndex, series] of seriesData.series.entries()) {
         for (const point of series.points) {
@@ -57,7 +55,12 @@ export function createLineChartContent(
 }
 
 /**
- * Generates line chart content for visx chart. Note that this function relays on the fact that
+ * Minimal input type model for {@link createLineChartContentFromIndexedSeries} function
+ */
+export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
+
+/**
+ * Generates line chart content for visx chart. Note that this function relies on the fact that
  * all series are indexed. This generator is used only for GQL api, only there we have indexed series
  * for setting-based api see {@link createLineChartContent}
  *
@@ -65,10 +68,10 @@ export function createLineChartContent(
  * @param seriesDefinition - insight definition with line settings (color, name, query)
  */
 export function createLineChartContentFromIndexedSeries(
-    series: InsightDataSeries[],
+    series: InsightDataSeriesData[],
     seriesDefinition: SearchBasedInsightSeries[] = []
-): LineChartContent<{ dateTime: number; [seriesKey: string]: number }, 'dateTime'> {
-    const dataByXValue = new Map<string, { dateTime: number; [seriesKey: string]: number }>()
+): LineChartContent<SeriesDataset, 'dateTime'> {
+    const dataByXValue = new Map<string, SeriesDataset>()
     const definitionMap = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id ?? '', definition])
     )
