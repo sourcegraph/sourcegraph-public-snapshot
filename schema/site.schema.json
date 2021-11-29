@@ -223,7 +223,7 @@
             ],
             "properties": {
               "name": {
-                "description": "Regular expression which matches against the name of a repository (e.g. \"github.com/owner/name\").",
+                "description": "Regular expression which matches against the name of a repository (e.g. \"^github\\.com/owner/name$\").",
                 "type": "string",
                 "format": "regex"
               },

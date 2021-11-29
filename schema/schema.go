@@ -1367,7 +1367,7 @@ type SMTPServerConfig struct {
 	Username string `json:"username,omitempty"`
 }
 type SearchIndexRevisionRule struct {
-	// Name description: Regular expression which matches against the name of a repository (e.g. "github.com/owner/name").
+	// Name description: Regular expression which matches against the name of a repository (e.g. "^github\.com/owner/name$").
 	Name string `json:"name,omitempty"`
 	// Revisions description: Revisions to index
 	Revisions []string `json:"revisions"`
