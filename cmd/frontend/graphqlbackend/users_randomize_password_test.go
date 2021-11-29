@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -16,16 +15,10 @@ import (
 )
 
 func TestRandomizeUserPassword(t *testing.T) {
-	resetMocks()
-
-	defer func() {
-		resetMocks()
-	}()
-
-	db := database.NewDB(nil)
 	userID := int32(42)
 	userIDBase64 := string(MarshalUserID(userID))
 
+	db := dbmock.NewMockDB()
 	t.Run("Errors when resetting passwords is not enabled", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
@@ -41,7 +34,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "resetting passwords is not enabled",
-						Path:    []interface{}{string("randomizeUserPassword")},
+						Path:    []interface{}{"randomizeUserPassword"},
 					},
 				},
 				Variables: map[string]interface{}{"user": userIDBase64},
@@ -51,12 +44,11 @@ func TestRandomizeUserPassword(t *testing.T) {
 
 	t.Run("Errors on Cloud when sending emails is not enabled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
-		envvar.MockSourcegraphDotComMode(true)
+		defer conf.Mock(nil)
 
-		defer func() {
-			conf.Mock(nil)
-			envvar.MockSourcegraphDotComMode(false)
-		}()
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
 
 		RunTests(t, []*Test{
 			{
@@ -72,7 +64,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 				ExpectedErrors: []*errors.QueryError{
 					{
 						Message: "unable to reset password because email sending is not configured",
-						Path:    []interface{}{string("randomizeUserPassword")},
+						Path:    []interface{}{"randomizeUserPassword"},
 					},
 				},
 				Variables: map[string]interface{}{"user": userIDBase64},
@@ -82,13 +74,12 @@ func TestRandomizeUserPassword(t *testing.T) {
 
 	// tests below depend on AuthProviders and EmailSmtp being configured properly
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: &schema.SMTPServerConfig{}}})
+	defer conf.Mock(nil)
 
 	t.Run("Returns error if user is not site-admin", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: false}, nil
-		}
-		defer resetMocks()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
 
 		RunTests(t, []*Test{
 			{
@@ -113,12 +104,9 @@ func TestRandomizeUserPassword(t *testing.T) {
 	})
 
 	t.Run("Returns error when cannot parse user ID", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: true}, nil
-		}
-
-		defer resetMocks()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
 
 		RunTests(t, []*Test{
 			{
@@ -143,18 +131,11 @@ func TestRandomizeUserPassword(t *testing.T) {
 	})
 
 	t.Run("Returns resetPasswordUrl if user is site-admin", func(t *testing.T) {
-		db := database.NewDB(nil)
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: true}, nil
-		}
-		database.Mocks.Users.RandomizePasswordAndClearPasswordResetRateLimit = func(ctx context.Context, userID int32) error {
-			return nil
-		}
-		database.Mocks.Users.RenewPasswordResetCode = func(ctx context.Context, id int32) (string, error) {
-			return "code", nil
-		}
-
-		defer resetMocks()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
+		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
+		db.UsersFunc.SetDefaultReturn(users)
 
 		RunTests(t, []*Test{
 			{
@@ -177,7 +158,9 @@ func TestRandomizeUserPassword(t *testing.T) {
 	})
 
 	t.Run("Does not return resetPasswordUrl when in Cloud", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig)
 
 		users := dbmock.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
@@ -188,16 +171,13 @@ func TestRandomizeUserPassword(t *testing.T) {
 		userEmails := dbmock.NewMockUserEmailsStore()
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
 
-		db := dbmock.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 		txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
 			return nil
 		}
-
 		defer func() {
-			envvar.MockSourcegraphDotComMode(false)
 			txemail.MockSend = nil
 		}()
 
