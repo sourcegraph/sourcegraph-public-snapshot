@@ -16,6 +16,8 @@ const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
                 }
                 files(recursive: true) {
                     path
+                    name
+                    isDirectory
                     url
                 }
             }

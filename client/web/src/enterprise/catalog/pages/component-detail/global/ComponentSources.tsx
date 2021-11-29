@@ -1,3 +1,5 @@
+import path from 'path'
+
 import classNames from 'classnames'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React from 'react'
@@ -7,6 +9,7 @@ import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { CatalogComponentSourcesFields } from '../../../../../graphql-operations'
+import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
 interface Props {
     catalogComponent: CatalogComponentSourcesFields
@@ -31,7 +34,7 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                     <SettingsIcon className="icon-inline mr-1" /> Configure
                 </Link>
             </header>
-            <ol className={classNames('list-unstyled', bodyClassName)}>
+            <ol className={classNames('list-unstyled mb-0', bodyClassName)}>
                 {sourceLocations.map(sourceLocation => (
                     <li key={sourceLocation.url} className="border p-2 m-2">
                         <RepoFileLink
@@ -49,24 +52,43 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                     </li>
                 ))}
             </ol>
-            <p className={classNames('card-body', bodyClassName)}>
-                All files:
-                <ol className="list-unstyled">
-                    {sourceLocations.map(
-                        sourceLocation =>
-                            'files' in sourceLocation &&
-                            sourceLocation.files &&
-                            sourceLocation.files.slice(0, 15 /* TODO(sqs) */).map(file => (
-                                <li key={file.url} className="small">
-                                    <Link to={file.url} className="text-muted">
-                                        {file.path}
-                                    </Link>
-                                </li>
-                            ))
-                    )}
-                </ol>
-            </p>
+            <ul className={classNames('list-group list-group-flush', bodyClassName)}>
+                {groupByParentDirectories(
+                    sourceLocations.flatMap(sourceLocation => ('files' in sourceLocation ? sourceLocation.files : []))
+                ).map(({ dir, files }) => (
+                    <li key={dir} className="list-group-item small">
+                        <div className="text-muted">{dir}:</div>
+                        <div className="ml-3">
+                            <TreeEntriesSection
+                                parentPath={dir}
+                                entries={files}
+                                fileDecorationsByPath={{} /* TODO(sqs) */}
+                                isLightTheme={false /* TODO(sqs) */}
+                            />
+                        </div>
+                    </li>
+                ))}
+            </ul>
         </div>
     ) : (
         <p className={classNames('mb-0', className)}>No source locations</p>
     )
+
+function groupByParentDirectories<F extends { path: string }>(files: F[]): { dir: string; files: F[] }[] {
+    files.sort((a, b) => {
+        const comp0 = path.dirname(a.path).localeCompare(path.dirname(b.path))
+        return comp0 === 0 ? a.path.localeCompare(b.path) : comp0
+    })
+
+    const groups: { dir: string; files: F[] }[] = []
+    for (const file of files) {
+        const dirname = path.dirname(file.path)
+        if (groups.length > 0 && dirname === groups[groups.length - 1].dir) {
+            groups[groups.length - 1].files.push(file)
+        } else {
+            groups.push({ dir: dirname, files: [file] })
+        }
+    }
+
+    return groups
+}

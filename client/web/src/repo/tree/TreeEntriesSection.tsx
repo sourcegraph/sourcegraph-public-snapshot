@@ -68,10 +68,12 @@ export const TreeEntriesSection: React.FunctionComponent<TreeEntriesSectionProps
     fileDecorationsByPath,
     isLightTheme,
 }) => {
-    const directChildren = entries.filter(entry => entry.path === [parentPath, entry.name].filter(Boolean).join('/'))
+    // TODO(sqs): hack to make ComponentSources work
+    /* const directChildren = entries.filter(entry => entry.path === [parentPath, entry.name].filter(Boolean).join('/'))
     if (directChildren.length === 0) {
         return null
-    }
+    }*/
+    const directChildren = entries
 
     // Render file decorations for all files in parent so we know how many total file decorations exist
     // and can decide whether or not to render dividers
