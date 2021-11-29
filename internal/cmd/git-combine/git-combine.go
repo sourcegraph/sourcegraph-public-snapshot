@@ -26,7 +26,9 @@ import (
 
 // Options are configurables for Combine.
 type Options struct {
-	// Limit is the maximum number of commits we import from each remote.
+	// Limit is the maximum number of commits we import from each remote. The
+	// memory usage of Combine is based on the number of unseen commits per
+	// remote. Limit is useful to specify when importing a large new upstream.
 	Limit int
 
 	Logger *log.Logger
@@ -392,7 +394,7 @@ func doDaemon(dir string, ticker <-chan time.Time, done <-chan struct{}, opt Opt
 
 func main() {
 	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
-	limit := flag.Int("limit", 0, "limits the number of commits imported from each remote. If 0 there is no limit.")
+	limit := flag.Int("limit", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
 
 	flag.Parse()
 
