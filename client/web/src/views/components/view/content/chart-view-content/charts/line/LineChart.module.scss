@@ -26,7 +26,7 @@
     list-style: none;
     padding: 0;
     margin: 0.75rem 0 0;
-    line-height: 1;
+    line-height: 1.2;
 
     &--horizontal {
         flex-direction: column;
@@ -38,12 +38,13 @@
 
 .legend-item {
     display: flex;
-    align-items: center;
+    align-items: baseline;
 }
 
 .legend-mark {
-    width: 0.75rem;
-    height: 0.75rem;
+    align-self: baseline;
+    width: 0.5rem;
+    height: 0.5rem;
     flex-shrink: 0;
     margin-right: 0.25rem;
     border-radius: 50%;

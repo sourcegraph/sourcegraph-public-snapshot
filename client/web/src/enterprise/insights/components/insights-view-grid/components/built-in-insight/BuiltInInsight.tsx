@@ -9,7 +9,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import * as View from '../../../../../../views'
 import { LineChartSettingsContext } from '../../../../../../views'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
-import { LangStatsInsight } from '../../../../core/types'
+import { isSearchBasedInsight, LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
@@ -52,6 +52,10 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
+    const chartLegendOrintation = isSearchBasedInsight(insight) && insight.series.length > 3
+        ? 'horizontal'
+        : 'vertical'
+
     return (
         <View.Root
             {...otherProps}
@@ -79,7 +83,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
                 <View.ErrorContent error={data.view} title={insight.id} icon={PuzzleIcon} />
             ) : (
                 data.view && (
-                    <LineChartSettingsContext.Provider value={{ zeroYAxisMin }}>
+                    <LineChartSettingsContext.Provider value={{ zeroYAxisMin, layout: chartLegendOrintation }}>
                         <View.Content
                             telemetryService={telemetryService}
                             content={data.view.content}
