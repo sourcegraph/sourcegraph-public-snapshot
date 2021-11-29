@@ -9,13 +9,10 @@ import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 
 import styles from './ComponentAuthors.module.scss'
+import { ComponentDetailContentCardProps } from './ComponentDetailContent'
 
-interface Props {
+interface Props extends ComponentDetailContentCardProps {
     catalogComponent: CatalogComponentAuthorsFields
-    className?: string
-    headerClassName?: string
-    titleClassName?: string
-    bodyClassName?: string
 }
 
 export const ComponentAuthors: React.FunctionComponent<Props> = ({
@@ -24,13 +21,14 @@ export const ComponentAuthors: React.FunctionComponent<Props> = ({
     headerClassName,
     titleClassName,
     bodyClassName,
+    bodyScrollableClassName,
 }) =>
     authors && authors.length > 0 ? (
         <div className={className}>
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Authors</h3>
             </header>
-            <ol className={classNames('list-group list-group-horizontal', bodyClassName)}>
+            <ol className={classNames('list-group list-group-horizontal', bodyClassName, bodyScrollableClassName)}>
                 {authors.map(author => (
                     <li
                         key={author.person.email}

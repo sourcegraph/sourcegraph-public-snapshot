@@ -19,6 +19,14 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps {
     catalogComponent: CatalogComponentDetailFields
 }
 
+export interface ComponentDetailContentCardProps {
+    className?: string
+    headerClassName?: string
+    titleClassName?: string
+    bodyClassName?: string
+    bodyScrollableClassName?: string
+}
+
 export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalogComponent, ...props }) => (
     <div>
         <PageHeader
@@ -63,21 +71,24 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                     headerClassName={classNames('card-header', styles.cardHeader)}
                     titleClassName={classNames('card-title', styles.cardTitle)}
                     bodyClassName={styles.cardBody}
+                    bodyScrollableClassName={styles.cardBodyScrollable}
                 />
-                <div>
+                <div className="d-flex flex-column">
                     <ComponentAuthors
                         catalogComponent={catalogComponent}
                         className="card mb-3"
                         headerClassName={classNames('card-header', styles.cardHeader)}
                         titleClassName={classNames('card-title', styles.cardTitle)}
                         bodyClassName={styles.cardBody}
+                        bodyScrollableClassName={styles.cardBodyScrollable}
                     />
                     <ComponentCommits
                         catalogComponent={catalogComponent}
-                        className="card"
+                        className="card overflow-hidden"
                         headerClassName={classNames('card-header', styles.cardHeader)}
                         titleClassName={classNames('card-title', styles.cardTitle)}
                         bodyClassName={styles.cardBody}
+                        bodyScrollableClassName={styles.cardBodyScrollable}
                     />
                 </div>
             </div>

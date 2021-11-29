@@ -5,12 +5,10 @@ import { Link } from 'react-router-dom'
 import { CatalogComponentChangesFields, GitCommitFields } from '../../../../../graphql-operations'
 import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
 
-interface Props {
+import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+
+interface Props extends ComponentDetailContentCardProps {
     catalogComponent: CatalogComponentChangesFields
-    className?: string
-    headerClassName?: string
-    titleClassName?: string
-    bodyClassName?: string
 }
 
 export const ComponentCommits: React.FunctionComponent<Props> = ({
@@ -19,13 +17,14 @@ export const ComponentCommits: React.FunctionComponent<Props> = ({
     headerClassName,
     titleClassName,
     bodyClassName,
+    bodyScrollableClassName,
 }) =>
     commits && commits.nodes.length > 0 ? (
         <div className={className}>
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Commits</h3>
             </header>
-            <ol className={classNames('list-group list-group-flush', bodyClassName)}>
+            <ol className={classNames('list-group list-group-flush', bodyClassName, bodyScrollableClassName)}>
                 {commits.nodes.map(commit => (
                     <GitCommit key={commit.oid} commit={commit} tag="li" className="list-group-item py-2" />
                 ))}

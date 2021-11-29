@@ -16,12 +16,10 @@ import { getFileDecorations } from '../../../../../backend/features'
 import { CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
-interface Props extends ExtensionsControllerProps, ThemeProps {
+import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+
+interface Props extends ComponentDetailContentCardProps, ExtensionsControllerProps, ThemeProps {
     catalogComponent: CatalogComponentSourcesFields
-    className?: string
-    headerClassName?: string
-    titleClassName?: string
-    bodyClassName?: string
 }
 
 export const ComponentSources: React.FunctionComponent<Props> = ({
@@ -30,6 +28,7 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
     headerClassName,
     titleClassName,
     bodyClassName,
+    bodyScrollableClassName,
     ...props
 }) =>
     sourceLocations.length > 0 ? (
@@ -58,7 +57,11 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
                     </li>
                 ))}
             </ol>
-            <ComponentFiles {...props} sourceLocations={sourceLocations} className={bodyClassName} />
+            <ComponentFiles
+                {...props}
+                sourceLocations={sourceLocations}
+                className={classNames(bodyClassName, bodyScrollableClassName)}
+            />
         </div>
     ) : (
         <p className={classNames('mb-0', className)}>No source locations</p>
