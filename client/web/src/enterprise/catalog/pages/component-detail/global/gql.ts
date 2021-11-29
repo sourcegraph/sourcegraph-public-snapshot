@@ -3,6 +3,15 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 
+const CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT = gql`
+    fragment CatalogComponentDocumentationFields on CatalogComponent {
+        readme {
+            richHTML
+            url
+        }
+    }
+`
+
 const CATALOG_COMPONENT_SOURCES_FRAGMENT = gql`
     fragment CatalogComponentSourcesFields on CatalogComponent {
         sourceLocations {
@@ -113,11 +122,13 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
         system
         tags
         url
+        ...CatalogComponentDocumentationFields
         ...CatalogComponentSourcesFields
         ...CatalogComponentChangesFields
         ...CatalogComponentAuthorsFields
         ...CatalogComponentUsageFields
     }
+    ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
     ${CATALOG_COMPONENT_AUTHORS_FRAGMENT}

@@ -10,6 +10,10 @@ import (
 )
 
 func (r *catalogComponentResolver) Usage(ctx context.Context, args *gql.CatalogComponentUsageArgs) (gql.CatalogComponentUsageResolver, error) {
+	if len(r.usagePatterns) == 0 {
+		return nil, nil
+	}
+
 	var queries []string
 	for _, p := range r.usagePatterns {
 		queries = append(queries, p.query)

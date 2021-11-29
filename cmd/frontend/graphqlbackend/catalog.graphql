@@ -33,9 +33,10 @@ type CatalogComponent implements Node {
     tags: [String!]!
     url: String!
     sourceLocations: [TreeEntry!]!
+    readme: File2
     commits(first: Int): GitCommitConnection
     authors: [CatalogComponentAuthorEdge!]
-    usage(query: String): CatalogComponentUsage!
+    usage(query: String): CatalogComponentUsage
 }
 
 type CatalogComponentAuthorEdge {

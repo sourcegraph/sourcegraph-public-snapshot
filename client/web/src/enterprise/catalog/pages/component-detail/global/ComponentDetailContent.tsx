@@ -14,6 +14,7 @@ import { CATALOG_COMPONENT_ICON_BY_KIND } from '../../../components/CatalogCompo
 import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentCommits } from './ComponentCommits'
 import styles from './ComponentDetailContent.module.scss'
+import { ComponentDocumentation } from './ComponentDocumentation'
 import { ComponentSources } from './ComponentSources'
 import { ComponentUsage } from './ComponentUsage'
 import { TabRouter } from './TabRouter'
@@ -37,7 +38,7 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                 path: '',
                 exact: true,
                 label: 'Documentation',
-                element: <p>Documentation</p>,
+                element: <ComponentDocumentation catalogComponent={catalogComponent} />,
             },
             {
                 path: 'impl',

@@ -48,6 +48,7 @@ type CatalogComponentResolver interface {
 	Tags() []string
 	URL() string
 
+	Readme(context.Context) (FileResolver, error)
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)

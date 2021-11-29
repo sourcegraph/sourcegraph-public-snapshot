@@ -20,17 +20,16 @@ import { UserAvatar } from '../../../../../user/UserAvatar'
 import { ComponentDetailContentCardProps } from './ComponentDetailContent'
 import styles from './ComponentUsage.module.scss'
 
-interface Props extends ComponentDetailContentCardProps, SettingsCascadeProps, TelemetryProps {
+interface Props
+    extends Pick<ComponentDetailContentCardProps, 'className' | 'bodyClassName' | 'bodyScrollableClassName'>,
+        SettingsCascadeProps,
+        TelemetryProps {
     catalogComponent: CatalogComponentUsageFields
 }
 
 export const ComponentUsage: React.FunctionComponent<Props> = ({
-    catalogComponent: {
-        usage: { locations, callers },
-    },
+    catalogComponent: { usage },
     className,
-    headerClassName,
-    titleClassName,
     bodyClassName,
     bodyScrollableClassName,
     settingsCascade,
@@ -38,11 +37,18 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
 }) => {
     const location = useLocation()
 
+    if (!usage) {
+        return (
+            <div className={className}>
+                <div className="alert-warning">Unable to determine usage information (no usage patterns specified)</div>
+            </div>
+        )
+    }
+
+    const { locations, callers } = usage
+
     return locations && locations.nodes.length > 0 ? (
         <div className={className}>
-            <header className={headerClassName + ' d-none'}>
-                <h3 className={titleClassName}>Locations</h3>
-            </header>
             <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
                 {callers.map(caller => (
                     <li
