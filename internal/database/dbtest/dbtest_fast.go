@@ -47,6 +47,8 @@ func NewFastWithDSN(t testing.TB, dsn string) *sql.DB {
 	if err != nil {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
+	t.Cleanup(func() { pool.db.Close() })
+
 	return newFromPool(t, u, pool)
 }
 
@@ -92,6 +94,43 @@ func NewFastTx(t testing.TB) *sql.Tx {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
 	t.Cleanup(func() { pool.db.Close() })
+
+	return newTxFromPool(t, u, pool)
+}
+
+func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
+	ctx := context.Background()
+	tdb, err := pool.GetTemplate(ctx, u, dbconn.Frontend, dbconn.CodeIntel)
+	if err != nil {
+		t.Fatalf("failed to get or create template db: %s", err)
+	}
+
+	mdb, err := pool.GetMigratedDB(ctx, tdb)
+	if err != nil {
+		t.Fatalf("failed to get or create migrated db: %s", err)
+	}
+	t.Cleanup(func() {
+		if t.Failed() {
+			t.Logf("database %q left intact for inspection", mdb.Name)
+			return
+		}
+
+		err := pool.UnclaimCleanMigratedDB(ctx, mdb)
+		if err != nil {
+			t.Fatalf("failed to unclaim migrated db %q: %s", mdb.Name, err)
+		}
+	})
+
+	testDBURL := urlWithDB(u, mdb.Name)
+	testDB := dbConn(t, testDBURL)
+	t.Cleanup(func() { testDB.Close() })
+
+	tx, err := testDB.Begin()
+	if err != nil {
+		t.Fatalf("failed to create a transaction: %s", err)
+	}
+	t.Cleanup(func() { tx.Rollback() })
+	return tx
 }
 
 func urlWithDB(u *url.URL, dbName string) *url.URL {
