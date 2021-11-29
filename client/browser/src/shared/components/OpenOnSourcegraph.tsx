@@ -19,5 +19,12 @@ export const OpenOnSourcegraph: React.FunctionComponent<Props> = ({
 }) => {
     const url = new URL(toPrettyBlobURL({ repoName, revision, filePath }), sourcegraphURL)
     url.searchParams.set('utm_source', getPlatformName())
-    return <SourcegraphIconButton {...props} className={classNames('open-on-sourcegraph', className)} href={url.href} />
+    return (
+        <SourcegraphIconButton
+            {...props}
+            className={classNames('open-on-sourcegraph', className)}
+            dataTestId="open-on-sourcegraph"
+            href={url.href}
+        />
+    )
 }
