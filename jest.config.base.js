@@ -49,6 +49,7 @@ const config = {
   // By default, don't clutter `yarn test --watch` output with the full coverage table. To see it, use the
   // `--coverageReporters text` jest option.
   coverageReporters: ['json', 'lcov', 'text-summary'],
+  testResultsProcessor: 'jest-junit',
 
   setupFiles: [
     path.join(__dirname, 'client/shared/dev/mockDate.js'),
