@@ -588,7 +588,7 @@ type ExperimentalFeatures struct {
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchIndexRevisions description: An array of objects describing rules for extra revisions (branch, ref, tag, commit sha, etc) to be indexed for all repositories that match them. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
-	SearchIndexRevisions []*SearchIndexRevisionRule `json:"search.index.revisions,omitempty"`
+	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
 	// SearchMultipleRevisionsPerRepository description: DEPRECATED. Always on. Will be removed in 3.19.
 	SearchMultipleRevisionsPerRepository *bool `json:"searchMultipleRevisionsPerRepository,omitempty"`
 	// StructuralSearch description: Enables structural search.
@@ -1366,7 +1366,7 @@ type SMTPServerConfig struct {
 	// Username description: The username to use when communicating with the SMTP server.
 	Username string `json:"username,omitempty"`
 }
-type SearchIndexRevisionRule struct {
+type SearchIndexRevisionsRule struct {
 	// Name description: Regular expression which matches against the name of a repository (e.g. "^github\.com/owner/name$").
 	Name string `json:"name,omitempty"`
 	// Revisions description: Revisions to index

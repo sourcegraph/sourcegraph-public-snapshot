@@ -143,7 +143,7 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "conf index revisions",
 		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexRevisions: []*schema.SearchIndexRevisionRule{
+			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
 				{Name: "repo-.*", Revisions: []string{"a"}},
 			},
 		}},
@@ -163,7 +163,7 @@ func TestGetIndexOptions(t *testing.T) {
 			SearchIndexBranches: map[string][]string{
 				"repo-01": {"a", "b"},
 			},
-			SearchIndexRevisions: []*schema.SearchIndexRevisionRule{
+			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
 				{Name: "repo-.*", Revisions: []string{"a", "c"}},
 			},
 		}},

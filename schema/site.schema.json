@@ -215,7 +215,7 @@
           "minItems": 1,
           "items": {
             "type": "object",
-            "title": "SearchIndexRevisionRule",
+            "title": "SearchIndexRevisionsRule",
             "additionalProperties": false,
             "required": ["revisions"],
             "anyOf": [
