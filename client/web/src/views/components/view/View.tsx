@@ -6,6 +6,8 @@ import { ErrorBoundary } from '../../../components/ErrorBoundary'
 
 import styles from './View.module.scss'
 
+const stopPropagation = (event: React.MouseEvent): void => event.stopPropagation()
+
 type ViewCardElementProps = React.DetailedHTMLProps<Omit<React.HTMLAttributes<HTMLElement>, 'contextMenu'>, HTMLElement>
 
 export interface ViewCardProps extends ViewCardElementProps {
@@ -45,7 +47,17 @@ export const View: React.FunctionComponent<PropsWithChildren<ViewCardProps>> = p
                             {subtitle}
                         </div>
 
-                        <div className={styles.action}>{actions}</div>
+                        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions */}
+                        <div
+                            // View component usually is rendered within a view grid component. To suppress
+                            // bad click that lead to card DnD events in view grid we stop event bubbling for
+                            // clicks.
+                            onClick={stopPropagation}
+                            onMouseDown={stopPropagation}
+                            className={styles.action}
+                        >
+                            {actions}
+                        </div>
                     </header>
                 )}
 
