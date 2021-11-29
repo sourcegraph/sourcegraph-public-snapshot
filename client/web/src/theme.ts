@@ -3,17 +3,8 @@ import { useMemo } from 'react'
 import { observeSystemIsLightTheme, ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { useThemeState as useThemeGlobalState } from './stores'
-
-/**
- * The user preference for the theme.
- * These values are stored in local storage.
- */
-export enum ThemePreference {
-    Light = 'light',
-    Dark = 'dark',
-    System = 'system',
-}
+import { useThemeState } from './stores'
+import { ThemePreference } from './stores/themeState'
 
 /**
  * Props that can be extended by any component's Props which needs to manipulate the theme preferences.
@@ -38,7 +29,7 @@ export interface ThemeState {
     setThemePreference: (theme: ThemePreference) => void
 }
 
-export const useThemeState = (): ThemeState => {
+export const useTheme = (): ThemeState => {
     // React to system-wide theme change.
     const { observable: systemIsLightThemeObservable, initialValue: systemIsLightThemeInitialValue } = useMemo(
         () => observeSystemIsLightTheme(window),
@@ -46,7 +37,7 @@ export const useThemeState = (): ThemeState => {
     )
     const systemIsLightTheme = useObservable(systemIsLightThemeObservable) ?? systemIsLightThemeInitialValue
 
-    const [themePreference, setThemePreference] = useThemeGlobalState(state => [state.theme, state.setTheme])
+    const [themePreference, setThemePreference] = useThemeState(state => [state.theme, state.setTheme])
     const enhancedThemePreference =
         themePreference === ThemePreference.System
             ? systemIsLightTheme
@@ -65,7 +56,7 @@ export const useThemeState = (): ThemeState => {
  * A React hook for getting and setting the theme.
  */
 export const useThemeProps = (): ThemeProps & ThemePreferenceProps => {
-    const { themePreference, enhancedThemePreference, setThemePreference } = useThemeState()
+    const { themePreference, enhancedThemePreference, setThemePreference } = useTheme()
     const isLightTheme = enhancedThemePreference === ThemePreference.Light
 
     useMemo(() => {
