@@ -8,7 +8,6 @@ const CATALOG_ENTITY_GRAPH_FRAGMENT = gql`
         relatedEntities {
             edges {
                 node {
-                    __typename
                     id
                     type
                     name

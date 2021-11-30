@@ -55,6 +55,7 @@ type CatalogEntityResolver struct {
 }
 
 func (r *CatalogEntityResolver) Typename() string {
+	panic("X")
 	switch r.CatalogEntity.(type) {
 	case CatalogComponentResolver:
 		return "CatalogComponent"
