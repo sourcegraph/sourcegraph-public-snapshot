@@ -62,7 +62,7 @@ func serveSignOutHandler(db database.DB) func(w http.ResponseWriter, r *http.Req
 }
 
 // logSignOutEvent records an event into the security event log.
-func logSignOutEvent(r *http.Request, db dbutil.DB, name database.SecurityEventName, err error) {
+func logSignOutEvent(r *http.Request, db database.DB, name database.SecurityEventName, err error) {
 	ctx := r.Context()
 	a := actor.FromContext(ctx)
 
