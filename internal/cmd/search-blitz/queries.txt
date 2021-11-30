@@ -1,0 +1,53 @@
+# regex_small
+patterntype:regexp se[arc]{3}hZoekt
+
+# regex_medium
+patterntype:regexp can_handle_hl_color\b
+
+# regex_large
+patterntype:regexp try_init
+
+# regex_two_sameline
+patterntype:regexp matt senses
+
+# regex_three_sameline
+patterntype:regexp mk tim hike
+
+# regex_repo_scope_small
+patterntype:regexp repo:^github\.com/sgtest/slate$ getfragment
+
+# regex_repo_scope_large
+patterntype:regexp repo:^github\.com/sgtest/flutter_inappwebview$ count:800 add\w+
+
+# regex_file_scope
+patterntype:regexp repo:^github\.com/sgtest/kubernetes$ file:^cluster/gce/gci Installing
+
+# structural_repo_scope_small
+patterntype:structural repo:^github\.com/sgtest/fastapi-crud-async$ file:^src/app async def :[1](...)
+
+# structural_multi_repo_small
+patterntype:structural repo:^github\.com/sourcegraph/ strings.ToUpper(...)
+
+# literal_small
+patterntype:literal --exclude-task=test
+
+# literal_large
+patterntype:literal lang:go -file:vendor/ count:1000 cfssl
+
+# literal_repo_scope
+patterntype:literal repo:^github\.com/sgtest/element$ repeat-click
+
+# literal_repo_excluded_scope
+patterntype:literal -repo:^github\.com/sourcegraph/sourcegraph$ --exclude-task=test
+
+# literal_file_scope
+patterntype:literal repo:^github\.com/sgtest/cockroach-gen$ file:^pkg/ccl/importccl/read_import_csv\.go p.record
+
+# symbol_small
+type:symbol IndexFormatVersion
+
+# diff_small
+type:diff repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
+
+# commit_small
+type:commit repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
