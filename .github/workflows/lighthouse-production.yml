@@ -1,6 +1,7 @@
 name: Lighthouse production audit
 on:
-  - push
+# NOTE: Do not uncomment without updating the GitHub webhook secret to avoid spamming #dev-frontend
+# - push
 # on:
 #   workflow_dispatch:
 #   schedule:
