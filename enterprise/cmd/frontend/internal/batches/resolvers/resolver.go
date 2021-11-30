@@ -44,8 +44,8 @@ func New(store *store.Store) graphqlbackend.BatchChangesResolver {
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for
 // them and can create batchChanges/changesetSpecs/batchSpecs.
-func batchChangesCreateAccess(ctx context.Context, db dbutil.DB) error {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, database.NewDB(db)); err != nil {
+func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, db); err != nil {
 		return err
 	}
 
@@ -497,7 +497,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		tr.Finish()
 	}()
 
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -553,7 +553,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		tr.Finish()
 	}()
 
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
