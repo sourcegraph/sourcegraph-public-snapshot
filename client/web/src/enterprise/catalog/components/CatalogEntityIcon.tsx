@@ -26,8 +26,7 @@ const CATALOG_COMPONENT_ICON_BY_KIND: Record<CatalogComponentKind, React.Compone
 }
 
 export function catalogEntityIconComponent(entity: PartialEntity): React.ComponentType<{ className?: string }> {
-    // TODO(sqs): default to entity.__typename === 'CatalogComponent' since graphql-go seems to return "" for the CatalogEntity interface __typename field (bug?)
-    switch (entity.__typename || 'CatalogComponent') {
+    switch (entity.__typename) {
         case 'CatalogComponent':
             return CATALOG_COMPONENT_ICON_BY_KIND[entity.kind]
         default:

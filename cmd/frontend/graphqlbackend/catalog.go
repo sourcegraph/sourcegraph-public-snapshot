@@ -54,18 +54,6 @@ type CatalogEntityResolver struct {
 	CatalogEntity
 }
 
-func (r *CatalogEntityResolver) Typename() string {
-	panic("X")
-	switch r.CatalogEntity.(type) {
-	case CatalogComponentResolver:
-		return "CatalogComponent"
-	default:
-		panic("no __typename for CatalogEntity")
-	}
-}
-
-func (r *CatalogEntityResolver) TypeName() string { return "CatalogComponent" }
-
 func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
 	e, ok := r.CatalogEntity.(CatalogComponentResolver)
 	return e, ok

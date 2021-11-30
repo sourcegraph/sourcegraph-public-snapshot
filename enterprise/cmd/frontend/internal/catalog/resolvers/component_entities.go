@@ -13,7 +13,7 @@ func (r *catalogComponentResolver) RelatedEntities(ctx context.Context) (gql.Cat
 		if edge.OutNode().ID() == r.ID() {
 			edges = append(edges, &catalogEntityRelatedEntityEdgeResolver{
 				type_: edge.Type(),
-				node:  &gql.CatalogEntityResolver{edge.InNode()},
+				node:  edge.InNode(),
 			})
 		}
 	}
