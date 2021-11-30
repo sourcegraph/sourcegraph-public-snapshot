@@ -4,4 +4,4 @@ import { EntityGraph } from '../../../../components/entity-graph/EntityGraph'
 
 interface Props {}
 
-export const OverviewEntityGraph: React.FunctionComponent<Props> = () => <EntityGraph graph={{ a: b }} />
+export const OverviewEntityGraph: React.FunctionComponent<Props> = () => <EntityGraph graph={{ a: 123 }} />
