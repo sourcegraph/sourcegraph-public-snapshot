@@ -84,25 +84,17 @@ check_available() {
       sleep 5
   done"
 }
-URL="http://localhost:7080"
-check_available $URL
-# shellcheck disable=SC2181
-if [ $? -ne 0 ]; then
-  echo "^^^ +++"
-  echo "$URL was not accessible within 60s. Here's the output of docker inspect:"
-  docker inspect "$CONTAINER"
-  exit 1
-fi
-
-URL="http://localhost:7080/healthz"
-check_available $URL
-# shellcheck disable=SC2181
-if [ $? -ne 0 ]; then
-  echo "^^^ +++"
-  echo "$URL was not accessible within 60s. Here's the output of docker inspect:"
-  docker inspect "$CONTAINER"
-  exit 1
-fi
+for URL in {"http://localhost:7080","http://localhost:7080/healthz"}; do
+  check_available $URL
+  # shellcheck disable=SC2181
+  if [ $? -ne 0 ]; then
+    echo "^^^ +++"
+    echo "$URL was not accessible within 60s. Here's the output of docker inspect:"
+    docker inspect "$CONTAINER"
+    exit 1
+  fi
+  echo "Waiting for $URL... done"
+done;
 
 echo "--- TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
