@@ -134,6 +134,18 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
                     hasNextPage
                 }
             }
+            schema {
+                __typename
+                path
+                ... on GitBlob {
+                    commit {
+                        oid
+                    }
+                    repository {
+                        name
+                    }
+                }
+            }
         }
     }
 

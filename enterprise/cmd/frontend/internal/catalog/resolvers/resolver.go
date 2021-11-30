@@ -93,6 +93,7 @@ type catalogComponentResolver struct {
 	sourceCommit  api.CommitID
 	sourcePaths   []string
 	usagePatterns []usagePattern
+	apiDefPath    string
 
 	db database.DB
 }
@@ -143,12 +144,19 @@ func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql
 	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
-func (r *catalogComponentResolver) SourceLocations(ctx context.Context) ([]*gql.GitTreeEntryResolver, error) {
+func (r *catalogComponentResolver) sourceCommitResolver(ctx context.Context) (*gql.GitCommitResolver, error) {
 	repoResolver, err := r.sourceRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
-	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil)
+	return gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil), nil
+}
+
+func (r *catalogComponentResolver) SourceLocations(ctx context.Context) ([]*gql.GitTreeEntryResolver, error) {
+	commitResolver, err := r.sourceCommitResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var locs []*gql.GitTreeEntryResolver
 	for _, sourcePath := range r.sourcePaths {
 

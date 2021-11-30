@@ -95,6 +95,7 @@ type CatalogComponentAPIArgs struct {
 
 type CatalogComponentAPIResolver interface {
 	Symbols(context.Context, *CatalogComponentAPISymbolsArgs) (*SymbolConnectionResolver, error)
+	Schema(context.Context) (FileResolver, error)
 }
 
 type CatalogComponentAPISymbolsArgs struct {

@@ -48,3 +48,15 @@ func (r *catalogComponentAPIResolver) Symbols(ctx context.Context, args *gql.Cat
 	// TODO(sqs): args.First is ignored
 	return r.symbols, nil
 }
+
+func (r *catalogComponentAPIResolver) Schema(ctx context.Context) (gql.FileResolver, error) {
+	if r.component.apiDefPath == "" {
+		return nil, nil
+	}
+
+	commitResolver, err := r.component.sourceCommitResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return commitResolver.File(ctx, &struct{ Path string }{Path: r.component.apiDefPath})
+}

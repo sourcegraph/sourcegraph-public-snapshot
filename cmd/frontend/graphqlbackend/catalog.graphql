@@ -72,4 +72,5 @@ type CatalogComponentUsedByComponentEdge {
 
 type CatalogComponentAPI {
     symbols(first: Int): SymbolConnection!
+    schema: File2
 }

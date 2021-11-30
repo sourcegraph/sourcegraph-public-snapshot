@@ -42,6 +42,7 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 				newQueryUsagePattern(`lang:go \bgit\.[A-Z]\w+\(ctx, patterntype:regexp`),
 				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/vcs/git" patterntype:literal`),
 			},
+			apiDefPath: "internal/gitserver/protocol/gitserver.go",
 		},
 		{
 			kind:         "SERVICE",
