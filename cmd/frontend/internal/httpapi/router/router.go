@@ -28,7 +28,6 @@ const (
 
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
-	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
 	GitExec                = "internal.git.exec"
@@ -90,7 +89,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	// Internal API endpoints should only be served on the internal Handler
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
-	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/git/{RepoID:[0-9]+}/exec").Methods("POST").Name(GitExec)
