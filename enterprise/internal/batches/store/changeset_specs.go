@@ -127,6 +127,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		ctx,
 		s.Handle().DB(),
 		"changeset_specs",
+		batch.MaxNumPostgresParameters,
 		changesetSpecInsertColumns,
 		"",
 		changesetSpecColumns,
