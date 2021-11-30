@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as d3 from 'd3-shape'
 import { CustomNodeLabelProps, DagreReact, EdgeOptions, NodeOptions, Point, RecursivePartial } from 'dagre-reactjs'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
 import AutoSizer from 'react-virtualized-auto-sizer'
@@ -54,6 +54,42 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
     const [stage, setStage] = useState(0)
     useEffect(() => setStage(stage => stage + 1), [graph])
 
+    const nodes: RecursivePartial<NodeOptions>[] = useMemo(
+        () =>
+            graph.nodes.map(node => ({
+                id: node.id,
+                label: node.name,
+                labelType: 'Entity',
+                meta: { entity: node, isActive: activeNodeID === node.id },
+                styles:
+                    activeNodeID === node.id
+                        ? {
+                              shape: { styles: { fill: 'var(--primary)' } },
+                          }
+                        : activeNodeID
+                        ? { shape: { styles: { fillOpacity: 0.4 } } }
+                        : undefined,
+            })),
+        [activeNodeID, graph.nodes]
+    )
+    const edges: RecursivePartial<EdgeOptions>[] = useMemo(() => {
+        const edges = new Map<string, RecursivePartial<EdgeOptions>>()
+        for (const edge of graph.edges) {
+            const key = `${edge.outNode.id}-${edge.inNode.id}`
+            const existing = edges.get(key)
+            if (existing) {
+                existing.label += `, ${edge.type}`
+            } else {
+                edges.set(key, {
+                    label: edge.type,
+                    from: edge.outNode.id,
+                    to: edge.inNode.id,
+                })
+            }
+        }
+        return [...edges.values()]
+    }, [graph.edges])
+
     const viewer = useRef<UncontrolledReactSVGPanZoom>(null)
     const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 })
     return (
@@ -83,25 +119,8 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                         <svg width={dimensions.width} height={dimensions.height}>
                             <DagreReact
                                 stage={stage}
-                                nodes={graph.nodes.map(node => ({
-                                    id: node.id,
-                                    label: node.name,
-                                    labelType: 'Entity',
-                                    meta: { entity: node, isActive: activeNodeID === node.id },
-                                    styles:
-                                        activeNodeID === node.id
-                                            ? {
-                                                  shape: { styles: { fill: 'var(--primary)' } },
-                                              }
-                                            : activeNodeID
-                                            ? { shape: { styles: { fillOpacity: 0.4 } } }
-                                            : undefined,
-                                }))}
-                                edges={graph.edges.map(edge => ({
-                                    label: edge.type,
-                                    from: edge.outNode.id,
-                                    to: edge.inNode.id,
-                                }))}
+                                nodes={nodes}
+                                edges={edges}
                                 defaultNodeConfig={defaultNodeConfig}
                                 defaultEdgeConfig={defaultEdgeConfig}
                                 customNodeLabels={{
@@ -124,8 +143,6 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                                     })
                                 }}
                                 graphOptions={{
-                                    marginx: 25,
-                                    marginy: 25,
                                     rankdir: 'LR',
                                     ranksep: 75,
                                     nodesep: 25,

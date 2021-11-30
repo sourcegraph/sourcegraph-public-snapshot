@@ -1,9 +1,11 @@
 import classNames from 'classnames'
+import { uniqBy } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { CatalogEntityRelationType } from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -24,6 +26,7 @@ import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
 import { ComponentUsage } from './ComponentUsage'
 import { TabRouter } from './TabRouter'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
@@ -58,12 +61,23 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                     <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
                                     <EntityGraph
                                         graph={{
-                                            edges: entity.relatedEntities.edges.map(edge => ({
-                                                type: edge.type,
-                                                outNode: entity,
-                                                inNode: edge.node,
-                                            })),
-                                            nodes: entity.relatedEntities.edges.map(edge => edge.node).concat(entity),
+                                            edges: entity.relatedEntities.edges.map(edge =>
+                                                edge.type === CatalogEntityRelationType.DEPENDS_ON
+                                                    ? {
+                                                          type: edge.type,
+                                                          outNode: entity,
+                                                          inNode: edge.node,
+                                                      }
+                                                    : {
+                                                          type: CatalogEntityRelationType.DEPENDS_ON,
+                                                          outNode: edge.node,
+                                                          inNode: entity,
+                                                      }
+                                            ),
+                                            nodes: uniqBy(
+                                                entity.relatedEntities.edges.map(edge => edge.node).concat(entity),
+                                                'id'
+                                            ),
                                         }}
                                         activeNodeID={entity.id}
                                     />
