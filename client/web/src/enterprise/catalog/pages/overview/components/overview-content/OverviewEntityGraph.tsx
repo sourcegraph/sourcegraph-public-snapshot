@@ -8,9 +8,11 @@ import { EntityGraph } from '../../../../components/entity-graph/EntityGraph'
 
 import { CATALOG_GRAPH } from './gql'
 
-interface Props {}
+interface Props {
+    className?: string
+}
 
-export const OverviewEntityGraph: React.FunctionComponent<Props> = () => {
+export const OverviewEntityGraph: React.FunctionComponent<Props> = ({ className }) => {
     const { data, error, loading } = useQuery<CatalogGraphResult, CatalogGraphVariables>(CATALOG_GRAPH, {
         // Cache this data but always re-request it in the background when we revisit
         // this page to pick up newer changes.
@@ -29,6 +31,6 @@ export const OverviewEntityGraph: React.FunctionComponent<Props> = () => {
     ) : !data || !data.catalog.graph ? (
         <p>Catalog graph is not available</p>
     ) : (
-        <EntityGraph graph={data.catalog.graph} />
+        <EntityGraph graph={data.catalog.graph} className={className} />
     )
 }

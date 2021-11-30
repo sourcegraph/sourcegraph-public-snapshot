@@ -16,6 +16,6 @@ export const OverviewContent: React.FunctionComponent<Props> = ({ filters, onFil
         <div>
             <EntityList filters={filters} onFiltersChange={onFiltersChange} size="sm" />
         </div>
-        <OverviewEntityGraph />
+        <OverviewEntityGraph className="p-2" />
     </div>
 )
