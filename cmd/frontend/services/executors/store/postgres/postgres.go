@@ -9,7 +9,7 @@ import (
 )
 
 // ensure that all the needed methods are implemented.
-var _ store.ExecutorStore = (*ExecutorStore)(nil)
+var _ store.Store = (*ExecutorStore)(nil)
 
 type ExecutorStore struct {
 	db *basestore.Store

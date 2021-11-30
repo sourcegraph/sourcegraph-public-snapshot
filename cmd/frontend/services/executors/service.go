@@ -21,7 +21,7 @@ func New(db dbutil.DB) Executor {
 }
 
 type executorService struct {
-	store store.ExecutorStore
+	store store.Store
 }
 
 func (s *executorService) List(ctx context.Context, query string, active bool, offset int, limit int) ([]types.Executor, int, error) {

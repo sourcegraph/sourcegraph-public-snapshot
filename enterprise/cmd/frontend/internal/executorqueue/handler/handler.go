@@ -16,7 +16,7 @@ import (
 
 type handler struct {
 	QueueOptions
-	executorStore executor.ExecutorStore
+	executorStore executor.Store
 }
 
 type QueueOptions struct {
@@ -36,7 +36,7 @@ type QueueOptions struct {
 	CanceledRecordsFetcher func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
-func newHandler(executorStore executor.ExecutorStore, queueOptions QueueOptions) *handler {
+func newHandler(executorStore executor.Store, queueOptions QueueOptions) *handler {
 	return &handler{
 		executorStore: executorStore,
 		QueueOptions:  queueOptions,

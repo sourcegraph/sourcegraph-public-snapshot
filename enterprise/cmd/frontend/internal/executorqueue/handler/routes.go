@@ -18,7 +18,7 @@ import (
 
 // SetupRoutes registers all route handlers required for all configured executor
 // queues with the given router.
-func SetupRoutes(executorStore executor.ExecutorStore, queueOptionsMap []QueueOptions, router *mux.Router) {
+func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, router *mux.Router) {
 	for _, queueOptions := range queueOptionsMap {
 		h := newHandler(executorStore, queueOptions)
 

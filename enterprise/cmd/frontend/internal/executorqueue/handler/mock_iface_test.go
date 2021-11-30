@@ -72,7 +72,7 @@ func NewMockExecutorStore() *MockExecutorStore {
 			},
 		},
 		TransactFunc: &ExecutorStoreTransactFunc{
-			defaultHook: func(context.Context) (executor.ExecutorStore, error) {
+			defaultHook: func(context.Context) (executor.Store, error) {
 				return nil, nil
 			},
 		},
@@ -82,7 +82,7 @@ func NewMockExecutorStore() *MockExecutorStore {
 			},
 		},
 		WithFunc: &ExecutorStoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) executor.ExecutorStore {
+			defaultHook: func(basestore.ShareableStore) executor.Store {
 				return nil
 			},
 		},
@@ -92,7 +92,7 @@ func NewMockExecutorStore() *MockExecutorStore {
 // NewMockExecutorStoreFrom creates a new mock of the MockExecutorStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
-func NewMockExecutorStoreFrom(i executor.ExecutorStore) *MockExecutorStore {
+func NewMockExecutorStoreFrom(i executor.Store) *MockExecutorStore {
 	return &MockExecutorStore{
 		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
 			defaultHook: i.DeleteInactiveHeartbeats,
@@ -646,15 +646,15 @@ func (c ExecutorStoreListFuncCall) Results() []interface{} {
 // ExecutorStoreTransactFunc describes the behavior when the Transact method
 // of the parent MockExecutorStore instance is invoked.
 type ExecutorStoreTransactFunc struct {
-	defaultHook func(context.Context) (executor.ExecutorStore, error)
-	hooks       []func(context.Context) (executor.ExecutorStore, error)
+	defaultHook func(context.Context) (executor.Store, error)
+	hooks       []func(context.Context) (executor.Store, error)
 	history     []ExecutorStoreTransactFuncCall
 	mutex       sync.Mutex
 }
 
 // Transact delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExecutorStore) Transact(v0 context.Context) (executor.ExecutorStore, error) {
+func (m *MockExecutorStore) Transact(v0 context.Context) (executor.Store, error) {
 	r0, r1 := m.TransactFunc.nextHook()(v0)
 	m.TransactFunc.appendCall(ExecutorStoreTransactFuncCall{v0, r0, r1})
 	return r0, r1
@@ -663,7 +663,7 @@ func (m *MockExecutorStore) Transact(v0 context.Context) (executor.ExecutorStore
 // SetDefaultHook sets function that is called when the Transact method of
 // the parent MockExecutorStore instance is invoked and the hook queue is
 // empty.
-func (f *ExecutorStoreTransactFunc) SetDefaultHook(hook func(context.Context) (executor.ExecutorStore, error)) {
+func (f *ExecutorStoreTransactFunc) SetDefaultHook(hook func(context.Context) (executor.Store, error)) {
 	f.defaultHook = hook
 }
 
@@ -671,7 +671,7 @@ func (f *ExecutorStoreTransactFunc) SetDefaultHook(hook func(context.Context) (e
 // Transact method of the parent MockExecutorStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ExecutorStoreTransactFunc) PushHook(hook func(context.Context) (executor.ExecutorStore, error)) {
+func (f *ExecutorStoreTransactFunc) PushHook(hook func(context.Context) (executor.Store, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -679,21 +679,21 @@ func (f *ExecutorStoreTransactFunc) PushHook(hook func(context.Context) (executo
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ExecutorStoreTransactFunc) SetDefaultReturn(r0 executor.ExecutorStore, r1 error) {
-	f.SetDefaultHook(func(context.Context) (executor.ExecutorStore, error) {
+func (f *ExecutorStoreTransactFunc) SetDefaultReturn(r0 executor.Store, r1 error) {
+	f.SetDefaultHook(func(context.Context) (executor.Store, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ExecutorStoreTransactFunc) PushReturn(r0 executor.ExecutorStore, r1 error) {
-	f.PushHook(func(context.Context) (executor.ExecutorStore, error) {
+func (f *ExecutorStoreTransactFunc) PushReturn(r0 executor.Store, r1 error) {
+	f.PushHook(func(context.Context) (executor.Store, error) {
 		return r0, r1
 	})
 }
 
-func (f *ExecutorStoreTransactFunc) nextHook() func(context.Context) (executor.ExecutorStore, error) {
+func (f *ExecutorStoreTransactFunc) nextHook() func(context.Context) (executor.Store, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -731,7 +731,7 @@ type ExecutorStoreTransactFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 executor.ExecutorStore
+	Result0 executor.Store
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -859,15 +859,15 @@ func (c ExecutorStoreUpsertHeartbeatFuncCall) Results() []interface{} {
 // ExecutorStoreWithFunc describes the behavior when the With method of the
 // parent MockExecutorStore instance is invoked.
 type ExecutorStoreWithFunc struct {
-	defaultHook func(basestore.ShareableStore) executor.ExecutorStore
-	hooks       []func(basestore.ShareableStore) executor.ExecutorStore
+	defaultHook func(basestore.ShareableStore) executor.Store
+	hooks       []func(basestore.ShareableStore) executor.Store
 	history     []ExecutorStoreWithFuncCall
 	mutex       sync.Mutex
 }
 
 // With delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockExecutorStore) With(v0 basestore.ShareableStore) executor.ExecutorStore {
+func (m *MockExecutorStore) With(v0 basestore.ShareableStore) executor.Store {
 	r0 := m.WithFunc.nextHook()(v0)
 	m.WithFunc.appendCall(ExecutorStoreWithFuncCall{v0, r0})
 	return r0
@@ -875,7 +875,7 @@ func (m *MockExecutorStore) With(v0 basestore.ShareableStore) executor.ExecutorS
 
 // SetDefaultHook sets function that is called when the With method of the
 // parent MockExecutorStore instance is invoked and the hook queue is empty.
-func (f *ExecutorStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) executor.ExecutorStore) {
+func (f *ExecutorStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) executor.Store) {
 	f.defaultHook = hook
 }
 
@@ -883,7 +883,7 @@ func (f *ExecutorStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStor
 // With method of the parent MockExecutorStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ExecutorStoreWithFunc) PushHook(hook func(basestore.ShareableStore) executor.ExecutorStore) {
+func (f *ExecutorStoreWithFunc) PushHook(hook func(basestore.ShareableStore) executor.Store) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -891,21 +891,21 @@ func (f *ExecutorStoreWithFunc) PushHook(hook func(basestore.ShareableStore) exe
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *ExecutorStoreWithFunc) SetDefaultReturn(r0 executor.ExecutorStore) {
-	f.SetDefaultHook(func(basestore.ShareableStore) executor.ExecutorStore {
+func (f *ExecutorStoreWithFunc) SetDefaultReturn(r0 executor.Store) {
+	f.SetDefaultHook(func(basestore.ShareableStore) executor.Store {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *ExecutorStoreWithFunc) PushReturn(r0 executor.ExecutorStore) {
-	f.PushHook(func(basestore.ShareableStore) executor.ExecutorStore {
+func (f *ExecutorStoreWithFunc) PushReturn(r0 executor.Store) {
+	f.PushHook(func(basestore.ShareableStore) executor.Store {
 		return r0
 	})
 }
 
-func (f *ExecutorStoreWithFunc) nextHook() func(basestore.ShareableStore) executor.ExecutorStore {
+func (f *ExecutorStoreWithFunc) nextHook() func(basestore.ShareableStore) executor.Store {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -943,7 +943,7 @@ type ExecutorStoreWithFuncCall struct {
 	Arg0 basestore.ShareableStore
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 executor.ExecutorStore
+	Result0 executor.Store
 }
 
 // Args returns an interface slice containing the arguments of this

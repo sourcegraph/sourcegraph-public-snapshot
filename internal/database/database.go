@@ -40,7 +40,7 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
-	Executors() executor.ExecutorStore
+	Executors() executor.Store
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -64,7 +64,6 @@ func (d *db) QueryContext(ctx context.Context, q string, args ...interface{}) (*
 
 func (d *db) ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error) {
 	return d.Handle().DB().ExecContext(ctx, q, args...)
-
 }
 
 func (d *db) QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row {
@@ -171,7 +170,7 @@ func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
 }
 
-func (d *db) Executors() executor.ExecutorStore {
+func (d *db) Executors() executor.Store {
 	return executorDB.ExecutorsWith(d.Store)
 }
 

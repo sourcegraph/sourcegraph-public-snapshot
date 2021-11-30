@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type ExecutorStore interface {
+type Store interface {
 	// List returns a set of executor activity records matching the given options.
 	//
 	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
