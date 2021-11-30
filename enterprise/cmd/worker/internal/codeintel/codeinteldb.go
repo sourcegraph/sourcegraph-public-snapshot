@@ -26,7 +26,7 @@ var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{},
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 
-	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "worker"})
+	db, _, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "worker"})
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
 	}

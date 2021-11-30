@@ -156,7 +156,7 @@ func initTest() error {
 	}
 
 	opts := dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests"}
-	sqlDB, err := dbconn.New(opts)
+	sqlDB, _, err := dbconn.New(opts)
 	if err != nil {
 		return err
 	}

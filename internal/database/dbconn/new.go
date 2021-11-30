@@ -3,6 +3,7 @@ package dbconn
 import (
 	"database/sql"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -32,20 +33,31 @@ type Opts struct {
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(opts Opts) (*sql.DB, error) {
+//
+// This function returns a basestore-style method that closes the database. This should
+// be called instead of calling Close directly on the database handle.
+func New(opts Opts) (*sql.DB, func(err error) error, error) {
 	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	db, err := newWithConfig(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if opts.DBName != "" {
 		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	}
 
-	return db, nil
+	close := func(err error) error {
+		if closeErr := db.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+
+		return err
+	}
+
+	return db, close, nil
 }
