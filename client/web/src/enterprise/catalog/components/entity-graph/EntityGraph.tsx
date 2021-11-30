@@ -39,7 +39,7 @@ const defaultEdgeConfig: RecursivePartial<EdgeOptions> = {
     pathType: 'd3curve',
     styles: {
         label: {
-            styles: { fill: 'var(--text-muted)', fontSize: '0.7rem' },
+            styles: { fill: 'var(--text-muted)', fontSize: '0.6rem' },
         },
         edge: {
             styles: { stroke: 'var(--border-color-2)', strokeWidth: '2.5px', fill: 'transparent' },
@@ -64,10 +64,16 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                 styles:
                     activeNodeID === node.id
                         ? {
-                              shape: { styles: { fill: 'var(--primary)' } },
+                              shape: {
+                                  styles: {
+                                      fill: 'var(--primary)',
+                                      stroke: 'var(--body-color)',
+                                      strokeWidth: '1.5px',
+                                  },
+                              },
                           }
                         : activeNodeID
-                        ? { shape: { styles: { fillOpacity: 0.4 } } }
+                        ? { shape: { styles: { fillOpacity: 0.3 } } }
                         : undefined,
             })),
         [activeNodeID, graph.nodes]
@@ -84,11 +90,17 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                     label: edge.type,
                     from: edge.outNode.id,
                     to: edge.inNode.id,
+                    styles:
+                        activeNodeID === edge.inNode.id
+                            ? {
+                                  edge: { styles: { strokeOpacity: 0.7, strokeWidth: '1.5px' } },
+                              }
+                            : undefined,
                 })
             }
         }
         return [...edges.values()]
-    }, [graph.edges])
+    }, [activeNodeID, graph.edges])
 
     const viewer = useRef<UncontrolledReactSVGPanZoom>(null)
     const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 })
@@ -103,6 +115,7 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                         background="transparent"
                         SVGBackground="transparent"
                         detectAutoPan={false}
+                        scaleFactorMax={1}
                         miniatureProps={{
                             position: 'none',
                             background: 'transparent',
@@ -143,6 +156,8 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                                     })
                                 }}
                                 graphOptions={{
+                                    marginx: 32,
+                                    marginy: 32,
                                     rankdir: 'LR',
                                     ranksep: 75,
                                     nodesep: 25,
