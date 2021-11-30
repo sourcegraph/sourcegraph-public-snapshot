@@ -238,9 +238,16 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         ].filter(isDefined)}
                     />
                     {catalog && (
-                        <NavItem icon={CatalogIcon}>
-                            <NavLink to="/catalog">Catalog</NavLink>
-                        </NavItem>
+                        <NavDropdown
+                            toggleItem={{ path: '/catalog', icon: CatalogIcon, content: 'Catalog' }}
+                            mobileHomeItem={{ content: 'Catalog home' }}
+                            items={[
+                                {
+                                    path: '/catalog/graph',
+                                    content: <>Graph</>,
+                                },
+                            ]}
+                        />
                     )}
                     {codeInsights && (
                         <NavItem icon={ViewDashboardOutlineIcon}>
