@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
-import React, { InputHTMLAttributes, useMemo } from 'react'
+import React, { forwardRef, InputHTMLAttributes, useMemo } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -31,7 +31,7 @@ interface DataSeriesQueryFieldProps
     onChange: (value: string) => void
 }
 
-export const DataSeriesQueryField: React.FunctionComponent<DataSeriesQueryFieldProps> = props => {
+export const DataSeriesQueryField: React.FunctionComponent<DataSeriesQueryFieldProps> = forwardRef(props => {
     const { value, className, onChange, onBlur = noop, disabled, autoFocus } = props
     const { enhancedThemePreference } = useTheme()
 
@@ -55,4 +55,4 @@ export const DataSeriesQueryField: React.FunctionComponent<DataSeriesQueryFieldP
             onBlur={onBlur}
         />
     )
-}
+})
