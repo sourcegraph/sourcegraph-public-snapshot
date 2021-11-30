@@ -104,7 +104,7 @@ func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) 
 
 // hasRepo returns true when the instance has at least one repository that isn't
 // soft-deleted nor blocked.
-func hasRepos(ctx context.Context, db dbutil.DB) (_ bool, err error) {
+func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
 	defer recordOperation("hasRepos")(&err)
 	rs, err := database.Repos(db).List(ctx, database.ReposListOptions{
 		LimitOffset: &database.LimitOffset{Limit: 1},
