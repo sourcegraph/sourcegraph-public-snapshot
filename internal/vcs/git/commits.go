@@ -362,11 +362,6 @@ func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.Commi
 	return parseBranchesContaining(strings.Split(string(out), "\n")), nil
 }
 
-var refPrefixes = map[string]struct{}{
-	"refs/heads/": {},
-	"refs/tags/":  {},
-}
-
 var refReplacer = strings.NewReplacer("refs/heads/", "", "refs/tags/", "")
 
 func parseBranchesContaining(lines []string) []string {
