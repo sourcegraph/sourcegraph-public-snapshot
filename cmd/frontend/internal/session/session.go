@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -270,7 +269,7 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 // InvalidateSessionCurrentUser invalidates all sessions for the current user.
-func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dbutil.DB) error {
+func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db database.DB) error {
 	a := actor.FromContext(r.Context())
 	err := database.Users(db).InvalidateSessionsByID(r.Context(), a.UID)
 	if err != nil {
@@ -285,14 +284,14 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dbu
 
 // InvalidateSessionsByID invalidates all sessions for a user
 // If an error occurs, it returns the error
-func InvalidateSessionsByID(ctx context.Context, db dbutil.DB, id int32) error {
+func InvalidateSessionsByID(ctx context.Context, db database.DB, id int32) error {
 	// Get the user from the request context
 	return database.Users(db).InvalidateSessionsByID(ctx, id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates
 // future HTTP request via cookie.
-func CookieMiddleware(db dbutil.DB, next http.Handler) http.Handler {
+func CookieMiddleware(db database.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
 		next.ServeHTTP(w, r.WithContext(authenticateByCookie(db, r, w)))
@@ -309,7 +308,7 @@ func CookieMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 //
 // If one of the above are not true, the request is still allowed to proceed but will be
 // unauthenticated unless some other authentication is provided, such as an access token.
-func CookieMiddlewareWithCSRFSafety(db dbutil.DB, next http.Handler, corsAllowHeader string, isTrustedOrigin func(*http.Request) bool) http.Handler {
+func CookieMiddlewareWithCSRFSafety(db database.DB, next http.Handler, corsAllowHeader string, isTrustedOrigin func(*http.Request) bool) http.Handler {
 	corsAllowHeader = textproto.CanonicalMIMEHeaderKey(corsAllowHeader)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie, Authorization, "+corsAllowHeader)
@@ -329,7 +328,7 @@ func CookieMiddlewareWithCSRFSafety(db dbutil.DB, next http.Handler, corsAllowHe
 	})
 }
 
-func authenticateByCookie(db dbutil.DB, r *http.Request, w http.ResponseWriter) context.Context {
+func authenticateByCookie(db database.DB, r *http.Request, w http.ResponseWriter) context.Context {
 	// If the request is already authenticated from a cookie (and not a token), then do not clobber the request's existing
 	// authenticated actor with the actor (if any) derived from the session cookie.
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() && a.FromSessionCookie {
