@@ -462,18 +462,6 @@ type Mutation {
     """
     logEvents(events: [Event!]): EmptyResponse
     """
-    Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
-    types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
-
-    Only subscribers to this saved search may perform this action.
-    """
-    sendSavedSearchTestNotification(
-        """
-        ID of the saved search.
-        """
-        id: ID!
-    ): EmptyResponse
-    """
     All mutations that update settings (global, organization, and user settings) are under this field.
 
     Only the settings subject whose settings are being mutated (and site admins) may perform this mutation.
