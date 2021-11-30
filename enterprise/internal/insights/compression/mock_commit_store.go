@@ -65,6 +65,38 @@ func NewMockCommitStore() *MockCommitStore {
 	}
 }
 
+// NewStrictMockCommitStore creates a new mock of the CommitStore interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockCommitStore() *MockCommitStore {
+	return &MockCommitStore{
+		GetFunc: &CommitStoreGetFunc{
+			defaultHook: func(context.Context, api.RepoID, time.Time, time.Time) ([]CommitStamp, error) {
+				panic("unexpected invocation of MockCommitStore.Get")
+			},
+		},
+		GetMetadataFunc: &CommitStoreGetMetadataFunc{
+			defaultHook: func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+				panic("unexpected invocation of MockCommitStore.GetMetadata")
+			},
+		},
+		InsertCommitsFunc: &CommitStoreInsertCommitsFunc{
+			defaultHook: func(context.Context, api.RepoID, []*gitdomain.Commit) error {
+				panic("unexpected invocation of MockCommitStore.InsertCommits")
+			},
+		},
+		SaveFunc: &CommitStoreSaveFunc{
+			defaultHook: func(context.Context, api.RepoID, *gitdomain.Commit) error {
+				panic("unexpected invocation of MockCommitStore.Save")
+			},
+		},
+		UpsertMetadataStampFunc: &CommitStoreUpsertMetadataStampFunc{
+			defaultHook: func(context.Context, api.RepoID) (CommitIndexMetadata, error) {
+				panic("unexpected invocation of MockCommitStore.UpsertMetadataStamp")
+			},
+		},
+	}
+}
+
 // NewMockCommitStoreFrom creates a new mock of the MockCommitStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

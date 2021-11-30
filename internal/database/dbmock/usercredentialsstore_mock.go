@@ -98,6 +98,59 @@ func NewMockUserCredentialsStore() *MockUserCredentialsStore {
 	}
 }
 
+// NewStrictMockUserCredentialsStore creates a new mock of the
+// UserCredentialsStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockUserCredentialsStore() *MockUserCredentialsStore {
+	return &MockUserCredentialsStore{
+		CreateFunc: &UserCredentialsStoreCreateFunc{
+			defaultHook: func(context.Context, database.UserCredentialScope, auth.Authenticator) (*database.UserCredential, error) {
+				panic("unexpected invocation of MockUserCredentialsStore.Create")
+			},
+		},
+		DeleteFunc: &UserCredentialsStoreDeleteFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockUserCredentialsStore.Delete")
+			},
+		},
+		GetByIDFunc: &UserCredentialsStoreGetByIDFunc{
+			defaultHook: func(context.Context, int64) (*database.UserCredential, error) {
+				panic("unexpected invocation of MockUserCredentialsStore.GetByID")
+			},
+		},
+		GetByScopeFunc: &UserCredentialsStoreGetByScopeFunc{
+			defaultHook: func(context.Context, database.UserCredentialScope) (*database.UserCredential, error) {
+				panic("unexpected invocation of MockUserCredentialsStore.GetByScope")
+			},
+		},
+		HandleFunc: &UserCredentialsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockUserCredentialsStore.Handle")
+			},
+		},
+		ListFunc: &UserCredentialsStoreListFunc{
+			defaultHook: func(context.Context, database.UserCredentialsListOpts) ([]*database.UserCredential, int, error) {
+				panic("unexpected invocation of MockUserCredentialsStore.List")
+			},
+		},
+		TransactFunc: &UserCredentialsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.UserCredentialsStore, error) {
+				panic("unexpected invocation of MockUserCredentialsStore.Transact")
+			},
+		},
+		UpdateFunc: &UserCredentialsStoreUpdateFunc{
+			defaultHook: func(context.Context, *database.UserCredential) error {
+				panic("unexpected invocation of MockUserCredentialsStore.Update")
+			},
+		},
+		WithFunc: &UserCredentialsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.UserCredentialsStore {
+				panic("unexpected invocation of MockUserCredentialsStore.With")
+			},
+		},
+	}
+}
+
 // NewMockUserCredentialsStoreFrom creates a new mock of the
 // MockUserCredentialsStore interface. All methods delegate to the given
 // implementation, unless overwritten.

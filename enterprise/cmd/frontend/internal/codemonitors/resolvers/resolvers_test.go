@@ -35,14 +35,14 @@ func TestCreateCodeMonitor(t *testing.T) {
 	userID := insertTestUser(t, db, "cm-user1", true)
 
 	want := &cm.Monitor{
-		ID:              1,
-		CreatedBy:       userID,
-		CreatedAt:       r.Now(),
-		ChangedBy:       userID,
-		ChangedAt:       r.Now(),
-		Description:     "test monitor",
-		Enabled:         true,
-		NamespaceUserID: userID,
+		ID:          1,
+		CreatedBy:   userID,
+		CreatedAt:   r.Now(),
+		ChangedBy:   userID,
+		ChangedAt:   r.Now(),
+		Description: "test monitor",
+		Enabled:     true,
+		UserID:      userID,
 	}
 
 	// Create a monitor.

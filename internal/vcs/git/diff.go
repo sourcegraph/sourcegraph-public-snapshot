@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type DiffOptions struct {
@@ -36,7 +38,7 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
 	}
 
-	rdr, err := ExecReader(ctx, opts.Repo, []string{
+	rdr, err := execReader(ctx, opts.Repo, []string{
 		"diff",
 		"--find-renames",
 		// TODO(eseliger): Enable once we have support for copy detection in go-diff
@@ -57,6 +59,37 @@ func Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
 		rdr:  rdr,
 		mfdr: diff.NewMultiFileDiffReader(rdr),
 	}, nil
+}
+
+// DiffPath returns a position-ordered slice of changes (additions or deletions)
+// of the given path between the given source and target commits.
+func DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
+	reader, err := execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	output, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	if len(output) == 0 {
+		return nil, nil
+	}
+
+	d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+	if err != nil {
+		return nil, err
+	}
+	return d.Hunks, nil
+}
+
+// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
+func DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+	command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+	command.Repo = repo
+	return command.Output(ctx)
 }
 
 type DiffFileIterator struct {

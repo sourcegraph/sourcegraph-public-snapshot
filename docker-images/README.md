@@ -14,17 +14,6 @@ All images in this directory are built and published automatically on CI:
 - See [the handbook](https://handbook.sourcegraph.com/engineering/deployments) for more information
 - Or see [how to build a test image](https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch) if you need to build a test image without merging your change to `master` first.
 
-### Exception: `docker-images/alpine` is manually built and pushed as needed.
-
-```sh
-git checkout master
-cd docker-images/alpine
-IMAGE=sourcegraph/alpine:$MY_VERSION ./build.sh
-VERSION=$MY_VERSION ./release.sh
-```
-
-Note: `$MY_VERSION` above should reflect the underlying Alpine version. If changes are made without altering the underlying Alpine version, then bump the suffix. For example, use 3.10-1, 3.10-2, and so on. To find the current version, consult https://hub.docker.com/r/sourcegraph/alpine
-
 ## Adding a new image
 
 1. Create a `build.sh` and add your publishing script to it - the script should end with `docker tag ... "$IMAGE"`. See the scripts in this directory for examples.

@@ -89,6 +89,53 @@ func NewMockExecutorStore() *MockExecutorStore {
 	}
 }
 
+// NewStrictMockExecutorStore creates a new mock of the ExecutorStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockExecutorStore() *MockExecutorStore {
+	return &MockExecutorStore{
+		DeleteInactiveHeartbeatsFunc: &ExecutorStoreDeleteInactiveHeartbeatsFunc{
+			defaultHook: func(context.Context, time.Duration) error {
+				panic("unexpected invocation of MockExecutorStore.DeleteInactiveHeartbeats")
+			},
+		},
+		DoneFunc: &ExecutorStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockExecutorStore.Done")
+			},
+		},
+		GetByIDFunc: &ExecutorStoreGetByIDFunc{
+			defaultHook: func(context.Context, int) (types.Executor, bool, error) {
+				panic("unexpected invocation of MockExecutorStore.GetByID")
+			},
+		},
+		HandleFunc: &ExecutorStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockExecutorStore.Handle")
+			},
+		},
+		ListFunc: &ExecutorStoreListFunc{
+			defaultHook: func(context.Context, database.ExecutorStoreListOptions) ([]types.Executor, int, error) {
+				panic("unexpected invocation of MockExecutorStore.List")
+			},
+		},
+		TransactFunc: &ExecutorStoreTransactFunc{
+			defaultHook: func(context.Context) (database.ExecutorStore, error) {
+				panic("unexpected invocation of MockExecutorStore.Transact")
+			},
+		},
+		UpsertHeartbeatFunc: &ExecutorStoreUpsertHeartbeatFunc{
+			defaultHook: func(context.Context, types.Executor) error {
+				panic("unexpected invocation of MockExecutorStore.UpsertHeartbeat")
+			},
+		},
+		WithFunc: &ExecutorStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.ExecutorStore {
+				panic("unexpected invocation of MockExecutorStore.With")
+			},
+		},
+	}
+}
+
 // NewMockExecutorStoreFrom creates a new mock of the MockExecutorStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

@@ -1,7 +1,6 @@
 package compute
 
 import (
-	"bytes"
 	"encoding/json"
 	"strings"
 	"text/template"
@@ -191,23 +190,16 @@ type MetaEnvironment struct {
 	Email   string
 }
 
-var builtinVariables = []string{
-	"repo",
-	"path",
-	"content",
-	"commit",
-	"author",
-	"date",
-	"email",
-}
+var empty = struct{}{}
 
-func isBuiltinVariable(str string) bool {
-	for _, v := range builtinVariables {
-		if v == str {
-			return true
-		}
-	}
-	return false
+var builtinVariables = map[string]struct{}{
+	"repo":    empty,
+	"path":    empty,
+	"content": empty,
+	"commit":  empty,
+	"author":  empty,
+	"date":    empty,
+	"email":   empty,
 }
 
 func templatize(pattern string) (string, error) {
@@ -221,7 +213,7 @@ func templatize(pattern string) (string, error) {
 		case Constant:
 			templatized = append(templatized, string(a))
 		case Variable:
-			if isBuiltinVariable(a.Name[1:]) {
+			if _, ok := builtinVariables[a.Name[1:]]; ok {
 				templateVar := strings.Title(a.Name[1:])
 				templatized = append(templatized, `{{.`+templateVar+`}}`)
 				continue
@@ -243,7 +235,7 @@ func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, erro
 	if err != nil {
 		return "", err
 	}
-	var result bytes.Buffer
+	var result strings.Builder
 	if err := t.Execute(&result, env); err != nil {
 		return "", err
 	}

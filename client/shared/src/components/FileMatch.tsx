@@ -67,6 +67,11 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     allExpanded?: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+
+    /**
+     * CSS class name to be applied to the ResultContainer Component
+     */
+    containerClassName?: string
 }
 
 const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
@@ -222,6 +227,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
                 onResultClicked: props.onSelect,
+                className: props.containerClassName,
                 resultType: result.type,
             }
         } else {
@@ -241,6 +247,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
                 repoStars: result.repoStars,
                 repoLastFetched: result.repoLastFetched,
                 onResultClicked: props.onSelect,
+                className: props.containerClassName,
                 resultType: result.type,
             }
         }
@@ -257,6 +264,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
             onResultClicked: props.onSelect,
+            className: props.containerClassName,
             resultType: result.type,
         }
     } else {
@@ -276,6 +284,7 @@ export const FileMatch: React.FunctionComponent<Props> = props => {
             repoStars: result.repoStars,
             repoLastFetched: result.repoLastFetched,
             onResultClicked: props.onSelect,
+            className: props.containerClassName,
             resultType: result.type,
         }
     }

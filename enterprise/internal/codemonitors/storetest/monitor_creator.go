@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -28,34 +27,53 @@ type TestStore struct {
 func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codemonitors.Monitor, error) {
 	t.Helper()
 
-	owner := relay.MarshalID("User", actor.FromContext(ctx).UID)
-	args := &graphqlbackend.CreateCodeMonitorArgs{
-		Monitor: &graphqlbackend.CreateMonitorArgs{
-			Namespace:   owner,
-			Description: testDescription,
-			Enabled:     true,
+	actions := []*codemonitors.EmailActionArgs{
+		{
+			Enabled:  true,
+			Priority: "NORMAL",
+			Header:   "test header 1",
 		},
-		Trigger: &graphqlbackend.CreateTriggerArgs{
-			Query: testQuery,
-		},
-		Actions: []*graphqlbackend.CreateActionArgs{
-			{
-				Email: &graphqlbackend.CreateActionEmailArgs{
-					Enabled:    true,
-					Priority:   "NORMAL",
-					Recipients: []graphql.ID{owner},
-					Header:     "test header 1"},
-			},
-			{
-				Email: &graphqlbackend.CreateActionEmailArgs{
-					Enabled:    true,
-					Priority:   "CRITICAL",
-					Recipients: []graphql.ID{owner},
-					Header:     "test header 2"},
-			},
+		{
+			Enabled:  true,
+			Priority: "CRITICAL",
+			Header:   "test header 2",
 		},
 	}
-	return s.CreateCodeMonitor(ctx, args)
+
+	// Create monitor.
+	uid := actor.FromContext(ctx).UID
+	m, err := s.CreateMonitor(ctx, codemonitors.MonitorArgs{
+		Description:     testDescription,
+		Enabled:         true,
+		NamespaceUserID: &uid,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create trigger.
+	err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range actions {
+		e, err := s.CreateEmailAction(ctx, m.ID, &codemonitors.EmailActionArgs{
+			Enabled:  a.Enabled,
+			Priority: a.Priority,
+			Header:   a.Header,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		if err != nil {
+			return nil, err
+		}
+		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return m, nil
 }
 
 func NewTestStore(t *testing.T) (context.Context, *TestStore) {

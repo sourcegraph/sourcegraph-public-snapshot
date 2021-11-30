@@ -13,7 +13,7 @@ import { RouteDescriptor } from '../../../util/contributions'
 import { lazyComponent } from '../../../util/lazyComponent'
 import { CodeIntelConfigurationPageProps } from '../configuration/pages/CodeIntelConfigurationPage'
 import { CodeIntelConfigurationPolicyPageProps } from '../configuration/pages/CodeIntelConfigurationPolicyPage'
-import { RepositoryIndexConfigurationPageProps } from '../configuration/pages/RepositoryIndexConfigurationPage'
+import { CodeIntelRepositoryIndexConfigurationPageProps } from '../configuration/pages/CodeIntelRepositoryIndexConfigurationPage'
 import { CodeIntelIndexesPageProps } from '../indexes/pages/CodeIntelIndexesPage'
 import { CodeIntelIndexPageProps } from '../indexes/pages/CodeIntelIndexPage'
 import { CodeIntelUploadPageProps } from '../uploads/pages/CodeIntelUploadPage'
@@ -52,11 +52,11 @@ const CodeIntelConfigurationPage = lazyComponent<CodeIntelConfigurationPageProps
 )
 
 const RepositoryIndexConfigurationPage = lazyComponent<
-    RepositoryIndexConfigurationPageProps,
-    'RepositoryIndexConfigurationPage'
+    CodeIntelRepositoryIndexConfigurationPageProps,
+    'CodeIntelRepositoryIndexConfigurationPage'
 >(
-    () => import('../../codeintel/configuration/pages/RepositoryIndexConfigurationPage'),
-    'RepositoryIndexConfigurationPage'
+    () => import('../../codeintel/configuration/pages/CodeIntelRepositoryIndexConfigurationPage'),
+    'CodeIntelRepositoryIndexConfigurationPage'
 )
 
 const CodeIntelConfigurationPolicyPage = lazyComponent<

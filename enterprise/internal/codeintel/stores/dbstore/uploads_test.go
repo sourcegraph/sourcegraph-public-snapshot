@@ -903,7 +903,7 @@ func TestHardDeleteUploadByID(t *testing.T) {
 		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
 	})
 
-	if err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54}, DependencyReferenceCountUpdateTypeNone); err != nil {
+	if _, err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54}, DependencyReferenceCountUpdateTypeNone); err != nil {
 		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 	assertReferenceCounts(t, store, map[int]int{
@@ -948,7 +948,7 @@ func TestHardDeleteUploadByIDPackageProvider(t *testing.T) {
 		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
 	})
 
-	if err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54}, DependencyReferenceCountUpdateTypeNone); err != nil {
+	if _, err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54}, DependencyReferenceCountUpdateTypeNone); err != nil {
 		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 	assertReferenceCounts(t, store, map[int]int{
@@ -997,7 +997,7 @@ func TestHardDeleteUploadByIDDuplicatePackageProvider(t *testing.T) {
 		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
 	})
 
-	if err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54, 55}, DependencyReferenceCountUpdateTypeNone); err != nil {
+	if _, err := store.UpdateReferenceCounts(context.Background(), []int{51, 52, 53, 54, 55}, DependencyReferenceCountUpdateTypeNone); err != nil {
 		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 	assertReferenceCounts(t, store, map[int]int{
@@ -1320,7 +1320,7 @@ func TestUpdateReferenceCounts(t *testing.T) {
 		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p3", Version: "1.2.4"}}, // future version
 	})
 
-	if err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeNone); err != nil {
+	if _, err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeNone); err != nil {
 		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 
@@ -1362,7 +1362,7 @@ func TestUpdateReferenceCounts(t *testing.T) {
 			t.Fatalf("unexpected error updating upload commit date: %s", err)
 		}
 
-		if err := store.UpdateReferenceCounts(context.Background(), []int{62, 63, 64}, DependencyReferenceCountUpdateTypeAdd); err != nil {
+		if _, err := store.UpdateReferenceCounts(context.Background(), []int{62, 63, 64}, DependencyReferenceCountUpdateTypeAdd); err != nil {
 			t.Fatalf("unexpected error updating reference counts: %s", err)
 		}
 
@@ -1381,7 +1381,7 @@ func TestUpdateReferenceCounts(t *testing.T) {
 	})
 
 	t.Run("remove uploads", func(t *testing.T) {
-		if err := store.UpdateReferenceCounts(context.Background(), []int{53, 56, 63, 64}, DependencyReferenceCountUpdateTypeRemove); err != nil {
+		if _, err := store.UpdateReferenceCounts(context.Background(), []int{53, 56, 63, 64}, DependencyReferenceCountUpdateTypeRemove); err != nil {
 			t.Fatalf("unexpected error updating reference counts: %s", err)
 		}
 
@@ -1445,7 +1445,7 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
-	if err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeAdd); err != nil {
+	if _, err := store.UpdateReferenceCounts(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}, DependencyReferenceCountUpdateTypeAdd); err != nil {
 		t.Fatalf("unexpected error updating reference counts: %s", err)
 	}
 

@@ -3,7 +3,7 @@ import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
-import { ThemePreference } from '../theme'
+import { ThemePreference } from '../stores/themeState'
 
 import { UserNavItem, UserNavItemProps } from './UserNavItem'
 

@@ -116,6 +116,68 @@ func NewMockSavedSearchStore() *MockSavedSearchStore {
 	}
 }
 
+// NewStrictMockSavedSearchStore creates a new mock of the SavedSearchStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockSavedSearchStore() *MockSavedSearchStore {
+	return &MockSavedSearchStore{
+		CreateFunc: &SavedSearchStoreCreateFunc{
+			defaultHook: func(context.Context, *types.SavedSearch) (*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.Create")
+			},
+		},
+		DeleteFunc: &SavedSearchStoreDeleteFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockSavedSearchStore.Delete")
+			},
+		},
+		GetByIDFunc: &SavedSearchStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32) (*api.SavedQuerySpecAndConfig, error) {
+				panic("unexpected invocation of MockSavedSearchStore.GetByID")
+			},
+		},
+		HandleFunc: &SavedSearchStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockSavedSearchStore.Handle")
+			},
+		},
+		IsEmptyFunc: &SavedSearchStoreIsEmptyFunc{
+			defaultHook: func(context.Context) (bool, error) {
+				panic("unexpected invocation of MockSavedSearchStore.IsEmpty")
+			},
+		},
+		ListAllFunc: &SavedSearchStoreListAllFunc{
+			defaultHook: func(context.Context) ([]api.SavedQuerySpecAndConfig, error) {
+				panic("unexpected invocation of MockSavedSearchStore.ListAll")
+			},
+		},
+		ListSavedSearchesByOrgIDFunc: &SavedSearchStoreListSavedSearchesByOrgIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByOrgID")
+			},
+		},
+		ListSavedSearchesByUserIDFunc: &SavedSearchStoreListSavedSearchesByUserIDFunc{
+			defaultHook: func(context.Context, int32) ([]*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.ListSavedSearchesByUserID")
+			},
+		},
+		TransactFunc: &SavedSearchStoreTransactFunc{
+			defaultHook: func(context.Context) (database.SavedSearchStore, error) {
+				panic("unexpected invocation of MockSavedSearchStore.Transact")
+			},
+		},
+		UpdateFunc: &SavedSearchStoreUpdateFunc{
+			defaultHook: func(context.Context, *types.SavedSearch) (*types.SavedSearch, error) {
+				panic("unexpected invocation of MockSavedSearchStore.Update")
+			},
+		},
+		WithFunc: &SavedSearchStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.SavedSearchStore {
+				panic("unexpected invocation of MockSavedSearchStore.With")
+			},
+		},
+	}
+}
+
 // NewMockSavedSearchStoreFrom creates a new mock of the
 // MockSavedSearchStore interface. All methods delegate to the given
 // implementation, unless overwritten.

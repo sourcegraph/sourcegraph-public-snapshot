@@ -1,17 +1,64 @@
 # Developing Sourcegraph
 
-This documentation is for developers contributing to the Sourcegraph code base.
+<style>
+.markdown-body h2 {
+  margin-top: 2em;
+}
+.markdown-body ul {
+  list-style:none;
+  padding-left: 1em;
+}
+.markdown-body ul li {
+  margin: 0.5em 0;
+}
+.markdown-body ul li:before {
+  content: '';
+  display: inline-block;
+  height: 1.2em;
+  width: 1em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-image: url(../batch_changes/file-icon.svg);
+  margin-right: 0.5em;
+  margin-bottom: -0.29em;
+}
+body.theme-dark .markdown-body ul li:before {
+  filter: invert(50%);
+}
+</style>
 
-Sourcegraph development is open source at:
+<p class="subtitle">Documentation for <b>developers contributing to the Sourcegraph code base</b></p>
 
-- [GitHub repository](https://github.com/sourcegraph/sourcegraph)
-- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+<div class="cta-group">
+<a class="btn btn-primary" href="setup/quickstart">★ Quickstart: develop Sourcegraph on your machine</a>
+<a class="btn" href="https://github.com/sourcegraph/sourcegraph">GitHub repository</a>
+<a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
+</div>
 
-## [Getting started](getting-started/index.md)
 
-A hands-on introduction for setting up your local development environment.
+## [Setup](setup/index.md)
 
-- [Quickstart](getting-started/quickstart.md)
+<p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
+
+<div class="getting-started">
+  <a href="setup/quickstart" class="btn" alt="Run through the Quickstart guide">
+   <span>★ Quickstart</span>
+   </br>
+   Run through the <b>step by step guide</b> and get your local environment ready.
+  </a>
+
+  <a href="setup/how-to" class="btn" alt="How-to guides">
+   <span>How-to guides</span>
+   </br>
+  <b>Context specific</b> guides: debugging live code, Apple M1 workarounds, ...
+  </a>
+
+  <a href="setup/troubleshooting" class="btn" alt="Troubleshooting">
+   <span>Troubleshooting</span>
+   </br>
+  Help for the <b>most common</b> problems.
+  </a>
+</div>
 
 ## [Background information](background-information/index.md)
 
@@ -102,32 +149,10 @@ Clarification and discussion about key concepts, architecture, and development s
 
 Guides to help with troubleshooting, configuring test instances, debugging, and more.
 
-### Local development
-
-- [DEPRECATED: Quickstart without `sg`](getting-started/deprecated_quickstart.md)
-- [How to debug live code](how-to/debug_live_code.md)
-- [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
-- [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
-- [Use `golangci-lint`](how-to/use-golangci-lint.md)
-- [Set up local development with M1 mac](how-to/m1_mac_local_dev.md)
-
 ### New features
 
 - [How to add support for a language](how-to/add_support_for_a_language.md)
 - [How to use feature flags](how-to/use_feature_flags.md)
-
-### [Troubleshooting](how-to/troubleshooting_local_development.md)
-
-- [Problems with node_modules or Javascript packages](how-to/troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
-- [dial tcp 127.0.0.1:3090: connect: connection refused](how-to/troubleshooting_local_development.md#dial-tcp-1270013090-connect-connection-refused)
-- [Database migration failures](how-to/troubleshooting_local_development.md#database-migration-failures)
-- [Internal Server Error](how-to/troubleshooting_local_development.md#internal-server-error)
-- [Increase maximum available file descriptors.](how-to/troubleshooting_local_development.md#increase-maximum-available-file-descriptors)
-- [Caddy 2 certificate problems](how-to/troubleshooting_local_development.md#caddy-2-certificate-problems)
-- [Running out of disk space](how-to/troubleshooting_local_development.md#running-out-of-disk-space)
-- [Certificate expiry](how-to/troubleshooting_local_development.md#certificate-expiry)
-- [CPU/RAM/bandwidth/battery usage](how-to/troubleshooting_local_development.md#cpurambandwidthbattery-usage)
-- [Permission errors for Grafana and Prometheus](how-to/troubleshooting_local_development.md#permission-errors-for-grafana-and-prometheus-containers)
 
 ### Implementing Sourcegraph
 
@@ -135,7 +160,6 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [Observability](background-information/observability/index.md)
   - [How to find monitoring](how-to/find_monitoring.md)
   - [How to add monitoring](how-to/add_monitoring.md)
-  - [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
 
 ### Testing Sourcegraph & CI
 

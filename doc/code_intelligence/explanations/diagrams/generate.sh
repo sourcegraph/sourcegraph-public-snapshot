@@ -4,6 +4,7 @@ set -ex
 
 declare mermaid_diagrams=(
   upload-states
+  index-states
 )
 
 # Install mermaid util

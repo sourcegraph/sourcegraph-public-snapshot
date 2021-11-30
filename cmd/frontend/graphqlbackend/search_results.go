@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -713,6 +714,20 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 			}
 		}
 
+		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
+			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+
+			diff := args.ResultTypes.Has(result.TypeDiff)
+			jobs = append(jobs, &commit.CommitSearch{
+				Query:         commit.QueryToGitQuery(args.Query, diff),
+				RepoOpts:      repoOptions,
+				Diff:          diff,
+				HasTimeFilter: commit.HasTimeFilter(args.Query),
+				Limit:         int(args.PatternInfo.FileMatchLimit),
+				Db:            r.db,
+			})
+		}
+
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			typ := search.TextRequest
 			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
@@ -1043,7 +1058,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 		if srr != nil {
 			n = len(srr.Matches)
 		}
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: r.rawQuery(),
 			Typ:           requestName,
 			Source:        requestSource,
@@ -1054,9 +1069,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			Error:         err,
 		})
 
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
+		_ = ev.Send()
 
 		if isSlow {
 			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
@@ -1694,29 +1707,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			Args:  args,
 			Limit: limit,
 		})
-	}
-
-	addCommitSearch := func(diff bool) {
-		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit), args.RepoOptions)
-		if err != nil {
-			agg.Error(err)
-			return
-		}
-
-		if err := j.ExpandUsernames(ctx, r.db); err != nil {
-			agg.Error(err)
-			return
-		}
-
-		jobs = append(jobs, j)
-	}
-
-	if args.ResultTypes.Has(result.TypeCommit) {
-		addCommitSearch(false)
-	}
-
-	if args.ResultTypes.Has(result.TypeDiff) {
-		addCommitSearch(true)
 	}
 
 	wgForJob := func(job run.Job) *sync.WaitGroup {

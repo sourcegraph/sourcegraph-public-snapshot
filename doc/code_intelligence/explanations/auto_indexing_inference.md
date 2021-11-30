@@ -1,9 +1,11 @@
 # Inference of auto-indexing jobs
 
 <aside class="experimental">
-<p><span class="badge badge-experimental">Experimental</span> This feature is available as an experimental feature in Sourcegraph 3.33 or later. As long as this feature is marked as experimental, instance and deployment requirements, behavior, and performance profiles are subject to change in the future without notice.</p>
+<p>
+<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+</p>
 
-<p><b>We'd love to ensure that this feature is meeting the requirements of our users.</b> If you have input or feedback on this feature, you can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
+<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
 When a commit of a repository is selected as a candidate for [auto-indexing](./auto_indexing.md) but does not have an explicitly supplied index job configuration, index jobs are inferred from the content of the repository at that commit.

@@ -1,4 +1,4 @@
-import { render } from 'enzyme'
+import { render } from '@testing-library/react'
 import React from 'react'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
@@ -48,7 +48,7 @@ describe('TreeEntriesSection', () => {
                     }}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
     it('should render a grid of tree entries in a subdirectory', () => {
@@ -105,7 +105,7 @@ describe('TreeEntriesSection', () => {
                     }}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
     it('should render only direct children', () => {
@@ -161,7 +161,7 @@ describe('TreeEntriesSection', () => {
                     }}
                     isLightTheme={true}
                 />
-            )
+            ).asFragment()
         ).toMatchSnapshot()
     })
 })
