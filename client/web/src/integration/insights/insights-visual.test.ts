@@ -50,6 +50,7 @@ describe('[VISUAL] Code insights page', () => {
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {
                         title: 'Testing Insight',
+                        series: [],
                     },
                 },
             },
@@ -137,6 +138,7 @@ describe('[VISUAL] Code insights page', () => {
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {
                         title: 'Testing Insight',
+                        series: [],
                     },
                 },
             },
@@ -180,6 +182,7 @@ describe('[VISUAL] Code insights page', () => {
                 'insights.allrepos': {
                     'searchInsights.insight.backend_ID_001': {
                         title: 'Testing Insight',
+                        series: [],
                     },
                 },
             },

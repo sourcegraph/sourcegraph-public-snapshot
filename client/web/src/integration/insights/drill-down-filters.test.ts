@@ -36,7 +36,9 @@ describe('Backend insight drill down filters', () => {
     it('should update user settings if drill-down filters have been persisted', async () => {
         const userSubjectSettigns = {
             'insights.allrepos': {
-                'searchInsights.insight.backend_ID_001': {},
+                'searchInsights.insight.backend_ID_001': {
+                    series: [],
+                },
             },
         }
 
