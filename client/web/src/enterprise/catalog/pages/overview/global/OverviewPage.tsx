@@ -22,16 +22,11 @@ export const OverviewPage: React.FunctionComponent<Props> = ({ filters, onFilter
         <Page>
             <PageHeader
                 path={[{ icon: CatalogIcon, text: 'Catalog' }]}
-                className="mb-3"
+                className="mb-4"
                 description="Explore software components, services, libraries, APIs, and more."
             />
-            <Container className="mb-4 p-0">
-                <OverviewContent
-                    filters={filters}
-                    onFiltersChange={onFiltersChange}
-                    telemetryService={telemetryService}
-                />
-            </Container>
+
+            <OverviewContent filters={filters} onFiltersChange={onFiltersChange} telemetryService={telemetryService} />
         </Page>
     )
 }

@@ -5208,6 +5208,13 @@
     "@types/react" "*"
     "@types/stripe-v3" "*"
 
+"@types/react-svg-pan-zoom@^3.3.4":
+  version "3.3.4"
+  resolved "https://registry.npmjs.org/@types/react-svg-pan-zoom/-/react-svg-pan-zoom-3.3.4.tgz#7d59f72b5d2f71ffa3a39238aa6f6d357a9b7efa"
+  integrity sha512-jkmAkAdhEKyYFiH7eTOvnR6xU6N/3jiOiWULZh7ETF7yDKgmnyJnUtytcMbZfrooUYFapbf9oWSfJHG0cnCbLQ==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-syntax-highlighter@11.0.5":
   version "11.0.5"
   resolved "https://registry.npmjs.org/@types/react-syntax-highlighter/-/react-syntax-highlighter-11.0.5.tgz#0d546261b4021e1f9d85b50401c0a42acb106087"
@@ -5219,6 +5226,13 @@
   version "16.9.2"
   resolved "https://registry.npmjs.org/@types/react-test-renderer/-/react-test-renderer-16.9.2.tgz#e1c408831e8183e5ad748fdece02214a7c2ab6c5"
   integrity sha512-4eJr1JFLIAlWhzDkBCkhrOIWOvOxcCAfQh+jiKg7l/nNZcCIL2MHl2dZhogIFKyHzedVWHaVP1Yydq/Ruu4agw==
+  dependencies:
+    "@types/react" "*"
+
+"@types/react-virtualized-auto-sizer@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@types/react-virtualized-auto-sizer/-/react-virtualized-auto-sizer-1.0.1.tgz#b3187dae1dfc4c15880c9cfc5b45f2719ea6ebd4"
+  integrity sha512-GH8sAnBEM5GV9LTeiz56r4ZhMOUSrP43tAQNSRVxNexDjcNKLCEtnxusAItg1owFUFE6k0NslV26gqVClVvong==
   dependencies:
     "@types/react" "*"
 

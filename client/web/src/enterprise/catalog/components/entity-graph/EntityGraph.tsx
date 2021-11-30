@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import { DagreReact, EdgeOptions, NodeOptions, RecursivePartial } from 'dagre-reactjs'
-import React from 'react'
+import React, { useRef, useState } from 'react'
+import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
+import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { CatalogGraphFields } from '../../../../graphql-operations'
 
@@ -42,13 +44,57 @@ const defaultEdgeConfig: RecursivePartial<EdgeOptions> = {
     },
 }
 
-export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }) => (
-    <svg width={1000} height={1000} className={classNames(className)}>
-        <DagreReact
-            nodes={graph.nodes.map(node => ({ id: node.id, label: node.name }))}
-            edges={graph.edges.map(edge => ({ from: edge.outNode.id, to: edge.inNode.id, label: edge.outType }))}
-            defaultNodeConfig={defaultNodeConfig}
-            defaultEdgeConfig={defaultEdgeConfig}
-        />
-    </svg>
-)
+export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }) => {
+    const viewer = useRef<UncontrolledReactSVGPanZoom>(null)
+    const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 })
+    return (
+        <div className={classNames(className)} style={{ height: '500px' }}>
+            <AutoSizer>
+                {({ height, width }) => (
+                    <UncontrolledReactSVGPanZoom
+                        width={width}
+                        height={height}
+                        tool="pan"
+                        background="transparent"
+                        detectAutoPan={false}
+                        miniatureProps={{
+                            position: 'none',
+                            background: '#fff',
+                            width: 100,
+                            height: 100,
+                        }}
+                        toolbarProps={{
+                            position: 'none',
+                            SVGAlignX: undefined,
+                            SVGAlignY: undefined,
+                        }}
+                        ref={viewer}
+                    >
+                        <svg width={dimensions.width} height={dimensions.height}>
+                            <DagreReact
+                                nodes={graph.nodes.map(node => ({ id: node.id, label: node.name }))}
+                                edges={graph.edges.map(edge => ({
+                                    from: edge.outNode.id,
+                                    to: edge.inNode.id,
+                                    label: edge.outType,
+                                }))}
+                                defaultNodeConfig={defaultNodeConfig}
+                                defaultEdgeConfig={defaultEdgeConfig}
+                                graphLayoutComplete={(width?: number, height?: number) => {
+                                    if (width && height) {
+                                        setDimensions({ width, height })
+                                    }
+                                    setTimeout(() => {
+                                        if (viewer.current) {
+                                            viewer.current.fitToViewer()
+                                        }
+                                    })
+                                }}
+                            />
+                        </svg>
+                    </UncontrolledReactSVGPanZoom>
+                )}
+            </AutoSizer>
+        </div>
+    )
+}
