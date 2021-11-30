@@ -16,7 +16,7 @@ export interface ResolvedDocumentURI extends ResolvedRootURI {
 /**
  * Resolve a URI of the form git://github.com/owner/repo?rev to an absolute reference.
  */
-export function resolveRootURI(uri: URL): ResolvedRootURI {
+function resolveRootURI(uri: URL): ResolvedRootURI {
     if (uri.protocol !== 'git:') {
         throw new Error(`Unsupported protocol: ${uri.protocol}`)
     }

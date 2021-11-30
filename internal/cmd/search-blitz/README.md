@@ -14,7 +14,7 @@ deployed with a dedicated instance of Prometheus and Grafana.
 
 ## How to track a query
 
-Add the query to [`config.yaml`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/search-blitz/config.yaml).
+Add the query to [`queries.txt`](https://github.com/sourcegraph/sourcegraph/blob/main/internal/cmd/search-blitz/queries.txt).
 
 ## How to deploy
 

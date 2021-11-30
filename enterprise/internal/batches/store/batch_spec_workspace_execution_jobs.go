@@ -40,7 +40,7 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
 
-var BatchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
+var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -466,7 +466,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	return nil
 }
 
-func ScanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
+func scanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
 	jobs, err := scanBatchSpecWorkspaceExecutionJobs(rows, err)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err

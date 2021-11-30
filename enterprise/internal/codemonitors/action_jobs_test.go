@@ -14,8 +14,8 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
@@ -60,8 +60,8 @@ func TestGetActionJobMetadata(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)
@@ -111,8 +111,8 @@ func TestScanActionJobs(t *testing.T) {
 		testQueryID        int64 = 1
 	)
 
-	ctx, s := newTestStore(t)
-	_, _, _, userCTX := newTestUser(ctx, t)
+	ctx, db, s := newTestStore(t)
+	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
 	if err != nil {
 		t.Fatal(err)

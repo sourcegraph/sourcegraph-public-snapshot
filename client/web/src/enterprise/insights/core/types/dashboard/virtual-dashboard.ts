@@ -15,3 +15,15 @@ export interface VirtualInsightsDashboard extends InsightDashboard {
  * One of virtual dashboard id that contains all available for a user insights
  */
 export const ALL_INSIGHTS_DASHBOARD_ID = 'all'
+
+/**
+ * Special virtual dashboard - "All Insights". Thid dashboard doesn't
+ * exist in settings or in BE database.
+ */
+export const ALL_INSIGHTS_DASHBOARD: VirtualInsightsDashboard = {
+    id: ALL_INSIGHTS_DASHBOARD_ID,
+    type: InsightsDashboardType.Virtual,
+    scope: InsightsDashboardScope.Personal,
+    title: 'All Insights',
+    insightIds: [],
+}

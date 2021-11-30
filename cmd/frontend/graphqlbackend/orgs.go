@@ -55,10 +55,6 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 }
 
 func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Not allowed on Cloud.
-	if envvar.SourcegraphDotComMode() {
-		return 0, errors.New("counting organizations is not allowed")
-	}
 	// 🚨 SECURITY: Only site admins can count organisations.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return 0, err

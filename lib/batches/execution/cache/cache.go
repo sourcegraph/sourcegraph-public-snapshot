@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/cockroachdb/errors"
 
@@ -168,4 +169,37 @@ func marshalAndHashStepsCacheKey(key StepsCacheKey, globalEnv []string) (string,
 		return "", err
 	}
 	return fmt.Sprintf("%s-step-%d", hash, key.StepIndex), err
+}
+
+func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, onlyFetchWorkspace bool, steps []batches.Step) ExecutionKey {
+	sort.Strings(r.FileMatches)
+
+	executionKey := ExecutionKey{
+		Repository:            r,
+		Path:                  path,
+		OnlyFetchWorkspace:    onlyFetchWorkspace,
+		Steps:                 steps,
+		BatchChangeAttributes: batchChangeAttributes,
+	}
+	return executionKey
+}
+
+func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.Result) ([]*batches.ChangesetSpec, error) {
+	sort.Strings(r.FileMatches)
+
+	input := &batches.ChangesetSpecInput{
+		Repository: r,
+		BatchChangeAttributes: &template.BatchChangeAttributes{
+			Name:        spec.Name,
+			Description: spec.Description,
+		},
+		Template:         spec.ChangesetTemplate,
+		TransformChanges: spec.TransformChanges,
+		Result:           result,
+	}
+
+	return batches.BuildChangesetSpecs(input, batches.ChangesetSpecFeatureFlags{
+		IncludeAutoAuthorDetails: true,
+		AllowOptionalPublished:   true,
+	})
 }

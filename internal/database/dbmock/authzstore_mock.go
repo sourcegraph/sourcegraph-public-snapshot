@@ -47,6 +47,28 @@ func NewMockAuthzStore() *MockAuthzStore {
 	}
 }
 
+// NewStrictMockAuthzStore creates a new mock of the AuthzStore interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockAuthzStore() *MockAuthzStore {
+	return &MockAuthzStore{
+		AuthorizedReposFunc: &AuthzStoreAuthorizedReposFunc{
+			defaultHook: func(context.Context, *database.AuthorizedReposArgs) ([]*types.Repo, error) {
+				panic("unexpected invocation of MockAuthzStore.AuthorizedRepos")
+			},
+		},
+		GrantPendingPermissionsFunc: &AuthzStoreGrantPendingPermissionsFunc{
+			defaultHook: func(context.Context, *database.GrantPendingPermissionsArgs) error {
+				panic("unexpected invocation of MockAuthzStore.GrantPendingPermissions")
+			},
+		},
+		RevokeUserPermissionsFunc: &AuthzStoreRevokeUserPermissionsFunc{
+			defaultHook: func(context.Context, *database.RevokeUserPermissionsArgs) error {
+				panic("unexpected invocation of MockAuthzStore.RevokeUserPermissions")
+			},
+		},
+	}
+}
+
 // NewMockAuthzStoreFrom creates a new mock of the MockAuthzStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockAuthzStoreFrom(i database.AuthzStore) *MockAuthzStore {

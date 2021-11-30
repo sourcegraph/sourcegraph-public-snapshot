@@ -28,10 +28,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// ChangesetColumns are used by by the changeset related Store methods and by
+// changesetColumns are used by by the changeset related Store methods and by
 // workerutil.Worker to load changesets from the database for processing by
 // the reconciler.
-var ChangesetColumns = []*sqlf.Query{
+var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.id"),
 	sqlf.Sprintf("changesets.repo_id"),
 	sqlf.Sprintf("changesets.created_at"),
@@ -188,7 +188,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		vars = append(vars, c.ID)
 	}
 
-	vars = append(vars, sqlf.Join(ChangesetColumns, ", "))
+	vars = append(vars, sqlf.Join(changesetColumns, ", "))
 
 	return sqlf.Sprintf(q, vars...), nil
 }
@@ -421,7 +421,7 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(
 		getChangesetsQueryFmtstr,
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -628,7 +628,7 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 
 	return sqlf.Sprintf(
 		listChangesetsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 		join,
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -757,7 +757,7 @@ func (s *Store) updateChangesetColumn(ctx context.Context, cs *btypes.Changeset,
 		cs.UpdatedAt,
 		val,
 		cs.ID,
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 	}
 
 	q := sqlf.Sprintf(updateChangesetColumnQueryFmtstr, vars...)
@@ -828,7 +828,7 @@ func updateChangesetCodeHostStateQuery(c *btypes.Changeset) (*sqlf.Query, error)
 		c.SyncErrorMessage,
 		nullStringColumn(title),
 		c.ID,
-		sqlf.Join(ChangesetColumns, ", "),
+		sqlf.Join(changesetColumns, ", "),
 	}
 
 	return sqlf.Sprintf(updateChangesetCodeHostStateQueryFmtstr, vars...), nil
@@ -1032,7 +1032,7 @@ updated_records AS (
 SELECT COUNT(id) FROM all_matching WHERE all_matching.reconciler_state = %s
 `
 
-func ScanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
+func scanFirstChangeset(rows *sql.Rows, err error) (*btypes.Changeset, bool, error) {
 	changesets, err := scanChangesets(rows, err)
 	if err != nil || len(changesets) == 0 {
 		return &btypes.Changeset{}, false, err
@@ -1282,7 +1282,7 @@ func (s *Store) EnqueueNextScheduledChangeset(ctx context.Context) (ch *btypes.C
 		enqueueNextScheduledChangesetFmtstr,
 		btypes.ReconcilerStateScheduled.ToDB(),
 		btypes.ReconcilerStateQueued.ToDB(),
-		sqlf.Join(ChangesetColumns, ","),
+		sqlf.Join(changesetColumns, ","),
 	)
 
 	var c btypes.Changeset

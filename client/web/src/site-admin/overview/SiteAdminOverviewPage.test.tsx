@@ -1,6 +1,6 @@
+import { render, waitFor } from '@testing-library/react'
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -21,8 +21,8 @@ describe('SiteAdminOverviewPage', () => {
         overviewComponents: [],
     }
 
-    test('activation in progress', done => {
-        const component = renderer.create(
+    test('activation in progress', async () => {
+        const component = render(
             <SiteAdminOverviewPage
                 {...baseProps}
                 activation={{
@@ -65,14 +65,11 @@ describe('SiteAdminOverviewPage', () => {
             />
         )
         // ensure the hooks ran and the "API response" has been received
-        setTimeout(() => {
-            expect(component.toJSON()).toMatchSnapshot()
-            done()
-        })
+        await waitFor(() => expect(component.asFragment()).toMatchSnapshot())
     })
 
-    test('< 2 users', done => {
-        const component = renderer.create(
+    test('< 2 users', async () => {
+        const component = render(
             <SiteAdminOverviewPage
                 {...baseProps}
                 _fetchOverview={() =>
@@ -101,12 +98,10 @@ describe('SiteAdminOverviewPage', () => {
             />
         )
         // ensure the hooks ran and the "API response" has been received
-        setTimeout(() => {
-            expect(component.toJSON()).toMatchSnapshot()
-            done()
-        })
+        await waitFor(() => expect(component.asFragment()).toMatchSnapshot())
     })
-    test('>= 2 users', done => {
+
+    test('>= 2 users', async () => {
         const usageStat: ISiteUsagePeriod = {
             __typename: 'SiteUsagePeriod',
             userCount: 10,
@@ -115,7 +110,14 @@ describe('SiteAdminOverviewPage', () => {
             integrationUserCount: 0,
             startTime: new Date().toISOString(),
         }
-        const component = renderer.create(
+
+        // Do this mock for resolving issue
+        // `Error: Uncaught [TypeError: tspan.node(...).getComputedTextLength is not a function`
+        // from `client/web/src/components/d3/BarChart.tsx`
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+        ;(window.SVGElement as any).prototype.getComputedTextLength = () => 500
+
+        const component = render(
             <SiteAdminOverviewPage
                 {...baseProps}
                 _fetchOverview={() =>
@@ -144,9 +146,6 @@ describe('SiteAdminOverviewPage', () => {
             />
         )
         // ensure the hooks ran and the "API response" has been received
-        setTimeout(() => {
-            expect(component.toJSON()).toMatchSnapshot()
-            done()
-        })
+        await waitFor(() => expect(component.asFragment()).toMatchSnapshot())
     })
 })

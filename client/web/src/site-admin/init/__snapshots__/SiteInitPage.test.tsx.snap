@@ -1,165 +1,160 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`SiteInitPage normal 1`] = `
-<div
-  className="siteInitPage"
->
+<DocumentFragment>
   <div
-    className="card content"
+    class="siteInitPage"
   >
     <div
-      className="card-body p-4"
+      class="card content"
     >
-      <img
-        alt="Sourcegraph logo"
-        className="w-100 mb-3"
-        src="/img/sourcegraph-logo-light.svg"
-      />
-      <h2
-        className="site-init-page__header"
+      <div
+        class="card-body p-4"
       >
-        Welcome
-      </h2>
-      <p>
-        Create an admin account to start using Sourcegraph.
-      </p>
-      <form
-        className="signinSignupForm test-signup-form rounded p-4 text-left mt-4 w-100"
-        noValidate={true}
-        onSubmit={[Function]}
-      >
-        <div
-          className="form-group d-flex flex-column align-content-start"
+        <img
+          alt="Sourcegraph logo"
+          class="w-100 mb-3"
+          src="/img/sourcegraph-logo-light.svg"
+        />
+        <h2
+          class="site-init-page__header"
         >
-          <label
-            className="align-self-start"
-            htmlFor="email"
-          >
-            Email
-          </label>
+          Welcome
+        </h2>
+        <p>
+          Create an admin account to start using Sourcegraph.
+        </p>
+        <form
+          class="signinSignupForm test-signup-form rounded p-4 text-left mt-4 w-100"
+          novalidate=""
+        >
           <div
-            className="container"
+            class="form-group d-flex flex-column align-content-start"
           >
-            <input
-              autoComplete="email"
-              autoFocus={true}
-              className="form-control"
-              disabled={false}
-              id="email"
-              name="email"
-              onChange={[Function]}
-              placeholder=" "
-              required={true}
-              spellCheck={false}
-              type="email"
-              value=""
-            />
+            <label
+              class="align-self-start"
+              for="email"
+            >
+              Email
+            </label>
+            <div
+              class="container"
+            >
+              <input
+                autocomplete="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder=" "
+                required=""
+                spellcheck="false"
+                type="email"
+                value=""
+              />
+            </div>
           </div>
-        </div>
-        <div
-          className="form-group d-flex flex-column align-content-start"
-        >
-          <label
-            className="align-self-start"
-            htmlFor="username"
-          >
-            Username
-          </label>
           <div
-            className="container"
+            class="form-group d-flex flex-column align-content-start"
           >
-            <input
-              autoCapitalize="off"
-              autoComplete="username"
-              className="form-control"
-              disabled={false}
-              id="username"
-              maxLength={255}
-              name="username"
-              onChange={[Function]}
-              pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
-              placeholder=" "
-              required={true}
-              spellCheck={false}
-              type="text"
-              value=""
-            />
+            <label
+              class="align-self-start"
+              for="username"
+            >
+              Username
+            </label>
+            <div
+              class="container"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="username"
+                class="form-control"
+                id="username"
+                maxlength="255"
+                name="username"
+                pattern="^[\\\\dA-Za-z](?:[\\\\dA-Za-z]|[.-](?=[\\\\dA-Za-z]))*-?$"
+                placeholder=" "
+                required=""
+                spellcheck="false"
+                type="text"
+                value=""
+              />
+            </div>
           </div>
-        </div>
-        <div
-          className="form-group d-flex flex-column align-content-start"
-        >
-          <label
-            className="align-self-start"
-            htmlFor="password"
-          >
-            Password
-          </label>
           <div
-            className="container"
+            class="form-group d-flex flex-column align-content-start"
           >
-            <input
-              autoComplete="new-password"
-              className="form-control"
-              disabled={false}
-              formNoValidate={true}
-              id="password"
-              minLength={12}
-              name="password"
-              onChange={[Function]}
-              onInvalid={[Function]}
-              placeholder=" "
-              required={true}
-              type="password"
-              value=""
-            />
+            <label
+              class="align-self-start"
+              for="password"
+            >
+              Password
+            </label>
+            <div
+              class="container"
+            >
+              <input
+                autocomplete="new-password"
+                class="form-control"
+                formnovalidate=""
+                id="password"
+                minlength="12"
+                name="password"
+                placeholder=" "
+                required=""
+                type="password"
+                value=""
+              />
+            </div>
+            <small
+              class="form-text text-muted"
+            >
+              At least 12 characters
+            </small>
           </div>
-          <small
-            className="form-text text-muted"
+          <div
+            class="form-group mb-0"
           >
-            At least 12 characters
-          </small>
-        </div>
-        <div
-          className="form-group mb-0"
-        >
-          <button
-            className="btn btn-primary btn-block d-flex justify-content-center align-items-center"
-            disabled={true}
-            type="submit"
-          >
-            Create admin account & continue
-          </button>
-        </div>
-      </form>
+            <button
+              class="btn btn-primary btn-block d-flex justify-content-center align-items-center"
+              disabled=""
+              type="submit"
+            >
+              Create admin account & continue
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`SiteInitPage unexpected authed user 1`] = `
-<div
-  className="siteInitPage"
->
+<DocumentFragment>
   <div
-    className="card content"
+    class="siteInitPage"
   >
     <div
-      className="card-body p-4"
+      class="card content"
     >
-      <img
-        alt="Sourcegraph logo"
-        className="w-100 mb-3"
-        src="/img/sourcegraph-logo-light.svg"
-      />
-      <p>
-        You're signed in as 
-        <strong>
-          alice
-        </strong>
-        . A site admin must initialize Sourcegraph before you can continue.
-      </p>
+      <div
+        class="card-body p-4"
+      >
+        <img
+          alt="Sourcegraph logo"
+          class="w-100 mb-3"
+          src="/img/sourcegraph-logo-light.svg"
+        />
+        <p>
+          You're signed in as 
+          <strong>
+            alice
+          </strong>
+          . A site admin must initialize Sourcegraph before you can continue.
+        </p>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;

@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -46,7 +45,7 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, dbutil.DB, conftypes.UnifiedWatchable, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, database.DB, conftypes.UnifiedWatchable, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,

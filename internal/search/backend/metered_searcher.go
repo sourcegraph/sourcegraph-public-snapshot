@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
@@ -62,9 +61,9 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 
 	qStr := queryString(q)
 
-	var event *libhoney.Event
+	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "SearchAll" {
-		event = honey.Event("search-zoekt")
+		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
 		for _, t := range tags {
@@ -89,11 +88,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		}
 		tr.LogFields(fields...)
-		if event != nil {
-			for _, f := range fields {
-				event.AddField(f.Key(), f.Value())
-			}
-		}
+		event.AddLogFields(fields)
 	}
 
 	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
@@ -198,16 +193,12 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
 	}
 	tr.LogFields(fields...)
-	if event != nil {
-		event.AddField("duration_ms", time.Since(start).Milliseconds())
-		if err != nil {
-			event.AddField("error", err)
-		}
-		for _, f := range fields {
-			event.AddField(f.Key(), f.Value())
-		}
-		event.Send()
+	event.AddField("duration_ms", time.Since(start).Milliseconds())
+	if err != nil {
+		event.AddField("error", err)
 	}
+	event.AddLogFields(fields)
+	event.Send()
 
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
@@ -240,9 +231,9 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	tr.LogFields(trace.Stringer("opts", opts))
 
-	var event *libhoney.Event
+	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {
-		event = honey.Event("search-zoekt")
+		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
 		event.AddField("opts.minimal", opts != nil && opts.Minimal)
@@ -258,17 +249,15 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		code = "error"
 	}
 
-	if event != nil {
-		event.AddField("duration_ms", time.Since(start).Milliseconds())
-		if zsl != nil {
-			event.AddField("repos", len(zsl.Repos))
-			event.AddField("minimal_repos", len(zsl.Minimal))
-		}
-		if err != nil {
-			event.AddField("error", err)
-		}
-		event.Send()
+	event.AddField("duration_ms", time.Since(start).Milliseconds())
+	if zsl != nil {
+		event.AddField("repos", len(zsl.Repos))
+		event.AddField("minimal_repos", len(zsl.Minimal))
 	}
+	if err != nil {
+		event.AddField("error", err)
+	}
+	event.Send()
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
 

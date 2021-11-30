@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func Test_output(t *testing.T) {
@@ -58,10 +59,10 @@ func fileMatch(content string) result.Match {
 
 func commitMatch(content string) result.Match {
 	return &result.CommitMatch{
-		Commit: gitapi.Commit{
-			Author:    gitapi.Signature{Name: "bob"},
-			Committer: &gitapi.Signature{},
-			Message:   gitapi.Message(content),
+		Commit: gitdomain.Commit{
+			Author:    gitdomain.Signature{Name: "bob"},
+			Committer: &gitdomain.Signature{},
+			Message:   gitdomain.Message(content),
 		},
 	}
 }

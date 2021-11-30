@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render, within } from '@testing-library/react'
 import React from 'react'
 import { ReplaySubject } from 'rxjs'
 import { TextDocumentDecoration, ThemableDecorationStyle } from 'sourcegraph'
@@ -44,26 +44,42 @@ describe('LineDecorator', () => {
     }
 
     it('renders one attachment', () => {
-        const props = createLineDecoratorProps(1, [
-            { after: { contentText: 'test content' }, range: new Range(new Position(0, 0), new Position(0, 0)) },
-        ])
+        const { codeElement } = createCodeElement()
+        const props = createLineDecoratorProps(
+            1,
+            [{ after: { contentText: 'test content' }, range: new Range(new Position(0, 0), new Position(0, 0)) }],
+            codeElement
+        )
 
-        expect(mount(<LineDecorator {...props} />)).toMatchSnapshot()
+        render(<LineDecorator {...props} />)
+
+        const container = within(codeElement)
+        expect(container.getByTestId('line-decoration')).toBeVisible()
+        expect(codeElement).toMatchSnapshot()
     })
 
     it('renders multiple attachments', () => {
-        const props = createLineDecoratorProps(1, [
-            {
-                after: { contentText: 'attachment from extension one' },
-                range: new Range(new Position(0, 0), new Position(0, 0)),
-            },
-            {
-                after: { contentText: 'attachment from extension two' },
-                range: new Range(new Position(0, 0), new Position(0, 0)),
-            },
-        ])
+        const { codeElement } = createCodeElement()
+        const props = createLineDecoratorProps(
+            1,
+            [
+                {
+                    after: { contentText: 'attachment from extension one' },
+                    range: new Range(new Position(0, 0), new Position(0, 0)),
+                },
+                {
+                    after: { contentText: 'attachment from extension two' },
+                    range: new Range(new Position(0, 0), new Position(0, 0)),
+                },
+            ],
+            codeElement
+        )
 
-        expect(mount(<LineDecorator {...props} />)).toMatchSnapshot()
+        render(<LineDecorator {...props} />)
+
+        const container = within(codeElement)
+        expect(container.getByTestId('line-decoration')).toBeVisible()
+        expect(codeElement).toMatchSnapshot()
     })
 
     it('decorates line', () => {
@@ -84,7 +100,7 @@ describe('LineDecorator', () => {
             codeElement
         )
 
-        const wrapper = mount(<LineDecorator {...props} />)
+        const wrapper = render(<LineDecorator {...props} />)
 
         // Code row should be styled after the decorator mounts
         expect({
@@ -123,14 +139,14 @@ describe('LineDecorator', () => {
             codeElement
         )
 
-        const wrapper = mount(<LineDecorator {...props} isLightTheme={true} />)
+        const { rerender } = render(<LineDecorator {...props} isLightTheme={true} />)
 
         expect({
             backgroundColor: parentRow.style.backgroundColor,
             borderColor: parentRow.style.borderColor,
         }).toStrictEqual(themeableDecorationStyleLight)
 
-        wrapper.setProps({ ...props, isLightTheme: false })
+        rerender(<LineDecorator {...props} isLightTheme={false} />)
 
         expect({
             backgroundColor: parentRow.style.backgroundColor,

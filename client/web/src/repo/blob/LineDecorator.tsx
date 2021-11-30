@@ -88,6 +88,7 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     innerPortalNode?.remove()
                     innerPortalNode = document.createElement('div')
                     innerPortalNode.id = portalID
+                    innerPortalNode.dataset.testid = 'line-decoration'
                     innerPortalNode.dataset.lineDecorationAttachmentPortal = 'true'
                     codeCell?.append(innerPortalNode)
                     setPortalNode(innerPortalNode)

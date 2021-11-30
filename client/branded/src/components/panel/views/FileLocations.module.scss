@@ -1,12 +1,16 @@
 .file-locations {
     overflow-y: auto;
-    // adding this temporarily and should be addressed in next css module tickets
-    :global(.result-container) {
+    .result-container {
         margin-bottom: 0;
         border-top-width: 0;
         border-left-width: 0;
         border-right-width: 0;
         border-radius: 0;
+        // ResultContainer Module has this style,
+        // but the specificity is lesser when it's inside FileLocation
+        &:not(:last-of-type) {
+            margin-bottom: 0.5rem;
+        }
     }
 }
 

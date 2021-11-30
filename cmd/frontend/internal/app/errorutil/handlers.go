@@ -11,6 +11,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -27,7 +28,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 					ext.Error.Set(span, true)
 					span.SetTag("err", err)
 					traceID = trace.IDFromSpan(span)
-					traceURL = trace.URL(traceID)
+					traceURL = trace.URL(traceID, conf.ExternalURL())
 				}
 				log15.Error(
 					"App HTTP handler error response",

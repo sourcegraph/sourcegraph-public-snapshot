@@ -47,13 +47,14 @@ func useFastPasswordMocks() {
 var BeforeTest []func()
 
 var (
-	connectOnce sync.Once
-	connectErr  error
+	connectOnce  sync.Once
+	globalTestDB *sql.DB
+	connectErr   error
 )
 
-// SetupGlobalTestDB creates a temporary test DB handle, sets
+// setupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
-func SetupGlobalTestDB(t testing.TB) {
+func setupGlobalTestDB(t testing.TB) {
 	useFastPasswordMocks()
 
 	if testing.Short() {
@@ -75,7 +76,7 @@ func SetupGlobalTestDB(t testing.TB) {
 		f()
 	}
 
-	emptyDBPreserveSchema(t, dbconn.Global)
+	emptyDBPreserveSchema(t, globalTestDB)
 }
 
 // GetDB calls SetupGlobalTestDB and returns dbconn.Global.
@@ -84,8 +85,8 @@ func SetupGlobalTestDB(t testing.TB) {
 // New callers and callers actually wishing to migrate fully away from a global DB connection
 // should use the new ../dbtest package instead of this one.
 func GetDB(t testing.TB) *sql.DB {
-	SetupGlobalTestDB(t)
-	return dbconn.Global
+	setupGlobalTestDB(t)
+	return globalTestDB
 }
 
 func emptyDBPreserveSchema(t testing.TB, d *sql.DB) {
@@ -155,7 +156,8 @@ func initTest() error {
 	}
 
 	opts := dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests"}
-	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+	sqlDB, err := dbconn.New(opts)
+	if err != nil {
 		return err
 	}
 
@@ -163,11 +165,12 @@ func initTest() error {
 		dbconn.Frontend,
 		dbconn.CodeIntel,
 	} {
-		if err := dbconn.MigrateDB(dbconn.Global, database); err != nil {
+		if err := dbconn.MigrateDB(sqlDB, database); err != nil {
 			return err
 		}
 	}
 
+	globalTestDB = sqlDB
 	return nil
 }
 

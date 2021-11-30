@@ -6,15 +6,16 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func commitResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		Repo: types.MinimalRepo{Name: api.RepoName(repo)},
-		Commit: gitapi.Commit{
+		Commit: gitdomain.Commit{
 			ID: api.CommitID(commit),
 		},
 	}
@@ -24,7 +25,7 @@ func diffResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		DiffPreview: &HighlightedString{},
 		Repo:        types.MinimalRepo{Name: api.RepoName(repo)},
-		Commit: gitapi.Commit{
+		Commit: gitdomain.Commit{
 			ID: api.CommitID(commit),
 		},
 	}

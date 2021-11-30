@@ -12,7 +12,7 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../graphql-operations'
-import { ThemePreference } from '../theme'
+import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
 

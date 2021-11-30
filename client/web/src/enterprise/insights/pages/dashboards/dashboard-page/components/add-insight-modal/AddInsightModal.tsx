@@ -3,7 +3,6 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
-import { of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -34,7 +33,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
 
     const subjects = useObservable(useMemo(() => getDashboardSubjects(), [getDashboardSubjects]))
     const insights = useObservable(
-        useMemo(() => getReachableInsights(dashboard.owner?.id || '') || of([]), [
+        useMemo(() => getReachableInsights({ subjectId: dashboard.owner?.id || '' }), [
             dashboard.owner,
             getReachableInsights,
         ])

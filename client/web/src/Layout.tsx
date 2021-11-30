@@ -63,7 +63,7 @@ import {
 } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { useTheme } from './theme'
+import { useThemeProps } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
@@ -214,7 +214,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const authRequired = useObservable(authRequiredObservable)
 
-    const themeProps = useTheme()
+    const themeProps = useThemeProps()
 
     const breadcrumbProps = useBreadcrumbs()
 

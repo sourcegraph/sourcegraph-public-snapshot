@@ -32,6 +32,19 @@ func NewMockIndexableReposLister() *MockIndexableReposLister {
 	}
 }
 
+// NewStrictMockIndexableReposLister creates a new mock of the
+// IndexableReposLister interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockIndexableReposLister() *MockIndexableReposLister {
+	return &MockIndexableReposLister{
+		ListFunc: &IndexableReposListerListFunc{
+			defaultHook: func(context.Context) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockIndexableReposLister.List")
+			},
+		},
+	}
+}
+
 // NewMockIndexableReposListerFrom creates a new mock of the
 // MockIndexableReposLister interface. All methods delegate to the given
 // implementation, unless overwritten.

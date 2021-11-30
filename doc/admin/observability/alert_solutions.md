@@ -169,8 +169,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -534,7 +535,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: internal_api_error_responses
+## frontend: internalapi_error_responses
 
 <p class="subtitle">internal API error responses every 5m by route</p>
 
@@ -545,12 +546,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-api-error-responses).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internalapi-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_internal_api_error_responses"
+  "warning_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -649,6 +650,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<br />
+
+## frontend: cloudkms_cryptographic_requests
+
+<p class="subtitle">cryptographic requests to Cloud KMS every 1m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 15000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+- <span class="badge badge-critical">critical</span> frontend: 30000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+
+**Possible solutions**
+
+- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-cloudkms-cryptographic-requests).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_cloudkms_cryptographic_requests",
+  "critical_frontend_cloudkms_cryptographic_requests"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 

@@ -82,9 +82,9 @@ func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, err
 	return a.user, a.userErr
 }
 
-type key int
+type contextKey int
 
-const actorKey key = iota
+const actorKey contextKey = iota
 
 // FromContext returns a new Actor instance from a given context.
 func FromContext(ctx context.Context) *Actor {

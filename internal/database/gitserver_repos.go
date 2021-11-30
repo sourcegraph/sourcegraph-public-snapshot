@@ -44,11 +44,10 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, now())",
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, now())",
 			gr.RepoID,
 			gr.CloneStatus,
 			dbutil.NewNullString(gr.ShardID),
-			dbutil.NewNullInt64(gr.LastExternalService),
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
 			gr.LastChanged,
@@ -60,11 +59,11 @@ func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.Upsert
 INSERT INTO
-    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, last_fetched, last_changed, updated_at)
+    gitserver_repos(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
-    SET (clone_status, shard_id, last_external_service, last_error, last_fetched, last_changed, updated_at) =
-        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, now())
+    SET (clone_status, shard_id, last_error, last_fetched, last_changed, updated_at) =
+        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, now())
 `, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "creating GitserverRepo")
@@ -107,7 +106,6 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 			&rgs.Name,
 			&dbutil.NullString{S: &cloneStatus},
 			&dbutil.NullString{S: &gr.ShardID},
-			&dbutil.NullInt64{N: &gr.LastExternalService},
 			&dbutil.NullString{S: &gr.LastError},
 			&dbutil.NullTime{Time: &gr.LastFetched},
 			&dbutil.NullTime{Time: &gr.LastChanged},
@@ -145,7 +143,6 @@ SELECT
 	repo.name,
 	gr.clone_status,
 	gr.shard_id,
-	gr.last_external_service,
 	gr.last_error,
 	gr.last_fetched,
 	gr.last_changed,
@@ -163,7 +160,6 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		repo.name,
 		NULL AS clone_status,
 		NULL AS shard_id,
-		NULL AS last_external_service,
 		NULL AS last_error,
 		NULL AS last_fetched,
 		NULL AS last_changed,
@@ -176,7 +172,6 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		repo.name,
 		gr.clone_status,
 		gr.shard_id,
-		gr.last_external_service,
 		gr.last_error,
 		gr.last_fetched,
 		gr.last_changed,
@@ -194,7 +189,6 @@ SELECT
        repo_id,
        clone_status,
        shard_id,
-       last_external_service,
        last_error,
        last_fetched,
        last_changed,
@@ -213,7 +207,6 @@ WHERE repo_id = %s
 		&gr.RepoID,
 		&cloneStatus,
 		&gr.ShardID,
-		&dbutil.NullInt64{N: &gr.LastExternalService},
 		&dbutil.NullString{S: &gr.LastError},
 		&dbutil.NullTime{Time: &gr.LastFetched},
 		&dbutil.NullTime{Time: &gr.LastChanged},

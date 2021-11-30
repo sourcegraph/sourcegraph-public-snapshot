@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type GitserverClient interface {
@@ -68,13 +69,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	command.Repo = repo
-
-	output, err := command.Output(ctx)
-	if err != nil {
-		return Changes{}, err
-	}
+	output, err := git.DiffSymbols(ctx, repo, commitA, commitB)
 
 	changes, err := parseGitDiffOutput(output)
 	if err != nil {

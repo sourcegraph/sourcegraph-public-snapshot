@@ -1,9 +1,7 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"strconv"
 	"strings"
 
@@ -15,7 +13,7 @@ import (
 )
 
 // PositionAdjuster translates a position within a git tree at a source commit into the
-// equivalent position in a target commit commit. The position adjuster instance carries
+// equivalent position in a target commit. The position adjuster instance carries
 // along with it the source commit.
 type PositionAdjuster interface {
 	// AdjustPath translates the given path from the source commit into the given target
@@ -123,25 +121,7 @@ func (p *positionAdjuster) readHunksCached(ctx context.Context, repo *types.Repo
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
 func (p *positionAdjuster) readHunks(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	reader, err := git.ExecReader(ctx, repo.Name, []string{"diff", sourceCommit, targetCommit, "--", path})
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	output, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-	if len(output) == 0 {
-		return nil, nil
-	}
-
-	diff, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
-	if err != nil {
-		return nil, err
-	}
-	return diff.Hunks, nil
+	return git.DiffPath(ctx, repo.Name, sourceCommit, targetCommit, path)
 }
 
 // adjustPosition translates the given position by adjusting the line number based on the
@@ -157,7 +137,7 @@ func adjustPosition(hunks []*diff.Hunk, pos lsifstore.Position) (lsifstore.Posit
 	return lsifstore.Position{Line: line, Character: pos.Character}, true
 }
 
-// adjustLine translates the given line nubmerbased on the number of additions and deletions
+// adjustLine translates the given line number based on the number of additions and deletions
 // that occur before that line. This function returns a boolean flag indicating that the
 // translation is successful. A translation fails when the given line has been edited.
 func adjustLine(hunks []*diff.Hunk, line int) (int, bool) {

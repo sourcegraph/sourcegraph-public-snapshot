@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -25,8 +25,6 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 	defer func() { backend.MockMakePasswordResetURL = nil }()
-	defer func() { database.Mocks.UserEmails.GetPrimaryEmail = nil }()
-	defer func() { database.Mocks.Users.GetByID = nil }()
 
 	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
 		query := url.Values{}
@@ -35,13 +33,15 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
 	}
 
-	database.Mocks.UserEmails.GetPrimaryEmail = func(context.Context, int32) (string, bool, error) {
-		return "a@example.com", true, nil
-	}
+	userEmails := dbmock.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	database.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-		return &types.User{ID: 1, Username: "test"}, nil
-	}
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "test"}, nil)
+
+	db := dbmock.NewMockDB()
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UsersFunc.SetDefaultReturn(users)
 
 	tests := []struct {
 		name    string
@@ -63,7 +63,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := HandleSetPasswordEmail(tst.ctx, nil, tst.id)
+			got, err := HandleSetPasswordEmail(tst.ctx, db, tst.id)
 			if diff := cmp.Diff(tst.wantURL, got); diff != "" {
 				t.Errorf("Message mismatch (-want +got):\n%s", diff)
 			}

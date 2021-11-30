@@ -13,8 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -30,7 +31,7 @@ func IsEnabled() bool {
 		// Insights.
 		return false
 	}
-	if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 		// Code insights is not supported in single-container Docker demo deployments.
 		return false
 	}
@@ -38,9 +39,9 @@ func IsEnabled() bool {
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres dbutil.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchable, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if !IsEnabled() {
-		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")
 		} else {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights has been disabled")

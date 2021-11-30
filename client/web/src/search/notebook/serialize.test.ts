@@ -1,4 +1,4 @@
-import { serializeBlockInput } from './serialize'
+import { parseLineRange, serializeBlockInput, serializeLineRange } from './serialize'
 
 const SOURCEGRAPH_URL = 'https://sourcegraph.com'
 
@@ -28,6 +28,7 @@ describe('serialize', () => {
                         repositoryName: 'github.com/sourcegraph/sourcegraph',
                         revision: 'feature',
                         filePath: 'client/web/index.ts',
+                        lineRange: null,
                     },
                 },
                 SOURCEGRAPH_URL
@@ -56,4 +57,15 @@ describe('serialize', () => {
             `${SOURCEGRAPH_URL}/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts?L101-123`
         )
     })
+
+    it('should serialize single line range', () =>
+        expect(serializeLineRange({ startLine: 123, endLine: 124 })).toStrictEqual('124'))
+
+    it('should serialize multi line range', () =>
+        expect(serializeLineRange({ startLine: 123, endLine: 321 })).toStrictEqual('124-321'))
+
+    it('should parse single line range', () => expect(parseLineRange('124')).toEqual({ startLine: 123, endLine: 124 }))
+
+    it('should parse multi line range', () =>
+        expect(parseLineRange('124-321')).toEqual({ startLine: 123, endLine: 321 }))
 })
