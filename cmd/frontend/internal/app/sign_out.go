@@ -32,7 +32,7 @@ func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
 	ssoSignOutHandler = f
 }
 
-func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func serveSignOutHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logSignOutEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
 

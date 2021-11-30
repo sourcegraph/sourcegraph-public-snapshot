@@ -300,7 +300,7 @@ func logSignInEvent(r *http.Request, db database.DB, usr *types.User, name *data
 }
 
 // HandleCheckUsernameTaken checks availability of username for signup form
-func HandleCheckUsernameTaken(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := auth.NormalizeUsername(vars["username"])
