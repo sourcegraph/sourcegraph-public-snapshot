@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -370,39 +369,14 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 	return commitDates, nil
 }
 
-// BranchesContaining returns a map from branch names to branch tip hashes for each brach
+// BranchesContaining returns a map from branch names to branch tip hashes for each branch
 // containing the given commit.
 func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
-	out, err := c.execGitCommand(ctx, repositoryID, "branch", "--contains", commit, "--format", "%(refname)")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
-
-	return parseBranchesContaining(strings.Split(out, "\n")), nil
-}
-
-func parseBranchesContaining(lines []string) []string {
-	names := make([]string, 0, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		refname := line
-
-		// Remove refs/heads/ or ref/tags/ prefix
-		for prefix := range refPrefixes {
-			if strings.HasPrefix(line, prefix) {
-				refname = line[len(prefix):]
-			}
-		}
-
-		names = append(names, refname)
-	}
-	sort.Strings(names)
-
-	return names
+	return git.BranchesContaining(ctx, repo, api.CommitID(commit))
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.

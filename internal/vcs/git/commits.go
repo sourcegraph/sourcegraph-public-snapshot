@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -345,4 +346,47 @@ func parseCommitFromLog(data []byte) (commit *gitdomain.Commit, refs []string, r
 	}
 
 	return commit, refs, rest, nil
+}
+
+// BranchesContaining returns a map from branch names to branch tip hashes for
+// each branch containing the given commit.
+func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+	cmd := gitserver.DefaultClient.Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseBranchesContaining(strings.Split(string(out), "\n")), nil
+}
+
+var refPrefixes = map[string]struct{}{
+	"refs/heads/": {},
+	"refs/tags/":  {},
+}
+
+func parseBranchesContaining(lines []string) []string {
+	names := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		refname := line
+
+		// Remove refs/heads/ or ref/tags/ prefix
+		for prefix := range refPrefixes {
+			if strings.HasPrefix(line, prefix) {
+				refname = line[len(prefix):]
+			}
+		}
+
+		names = append(names, refname)
+	}
+	sort.Strings(names)
+
+	return names
 }
