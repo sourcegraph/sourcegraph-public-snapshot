@@ -143,8 +143,8 @@ type resultQueue struct {
 	// results in memory.
 	maxQueueDepth int
 
-	queue          priorityQueue
-	queueMaxLength int // for a prometheus metric
+	queue           priorityQueue
+	metricMaxLength int // for a prometheus metric
 
 	endpointMaxPendingPriority map[string]float64
 
@@ -207,8 +207,8 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 		}
 	}
 
-	if q.queue.Len() > q.queueMaxLength {
-		q.queueMaxLength = q.queue.Len()
+	if q.queue.Len() > q.metricMaxLength {
+		q.metricMaxLength = q.queue.Len()
 	}
 
 	// Pop and send search results where it is guaranteed that no
@@ -226,7 +226,7 @@ func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
 // FlushAll will send any remaining results that are in the queue and any
 // final statistics. This should only be called once all endpoints are done.
 func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
-	metricReorderQueueSize.WithLabelValues().Observe(float64(q.queueMaxLength))
+	metricReorderQueueSize.WithLabelValues().Observe(float64(q.metricMaxLength))
 	metricFinalQueueSize.Add(float64(q.queue.Len()))
 	for q.queue.Len() > 0 {
 		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
