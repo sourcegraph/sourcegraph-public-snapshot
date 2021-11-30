@@ -8,8 +8,8 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { QueryChangeSource } from '../../../../../../../../search/helpers'
 import { LazyMonacoQueryInput } from '../../../../../../../../search/input/LazyMonacoQueryInput'
 import { DEFAULT_MONACO_OPTIONS } from '../../../../../../../../search/input/MonacoQueryInput'
-import { ThemePreference } from '../../../../../../../../stores/themeState';
-import { useTheme } from '../../../../../../../../theme';
+import { ThemePreference } from '../../../../../../../../stores/themeState'
+import { useTheme } from '../../../../../../../../theme'
 
 import styles from './DataSeriesQueryField.module.scss'
 
