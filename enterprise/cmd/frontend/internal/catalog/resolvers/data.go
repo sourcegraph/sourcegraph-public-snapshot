@@ -29,6 +29,11 @@ func dummyData(db database.DB) []*catalogComponentResolver {
 			sourceRepo:   sourceRepo,
 			sourceCommit: sourceCommit,
 			sourcePaths:  []string{"cmd/frontend", "enterprise/cmd/frontend"},
+			usagePatterns: []usagePattern{
+				newQueryUsagePattern(`\.api/graphql patterntype:literal`),
+				newQueryUsagePattern(`lang:typescript requestGraphQL\(|useConnection\(|useQuery\(|gql` + "`" + ` patterntype:regexp`),
+			},
+			apiDefPath: "cmd/frontend/graphqlbackend/schema.graphql",
 		},
 		{
 			kind:         "SERVICE",

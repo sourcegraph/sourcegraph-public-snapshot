@@ -1,16 +1,13 @@
 import classNames from 'classnames'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React from 'react'
 import { useLocation } from 'react-router'
 import { Link } from 'react-router-dom'
-import { of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-import { FileLocations } from '@sourcegraph/branded/src/components/panel/views/FileLocations'
-import { Location } from '@sourcegraph/extension-api-types'
+import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { CatalogComponentAPIFields, SymbolFields } from '../../../../../graphql-operations'
 import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
@@ -45,24 +42,23 @@ export const ComponentAPI: React.FunctionComponent<Props> = ({
                 }
             </style>
             {schema && schema.__typename === 'GitBlob' && (
-                <FileLocations
-                    location={location}
-                    locations={of<Location[]>([
-                        {
-                            uri: makeRepoURI({
-                                repoName: schema.repository.name,
-                                commitID: schema.commit.oid,
-                                filePath: schema.path,
-                            }),
-                            range: { start: { line: 0, character: 0 }, end: { line: 10, character: 0 } },
-                        },
-                    ])}
-                    icon={SourceRepositoryIcon}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                    settingsCascade={settingsCascade}
-                    className={classNames('mb-3')}
-                    parentContainerIsEmpty={false}
-                    telemetryService={telemetryService}
+                <CodeExcerpt
+                    repoName={schema.repository.name}
+                    commitID={schema.commit.oid}
+                    filePath={schema.path}
+                    startLine={0}
+                    endLine={9999}
+                    highlightRanges={[]}
+                    fetchHighlightedFileRangeLines={() =>
+                        fetchHighlightedFileLineRanges({
+                            repoName: schema.repository.name,
+                            commitID: schema.commit.oid,
+                            filePath: schema.path,
+                            ranges: [{ startLine: 0, endLine: 9999 }],
+                            disableTimeout: false,
+                        }).pipe(map(result => result[0]))
+                    }
+                    isFirst={true}
                 />
             )}
             <ol className={classNames('list-group', className)}>
