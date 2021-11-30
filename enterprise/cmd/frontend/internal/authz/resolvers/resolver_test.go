@@ -98,7 +98,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				mutation {
 					setRepositoryPermissionsForUsers(
@@ -140,7 +140,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				mutation {
 					setRepositoryPermissionsForUsers(
@@ -410,7 +410,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check authorized repos via email",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -438,7 +438,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check authorized repos via username",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -466,7 +466,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check pending authorized repos via email",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -494,7 +494,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check pending authorized repos via username",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -566,7 +566,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 			name: "list pending users with their bind IDs",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					usersWithPendingPermissions
@@ -647,7 +647,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			name: "get authorized users",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
@@ -807,7 +807,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					currentUser {
