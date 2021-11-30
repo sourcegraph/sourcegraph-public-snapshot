@@ -54,7 +54,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                     >
                                         <SearchIcon className="icon-inline" /> Search in {entity.name}...
                                     </Link>
-                                    <ComponentSourceDefinitions catalogComponent={entity} />
+                                    <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
                                     <ComponentAuthors
                                         catalogComponent={entity}
                                         className="card mb-3"

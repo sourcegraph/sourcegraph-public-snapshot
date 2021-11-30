@@ -16,9 +16,9 @@ export const ComponentSourceDefinitions: React.FunctionComponent<Props> = ({
 }) => (
     <div className={className}>
         {sourceLocations.length > 0 ? (
-            <ol className="list-unstyled mb-0">
+            <ol className="list-group mb-0">
                 {sourceLocations.map(sourceLocation => (
-                    <li key={sourceLocation.url} className="border p-2 mb-3">
+                    <li key={sourceLocation.url} className="list-group-item">
                         <RepoFileLink
                             repoName={sourceLocation.repository.name}
                             repoURL={sourceLocation.repository.url}

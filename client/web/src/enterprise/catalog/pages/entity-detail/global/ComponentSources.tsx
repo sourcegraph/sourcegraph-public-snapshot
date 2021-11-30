@@ -14,8 +14,8 @@ import { getFileDecorations } from '../../../../../backend/features'
 import { CatalogEntityDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
-import { EntityDetailContentCardProps } from './EntityDetailContent'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
+import { EntityDetailContentCardProps } from './EntityDetailContent'
 
 interface Props
     extends Pick<EntityDetailContentCardProps, 'className' | 'bodyScrollableClassName'>,
@@ -31,7 +31,7 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
     ...props
 }) => (
     <div className={className}>
-        <ComponentSourceDefinitions catalogComponent={catalogComponent} />
+        <ComponentSourceDefinitions catalogComponent={catalogComponent} className="mb-2" />
         <div className="d-flex align-items-center justify-content-end">
             <Link
                 to={`${catalogComponent.url}/spec`}
