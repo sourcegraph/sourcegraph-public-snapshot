@@ -297,6 +297,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                     // and the filter is not scrolled into view.
                     editor.revealRange(toMonacoRange(queryState.revealRange, textModel))
                 }
+                editor.focus()
                 break
             }
             default: {
@@ -308,6 +309,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 }
                 editor.setPosition(position)
                 editor.revealPosition(position)
+                editor.focus()
             }
         }
     }, [editor, queryState])
