@@ -30,11 +30,9 @@ type CatalogGraph {
 }
 
 type CatalogEntityRelationEdge {
+    type: CatalogEntityRelationType!
     outNode: CatalogEntity!
-    outType: CatalogEntityRelationType!
-
     inNode: CatalogEntity!
-    inType: CatalogEntityRelationType!
 }
 
 type CatalogEntityRelatedEntityConnection {

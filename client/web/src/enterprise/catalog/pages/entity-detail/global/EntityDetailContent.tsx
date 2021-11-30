@@ -58,21 +58,11 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                     <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
                                     <EntityGraph
                                         graph={{
-                                            edges: entity.relatedEntities.edges.map(edge =>
-                                                edge.type === 'DEPENDS_ON'
-                                                    ? {
-                                                          outNode: edge.node,
-                                                          outType: edge.type,
-                                                          inNode: entity,
-                                                          inType: edge.type,
-                                                      }
-                                                    : {
-                                                          outNode: entity,
-                                                          outType: edge.type,
-                                                          inNode: edge.node,
-                                                          inType: edge.type,
-                                                      }
-                                            ),
+                                            edges: entity.relatedEntities.edges.map(edge => ({
+                                                type: edge.type,
+                                                outNode: entity,
+                                                inNode: edge.node,
+                                            })),
                                             nodes: entity.relatedEntities.edges.map(edge => edge.node).concat(entity),
                                         }}
                                         activeNodeID={entity.id}

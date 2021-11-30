@@ -31,6 +31,12 @@ export const OverviewEntityGraph: React.FunctionComponent<Props> = ({ className 
     ) : !data || !data.catalog.graph ? (
         <p>Catalog graph is not available</p>
     ) : (
-        <EntityGraph graph={data.catalog.graph} className={className} />
+        <EntityGraph
+            graph={{
+                ...data.catalog.graph,
+                edges: data.catalog.graph.edges.filter(edge => edge.type === 'DEPENDS_ON'),
+            }}
+            className={className}
+        />
     )
 }

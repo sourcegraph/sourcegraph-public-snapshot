@@ -16,11 +16,29 @@ type Component struct {
 	SourcePaths   []string
 	UsagePatterns []UsagePattern
 	APIDefPath    string
+
+	// Edges
+	DependsOn []string
 }
 
 type UsagePattern struct {
 	Query string
 }
+
+type Edge struct {
+	Type    EntityRelationType
+	Out, In string // entity names
+}
+
+type EntityRelationType string
+
+const (
+	DependsOnRelation    = "DEPENDS_ON"
+	DependencyOfRelation = "DEPENDENCY_OF"
+
+	PartOfRelation  = "PART_OF"
+	HasPartRelation = "HAS_PART"
+)
 
 func newQueryUsagePattern(query string) UsagePattern {
 	return UsagePattern{
@@ -28,7 +46,7 @@ func newQueryUsagePattern(query string) UsagePattern {
 	}
 }
 
-func Components() []Component {
+func Data() ([]Component, []Edge) {
 	const (
 		sourceRepo   = "github.com/sourcegraph/sourcegraph"
 		sourceCommit = "2ada4911722e2c812cc4f1bbfb6d5d1756891392"
@@ -45,6 +63,7 @@ func Components() []Component {
 				newQueryUsagePattern(`lang:typescript requestGraphQL\(|useConnection\(|useQuery\(|gql` + "`" + ` patterntype:regexp`),
 			},
 			APIDefPath: "cmd/frontend/graphqlbackend/schema.graphql",
+			DependsOn:  []string{"gitserver", "client-web", "repo-updater", "executor", "github-proxy", "precise-code-intel-worker", "query-runner", "searcher", "sitemap", "symbols"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -66,6 +85,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
+			DependsOn:    []string{"gitserver", "github-proxy"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -77,6 +97,7 @@ func Components() []Component {
 			UsagePatterns: []UsagePattern{
 				newQueryUsagePattern(`lang:go \bsearcher\.Search\( patterntype:regexp`),
 			},
+			DependsOn: []string{"gitserver"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -84,6 +105,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/executor"},
+			DependsOn:    []string{"frontend"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -91,6 +113,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/precise-code-intel-worker"},
+			DependsOn:    []string{"frontend"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -105,6 +128,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/query-runner"},
+			DependsOn:    []string{"frontend"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -119,6 +143,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/server", "enterprise/cmd/server"},
+			DependsOn:    []string{"frontend", "repo-updater", "symbols", "query-runner", "gitserver"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -126,6 +151,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/symbols"},
+			DependsOn:    []string{"gitserver"},
 		},
 		{
 			Kind:         "SERVICE",
@@ -133,6 +159,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/sitemap"},
+			DependsOn:    []string{"frontend"},
 		},
 		{
 			Kind:         "TOOL",
@@ -158,6 +185,7 @@ func Components() []Component {
 				// newQueryUsagePattern(`lang:markdown ` + "`" + `src[` + "`" + `\s] patterntype:regexp`),
 				// newQueryUsagePattern(`lang:markdown (^|\s*\$ )src\s patterntype:regexp`),
 			},
+			DependsOn: []string{"frontend"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -165,6 +193,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/web"},
+			DependsOn:    []string{"extension-api", "client-shared", "wildcard", "frontend"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -172,6 +201,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/browser"},
+			DependsOn:    []string{"extension-api", "client-shared", "wildcard", "frontend"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -179,6 +209,7 @@ func Components() []Component {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/shared"},
+			DependsOn:    []string{"extension-api", "wildcard", "frontend"},
 		},
 		{
 			Kind:         "LIBRARY",
@@ -203,6 +234,28 @@ func Components() []Component {
 		},
 	}
 	sort.Slice(components, func(i, j int) bool { return components[i].Name < components[j].Name })
+
+	var edges []Edge
+	for _, c := range components {
+		for _, dependsOn := range c.DependsOn {
+			edges = append(edges, Edge{
+				Type: DependsOnRelation,
+				Out:  c.Name,
+				In:   dependsOn,
+			})
+			edges = append(edges, Edge{
+				Type: DependencyOfRelation,
+				Out:  dependsOn,
+				In:   c.Name,
+			})
+		}
+	}
+
+	return components, edges
+}
+
+func Components() []Component {
+	components, _ := Data()
 	return components
 }
 

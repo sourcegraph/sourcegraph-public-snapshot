@@ -98,9 +98,9 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                                             : undefined,
                                 }))}
                                 edges={graph.edges.map(edge => ({
+                                    label: edge.type,
                                     from: edge.outNode.id,
                                     to: edge.inNode.id,
-                                    label: edge.outType,
                                 }))}
                                 defaultNodeConfig={defaultNodeConfig}
                                 defaultEdgeConfig={defaultEdgeConfig}
@@ -153,7 +153,7 @@ const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
 )
 
 const generatePathD3Curve = (points: Point[]): string => {
-    const p: [number, number][] = points.map(point => [point.x, point.y])
-    const c = d3.line().curve(d3.curveBasis)(p)
-    return c!
+    const coords: [number, number][] = points.map(point => [point.x, point.y])
+    const curve = d3.line().curve(d3.curveBasis)(coords)!
+    return curve
 }

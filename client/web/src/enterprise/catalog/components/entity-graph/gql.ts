@@ -14,14 +14,13 @@ export const CATALOG_GRAPH_FRAGMENT = gql`
             }
         }
         edges {
+            type
             outNode {
                 id
             }
-            outType
             inNode {
                 id
             }
-            inType
         }
     }
 `
