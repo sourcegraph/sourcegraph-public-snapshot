@@ -177,21 +177,23 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
     }
 `
 
-const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
-    fragment CatalogComponentDetailFields on CatalogComponent {
+const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
+    fragment CatalogEntityDetailFields on CatalogComponent {
+        __typename
         id
-        kind
+        type
         name
         description
-        system
-        tags
         url
-        ...CatalogComponentDocumentationFields
-        ...CatalogComponentSourcesFields
-        ...CatalogComponentChangesFields
-        ...CatalogComponentAuthorsFields
-        ...CatalogComponentUsageFields
-        ...CatalogComponentAPIFields
+        ... on CatalogComponent {
+            kind
+            ...CatalogComponentDocumentationFields
+            ...CatalogComponentSourcesFields
+            ...CatalogComponentChangesFields
+            ...CatalogComponentAuthorsFields
+            ...CatalogComponentUsageFields
+            ...CatalogComponentAPIFields
+        }
     }
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
@@ -201,11 +203,11 @@ const CATALOG_COMPONENT_DETAIL_FRAGMENT = gql`
     ${CATALOG_COMPONENT_API_FRAGMENT}
 `
 
-export const CATALOG_COMPONENT_BY_NAME = gql`
-    query CatalogComponentByName($name: String!) {
-        catalogComponent(name: $name) {
-            ...CatalogComponentDetailFields
+export const CATALOG_ENTITY_BY_NAME = gql`
+    query CatalogEntityByName($name: String!) {
+        catalogEntity(name: $name) {
+            ...CatalogEntityDetailFields
         }
     }
-    ${CATALOG_COMPONENT_DETAIL_FRAGMENT}
+    ${CATALOG_ENTITY_DETAIL_FRAGMENT}
 `

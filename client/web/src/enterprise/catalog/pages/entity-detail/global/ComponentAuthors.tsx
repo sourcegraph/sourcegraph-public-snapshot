@@ -9,9 +9,9 @@ import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 
 import styles from './ComponentAuthors.module.scss'
-import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+import { EntityDetailContentCardProps } from './EntityDetailContent'
 
-interface Props extends ComponentDetailContentCardProps {
+interface Props extends EntityDetailContentCardProps {
     catalogComponent: CatalogComponentAuthorsFields
 }
 

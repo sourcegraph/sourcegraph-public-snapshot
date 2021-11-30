@@ -7,15 +7,17 @@ import React from 'react'
 
 import { CatalogComponentKind } from '../../../graphql-operations'
 
+interface PartialEntity {
+    __typename: 'CatalogComponent'
+    kind: CatalogComponentKind
+}
+
 interface Props {
-    entity: { kind: CatalogComponentKind }
+    entity: PartialEntity
     className?: string
 }
 
-export const CATALOG_COMPONENT_ICON_BY_KIND: Record<
-    CatalogComponentKind,
-    React.ComponentType<{ className?: string }>
-> = {
+const CATALOG_COMPONENT_ICON_BY_KIND: Record<CatalogComponentKind, React.ComponentType<{ className?: string }>> = {
     SERVICE: ApplicationCogOutlineIcon,
     WEBSITE: ApplicationOutlineIcon,
     LIBRARY: BookMultipleIcon,
@@ -23,7 +25,16 @@ export const CATALOG_COMPONENT_ICON_BY_KIND: Record<
     OTHER: TextureBoxIcon,
 }
 
-export const CatalogEntityIcon: React.FunctionComponent<Props> = ({ entity: { kind }, className }) => {
-    const Icon = CATALOG_COMPONENT_ICON_BY_KIND[kind]
+export function catalogEntityIconComponent(entity: PartialEntity): React.ComponentType<{ className?: string }> {
+    switch (entity.__typename) {
+        case 'CatalogComponent':
+            return CATALOG_COMPONENT_ICON_BY_KIND[entity.kind]
+        default:
+            throw new Error('unknown icon')
+    }
+}
+
+export const CatalogEntityIcon: React.FunctionComponent<Props> = ({ entity, className }) => {
+    const Icon = catalogEntityIconComponent(entity)
     return <Icon className={className} />
 }

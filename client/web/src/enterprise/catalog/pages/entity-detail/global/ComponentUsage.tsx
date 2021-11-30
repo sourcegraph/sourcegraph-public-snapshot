@@ -19,11 +19,11 @@ import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
 
-import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+import { EntityDetailContentCardProps } from './EntityDetailContent'
 import styles from './ComponentUsage.module.scss'
 
 interface Props
-    extends Pick<ComponentDetailContentCardProps, 'className' | 'bodyClassName' | 'bodyScrollableClassName'>,
+    extends Pick<EntityDetailContentCardProps, 'className' | 'bodyClassName' | 'bodyScrollableClassName'>,
         SettingsCascadeProps,
         TelemetryProps {
     catalogComponent: CatalogComponentUsageFields

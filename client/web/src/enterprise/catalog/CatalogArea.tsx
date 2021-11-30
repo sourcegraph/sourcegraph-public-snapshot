@@ -11,7 +11,7 @@ import { HeroPage } from '../../components/HeroPage'
 
 import styles from './CatalogArea.module.scss'
 import { useCatalogEntityFilters } from './core/entity-filters'
-import { ComponentDetailPage } from './pages/entity-detail/global/ComponentDetailPage'
+import { EntityDetailPage } from './pages/entity-detail/global/EntityDetailPage'
 import { OverviewPage } from './pages/overview/global/OverviewPage'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
@@ -38,10 +38,10 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                 </Route>
                 <Route path={`${match.url}/:name`}>
                     {(matchProps: RouteComponentProps<{ name: string }>) => (
-                        <ComponentDetailPage
+                        <EntityDetailPage
                             key={1}
                             {...props}
-                            catalogComponentName={matchProps.match.params.name}
+                            entityName={matchProps.match.params.name}
                             filters={filters}
                             onFiltersChange={onFiltersChange}
                             telemetryService={telemetryService}

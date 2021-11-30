@@ -8,13 +8,13 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../../../components/PageTitle'
-import { CatalogComponentByNameResult, CatalogComponentByNameVariables } from '../../../../../graphql-operations'
+import { CatalogEntityByNameResult, CatalogEntityByNameVariables } from '../../../../../graphql-operations'
 import { CatalogEntityFiltersProps } from '../../../core/entity-filters'
 import { EntityList } from '../../overview/components/entity-list/EntityList'
 import { Sidebar } from '../sidebar/Sidebar'
 
-import { ComponentDetailContent } from './ComponentDetailContent'
-import { CATALOG_COMPONENT_BY_NAME } from './gql'
+import { EntityDetailContent } from './EntityDetailContent'
+import { CATALOG_ENTITY_BY_NAME } from './gql'
 
 export interface Props
     extends CatalogEntityFiltersProps,
@@ -22,28 +22,28 @@ export interface Props
         ExtensionsControllerProps,
         ThemeProps,
         SettingsCascadeProps {
-    /** The name of the CatalogComponent. */
-    catalogComponentName: string
+    /** The name of the catalog entity. */
+    entityName: string
 }
 
 /**
- * The catalog component detail page.
+ * The catalog entity detail page.
  */
-export const ComponentDetailPage: React.FunctionComponent<Props> = ({
-    catalogComponentName,
+export const EntityDetailPage: React.FunctionComponent<Props> = ({
+    entityName,
     filters,
     onFiltersChange,
     telemetryService,
     ...props
 }) => {
     useEffect(() => {
-        telemetryService.logViewEvent('CatalogComponentDetail')
+        telemetryService.logViewEvent('CatalogEntityDetail')
     }, [telemetryService])
 
-    const { data, error, loading } = useQuery<CatalogComponentByNameResult, CatalogComponentByNameVariables>(
-        CATALOG_COMPONENT_BY_NAME,
+    const { data, error, loading } = useQuery<CatalogEntityByNameResult, CatalogEntityByNameVariables>(
+        CATALOG_ENTITY_BY_NAME,
         {
-            variables: { name: catalogComponentName },
+            variables: { name: entityName },
 
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
@@ -61,17 +61,17 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
             <PageTitle
                 title={
                     error
-                        ? 'Error loading component'
+                        ? 'Error loading entity'
                         : loading && !data
-                        ? 'Loading component...'
-                        : !data || !data.catalogComponent
-                        ? 'Component not found'
-                        : data.catalogComponent.name
+                        ? 'Loading entity...'
+                        : !data || !data.catalogEntity
+                        ? 'Entity not found'
+                        : data.catalogEntity.name
                 }
             />
             <Sidebar>
                 <EntityList
-                    selectedEntityName={catalogComponentName}
+                    selectedEntityName={entityName}
                     filters={filters}
                     onFiltersChange={onFiltersChange}
                     className="flex-1"
@@ -83,14 +83,10 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline" />
                 ) : error && !data ? (
                     <div className="alert alert-danger">Error: {error.message}</div>
-                ) : !data || !data.catalogComponent ? (
-                    <div className="alert alert-danger">Component not found in catalog</div>
+                ) : !data || !data.catalogEntity ? (
+                    <div className="alert alert-danger">Entity not found in catalog</div>
                 ) : (
-                    <ComponentDetailContent
-                        {...props}
-                        catalogComponent={data.catalogComponent}
-                        telemetryService={telemetryService}
-                    />
+                    <EntityDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
                 )}
             </div>
         </>

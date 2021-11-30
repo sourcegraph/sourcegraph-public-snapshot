@@ -5,9 +5,9 @@ import { Link } from 'react-router-dom'
 import { CatalogComponentChangesFields, GitCommitFields } from '../../../../../graphql-operations'
 import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
 
-import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+import { EntityDetailContentCardProps } from './EntityDetailContent'
 
-interface Props extends ComponentDetailContentCardProps {
+interface Props extends EntityDetailContentCardProps {
     catalogComponent: CatalogComponentChangesFields
 }
 

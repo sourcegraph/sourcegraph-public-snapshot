@@ -11,17 +11,17 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { getFileDecorations } from '../../../../../backend/features'
-import { CatalogComponentDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
+import { CatalogEntityDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
-import { ComponentDetailContentCardProps } from './ComponentDetailContent'
+import { EntityDetailContentCardProps } from './EntityDetailContent'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 
 interface Props
-    extends Pick<ComponentDetailContentCardProps, 'className' | 'bodyScrollableClassName'>,
+    extends Pick<EntityDetailContentCardProps, 'className' | 'bodyScrollableClassName'>,
         ExtensionsControllerProps,
         ThemeProps {
-    catalogComponent: CatalogComponentSourcesFields & Pick<CatalogComponentDetailFields, 'url'>
+    catalogComponent: CatalogComponentSourcesFields & Pick<CatalogEntityDetailFields, 'url'>
 }
 
 export const ComponentSources: React.FunctionComponent<Props> = ({
