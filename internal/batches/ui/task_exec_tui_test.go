@@ -48,14 +48,6 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	advanceClock := func(d time.Duration) { now = now.Add(d) }
 
 	buf := &ttyBuf{}
-	expectOutput := func(t *testing.T, buf *ttyBuf, want []string) {
-		t.Helper()
-
-		have := buf.Lines()
-		if !cmp.Equal(want, have) {
-			t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
-		}
-	}
 
 	out := output.NewOutput(buf, output.OutputOpts{
 		ForceTTY:    true,
@@ -205,6 +197,70 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	})
 }
 
+func TestProgressUpdateAfterComplete(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Something emits different escape codes on windows.")
+	}
+
+	buf := &ttyBuf{}
+
+	now := time.Now()
+	clock := func() time.Time { return now.UTC().Truncate(time.Millisecond) }
+
+	out := output.NewOutput(buf, output.OutputOpts{
+		ForceTTY:    true,
+		ForceColor:  true,
+		ForceHeight: 25,
+		ForceWidth:  80,
+		Verbose:     true,
+	})
+
+	tasks := []*executor.Task{
+		{Repository: &graphql.Repository{Name: "github.com/sourcegraph/sourcegraph"}},
+		{Repository: &graphql.Repository{Name: "github.com/sourcegraph/src-cli"}},
+	}
+
+	printer := newTaskExecTUI(out, true, 2)
+	printer.forceNoSpinner = true
+	printer.clock = clock
+
+	// Setup internal state.
+	printer.Start(tasks)
+
+	// Start the tasks.
+	printer.TaskStarted(tasks[0])
+	printer.TaskStarted(tasks[1])
+
+	// Update the tasks into a useful state.
+	printer.TaskCurrentlyExecuting(tasks[0], "echo Hello World > README.md")
+	printer.TaskCurrentlyExecuting(tasks[1], "Downloading archive")
+
+	expectOutput(t, buf, []string{
+		"⠋  Executing... (0/2, 0 errored)  ",
+		"│                                                                               ",
+		"├── github.com/sourcegraph/sourcegraph  echo Hello World > README.md          0s",
+		"└── github.com/sourcegraph/src-cli      Downloading archive                   0s",
+		"",
+	})
+
+	// Now mark the progress as complete.
+	printer.progress.Complete()
+
+	// Now send another update. This would panic before the relevant fix was
+	// merged in #666.
+	printer.TaskCurrentlyExecuting(tasks[0], "exit 42")
+
+	// The actual output is slightly less important at this point, but let's
+	// check it anyway.
+	expectOutput(t, buf, []string{
+		"✅ Executing... (0/2, 0 errored)  ██████████████████████████████████████████████",
+		"│                                                                               ",
+		"├── github.com/sourcegraph/sourcegraph  exit 42                               0s",
+		"└── github.com/sourcegraph/src-cli      Downloading archive                   0s",
+		"",
+	})
+}
+
 type ttyBuf struct {
 	lines [][]byte
 
@@ -321,4 +377,13 @@ func (t *ttyBuf) Lines() []string {
 
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+func expectOutput(t *testing.T, buf *ttyBuf, want []string) {
+	t.Helper()
+
+	have := buf.Lines()
+	if !cmp.Equal(want, have) {
+		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
+	}
 }
