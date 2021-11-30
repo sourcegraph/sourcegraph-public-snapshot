@@ -128,6 +128,56 @@ func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*git
 	return commitLog(ctx, repo, opt)
 }
 
+// CommitsUniqueToBranch returns a map from commits that exist on a particular
+// branch in the given repository to their committer date. This set of commits is
+// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
+// commits on {branchName} not also on the tip of the default branch. If the
+// supplied branch name is the default branch, then this method instead returns
+// all commits reachable from HEAD.
+func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	args := []string{"log", "--pretty=format:%H:%cI"}
+	if maxAge != nil {
+		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
+	}
+	if isDefaultBranch {
+		args = append(args, "HEAD")
+	} else {
+		args = append(args, branchName, "^HEAD")
+	}
+
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
+}
+
+func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
+	commitDates := make(map[string]time.Time, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
+		}
+
+		duration, err := time.Parse(time.RFC3339, parts[1])
+		if err != nil {
+			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
+		}
+
+		commitDates[parts[0]] = duration
+	}
+
+	return commitDates, nil
+}
+
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
 func HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string) (bool, error) {
