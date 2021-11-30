@@ -79,12 +79,19 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
+	sourceGraphDotComMode := envvar.SourcegraphDotComMode()
+
+	if sourceGraphDotComMode {
+		// TODO: handle the output from this somehow?
+		callRepoUpdaterForRepo(ctx, name)
+	}
+
 	switch repo, err := s.store.GetByName(ctx, name); {
 	case err == nil:
 		return repo, nil
 	case !errcode.IsNotFound(err):
 		return nil, err
-	case envvar.SourcegraphDotComMode():
+	case sourceGraphDotComMode:
 		// Automatically add repositories on Sourcegraph.com.
 		newName, err := s.Add(ctx, name)
 		if err != nil {
@@ -101,6 +108,16 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	default:
 		return nil, err
 	}
+}
+
+// Looking up the repo in repo-updater makes it sync that repo to the
+// database on sourcegraph.com if that repo is from github.com or gitlab.com
+func callRepoUpdaterForRepo(ctx context.Context, name api.RepoName) (api.RepoName, error) {
+	lookupResult, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	if lookupResult != nil && lookupResult.Repo != nil {
+		return lookupResult.Repo.Name, err
+	}
+	return "", err
 }
 
 func shouldRedirect(name api.RepoName) bool {
@@ -142,13 +159,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	}
 	status = "success"
 
-	// Looking up the repo in repo-updater makes it sync that repo to the
-	// database on sourcegraph.com if that repo is from github.com or gitlab.com
-	lookupResult, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
-	if lookupResult != nil && lookupResult.Repo != nil {
-		return lookupResult.Repo.Name, err
-	}
-	return "", err
+	return callRepoUpdaterForRepo(ctx, name)
 }
 
 func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
