@@ -58,16 +58,12 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	}})
 	defer endObservation(1, observation.Args{})
 
-	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
-		}
-
 		return "", false, err
 	}
 
-	return revision, true, nil
+	return git.Head(ctx, repo)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,

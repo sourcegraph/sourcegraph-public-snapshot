@@ -304,6 +304,25 @@ func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool
 	return false, err
 }
 
+// Head determines the tip commit of the default branch for the given repository.
+// If no HEAD revision exists for the given repository (which occurs with empty
+// repositories), a false-valued flag is returned along with a nil error and
+// empty revision.
+func Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
+	cmd := gitserver.DefaultClient.Command("git", "rev-parse", "HEAD")
+	cmd.Repo = repo
+
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			err = nil
+		}
+		return "", false, err
+	}
+
+	return string(out), true, nil
+}
+
 const (
 	partsPerCommit = 10 // number of \x00-separated fields per commit
 
