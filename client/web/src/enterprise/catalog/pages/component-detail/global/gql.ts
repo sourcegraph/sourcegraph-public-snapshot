@@ -137,12 +137,14 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
             schema {
                 __typename
                 path
+                url
                 ... on GitBlob {
                     commit {
                         oid
                     }
                     repository {
                         name
+                        url
                     }
                 }
             }

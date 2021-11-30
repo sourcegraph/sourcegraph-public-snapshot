@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { map } from 'rxjs/operators'
 
 import { CodeExcerpt } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -42,24 +43,34 @@ export const ComponentAPI: React.FunctionComponent<Props> = ({
                 }
             </style>
             {schema && schema.__typename === 'GitBlob' && (
-                <CodeExcerpt
-                    repoName={schema.repository.name}
-                    commitID={schema.commit.oid}
-                    filePath={schema.path}
-                    startLine={0}
-                    endLine={9999}
-                    highlightRanges={[]}
-                    fetchHighlightedFileRangeLines={() =>
-                        fetchHighlightedFileLineRanges({
-                            repoName: schema.repository.name,
-                            commitID: schema.commit.oid,
-                            filePath: schema.path,
-                            ranges: [{ startLine: 0, endLine: 9999 }],
-                            disableTimeout: false,
-                        }).pipe(map(result => result[0]))
-                    }
-                    isFirst={true}
-                />
+                <>
+                    <RepoFileLink
+                        repoURL={schema.repository.url}
+                        repoName={schema.repository.name}
+                        filePath={schema.path}
+                        fileURL={schema.url}
+                        className="mb-2"
+                    />
+                    <CodeExcerpt
+                        repoName={schema.repository.name}
+                        commitID={schema.commit.oid}
+                        filePath={schema.path}
+                        startLine={0}
+                        endLine={9999}
+                        highlightRanges={[]}
+                        fetchHighlightedFileRangeLines={() =>
+                            fetchHighlightedFileLineRanges({
+                                repoName: schema.repository.name,
+                                commitID: schema.commit.oid,
+                                filePath: schema.path,
+                                ranges: [{ startLine: 0, endLine: 9999 }],
+                                disableTimeout: false,
+                            }).pipe(map(result => result[0]))
+                        }
+                        isFirst={true}
+                        className="border p-2 d-block"
+                    />
+                </>
             )}
             <ol className={classNames('list-group', className)}>
                 {symbols.nodes
