@@ -909,7 +909,7 @@ func (codeIntelligence) NewSymbolsParserGroup(containerName string) monitoring.G
 			Name:           containerName,
 			Description:    "in-flight parse jobs",
 			Owner:          monitoring.ObservableOwnerCodeIntel,
-			Query:          "max(src_codeintel_symbols_parseing{job=~\"^symbols.*\"})",
+			Query:          "max(src_codeintel_symbols_parsing{job=~\"^symbols.*\"})",
 			NoAlert:        true,
 			Interpretation: "none",
 			Panel:          monitoring.Panel(),

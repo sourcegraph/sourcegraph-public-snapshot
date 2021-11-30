@@ -11117,7 +11117,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100100` o
 <details>
 <summary>Technical details</summary>
 
-Query: `max(src_codeintel_symbols_parseing{job=~"^symbols.*"})`
+Query: `max(src_codeintel_symbols_parsing{job=~"^symbols.*"})`
 
 </details>
 
