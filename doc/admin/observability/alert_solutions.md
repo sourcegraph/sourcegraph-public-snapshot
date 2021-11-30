@@ -169,8 +169,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
