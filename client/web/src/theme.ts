@@ -6,14 +6,6 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { useThemeState } from './stores'
 import { ThemePreference } from './stores/themeState'
 
-/**
- * Props that can be extended by any component's Props which needs to manipulate the theme preferences.
- */
-export interface ThemePreferenceProps {
-    themePreference: ThemePreference
-    onThemePreferenceChange: (theme: ThemePreference) => void
-}
-
 export interface ThemeState {
     /**
      * Parsed from local storage theme preference value.
@@ -53,7 +45,19 @@ export const useTheme = (): ThemeState => {
 }
 
 /**
+ * Props that can be extended by any component's Props which needs to manipulate the theme preferences.
+ *
+ * @deprecated Use useTheme hook instead to get theme preference state
+ */
+export interface ThemePreferenceProps {
+    themePreference: ThemePreference
+    onThemePreferenceChange: (theme: ThemePreference) => void
+}
+
+/**
  * A React hook for getting and setting the theme.
+ *
+ * @deprecated Use useTheme hook instead to get theme preference state
  */
 export const useThemeProps = (): ThemeProps & ThemePreferenceProps => {
     const { themePreference, enhancedThemePreference, setThemePreference } = useTheme()
