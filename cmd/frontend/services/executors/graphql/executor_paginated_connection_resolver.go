@@ -6,29 +6,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-type ExecutorPaginatedConnection struct {
+type ExecutorPaginatedResolver struct {
 	resolvers  []*ExecutorResolver
 	totalCount int
 	nextOffset *int
 }
 
-func NewExecutorPaginatedConnection(resolvers []*ExecutorResolver, totalCount int, nextOffset *int) *ExecutorPaginatedConnection {
-	return &ExecutorPaginatedConnection{
+func NewExecutorPaginatedConnection(resolvers []*ExecutorResolver, totalCount int, nextOffset *int) *ExecutorPaginatedResolver {
+	return &ExecutorPaginatedResolver{
 		resolvers:  resolvers,
 		totalCount: totalCount,
 		nextOffset: nextOffset,
 	}
 }
 
-func (r *ExecutorPaginatedConnection) Nodes(ctx context.Context) []*ExecutorResolver {
+func (r *ExecutorPaginatedResolver) Nodes(ctx context.Context) []*ExecutorResolver {
 	return r.resolvers
 }
 
-func (r *ExecutorPaginatedConnection) TotalCount(ctx context.Context) int32 {
+func (r *ExecutorPaginatedResolver) TotalCount(ctx context.Context) int32 {
 	return int32(r.totalCount)
 }
 
-func (r *ExecutorPaginatedConnection) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (r *ExecutorPaginatedResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.EncodeIntCursor(toInt32(r.nextOffset))
 }
 

@@ -13,7 +13,7 @@ import (
 
 type Resolver interface {
 	Executor(ctx context.Context, gqlID graphql.ID) (*ExecutorResolver, error)
-	Executors(ctx context.Context, query *string, active *bool, first *int32, after *string) (*ExecutorPaginatedConnection, error)
+	Executors(ctx context.Context, query *string, active *bool, first *int32, after *string) (*ExecutorPaginatedResolver, error)
 }
 
 type resolver struct {
@@ -43,7 +43,7 @@ func (r *resolver) Executor(ctx context.Context, gqlID graphql.ID) (*ExecutorRes
 	return NewExecutorResolver(executor), nil
 }
 
-func (r *resolver) Executors(ctx context.Context, query *string, active *bool, first *int32, after *string) (*ExecutorPaginatedConnection, error) {
+func (r *resolver) Executors(ctx context.Context, query *string, active *bool, first *int32, after *string) (*ExecutorPaginatedResolver, error) {
 	p, err := validateArgs(ctx, query, active, first, after)
 	if err != nil {
 		return nil, err

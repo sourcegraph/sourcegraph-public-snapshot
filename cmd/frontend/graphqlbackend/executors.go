@@ -15,7 +15,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	Active *bool
 	First  *int32
 	After  *string
-}) (*gql.ExecutorPaginatedConnection, error) {
+}) (*gql.ExecutorPaginatedResolver, error) {
 	// 🚨 SECURITY: Only site-admins may view executor details
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
