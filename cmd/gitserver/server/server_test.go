@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -465,7 +464,7 @@ func makeSingleCommitRepo(cmd func(string, ...string) string) string {
 	return cmd("git", "rev-parse", "HEAD")
 }
 
-func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *Server {
+func makeTestServer(ctx context.Context, repoDir, remote string, db database.DB) *Server {
 	s := &Server{
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
@@ -491,7 +490,7 @@ func TestCloneRepo(t *testing.T) {
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -590,7 +589,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
@@ -900,7 +899,7 @@ func TestSyncRepoState(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := dbtest.NewDB(t)
+	db := database.NewDB(dbtest.NewDB(t))
 	remoteDir := t.TempDir()
 
 	cmd := func(name string, arg ...string) string {
