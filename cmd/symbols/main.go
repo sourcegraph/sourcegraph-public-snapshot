@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 const port = "3184"
@@ -71,15 +72,12 @@ func main() {
 			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar", Paths: paths})
 		},
 		GitDiff: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (*symbols.Changes, error) {
-			command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-			command.Repo = repo
-
-			output, err := command.Output(ctx)
+			output, err := git.DiffSymbols(ctx, repo, commitA, commitB)
 			if err != nil {
 				return nil, err
 			}
 
-			// The output is a a repeated sequence of:
+			// The output is a repeated sequence of:
 			//
 			//     <status> NUL <path> NUL
 			//
