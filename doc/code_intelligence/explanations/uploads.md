@@ -51,7 +51,7 @@ Sourcegraph keeps a mapping from a commit of a repository to the set of upload r
 When an upload changes state, we flag the repository as needing to be updated. Then the [`worker` service](http://localhost:5080/admin/workers#codeintel-commitgraph)
 will update the commit graph and unset the flag for that repository asynchronously.
 
-While this flag is set, set consider a repository's commit graph _stale_. This simply means that there may be some upload records in a `COMPLETED` state that aren't yet being used to resolve code intelligence queries (as might be expected).
+While this flag is set, the repository's commit graph is considered _stale_. This simply means that there may be some upload records in a `COMPLETED` state that aren't yet being used to resolve code intelligence queries (as might be expected).
 
 The state of a repository's commit graph can be seen in the code intelligence page in the target repository's index page.
 
