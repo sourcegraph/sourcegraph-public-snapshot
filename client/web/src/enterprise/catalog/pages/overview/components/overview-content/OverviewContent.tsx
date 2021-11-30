@@ -12,8 +12,10 @@ interface Props extends TelemetryProps, CatalogEntityFiltersProps {
 }
 
 export const OverviewContent: React.FunctionComponent<Props> = ({ filters, onFiltersChange }) => (
-    <>
-        <EntityList filters={filters} onFiltersChange={onFiltersChange} size="lg" />
+    <div className="d-flex">
+        <div>
+            <EntityList filters={filters} onFiltersChange={onFiltersChange} size="sm" />
+        </div>
         <OverviewEntityGraph />
-    </>
+    </div>
 )
