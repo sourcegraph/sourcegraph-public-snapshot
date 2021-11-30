@@ -246,7 +246,13 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
-	codeintelSentry, err := sentry.NewWithDsn(conf.DefaultClient().SiteConfig().Log.Sentry.CodeIntelDSN)
+	codeintelSentry, err := sentry.NewWithDsn(
+		conf.DefaultClient().SiteConfig().Log.Sentry.CodeIntelDSN,
+		conf.DefaultClient(),
+		func(c conftypes.SiteConfigQuerier) (dsn string) {
+			return c.SiteConfig().Log.Sentry.CodeIntelDSN
+		},
+	)
 	if err != nil {
 		return err
 	}

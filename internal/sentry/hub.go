@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/sentry-go"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -15,20 +16,44 @@ type Hub struct {
 	*sentry.Hub
 }
 
-func NewWithDsn(dsn string) (*Hub, error) {
-	c, err := sentry.NewClient(sentry.ClientOptions{
-		Dsn:        dsn,
-		Debug:      sentryDebug,
-		ServerName: "", // Sentry client will gather the server name when leave empty
-		Release:    version.Version(),
-	})
+type OnChangeFunc func(c conftypes.SiteConfigQuerier) (dsn string)
+
+// NewWithDsn initializes a non-global Sentry client with the given DSN string. It then watches site configuration for any
+// subsequent changes and invokes the onChange function, updating the embedded client if the DSN changes.
+func NewWithDsn(dsn string, conf conftypes.WatchableSiteConfig, onChange OnChangeFunc) (*Hub, error) {
+	initClient := func(dsn string) (*sentry.Client, error) {
+		c, err := sentry.NewClient(sentry.ClientOptions{
+			Dsn:        dsn,
+			Debug:      sentryDebug,
+			ServerName: "", // Sentry client will gather the server name when leave empty
+			Release:    version.Version(),
+		})
+		if err != nil {
+			return nil, err
+		}
+		return c, nil
+	}
+
+	client, err := initClient(dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	h := &Hub{
-		Hub: sentry.NewHub(c, sentry.NewScope()),
+		Hub: sentry.NewHub(client, sentry.NewScope()),
 	}
+
+	conf.Watch(func() {
+		newDsn := onChange(conf)
+		if newDsn != "" && newDsn != client.Options().Dsn {
+			c, err := initClient(newDsn)
+			if err != nil {
+				log15.Error("sentry.dsn.initClient", "error", err)
+				return
+			}
+			h.Hub = sentry.NewHub(c, sentry.NewScope())
+		}
+	})
 
 	return h, nil
 }
