@@ -55,7 +55,7 @@ func (r *Resolver) checkLicense() error {
 	return nil
 }
 
-func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
+func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
 		store:             edb.Perms(db, clock),
 		repoupdaterClient: repoupdater.DefaultClient,

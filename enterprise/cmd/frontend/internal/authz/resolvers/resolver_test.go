@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -45,11 +44,11 @@ var (
 	parsedSchema    *graphql.Schema
 )
 
-func mustParseGraphQLSchema(t *testing.T, db dbutil.DB) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
 	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil)
+		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil)
 	})
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
