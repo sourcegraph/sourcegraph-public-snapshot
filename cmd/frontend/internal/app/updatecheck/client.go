@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -117,12 +116,12 @@ func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
 	return usagestatsdeprecated.GetUsersActiveTodayCount(ctx)
 }
 
-func getInitialSiteAdminEmail(ctx context.Context, db dbutil.DB) (_ string, err error) {
+func getInitialSiteAdminEmail(ctx context.Context, db database.DB) (_ string, err error) {
 	defer recordOperation("getInitialSiteAdminEmail")(&err)
 	return database.UserEmails(db).GetInitialSiteAdminEmail(ctx)
 }
 
-func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalBatchChangesUsageJSON")(&err)
 
 	batchChangesUsage, err := usagestats.GetBatchChangesUsageStatistics(ctx, db)
@@ -132,7 +131,7 @@ func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db dbutil.DB) (_ js
 	return json.Marshal(batchChangesUsage)
 }
 
-func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
 
 	growthStatistics, err := usagestats.GetGrowthStatistics(ctx, db)
@@ -142,7 +141,7 @@ func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db dbutil.DB) (_ jso
 	return json.Marshal(growthStatistics)
 }
 
-func getAndMarshalSavedSearchesJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
 
 	savedSearches, err := usagestats.GetSavedSearches(ctx, db)
@@ -152,7 +151,7 @@ func getAndMarshalSavedSearchesJSON(ctx context.Context, db dbutil.DB) (_ json.R
 	return json.Marshal(savedSearches)
 }
 
-func getAndMarshalHomepagePanelsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
 
 	homepagePanels, err := usagestats.GetHomepagePanels(ctx, db)
@@ -172,7 +171,7 @@ func getAndMarshalRepositoriesJSON(ctx context.Context) (_ json.RawMessage, err 
 	return json.Marshal(repos)
 }
 
-func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
 
 	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx, db)
@@ -183,7 +182,7 @@ func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(retentionStatistics)
 }
 
-func getAndMarshalSearchOnboardingJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalSearchOnboardingJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
 
 	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx, db)
@@ -194,7 +193,7 @@ func getAndMarshalSearchOnboardingJSON(ctx context.Context, db dbutil.DB) (_ jso
 	return json.Marshal(searchOnboarding)
 }
 
-func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
 
 	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx, db)
@@ -205,7 +204,7 @@ func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db dbutil.DB
 	return json.Marshal(codeIntelUsage)
 }
 
-func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
 
 	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx, db)
@@ -216,7 +215,7 @@ func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db dbutil.DB) (
 	return json.Marshal(searchUsage)
 }
 
-func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalExtensionsUsageStatisticsJSON")
 
 	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx, db)
@@ -227,7 +226,7 @@ func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db dbutil.D
 	return json.Marshal(extensionsUsage)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
 	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
@@ -238,7 +237,7 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db dbutil.DB) (_ js
 	return json.Marshal(codeInsightsUsage)
 }
 
-func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeMonitoringUsageJSON")
 
 	codeMonitoringUsage, err := usagestats.GetCodeMonitoringUsageStatistics(ctx, db)
@@ -249,7 +248,7 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db dbutil.DB) (_ 
 	return json.Marshal(codeMonitoringUsage)
 }
 
-func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db dbutil.DB) (_ json.RawMessage, err error) {
+func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
 
 	versions, err := versions.GetVersions()
@@ -259,7 +258,7 @@ func getAndMarshalCodeHostVersionsJSON(ctx context.Context, db dbutil.DB) (_ jso
 	return json.Marshal(versions)
 }
 
-func getDependencyVersions(ctx context.Context, db dbutil.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
+func getDependencyVersions(ctx context.Context, db database.DB, logFunc func(string, ...interface{})) (json.RawMessage, error) {
 	var (
 		err error
 		dv  dependencyVersions
@@ -521,7 +520,7 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context, db dbutil.DB) (kinds []string, err error) {
+func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
 	defer recordOperation("externalServiceKinds")(&err)
 	kinds, err = database.ExternalServices(db).DistinctKinds(ctx)
 	return kinds, err
