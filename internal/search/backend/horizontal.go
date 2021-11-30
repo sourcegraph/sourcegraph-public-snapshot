@@ -33,6 +33,12 @@ var (
 		Name: "src_zoekt_ignored_error_total",
 		Help: "Total number of errors ignored from Zoekt.",
 	})
+	// temporary metric so we can check if we are encountering non-empty
+	// queues once streaming is complete.
+	metricFinalQueueSize = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "src_zoekt_final_queue_size",
+		Help: "the size of the results queue once streaming is done.",
+	})
 )
 
 // HorizontalSearcher is a Streamer which aggregates searches over
@@ -87,6 +93,13 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	// unwrap this before passing it on to the Zoekt evaluation layers.
 	q = &query.GobCache{Q: q}
 
+	// We aggregate statistics independently of matches. Everytime we
+	// encounter matches to send we send the current aggregated stats then
+	// reset them. This is because in a lot of cases we only get stats and no
+	// matches. By aggregating we avoid spamming the sender and the
+	// resultQueue with pure stats events.
+	var stats zoekt.Stats
+
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
 		go func(endpoint string, c zoekt.Streamer) {
@@ -96,14 +109,12 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 					return
 				}
 
-				// Send stats only results straight away, bypassing any re-ordering for ranking.
-				if len(sr.Files) == 0 && sr.Progress.MaxPendingPriority == 0 && !sr.Stats.Zero() {
-					streamer.Send(sr)
-					return
-				}
-
 				mu.Lock()
 				defer mu.Unlock()
+
+				// Update aggregate stats
+				stats.Add(sr.Stats)
+				sr.Stats = zoekt.Stats{}
 
 				// Note the endpoint's updated MaxPendingPriority, and recompute
 				// it across all endpoints to determine what search results are stable.
@@ -118,18 +129,21 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 
 				// Don't add empty results to the heap.
-				if len(sr.Files) == 0 && sr.Stats.Zero() {
-					return
+				if len(sr.Files) != 0 {
+					resultQueue.add(sr)
 				}
 
 				// Pop and send search results where it is guaranteed that no higher-priority result
 				// is possible, because there are no pending shards with a greater priority.
-				resultQueue.add(sr)
 				if resultQueue.Len() > resultQueueMaxLength {
 					resultQueueMaxLength = resultQueue.Len()
 				}
 				for (maxQueueDepth >= 0 && len(resultQueue) > maxQueueDepth) || resultQueue.isTopAbove(maxPending) {
-					streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
+					// We need to use the current aggregate stats then clear them out.
+					sr = heap.Pop(&resultQueue).(*zoekt.SearchResult)
+					sr.Stats = stats
+					stats = zoekt.Stats{}
+					streamer.Send(sr)
 				}
 			}))
 			mu.Lock()
@@ -158,9 +172,23 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	metricReorderQueueSize.WithLabelValues().Observe(float64(resultQueueMaxLength))
+	metricFinalQueueSize.Add(float64(len(resultQueue)))
 	for len(resultQueue) > 0 {
-		streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
+		sr := heap.Pop(&resultQueue).(*zoekt.SearchResult)
+		sr.Stats = stats
+		stats = zoekt.Stats{}
+		streamer.Send(sr)
 	}
+
+	// We may have had no matches but had stats. Send the final stats if there
+	// is any.
+	if !stats.Zero() {
+		streamer.Send(&zoekt.SearchResult{
+			Stats: stats,
+		})
+		stats = zoekt.Stats{}
+	}
+
 	return nil
 }
 
