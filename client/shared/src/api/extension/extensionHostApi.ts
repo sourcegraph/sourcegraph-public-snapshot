@@ -49,7 +49,6 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
     const getTextDocument = (uri: string): ExtensionDocument => {
         const textDocument = state.textDocuments.get(uri)
         if (!textDocument) {
-            console.log({ uri, allDocs: state.textDocuments })
             throw new Error(`Text document does not exist with URI ${uri}`)
         }
         return textDocument

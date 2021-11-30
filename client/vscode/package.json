@@ -2,7 +2,7 @@
   "private": true,
   "name": "sourcegraph-preview",
   "displayName": "Sourcegraph - preview",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Sourcegraph for VS Code",
   "publisher": "kandalatj",
   "sideEffects": false,
