@@ -73,7 +73,7 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
+	if _, err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
 		return nil, errors.Errorf("Failed to perform codeinsights database migration: %s", err)
 	}
 	return db, nil

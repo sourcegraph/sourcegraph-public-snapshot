@@ -68,10 +68,13 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	// Perform DB migrations.
-	if err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
+	close, err := dbconn.MigrateDB(db, dbconn.CodeInsights)
+	if err != nil {
 		t.Fatalf("Failed to perform codeinsights database migration: %s", err)
 	}
 	cleanup = func() {
+		close()
+
 		if err := db.Close(); err != nil {
 			t.Log(err)
 		}
