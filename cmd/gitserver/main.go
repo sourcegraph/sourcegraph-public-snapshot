@@ -86,7 +86,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize database stores: %v", err)
 	}
-	db := database.NewDB(db)
+	db := database.NewDB(sqlDB)
 
 	repoStore := database.Repos(db)
 	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
