@@ -18,6 +18,26 @@ type CatalogRootResolver interface {
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
+type CatalogEntityArgs struct {
+	Name string
+}
+
+type CatalogResolver interface {
+	Entities(context.Context, *CatalogEntitiesArgs) (CatalogEntityConnectionResolver, error)
+	Graph(context.Context) (CatalogGraphResolver, error)
+}
+
+type CatalogEntitiesArgs struct {
+	Query *string
+	First *int32
+	After *string
+}
+
+type CatalogGraphResolver interface {
+	Nodes() []*CatalogEntityResolver
+	Edges() []CatalogEntityRelationEdgeResolver
+}
+
 type CatalogEntityType string
 
 type CatalogEntity interface {
@@ -26,6 +46,8 @@ type CatalogEntity interface {
 	Name() string
 	Description() *string
 	URL() string
+
+	RelatedEntities(context.Context) (CatalogEntityRelatedEntityConnectionResolver, error)
 }
 
 type CatalogEntityResolver struct {
@@ -37,18 +59,23 @@ func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, 
 	return e, ok
 }
 
-type CatalogEntityArgs struct {
-	Name string
+type CatalogEntityRelationType string
+
+type CatalogEntityRelationEdgeResolver interface {
+	OutNode() *CatalogEntityResolver
+	OutType() CatalogEntityRelationType
+
+	InNode() *CatalogEntityResolver
+	InType() CatalogEntityRelationType
 }
 
-type CatalogResolver interface {
-	Entities(context.Context, *CatalogEntitiesArgs) (CatalogEntityConnectionResolver, error)
+type CatalogEntityRelatedEntityConnectionResolver interface {
+	Edges() []CatalogEntityRelatedEntityEdgeResolver
 }
 
-type CatalogEntitiesArgs struct {
-	Query *string
-	First *int32
-	After *string
+type CatalogEntityRelatedEntityEdgeResolver interface {
+	Node() *CatalogEntityResolver
+	Type() CatalogEntityRelationType
 }
 
 type CatalogEntityConnectionResolver interface {

@@ -8,6 +8,7 @@ extend type Query {
 
 type Catalog {
     entities(query: String, first: Int, after: String): CatalogEntityConnection!
+    graph: CatalogGraph!
 }
 
 enum CatalogEntityType {
@@ -20,6 +21,34 @@ interface CatalogEntity {
     name: String!
     description: String
     url: String!
+    relatedEntities: CatalogEntityRelatedEntityConnection!
+}
+
+type CatalogGraph {
+    nodes: [CatalogEntity!]!
+    edges: [CatalogEntityRelationEdge!]!
+}
+
+type CatalogEntityRelationEdge {
+    outNode: CatalogEntity!
+    outType: CatalogEntityRelationType!
+
+    inNode: CatalogEntity!
+    inType: CatalogEntityRelationType!
+}
+
+type CatalogEntityRelatedEntityConnection {
+    edges: [CatalogEntityRelatedEntityEdge!]!
+}
+
+enum CatalogEntityRelationType {
+    DEPENDS_ON
+    DEPENDENCY_OF
+}
+
+type CatalogEntityRelatedEntityEdge {
+    node: CatalogEntity!
+    type: CatalogEntityRelationType!
 }
 
 type CatalogEntityConnection {
