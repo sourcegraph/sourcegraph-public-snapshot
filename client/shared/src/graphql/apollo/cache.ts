@@ -27,6 +27,11 @@ const typePolicies: TypedTypePolicies = {
 export const generateCache = (): InMemoryCache =>
     new InMemoryCache({
         typePolicies,
+
+        // https://www.apollographql.com/docs/react/data/fragments/#defining-possibletypes-manually
+        possibleTypes: {
+            CatalogEntity: ['CatalogComponent'],
+        },
     })
 
 export const cache = generateCache()
