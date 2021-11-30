@@ -289,6 +289,21 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit,
 	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 }
 
+// CommitExists determines if the given commit exists in the given repository.
+func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
+	cmd := gitserver.DefaultClient.Command("git", "cat-file", "-t", string(id))
+	cmd.Repo = repo
+
+	out, err := cmd.Output(ctx)
+	if err == nil {
+		return true, nil
+	}
+	if bytes.Contains(out, []byte("Not a valid object name")) {
+		err = nil
+	}
+	return false, err
+}
+
 const (
 	partsPerCommit = 10 // number of \x00-separated fields per commit
 

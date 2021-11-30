@@ -42,15 +42,11 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "cat-file", "-t", commit)
-	if err == nil {
-		return true, nil
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return false, err
 	}
-
-	if strings.Contains(out, "Not a valid object name") {
-		err = nil
-	}
-	return false, err
+	return git.CommitExists(ctx, repo, api.CommitID(commit))
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
