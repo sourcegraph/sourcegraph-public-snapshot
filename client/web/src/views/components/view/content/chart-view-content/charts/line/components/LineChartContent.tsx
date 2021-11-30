@@ -362,6 +362,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                             snapTooltipToDatumY={false}
                             showDatumGlyph={false}
                             showSeriesGlyphs={false}
+                            verticalCrosshairStyle={{ strokeWidth: 2, stroke: 'var(--secondary)' }}
                             renderTooltip={renderTooltip}
                         />
                     </XYChart>
