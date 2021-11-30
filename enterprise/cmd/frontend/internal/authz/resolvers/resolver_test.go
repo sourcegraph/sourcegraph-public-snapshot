@@ -729,7 +729,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
