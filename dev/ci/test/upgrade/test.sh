@@ -76,13 +76,34 @@ trap docker_logs exit
 sleep 15
 
 # Run tests
-
+check_available() {
+  local URL=$1
+  echo "--- TEST: Checking $URL is accessible"
+  timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+      echo Waiting 5s for $URL...
+      sleep 5
+  done"
+}
 URL="http://localhost:7080"
-echo "--- TEST: Checking Sourcegraph instance is accessible"
-timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
-    echo Waiting 5s for $URL...
-    sleep 5
-done"
+check_available $URL
+# shellcheck disable=SC2181
+if [ $? -ne 0 ]; then
+  echo "^^^ +++"
+  echo "$URL was not accessible within 60s. Here's the output of docker inspect:"
+  docker inspect "$CONTAINER"
+  exit 1
+fi
+
+URL="http://localhost:7080/healthz"
+check_available $URL
+# shellcheck disable=SC2181
+if [ $? -ne 0 ]; then
+  echo "^^^ +++"
+  echo "$URL was not accessible within 60s. Here's the output of docker inspect:"
+  docker inspect "$CONTAINER"
+  exit 1
+fi
+
 echo "--- TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
 echo "--- TEST: Running tests"
