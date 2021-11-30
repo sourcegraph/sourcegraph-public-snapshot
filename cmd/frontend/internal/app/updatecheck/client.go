@@ -77,7 +77,7 @@ func recordOperation(method string) func(*error) {
 	}
 }
 
-func getAndMarshalSiteActivityJSON(ctx context.Context, db dbutil.DB, criticalOnly bool) (_ json.RawMessage, err error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context, db database.DB, criticalOnly bool) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSiteActivityJSON")(&err)
 	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db, criticalOnly)
 	if err != nil {
@@ -320,7 +320,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
+func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 	logFunc := log15.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = log15.Warn
@@ -528,7 +528,7 @@ func externalServiceKinds(ctx context.Context, db dbutil.DB) (kinds []string, er
 }
 
 // check performs an update check and updates the global state.
-func check(db dbutil.DB) {
+func check(db database.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -598,7 +598,7 @@ func check(db dbutil.DB) {
 var started bool
 
 // Start starts checking for software updates periodically.
-func Start(db dbutil.DB) {
+func Start(db database.DB) {
 	if started {
 		panic("already started")
 	}
