@@ -23,6 +23,7 @@ func NewFastDB(t testing.TB) *sql.DB {
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
+	updateDSNFromEnv(u)
 
 	pool, err := newPoolFromURL(u)
 	if err != nil {
@@ -50,6 +51,7 @@ func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
+	updateDSNFromEnv(u)
 
 	pool, err := newPoolFromURL(u)
 	if err != nil {
@@ -77,6 +79,7 @@ func NewFastTx(t testing.TB) *sql.Tx {
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
 	}
+	updateDSNFromEnv(u)
 
 	pool, err := newPoolFromURL(u)
 	if err != nil {
