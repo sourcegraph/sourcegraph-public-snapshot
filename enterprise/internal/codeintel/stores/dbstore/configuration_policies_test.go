@@ -10,16 +10,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetConfigurationPolicies(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
 	query := `
@@ -37,15 +34,15 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, 42,   'policy 1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(2, 42,   'policy 2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
-			(3, 43,   'policy 3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(4, NULL, 'policy 4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
-			(5, NULL, 'policy 5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
-			(6, NULL, 'policy 6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false),
-			(7, NULL, 'policy 7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false),
-			(8, NULL, 'policy 8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false),
-			(9, NULL, 'policy 9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false)
+			(101, 42,   'policy 1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
+			(102, 42,   'policy 2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
+			(103, 43,   'policy 3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
+			(104, NULL, 'policy 4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false),
+			(105, NULL, 'policy 5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false),
+			(106, NULL, 'policy 6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false),
+			(107, NULL, 'policy 7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false),
+			(108, NULL, 'policy 8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false),
+			(109, NULL, 'policy 9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -57,10 +54,10 @@ func TestGetConfigurationPolicies(t *testing.T) {
 	insertRepo(t, db, 44, "localhost/secret-repo")
 
 	for policyID, patterns := range map[int][]string{
-		6: {"gitlab.com/*"},
-		7: {"gitlab.com/*1"},
-		8: {"gitlab.com/*2"},
-		9: {"github.com/*"},
+		106: {"gitlab.com/*"},
+		107: {"gitlab.com/*1"},
+		108: {"gitlab.com/*2"},
+		109: {"github.com/*"},
 	} {
 		if err := store.UpdateReposMatchingPatterns(ctx, patterns, policyID, nil); err != nil {
 			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
@@ -75,24 +72,24 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		expectedIDs      []int
 	}
 	testCases := []testCase{
-		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9}},                      // Any flags; all policies
-		{repositoryID: 41, expectedIDs: []int{4, 5, 6, 7}},                   // Any flags; matches repo by patterns
-		{repositoryID: 42, expectedIDs: []int{1, 2, 4, 5, 9}},                // Any flags; matches repo by assignment and pattern
-		{repositoryID: 43, expectedIDs: []int{3, 4, 5}},                      // Any flags; matches repo by assignment
-		{repositoryID: 44, expectedIDs: []int{4, 5}},                         // Any flags; no matches by repo
-		{forDataRetention: true, expectedIDs: []int{2, 4, 6, 8}},             // For data retention; all policies
-		{forDataRetention: true, repositoryID: 41, expectedIDs: []int{4, 6}}, // For data retention; matches repo by patterns
-		{forDataRetention: true, repositoryID: 42, expectedIDs: []int{2, 4}}, // For data retention; matches repo by assignment and pattern
-		{forDataRetention: true, repositoryID: 43, expectedIDs: []int{4}},    // For data retention; matches repo by assignment
-		{forDataRetention: true, repositoryID: 44, expectedIDs: []int{4}},    // For data retention; no matches by repo
-		{forIndexing: true, expectedIDs: []int{1, 3, 5, 7, 9}},               // For indexing; all policies
-		{forIndexing: true, repositoryID: 41, expectedIDs: []int{5, 7}},      // For indexing; matches repo by patterns
-		{forIndexing: true, repositoryID: 42, expectedIDs: []int{1, 5, 9}},   // For indexing; matches repo by assignment and pattern
-		{forIndexing: true, repositoryID: 43, expectedIDs: []int{3, 5}},      // For indexing; matches repo by assignment
-		{forIndexing: true, repositoryID: 44, expectedIDs: []int{5}},         // For indexing; no matches by repo
+		{expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},        // Any flags; all policies
+		{repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},               // Any flags; matches repo by patterns
+		{repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}},          // Any flags; matches repo by assignment and pattern
+		{repositoryID: 43, expectedIDs: []int{103, 104, 105}},                    // Any flags; matches repo by assignment
+		{repositoryID: 44, expectedIDs: []int{104, 105}},                         // Any flags; no matches by repo
+		{forDataRetention: true, expectedIDs: []int{102, 104, 106, 108}},         // For data retention; all policies
+		{forDataRetention: true, repositoryID: 41, expectedIDs: []int{104, 106}}, // For data retention; matches repo by patterns
+		{forDataRetention: true, repositoryID: 42, expectedIDs: []int{102, 104}}, // For data retention; matches repo by assignment and pattern
+		{forDataRetention: true, repositoryID: 43, expectedIDs: []int{104}},      // For data retention; matches repo by assignment
+		{forDataRetention: true, repositoryID: 44, expectedIDs: []int{104}},      // For data retention; no matches by repo
+		{forIndexing: true, expectedIDs: []int{101, 103, 105, 107, 109}},         // For indexing; all policies
+		{forIndexing: true, repositoryID: 41, expectedIDs: []int{105, 107}},      // For indexing; matches repo by patterns
+		{forIndexing: true, repositoryID: 42, expectedIDs: []int{101, 105, 109}}, // For indexing; matches repo by assignment and pattern
+		{forIndexing: true, repositoryID: 43, expectedIDs: []int{103, 105}},      // For indexing; matches repo by assignment
+		{forIndexing: true, repositoryID: 44, expectedIDs: []int{105}},           // For indexing; no matches by repo
 
-		{term: "bc", expectedIDs: []int{1, 3, 4, 5, 6, 8}}, // Searches by name (multiple substring matches)
-		{term: "abcd", expectedIDs: []int{}},               // Searches by name (no matches)
+		{term: "bc", expectedIDs: []int{101, 103, 104, 105, 106, 108}}, // Searches by name (multiple substring matches)
+		{term: "abcd", expectedIDs: []int{}},                           // Searches by name (no matches)
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
@@ -150,11 +147,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 }
 
 func TestGetConfigurationPolicyByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
 	query := `
@@ -171,13 +165,13 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 			indexing_enabled,
 			index_commit_max_age_hours,
 			index_intermediate_commits
-		) VALUES (1, 42, '{github.com/*}', 'policy 1', 'GIT_TREE', 'ab/', true, 2, false, false, 3, true)
+		) VALUES (101, 42, '{github.com/*}', 'policy 1', 'GIT_TREE', 'ab/', true, 2, false, false, 3, true)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	policy, ok, err := store.GetConfigurationPolicyByID(context.Background(), 1)
+	policy, ok, err := store.GetConfigurationPolicyByID(context.Background(), 101)
 	if err != nil {
 		t.Fatalf("unexpected error fetching configuration policy: %s", err)
 	}
@@ -192,7 +186,7 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 	repositoryPatterns := []string{"github.com/*"}
 
 	expectedPolicy := ConfigurationPolicy{
-		ID:                        1,
+		ID:                        101,
 		RepositoryID:              &repositoryID,
 		RepositoryPatterns:        &repositoryPatterns,
 		Name:                      "policy 1",
@@ -228,11 +222,8 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 }
 
 func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	_, ok, err := store.GetConfigurationPolicyByID(context.Background(), 15)
 	if err != nil {
@@ -244,11 +235,8 @@ func TestGetConfigurationPolicyByIDUnknownID(t *testing.T) {
 }
 
 func TestCreateConfigurationPolicy(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
 	d1 := time.Hour * 5
@@ -294,11 +282,8 @@ func TestCreateConfigurationPolicy(t *testing.T) {
 }
 
 func TestUpdateConfigurationPolicy(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
 	d1 := time.Hour * 5
@@ -359,11 +344,8 @@ func TestUpdateConfigurationPolicy(t *testing.T) {
 }
 
 func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
 	d1 := time.Hour * 5
@@ -471,11 +453,8 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 }
 
 func TestDeleteConfigurationPolicyByID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
 	d1 := time.Hour * 5
@@ -517,11 +496,8 @@ func TestDeleteConfigurationPolicyByID(t *testing.T) {
 }
 
 func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 
 	repositoryID := 42
 	d1 := time.Hour * 5
@@ -568,11 +544,8 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 }
 
 func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
+	db := dbtest.NewDB(t)
+	store := testStoreWithoutConfigurationPolicies(t, db)
 	ctx := context.Background()
 
 	query := `
@@ -590,10 +563,10 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true,  1, true,  true,  1, true),
-			(2, NULL, 'policy 2', 'GIT_TREE', 'cd/', null, false, 2, true,  true,  2, true),
-			(3, NULL, 'policy 3', 'GIT_TREE', 'ef/', null, true,  3, false, false, 3, false),
-			(4, NULL, 'policy 4', 'GIT_TREE', 'gh/', null, false, 4, false, false, 4, false)
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true,  1, true,  true,  1, true),
+			(102, NULL, 'policy 2', 'GIT_TREE', 'cd/', null, false, 2, true,  true,  2, true),
+			(103, NULL, 'policy 3', 'GIT_TREE', 'ef/', null, true,  3, false, false, 3, false),
+			(104, NULL, 'policy 4', 'GIT_TREE', 'gh/', null, false, 4, false, false, 4, false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -610,28 +583,28 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 	// Can return nulls
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{1, 2}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{101, 102}, ids(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
 	// Returns new batch
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{3, 4}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{103, 104}, ids(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
 	// Recycles policies by age
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{1, 2, 3}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{101, 102, 103}, ids(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
 	// Recycles policies by age
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
-	} else if diff := cmp.Diff([]int{4, 1, 2}, ids(policies)); diff != "" {
+	} else if diff := cmp.Diff([]int{104, 101, 102}, ids(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 }
