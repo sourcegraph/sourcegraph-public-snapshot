@@ -9500,6 +9500,7 @@ Query: `max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[
 <p class="subtitle">Total number of repos scheduled for permissions sync</p>
 
 Indicates how many repositories have been scheduled for a permissions sync.
+More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/repo/permissions#permissions-sync-scheduling)
 
 This panel has no related alerts.
 
