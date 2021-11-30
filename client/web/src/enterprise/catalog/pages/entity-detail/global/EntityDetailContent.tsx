@@ -13,6 +13,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { catalogEntityIconComponent } from '../../../components/CatalogEntityIcon'
+import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentAPI } from './ComponentApi'
 import { ComponentAuthors } from './ComponentAuthors'
@@ -55,22 +56,47 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                         <SearchIcon className="icon-inline" /> Search in {entity.name}...
                                     </Link>
                                     <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
-                                    <ComponentAuthors
-                                        catalogComponent={entity}
-                                        className="card mb-3"
-                                        headerClassName={classNames('card-header', styles.cardHeader)}
-                                        titleClassName={classNames('card-title', styles.cardTitle)}
-                                        bodyClassName={styles.cardBody}
-                                        bodyScrollableClassName={styles.cardBodyScrollable}
+                                    <EntityGraph
+                                        graph={{
+                                            edges: entity.relatedEntities.edges.map(edge =>
+                                                edge.type === 'DEPENDS_ON'
+                                                    ? {
+                                                          outNode: entity,
+                                                          outType: edge.type,
+                                                          inNode: edge.node,
+                                                          inType: edge.type,
+                                                      }
+                                                    : {
+                                                          outNode: edge.node,
+                                                          outType: edge.type,
+                                                          inNode: entity,
+                                                          inType: edge.type,
+                                                      }
+                                            ),
+                                            nodes: entity.relatedEntities.edges.map(edge => edge.node).concat(entity),
+                                        }}
+                                        activeNodeID={entity.id}
                                     />
-                                    <ComponentCommits
-                                        catalogComponent={entity}
-                                        className="card overflow-hidden"
-                                        headerClassName={classNames('card-header', styles.cardHeader)}
-                                        titleClassName={classNames('card-title', styles.cardTitle)}
-                                        bodyClassName={styles.cardBody}
-                                        bodyScrollableClassName={styles.cardBodyScrollable}
-                                    />
+                                    {false && (
+                                        <>
+                                            <ComponentAuthors
+                                                catalogComponent={entity}
+                                                className="card mb-3"
+                                                headerClassName={classNames('card-header', styles.cardHeader)}
+                                                titleClassName={classNames('card-title', styles.cardTitle)}
+                                                bodyClassName={styles.cardBody}
+                                                bodyScrollableClassName={styles.cardBodyScrollable}
+                                            />
+                                            <ComponentCommits
+                                                catalogComponent={entity}
+                                                className="card overflow-hidden"
+                                                headerClassName={classNames('card-header', styles.cardHeader)}
+                                                titleClassName={classNames('card-title', styles.cardTitle)}
+                                                bodyClassName={styles.cardBody}
+                                                bodyScrollableClassName={styles.cardBodyScrollable}
+                                            />
+                                        </>
+                                    )}
                                 </>
                             ) : (
                                 <div>Typename is {entity.__typename}</div>

@@ -1,5 +1,5 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Switch, Route, useRouteMatch, RouteComponentProps } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -23,8 +23,6 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
     const match = useRouteMatch()
 
     const { filters, onFiltersChange } = useCatalogEntityFilters()
-
-    useEffect(() => () => console.log('DESTROY CatalogArea'), [])
 
     return (
         <div className={styles.container}>

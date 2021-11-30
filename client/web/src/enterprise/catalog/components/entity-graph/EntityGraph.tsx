@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as d3 from 'd3-shape'
 import { CustomNodeLabelProps, DagreReact, EdgeOptions, NodeOptions, Point, RecursivePartial } from 'dagre-reactjs'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
 import AutoSizer from 'react-virtualized-auto-sizer'
@@ -11,6 +11,7 @@ import { CatalogEntityIcon } from '../CatalogEntityIcon'
 
 interface Props {
     graph: CatalogGraphFields
+    activeNodeID?: string
     className?: string
 }
 
@@ -20,7 +21,7 @@ const defaultNodeConfig: RecursivePartial<NodeOptions> = {
             padding: {
                 top: 8,
                 right: 16,
-                bottom: 12,
+                bottom: 8,
                 left: 16,
             },
         },
@@ -49,7 +50,10 @@ const defaultEdgeConfig: RecursivePartial<EdgeOptions> = {
     },
 }
 
-export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }) => {
+export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeID, className }) => {
+    const [stage, setStage] = useState(0)
+    useEffect(() => setStage(stage => stage + 1), [graph])
+
     const viewer = useRef<UncontrolledReactSVGPanZoom>(null)
     const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 })
     return (
@@ -78,11 +82,20 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
                     >
                         <svg width={dimensions.width} height={dimensions.height}>
                             <DagreReact
+                                stage={stage}
                                 nodes={graph.nodes.map(node => ({
                                     id: node.id,
                                     label: node.name,
                                     labelType: 'Entity',
-                                    meta: { entity: node },
+                                    meta: { entity: node, isActive: activeNodeID === node.id },
+                                    styles:
+                                        activeNodeID === node.id
+                                            ? {
+                                                  shape: { styles: { fill: 'var(--primary)' } },
+                                              }
+                                            : activeNodeID
+                                            ? { shape: { styles: { fillOpacity: 0.4 } } }
+                                            : undefined,
                                 }))}
                                 edges={graph.edges.map(edge => ({
                                     from: edge.outNode.id,
@@ -111,11 +124,11 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
                                     })
                                 }}
                                 graphOptions={{
-                                    marginx: 15,
-                                    marginy: 15,
+                                    marginx: 25,
+                                    marginy: 25,
                                     rankdir: 'LR',
-                                    ranksep: 55,
-                                    nodesep: 15,
+                                    ranksep: 75,
+                                    nodesep: 25,
                                 }}
                             />
                         </svg>
@@ -128,10 +141,13 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
 
 const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
     node: {
-        meta: { entity },
+        meta: { entity, isActive },
     },
 }) => (
-    <Link to={entity.url} className="d-flex align-items-center text-body text-nowrap">
+    <Link
+        to={entity.url}
+        className={classNames('d-flex align-items-center text-body text-nowrap', { 'font-weight-bold': isActive })}
+    >
         <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
     </Link>
 )

@@ -30,7 +30,7 @@ export function catalogEntityIconComponent(entity: PartialEntity): React.Compone
         case 'CatalogComponent':
             return CATALOG_COMPONENT_ICON_BY_KIND[entity.kind]
         default:
-            throw new Error('unknown icon')
+            return TextureBoxIcon // TODO(sqs): unexpected case
     }
 }
 
