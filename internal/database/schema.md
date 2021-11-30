@@ -946,16 +946,15 @@ Referenced by:
 
 # Table "public.gitserver_repos"
 ```
-        Column         |           Type           | Collation | Nullable |      Default       
------------------------+--------------------------+-----------+----------+--------------------
- repo_id               | integer                  |           | not null | 
- clone_status          | text                     |           | not null | 'not_cloned'::text
- last_external_service | bigint                   |           |          | 
- shard_id              | text                     |           | not null | 
- last_error            | text                     |           |          | 
- updated_at            | timestamp with time zone |           | not null | now()
- last_fetched          | timestamp with time zone |           | not null | now()
- last_changed          | timestamp with time zone |           | not null | now()
+    Column    |           Type           | Collation | Nullable |      Default       
+--------------+--------------------------+-----------+----------+--------------------
+ repo_id      | integer                  |           | not null | 
+ clone_status | text                     |           | not null | 'not_cloned'::text
+ shard_id     | text                     |           | not null | 
+ last_error   | text                     |           |          | 
+ updated_at   | timestamp with time zone |           | not null | now()
+ last_fetched | timestamp with time zone |           | not null | now()
+ last_changed | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
