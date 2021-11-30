@@ -37,10 +37,6 @@ func (r *Resolver) SearchInsightLivePreview(ctx context.Context, args graphqlbac
 	return resolvers, nil
 }
 
-func (r *disabledResolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
 type searchInsightLivePreviewSeriesResolver struct {
 	series *query.GeneratedTimeSeries
 }
