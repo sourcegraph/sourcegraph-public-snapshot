@@ -59,6 +59,10 @@ func main() {
 		log.Fatalf("Failed to load configuration: %s", err)
 	}
 
+	// Ensure we register our database driver before calling
+	// anything that tries to open a SQLite database.
+	database.Init()
+
 	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
 		if err := sqlite.SanityCheck(); err != nil {
@@ -99,7 +103,6 @@ func main() {
 		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
-	database.Init()
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
 	parser := parser.NewParser(parserPool, repositoryFetcher, observationContext)
