@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import { CustomNodeLabelProps, DagreReact, EdgeOptions, NodeOptions, RecursivePartial } from 'dagre-reactjs'
+import * as d3 from 'd3-shape'
+import { CustomNodeLabelProps, DagreReact, EdgeOptions, NodeOptions, Point, RecursivePartial } from 'dagre-reactjs'
 import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
@@ -33,12 +34,14 @@ const defaultNodeConfig: RecursivePartial<NodeOptions> = {
 }
 
 const defaultEdgeConfig: RecursivePartial<EdgeOptions> = {
+    labelOffset: 4,
+    pathType: 'd3curve',
     styles: {
         label: {
-            styles: { fill: 'var(--text-muted)' },
+            styles: { fill: 'var(--text-muted)', fontSize: '0.7rem' },
         },
         edge: {
-            styles: { stroke: 'var(--border-color-2)', strokeWidth: '2.5px' },
+            styles: { stroke: 'var(--border-color-2)', strokeWidth: '2.5px', fill: 'transparent' },
         },
         marker: {
             styles: { fill: 'var(--border-color-2)' },
@@ -94,6 +97,9 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
                                         html: true,
                                     },
                                 }}
+                                customPathGenerators={{
+                                    d3curve: generatePathD3Curve,
+                                }}
                                 graphLayoutComplete={(width?: number, height?: number) => {
                                     if (width && height) {
                                         setDimensions({ width, height })
@@ -129,3 +135,9 @@ const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
         <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
     </Link>
 )
+
+const generatePathD3Curve = (points: Point[]): string => {
+    const p: [number, number][] = points.map(point => [point.x, point.y])
+    const c = d3.line().curve(d3.curveBasis)(p)
+    return c!
+}

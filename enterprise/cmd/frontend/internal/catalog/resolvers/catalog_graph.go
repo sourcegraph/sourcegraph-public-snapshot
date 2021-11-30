@@ -17,13 +17,19 @@ func (r *catalogResolver) Graph(ctx context.Context) (gql.CatalogGraphResolver, 
 	}
 	graph.nodes = wrapInCatalogEntityInterfaceType(entities)
 
-	seeds := []int{1, 2, 3, 5, 7, 8, 11, 1, 12, 5, 3}
+	seeds := []int{1, 2, 3, 5, 7, 8, 11, 1, 12, 5}
+	seeds = append(seeds, seeds...)
 	y := 17
 	for _, x := range seeds {
+		outNode := graph.nodes[x%len(graph.nodes)]
+		inNode := graph.nodes[y%len(graph.nodes)]
+		if outNode == inNode {
+			continue
+		}
 		edge := catalogEntityRelationEdgeResolver{
-			outNode: graph.nodes[x%len(graph.nodes)],
+			outNode: outNode,
 			outType: "DEPENDS_ON",
-			inNode:  graph.nodes[y%len(graph.nodes)],
+			inNode:  inNode,
 			inType:  "DEPENDENCY_OF",
 		}
 		y += x
