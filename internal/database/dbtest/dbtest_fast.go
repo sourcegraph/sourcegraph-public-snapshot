@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"net/url"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
-func NewFast(t testing.TB) *sql.DB {
+// NewFastDB returns a clean database that will be deleted
+// at the end of the test.
+func NewFastDB(t testing.TB) *sql.DB {
 	t.Helper()
 	u, err := url.Parse(getDSN())
 	if err != nil {
@@ -22,21 +25,14 @@ func NewFast(t testing.TB) *sql.DB {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
 	t.Cleanup(func() { pool.db.Close() })
+	cleanOldDBs(pool)
 
 	return newFromPool(t, u, pool)
 }
 
-const defaultDSN = `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/postgres?sslmode=disable&timezone=UTC`
-
-func getDSN() string {
-	if dsn, ok := os.LookupEnv("PGDATASOURCE"); ok {
-		return dsn
-	}
-
-	return defaultDSN
-}
-
-func NewFastWithDSN(t testing.TB, dsn string) *sql.DB {
+// NewFastDBWithDSN returns a clean database using the given connection string
+// that will be deleted at the end of the test
+func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 	t.Helper()
 	u, err := url.Parse(dsn)
 	if err != nil {
@@ -48,17 +44,61 @@ func NewFastWithDSN(t testing.TB, dsn string) *sql.DB {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
 	t.Cleanup(func() { pool.db.Close() })
+	cleanOldDBs(pool)
 
 	return newFromPool(t, u, pool)
 }
 
+// NewFastTx returns a transaction in a clean database. At the end of the test,
+// the transaction will be rolled back, and the clean database can be reused
+func NewFastTx(t testing.TB) *sql.Tx {
+	t.Helper()
+	u, err := url.Parse(getDSN())
+	if err != nil {
+		t.Fatalf("failed to parse dsn: %s", err)
+	}
+
+	pool, err := newPoolFromURL(u)
+	if err != nil {
+		t.Fatalf("failed to create new pool: %s", err)
+	}
+	t.Cleanup(func() { pool.db.Close() })
+	cleanOldDBs(pool)
+
+	return newTxFromPool(t, u, pool)
+}
+
+func getDSN() string {
+	if dsn, ok := os.LookupEnv("PGDATASOURCE"); ok {
+		return dsn
+	}
+
+	return `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/postgres?sslmode=disable&timezone=UTC`
+}
+
+var (
+	cleanupOnce sync.Once
+	cleanupErr  error
+)
+
+// Once per test process, we check for any databases from old migrations and clean them up
+func cleanOldDBs(pool *testDatabasePool) error {
+	cleanupOnce.Do(func() {
+		cleanupErr = pool.CleanUpOldDBs(context.Background(), dbconn.Frontend, dbconn.CodeIntel)
+	})
+	return cleanupErr
+}
+
 func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 	ctx := context.Background()
+
+	// Get or create the template database
 	tdb, err := pool.GetTemplate(ctx, u, dbconn.Frontend, dbconn.CodeIntel)
 	if err != nil {
 		t.Fatalf("failed to get or create template db: %s", err)
 	}
 
+	// Get or create a database cloned from the template database
 	mdb, err := pool.GetMigratedDB(ctx, tdb)
 	if err != nil {
 		t.Fatalf("failed to get or create migrated db: %s", err)
@@ -75,27 +115,12 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 		}
 	})
 
+	// Open a connection to the clean database
 	testDBURL := urlWithDB(u, mdb.Name)
 	testDB := dbConn(t, testDBURL)
 	t.Cleanup(func() { testDB.Close() })
 
 	return testDB
-}
-
-func NewFastTx(t testing.TB) *sql.Tx {
-	t.Helper()
-	u, err := url.Parse(getDSN())
-	if err != nil {
-		t.Fatalf("failed to parse dsn: %s", err)
-	}
-
-	pool, err := newPoolFromURL(u)
-	if err != nil {
-		t.Fatalf("failed to create new pool: %s", err)
-	}
-	t.Cleanup(func() { pool.db.Close() })
-
-	return newTxFromPool(t, u, pool)
 }
 
 func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {

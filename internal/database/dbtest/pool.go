@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -95,6 +96,10 @@ VALUES (%s)
 RETURNING %s
 `
 
+// GetTemplate will return a template database that has been migrated with the given migrations.
+// The given migrations are hashed and used to identify template databases that have already been
+// migrated. If no template database exists with the same hash as the given migrations, a new template
+// database is created and the migrations are run.
 func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...*dbconn.Database) (_ *TemplateDB, err error) {
 	tx, err := t.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -199,6 +204,9 @@ WHERE claimed = false
 LIMIT 1
 `
 
+// GetMigratedDB returns a new, clean, migrated db that is cloned from the given templated db. If an unclaimed,
+// clean database already exists for the given template, that is claimed and returned. If it does not, a new
+// database is created from the given template and returned.
 func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (_ *MigratedDB, err error) {
 	tx, err := t.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -256,6 +264,10 @@ SET (claimed, clean) = (false, true)
 WHERE id = %s
 `
 
+// UnclaimCleanMigratedDB marks a clean database as unclaimed, allowing it to be returned by a
+// call to GetMigratedDB. A migrated db should never be unclaimed if it was written to, and should
+// be deleted instead. This should really only be called if the database was only used in a transaction
+// and that transaction was rolled back (as in NewFastTx).
 func (t *testDatabasePool) UnclaimCleanMigratedDB(ctx context.Context, mdb *MigratedDB) error {
 	q := sqlf.Sprintf(
 		unclaimCleanMigratedDB,
@@ -271,17 +283,128 @@ DELETE FROM migrated_dbs
 WHERE id = %s
 `
 
+// DeleteMigratedDB deletes a database and untracks it in migrated_dbs
 func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) error {
-	q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
-	_, err := t.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
 	if err != nil {
 		return err
 	}
 
-	_, err = t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
+	q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
+	_, err = t.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
+const listOldTemplateDBs = `
+SELECT %s
+FROM template_dbs
+WHERE 
+	migration_hash != %s
+	AND last_used_at < NOW() - INTERVAL '1 day'
+FOR UPDATE
+`
+
+const listMigratedDBsForTemplate = `
+SELECT %s
+FROM migrated_dbs
+WHERE template = %s
+FOR UPDATE
+`
+
+const uninsertTemplateDB = `
+DELETE FROM template_dbs
+WHERE id = %s
+`
+
+func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.Database) (err error) {
+	hash, err := hashMigrations(except...)
+	if err != nil {
+		return err
+	}
+
+	tx, err := t.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	// List any old template databases that don't have the same
+	// hash as the given database definitions
+	q := sqlf.Sprintf(
+		listOldTemplateDBs,
+		sqlf.Join(templateDBColumns, ","),
+		hash,
+	)
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	oldTDBs, err := scanTemplateDBs(rows)
+	if err != nil {
+		return err
+	}
+
+	var errs *multierror.Error
+	for _, tdb := range oldTDBs {
+		q = sqlf.Sprintf(
+			listMigratedDBsForTemplate,
+			tdb.ID,
+		)
+		rows, err = tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		defer rows.Close()
+
+		mdbs, err := scanMigratedDBs(rows)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+
+		var mdbErrs *multierror.Error
+		for _, mdb := range mdbs {
+			// Just a best effort delete in case this somehow gets out of sync
+			// and that database is already gone
+			_, _ = t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
+
+			q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
+			_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			if err != nil {
+				mdbErrs = multierror.Append(mdbErrs, err)
+			}
+		}
+		if mdbErrs != nil {
+			errs = multierror.Append(mdbErrs)
+			continue
+		}
+
+		// Just a best effort delete in case this somehow gets out of sync
+		// and that database is already gone
+		_, _ = t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(tdb.Name))
+
+		q = sqlf.Sprintf(uninsertTemplateDB, tdb.ID)
+		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+	}
+
+	return errs.ErrorOrNil()
+}
+
+// hashMigrations deterministically hashes all the migrations in the given
+// database definitions. This is used to determine whether a new template
+// database should be created for the given set of migrations.
 func hashMigrations(defs ...*dbconn.Database) (uint64, error) {
 	hash := fnv.New64()
 	for _, def := range defs {
@@ -314,6 +437,18 @@ func hashMigrations(defs ...*dbconn.Database) (uint64, error) {
 	return hash.Sum64(), nil
 }
 
+func scanTemplateDBs(rows *sql.Rows) ([]*TemplateDB, error) {
+	var tdbs []*TemplateDB
+	for rows.Next() {
+		tdb, err := scanTemplateDB(rows)
+		if err != nil {
+			return nil, err
+		}
+		tdbs = append(tdbs, tdb)
+	}
+	return tdbs, nil
+}
+
 func scanTemplateDB(scanner dbutil.Scanner) (*TemplateDB, error) {
 	var t TemplateDB
 	err := scanner.Scan(
@@ -324,6 +459,18 @@ func scanTemplateDB(scanner dbutil.Scanner) (*TemplateDB, error) {
 		&t.LastUsedAt,
 	)
 	return &t, err
+}
+
+func scanMigratedDBs(rows *sql.Rows) ([]*MigratedDB, error) {
+	var mdbs []*MigratedDB
+	for rows.Next() {
+		mdb, err := scanMigratedDB(rows)
+		if err != nil {
+			return nil, err
+		}
+		mdbs = append(mdbs, mdb)
+	}
+	return mdbs, nil
 }
 
 func scanMigratedDB(scanner dbutil.Scanner) (*MigratedDB, error) {

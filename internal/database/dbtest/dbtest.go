@@ -58,7 +58,7 @@ var rngLock sync.Mutex
 // DSN.
 func NewDB(t testing.TB) *sql.DB {
 	if os.Getenv("USE_FAST_DBTEST") != "" {
-		return NewFast(t)
+		return NewFastDB(t)
 	}
 	return NewFromDSN(t, "")
 }
