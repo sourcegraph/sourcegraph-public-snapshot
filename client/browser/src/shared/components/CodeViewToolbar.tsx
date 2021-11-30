@@ -15,6 +15,7 @@ import { DiffOrBlobInfo, FileInfoWithContent } from '../code-hosts/shared/codeHo
 import { SignInButton } from '../code-hosts/shared/SignInButton'
 import { defaultRevisionToCommitID } from '../code-hosts/shared/util/fileInfo'
 
+import styles from './CodeViewToolbar.module.scss'
 import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
@@ -57,14 +58,11 @@ export interface CodeViewToolbarProps
 }
 
 export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
-    <ul className={classNames('code-view-toolbar', props.className)} data-testid="code-view-toolbar">
+    <ul className={classNames(styles.codeViewToolbar, props.className)} data-testid="code-view-toolbar">
         {!props.hideActions && (
             <ActionsNavItems
                 {...props}
-                listItemClass={classNames(
-                    'code-view-toolbar__item',
-                    props.buttonProps?.listItemClass ?? props.listItemClass
-                )}
+                listItemClass={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}
                 actionItemClass={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                 menu={ContributableMenu.EditorTitle}
                 extensionsController={props.extensionsController}
@@ -85,12 +83,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
         ) : (
             <>
                 {!('blob' in props.fileInfoOrError) && props.fileInfoOrError.head && props.fileInfoOrError.base && (
-                    <li
-                        className={classNames(
-                            'code-view-toolbar__item',
-                            props.buttonProps?.listItemClass ?? props.listItemClass
-                        )}
-                    >
+                    <li className={classNames(styles.item, props.buttonProps?.listItemClass ?? props.listItemClass)}>
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"
                             platformContext={props.platformContext}
@@ -115,7 +108,7 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                     'blob' in props.fileInfoOrError && props.fileInfoOrError.blob.content !== undefined && (
                         <li
                             className={classNames(
-                                'code-view-toolbar__item',
+                                styles.item,
                                 props.buttonProps?.actionItemClass ?? props.listItemClass
                             )}
                         >

@@ -839,7 +839,7 @@ describe('codeHost', () => {
             await tick()
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
-            expect(nativeTooltip).toHaveClass('native-tooltip--hidden')
+            expect(nativeTooltip).toHaveAttribute('data-native-tooltip-hidden', 'true')
         })
     })
 
