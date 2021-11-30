@@ -8,7 +8,7 @@ import React from 'react'
 import { CatalogComponentKind } from '../../../graphql-operations'
 
 interface Props {
-    catalogComponent: { kind: CatalogComponentKind }
+    entity: { kind: CatalogComponentKind }
     className?: string
 }
 
@@ -23,7 +23,7 @@ export const CATALOG_COMPONENT_ICON_BY_KIND: Record<
     OTHER: TextureBoxIcon,
 }
 
-export const CatalogComponentIcon: React.FunctionComponent<Props> = ({ catalogComponent: { kind }, className }) => {
+export const CatalogEntityIcon: React.FunctionComponent<Props> = ({ entity: { kind }, className }) => {
     const Icon = CATALOG_COMPONENT_ICON_BY_KIND[kind]
     return <Icon className={className} />
 }

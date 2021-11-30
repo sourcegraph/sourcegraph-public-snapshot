@@ -11,7 +11,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogComponentDetailFields } from '../../../../../graphql-operations'
-import { CATALOG_COMPONENT_ICON_BY_KIND } from '../../../components/CatalogComponentIcon'
+import { CATALOG_COMPONENT_ICON_BY_KIND } from '../../../components/CatalogEntityIcon'
 
 import { ComponentAPI } from './ComponentApi'
 import { ComponentAuthors } from './ComponentAuthors'

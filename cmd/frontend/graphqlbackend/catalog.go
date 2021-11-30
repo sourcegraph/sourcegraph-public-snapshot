@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -14,40 +13,53 @@ import (
 // CatalogRootResolver is the root resolver.
 type CatalogRootResolver interface {
 	Catalog(context.Context) (CatalogResolver, error)
-	CatalogComponent(context.Context, *CatalogComponentArgs) (CatalogComponentResolver, error)
+	CatalogEntity(context.Context, *CatalogEntityArgs) (*CatalogEntityResolver, error)
 
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
-type CatalogComponentArgs struct {
+type CatalogEntityType string
+
+type CatalogEntity interface {
+	Node
+	Type() CatalogEntityType
+	Name() string
+	Description() *string
+	URL() string
+}
+
+type CatalogEntityResolver struct {
+	CatalogEntity
+}
+
+func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
+	e, ok := r.CatalogEntity.(CatalogComponentResolver)
+	return e, ok
+}
+
+type CatalogEntityArgs struct {
 	Name string
 }
 
 type CatalogResolver interface {
-	Components(context.Context, *CatalogComponentsArgs) (CatalogComponentConnectionResolver, error)
+	Entities(context.Context, *CatalogEntitiesArgs) (CatalogEntityConnectionResolver, error)
 }
 
-type CatalogComponentsArgs struct {
+type CatalogEntitiesArgs struct {
 	Query *string
 	First *int32
 	After *string
 }
 
-type CatalogComponentConnectionResolver interface {
-	Nodes(context.Context) ([]CatalogComponentResolver, error)
+type CatalogEntityConnectionResolver interface {
+	Nodes(context.Context) ([]*CatalogEntityResolver, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 }
 
 type CatalogComponentResolver interface {
-	ID() graphql.ID
+	CatalogEntity
 	Kind() CatalogComponentKind
-	Name() string
-	Description() *string
-	Owner(context.Context) (*PersonResolver, error)
-	System() *string
-	Tags() []string
-	URL() string
 
 	Readme(context.Context) (FileResolver, error)
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)

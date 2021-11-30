@@ -15,20 +15,19 @@ import {
     SummaryContainer,
 } from '../../../../../../components/FilteredConnection/ui'
 import {
-    CatalogComponentsResult,
-    CatalogComponentsVariables,
-    CatalogComponentFields,
+    CatalogEntitiesResult,
+    CatalogEntitiesVariables,
+    CatalogEntityFields,
 } from '../../../../../../graphql-operations'
-import { CatalogComponentIcon } from '../../../../components/CatalogComponentIcon'
-import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
+import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
+import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 
-import styles from './ComponentList.module.scss'
-import { ComponentListFilters } from './ComponentListFilters'
-import { CATALOG_COMPONENTS } from './gql'
+import { EntityListFilters } from './EntityListFilters'
+import { CATALOG_ENTITIES } from './gql'
 
-interface Props extends CatalogComponentFiltersProps {
-    /** The name of the currently selected CatalogComponent, if any. */
-    selectedComponentName?: string
+interface Props extends CatalogEntityFiltersProps {
+    /** The name of the currently selected catalog entity, if any. */
+    selectedEntityName?: string
 
     size: 'sm' | 'lg'
     className?: string
@@ -36,19 +35,19 @@ interface Props extends CatalogComponentFiltersProps {
 
 const FIRST = 20
 
-export const ComponentList: React.FunctionComponent<Props> = ({
-    selectedComponentName,
+export const EntityList: React.FunctionComponent<Props> = ({
+    selectedEntityName,
     filters,
     onFiltersChange,
     size,
     className,
 }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
-        CatalogComponentsResult,
-        CatalogComponentsVariables,
-        CatalogComponentFields
+        CatalogEntitiesResult,
+        CatalogEntitiesVariables,
+        CatalogEntityFields
     >({
-        query: CATALOG_COMPONENTS,
+        query: CATALOG_ENTITIES,
         variables: {
             query: filters.query || '',
             first: FIRST,
@@ -60,13 +59,13 @@ export const ComponentList: React.FunctionComponent<Props> = ({
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-            return data.catalog.components
+            return data.catalog.entities
         },
     })
 
     return (
         <>
-            <ComponentListFilters
+            <EntityListFilters
                 filters={filters}
                 onFiltersChange={onFiltersChange}
                 size={size}
@@ -74,12 +73,12 @@ export const ComponentList: React.FunctionComponent<Props> = ({
             />
             <ConnectionContainer className={className}>
                 {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className={classNames('list-group list-group-flush', styles.list)}>
+                <ConnectionList className={classNames('list-group list-group-flush')}>
                     {connection?.nodes?.map(node => (
-                        <CatalogComponent
+                        <CatalogEntity
                             key={node.id}
                             node={node}
-                            selected={Boolean(selectedComponentName && node.name === selectedComponentName)}
+                            selected={Boolean(selectedEntityName && node.name === selectedEntityName)}
                             size={size}
                         />
                     ))}
@@ -91,8 +90,8 @@ export const ComponentList: React.FunctionComponent<Props> = ({
                             noSummaryIfAllNodesVisible={true}
                             first={FIRST}
                             connection={connection}
-                            noun="component"
-                            pluralNoun="components"
+                            noun="entity"
+                            pluralNoun="entities"
                             hasNextPage={hasNextPage}
                             emptyElement={<p>No components found</p>}
                         />
@@ -104,8 +103,8 @@ export const ComponentList: React.FunctionComponent<Props> = ({
     )
 }
 
-const CatalogComponent: React.FunctionComponent<{
-    node: CatalogComponentFields
+const CatalogEntity: React.FunctionComponent<{
+    node: CatalogEntityFields
     selected?: boolean
     size: 'sm' | 'lg'
 }> = ({ node, selected, size }) => (
@@ -118,8 +117,8 @@ const CatalogComponent: React.FunctionComponent<{
                     'stretched-link': size === 'sm',
                 })}
             >
-                <CatalogComponentIcon
-                    catalogComponent={node}
+                <CatalogEntityIcon
+                    entity={node}
                     className={classNames('icon-inline mr-1 flex-shrink-0', { 'text-muted': !selected })}
                 />
                 {node.name}

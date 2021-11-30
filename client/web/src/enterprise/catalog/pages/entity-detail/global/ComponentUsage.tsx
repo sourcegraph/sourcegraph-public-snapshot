@@ -17,7 +17,7 @@ import { CatalogComponentUsageFields } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
 import { UserAvatar } from '../../../../../user/UserAvatar'
-import { CatalogComponentIcon } from '../../../components/CatalogComponentIcon'
+import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
 
 import { ComponentDetailContentCardProps } from './ComponentDetailContent'
 import styles from './ComponentUsage.module.scss'
@@ -73,10 +73,7 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
                 {componentEdges.map(edge => (
                     <li key={edge.node.id} className={classNames('list-group-item')}>
                         <Link to={edge.node.url} className="d-flex align-items-center text-body">
-                            <CatalogComponentIcon
-                                catalogComponent={edge.node}
-                                className="icon-inline text-muted mr-1"
-                            />
+                            <CatalogEntityIcon entity={edge.node} className="icon-inline text-muted mr-1" />
                             {edge.node.name}
                         </Link>
                     </li>

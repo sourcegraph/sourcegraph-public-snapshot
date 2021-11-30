@@ -2,31 +2,28 @@ import * as H from 'history'
 import { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
-export interface CatalogComponentFilters {
+export interface CatalogEntityFilters {
     query?: string
     owner?: string
     system?: string
     tags?: string[]
 }
 
-export interface CatalogComponentFiltersProps {
-    filters: CatalogComponentFilters
-    onFiltersChange: (newValue: CatalogComponentFilters) => void
+export interface CatalogEntityFiltersProps {
+    filters: CatalogEntityFilters
+    onFiltersChange: (newValue: CatalogEntityFilters) => void
 }
 
-export const useCatalogComponentFilters = (): CatalogComponentFiltersProps => {
+export const useCatalogEntityFilters = (): CatalogEntityFiltersProps => {
     const history = useHistory()
     const location = useLocation()
 
-    const filters = useMemo(() => catalogComponentFiltersFromLocation(location.search), [location.search])
+    const filters = useMemo(() => filtersFromLocation(location.search), [location.search])
     const onFiltersChange = useCallback(
-        (newValue: CatalogComponentFilters) => {
+        (newValue: CatalogEntityFilters) => {
             history.push({
                 ...location,
-                search: urlSearchParamsFromCatalogComponentFilters(
-                    newValue,
-                    new URLSearchParams(location.search)
-                ).toString(),
+                search: urlSearchParametersFromFilters(newValue, new URLSearchParams(location.search)).toString(),
             })
         },
         [history, location]
@@ -35,7 +32,7 @@ export const useCatalogComponentFilters = (): CatalogComponentFiltersProps => {
     return { filters, onFiltersChange }
 }
 
-function catalogComponentFiltersFromLocation(locationSearch: H.Location['search']): CatalogComponentFilters {
+function filtersFromLocation(locationSearch: H.Location['search']): CatalogEntityFilters {
     const parameters = new URLSearchParams(locationSearch)
     return {
         query: parameters.get('q') || undefined,
@@ -45,11 +42,7 @@ function catalogComponentFiltersFromLocation(locationSearch: H.Location['search'
     }
 }
 
-// eslint-disable-next-line unicorn/prevent-abbreviations
-function urlSearchParamsFromCatalogComponentFilters(
-    filters: CatalogComponentFilters,
-    base: URLSearchParams
-): URLSearchParams {
+function urlSearchParametersFromFilters(filters: CatalogEntityFilters, base: URLSearchParams): URLSearchParams {
     const parameters = new URLSearchParams(base)
 
     if (filters.query) {

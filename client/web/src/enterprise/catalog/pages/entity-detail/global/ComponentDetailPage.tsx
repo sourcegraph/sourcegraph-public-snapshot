@@ -9,15 +9,15 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CatalogComponentByNameResult, CatalogComponentByNameVariables } from '../../../../../graphql-operations'
-import { CatalogComponentFiltersProps } from '../../../core/component-filters'
-import { ComponentList } from '../../overview/components/component-list/ComponentList'
+import { CatalogEntityFiltersProps } from '../../../core/entity-filters'
+import { EntityList } from '../../overview/components/entity-list/EntityList'
 import { Sidebar } from '../sidebar/Sidebar'
 
 import { ComponentDetailContent } from './ComponentDetailContent'
 import { CATALOG_COMPONENT_BY_NAME } from './gql'
 
 export interface Props
-    extends CatalogComponentFiltersProps,
+    extends CatalogEntityFiltersProps,
         TelemetryProps,
         ExtensionsControllerProps,
         ThemeProps,
@@ -70,8 +70,8 @@ export const ComponentDetailPage: React.FunctionComponent<Props> = ({
                 }
             />
             <Sidebar>
-                <ComponentList
-                    selectedComponentName={catalogComponentName}
+                <EntityList
+                    selectedEntityName={catalogComponentName}
                     filters={filters}
                     onFiltersChange={onFiltersChange}
                     className="flex-1"

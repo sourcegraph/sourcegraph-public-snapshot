@@ -2,13 +2,13 @@ import React from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
-import { ComponentList } from '../component-list/ComponentList'
+import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
+import { EntityList } from '../entity-list/EntityList'
 
-interface Props extends TelemetryProps, CatalogComponentFiltersProps {
+interface Props extends TelemetryProps, CatalogEntityFiltersProps {
     // TODO(sqs): what scope of catalog (eg repo) or global
 }
 
 export const OverviewContent: React.FunctionComponent<Props> = ({ filters, onFiltersChange }) => (
-    <ComponentList filters={filters} onFiltersChange={onFiltersChange} size="lg" />
+    <EntityList filters={filters} onFiltersChange={onFiltersChange} size="lg" />
 )

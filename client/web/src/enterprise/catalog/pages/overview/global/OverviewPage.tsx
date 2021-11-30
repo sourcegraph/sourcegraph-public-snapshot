@@ -5,10 +5,10 @@ import { Page } from '@sourcegraph/web/src/components/Page'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../../catalog'
-import { CatalogComponentFiltersProps } from '../../../core/component-filters'
+import { CatalogEntityFiltersProps } from '../../../core/entity-filters'
 import { OverviewContent } from '../components/overview-content/OverviewContent'
 
-interface Props extends CatalogComponentFiltersProps, TelemetryProps {}
+interface Props extends CatalogEntityFiltersProps, TelemetryProps {}
 
 /**
  * The catalog overview page.

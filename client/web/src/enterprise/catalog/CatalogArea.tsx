@@ -10,8 +10,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '../../components/HeroPage'
 
 import styles from './CatalogArea.module.scss'
-import { useCatalogComponentFilters } from './core/component-filters'
-import { ComponentDetailPage } from './pages/component-detail/global/ComponentDetailPage'
+import { useCatalogEntityFilters } from './core/entity-filters'
+import { ComponentDetailPage } from './pages/entity-detail/global/ComponentDetailPage'
 import { OverviewPage } from './pages/overview/global/OverviewPage'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
@@ -22,7 +22,7 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
 export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, ...props }) => {
     const match = useRouteMatch()
 
-    const { filters, onFiltersChange } = useCatalogComponentFilters()
+    const { filters, onFiltersChange } = useCatalogEntityFilters()
 
     useEffect(() => () => console.log('DESTROY CatalogArea'), [])
 

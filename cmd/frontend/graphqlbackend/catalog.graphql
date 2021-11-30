@@ -3,15 +3,27 @@ extend type Query {
     [WIP]
     """
     catalog: Catalog!
-    catalogComponent(name: String!): CatalogComponent
+    catalogEntity(name: String!): CatalogEntity
 }
 
 type Catalog {
-    components(query: String, first: Int, after: String): CatalogComponentConnection!
+    entities(query: String, first: Int, after: String): CatalogEntityConnection!
 }
 
-type CatalogComponentConnection {
-    nodes: [CatalogComponent!]!
+enum CatalogEntityType {
+    COMPONENT
+}
+
+interface CatalogEntity implements Node {
+    id: ID!
+    type: CatalogEntityType!
+    name: String!
+    description: String
+    url: String!
+}
+
+type CatalogEntityConnection {
+    nodes: [CatalogEntity!]!
     totalCount: Int!
     pageInfo: PageInfo!
 }
@@ -24,14 +36,12 @@ enum CatalogComponentKind {
     OTHER
 }
 
-type CatalogComponent implements Node {
+type CatalogComponent implements Node & CatalogEntity {
     id: ID!
-    kind: CatalogComponentKind!
+    type: CatalogEntityType!
     name: String!
+    kind: CatalogComponentKind!
     description: String
-    owner: Person
-    system: String
-    tags: [String!]!
     url: String!
     sourceLocations: [TreeEntry!]!
     readme: File2

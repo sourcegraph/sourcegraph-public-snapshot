@@ -2,16 +2,16 @@ import classNames from 'classnames'
 import React, { ChangeEventHandler, useCallback, useRef } from 'react'
 import { Form } from 'reactstrap'
 
-import { CatalogComponentFiltersProps } from '../../../../core/component-filters'
+import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 
-import styles from './ComponentListFilters.module.scss'
+import styles from './EntityListFilters.module.scss'
 
-interface Props extends CatalogComponentFiltersProps {
+interface Props extends CatalogEntityFiltersProps {
     size: 'sm' | 'lg'
     className?: string
 }
 
-export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size, className }) => {
+export const EntityListFilters: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size, className }) => {
     // Update filter query on submit (not incrementally while typing).
     const queryElement = useRef<HTMLInputElement | null>(null)
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
@@ -50,11 +50,11 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
     return (
         <Form className={classNames(sizeStyles.form, className)} onSubmit={onSubmit}>
             <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                <label htmlFor="component-list-filters__query" className="sr-only">
+                <label htmlFor="entity-list-filters__query" className="sr-only">
                     Query
                 </label>
                 <input
-                    id="component-list-filters__query"
+                    id="entity-list-filters__query"
                     className={classNames('form-control', sizeStyles.input)}
                     type="search"
                     placeholder="Search catalog..."
@@ -65,11 +65,11 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
             {size === 'lg' && (
                 <>
                     <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                        <label htmlFor="component-list-filters__owner" className="sr-only">
+                        <label htmlFor="entity-list-filters__owner" className="sr-only">
                             Owner
                         </label>
                         <input
-                            id="component-list-filters__owner"
+                            id="entity-list-filters__owner"
                             className={classNames('form-control', sizeStyles.input)}
                             placeholder="Owner"
                             value={filters.owner || ''}
@@ -77,11 +77,11 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
                         />
                     </div>
                     <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                        <label htmlFor="component-list-filters__system" className="sr-only">
+                        <label htmlFor="entity-list-filters__system" className="sr-only">
                             System
                         </label>
                         <input
-                            id="component-list-filters__system"
+                            id="entity-list-filters__system"
                             className={classNames('form-control', sizeStyles.input)}
                             placeholder="System"
                             value={filters.system || ''}
@@ -89,11 +89,11 @@ export const ComponentListFilters: React.FunctionComponent<Props> = ({ filters, 
                         />
                     </div>
                     <div className={classNames('form-group mb-0', sizeStyles.formGroup)}>
-                        <label htmlFor="component-list-filters__tags" className="sr-only">
+                        <label htmlFor="entity-list-filters__tags" className="sr-only">
                             Tags
                         </label>
                         <input
-                            id="component-list-filters__tags"
+                            id="entity-list-filters__tags"
                             className={classNames('form-control', sizeStyles.input)}
                             placeholder="Tags"
                             value={filters.tags || ''}
