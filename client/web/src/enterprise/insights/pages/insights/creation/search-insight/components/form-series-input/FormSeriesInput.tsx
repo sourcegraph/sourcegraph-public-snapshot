@@ -1,4 +1,6 @@
 import classNames from 'classnames'
+import Check from 'mdi-react/CheckIcon'
+import Info from 'mdi-react/InfoCircleOutlineIcon'
 import React from 'react'
 import { noop } from 'rxjs'
 
@@ -11,6 +13,8 @@ import { MonacoField } from '../../../../../../components/form/monaco-field/Mona
 import { createRequiredValidator } from '../../../../../../components/form/validators'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
+
+import styles from './FormSeriesInput.module.scss'
 
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
@@ -52,6 +56,43 @@ interface FormSeriesInputProps {
     /** Change handler in order to listen last values of series form. */
     onChange?: (formValues: SearchBasedInsightSeries, valid: boolean) => void
 }
+
+const SearchQueryChecks: React.FunctionComponent = () => (
+    <>
+        <ul className={classNames(['mt-4', styles.formSeriesInputSeriesCheck])}>
+            <li>
+                <Check size={16} /> Contains a properly formatted regular expression with at least one capture group
+            </li>
+            <li>
+                <Check size={16} /> Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular
+                expression boolean operators can still be used)
+            </li>
+            <li>
+                <Check size={16} /> Does not contain <code>patternType:literal</code> and{' '}
+                <code>patternType:structural</code>
+            </li>
+            <li>
+                <Check size={16} /> The capture group matches file contents (not <code>repo</code> or <code>file</code>)
+            </li>
+            <li>
+                <Check size={16} /> Does not contain <code>commit</code> or <code>diff</code> search
+            </li>
+            <li>
+                <Check size={16} /> Does not contain the <code>repo:</code> filter as it will be added automatically if
+                needed
+            </li>
+        </ul>
+        <p className="mt-4">
+            Tip: use <code>archived:no</code> or <code>fork:no</code> to exclude results from archived or forked
+            repositories. Explore <a href="#">example queries</a> and learn more about{' '}
+            <a href="#">automatically generated data series</a>.
+        </p>
+        <p className="mt-4">
+            <Info size={16} /> Name and color of each data seris will be generated automatically. Chart will display up
+            to 20 data series.
+        </p>
+    </>
+)
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
@@ -142,12 +183,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 description={
                     <span>
                         {!isSearchQueryDisabled ? (
-                            <>
-                                Do not include the <code>repo:</code> filter; if needed, it will be added automatically.
-                                <br />
-                                Tip: include <code>archived:no</code> and <code>fork:no</code> if you don't want results
-                                from archived or forked repos.
-                            </>
+                            <SearchQueryChecks />
                         ) : (
                             <>
                                 We don't yet allow editing queries for insights over all repos. To change the query,

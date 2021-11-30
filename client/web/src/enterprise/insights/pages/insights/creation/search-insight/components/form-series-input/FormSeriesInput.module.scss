@@ -1,0 +1,17 @@
+.form-series-input {
+    &__series-check {
+        list-style: none;
+        margin-left: 24px;
+        padding-left: 0;
+
+        & > li {
+            position: relative;
+        }
+
+        svg {
+            position: absolute;
+            left: -24px;
+            fill: green;
+        }
+    }
+}
