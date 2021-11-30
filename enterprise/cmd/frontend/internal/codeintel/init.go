@@ -58,6 +58,7 @@ func newResolver(ctx context.Context, db database.DB, observationContext *observ
 		services.indexEnqueuer,
 		hunkCache,
 		observationContext,
+		db,
 	)
 
 	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil

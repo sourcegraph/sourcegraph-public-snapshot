@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -30,30 +29,25 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	executorService := executors.New(r.db)
-	executors, totalCount, err := executorService.List(ctx, query, active, offset, limit)
+	executors, err := r.CodeIntelResolver.ExecutorResolver().Executors(ctx, query, active, offset, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	return executorService.ToPaginatedConnection(ctx, executors, totalCount, offset), nil
+	return executors, nil
 }
 
-func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*gql.ExecutorResolver, error) {
+func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID, r *schemaResolver) (*gql.ExecutorResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	executorService := executors.New(db)
-	executor, ok, err := executorService.GetByID(ctx, gqlID)
+	executor, err := r.CodeIntelResolver.ExecutorResolver().Executor(ctx, gqlID)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		return nil, nil
-	}
 
-	return executorService.ToResolver(ctx, executor), nil
+	return executor, nil
 }
 
 type graphqlArgs *struct {

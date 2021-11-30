@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -45,6 +46,10 @@ func NewResolver(db dbutil.DB, resolver resolvers.Resolver) gql.CodeIntelResolve
 		resolver:         resolver,
 		locationResolver: NewCachedLocationResolver(db),
 	}
+}
+
+func (r *Resolver) ExecutorResolver() executor.Resolver {
+	return r.resolver.ExecutorResolver()
 }
 
 func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
