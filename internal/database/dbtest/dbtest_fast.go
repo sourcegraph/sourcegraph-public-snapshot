@@ -14,7 +14,11 @@ import (
 // NewFastDB returns a clean database that will be deleted
 // at the end of the test.
 func NewFastDB(t testing.TB) *sql.DB {
+	if testing.Short() {
+		t.Skip("skipping DB test since -short specified")
+	}
 	t.Helper()
+
 	u, err := url.Parse(getDSN())
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
@@ -25,7 +29,11 @@ func NewFastDB(t testing.TB) *sql.DB {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
 	t.Cleanup(func() { pool.db.Close() })
-	cleanOldDBs(pool)
+
+	err = cleanOldDBs(pool)
+	if err != nil {
+		t.Fatalf("failed to clean old dbs: %s", err)
+	}
 
 	return newFromPool(t, u, pool)
 }
@@ -33,7 +41,11 @@ func NewFastDB(t testing.TB) *sql.DB {
 // NewFastDBWithDSN returns a clean database using the given connection string
 // that will be deleted at the end of the test
 func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
+	if testing.Short() {
+		t.Skip("skipping DB test since -short specified")
+	}
 	t.Helper()
+
 	u, err := url.Parse(dsn)
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
@@ -44,7 +56,11 @@ func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
 	t.Cleanup(func() { pool.db.Close() })
-	cleanOldDBs(pool)
+
+	err = cleanOldDBs(pool)
+	if err != nil {
+		t.Fatalf("failed to clean old dbs: %s", err)
+	}
 
 	return newFromPool(t, u, pool)
 }
@@ -52,7 +68,11 @@ func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 // NewFastTx returns a transaction in a clean database. At the end of the test,
 // the transaction will be rolled back, and the clean database can be reused
 func NewFastTx(t testing.TB) *sql.Tx {
+	if testing.Short() {
+		t.Skip("skipping DB test since -short specified")
+	}
 	t.Helper()
+
 	u, err := url.Parse(getDSN())
 	if err != nil {
 		t.Fatalf("failed to parse dsn: %s", err)
@@ -63,7 +83,11 @@ func NewFastTx(t testing.TB) *sql.Tx {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
 	t.Cleanup(func() { pool.db.Close() })
-	cleanOldDBs(pool)
+
+	err = cleanOldDBs(pool)
+	if err != nil {
+		t.Fatalf("failed to clean old dbs: %s", err)
+	}
 
 	return newTxFromPool(t, u, pool)
 }
@@ -143,7 +167,6 @@ func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
 			return
 		}
 
-		t.Logf("unclaining %s", mdb.Name)
 		err := pool.UnclaimCleanMigratedDB(ctx, mdb)
 		if err != nil {
 			t.Fatalf("failed to unclaim migrated db %q: %s", mdb.Name, err)

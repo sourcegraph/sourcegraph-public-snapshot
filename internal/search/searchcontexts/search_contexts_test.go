@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
@@ -113,6 +114,8 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 }
 
 func TestConstructingSearchContextSpecs(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name                  string
 		searchContext         *types.SearchContext
@@ -153,9 +156,7 @@ func createRepos(ctx context.Context, repoStore database.RepoStore) ([]types.Min
 }
 
 func TestResolvingSearchContextRepoNames(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
@@ -192,12 +193,12 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 }
 
 func TestSearchContextWriteAccessValidation(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 
 	internalCtx := actor.WithInternalActor(context.Background())
+	start := time.Now()
 	db := database.NewDB(dbtest.NewDB(t))
+	t.Logf("fast tx time: %s", time.Since(start))
 	u := database.Users(db)
 
 	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
@@ -220,6 +221,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, got %s", err)
 	}
+	t.Logf("create time: %s", time.Since(start))
 
 	tests := []struct {
 		name            string
@@ -312,9 +314,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 }
 
 func TestCreatingSearchContexts(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
@@ -413,9 +413,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 }
 
 func TestUpdatingSearchContexts(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
@@ -497,9 +495,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 }
 
 func TestDeletingAutoDefinedSearchContext(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
 
 	internalCtx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(dbtest.NewDB(t))
