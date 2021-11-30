@@ -35,6 +35,6 @@ export function catalogEntityIconComponent(entity: PartialEntity): React.Compone
 }
 
 export const CatalogEntityIcon: React.FunctionComponent<Props> = ({ entity, className }) => {
-    const Icon = catalogEntityIconComponent(entity)
+    const Icon = catalogEntityIconComponent(entity) || TextureBoxIcon
     return <Icon className={className} />
 }

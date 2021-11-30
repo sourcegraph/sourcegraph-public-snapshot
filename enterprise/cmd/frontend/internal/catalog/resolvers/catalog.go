@@ -12,17 +12,15 @@ type catalogResolver struct {
 	db database.DB
 }
 
-func (r *catalogResolver) Components(ctx context.Context, args *gql.CatalogComponentsArgs) (gql.CatalogComponentConnectionResolver, error) {
+func (r *catalogResolver) Entities(ctx context.Context, args *gql.CatalogEntitiesArgs) (gql.CatalogEntityConnectionResolver, error) {
 	components := dummyData(r.db)
 
-	var keep []gql.CatalogComponentResolver
+	var keep []gql.CatalogEntity
 	for _, c := range components {
 		if args.Query == nil || strings.Contains(c.component.Name, *args.Query) {
 			keep = append(keep, c)
 		}
 	}
 
-	return &catalogComponentConnectionResolver{
-		components: keep,
-	}, nil
+	return &catalogEntityConnectionResolver{entities: wrapInCatalogEntityInterfaceType(keep)}, nil
 }

@@ -12,6 +12,7 @@ export const CATALOG_ENTITIES = gql`
     }
 
     fragment CatalogEntityFields on CatalogEntity {
+        __typename
         id
         type
         name

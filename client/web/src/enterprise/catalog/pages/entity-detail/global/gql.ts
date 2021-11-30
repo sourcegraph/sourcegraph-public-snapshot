@@ -178,7 +178,7 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
 `
 
 const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
-    fragment CatalogEntityDetailFields on CatalogComponent {
+    fragment CatalogEntityDetailFields on CatalogEntity {
         __typename
         id
         type

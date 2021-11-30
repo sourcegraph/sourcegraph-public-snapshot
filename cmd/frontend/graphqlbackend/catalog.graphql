@@ -14,7 +14,7 @@ enum CatalogEntityType {
     COMPONENT
 }
 
-interface CatalogEntity implements Node {
+interface CatalogEntity {
     id: ID!
     type: CatalogEntityType!
     name: String!
