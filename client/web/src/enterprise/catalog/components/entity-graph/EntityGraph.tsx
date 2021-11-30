@@ -73,7 +73,7 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                               },
                           }
                         : activeNodeID
-                        ? { shape: { styles: { fillOpacity: 0.3 } } }
+                        ? { shape: { styles: { fillOpacity: 0.35 } } }
                         : undefined,
             })),
         [activeNodeID, graph.nodes]
