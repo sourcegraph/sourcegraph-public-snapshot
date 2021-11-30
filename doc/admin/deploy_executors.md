@@ -278,19 +278,39 @@ Auto scaling makes use of the auto-scaling capabilities of the respective cloud 
 
 With the Terraform variables [`min-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22max_replicas%22&patternType=literal) in the Terraform modules linked to above, you can configure the minimum and maximum number of compute machines to be run at a given time. `min-replicas` must be `>= 0`.
 
-For auto scaling to work, the Sourcegraph instance (its `worker` service, specifically) needs to be configured to have credentials to publish a scaling metric to the cloud provider used. Therefore, the `credentials` submodule exists in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules. Using them, you get properly configured credentials in the Terraform outputs.
+For auto scaling to work, the Sourcegraph instance (its `worker` service, specifically) needs to be configured with the correct credentials in order to publish a scaling metric to the used cloud provider. The `credentials` submodule in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules exists for that purpose. When used, the `credentials` moduel sets up the credentials on the cloud provider and returns them in the terraform oujtputs it, you get properly configured credentials in the Terraform outputs.
+
+Here's an example of how one would use the `credentials` submodule:
 
 ```terraform
-module "credentials" {
+module "my-credentials" {
   source  = "sourcegraph/executors/<cloud>//modules/credentials"
+
+  # Find the latest version here:
+  # - https://github.com/sourcegraph/terraform-google-executors/tags
+  # - https://github.com/sourcegraph/terraform-aws-executors/tags
   version = "<version>"
 
   region          = <region>
   resource_prefix = ""
 }
+
+# For Google:
+output "metric_writer_credentials_file" {
+  value = module.my-credentials.metric_writer_credentials_file
+}
+
+# For AWS:
+output "metric_writer_access_key_id" {
+  value = module.my-credentials.metric_writer_access_key_id
+}
+
+output "metric_writer_secret_key" {
+  value = module.my-credentials.metric_writer_secret_key
+}
 ```
 
-When applied, this will yield something like
+After a `terraform apply`, a `terraform output` should yield something like this:
 
 ```
 # For AWS:
@@ -298,10 +318,10 @@ metric_writer_access_key_id = <THE_ACCESS_KEY_TO_CONFIGURE>
 metric_writer_secret_key    = <THE_SECRET_KEY_TO_CONFIGURE>
 
 # For Google:
-metric_writer_credentials_file = <THE_CREDENTIALS_FILE_CONTENT>
+metric_writer_credentials_file = <THE_CREDENTIALS_FILE_CONTENT_BASE64_ENCODED>
 ```
 
-Use these credentials in the following way for the different cloud providers:
+The following sections describe how to use these credentials on the different cloud providers.
 
 ### Google
 
@@ -309,9 +329,10 @@ The GCE auto-scaling groups configured by the Sourcegraph Terraform module respo
 
 To write the scaling metric to Cloud Monitoring, the `worker` service must have defined the following environment variables:
 
-- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use the same value as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22metrics_environment_label%22&patternType=literal)
-- `EXECUTOR_METRIC_GCP_PROJECT_ID`
-- `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE`
+- `EXECUTOR_METRIC_ENVIRONMENT_LABEL`: Must use the value that was set as [`metrics_environment_label`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22metrics_environment_label%22&patternType=literal) when provisioning `executors`
+- `EXECUTOR_METRIC_GCP_PROJECT_ID`: The GCP project ID
+- Option 1: `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT`: The base64-decoded output of the `metric_writer_credentials_file` from above.
+- Option 2: `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE`: Path to a file containing the base64-decoded `metric_writer_credentials_file` output from above.
 
 ### AWS
 
@@ -331,9 +352,9 @@ Once these are set, and the worker service has been restarted, you should be abl
 
 To test if the metric is correctly reported into the Cloud provider:
 
-- On Google Cloud, this can be found in the Metrics explorer. Select Resource type = "Global" and then Metric = "custom/executors/queue/size". You should see some values reported here, 0 is also an indicator that it works correct.
+- On Google Cloud, this can be found in the **Metrics explorer**. Select **Resource type: Global** and then **Metric: `custom/executors/queue/size`**. You should see values reported here. 0 is also an indicator that it works correct.
 
-- On AWS, this can be found in the CloudWatch metrics section. Under "All metrics", select the namespace "sourcegraph-executor" and then the metric "environment, queueName". Make sure there are entries returned.
+- On AWS, this can be found in the CloudWatch metrics section. Under **All metrics**, select the namespace `sourcegraph-executor` and then the metric `environment, queueName`. Make sure there are entries returned.
 
 Next, you can test whether the number of executors rises and shrinks as load spikes occur. Keep in mind that auto-scaling is not a real-time operation on most cloud providers and usually takes a short moment and can have some delays between the metric going down and the desired machine count adjusting.
 
