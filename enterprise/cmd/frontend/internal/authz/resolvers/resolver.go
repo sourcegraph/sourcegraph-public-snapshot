@@ -269,7 +269,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	}
 
 	return &repositoryConnectionResolver{
-		db:    r.store.Handle().DB(),
+		db:    database.NewDB(r.store.Handle().DB()),
 		ids:   ids,
 		first: args.First,
 		after: args.After,
