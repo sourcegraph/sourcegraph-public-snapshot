@@ -367,6 +367,8 @@ var refPrefixes = map[string]struct{}{
 	"refs/tags/":  {},
 }
 
+var refReplacer = strings.NewReplacer("refs/heads/", "", "refs/tags/", "")
+
 func parseBranchesContaining(lines []string) []string {
 	names := make([]string, 0, len(lines))
 	for _, line := range lines {
@@ -374,17 +376,8 @@ func parseBranchesContaining(lines []string) []string {
 		if line == "" {
 			continue
 		}
-
-		refname := line
-
-		// Remove refs/heads/ or ref/tags/ prefix
-		for prefix := range refPrefixes {
-			if strings.HasPrefix(line, prefix) {
-				refname = line[len(prefix):]
-			}
-		}
-
-		names = append(names, refname)
+		line = refReplacer.Replace(line)
+		names = append(names, line)
 	}
 	sort.Strings(names)
 
