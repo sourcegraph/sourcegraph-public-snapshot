@@ -62,6 +62,7 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 
 		return nil
 	})
+
 	return newest, commit, ok, err
 }
 
@@ -103,16 +104,23 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 	if err != nil {
 		return false, errors.Wrap(err, "gitserverClient.GitDiff")
 	}
-	paths := append(changes.Added, append(changes.Modified, changes.Deleted...)...)
 
-	if len(paths) > maxTotalPaths {
+	// Paths to re-parse
+	addedOrModifiedPaths := append(changes.Added, changes.Modified...)
+
+	// Paths to modify in the database
+	addedModifiedOrDeletedPaths := append(addedOrModifiedPaths, changes.Deleted...)
+
+	// Too many entries
+	if len(addedModifiedOrDeletedPaths) > maxTotalPaths {
 		return false, nil
 	}
 
 	totalPathsLength := 0
-	for _, path := range paths {
+	for _, path := range addedModifiedOrDeletedPaths {
 		totalPathsLength += len(path)
 	}
+	// Argument lists too long
 	if totalPathsLength > maxTotalPathsLength {
 		return false, nil
 	}
@@ -121,11 +129,11 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 		return false, err
 	}
 
-	return true, w.parseAndWriteInTransaction(ctx, args, paths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
+	return true, w.parseAndWriteInTransaction(ctx, args, addedOrModifiedPaths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
 		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
 			return errors.Wrap(err, "store.UpdateMeta")
 		}
-		if err := tx.DeletePaths(ctx, paths); err != nil {
+		if err := tx.DeletePaths(ctx, addedModifiedOrDeletedPaths); err != nil {
 			return errors.Wrap(err, "store.DeletePaths")
 		}
 		if err := tx.WriteSymbols(ctx, symbols); err != nil {
