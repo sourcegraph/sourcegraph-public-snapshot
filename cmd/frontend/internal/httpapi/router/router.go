@@ -26,7 +26,6 @@ const (
 	GitLabWebhooks          = "gitlab.webhooks"
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 
-	OrgsGetByName          = "internal.orgs.get-by-name"
 	UsersGetByUsername     = "internal.users.get-by-username"
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
@@ -90,7 +89,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
 	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)

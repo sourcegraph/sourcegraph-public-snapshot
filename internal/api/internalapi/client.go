@@ -34,14 +34,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
-func (c *internalClient) OrgsGetByName(ctx context.Context, orgName string) (orgID *int32, err error) {
-	err = c.postInternal(ctx, "orgs/get-by-name", orgName, &orgID)
-	if err != nil {
-		return nil, err
-	}
-	return orgID, nil
-}
-
 func (c *internalClient) UsersGetByUsername(ctx context.Context, username string) (user *int32, err error) {
 	err = c.postInternal(ctx, "users/get-by-username", username, &user)
 	if err != nil {
