@@ -157,7 +157,7 @@ This overlay adds a namespace declaration to all the manifests.
 
 #### Storageclass
 
-By default sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests. 
+By default Sourcegraph is configured to use a storage class called `sourcegraph`. If you wish to use an alternate name, you can use this overlay to change all `storageClass` references in the manifests. 
 
 You need to create the storageclass if it doesn't exist yet. See [these docs](#configure-a-storage-class) for more instructions.
 
