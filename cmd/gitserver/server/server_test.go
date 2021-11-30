@@ -472,7 +472,7 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
-		DB:               db,
+		DB:               database.NewDB(db),
 		CloneQueue:       NewCloneQueue(list.New()),
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},

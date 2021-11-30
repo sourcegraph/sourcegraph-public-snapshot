@@ -4,6 +4,7 @@ package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 import (
 	"container/list"
 	"context"
+	"database/sql"
 	"log"
 	"net"
 	"net/http"
@@ -26,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -82,10 +82,11 @@ func main() {
 		log.Fatalf("SRC_REPOS_DESIRED_PERCENT_FREE is out of range: %v", err)
 	}
 
-	db, err := getDB()
+	sqlDB, err := getDB()
 	if err != nil {
 		log.Fatalf("failed to initialize database stores: %v", err)
 	}
+	db := database.NewDB(db)
 
 	repoStore := database.Repos(db)
 	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
@@ -259,7 +260,7 @@ func getPercent(p int) (int, error) {
 
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
-func getDB() (dbutil.DB, error) {
+func getDB() (*sql.DB, error) {
 	//
 	// START FLAILING
 
