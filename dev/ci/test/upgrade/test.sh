@@ -76,9 +76,13 @@ trap docker_logs exit
 sleep 15
 
 # Run tests
+
+URL="http://localhost:7080"
 echo "--- TEST: Checking Sourcegraph instance is accessible"
-curl -f http://localhost:7080
-curl -f http://localhost:7080/healthz
+timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+    echo Waiting 5s for $URL...
+    sleep 5
+done"
 echo "--- TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
 echo "--- TEST: Running tests"
