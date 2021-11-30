@@ -68,37 +68,22 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		maxQueueDepth = siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
 	}
 
+	endpoints := make([]string, 0, len(clients))
+	for endpoint := range clients {
+		endpoints = append(endpoints, endpoint)
+	}
+
+	// resultQueue is used to re-order results by priority.
+	resultQueue := newResultQueue(maxQueueDepth, endpoints)
+
 	// During rebalancing a repository can appear on more than one replica.
 	var mu sync.Mutex
 	dedupper := dedupper{}
-
-	// The results from each endpoint are mostly sorted by priority, with bounded errors described
-	// by SearchResult.Stats.MaxPendingPriority. Each backend will dispatch searches in parallel against
-	// its shards in priority order, but the actual return order of those searches is not constrained.
-	//
-	// Instead, the backend will report the maximum priority shard that it still has pending along with
-	// the results that it returns, so we accumulate results in a heap and only pop when the top item
-	// has a priority greater than the maximum of all endpoints' pending results.
-	endpointMaxPendingPriority := map[string]float64{}
-	resultQueue := priorityQueue{}
-	resultQueueMaxLength := 0 // for a prometheus metric
-
-	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
-	for endpoint := range clients {
-		endpointMaxPendingPriority[endpoint] = math.Inf(1)
-	}
 
 	// GobCache exists so we only pay the cost of marshalling a query once
 	// when we aggregate it out over all the replicas. Zoekt's RPC layers
 	// unwrap this before passing it on to the Zoekt evaluation layers.
 	q = &query.GobCache{Q: q}
-
-	// We aggregate statistics independently of matches. Everytime we
-	// encounter matches to send we send the current aggregated stats then
-	// reset them. This is because in a lot of cases we only get stats and no
-	// matches. By aggregating we avoid spamming the sender and the
-	// resultQueue with pure stats events.
-	var stats zoekt.Stats
 
 	ch := make(chan error, len(clients))
 	for endpoint, c := range clients {
@@ -112,46 +97,13 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				mu.Lock()
 				defer mu.Unlock()
 
-				// Update aggregate stats
-				stats.Add(sr.Stats)
-				sr.Stats = zoekt.Stats{}
-
-				// Note the endpoint's updated MaxPendingPriority, and recompute
-				// it across all endpoints to determine what search results are stable.
-				endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
-				maxPending := math.Inf(-1)
-				for _, pri := range endpointMaxPendingPriority {
-					if pri > maxPending {
-						maxPending = pri
-					}
-				}
-
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 
-				// Don't add empty results to the heap.
-				if len(sr.Files) != 0 {
-					resultQueue.add(sr)
-				}
-
-				// Pop and send search results where it is guaranteed that no higher-priority result
-				// is possible, because there are no pending shards with a greater priority.
-				if resultQueue.Len() > resultQueueMaxLength {
-					resultQueueMaxLength = resultQueue.Len()
-				}
-				for (maxQueueDepth >= 0 && len(resultQueue) > maxQueueDepth) || resultQueue.isTopAbove(maxPending) {
-					// We need to use the current aggregate stats then clear them out.
-					sr = heap.Pop(&resultQueue).(*zoekt.SearchResult)
-					sr.Stats = stats
-					stats = zoekt.Stats{}
-					streamer.Send(sr)
-				}
+				resultQueue.Enqueue(endpoint, sr)
+				resultQueue.FlushReady(streamer)
 			}))
 			mu.Lock()
-			// Clear pending priority because the endpoint is done sending results--
-			// otherwise, an endpoint with 0 results could delay results returning,
-			// because it would never set its maxPendingPriority to 0 in the StreamSearch
-			// callback.
-			delete(endpointMaxPendingPriority, endpoint)
+			resultQueue.Done(endpoint)
 			mu.Unlock()
 
 			if canIgnoreError(ctx, err) {
@@ -171,25 +123,126 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		return err
 	}
 
-	metricReorderQueueSize.WithLabelValues().Observe(float64(resultQueueMaxLength))
-	metricFinalQueueSize.Add(float64(len(resultQueue)))
-	for len(resultQueue) > 0 {
-		sr := heap.Pop(&resultQueue).(*zoekt.SearchResult)
-		sr.Stats = stats
-		stats = zoekt.Stats{}
+	resultQueue.FlushAll(streamer)
+
+	return nil
+}
+
+// The results from each endpoint are mostly sorted by priority, with bounded
+// errors described by SearchResult.Stats.MaxPendingPriority. Each backend
+// will dispatch searches in parallel against its shards in priority order,
+// but the actual return order of those searches is not constrained.
+//
+// Instead, the backend will report the maximum priority shard that it still
+// has pending along with the results that it returns, so we accumulate
+// results in a heap and only pop when the top item has a priority greater
+// than the maximum of all endpoints' pending results.
+type resultQueue struct {
+	// maxQueueDepth will flush any items in the queue such that we never
+	// exceed maxQueueDepth. This is used to prevent aggregating too many
+	// results in memory.
+	maxQueueDepth int
+
+	queue           priorityQueue
+	metricMaxLength int // for a prometheus metric
+
+	endpointMaxPendingPriority map[string]float64
+
+	// We aggregate statistics independently of matches. Everytime we
+	// encounter matches to send we send the current aggregated stats then
+	// reset them. This is because in a lot of cases we only get stats and no
+	// matches. By aggregating we avoid spamming the sender and the
+	// resultQueue with pure stats events.
+	stats zoekt.Stats
+}
+
+func newResultQueue(maxQueueDepth int, endpoints []string) *resultQueue {
+	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
+	endpointMaxPendingPriority := map[string]float64{}
+	for _, endpoint := range endpoints {
+		endpointMaxPendingPriority[endpoint] = math.Inf(1)
+	}
+
+	return &resultQueue{
+		maxQueueDepth:              maxQueueDepth,
+		endpointMaxPendingPriority: endpointMaxPendingPriority,
+	}
+}
+
+// Enqueue adds the result to the queue and updates the max pending priority
+// for endpoint based on sr.
+func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
+	// Update aggregate stats
+	q.stats.Add(sr.Stats)
+	sr.Stats = zoekt.Stats{}
+
+	// Note the endpoint's updated MaxPendingPriority
+	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
+
+	// Don't add empty results to the heap.
+	if len(sr.Files) != 0 {
+		q.queue.add(sr)
+	}
+}
+
+// Done must be called once per endpoint once it has finished streaming.
+func (q *resultQueue) Done(endpoint string) {
+	// Clear pending priority because the endpoint is done sending results--
+	// otherwise, an endpoint with 0 results could delay results returning,
+	// because it would never set its maxPendingPriority to 0 in the
+	// StreamSearch callback.
+	delete(q.endpointMaxPendingPriority, endpoint)
+}
+
+// FlushReady will send results which are greater than the
+// maxPendingPriority. Note: it will also send results if we exceed
+// maxQueueDepth.
+func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
+	// we can send any results such that priority > maxPending. Need to
+	// calculate maxPending.
+	maxPending := math.Inf(-1)
+	for _, pri := range q.endpointMaxPendingPriority {
+		if pri > maxPending {
+			maxPending = pri
+		}
+	}
+
+	if q.queue.Len() > q.metricMaxLength {
+		q.metricMaxLength = q.queue.Len()
+	}
+
+	// Pop and send search results where it is guaranteed that no
+	// higher-priority result is possible, because there are no pending shards
+	// with a greater priority.
+	for (q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth) || q.queue.isTopAbove(maxPending) {
+		// We need to use the current aggregate stats then clear them out.
+		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
+		sr.Stats = q.stats
+		q.stats = zoekt.Stats{}
+		streamer.Send(sr)
+	}
+}
+
+// FlushAll will send any remaining results that are in the queue and any
+// final statistics. This should only be called once all endpoints are done.
+func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
+	metricReorderQueueSize.WithLabelValues().Observe(float64(q.metricMaxLength))
+	metricFinalQueueSize.Add(float64(q.queue.Len()))
+	for q.queue.Len() > 0 {
+		sr := heap.Pop(&q.queue).(*zoekt.SearchResult)
+		sr.Stats = q.stats
+		q.stats = zoekt.Stats{}
 		streamer.Send(sr)
 	}
 
 	// We may have had no matches but had stats. Send the final stats if there
 	// is any.
-	if !stats.Zero() {
+	if !q.stats.Zero() {
 		streamer.Send(&zoekt.SearchResult{
-			Stats: stats,
+			Stats: q.stats,
 		})
-		stats = zoekt.Stats{}
+		q.stats = zoekt.Stats{}
 	}
-
-	return nil
 }
 
 // priorityQueue modified from https://golang.org/pkg/container/heap/
