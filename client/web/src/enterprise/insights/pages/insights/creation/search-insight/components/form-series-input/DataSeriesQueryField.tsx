@@ -8,7 +8,8 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { QueryChangeSource } from '../../../../../../../../search/helpers'
 import { LazyMonacoQueryInput } from '../../../../../../../../search/input/LazyMonacoQueryInput'
 import { DEFAULT_MONACO_OPTIONS } from '../../../../../../../../search/input/MonacoQueryInput'
-import { ThemePreference, useThemeState } from '../../../../../../../../theme'
+import { ThemePreference } from '../../../../../../../../stores/themeState';
+import { useTheme } from '../../../../../../../../theme';
 
 import styles from './DataSeriesQueryField.module.scss'
 
@@ -32,7 +33,7 @@ interface DataSeriesQueryFieldProps
 
 export const DataSeriesQueryField: React.FunctionComponent<DataSeriesQueryFieldProps> = props => {
     const { value, className, onChange, onBlur = noop, disabled, autoFocus } = props
-    const { enhancedThemePreference } = useThemeState()
+    const { enhancedThemePreference } = useTheme()
 
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
