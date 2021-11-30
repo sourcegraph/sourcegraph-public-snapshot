@@ -12,6 +12,7 @@ import { toSourcegraphLanguage } from './code-intel/languages'
 import { SourcegraphDefinitionProvider } from './code-intel/SourcegraphDefinitionProvider'
 import { SourcegraphHoverProvider } from './code-intel/SourcegraphHoverProvider'
 import { SourcegraphReferenceProvider } from './code-intel/SourcegraphReferenceProvider'
+import { openFileInBrowser } from './commands.ts/openFileInBrowser'
 import { openSourcegraphUriCommand } from './commands.ts/openSourcegraphUriCommand'
 import { FilesTreeDataProvider } from './file-system/FilesTreeDataProvider'
 import { SourcegraphFileSystemProvider } from './file-system/SourcegraphFileSystemProvider'
@@ -79,6 +80,7 @@ export function activate(context: vscode.ExtensionContext): void {
         () => {}
     )
 
+    // Open remote Sourcegraph file in VS Code
     context.subscriptions.push(
         vscode.commands.registerCommand('extension.openFile', async uri => {
             if (typeof uri === 'string') {
@@ -89,6 +91,9 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     )
+
+    // Open local file or remote Sourcegraph file in browser
+    context.subscriptions.push(vscode.commands.registerCommand('sourcegraph.openInBrowser', openFileInBrowser))
 
     // TODO copy from existing extension.
     // context.subscriptions.push(registerSourcegraphGitCommands())

@@ -36,6 +36,11 @@
         "command": "extension.openFile",
         "category": "Sourcegraph",
         "title": "Open File"
+      },
+      {
+        "command": "sourcegraph.openInBrowser",
+        "category": "Sourcegraph",
+        "title": "Open file in browser"
       }
     ],
     "viewsContainers": {
