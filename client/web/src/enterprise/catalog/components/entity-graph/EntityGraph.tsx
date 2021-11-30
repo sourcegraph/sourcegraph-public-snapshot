@@ -1,10 +1,12 @@
 import classNames from 'classnames'
-import { DagreReact, EdgeOptions, NodeOptions, RecursivePartial } from 'dagre-reactjs'
+import { CustomNodeLabelProps, DagreReact, EdgeOptions, NodeOptions, RecursivePartial } from 'dagre-reactjs'
 import React, { useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { CatalogGraphFields } from '../../../../graphql-operations'
+import { CatalogEntityIcon } from '../CatalogEntityIcon'
 
 interface Props {
     graph: CatalogGraphFields
@@ -48,18 +50,19 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
     const viewer = useRef<UncontrolledReactSVGPanZoom>(null)
     const [dimensions, setDimensions] = useState({ width: 1000, height: 1000 })
     return (
-        <div className={classNames(className)} style={{ height: '500px' }}>
+        <div className={classNames(className)} style={{ height: '80vh' }}>
             <AutoSizer>
                 {({ height, width }) => (
                     <UncontrolledReactSVGPanZoom
                         width={width}
                         height={height}
-                        tool="pan"
+                        tool="auto"
                         background="transparent"
+                        SVGBackground="transparent"
                         detectAutoPan={false}
                         miniatureProps={{
                             position: 'none',
-                            background: '#fff',
+                            background: 'transparent',
                             width: 100,
                             height: 100,
                         }}
@@ -72,7 +75,12 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
                     >
                         <svg width={dimensions.width} height={dimensions.height}>
                             <DagreReact
-                                nodes={graph.nodes.map(node => ({ id: node.id, label: node.name }))}
+                                nodes={graph.nodes.map(node => ({
+                                    id: node.id,
+                                    label: node.name,
+                                    labelType: 'Entity',
+                                    meta: { entity: node },
+                                }))}
                                 edges={graph.edges.map(edge => ({
                                     from: edge.outNode.id,
                                     to: edge.inNode.id,
@@ -80,6 +88,12 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
                                 }))}
                                 defaultNodeConfig={defaultNodeConfig}
                                 defaultEdgeConfig={defaultEdgeConfig}
+                                customNodeLabels={{
+                                    Entity: {
+                                        renderer: EntityNodeLabel,
+                                        html: true,
+                                    },
+                                }}
                                 graphLayoutComplete={(width?: number, height?: number) => {
                                     if (width && height) {
                                         setDimensions({ width, height })
@@ -90,6 +104,13 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
                                         }
                                     })
                                 }}
+                                graphOptions={{
+                                    marginx: 15,
+                                    marginy: 15,
+                                    rankdir: 'LR',
+                                    ranksep: 55,
+                                    nodesep: 15,
+                                }}
                             />
                         </svg>
                     </UncontrolledReactSVGPanZoom>
@@ -98,3 +119,13 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, className }
         </div>
     )
 }
+
+const EntityNodeLabel: React.FunctionComponent<CustomNodeLabelProps> = ({
+    node: {
+        meta: { entity },
+    },
+}) => (
+    <Link to={entity.url} className="d-flex align-items-center text-body text-nowrap">
+        <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+    </Link>
+)

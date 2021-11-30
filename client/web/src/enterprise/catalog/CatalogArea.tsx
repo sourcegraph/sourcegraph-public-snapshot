@@ -29,14 +29,7 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
     return (
         <div className={styles.container}>
             <Switch>
-                <Route path={match.url} exact={true}>
-                    <OverviewPage
-                        filters={filters}
-                        onFiltersChange={onFiltersChange}
-                        telemetryService={telemetryService}
-                    />
-                </Route>
-                <Route path={`${match.url}/:name`}>
+                <Route path={`${match.url}/entities/:name`}>
                     {(matchProps: RouteComponentProps<{ name: string }>) => (
                         <EntityDetailPage
                             key={1}
@@ -47,6 +40,13 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                             telemetryService={telemetryService}
                         />
                     )}
+                </Route>
+                <Route path={match.url}>
+                    <OverviewPage
+                        filters={filters}
+                        onFiltersChange={onFiltersChange}
+                        telemetryService={telemetryService}
+                    />
                 </Route>
                 <Route>
                     <HeroPage icon={MapSearchIcon} title="404: Not Found" />

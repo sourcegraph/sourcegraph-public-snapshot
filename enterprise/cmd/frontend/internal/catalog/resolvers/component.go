@@ -36,7 +36,7 @@ func (r *catalogComponentResolver) Description() *string {
 }
 
 func (r *catalogComponentResolver) URL() string {
-	return "/catalog/" + string(r.Name())
+	return "/catalog/entities/" + string(r.Name())
 }
 
 func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {
