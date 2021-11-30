@@ -77,6 +77,7 @@ type CatalogComponent implements Node & CatalogEntity {
     readme: File2
     commits(first: Int): GitCommitConnection
     authors: [CatalogComponentAuthorEdge!]
+    owners: [CatalogEntityOwnerEdge!]
     usage(query: String): CatalogComponentUsage
     api(query: String): CatalogComponentAPI
 }
@@ -87,6 +88,12 @@ type CatalogComponentAuthorEdge {
     authoredLineCount: Int!
     authoredLineProportion: Float!
     lastCommit: GitCommit!
+}
+
+type CatalogEntityOwnerEdge {
+    owner: String!
+    fileCount: Int!
+    fileProportion: Float!
 }
 
 type CatalogComponentUsage {

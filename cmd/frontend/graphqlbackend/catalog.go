@@ -90,6 +90,7 @@ type CatalogComponentResolver interface {
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
+	Owners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
 	Usage(context.Context, *CatalogComponentUsageArgs) (CatalogComponentUsageResolver, error)
 	API(context.Context, *CatalogComponentAPIArgs) (CatalogComponentAPIResolver, error)
 }
@@ -102,6 +103,12 @@ type CatalogComponentAuthorEdgeResolver interface {
 	AuthoredLineCount() int32
 	AuthoredLineProportion() float64
 	LastCommit(context.Context) (*GitCommitResolver, error)
+}
+
+type CatalogEntityOwnerEdgeResolver interface {
+	Owner() string
+	FileCount() int32
+	FileProportion() float64
 }
 
 type CatalogComponentUsageArgs struct {
