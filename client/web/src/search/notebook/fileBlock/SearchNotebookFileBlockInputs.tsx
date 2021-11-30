@@ -23,6 +23,7 @@ interface SearchNotebookFileBlockInputsProps
     lineRangeInput: string
     showRevisionInput: boolean
     showLineRangeInput: boolean
+    isMacPlatform: boolean
     setIsInputFocused(value: boolean): void
     setFileInput: (input: Partial<FileBlockInput>) => void
     setLineRangeInput: (input: string) => void
@@ -62,6 +63,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
     isLineRangeValid,
     showRevisionInput,
     showLineRangeInput,
+    isMacPlatform,
     setIsInputFocused,
     onSelectBlock,
     setFileInput,
@@ -124,6 +126,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     suggestions={repoSuggestions}
                     suggestionsIcon={<SourceRepositoryIcon className="mr-1" size="1rem" />}
                     isValid={isRepositoryNameValid}
+                    isMacPlatform={isMacPlatform}
                     dataTestId="file-block-repository-name-input"
                 />
                 <div className={styles.separator} />
@@ -138,6 +141,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     suggestions={fileSuggestions}
                     suggestionsIcon={<FileDocumentIcon className="mr-1" size="1rem" />}
                     isValid={isFilePathValid}
+                    isMacPlatform={isMacPlatform}
                     dataTestId="file-block-file-path-input"
                 />
             </div>
@@ -154,6 +158,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isRevisionValid}
+                            isMacPlatform={isMacPlatform}
                             dataTestId="file-block-revision-input"
                         />
                     </div>
@@ -176,6 +181,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                             onFocus={onInputFocus}
                             onBlur={onInputBlur}
                             isValid={isLineRangeValid}
+                            isMacPlatform={isMacPlatform}
                             dataTestId="file-block-line-range-input"
                         />
                     </div>

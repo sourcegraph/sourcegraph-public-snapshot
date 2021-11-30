@@ -103,7 +103,10 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
         id,
         isMacPlatform,
         onEnterBlock: () => setShowInputs(true),
-        onRunBlock: () => setShowInputs(false),
+        onRunBlock: () => {
+            setShowInputs(false)
+            setIsInputFocused(false)
+        },
         ...props,
     })
 
@@ -246,6 +249,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
                         isLineRangeValid={isLineRangeValid}
                         showRevisionInput={showRevisionInput}
                         showLineRangeInput={showLineRangeInput}
+                        isMacPlatform={isMacPlatform}
                         setIsInputFocused={setIsInputFocused}
                         onSelectBlock={onSelectBlock}
                         setFileInput={setFileInput}

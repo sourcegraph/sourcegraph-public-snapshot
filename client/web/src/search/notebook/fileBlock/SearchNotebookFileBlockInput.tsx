@@ -10,6 +10,8 @@ import classNames from 'classnames'
 import { debounce } from 'lodash'
 import React, { useMemo, useState, useCallback } from 'react'
 
+import { isModifierKeyPressed } from '../useBlockShortcuts'
+
 import styles from './SearchNotebookFileBlockInput.module.scss'
 
 interface SearchNotebookFileBlockInputProps {
@@ -24,6 +26,7 @@ interface SearchNotebookFileBlockInputProps {
     suggestions?: string[]
     suggestionsIcon?: JSX.Element
     isValid?: boolean
+    isMacPlatform: boolean
     dataTestId?: string
 }
 
@@ -39,6 +42,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     suggestions,
     suggestionsIcon,
     isValid,
+    isMacPlatform,
     dataTestId,
 }) => {
     const [inputValue, setInputValue] = useState(value)
@@ -59,8 +63,12 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
                 if (event.key === 'Escape') {
                     const target = event.target as HTMLElement
                     target.blur()
+                } else if (
+                    // Allow cmd+Enter/ctrl+Enter to propagate to run the block, stop all other events
+                    !(event.key === 'Enter' && isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform))
+                ) {
+                    event.stopPropagation()
                 }
-                event.stopPropagation()
             }}
         >
             <ComboboxInput
