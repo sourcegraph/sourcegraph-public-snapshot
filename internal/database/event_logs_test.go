@@ -26,6 +26,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	var testCases = []struct {
@@ -56,8 +57,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tx := dbtest.NewFastTx(t)
-			err := EventLogs(tx).Insert(ctx, tc.event)
+			err := EventLogs(db).Insert(ctx, tc.event)
 
 			if have, want := fmt.Sprint(errors.Unwrap(err)), tc.err; have != want {
 				t.Errorf("have %+v, want %+v", have, want)
