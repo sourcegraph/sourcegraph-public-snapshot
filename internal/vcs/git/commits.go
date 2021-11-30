@@ -291,17 +291,14 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit,
 
 // CommitExists determines if the given commit exists in the given repository.
 func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
-	cmd := gitserver.DefaultClient.Command("git", "cat-file", "-t", string(id))
-	cmd.Repo = repo
-
-	out, err := cmd.Output(ctx)
-	if err == nil {
-		return true, nil
+	c, err := getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		return false, nil
 	}
-	if bytes.Contains(out, []byte("Not a valid object name")) {
-		err = nil
+	if err != nil {
+		return false, err
 	}
-	return false, err
+	return c != nil, nil
 }
 
 // Head determines the tip commit of the default branch for the given repository.

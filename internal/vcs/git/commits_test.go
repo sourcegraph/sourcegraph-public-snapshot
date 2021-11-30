@@ -225,6 +225,33 @@ func TestHead(t *testing.T) {
 	}
 }
 
+func TestCommitExists(t *testing.T) {
+	t.Parallel()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	repo := MakeGitRepository(t, gitCommands...)
+	ctx := context.Background()
+
+	wantCommit := api.CommitID("ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
+	exists, err := CommitExists(ctx, repo, wantCommit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Fatal("Should exist")
+	}
+
+	exists, err = CommitExists(ctx, repo, NonExistentCommitID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatal("Should not exist")
+	}
+}
+
 func TestRepository_Commits(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
