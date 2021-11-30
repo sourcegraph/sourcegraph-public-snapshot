@@ -27,7 +27,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, err := dbconn.NewRaw(timescaleDSN)
+	initConn, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN})
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -62,7 +62,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, err = dbconn.NewRaw(timescaleDSN)
+	db, err = dbconn.New(dbconn.Opts{DSN: timescaleDSN})
 	if err != nil {
 		t.Fatal(err)
 	}
