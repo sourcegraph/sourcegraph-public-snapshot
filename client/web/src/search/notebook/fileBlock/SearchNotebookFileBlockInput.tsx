@@ -99,7 +99,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
             />
             {/* Only show suggestions popover for the latest input value */}
             {suggestions && value === inputValue && (
-                <ComboboxPopover>
+                <ComboboxPopover className={styles.suggestionsPopover}>
                     <ComboboxList className={styles.suggestionsList}>
                         {suggestions.map(suggestion => (
                             <ComboboxOption className={styles.suggestionsOption} key={suggestion} value={suggestion}>
