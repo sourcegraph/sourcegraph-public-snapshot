@@ -6,12 +6,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/services/executors/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
-
-const DefaultExecutorsLimit = 50
 
 func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 	Query  *string
@@ -24,12 +21,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	query, active, offset, limit, err := validateArgs(ctx, args)
-	if err != nil {
-		return nil, err
-	}
-
-	executors, err := r.CodeIntelResolver.ExecutorResolver().Executors(ctx, query, active, offset, limit)
+	executors, err := r.CodeIntelResolver.ExecutorResolver().Executors(ctx, args.Query, args.Active, args.First, args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -48,33 +40,4 @@ func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID, r *sche
 	}
 
 	return executor, nil
-}
-
-type graphqlArgs *struct {
-	Query  *string
-	Active *bool
-	First  *int32
-	After  *string
-}
-
-func validateArgs(ctx context.Context, args graphqlArgs) (query string, active bool, offset int, limit int, err error) {
-	if args.Query != nil {
-		query = *args.Query
-	}
-
-	if args.Active != nil {
-		active = *args.Active
-	}
-
-	offset, err = graphqlutil.DecodeIntCursor(args.After)
-	if err != nil {
-		return
-	}
-
-	limit = DefaultExecutorsLimit
-	if args.First != nil {
-		limit = int(*args.First)
-	}
-
-	return
 }
