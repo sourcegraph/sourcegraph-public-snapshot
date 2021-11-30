@@ -276,9 +276,16 @@ Auto scaling of executor instances can help to increase concurrency of jobs, wit
 
 Auto scaling makes use of the auto-scaling capabilities of the respective cloud provider (AutoScalingGroups on AWS and Instance Groups on GCP). Sourcegraph's `worker` service publishes a scaling metric (that is, the number of jobs in queue) to the cloud providers. Then, based on that reported value, the auto scalers add and remove compute resources to match the required amount of compute.
 
-With the Terraform variables [`min-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max-replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22max_replicas%22&patternType=literal) in the Terraform modules linked to above, you can configure the minimum and maximum number of compute machines to be run at a given time. `min-replicas` must be `>= 0`.
+With the Terraform variables [`min_replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22min_replicas%22&patternType=literal) and [`max_replicas`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-.*-executors%24+variable+%22max_replicas%22&patternType=literal) in the Terraform modules linked to above, you can configure the minimum and maximum number of compute machines to be run at a given time.
 
-For auto scaling to work, the Sourcegraph instance (its `worker` service, specifically) needs to be configured with the correct credentials in order to publish a scaling metric to the used cloud provider. The `credentials` submodule in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules exists for that purpose. When used, the `credentials` moduel sets up the credentials on the cloud provider and returns them in the terraform oujtputs it, you get properly configured credentials in the Terraform outputs.
+For auto scaling to work, two things must be true:
+
+1. `min_replicas` must be `>= 0` and `max_replicas` must be `> min_replicas`.
+2. The Sourcegraph instance (its `worker` service, specifically) needs to publish scaling metrics to the used cloud provider.
+
+For the latter to work, the Sourcegraph instance needs to be configured with the correct credentials that allow it to access the cloud provider.
+
+The `credentials` submodule in both our [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors/-/tree/modules/credentials) and [GCP](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors/-/tree/modules/credentials) executor modules exists for that purpose. When used, the `credentials` module sets up the credentials on the cloud provider and returns them in the Terraform outputs.
 
 Here's an example of how one would use the `credentials` submodule:
 
@@ -321,7 +328,7 @@ metric_writer_secret_key    = <THE_SECRET_KEY_TO_CONFIGURE>
 metric_writer_credentials_file = <THE_CREDENTIALS_FILE_CONTENT_BASE64_ENCODED>
 ```
 
-The following sections describe how to use these credentials on the different cloud providers.
+These outputs can then be used to configure the Sourcegraph instance, which is explained in the following sections for the different cloud providers.
 
 ### Google
 
