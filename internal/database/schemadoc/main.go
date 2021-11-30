@@ -168,9 +168,11 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 		}
 	}()
 
-	if err := dbconn.MigrateDB(db, database); err != nil {
+	closeMigration, err := dbconn.MigrateDB(db, database)
+	if err != nil {
 		return "", errors.Wrap(err, "MigrateDB")
 	}
+	defer closeMigration()
 
 	tables, err := getTables(db)
 	if err != nil {

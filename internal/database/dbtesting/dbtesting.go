@@ -165,7 +165,7 @@ func initTest() error {
 		dbconn.Frontend,
 		dbconn.CodeIntel,
 	} {
-		if err := dbconn.MigrateDB(sqlDB, database); err != nil {
+		if _, err := dbconn.MigrateDB(sqlDB, database); err != nil {
 			return err
 		}
 	}

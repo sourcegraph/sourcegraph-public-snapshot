@@ -146,7 +146,7 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 			dbconn.Frontend,
 			dbconn.CodeIntel,
 		} {
-			close, err := dbconn.DoMigrateDB(templateDB, database)
+			close, err := dbconn.MigrateDB(templateDB, database)
 			if err != nil {
 				t.Fatalf("failed to apply migrations: %s", err)
 			}
