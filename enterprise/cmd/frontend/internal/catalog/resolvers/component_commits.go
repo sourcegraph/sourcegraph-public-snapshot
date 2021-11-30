@@ -18,10 +18,10 @@ func (r *catalogComponentResolver) Commits(ctx context.Context, args *graphqluti
 	// only for a single file"), so we can't do this all in 1 Git command.
 
 	var combinedCommits []*gitdomain.Commit
-	for _, sourcePath := range r.sourcePaths {
+	for _, sourcePath := range r.component.SourcePaths {
 		isDir := true
-		commits, err := git.Commits(ctx, r.sourceRepo, git.CommitsOptions{
-			Range:  string(r.sourceCommit),
+		commits, err := git.Commits(ctx, r.component.SourceRepo, git.CommitsOptions{
+			Range:  string(r.component.SourceCommit),
 			Path:   sourcePath,
 			Follow: !isDir,
 			N:      uint(args.GetFirst()),

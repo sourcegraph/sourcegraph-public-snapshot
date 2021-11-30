@@ -9,6 +9,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -57,7 +58,7 @@ func (r *catalogResolver) Components(ctx context.Context, args *gql.CatalogCompo
 
 	var keep []gql.CatalogComponentResolver
 	for _, c := range components {
-		if args.Query == nil || strings.Contains(c.name, *args.Query) {
+		if args.Query == nil || strings.Contains(c.component.Name, *args.Query) {
 			keep = append(keep, c)
 		}
 	}
@@ -84,37 +85,27 @@ func (r *catalogComponentConnectionResolver) PageInfo(ctx context.Context) (*gra
 }
 
 type catalogComponentResolver struct {
-	kind        gql.CatalogComponentKind
-	name        string
-	description string
-	system      *string
-
-	sourceRepo    api.RepoName
-	sourceCommit  api.CommitID
-	sourcePaths   []string
-	usagePatterns []usagePattern
-	apiDefPath    string
-
-	db database.DB
+	component catalog.Component
+	db        database.DB
 }
 
 func (r *catalogComponentResolver) ID() graphql.ID {
-	return relay.MarshalID("CatalogComponent", r.name) // TODO(sqs)
+	return relay.MarshalID("CatalogComponent", r.component.Name) // TODO(sqs)
 }
 
 func (r *catalogComponentResolver) Kind() gql.CatalogComponentKind {
-	return r.kind
+	return gql.CatalogComponentKind(r.component.Kind)
 }
 
 func (r *catalogComponentResolver) Name() string {
-	return r.name
+	return r.component.Name
 }
 
 func (r *catalogComponentResolver) Description() *string {
-	if r.description == "" {
+	if r.component.Description == "" {
 		return nil
 	}
-	return &r.description
+	return &r.component.Description
 }
 
 func (r *catalogComponentResolver) Owner(context.Context) (*gql.PersonResolver, error) {
@@ -122,7 +113,7 @@ func (r *catalogComponentResolver) Owner(context.Context) (*gql.PersonResolver, 
 }
 
 func (r *catalogComponentResolver) System() *string {
-	return r.system
+	return r.component.System
 }
 
 func (r *catalogComponentResolver) Tags() []string {
@@ -136,7 +127,7 @@ func (r *catalogComponentResolver) URL() string {
 func (r *catalogComponentResolver) sourceRepoResolver(ctx context.Context) (*gql.RepositoryResolver, error) {
 	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
 	// filters out repositories that the user doesn't have access to.
-	repo, err := r.db.Repos().GetByName(ctx, r.sourceRepo)
+	repo, err := r.db.Repos().GetByName(ctx, r.component.SourceRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +140,7 @@ func (r *catalogComponentResolver) sourceCommitResolver(ctx context.Context) (*g
 	if err != nil {
 		return nil, err
 	}
-	return gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil), nil
+	return gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.component.SourceCommit), nil), nil
 }
 
 func (r *catalogComponentResolver) SourceLocations(ctx context.Context) ([]*gql.GitTreeEntryResolver, error) {
@@ -158,8 +149,7 @@ func (r *catalogComponentResolver) SourceLocations(ctx context.Context) ([]*gql.
 		return nil, err
 	}
 	var locs []*gql.GitTreeEntryResolver
-	for _, sourcePath := range r.sourcePaths {
-
+	for _, sourcePath := range r.component.SourcePaths {
 		locs = append(locs, gql.NewGitTreeEntryResolver(r.db, commitResolver, gql.CreateFileInfo(sourcePath, false)))
 	}
 	return locs, nil

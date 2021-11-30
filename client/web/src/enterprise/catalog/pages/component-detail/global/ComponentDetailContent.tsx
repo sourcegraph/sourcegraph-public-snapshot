@@ -1,5 +1,7 @@
 import classNames from 'classnames'
+import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -42,6 +44,12 @@ export const ComponentDetailContent: React.FunctionComponent<Props> = ({ catalog
                 label: 'Overview',
                 element: (
                     <div className="d-flex flex-column">
+                        <Link
+                            to={`/search?q=context:c/${catalogComponent.name}`}
+                            className="d-flex align-items-center mb-2 btn btn-outline-secondary"
+                        >
+                            <SearchIcon className="icon-inline" /> Search in {catalogComponent.name}...
+                        </Link>
                         <ComponentSourceDefinitions catalogComponent={catalogComponent} />
                         <ComponentAuthors
                             catalogComponent={catalogComponent}

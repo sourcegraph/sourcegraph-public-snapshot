@@ -21,8 +21,8 @@ func (r *catalogComponentUsageResolver) Components(ctx context.Context) ([]gql.C
 	componentForPath := func(repo api.RepoName, path string) *catalogComponentResolver {
 		// TODO(sqs): ignores commit SHA - is that ok?
 		for _, c := range components {
-			if c.sourceRepo == repo {
-				for _, sourcePath := range c.sourcePaths {
+			if c.component.SourceRepo == repo {
+				for _, sourcePath := range c.component.SourcePaths {
 					if path == sourcePath || strings.HasPrefix(path, sourcePath+"/") || sourcePath == "." {
 						return c
 					}

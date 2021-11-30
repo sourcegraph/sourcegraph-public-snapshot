@@ -14,11 +14,11 @@ func (r *catalogComponentResolver) API(ctx context.Context, args *gql.CatalogCom
 	if err != nil {
 		return nil, err
 	}
-	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.sourceCommit), nil)
+	commitResolver := gql.NewGitCommitResolver(r.db, repoResolver, api.CommitID(r.component.SourceCommit), nil)
 
 	// Only find symbols in the component's paths.
-	includePatterns := make([]string, len(r.sourcePaths))
-	for _, p := range r.sourcePaths {
+	includePatterns := make([]string, len(r.component.SourcePaths))
+	for _, p := range r.component.SourcePaths {
 		includePatterns = append(includePatterns, "^"+regexp.QuoteMeta(p)+"($|/)")
 	}
 
@@ -50,7 +50,7 @@ func (r *catalogComponentAPIResolver) Symbols(ctx context.Context, args *gql.Cat
 }
 
 func (r *catalogComponentAPIResolver) Schema(ctx context.Context) (gql.FileResolver, error) {
-	if r.component.apiDefPath == "" {
+	if r.component.component.APIDefPath == "" {
 		return nil, nil
 	}
 
@@ -58,5 +58,5 @@ func (r *catalogComponentAPIResolver) Schema(ctx context.Context) (gql.FileResol
 	if err != nil {
 		return nil, err
 	}
-	return commitResolver.File(ctx, &struct{ Path string }{Path: r.component.apiDefPath})
+	return commitResolver.File(ctx, &struct{ Path string }{Path: r.component.component.APIDefPath})
 }
