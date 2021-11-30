@@ -25,6 +25,23 @@ add('default', () => (
     </WebStory>
 ))
 
+add('default with suggestions', () => (
+    <WebStory>
+        {() => (
+            <SearchNotebookFileBlockInput
+                placeholder="File block input"
+                value="client/web/file"
+                onChange={noop}
+                onFocus={noop}
+                onBlur={noop}
+                isMacPlatform={false}
+                suggestions={['client/web/file1.tsx', 'client/web/file2.tsx', 'client/web/file3.tsx']}
+                testTriggerSuggestions={true}
+            />
+        )}
+    </WebStory>
+))
+
 add('valid', () => (
     <WebStory>
         {() => (

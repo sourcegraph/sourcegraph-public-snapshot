@@ -8,7 +8,7 @@ import {
 } from '@reach/combobox'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react'
 
 import { isModifierKeyPressed } from '../useBlockShortcuts'
 
@@ -28,6 +28,7 @@ interface SearchNotebookFileBlockInputProps {
     isValid?: boolean
     isMacPlatform: boolean
     dataTestId?: string
+    testTriggerSuggestions?: boolean
 }
 
 export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNotebookFileBlockInputProps> = ({
@@ -44,6 +45,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
     isValid,
     isMacPlatform,
     dataTestId,
+    testTriggerSuggestions,
 }) => {
     const [inputValue, setInputValue] = useState(value)
     const debouncedOnChange = useMemo(() => debounce(onChange, 300), [onChange])
@@ -54,6 +56,14 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         },
         [debouncedOnChange, setInputValue]
     )
+
+    const inputReference = useRef<HTMLInputElement>(null)
+    useEffect(() => {
+        if (testTriggerSuggestions) {
+            inputReference.current?.focus()
+        }
+    }, [inputReference, testTriggerSuggestions])
+
     return (
         <Combobox
             openOnFocus={true}
@@ -73,6 +83,7 @@ export const SearchNotebookFileBlockInput: React.FunctionComponent<SearchNoteboo
         >
             <ComboboxInput
                 id={id}
+                ref={inputReference}
                 className={classNames(
                     inputClassName,
                     'form-control',
