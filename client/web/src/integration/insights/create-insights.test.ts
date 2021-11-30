@@ -7,6 +7,7 @@ import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graph
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
+import { percySnapshotWithVariants } from '../utils'
 
 import {
     INSIGHT_TYPES_MIGRATION_BULK_SEARCH,
@@ -102,6 +103,8 @@ describe('Code insight create insight page', () => {
                 otherThreshold: 0.03,
             },
         })
+
+        await percySnapshotWithVariants(driver.page, 'Code insights create new language usage insight')
     })
 
     it('should update user/org settings if search based insight has been created', async () => {
