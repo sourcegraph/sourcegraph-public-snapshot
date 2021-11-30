@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -32,6 +32,7 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 	return repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
 }
 
+// Prefer using NewGitCommitResolver to create an instance of the commit resolver.
 type GitCommitResolver struct {
 	db           database.DB
 	repoResolver *RepositoryResolver
@@ -50,14 +51,15 @@ type GitCommitResolver struct {
 
 	// commit should not be accessed directly since it might not be initialized.
 	// Use the resolver methods instead.
-	commit     *gitapi.Commit
+	commit     *gitdomain.Commit
 	commitOnce sync.Once
 	commitErr  error
 }
 
-// When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
-// a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, db database.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
+// NewGitCommitResolver returns a new CommitResulover. When commit is set to nil,
+// commit will be loaded lazily as needed by the resolver. Pass in a commit when
+// you have batch-loaded a bunch of them and already have them at hand.
+func NewGitCommitResolver(db database.DB, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -68,7 +70,7 @@ func toGitCommitResolver(repo *RepositoryResolver, db database.DB, id api.Commit
 	}
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitapi.Commit, error) {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
 	r.commitOnce.Do(func() {
 		if r.commit != nil {
 			return
@@ -203,17 +205,18 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 
 	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if !stat.Mode().IsDir() {
 		return nil, errors.Errorf("not a directory: %q", args.Path)
 	}
-	return &GitTreeEntryResolver{
-		db:          r.db,
-		commit:      r,
-		stat:        stat,
-		isRecursive: args.Recursive,
-	}, nil
+
+	treeEntry := NewGitTreeEntryResolver(r.db, r, stat)
+	treeEntry.isRecursive = args.Recursive
+	return treeEntry, nil
 }
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
@@ -229,11 +232,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	if !stat.Mode().IsRegular() {
 		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
-	return &GitTreeEntryResolver{
-		db:     r.db,
-		commit: r,
-		stat:   stat,
-	}, nil
+	return NewGitTreeEntryResolver(r.db, r, stat), nil
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
@@ -252,7 +251,7 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +269,7 @@ func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*language
 		return nil, err
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := backend.NewRepos(r.db.Repos()).GetInventory(ctx, repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}

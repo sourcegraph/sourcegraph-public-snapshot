@@ -10,6 +10,7 @@ import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../util/context'
 
 import { CodeHostContext } from './codeHost'
 import { SignInButton } from './SignInButton'
+import styles from './ViewOnSourcegraphButton.module.scss'
 
 export interface ViewOnSourcegraphButtonClassProps {
     className?: string
@@ -18,7 +19,7 @@ export interface ViewOnSourcegraphButtonClassProps {
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     codeHostType: string
-    getContext: () => CodeHostContext
+    context: CodeHostContext
     sourcegraphURL: string
     minimalUI: boolean
     repoExistsOrError?: boolean | ErrorLike
@@ -38,7 +39,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     codeHostType,
     repoExistsOrError,
     sourcegraphURL,
-    getContext,
+    context,
     minimalUI,
     onConfigureSourcegraphClick,
     showSignInButton,
@@ -48,13 +49,13 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     onPrivateCloudError,
 }) => {
     className = classNames('open-on-sourcegraph', className)
-    const mutedIconClassName = classNames('open-on-sourcegraph__icon--muted', iconClassName)
+    const mutedIconClassName = classNames(styles.iconMuted, iconClassName)
     const commonProps: Partial<SourcegraphIconButtonProps> = {
         className,
         iconClassName,
     }
 
-    const { rawRepoName, revision, privateRepository } = getContext()
+    const { rawRepoName, revision, privateRepository } = context
 
     const isPrivateCloudError =
         sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && repoExistsOrError === false && privateRepository

@@ -73,7 +73,7 @@ describe('FileMatch', () => {
             ],
         }
         const { container } = render(<FileMatch {...defaultProps} result={result} settingsCascade={settingsCascade} />)
-        const tableRows = container.querySelectorAll('.code-excerpt tr')
+        const tableRows = container.querySelectorAll('[data-testid="code-excerpt"] tr')
         expect(tableRows.length).toBe(7)
     })
 })

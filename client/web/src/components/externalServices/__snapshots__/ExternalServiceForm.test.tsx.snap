@@ -1,157 +1,147 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ExternalServiceForm create GitHub 1`] = `
-<form
-  className="external-service-form"
-  onInvalid={[Function]}
-  onSubmit={[Function]}
->
-  <div
-    className="form-group"
+<DocumentFragment>
+  <form
+    class="external-service-form"
   >
-    <label
-      className="font-weight-bold"
-      htmlFor="test-external-service-form-display-name"
+    <div
+      class="form-group"
     >
-      Display name:
-    </label>
-    <input
-      autoComplete="off"
-      autoCorrect="off"
-      autoFocus={true}
-      className="form-control"
-      disabled={false}
-      id="test-external-service-form-display-name"
-      onChange={[Function]}
-      required={true}
-      spellCheck={false}
-      type="text"
-      value="GitHub"
-    />
-  </div>
-  <div
-    className="form-group"
-  >
-    DynamicallyImportedMonacoSettingsEditor
-    <p
-      className="form-text text-muted"
+      <label
+        class="font-weight-bold"
+        for="test-external-service-form-display-name"
+      >
+        Display name:
+      </label>
+      <input
+        autocomplete="off"
+        autocorrect="off"
+        class="form-control"
+        id="test-external-service-form-display-name"
+        required=""
+        spellcheck="false"
+        type="text"
+        value="GitHub"
+      />
+    </div>
+    <div
+      class="form-group"
     >
-      <small>
-        Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-      </small>
-    </p>
-  </div>
-  <button
-    className="btn btn-primary mb-3 test-add-external-service-button"
-    disabled={false}
-    type="submit"
-  >
-    Add repositories
-  </button>
-</form>
+      DynamicallyImportedMonacoSettingsEditor
+      <p
+        class="form-text text-muted"
+      >
+        <small>
+          Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        </small>
+      </p>
+    </div>
+    <button
+      class="btn btn-primary mb-3 test-add-external-service-button"
+      type="submit"
+    >
+      Add repositories
+    </button>
+  </form>
+</DocumentFragment>
 `;
 
 exports[`ExternalServiceForm edit GitHub 1`] = `
-<form
-  className="external-service-form"
-  onInvalid={[Function]}
-  onSubmit={[Function]}
->
-  <div
-    className="form-group"
+<DocumentFragment>
+  <form
+    class="external-service-form"
   >
-    <label
-      className="font-weight-bold"
-      htmlFor="test-external-service-form-display-name"
+    <div
+      class="form-group"
     >
-      Display name:
-    </label>
-    <input
-      autoComplete="off"
-      autoCorrect="off"
-      autoFocus={true}
-      className="form-control"
-      disabled={false}
-      id="test-external-service-form-display-name"
-      onChange={[Function]}
-      required={true}
-      spellCheck={false}
-      type="text"
-      value="GitHub"
-    />
-  </div>
-  <div
-    className="form-group"
-  >
-    DynamicallyImportedMonacoSettingsEditor
-    <p
-      className="form-text text-muted"
+      <label
+        class="font-weight-bold"
+        for="test-external-service-form-display-name"
+      >
+        Display name:
+      </label>
+      <input
+        autocomplete="off"
+        autocorrect="off"
+        class="form-control"
+        id="test-external-service-form-display-name"
+        required=""
+        spellcheck="false"
+        type="text"
+        value="GitHub"
+      />
+    </div>
+    <div
+      class="form-group"
     >
-      <small>
-        Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-      </small>
-    </p>
-  </div>
-  <button
-    className="btn btn-primary mb-3 test-add-external-service-button"
-    disabled={false}
-    type="submit"
-  >
-    Add repositories
-  </button>
-</form>
+      DynamicallyImportedMonacoSettingsEditor
+      <p
+        class="form-text text-muted"
+      >
+        <small>
+          Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        </small>
+      </p>
+    </div>
+    <button
+      class="btn btn-primary mb-3 test-add-external-service-button"
+      type="submit"
+    >
+      Add repositories
+    </button>
+  </form>
+</DocumentFragment>
 `;
 
 exports[`ExternalServiceForm edit GitHub, loading 1`] = `
-<form
-  className="external-service-form"
-  onInvalid={[Function]}
-  onSubmit={[Function]}
->
-  <div
-    className="form-group"
-  >
-    <label
-      className="font-weight-bold"
-      htmlFor="test-external-service-form-display-name"
-    >
-      Display name:
-    </label>
-    <input
-      autoComplete="off"
-      autoCorrect="off"
-      autoFocus={true}
-      className="form-control"
-      disabled={true}
-      id="test-external-service-form-display-name"
-      onChange={[Function]}
-      required={true}
-      spellCheck={false}
-      type="text"
-      value="GitHub"
-    />
-  </div>
-  <div
-    className="form-group"
-  >
-    DynamicallyImportedMonacoSettingsEditor
-    <p
-      className="form-text text-muted"
-    >
-      <small>
-        Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-      </small>
-    </p>
-  </div>
-  <button
-    className="btn btn-primary mb-3 test-add-external-service-button"
-    disabled={true}
-    type="submit"
+<DocumentFragment>
+  <form
+    class="external-service-form"
   >
     <div
-      className="loading-spinner icon-inline"
-    />
-    Add repositories
-  </button>
-</form>
+      class="form-group"
+    >
+      <label
+        class="font-weight-bold"
+        for="test-external-service-form-display-name"
+      >
+        Display name:
+      </label>
+      <input
+        autocomplete="off"
+        autocorrect="off"
+        class="form-control"
+        disabled=""
+        id="test-external-service-form-display-name"
+        required=""
+        spellcheck="false"
+        type="text"
+        value="GitHub"
+      />
+    </div>
+    <div
+      class="form-group"
+    >
+      DynamicallyImportedMonacoSettingsEditor
+      <p
+        class="form-text text-muted"
+      >
+        <small>
+          Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        </small>
+      </p>
+    </div>
+    <button
+      class="btn btn-primary mb-3 test-add-external-service-button"
+      disabled=""
+      type="submit"
+    >
+      <div
+        class="loading-spinner icon-inline"
+      />
+      Add repositories
+    </button>
+  </form>
+</DocumentFragment>
 `;

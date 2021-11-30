@@ -47,7 +47,7 @@ function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; conten
          <div class=${styles.close}>${closeIconSvg}</div>
      `
     element.append(close)
-    element.querySelector(styles.close)?.addEventListener('click', () => {
+    element.querySelector(`.${styles.close}`)?.addEventListener('click', () => {
         options.tour.cancel()
         eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber }, { stage: options.stepNumber })
     })
@@ -74,8 +74,8 @@ function generateStep1(
     content.className = 'd-flex align-items-center'
     content.innerHTML = `
          <div class=${styles.title}>Get started</div>
-         <button type="button" class="btn btn-link p-0 ${styles.link} tour-language-button">Search a language</button>
-         <button type="button" class="btn btn-link p-0 ${styles.link} tour-repo-button">Search a repository</button>
+         <button type="button" data-testid="tour-language-button" class="btn btn-link p-0 ${styles.link} tour-language-button">Search a language</button>
+         <button type="button" data-testid="tour-repo-button" class="btn btn-link p-0 ${styles.link} tour-repo-button">Search a repository</button>
      `
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()

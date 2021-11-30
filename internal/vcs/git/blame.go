@@ -11,8 +11,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // BlameOptions configures a blame.
@@ -31,7 +31,7 @@ type Hunk struct {
 	StartByte int // 0-indexed start byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
 	api.CommitID
-	Author   gitapi.Signature
+	Author   gitdomain.Signature
 	Message  string
 	Filename string
 }
@@ -74,7 +74,7 @@ func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameO
 		return nil, nil
 	}
 
-	commits := make(map[string]gitapi.Commit)
+	commits := make(map[string]gitdomain.Commit)
 	filenames := make(map[string]string)
 	hunks := make([]*Hunk, 0)
 	remainingLines := strings.Split(string(out[:len(out)-1]), "\n")
@@ -111,10 +111,10 @@ func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameO
 				return nil, errors.Errorf("Failed to parse author-time %q", remainingLines[3])
 			}
 			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := gitapi.Commit{
+			commit := gitdomain.Commit{
 				ID:      api.CommitID(commitID),
-				Message: gitapi.Message(summary),
-				Author: gitapi.Signature{
+				Message: gitdomain.Message(summary),
+				Author: gitdomain.Signature{
 					Name:  author,
 					Email: email,
 					Date:  time.Unix(authorTime, 0).UTC(),

@@ -621,6 +621,54 @@ query{
 	}
 }
 
+func TestV4Client_SearchRepos_Enterprise(t *testing.T) {
+	cli, save := newEnterpriseV4Client(t, "SearchRepos-Enterprise")
+	t.Cleanup(save)
+
+	testCases := []struct {
+		name   string
+		ctx    context.Context
+		params SearchReposParams
+		err    string
+	}{
+		{
+			name: "narrow-query-enterprise",
+			params: SearchReposParams{
+				Query: "repo:admiring-austin-120/fluffy-enigma",
+				First: 1,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			results, err := cli.SearchRepos(tc.ctx, tc.params)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			testutil.AssertGolden(t,
+				fmt.Sprintf("testdata/golden/SearchRepos-Enterprise-%s", tc.name),
+				update("SearchRepos-Enterprise"),
+				results,
+			)
+		})
+	}
+}
+
 func TestV4Client_WithAuthenticator(t *testing.T) {
 	uri, err := url.Parse("https://github.com")
 	if err != nil {
@@ -658,4 +706,22 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 	}
 
 	return NewV4Client(uri, vcrToken, doer), save
+}
+
+func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
+	t.Helper()
+
+	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
+	uri, err := url.Parse("https://ghe.sgdev.org/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	uri, _ = APIRoot(uri)
+
+	doer, err := cf.Doer()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return NewV4Client(uri, gheToken, doer), save
 }

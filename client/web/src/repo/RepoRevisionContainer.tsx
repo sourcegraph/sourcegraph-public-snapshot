@@ -1,6 +1,5 @@
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -37,9 +36,11 @@ import { RouteDescriptor } from '../util/contributions'
 import { CopyPathAction } from './actions/CopyPathAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
+import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
+import styles from './RepoRevisionContainer.module.scss'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
@@ -150,7 +151,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<RepoRevisionBread
             : revision) ||
             resolvedRevisionOrError.defaultBranch ||
             'HEAD'}
-        <ChevronDownIcon className="icon-inline repo-revision-container__breadcrumb-icon" />
+        <RepoRevisionChevronDownIcon className="icon-inline" />
         <RepoRevisionContainerPopover
             repo={repo}
             resolvedRevisionOrError={resolvedRevisionOrError}
@@ -211,7 +212,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
 
             return {
                 key: 'revision',
-                divider: <span className="repo-revision-container__divider">@</span>,
+                divider: <span className={styles.divider}>@</span>,
                 element: (
                     <RepoRevisionContainerBreadcrumb
                         resolvedRevisionOrError={props.resolvedRevisionOrError}
@@ -277,7 +278,7 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     const resolvedRevisionOrError = props.resolvedRevisionOrError
 
     return (
-        <div className="repo-revision-container pl-3">
+        <RepoRevisionWrapper className="pl-3">
             <Switch>
                 {props.routes.map(
                     ({ path, render, exact, condition = () => true }) =>
@@ -316,6 +317,6 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
                     />
                 )}
             </RepoHeaderContributionPortal>
-        </div>
+        </RepoRevisionWrapper>
     )
 }

@@ -57,6 +57,34 @@ func NewMockUserPublicRepoStore() *MockUserPublicRepoStore {
 	}
 }
 
+// NewStrictMockUserPublicRepoStore creates a new mock of the
+// UserPublicRepoStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockUserPublicRepoStore() *MockUserPublicRepoStore {
+	return &MockUserPublicRepoStore{
+		HandleFunc: &UserPublicRepoStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockUserPublicRepoStore.Handle")
+			},
+		},
+		ListByUserFunc: &UserPublicRepoStoreListByUserFunc{
+			defaultHook: func(context.Context, int32) ([]database.UserPublicRepo, error) {
+				panic("unexpected invocation of MockUserPublicRepoStore.ListByUser")
+			},
+		},
+		SetUserRepoFunc: &UserPublicRepoStoreSetUserRepoFunc{
+			defaultHook: func(context.Context, database.UserPublicRepo) error {
+				panic("unexpected invocation of MockUserPublicRepoStore.SetUserRepo")
+			},
+		},
+		SetUserReposFunc: &UserPublicRepoStoreSetUserReposFunc{
+			defaultHook: func(context.Context, int32, []database.UserPublicRepo) error {
+				panic("unexpected invocation of MockUserPublicRepoStore.SetUserRepos")
+			},
+		},
+	}
+}
+
 // NewMockUserPublicRepoStoreFrom creates a new mock of the
 // MockUserPublicRepoStore interface. All methods delegate to the given
 // implementation, unless overwritten.

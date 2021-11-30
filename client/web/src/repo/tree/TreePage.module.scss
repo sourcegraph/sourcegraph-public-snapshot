@@ -10,18 +10,18 @@
     :global(.batch-change-badge) {
         top: 0;
     }
+}
 
-    :global(.git-commit-node) {
-        padding-left: 0;
-        padding-right: 0;
+.git-commit-node {
+    padding-left: 0;
+    padding-right: 0;
 
-        :global(.git-commit-node__message-subject) {
-            opacity: 0.9;
-        }
+    &-message-subject {
+        opacity: 0.9;
+    }
 
-        :global(.btn) {
-            opacity: 0.85;
-        }
+    :global(.btn) {
+        opacity: 0.85;
     }
 }
 

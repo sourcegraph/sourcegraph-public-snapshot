@@ -4,7 +4,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React from 'react'
 
-import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
+import { InsightDashboard, isRealDashboard } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { Badge } from '../badge/Badge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
@@ -31,14 +31,10 @@ export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
                     return <MenuButtonContent title="Unknown dashboard" isExpanded={isExpanded} />
                 }
 
-                if (dashboard.type === InsightsDashboardType.All) {
-                    return <MenuButtonContent title="All Insights" isExpanded={isExpanded} />
-                }
-
                 return (
                     <MenuButtonContent
                         title={getDashboardTitle(dashboard)}
-                        badge={getDashboardOwnerName(dashboard)}
+                        badge={isRealDashboard(dashboard) ? getDashboardOwnerName(dashboard) : undefined}
                         isExpanded={isExpanded}
                     />
                 )

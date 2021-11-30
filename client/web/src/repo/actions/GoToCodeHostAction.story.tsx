@@ -14,8 +14,8 @@ import { WebStory } from '../../components/WebStory'
 import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
 
 const onClose = action('onClose')
-const onRejection = action('onRejection')
-const onClickInstall = action('onClickInstall')
+const onReject = action('onReject')
+const onInstall = action('onInstall')
 
 const { add } = storiesOf('web/repo/actions/InstallBrowserExtensionPopover', module).addDecorator(story => (
     <div className="container mt-3">{story()}</div>
@@ -41,11 +41,11 @@ add('GitHub', () => (
                         url=""
                         serviceKind={serviceKind}
                         onClose={onClose}
-                        onRejection={onRejection}
-                        onClickInstall={onClickInstall}
+                        onReject={onReject}
+                        onInstall={onInstall}
                         targetID={targetID}
                         isOpen={open}
-                        toggle={noop}
+                        onToggle={noop}
                     />
                 </>
             )
@@ -75,11 +75,11 @@ add(
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
-                            onRejection={onRejection}
-                            onClickInstall={onClickInstall}
+                            onReject={onReject}
+                            onInstall={onInstall}
                             targetID={targetID}
                             isOpen={open}
-                            toggle={noop}
+                            onToggle={noop}
                         />
                     </>
                 )
@@ -113,11 +113,11 @@ add(
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
-                            onRejection={onRejection}
-                            onClickInstall={onClickInstall}
+                            onReject={onReject}
+                            onInstall={onInstall}
                             targetID={targetID}
                             isOpen={open}
-                            toggle={noop}
+                            onToggle={noop}
                         />
                     </>
                 )
@@ -152,11 +152,11 @@ add(
                             url=""
                             serviceKind={serviceKind}
                             onClose={onClose}
-                            onRejection={onRejection}
-                            onClickInstall={onClickInstall}
+                            onReject={onReject}
+                            onInstall={onInstall}
                             targetID={targetID}
                             isOpen={open}
-                            toggle={noop}
+                            onToggle={noop}
                         />
                     </>
                 )

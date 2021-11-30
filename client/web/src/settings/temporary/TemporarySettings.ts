@@ -11,13 +11,14 @@ export interface TemporarySettingsSchema {
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
     'search.onboarding.tourCancelled': boolean
-    'search.usedNonGlobalContext': boolean
+    'search.contexts.ctaDismissed': boolean
     'insights.freeBetaAccepted': boolean
     'npsSurvey.hasTemporarilyDismissed': boolean
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
+    'codemonitor.info.visible': boolean
 }
 
 /**

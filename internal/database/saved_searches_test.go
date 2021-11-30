@@ -37,8 +37,6 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -73,8 +71,6 @@ func TestSavedSearchesCreate(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -90,8 +86,6 @@ func TestSavedSearchesCreate(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -116,8 +110,6 @@ func TestSavedSearchesUpdate(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -130,8 +122,6 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		ID:          1,
 		Query:       "test2",
 		Description: "test2",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -162,8 +152,6 @@ func TestSavedSearchesDelete(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -203,8 +191,6 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -224,8 +210,6 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}}
@@ -250,8 +234,6 @@ func TestSavedSearchesGetByID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -271,8 +253,6 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		Key:         "1",
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}}
@@ -298,8 +278,6 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}
@@ -324,8 +302,6 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	orgFake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      nil,
 		OrgID:       &org1.ID,
 	}
@@ -340,8 +316,6 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 	org2Fake := &types.SavedSearch{
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      nil,
 		OrgID:       &org2.ID,
 	}
@@ -371,24 +345,18 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		ID:          1,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      &userID,
 		OrgID:       nil,
 	}, {
 		ID:          2,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      nil,
 		OrgID:       &org1.ID,
 	}, {
 		ID:          3,
 		Query:       "test",
 		Description: "test",
-		Notify:      true,
-		NotifySlack: true,
 		UserID:      nil,
 		OrgID:       &org2.ID,
 	}}

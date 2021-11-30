@@ -7,7 +7,7 @@ import (
 )
 
 // Observation exports available shared observable and group constructors related
-// to the metrics emitted by internal/metrics.NewOperationMetrics in the Go backend.
+// to the metrics emitted by internal/metrics.NewREDMetrics in the Go backend.
 var Observation = observationConstructor{
 	Total:     Standard.Count("operations"),
 	Duration:  Standard.Duration("operation"),
@@ -76,7 +76,7 @@ type ObservationGroupOptions struct {
 //   - histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
 //   - counter of the format `src_{options.MetricNameRoot}_errors_total`
 //
-// These metrics can be created via internal/metrics.NewOperationMetrics in the Go backend.
+// These metrics can be created via internal/metrics.NewREDMetrics in the Go backend.
 func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
 	rows := make([]monitoring.Row, 0, 2)
 

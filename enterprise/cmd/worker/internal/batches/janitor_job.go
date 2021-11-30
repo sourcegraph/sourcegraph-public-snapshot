@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/background"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -41,7 +41,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		return nil, err
 	}
 
-	executorStore := background.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
+	executorStore := store.NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext)
 
 	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationContext, "batches", executorStore, janitorConfigInst.MetricsConfig)
 	if err != nil {

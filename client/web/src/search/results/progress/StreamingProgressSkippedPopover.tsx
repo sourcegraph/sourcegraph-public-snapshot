@@ -14,6 +14,7 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 
 import { StreamingProgressProps } from './StreamingProgress'
+import styles from './StreamingProgressSkippedPopover.module.scss'
 
 const severityToNumber = (severity: Skipped['severity']): number => {
     switch (severity) {
@@ -49,12 +50,14 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
 
     return (
         <div
-            className={classNames('streaming-skipped-item pt-2 w-100', {
-                'streaming-skipped-item--warn': skipped.severity !== 'info',
-            })}
+            className={classNames(
+                'pt-2 w-100',
+                styles.streamingSkippedItem,
+                skipped.severity !== 'info' && styles.streamingSkippedItemWarn
+            )}
         >
             <Button
-                className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
+                className={classNames(styles.button, 'p-2 w-100 bg-transparent border-0')}
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
@@ -62,29 +65,30 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
-                        <InformationOutlineIcon className="icon-inline streaming-skipped-item__icon flex-shrink-0" />
+                        <InformationOutlineIcon className={classNames('icon-inline', styles.icon, 'flex-shrink-0')} />
                     ) : (
-                        <AlertCircleIcon className="icon-inline streaming-skipped-item__icon flex-shrink-0" />
+                        <AlertCircleIcon className={classNames('icon-inline', styles.icon, 'flex-shrink-0')} />
                     )}
                     <span className="flex-grow-1 text-left">{skipped.title}</span>
 
                     {skipped.message &&
                         (isOpen ? (
-                            <ChevronDownIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
+                            <ChevronDownIcon className={classNames('icon-inline flex-shrink-0', styles.chevron)} />
                         ) : (
-                            <ChevronLeftIcon className="icon-inline flex-shrink-0 streaming-skipped-item__chevron" />
+                            <ChevronLeftIcon className={classNames('icon-inline flex-shrink-0', styles.chevron)} />
                         ))}
                 </h4>
             </Button>
+
             {skipped.message && (
                 <Collapse isOpen={isOpen}>
                     <Markdown
-                        className="streaming-skipped-item__message text-left py-1"
+                        className={classNames(styles.message, styles.markdown, 'text-left py-1')}
                         dangerousInnerHTML={renderMarkdown(skipped.message)}
                     />
                 </Collapse>
             )}
-            <div className="streaming-skipped-item__bottom-border-spacer mt-2" />
+            <div className={classNames(styles.bottomBorderSpacer, 'mt-2')} />
         </div>
     )
 }
@@ -127,7 +131,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 />
             ))}
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
-                <Form className="pb-3 px-3" onSubmit={submitHandler}>
+                <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
                     <div className="mb-2 mt-3">Search again:</div>
                     <FormGroup check={true}>
                         {sortedSkippedItems.map(
@@ -142,6 +146,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                                             type="checkbox"
                                             value={skipped.suggested.queryExpression}
                                             onChange={checkboxHandler}
+                                            data-testid="streaming-progress-skipped-suggest-check"
                                         />{' '}
                                         {skipped.suggested.title} (
                                         <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)
@@ -155,6 +160,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         className="mt-2"
                         color="primary"
                         disabled={selectedSuggestedSearches.size === 0}
+                        data-testid="skipped-popover-form-submit-btn"
                     >
                         <SearchIcon className="icon-inline mr-1" />
                         Search again

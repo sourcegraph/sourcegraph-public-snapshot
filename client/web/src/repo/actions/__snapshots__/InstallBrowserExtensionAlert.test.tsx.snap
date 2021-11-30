@@ -1,105 +1,73 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "BITBUCKETSERVER",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={true}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
         >
           Install the Sourcegraph browser extension
         </a>
-         
-        to add code intelligence
-         
-        to 
-        pull requests
-         
-        and file views
-         
-        on 
-        Bitbucket Server
-        .
+         to add code intelligence to pull requests and file views on Bitbucket Server.
       </p>
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="native-integration"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "BITBUCKETSERVER",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
-        Bitbucket Server
-        .
-         
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for Bitbucket Server. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
         >
           Learn more
         </a>
-         
-        or
-         
+         or 
         <a
-          className="alert-link"
+          class="alert-link"
           href=""
           rel="noopener"
           target="_blank"
@@ -110,54 +78,40 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "BITBUCKETSERVER",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Get code intelligence
-         
-        while browsing files and reviewing
-         
-        pull requests
-         
-        on 
-        Bitbucket Server
-        .
-         
+        Get code intelligence while browsing files and reviewing pull requests on Bitbucket Server. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -168,118 +122,93 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "GITHUB",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={true}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
         >
           Install the Sourcegraph browser extension
         </a>
-         
-        to add code intelligence
-         
-        to 
-        pull requests
-         
-        and file views
-         
-        on 
-        GitHub
-        .
+         to add code intelligence to pull requests and file views on GitHub.
       </p>
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="native-integration"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "GITHUB",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
-        GitHub
-        .
-         
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for GitHub. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
         >
           Learn more
         </a>
-         
-        or
-         
+         or 
         <a
-          className="alert-link"
+          class="alert-link"
           href=""
           rel="noopener"
           target="_blank"
@@ -290,54 +219,40 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "GITHUB",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Get code intelligence
-         
-        while browsing files and reviewing
-         
-        pull requests
-         
-        on 
-        GitHub
-        .
-         
+        Get code intelligence while browsing files and reviewing pull requests on GitHub. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -348,118 +263,93 @@ exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "GITLAB",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={true}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
         >
           Install the Sourcegraph browser extension
         </a>
-         
-        to add code intelligence
-         
-        to 
-        merge requests
-         
-        and file views
-         
-        on 
-        GitLab
-        .
+         to add code intelligence to merge requests and file views on GitLab.
       </p>
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="native-integration"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "GITLAB",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
-        GitLab
-        .
-         
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for GitLab. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
         >
           Learn more
         </a>
-         
-        or
-         
+         or 
         <a
-          className="alert-link"
+          class="alert-link"
           href=""
           rel="noopener"
           target="_blank"
@@ -470,54 +360,40 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "GITLAB",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Get code intelligence
-         
-        while browsing files and reviewing
-         
-        merge requests
-         
-        on 
-        GitLab
-        .
-         
+        Get code intelligence while browsing files and reviewing merge requests on GitLab. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -528,115 +404,93 @@ exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "PHABRICATOR",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={true}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack"
           rel="noopener noreferrer"
           target="_blank"
         >
           Install the Sourcegraph browser extension
         </a>
-         
-        to add code intelligence
-         
-        while browsing and reviewing code
-         
-        on 
-        Phabricator
-        .
+         to add code intelligence while browsing and reviewing code on Phabricator.
       </p>
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="native-integration"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "PHABRICATOR",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
-        Phabricator
-        .
-         
+        Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for Phabricator. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="https://docs.sourcegraph.com/integration/browser_extension"
           rel="noopener"
           target="_blank"
         >
           Learn more
         </a>
-         
-        or
-         
+         or 
         <a
-          className="alert-link"
+          class="alert-link"
           href=""
           rel="noopener"
           target="_blank"
@@ -647,52 +501,40 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
 exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={
-    Array [
-      Object {
-        "serviceKind": "PHABRICATOR",
-        "url": "",
-      },
-    ]
-  }
-  isChrome={false}
-  onAlertDismissed={[Function]}
->
+<DocumentFragment>
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    class="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
     data-testid="install-browser-extension-alert"
   >
     <div
-      className="d-flex align-items-center"
+      class="d-flex align-items-center"
     >
       <p
-        className="my-0 mr-3"
+        class="my-0 mr-3"
       >
-        Get code intelligence
-         
-        while browsing and reviewing code
-         
-        on 
-        Phabricator
-        .
-         
+        Get code intelligence while browsing and reviewing code on Phabricator. 
         <a
-          className="alert-link"
+          class="alert-link"
           href="/help/integration/browser_extension"
           rel="noopener noreferrer"
           target="_blank"
@@ -703,41 +545,27 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
     </div>
     <button
       aria-label="Close alert"
-      className="btn btn-icon test-close-alert"
-      onClick={[Function]}
+      class="btn btn-icon test-close-alert"
       type="button"
     >
-      <Memo(CloseIcon)
-        className="icon-inline"
-      />
+      <svg
+        class="mdi-icon icon-inline"
+        fill="currentColor"
+        height="24"
+        viewBox="0 0 24 24"
+        width="24"
+      >
+        <path
+          d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+        />
+      </svg>
     </button>
   </div>
-</InstallBrowserExtensionAlert>
+</DocumentFragment>
 `;
 
-exports[`InstallBrowserExtensionAlert none (Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={Array []}
-  isChrome={true}
-  onAlertDismissed={[Function]}
-/>
-`;
+exports[`InstallBrowserExtensionAlert none (Chrome) 1`] = `<DocumentFragment />`;
 
-exports[`InstallBrowserExtensionAlert none (native integration) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="native-integration"
-  externalURLs={Array []}
-  isChrome={false}
-  onAlertDismissed={[Function]}
-/>
-`;
+exports[`InstallBrowserExtensionAlert none (native integration) 1`] = `<DocumentFragment />`;
 
-exports[`InstallBrowserExtensionAlert none (non-Chrome) 1`] = `
-<InstallBrowserExtensionAlert
-  codeHostIntegrationMessaging="browser-extension"
-  externalURLs={Array []}
-  isChrome={false}
-  onAlertDismissed={[Function]}
-/>
-`;
+exports[`InstallBrowserExtensionAlert none (non-Chrome) 1`] = `<DocumentFragment />`;

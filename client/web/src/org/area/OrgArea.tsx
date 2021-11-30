@@ -96,7 +96,7 @@ interface Props
     /**
      * The currently authenticated user.
      */
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
 }
 
@@ -234,6 +234,7 @@ export class OrgArea extends React.Component<Props> {
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
+            batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,
             breadcrumbs: this.props.breadcrumbs,
             setBreadcrumb: this.state.setBreadcrumb,
             useBreadcrumb: this.state.useBreadcrumb,
@@ -273,7 +274,13 @@ export class OrgArea extends React.Component<Props> {
         )
     }
 
-    private onDidRespondToInvitation = (): void => this.refreshRequests.next()
+    private onDidRespondToInvitation = (accepted: boolean): void => {
+        if (!accepted) {
+            this.props.history.push('/user/settings')
+            return
+        }
+        this.refreshRequests.next()
+    }
 
     private onDidUpdateOrganization = (): void => this.refreshRequests.next()
 }

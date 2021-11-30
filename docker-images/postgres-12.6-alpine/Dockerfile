@@ -11,7 +11,9 @@ RUN apk add --no-cache nss su-exec shadow &&\
     chown -R postgres:postgres /var/lib/postgresql &&\
     chown -R postgres:postgres /var/run/postgresql
 
-RUN apk add --upgrade --no-cache libxml2=2.9.12-r0 libgcrypt=1.8.8-r1 apk-tools=2.12.7-r0
+# @FIXME: Update redis image
+# Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
+RUN apk add --upgrade --no-cache libxml2=2.9.12-r0 libgcrypt=1.8.8-r1 apk-tools=2.12.7-r0 busybox=1.32.1-r7
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \

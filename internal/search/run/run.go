@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -29,7 +30,7 @@ type SearchInputs struct {
 // may not be required, depending on the job. E.g., a global search job does not
 // require upfront repository resolution).
 type Job interface {
-	Run(context.Context, streaming.Sender, []*search.RepositoryRevisions) error
+	Run(context.Context, streaming.Sender, searchrepos.Pager) error
 	Name() string
 }
 

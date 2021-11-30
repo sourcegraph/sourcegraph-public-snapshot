@@ -17,7 +17,6 @@ var SrcProfServices = []map[string]string{
 	{"Name": "searcher", "Host": "127.0.0.1:6069"},
 	{"Name": "symbols", "Host": "127.0.0.1:6071"},
 	{"Name": "repo-updater", "Host": "127.0.0.1:6074"},
-	{"Name": "query-runner", "Host": "127.0.0.1:6067"},
 	{"Name": "worker", "Host": "127.0.0.1:6089"},
 	{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
 	// no executors in server image

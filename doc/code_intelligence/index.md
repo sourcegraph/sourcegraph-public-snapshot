@@ -37,7 +37,6 @@ Code intelligence provides advanced code navigation features that let developers
 
 ## [How-tos](how-to/index.md)
 
-
 - [Configure data retention policies](how-to/configure_data_retention.md)
 - [Add a GitHub repository to your Sourcegraph instance](how-to/add_a_repository.md)
 - [Index a Go repository](how-to/index_a_go_repository.md)
@@ -46,6 +45,8 @@ Code intelligence provides advanced code navigation features that let developers
 - [Index other languages](how-to/index_other_languages.md)
 - [Add LSIF to many repositories](how-to/adding_lsif_to_many_repos.md)
 - [Adding LSIF to CI workflows](how-to/adding_lsif_to_workflows.md)
+- <span class="badge badge-experimental">Experimental</span> [Enable auto-indexing](how-to/enable_auto_indexing.md)
+- <span class="badge badge-experimental">Experimental</span> [Configure auto-indexing](how-to/configure_auto_indexing.md)
 
 ## [Tutorials](tutorials/index.md)
 
@@ -62,9 +63,12 @@ Code intelligence provides advanced code navigation features that let developers
   - [Find references](explanations/features.md#find-references)
   - [Symbol search](explanations/features.md#symbol-search)
 - [Writing an indexer](explanations/writing_an_indexer.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing](explanations/auto_indexing.md)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](explanations/auto_indexing_inference.md)
 
 ## [References](references/index.md)
 
 - [Troubleshooting](references/troubleshooting.md)
 - [Sourcegraph recommended indexers](references/indexers.md)
 - [LSIF.dev](https://lsif.dev/)
+- <span class="badge badge-experimental">Experimental</span> [Auto-indexing configuration](references/auto_indexing_configuration.md)

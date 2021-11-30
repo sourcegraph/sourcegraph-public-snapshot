@@ -12,6 +12,7 @@
 | `-property` | The name of the settings property to set. |  |
 | `-subject` | The ID of the settings subject whose settings to edit. (default: authenticated user) |  |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
+| `-user-agent-telemetry` | Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph | `true` |
 | `-value` | The value for the settings property (when used with -property). |  |
 | `-value-file` | Read the value from this file instead of from the -value command-line option. |  |
 
@@ -34,6 +35,8 @@ Usage of 'src config edit':
     	The ID of the settings subject whose settings to edit. (default: authenticated user)
   -trace
     	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
+  -user-agent-telemetry
+    	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -value string
     	The value for the settings property (when used with -property).
   -value-file string

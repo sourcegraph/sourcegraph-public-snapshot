@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -32,7 +31,7 @@ func (r *schemaResolver) User(
 	var user *types.User
 	switch {
 	case args.Username != nil:
-		user, err = database.Users(r.db).GetByUsername(ctx, *args.Username)
+		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
@@ -42,7 +41,7 @@ func (r *schemaResolver) User(
 				return nil, err
 			}
 		}
-		user, err = database.Users(r.db).GetByVerifiedEmail(ctx, *args.Email)
+		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
 
 	default:
 		return nil, errors.New("must specify either username or email to look up a user")
@@ -102,9 +101,17 @@ func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
 // Email returns the user's oldest email, if one exists.
 // Deprecated: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-		return "", err
+	// 🚨 SECURITY: Only the authenticated user can view their email on
+	// Sourcegraph.com.
+	if envvar.SourcegraphDotComMode() {
+		if err := backend.CheckSameUser(ctx, r.user.ID); err != nil {
+			return "", err
+		}
+	} else {
+		// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+			return "", err
+		}
 	}
 
 	email, _, err := database.UserEmails(r.db).GetPrimaryEmail(ctx, r.user.ID)
@@ -235,7 +242,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		}
 		update.Username = *args.Username
 	}
-	if err := database.Users(r.db).Update(ctx, userID, update); err != nil {
+	if err := r.db.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
 	return UserByIDInt32(ctx, r.db, userID)
@@ -260,7 +267,7 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
-	orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.user.ID)
+	orgs, err := r.db.Orgs().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -327,7 +334,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: A user can only change their own password.
+	// 🚨 SECURITY: Only the authenticated user can change their password.
 	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -351,7 +358,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	NewPassword string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: A user can only create their own password.
+	// 🚨 SECURITY: Only the authenticated user can create their password.
 	user, err := database.Users(r.db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
@@ -359,6 +366,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	if user == nil {
 		return nil, errors.New("no authenticated user")
 	}
+
 	if err := database.Users(r.db).CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
@@ -404,13 +412,13 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
 	}
 	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
+		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
+		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{
@@ -419,7 +427,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		}}
 	} else {
 		opt.OrderBy = database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(*args.OrderBy),
+			Field:      ToDBRepoListColumn(*args.OrderBy),
 			Descending: args.Descending,
 		}}
 	}
@@ -428,7 +436,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		opt.UserID = r.user.ID
 		opt.IncludeUserPublicRepos = true
 	} else {
-		id, err := unmarshalExternalServiceID(*args.ExternalServiceID)
+		id, err := UnmarshalExternalServiceID(*args.ExternalServiceID)
 		if err != nil {
 			return nil, err
 		}
@@ -469,8 +477,8 @@ func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) 
 //
 // If that subject's username is different from the proposed one, then a
 // change is being attempted and may be rejected by viewerCanChangeUsername.
-func viewerIsChangingUsername(ctx context.Context, db dbutil.DB, subjectUserID int32, proposedUsername string) bool {
-	subject, err := database.Users(db).GetByID(ctx, subjectUserID)
+func viewerIsChangingUsername(ctx context.Context, db database.DB, subjectUserID int32, proposedUsername string) bool {
+	subject, err := db.Users().GetByID(ctx, subjectUserID)
 	if err != nil {
 		log15.Warn("viewerIsChangingUsername", "error", err)
 		return true

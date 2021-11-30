@@ -229,7 +229,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					allowOrgs:   ci.allowOrgs,
 				}
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)
 				}
@@ -295,7 +295,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		allowOrgs:   nil,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "")
+	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}

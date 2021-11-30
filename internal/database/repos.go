@@ -10,7 +10,6 @@ import (
 	regexpsyntax "regexp/syntax"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -19,12 +18,12 @@ import (
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -88,8 +87,6 @@ var _ RepoStore = (*repoStore)(nil)
 // repoStore handles access to the repo table
 type repoStore struct {
 	*basestore.Store
-
-	once sync.Once
 }
 
 // Repos instantiates and returns a new RepoStore with prepared statements.
@@ -112,26 +109,12 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 	return &repoStore{Store: txBase}, err
 }
 
-// ensureStore instantiates a basestore.Store if necessary, using the dbconn.Global handle.
-// This function ensures access to dbconn happens after the rest of the code or tests have
-// initialized it.
-// This can't be removed yet because GlobalRepos still uses the zero value of `repoStore`,
-// depending on it being initialized by `ensureStore`
-func (s *repoStore) ensureStore() {
-	s.once.Do(func() {
-		if s.Store == nil {
-			s.Store = basestore.NewWithDB(dbconn.Global, sql.TxOptions{})
-		}
-	})
-}
-
 // Get finds and returns the repo with the given repository ID from the database.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, id)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.Get", "")
 	defer func() {
@@ -211,7 +194,6 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	if Mocks.Repos.GetByName != nil {
 		return Mocks.Repos.GetByName(ctx, nameOrURI)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.GetByName", "")
 	defer func() {
@@ -257,7 +239,6 @@ func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types
 	if Mocks.Repos.GetByIDs != nil {
 		return Mocks.Repos.GetByIDs(ctx, ids...)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.GetByIDs", "")
 	defer func() {
@@ -288,7 +269,6 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	if Mocks.Repos.Count != nil {
 		return Mocks.Repos.Count(ctx, opt)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.Count", "")
 	defer func() {
@@ -315,7 +295,6 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	if Mocks.Repos.Metadata != nil {
 		return Mocks.Repos.Metadata(ctx, ids...)
 	}
-	s.ensureStore()
 
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
 	defer func() {
@@ -499,6 +478,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		r.Metadata = new(perforce.Depot)
 	case extsvc.TypePhabricator:
 		r.Metadata = new(phabricator.Repo)
+	case extsvc.TypePagure:
+		r.Metadata = new(pagure.Project)
 	case extsvc.TypeOther:
 		r.Metadata = new(extsvc.OtherRepoMetadata)
 	case extsvc.TypeJVMPackages:
@@ -533,6 +514,10 @@ type ReposListOptions struct {
 	// ExcludePattern is a regular expression that must not match any repository
 	// returned in the list.
 	ExcludePattern string
+
+	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
+	// with case sensitivity or not.
+	CaseSensitivePatterns bool
 
 	// Names is a list of repository names used to limit the results to that
 	// set of repositories.
@@ -609,7 +594,7 @@ type ReposListOptions struct {
 	OrderBy RepoListOrderBy
 
 	// Cursors to efficiently paginate through large result sets.
-	Cursors Cursors
+	Cursors types.MultiCursor
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -716,7 +701,6 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
-	s.ensureStore()
 
 	// always having ID in ORDER BY helps Postgres create a more performant query plan
 	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
@@ -733,7 +717,6 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	s.ensureStore()
 
 	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
@@ -836,12 +819,15 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
-	for _, c := range opt.Cursors {
-		cursorConds, err := parseCursorConds(c)
+	if len(opt.Cursors) > 0 {
+		cursorConds, err := parseCursorConds(opt.Cursors)
 		if err != nil {
 			return nil, err
 		}
-		where = append(where, cursorConds...)
+
+		if cursorConds != nil {
+			where = append(where, cursorConds)
+		}
 	}
 
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
@@ -853,7 +839,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	for _, includePattern := range opt.IncludePatterns {
-		extraConds, err := parsePattern(includePattern)
+		extraConds, err := parsePattern(includePattern, opt.CaseSensitivePatterns)
 		if err != nil {
 			return nil, err
 		}
@@ -861,7 +847,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if opt.ExcludePattern != "" {
-		where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
+		if opt.CaseSensitivePatterns {
+			where = append(where, sqlf.Sprintf("name !~* %s", opt.ExcludePattern))
+		} else {
+			where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
+		}
 	}
 
 	if len(opt.IDs) > 0 {
@@ -916,7 +906,7 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged),
-			sqlf.Sprintf("repo.updated_at >= %s", opt.MinLastChanged),
+			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
 			sqlf.Sprintf("repo.id IN (SELECT scr.repo_id FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE sc.updated_at >= %s)", opt.MinLastChanged),
 		}
 		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
@@ -1029,14 +1019,16 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		return nil, err
 	}
 
-	return sqlf.Sprintf(
+	q := sqlf.Sprintf(
 		fmt.Sprintf(listReposQueryFmtstr, strings.Join(columns, ",")),
 		queryPrefix,
 		sqlf.Join(joins, "\n"),
 		queryConds,
 		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
-	), nil
+	)
+
+	return q, nil
 }
 
 const userReposCTEFmtstr = `
@@ -1063,14 +1055,13 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user or org added repos.
 func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	s.ensureStore()
 
 	var where, joins []*sqlf.Query
 
@@ -1135,6 +1126,8 @@ WHERE
 	(
 		repo.stars >= %s
 		OR
+		lower(repo.name) LIKE 'src.fedoraproject.org/%%'
+		OR
 		repo.id IN (
 			SELECT
 				repo_id
@@ -1142,6 +1135,8 @@ WHERE
 				external_service_repos
 			WHERE
 				external_service_repos.user_id IS NOT NULL
+				OR
+				external_service_repos.org_id IS NOT NULL
 
 			UNION ALL
 
@@ -1169,7 +1164,6 @@ func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	s.ensureStore()
 
 	records := make([]*repoRecord, 0, len(repos))
 
@@ -1427,7 +1421,6 @@ func (s *repoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
 	if len(ids) == 0 {
 		return nil
 	}
-	s.ensureStore()
 
 	// The number of deleted repos can potentially be higher
 	// than the maximum number of arguments we can pass to postgres.
@@ -1476,8 +1469,6 @@ WHERE
 // repo purger. We special case just returning enabled names so that we read much
 // less data into memory.
 func (s *repoStore) ListEnabledNames(ctx context.Context) (values []api.RepoName, err error) {
-	s.ensureStore()
-
 	q := sqlf.Sprintf(listEnabledNamesQueryFmtstr)
 	rows, queryErr := s.Query(ctx, q)
 	if queryErr != nil {
@@ -1520,8 +1511,6 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 		return Mocks.Repos.GetFirstRepoNamesByCloneURL(ctx, cloneURL)
 	}
 
-	s.ensureStore()
-
 	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
@@ -1529,7 +1518,7 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 	return api.RepoName(name), nil
 }
 
-func parsePattern(p string) ([]*sqlf.Query, error) {
+func parsePattern(p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
@@ -1542,42 +1531,64 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 			conds = append(conds, sqlf.Sprintf("name = ANY (%s)", pq.Array(exact)))
 		}
 	}
-	if len(like) > 0 {
-		for _, v := range like {
+	for _, v := range like {
+		if caseSensitive {
+			conds = append(conds, sqlf.Sprintf(`name::text LIKE %s`, v))
+		} else {
 			conds = append(conds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
 		}
 	}
 	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
+		if caseSensitive {
+			conds = append(conds, sqlf.Sprintf("name::text ~ %s", pattern))
+		} else {
+			conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
+		}
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-// parseCursorConds checks whether the query is using cursor-based pagination, and
-// if so performs the necessary transformations for it to be successful.
-func parseCursorConds(c *Cursor) (conds []*sqlf.Query, err error) {
-	if c == nil || c.Column == "" || c.Value == "" {
-		return nil, nil
-	}
-	var direction string
-	switch c.Direction {
-	case "next":
-		direction = ">="
-	case "prev":
-		direction = "<="
-	default:
-		return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
+// parseCursorConds returns the WHERE conditions for the given cursor
+func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
+	var (
+		direction string
+		operator  string
+		columns   = make([]string, 0, len(cs))
+		values    = make([]*sqlf.Query, 0, len(cs))
+	)
+
+	for _, c := range cs {
+		if c == nil || c.Column == "" || c.Value == "" {
+			continue
+		}
+
+		if direction == "" {
+			switch direction = c.Direction; direction {
+			case "next":
+				operator = ">="
+			case "prev":
+				operator = "<="
+			default:
+				return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
+			}
+		} else if direction != c.Direction {
+			return nil, errors.Errorf("multi-cursors must have the same direction")
+		}
+
+		switch RepoListColumn(c.Column) {
+		case RepoListName, RepoListStars, RepoListCreatedAt, RepoListID:
+			columns = append(columns, c.Column)
+			values = append(values, sqlf.Sprintf("%s", c.Value))
+		default:
+			return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
+		}
 	}
 
-	switch c.Column {
-	case string(RepoListName):
-		conds = append(conds, sqlf.Sprintf("name "+direction+" %s", c.Value))
-	case string(RepoListCreatedAt):
-		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", c.Value))
-	default:
-		return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
+	if len(columns) == 0 {
+		return nil, nil
 	}
-	return conds, nil
+
+	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", strings.Join(columns, ", "), operator), sqlf.Join(values, ", ")), nil
 }
 
 // parseIncludePattern either (1) parses the pattern into a list of exact possible

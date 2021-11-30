@@ -21,7 +21,7 @@ type operations struct {
 }
 
 func newOperations(storeName string, observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
+	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		fmt.Sprintf("workerutil_dbworker_store_%s", storeName),
 		metrics.WithLabels("op"),

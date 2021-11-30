@@ -156,8 +156,8 @@ func traceGraphQL(data traceData) {
 
 	duration := time.Since(data.execStart)
 
-	ev := honey.Event("graphql-cost")
-	ev.SampleRate = uint(traceGraphQLQueriesSample)
+	ev := honey.NewEvent("graphql-cost")
+	ev.SetSampleRate(uint(traceGraphQLQueriesSample))
 
 	ev.AddField("query", data.queryParams.Query)
 	ev.AddField("variables", data.queryParams.Variables)

@@ -36,8 +36,8 @@ func (s *InsightStore) Handle() *basestore.TransactableHandle { return s.Store.H
 
 // With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
 // Needed to implement the basestore.Store interface
-func (s *InsightStore) With(other *InsightStore) *InsightStore {
-	return &InsightStore{Store: s.Store.With(other.Store), Now: other.Now}
+func (s *InsightStore) With(other basestore.ShareableStore) *InsightStore {
+	return &InsightStore{Store: s.Store.With(other), Now: s.Now}
 }
 
 func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
@@ -158,6 +158,15 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 	return s.GroupByView(ctx, viewSeries), nil
 }
 
+func (s *InsightStore) GetAllMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.GetAll(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.GroupByView(ctx, viewSeries), nil
+}
+
 func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.InsightViewSeries) []types.Insight {
 	mapped := make(map[string][]types.InsightViewSeries, len(viewSeries))
 	for _, series := range viewSeries {
@@ -176,6 +185,8 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
 				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
 			},
+			OtherThreshold:   seriesSet[0].OtherThreshold,
+			PresentationType: seriesSet[0].PresentationType,
 		})
 	}
 
@@ -367,6 +378,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.SampleIntervalValue,
 			&temp.DefaultFilterIncludeRepoRegex,
 			&temp.DefaultFilterExcludeRepoRegex,
+			&temp.OtherThreshold,
+			&temp.PresentationType,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -458,6 +471,7 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
 		view.OtherThreshold,
+		view.PresentationType,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
@@ -487,6 +501,8 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.Description,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		view.OtherThreshold,
+		view.PresentationType,
 		view.UniqueID,
 	))
 	var id int
@@ -731,13 +747,15 @@ WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = 
 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
-INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex, other_threshold)
-VALUES (%s, %s, %s, %s, %s, %s)
+INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex,
+	other_threshold, presentation_type)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
-UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s
+UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
+other_threshold = %s, presentation_type = %s
 WHERE unique_id = %s
 RETURNING id;`
 
@@ -754,7 +772,8 @@ const getInsightByViewSql = `
 SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
-i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
+i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
+iv.other_threshold, iv.presentation_type
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -775,7 +794,8 @@ const getInsightsVisibleToUserSql = `
 SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
-       i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
+       i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
+	   iv.other_threshold, iv.presentation_type
 FROM (%s) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

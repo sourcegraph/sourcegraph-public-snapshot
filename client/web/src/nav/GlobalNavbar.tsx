@@ -7,8 +7,8 @@ import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -51,7 +51,7 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useNavbarQueryState } from '../search/navbarSearchQueryState'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -102,9 +102,6 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
-
-    /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
-    hideNavLinks: boolean
 }
 
 export const GlobalNavbar: React.FunctionComponent<Props> = ({
@@ -112,7 +109,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     showSearchBox,
     caseSensitive,
     patternType,
-    hideNavLinks,
     variant,
     isLightTheme,
     branding,

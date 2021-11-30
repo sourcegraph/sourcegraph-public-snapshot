@@ -57,7 +57,7 @@ func TestWriteDocumentationUpload(t *testing.T) {
 	isDefaultBranch := true
 
 	db := dbtest.NewDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	{
 		tx, err := store.Transact(ctx)
@@ -73,7 +73,7 @@ func TestWriteDocumentationUpload(t *testing.T) {
 		documentationPages := make(chan *precise.DocumentationPageData, 1)
 		documentationPages <- page
 		close(documentationPages)
-		err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, repositoryNameID, languageNameID)
+		_, err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, repositoryNameID, languageNameID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +99,7 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	pathInfo := &precise.DocumentationPathInfoData{
 		PathID:  "/github.com/sourcegraph/lsif-go/internal",
@@ -114,7 +114,7 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 	documentationPathInfo := make(chan *precise.DocumentationPathInfoData, 1)
 	documentationPathInfo <- pathInfo
 	close(documentationPathInfo)
-	err := store.WriteDocumentationPathInfo(ctx, testBundleID, documentationPathInfo)
+	_, err := store.WriteDocumentationPathInfo(ctx, testBundleID, documentationPathInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestWriteDocumentationMappings(t *testing.T) {
 	ctx := context.Background()
 
 	db := dbtest.NewDB(t)
-	store := NewStore(db, &observation.TestContext)
+	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
 	filePath := "internal/index/indexer.go"
 	mapping := precise.DocumentationMapping{
@@ -149,7 +149,7 @@ func TestWriteDocumentationMappings(t *testing.T) {
 	documentationMappings := make(chan precise.DocumentationMapping, 1)
 	documentationMappings <- mapping
 	close(documentationMappings)
-	err := store.WriteDocumentationMappings(ctx, testBundleID, documentationMappings)
+	_, err := store.WriteDocumentationMappings(ctx, testBundleID, documentationMappings)
 	if err != nil {
 		t.Fatal(err)
 	}

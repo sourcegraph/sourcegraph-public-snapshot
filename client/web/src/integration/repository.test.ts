@@ -426,9 +426,15 @@ describe('Repository', () => {
             await assertSelectorHasText('header.test-tree-page-title', shortRepositoryName)
             await driver.assertWindowLocation(repositorySourcegraphUrl)
 
-            await driver.findElementWithText(clickedCommit, { selector: '.git-commit-node__oid', action: 'click' })
-            await driver.page.waitForSelector('.git-commit-node__message-subject')
-            await assertSelectorHasText('.git-commit-node__message-subject', 'update LSIF indexing CI workflow')
+            await driver.findElementWithText(clickedCommit, {
+                selector: '[data-testid="git-commit-node-oid"]',
+                action: 'click',
+            })
+            await driver.page.waitForSelector('[data-testid="git-commit-node-message-subject"]')
+            await assertSelectorHasText(
+                '[data-testid="git-commit-node-message-subject"]',
+                'update LSIF indexing CI workflow'
+            )
         })
 
         it('works with files with spaces in the name', async () => {

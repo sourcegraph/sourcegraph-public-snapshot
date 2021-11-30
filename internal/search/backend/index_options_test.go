@@ -102,7 +102,8 @@ func TestGetIndexOptions(t *testing.T) {
 	}, {
 		name: "nosymbols",
 		conf: schema.SiteConfiguration{
-			SearchIndexSymbolsEnabled: boolPtr(false)},
+			SearchIndexSymbolsEnabled: boolPtr(false),
+		},
 		repo: REPO,
 		want: zoektIndexOptions{
 			RepoID: 1,
@@ -137,6 +138,45 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 				{Name: "a", Version: "!a"},
+			},
+		},
+	}, {
+		name: "conf index revisions",
+		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
+				{Name: "repo-.*", Revisions: []string{"a"}},
+			},
+		}},
+		repo: REPO,
+		want: zoektIndexOptions{
+			RepoID:  1,
+			Name:    "repo-01",
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+				{Name: "a", Version: "!a"},
+			},
+		},
+	}, {
+		name: "conf index revisions and branches",
+		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+			SearchIndexBranches: map[string][]string{
+				"repo-01": {"a", "b"},
+			},
+			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
+				{Name: "repo-.*", Revisions: []string{"a", "c"}},
+			},
+		}},
+		repo: REPO,
+		want: zoektIndexOptions{
+			RepoID:  1,
+			Name:    "repo-01",
+			Symbols: true,
+			Branches: []zoekt.RepositoryBranch{
+				{Name: "HEAD", Version: "!HEAD"},
+				{Name: "a", Version: "!a"},
+				{Name: "b", Version: "!b"},
+				{Name: "c", Version: "!c"},
 			},
 		},
 	}, {

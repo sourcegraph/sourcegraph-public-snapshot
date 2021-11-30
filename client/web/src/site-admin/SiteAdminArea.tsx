@@ -88,6 +88,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
+        batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
         activation: props.activation,
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
@@ -104,6 +105,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<SiteAdminAreaProps> = 
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
+                    batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                 />
                 <div className="flex-bounded">
                     <ErrorBoundary location={props.location}>

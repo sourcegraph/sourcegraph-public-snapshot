@@ -157,3 +157,6 @@ sitemap_query.db
 
 # Trivy security vulnerability reports
 *-security-report.html
+
+# CI annotations lock
+.annotate.lock

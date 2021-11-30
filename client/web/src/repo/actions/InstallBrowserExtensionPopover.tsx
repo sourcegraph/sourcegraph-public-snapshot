@@ -17,10 +17,10 @@ interface Props {
     url: string
     serviceKind: ExternalServiceKind | null
     onClose: () => void
-    onRejection: () => void
-    onClickInstall: () => void
+    onReject: () => void
+    onInstall: () => void
     targetID: string
-    toggle: () => void
+    onToggle: () => void
     isOpen: boolean
 }
 
@@ -28,10 +28,10 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
     url,
     serviceKind,
     onClose,
-    onRejection,
-    onClickInstall,
+    onReject,
+    onInstall,
     targetID,
-    toggle,
+    onToggle,
     isOpen,
 }) => {
     const { displayName, icon } = serviceKindDisplayNameAndIcon(serviceKind)
@@ -42,7 +42,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
 
     return (
         <Popover
-            toggle={toggle}
+            toggle={onToggle}
             target={targetID}
             isOpen={isOpen}
             popperClassName={classNames('shadow border', styles.installBrowserExtensionPopover)}
@@ -87,7 +87,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                         <div className="d-flex justify-content-end">
                             <ButtonLink
                                 className="btn btn-outline-secondary mr-2"
-                                onSelect={onRejection}
+                                onSelect={onReject}
                                 to={url}
                                 {...linkProps}
                             >
@@ -105,7 +105,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
 
                             <ButtonLink
                                 className="btn btn-primary mr-2"
-                                onSelect={onClickInstall}
+                                onSelect={onInstall}
                                 to="/help/integration/browser_extension"
                                 {...linkProps}
                             >

@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/buildkite/go-buildkite/v3 v3.0.1
 	github.com/cockroachdb/errors v1.8.6
+	github.com/garyburd/redigo v1.6.3
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/google/go-cmp v0.5.6

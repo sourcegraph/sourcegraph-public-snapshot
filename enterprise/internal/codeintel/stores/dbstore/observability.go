@@ -59,7 +59,7 @@ type operations struct {
 	referenceIDsAndFilters                      *observation.Operation
 	referencesForUpload                         *observation.Operation
 	refreshCommitResolvability                  *observation.Operation
-	repoIDsByGlobPattern                        *observation.Operation
+	repoIDsByGlobPatterns                       *observation.Operation
 	repoName                                    *observation.Operation
 	requeue                                     *observation.Operation
 	requeueIndex                                *observation.Operation
@@ -70,11 +70,10 @@ type operations struct {
 	staleSourcedCommits                         *observation.Operation
 	updateCommitedAt                            *observation.Operation
 	updateConfigurationPolicy                   *observation.Operation
-	updateDependencyNumReferences               *observation.Operation
 	updateIndexConfigurationByRepositoryID      *observation.Operation
-	updateNumReferences                         *observation.Operation
 	updatePackageReferences                     *observation.Operation
 	updatePackages                              *observation.Operation
+	updateReferenceCounts                       *observation.Operation
 	updateReposMatchingPatterns                 *observation.Operation
 	updateSourcedCommits                        *observation.Operation
 	updateUploadRetention                       *observation.Operation
@@ -85,7 +84,7 @@ type operations struct {
 	writeVisibleUploads        *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
+func newOperations(observationContext *observation.Context, metrics *metrics.REDMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
 			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
@@ -155,7 +154,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referenceIDsAndFilters:              op("ReferenceIDsAndFilters"),
 		referencesForUpload:                 op("ReferencesForUpload"),
 		refreshCommitResolvability:          op("RefreshCommitResolvability"),
-		repoIDsByGlobPattern:                op("repoIDsByGlobPattern"),
+		repoIDsByGlobPatterns:               op("repoIDsByGlobPatterns"),
 		repoName:                            op("RepoName"),
 		requeue:                             op("Requeue"),
 		requeueIndex:                        op("RequeueIndex"),
@@ -166,14 +165,14 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		staleSourcedCommits:                         op("StaleSourcedCommits"),
 		updateCommitedAt:                            op("UpdateCommitedAt"),
 		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),
-		updateDependencyNumReferences:               op("UpdateDependencyNumReferences"),
-		updateIndexConfigurationByRepositoryID:      op("UpdateIndexConfigurationByRepositoryID"),
-		updateNumReferences:                         op("UpdateNumReferences"),
-		updatePackageReferences:                     op("UpdatePackageReferences"),
-		updatePackages:                              op("UpdatePackages"),
-		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
-		updateSourcedCommits:                        op("UpdateSourcedCommits"),
-		updateUploadRetention:                       op("UpdateUploadRetention"),
+		updateReferenceCounts:                       op("UpdateReferenceCounts"),
+
+		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		updatePackageReferences:                op("UpdatePackageReferences"),
+		updatePackages:                         op("UpdatePackages"),
+		updateReposMatchingPatterns:            op("UpdateReposMatchingPatterns"),
+		updateSourcedCommits:                   op("UpdateSourcedCommits"),
+		updateUploadRetention:                  op("UpdateUploadRetention"),
 
 		persistNearestUploads:      subOp("persistNearestUploads"),
 		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),

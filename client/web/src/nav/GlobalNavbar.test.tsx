@@ -12,7 +12,7 @@ import {
 import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../graphql-operations'
-import { ThemePreference } from '../theme'
+import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
@@ -39,9 +39,9 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     settingsCascade: NOOP_SETTINGS_CASCADE,
     batchChangesEnabled: false,
     batchChangesExecutionEnabled: false,
+    batchChangesWebhookLogsEnabled: false,
     enableCodeMonitoring: false,
     telemetryService: {} as any,
-    hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
     isExtensionAlertAnimating: false,
     showSearchBox: true,
     showSearchContext: false,

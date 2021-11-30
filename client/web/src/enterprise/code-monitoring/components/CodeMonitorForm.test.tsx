@@ -1,4 +1,4 @@
-import { mount } from 'enzyme'
+import { render, screen } from '@testing-library/react'
 import { createMemoryHistory, createLocation } from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
@@ -22,9 +22,7 @@ const PROPS: CodeMonitorFormProps = {
 
 describe('CodeMonitorForm', () => {
     test('Uses trigger query when present', () => {
-        const component = mount(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
-        const triggerQuery = component.find('[data-testid="trigger-query-edit"]')
-        expect(triggerQuery.length).toStrictEqual(1)
-        expect(triggerQuery.at(0).prop('value')).toStrictEqual('foo')
+        render(<CodeMonitorForm {...PROPS} triggerQuery="foo" />)
+        expect(screen.getByTestId('trigger-query-edit')).toHaveValue('foo')
     })
 })

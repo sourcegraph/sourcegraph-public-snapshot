@@ -21,6 +21,9 @@ const (
 	Replacement
 	// Diff means comby returns a diff after performing an in-place operation on file contents
 	Diff
+	// NewlineSeparatedOutput means output the result of substituting the rewrite
+	// template, newline-separated for each result.
+	NewlineSeparatedOutput
 )
 
 type Args struct {
@@ -75,11 +78,13 @@ var (
 	_ Result = (*FileMatch)(nil)
 	_ Result = (*FileDiff)(nil)
 	_ Result = (*FileReplacement)(nil)
+	_ Result = (*Output)(nil)
 )
 
 func (*FileMatch) result()       {}
 func (*FileDiff) result()        {}
 func (*FileReplacement) result() {}
+func (*Output) result()          {}
 
 // FileMatch represents all the matches in a single file
 type FileMatch struct {
@@ -97,4 +102,9 @@ type FileDiff struct {
 type FileReplacement struct {
 	URI     string `json:"uri"`
 	Content string `json:"rewritten_source"`
+}
+
+// Output represents content output by substituting variables in a rewrite template.
+type Output struct {
+	Value []byte // corresponds to stdout of a comby invocation.
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
@@ -31,7 +32,7 @@ import (
 )
 
 // metricsRecorder records operational metrics for methods.
-var metricsRecorder = metrics.NewOperationMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
+var metricsRecorder = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
@@ -79,7 +80,6 @@ func recordOperation(method string) func(*error) {
 func getAndMarshalSiteActivityJSON(ctx context.Context, db dbutil.DB, criticalOnly bool) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalSiteActivityJSON")(&err)
 	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db, criticalOnly)
-
 	if err != nil {
 		return nil, err
 	}
@@ -296,8 +296,8 @@ func getRedisVersion(dialFunc func() (redis.Conn, error)) (string, error) {
 
 	m, err := parseRedisInfo(buf)
 	return m["redis_version"], err
-
 }
+
 func parseRedisInfo(buf []byte) (map[string]string, error) {
 	var (
 		lines = bytes.Split(buf, []byte("\n"))
@@ -328,7 +328,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 
 	r := &pingRequest{
 		ClientSiteID:        siteid.Get(),
-		DeployType:          conf.DeployType(),
+		DeployType:          deploy.Type(),
 		ClientVersionString: version.Version(),
 		LicenseKey:          conf.Get().LicenseKey,
 		CodeIntelUsage:      []byte("{}"),
@@ -579,7 +579,6 @@ func check(db dbutil.DB) {
 	mu.Unlock()
 
 	updateVersion, err := doCheck()
-
 	if err != nil {
 		log15.Error("telemetry: updatecheck failed", "error", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
@@ -138,7 +139,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 // gqlURL returns the frontend's internal GraphQL API URL, with the given ?queryName parameter
 // which is used to keep track of the source and type of GraphQL queries.
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(api.InternalClient.URL)
+	u, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
 		return "", err
 	}

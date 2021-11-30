@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 
 import { AuthenticatedUser } from '../../../../../../../auth'
 import { WebStory } from '../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../../../../core/types'
 
 import { DashboardSelect } from './DashboardSelect'
 
@@ -17,10 +17,10 @@ const { add } = storiesOf('web/insights/DashboardSelect', module)
 
 const DASHBOARDS: InsightDashboard[] = [
     {
-        type: InsightsDashboardType.Personal,
+        scope: InsightsDashboardScope.Personal,
+        type: InsightsDashboardType.BuiltIn,
         id: '101',
         title: 'Personal',
-        builtIn: true,
         insightIds: [],
         owner: {
             id: '101',
@@ -28,10 +28,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Personal,
+        scope: InsightsDashboardScope.Personal,
+        type: InsightsDashboardType.Custom,
         id: '102',
         title: 'Code Insights dashboard',
-        builtIn: false,
         settingsKey: 'codeInsightsDasbhoard',
         insightIds: [],
         owner: {
@@ -40,10 +40,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Personal,
+        scope: InsightsDashboardScope.Personal,
+        type: InsightsDashboardType.Custom,
         id: '103',
         title: 'Experimental Insights dashboard',
-        builtIn: false,
         settingsKey: 'experimentalInsightsDashboard',
         insightIds: [],
         owner: {
@@ -52,10 +52,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Organization,
+        scope: InsightsDashboardScope.Organization,
+        type: InsightsDashboardType.BuiltIn,
         id: '104',
         title: 'Sourcegraph',
-        builtIn: true,
         insightIds: [],
         owner: {
             id: '104',
@@ -63,10 +63,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Organization,
+        scope: InsightsDashboardScope.Organization,
+        type: InsightsDashboardType.Custom,
         id: '105',
         title: 'Loooong looo0000ong name of dashboard',
-        builtIn: false,
         settingsKey: 'looonglooongDashboard',
         insightIds: [],
         owner: {
@@ -75,10 +75,10 @@ const DASHBOARDS: InsightDashboard[] = [
         },
     },
     {
-        type: InsightsDashboardType.Organization,
+        scope: InsightsDashboardScope.Organization,
+        type: InsightsDashboardType.Custom,
         id: '106',
         title: 'Loooong looo0000ong name of dashboard',
-        builtIn: false,
         settingsKey: 'looonglooongDashboard',
         insightIds: [],
         owner: {

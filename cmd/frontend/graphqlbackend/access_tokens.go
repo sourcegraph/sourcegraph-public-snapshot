@@ -25,6 +25,13 @@ type createAccessTokenInput struct {
 }
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
+	// 🚨 SECURITY: Creating access tokens for any user by site admins is not
+	// allowed on Sourcegraph.com. This check is mostly the defense for a
+	// misconfiguration of the site configuration.
+	if envvar.SourcegraphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
+		return nil, errors.Errorf("access token configuration value %q is disabled on Sourcegraph.com", conf.AccessTokensAllow())
+	}
+
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
@@ -46,7 +53,6 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
 		}
 	case conf.AccessTokensNone:
-		fallthrough
 	default:
 		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
 	}
@@ -64,7 +70,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 			if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			} else if envvar.SourcegraphDotComMode() {
-				return nil, errors.New("creation of access tokens with sudo scope is disabled")
+				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
 			}
 		default:
 			return nil, errors.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)

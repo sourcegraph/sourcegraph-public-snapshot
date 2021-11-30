@@ -63,8 +63,8 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
     )
 
     return (
-        <div className="w-100">
-            <Page className="search-contexts-list-page">
+        <div data-testid="search-contexts-list-page" className="w-100">
+            <Page>
                 <PageHeader
                     path={[
                         {

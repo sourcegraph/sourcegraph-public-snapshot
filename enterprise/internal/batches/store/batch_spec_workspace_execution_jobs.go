@@ -40,7 +40,7 @@ var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
 
-var BatchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
+var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -94,7 +94,7 @@ const executableWorkspaceJobsConditionFmtstr = `
 	AND
 	jsonb_array_length(batch_spec_workspaces.steps) > 0
 	AND
-	batch_spec_workspaces.batch_spec_execution_cache_entry_id IS NULL
+	batch_spec_workspaces.cached_result_found IS FALSE
 )`
 
 // CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
@@ -466,7 +466,7 @@ func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	return nil
 }
 
-func ScanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
+func scanFirstBatchSpecWorkspaceExecutionJob(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspaceExecutionJob, bool, error) {
 	jobs, err := scanBatchSpecWorkspaceExecutionJobs(rows, err)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err

@@ -7,13 +7,13 @@ import (
 
 	"github.com/xeonx/timeago"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type CommitMatch struct {
-	Commit     gitapi.Commit
+	Commit     gitdomain.Commit
 	Repo       types.MinimalRepo
 	Refs       []string
 	SourceRefs []string

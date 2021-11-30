@@ -18,9 +18,9 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
+import { useNavbarQueryState } from '../../stores'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { SubmitSearchParameters } from '../helpers'
-import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 import { SearchBox } from './SearchBox'
 
@@ -123,6 +123,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                     caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
                     isVisible={isFuzzyFinderVisible}
+                    telemetryService={props.telemetryService}
                 />
             )}
         </Form>

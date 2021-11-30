@@ -18,9 +18,11 @@ type DB interface {
 
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
+	Conf() ConfStore
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
+	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
@@ -38,6 +40,7 @@ type DB interface {
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
+	Executors() ExecutorStore
 
 	Transact(context.Context) (DB, error)
 	Done(error) error
@@ -49,6 +52,10 @@ var _ DB = (*db)(nil)
 // that has constructor methods for the more specialized stores.
 func NewDB(inner dbutil.DB) DB {
 	return &db{basestore.NewWithDB(inner, sql.TxOptions{})}
+}
+
+func NewDBWith(other basestore.ShareableStore) DB {
+	return &db{basestore.NewWithHandle(other.Handle())}
 }
 
 type db struct {
@@ -88,6 +95,10 @@ func (d *db) Authz() AuthzStore {
 	return AuthzWith(d.Store)
 }
 
+func (d *db) Conf() ConfStore {
+	return &confStore{Store: basestore.NewWithHandle(d.Handle())}
+}
+
 func (d *db) EventLogs() EventLogStore {
 	return EventLogsWith(d.Store)
 }
@@ -98,6 +109,10 @@ func (d *db) ExternalServices() ExternalServiceStore {
 
 func (d *db) FeatureFlags() FeatureFlagStore {
 	return FeatureFlagsWith(d.Store)
+}
+
+func (d *db) GlobalState() GlobalStateStore {
+	return &globalStateStore{Store: basestore.NewWithHandle(d.Handle())}
 }
 
 func (d *db) Namespaces() NamespaceStore {
@@ -166,6 +181,10 @@ func (d *db) Users() UserStore {
 
 func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
 	return WebhookLogsWith(d.Store, key)
+}
+
+func (d *db) Executors() ExecutorStore {
+	return ExecutorsWith(d.Store)
 }
 
 func (d *db) Unwrap() dbutil.DB {

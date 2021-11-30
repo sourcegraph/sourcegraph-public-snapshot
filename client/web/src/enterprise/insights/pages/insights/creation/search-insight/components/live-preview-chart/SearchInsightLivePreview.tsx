@@ -5,7 +5,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard/src'
 
 import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 import { EditableDataSeries, InsightStep } from '../../types'
@@ -43,7 +43,7 @@ export interface SearchInsightLivePreviewProps {
 export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLivePreviewProps> = props => {
     const { series, repositories, step, stepValue, disabled = false, isAllReposMode, className } = props
 
-    const { getSearchInsightContent } = useContext(InsightsApiContext)
+    const { getSearchInsightContent } = useContext(CodeInsightsBackendContext)
 
     const [loading, setLoading] = useState<boolean>(false)
     const [dataOrError, setDataOrError] = useState<LineChartContent<any, string> | Error | undefined>()
@@ -65,6 +65,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         series: liveSeries,
         repositories: getSanitizedRepositories(repositories),
         step: { [step]: stepValue },
+        disabled,
     })
 
     const liveDebouncedSettings = useDebounce(liveSettings, 500)
@@ -74,13 +75,16 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         setLoading(true)
         setDataOrError(undefined)
 
-        if (disabled) {
+        if (liveDebouncedSettings.disabled) {
             setLoading(false)
 
             return
         }
 
-        getSearchInsightContent(liveDebouncedSettings, { where: 'insightsPage', context: {} })
+        getSearchInsightContent({
+            insight: liveDebouncedSettings,
+            options: { where: 'insightsPage', context: {} },
+        })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))
@@ -88,7 +92,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
         return () => {
             hasRequestCanceled = true
         }
-    }, [disabled, lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
+    }, [lastPreviewVersion, getSearchInsightContent, liveDebouncedSettings])
 
     return (
         <LivePreviewContainer

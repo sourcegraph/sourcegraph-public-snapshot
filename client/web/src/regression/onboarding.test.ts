@@ -26,11 +26,11 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
     await driver.page.click(activationNavBarSelector)
     await delay(2000) // TODO: replace/delete
     return driver.page.evaluate(() => {
-        const dropdownMenu = document.querySelector('.activation-dropdown')
+        const dropdownMenu = document.querySelector('[data-testid="activation-dropdown"]')
         if (!dropdownMenu) {
             throw new Error('No activation status dropdown menu')
         }
-        const lineItems = [...dropdownMenu.querySelectorAll('.activation-dropdown-item')]
+        const lineItems = [...dropdownMenu.querySelectorAll('[data-testid="activation-dropdown-item"]')]
         const complete = lineItems.flatMap(element => [...element.querySelectorAll('.mdi-icon.text-success')]).length
         const incomplete = lineItems.flatMap(element => [...element.querySelectorAll('.mdi-icon.text-muted')]).length
         return {

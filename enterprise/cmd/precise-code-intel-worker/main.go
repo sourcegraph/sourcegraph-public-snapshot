@@ -47,8 +47,8 @@ func main() {
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	tracer.Init()
-	sentry.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
 	trace.Init()
 
 	if err := config.Validate(); err != nil {
@@ -82,7 +82,7 @@ func main() {
 	// Initialize stores
 	dbStore := dbstore.NewWithDB(db, observationContext)
 	workerStore := dbstore.WorkerutilUploadStore(dbStore, observationContext)
-	lsifStore := lsifstore.NewStore(codeIntelDB, observationContext)
+	lsifStore := lsifstore.NewStore(codeIntelDB, conf.Get(), observationContext)
 	gitserverClient := gitserver.New(dbStore, observationContext)
 
 	uploadStore, err := uploadstore.CreateLazy(context.Background(), config.UploadStoreConfig, observationContext)
@@ -121,15 +121,16 @@ func main() {
 }
 
 func mustInitializeDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections.PostgresDSN
+	postgresDSN := conf.Get().ServiceConnections().PostgresDSN
 	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.PostgresDSN; postgresDSN != newDSN {
+		if newDSN := conf.Get().ServiceConnections().PostgresDSN; postgresDSN != newDSN {
 			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})
 
 	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "precise-code-intel-worker"}
-	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+	sqlDB, err := dbconn.New(opts)
+	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
 
@@ -139,7 +140,7 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(dbconn.Global))
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -147,13 +148,13 @@ func mustInitializeDB() *sql.DB {
 	// END FLAILING
 	//
 
-	return dbconn.Global
+	return sqlDB
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN
+	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
 	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections.CodeIntelPostgresDSN; postgresDSN != newDSN {
+		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
 			log.Fatalf("Detected codeintel database DSN change, restarting to take effect: %s", newDSN)
 		}
 	})

@@ -180,6 +180,108 @@ func NewMockRepoStore() *MockRepoStore {
 	}
 }
 
+// NewStrictMockRepoStore creates a new mock of the RepoStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockRepoStore() *MockRepoStore {
+	return &MockRepoStore{
+		CountFunc: &RepoStoreCountFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) (int, error) {
+				panic("unexpected invocation of MockRepoStore.Count")
+			},
+		},
+		CreateFunc: &RepoStoreCreateFunc{
+			defaultHook: func(context.Context, ...*types.Repo) error {
+				panic("unexpected invocation of MockRepoStore.Create")
+			},
+		},
+		DeleteFunc: &RepoStoreDeleteFunc{
+			defaultHook: func(context.Context, ...api.RepoID) error {
+				panic("unexpected invocation of MockRepoStore.Delete")
+			},
+		},
+		DoneFunc: &RepoStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockRepoStore.Done")
+			},
+		},
+		GetFunc: &RepoStoreGetFunc{
+			defaultHook: func(context.Context, api.RepoID) (*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.Get")
+			},
+		},
+		GetByIDsFunc: &RepoStoreGetByIDsFunc{
+			defaultHook: func(context.Context, ...api.RepoID) ([]*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.GetByIDs")
+			},
+		},
+		GetByNameFunc: &RepoStoreGetByNameFunc{
+			defaultHook: func(context.Context, api.RepoName) (*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.GetByName")
+			},
+		},
+		GetFirstRepoNamesByCloneURLFunc: &RepoStoreGetFirstRepoNamesByCloneURLFunc{
+			defaultHook: func(context.Context, string) (api.RepoName, error) {
+				panic("unexpected invocation of MockRepoStore.GetFirstRepoNamesByCloneURL")
+			},
+		},
+		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
+			defaultHook: func(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.GetReposSetByIDs")
+			},
+		},
+		HandleFunc: &RepoStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockRepoStore.Handle")
+			},
+		},
+		ListFunc: &RepoStoreListFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
+				panic("unexpected invocation of MockRepoStore.List")
+			},
+		},
+		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
+			defaultHook: func(context.Context) ([]api.RepoName, error) {
+				panic("unexpected invocation of MockRepoStore.ListEnabledNames")
+			},
+		},
+		ListIndexableReposFunc: &RepoStoreListIndexableReposFunc{
+			defaultHook: func(context.Context, database.ListIndexableReposOptions) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockRepoStore.ListIndexableRepos")
+			},
+		},
+		ListMinimalReposFunc: &RepoStoreListMinimalReposFunc{
+			defaultHook: func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+				panic("unexpected invocation of MockRepoStore.ListMinimalRepos")
+			},
+		},
+		MetadataFunc: &RepoStoreMetadataFunc{
+			defaultHook: func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error) {
+				panic("unexpected invocation of MockRepoStore.Metadata")
+			},
+		},
+		QueryFunc: &RepoStoreQueryFunc{
+			defaultHook: func(context.Context, *sqlf.Query) (*sql.Rows, error) {
+				panic("unexpected invocation of MockRepoStore.Query")
+			},
+		},
+		StreamMinimalReposFunc: &RepoStoreStreamMinimalReposFunc{
+			defaultHook: func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error {
+				panic("unexpected invocation of MockRepoStore.StreamMinimalRepos")
+			},
+		},
+		TransactFunc: &RepoStoreTransactFunc{
+			defaultHook: func(context.Context) (database.RepoStore, error) {
+				panic("unexpected invocation of MockRepoStore.Transact")
+			},
+		},
+		WithFunc: &RepoStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.RepoStore {
+				panic("unexpected invocation of MockRepoStore.With")
+			},
+		},
+	}
+}
+
 // NewMockRepoStoreFrom creates a new mock of the MockRepoStore interface.
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockRepoStoreFrom(i database.RepoStore) *MockRepoStore {

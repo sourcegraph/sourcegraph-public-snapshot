@@ -25,72 +25,29 @@ type metricsCollector struct {
 }
 
 func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
-	const (
-		namespace = "src"
-		subsystem = "pgsql_conns"
-	)
-
-	labels := prometheus.Labels{
-		"db_name":  dbname,
-		"app_name": app,
+	desc := func(name, help string) *prometheus.Desc {
+		return prometheus.NewDesc(
+			prometheus.BuildFQName("src", "pgsql_conns", name),
+			help,
+			nil,
+			prometheus.Labels{
+				"db_name":  dbname,
+				"app_name": app,
+			},
+		)
 	}
 
 	return &metricsCollector{
-		db: db,
-		maxOpenDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "max_open"),
-			"Maximum number of open connections to the database.",
-			nil,
-			labels,
-		),
-		openDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "open"),
-			"The number of established connections both in use and idle.",
-			nil,
-			labels,
-		),
-		inUseDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "in_use"),
-			"The number of connections currently in use.",
-			nil,
-			labels,
-		),
-		idleDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "idle"),
-			"The number of idle connections.",
-			nil,
-			labels,
-		),
-		waitedForDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "waited_for"),
-			"The total number of connections waited for.",
-			nil,
-			labels,
-		),
-		blockedSecondsDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "blocked_seconds"),
-			"The total time blocked waiting for a new connection.",
-			nil,
-			labels,
-		),
-		closedMaxIdleDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "closed_max_idle"),
-			"The total number of connections closed due to SetMaxIdleConns.",
-			nil,
-			labels,
-		),
-		closedMaxLifetimeDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "closed_max_lifetime"),
-			"The total number of connections closed due to SetConnMaxLifetime.",
-			nil,
-			labels,
-		),
-		closedMaxIdleTimeDesc: prometheus.NewDesc(
-			prometheus.BuildFQName(namespace, subsystem, "closed_max_idle_time"),
-			"The total number of connections closed due to SetConnMaxIdleTime.",
-			nil,
-			labels,
-		),
+		db:                    db,
+		maxOpenDesc:           desc("max_open", "Maximum number of open connections to the database."),
+		openDesc:              desc("open", "The number of established connections both in use and idle."),
+		inUseDesc:             desc("in_use", "The number of connections currently in use."),
+		idleDesc:              desc("idle", "The number of idle connections."),
+		waitedForDesc:         desc("waited_for", "The total number of connections waited for."),
+		blockedSecondsDesc:    desc("blocked_seconds", "The total time blocked waiting for a new connection."),
+		closedMaxIdleDesc:     desc("closed_max_idle", "The total number of connections closed due to SetMaxIdleConns."),
+		closedMaxLifetimeDesc: desc("closed_max_lifetime", "The total number of connections closed due to SetConnMaxLifetime."),
+		closedMaxIdleTimeDesc: desc("closed_max_idle_time", "The total number of connections closed due to SetConnMaxIdleTime."),
 	}
 }
 
@@ -109,51 +66,21 @@ func (c metricsCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements the prometheus.Collector interface.
 func (c metricsCollector) Collect(ch chan<- prometheus.Metric) {
-	stats := c.db.Stats()
+	counter := func(desc *prometheus.Desc, value float64) prometheus.Metric {
+		return prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value)
+	}
+	gauge := func(desc *prometheus.Desc, value float64) prometheus.Metric {
+		return prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, value)
+	}
 
-	ch <- prometheus.MustNewConstMetric(
-		c.maxOpenDesc,
-		prometheus.GaugeValue,
-		float64(stats.MaxOpenConnections),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.openDesc,
-		prometheus.GaugeValue,
-		float64(stats.OpenConnections),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.inUseDesc,
-		prometheus.GaugeValue,
-		float64(stats.InUse),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.idleDesc,
-		prometheus.GaugeValue,
-		float64(stats.Idle),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.waitedForDesc,
-		prometheus.CounterValue,
-		float64(stats.WaitCount),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.blockedSecondsDesc,
-		prometheus.CounterValue,
-		stats.WaitDuration.Seconds(),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.closedMaxIdleDesc,
-		prometheus.CounterValue,
-		float64(stats.MaxIdleClosed),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.closedMaxLifetimeDesc,
-		prometheus.CounterValue,
-		float64(stats.MaxLifetimeClosed),
-	)
-	ch <- prometheus.MustNewConstMetric(
-		c.closedMaxIdleTimeDesc,
-		prometheus.CounterValue,
-		float64(stats.MaxIdleTimeClosed),
-	)
+	stats := c.db.Stats()
+	ch <- gauge(c.maxOpenDesc, float64(stats.MaxOpenConnections))
+	ch <- gauge(c.openDesc, float64(stats.OpenConnections))
+	ch <- gauge(c.inUseDesc, float64(stats.InUse))
+	ch <- gauge(c.idleDesc, float64(stats.Idle))
+	ch <- counter(c.waitedForDesc, float64(stats.WaitCount))
+	ch <- counter(c.blockedSecondsDesc, stats.WaitDuration.Seconds())
+	ch <- counter(c.closedMaxIdleDesc, float64(stats.MaxIdleClosed))
+	ch <- counter(c.closedMaxLifetimeDesc, float64(stats.MaxLifetimeClosed))
+	ch <- counter(c.closedMaxIdleTimeDesc, float64(stats.MaxIdleTimeClosed))
 }

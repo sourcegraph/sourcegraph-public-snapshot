@@ -83,6 +83,48 @@ func NewMockPhabricatorStore() *MockPhabricatorStore {
 	}
 }
 
+// NewStrictMockPhabricatorStore creates a new mock of the PhabricatorStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockPhabricatorStore() *MockPhabricatorStore {
+	return &MockPhabricatorStore{
+		CreateFunc: &PhabricatorStoreCreateFunc{
+			defaultHook: func(context.Context, string, api.RepoName, string) (*types.PhabricatorRepo, error) {
+				panic("unexpected invocation of MockPhabricatorStore.Create")
+			},
+		},
+		CreateIfNotExistsFunc: &PhabricatorStoreCreateIfNotExistsFunc{
+			defaultHook: func(context.Context, string, api.RepoName, string) (*types.PhabricatorRepo, error) {
+				panic("unexpected invocation of MockPhabricatorStore.CreateIfNotExists")
+			},
+		},
+		CreateOrUpdateFunc: &PhabricatorStoreCreateOrUpdateFunc{
+			defaultHook: func(context.Context, string, api.RepoName, string) (*types.PhabricatorRepo, error) {
+				panic("unexpected invocation of MockPhabricatorStore.CreateOrUpdate")
+			},
+		},
+		GetByNameFunc: &PhabricatorStoreGetByNameFunc{
+			defaultHook: func(context.Context, api.RepoName) (*types.PhabricatorRepo, error) {
+				panic("unexpected invocation of MockPhabricatorStore.GetByName")
+			},
+		},
+		HandleFunc: &PhabricatorStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockPhabricatorStore.Handle")
+			},
+		},
+		TransactFunc: &PhabricatorStoreTransactFunc{
+			defaultHook: func(context.Context) (database.PhabricatorStore, error) {
+				panic("unexpected invocation of MockPhabricatorStore.Transact")
+			},
+		},
+		WithFunc: &PhabricatorStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.PhabricatorStore {
+				panic("unexpected invocation of MockPhabricatorStore.With")
+			},
+		},
+	}
+}
+
 // NewMockPhabricatorStoreFrom creates a new mock of the
 // MockPhabricatorStore interface. All methods delegate to the given
 // implementation, unless overwritten.

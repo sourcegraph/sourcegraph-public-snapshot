@@ -38,7 +38,6 @@ type SubRepoPermsStore interface {
 	UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
-	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
 // subRepoPermsStore is the unified interface for managing sub repository
@@ -189,23 +188,6 @@ WHERE user_id = %s
 	}
 
 	return result, nil
-}
-
-// RepoSupported returns whether the given repo supports sub-repo permissions
-func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo api.RepoName) (bool, error) {
-	q := sqlf.Sprintf(`
-SELECT EXISTS(
-  SELECT
-  FROM external_services
-    JOIN external_service_repos esr ON external_services.id = esr.external_service_id
-    JOIN repo r ON esr.repo_id = r.id
-  WHERE r.name = %s
-  AND kind IN (%s)
-)
-`, repo, sqlf.Join(supportedKindsQuery, ","))
-
-	supported, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
-	return supported, errors.Wrap(err, "checking for sub-repo support")
 }
 
 type MockSubRepoPerms struct {

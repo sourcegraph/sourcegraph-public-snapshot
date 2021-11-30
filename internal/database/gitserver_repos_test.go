@@ -43,10 +43,9 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "gitserver1",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     "gitserver1",
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create one GitServerRepo
@@ -126,10 +125,9 @@ func TestGitserverReposGetByID(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "test",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create GitServerRepo
@@ -365,10 +363,9 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 	}
 
 	gitserverRepo := &types.GitserverRepo{
-		RepoID:              repo1.ID,
-		ShardID:             "",
-		CloneStatus:         types.CloneStatusNotCloned,
-		LastExternalService: 0,
+		RepoID:      repo1.ID,
+		ShardID:     "",
+		CloneStatus: types.CloneStatusNotCloned,
 	}
 
 	// Create one GitServerRepo

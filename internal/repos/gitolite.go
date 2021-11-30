@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -206,7 +207,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*t
 				continue
 			}
 
-			if err := api.InternalClient.PhabricatorRepoCreate(ctx, name, metadata.Callsign, conf.Phabricator.Url); err != nil {
+			if err := internalapi.Client.PhabricatorRepoCreate(ctx, name, metadata.Callsign, conf.Phabricator.Url); err != nil {
 				log15.Warn("could not ensure Gitolite Phabricator mapping", "repo", name, "error", err)
 			}
 		}

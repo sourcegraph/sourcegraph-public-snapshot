@@ -120,7 +120,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
-	id, err := unmarshalExternalServiceID(args.Input.ID)
+	id, err := UnmarshalExternalServiceID(args.Input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
-	id, err := unmarshalExternalServiceID(args.ExternalService)
+	id, err := UnmarshalExternalServiceID(args.ExternalService)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +274,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	var afterID int64
 	if args.After != nil {
 		var err error
-		afterID, err = unmarshalExternalServiceID(graphql.ID(*args.After))
+		afterID, err = UnmarshalExternalServiceID(graphql.ID(*args.After))
 		if err != nil {
 			return nil, err
 		}

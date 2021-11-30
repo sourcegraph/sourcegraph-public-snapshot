@@ -1,73 +1,62 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-
-import { requestGraphQL } from '../../../backend/graphql'
-import {
-    ExecuteBatchSpecFields,
-    ExecuteBatchSpecResult,
-    ExecuteBatchSpecVariables,
-    BatchSpecWorkspacesByIDResult,
-    BatchSpecWorkspacesByIDVariables,
-    BatchSpecWithWorkspacesFields,
-    CreateBatchSpecFromRawResult,
-    CreateBatchSpecFromRawVariables,
-    ReplaceBatchSpecInputResult,
-    ReplaceBatchSpecInputVariables,
-    Scalars,
-} from '../../../graphql-operations'
-
-export async function executeBatchSpec(spec: Scalars['ID']): Promise<ExecuteBatchSpecFields> {
-    const result = await requestGraphQL<ExecuteBatchSpecResult, ExecuteBatchSpecVariables>(
-        gql`
-            mutation ExecuteBatchSpec($id: ID!) {
-                executeBatchSpec(batchSpec: $id) {
-                    ...ExecuteBatchSpecFields
-                }
+export const EXECUTE_BATCH_SPEC = gql`
+    mutation ExecuteBatchSpec($batchSpec: ID!) {
+        executeBatchSpec(batchSpec: $batchSpec) {
+            id
+            namespace {
+                url
             }
-
-            fragment ExecuteBatchSpecFields on BatchSpec {
-                id
-                namespace {
-                    url
-                }
-            }
-        `,
-        { id: spec }
-    ).toPromise()
-    return dataOrThrowErrors(result).executeBatchSpec
-}
-
-const fragment = gql`
-    fragment BatchSpecWithWorkspacesFields on BatchSpec {
-        id
-        originalInput
-        workspaceResolution {
-            workspaces(first: 10000) {
-                nodes {
-                    ...CreateBatchSpecWorkspaceFields
-                }
-            }
-            state
-            failureMessage
         }
-        allowUnsupported
-        allowIgnored
-        importingChangesets(first: 10000) {
-            totalCount
-            nodes {
-                __typename
-                id
-                ... on VisibleChangesetSpec {
-                    description {
+    }
+`
+
+export const CREATE_BATCH_SPEC_FROM_RAW = gql`
+    mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!, $noCache: Boolean!) {
+        createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace, noCache: $noCache) {
+            id
+        }
+    }
+`
+
+export const REPLACE_BATCH_SPEC_INPUT = gql`
+    mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!, $noCache: Boolean!) {
+        replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec, noCache: $noCache) {
+            id
+        }
+    }
+`
+
+export const WORKSPACE_RESOLUTION_STATUS = gql`
+    query WorkspaceResolutionStatus($batchSpec: ID!) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                workspaceResolution {
+                    state
+                    failureMessage
+                }
+            }
+        }
+    }
+`
+
+export const WORKSPACES = gql`
+    query BatchSpecWorkspacesPreview($batchSpec: ID!, $first: Int, $after: String) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                workspaceResolution {
+                    __typename
+                    workspaces(first: $first, after: $after) {
                         __typename
-                        ... on ExistingChangesetReference {
-                            baseRepository {
-                                name
-                                url
-                            }
-                            externalID
+                        totalCount
+                        pageInfo {
+                            hasNextPage
+                            endCursor
+                        }
+                        nodes {
+                            ...PreviewBatchSpecWorkspaceFields
                         }
                     }
                 }
@@ -75,98 +64,80 @@ const fragment = gql`
         }
     }
 
-    fragment CreateBatchSpecWorkspaceFields on BatchSpecWorkspace {
+    fragment PreviewBatchSpecWorkspaceFields on BatchSpecWorkspace {
+        __typename
         repository {
+            __typename
             id
             name
             url
+            defaultBranch {
+                __typename
+                id
+            }
         }
         ignored
         unsupported
         branch {
+            __typename
             id
             abbrevName
             displayName
             target {
+                __typename
                 oid
             }
+            url
         }
         path
-        onlyFetchWorkspace
-        steps {
-            run
-            container
-        }
         searchResultPaths
         cachedResultFound
     }
 `
 
-export function createBatchSpecFromRaw(
-    spec: string,
-    namespace: Scalars['ID']
-): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(
-        gql`
-            mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
-                createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
-
-            ${fragment}
-        `,
-        { spec, namespace }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => result.createBatchSpecFromRaw)
-    )
-}
-
-export function replaceBatchSpecInput(
-    previousSpec: Scalars['ID'],
-    spec: string
-): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<ReplaceBatchSpecInputResult, ReplaceBatchSpecInputVariables>(
-        gql`
-            mutation ReplaceBatchSpecInput($previousSpec: ID!, $spec: String!) {
-                replaceBatchSpecInput(previousSpec: $previousSpec, batchSpec: $spec) {
-                    ...BatchSpecWithWorkspacesFields
-                }
-            }
-
-            ${fragment}
-        `,
-        { previousSpec, spec }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(result => result.replaceBatchSpecInput)
-    )
-}
-
-export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWithWorkspacesFields> {
-    return requestGraphQL<BatchSpecWorkspacesByIDResult, BatchSpecWorkspacesByIDVariables>(
-        gql`
-            query BatchSpecWorkspacesByID($id: ID!) {
-                node(id: $id) {
+export const IMPORTING_CHANGESETS = gql`
+    query BatchSpecImportingChangesets($batchSpec: ID!, $first: Int, $after: String) {
+        node(id: $batchSpec) {
+            __typename
+            ... on BatchSpec {
+                importingChangesets(first: $first, after: $after) {
                     __typename
-                    ...BatchSpecWithWorkspacesFields
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
+                    nodes {
+                        __typename
+                        ... on VisibleChangesetSpec {
+                            ...PreviewBatchSpecImportingChangesetFields
+                        }
+                        ... on HiddenChangesetSpec {
+                            ...PreviewBatchSpecImportingHiddenChangesetFields
+                        }
+                    }
                 }
             }
+        }
+    }
 
-            ${fragment}
-        `,
-        { id }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => {
-            if (!data.node) {
-                throw new Error('Not found')
+    fragment PreviewBatchSpecImportingChangesetFields on VisibleChangesetSpec {
+        __typename
+        id
+        description {
+            __typename
+            ... on ExistingChangesetReference {
+                baseRepository {
+                    name
+                    url
+                }
+                externalID
             }
-            if (data.node.__typename !== 'BatchSpec') {
-                throw new Error(`Node is a ${data.node.__typename}, not a BatchSpec`)
-            }
-            return data.node
-        })
-    )
-}
+        }
+    }
+
+    fragment PreviewBatchSpecImportingHiddenChangesetFields on HiddenChangesetSpec {
+        __typename
+        id
+    }
+`

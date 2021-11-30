@@ -2,6 +2,9 @@ package shared
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/grafana-tools/sdk"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
@@ -54,15 +57,30 @@ func (standardConstructor) Duration(legend string) observableConstructor {
 		return func(containerName string, owner monitoring.ObservableOwner) Observable {
 			filters := makeFilters(containerName, options.Filters...)
 			by, _ := makeBy(append([]string{"le"}, options.By...)...)
-			_, legendPrefix := makeBy(options.By...)
 
-			return Observable{
-				Name:        fmt.Sprintf("%s_99th_percentile_duration", options.MetricNameRoot),
-				Description: fmt.Sprintf("99th percentile successful %s%s duration over 5m", options.MetricDescriptionRoot, legend),
-				Query:       fmt.Sprintf(`histogram_quantile(0.99, sum %s(rate(src_%s_duration_seconds_bucket{%s}[5m])))`, by, options.MetricNameRoot, filters),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)).Unit(monitoring.Seconds),
-				Owner:       owner,
+			observable := Observable{
+				Name:  fmt.Sprintf("%s_99th_percentile_duration", options.MetricNameRoot),
+				Query: fmt.Sprintf(`sum %s(rate(src_%s_duration_seconds_bucket{%s}[5m]))`, by, options.MetricNameRoot, filters),
+				Owner: owner,
 			}
+
+			if len(options.By) > 0 {
+				_, legendPrefix := makeBy(options.By...)
+				observable.Panel = monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)).Unit(monitoring.Seconds)
+				observable.Query = fmt.Sprintf("histogram_quantile(0.99, %s)", observable.Query)
+				observable.Description = fmt.Sprintf("99th percentile successful %s%s duration over 5m", options.MetricDescriptionRoot, legend)
+			} else {
+				descriptionRoot := "aggregate successful " + strings.TrimPrefix(options.MetricDescriptionRoot, "aggregate ")
+				observable.Description = fmt.Sprintf("%s%s duration distribution over 5m", descriptionRoot, legend)
+				observable.Panel = monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
+					p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
+					p.HeatmapPanel.DataFormat = "tsbuckets"
+					p.HeatmapPanel.Targets[0].Format = "heatmap"
+					p.HeatmapPanel.Targets[0].LegendFormat = "{{le}}"
+				})
+			}
+
+			return observable
 		}
 	}
 }

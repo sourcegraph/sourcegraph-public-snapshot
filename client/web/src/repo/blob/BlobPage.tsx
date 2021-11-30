@@ -96,10 +96,11 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         filePath={filePath}
                         isDir={false}
                         repoUrl={repoUrl}
+                        telemetryService={props.telemetryService}
                     />
                 ),
             }
-        }, [filePath, revision, repoName, repoUrl])
+        }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
