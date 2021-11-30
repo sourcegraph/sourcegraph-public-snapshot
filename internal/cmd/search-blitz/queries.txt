@@ -51,3 +51,32 @@ type:diff repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"febru
 
 # commit_small
 type:commit repo:^github\.com/sourcegraph/sourcegraph$ author:camden before:"february 1 2021"
+
+
+## mono_ queries cherry-pick the above queries but are run on our synthetic
+## monorepo. The queries specifying rev: will use the latest commit, not just
+## the latest indexed commit.
+
+# mono_regex_small
+repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt
+
+# mono_rev_regex_small
+repo:^github\.com/sgtest/megarepo$ patterntype:regexp se[arc]{3}hZoekt rev:main
+
+# mono_structural_small
+repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...)
+
+# mono_rev_structural_small
+repo:^github\.com/sgtest/megarepo$ patterntype:structural strings.ToUpper(...) rev:main
+
+# mono_symbol_small
+repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion
+
+# mono_rev_symbol_small
+repo:^github\.com/sgtest/megarepo$ type:symbol IndexFormatVersion rev:main
+
+# mono_diff_small
+repo:^github\.com/sgtest/megarepo$ type:diff   author:camden before:"february 1 2021"
+
+# mono_commit_small
+repo:^github\.com/sgtest/megarepo$ type:commit author:camden before:"february 1 2021"
