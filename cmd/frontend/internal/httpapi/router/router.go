@@ -43,7 +43,6 @@ const (
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
-	ExternalServicesList   = "internal.external-services.list"
 	StreamingSearch        = "internal.stream-search"
 )
 
@@ -97,7 +96,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
-	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
