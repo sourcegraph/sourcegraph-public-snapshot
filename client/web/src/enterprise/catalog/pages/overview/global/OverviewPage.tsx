@@ -1,7 +1,6 @@
-import GraphOutlineIcon from 'mdi-react/GraphOutlineIcon'
 import React, { useEffect } from 'react'
 import { Route, Switch, useRouteMatch } from 'react-router'
-import { Link, NavLink } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -47,21 +46,9 @@ export const OverviewPage: React.FunctionComponent<Props> = ({ filters, onFilter
 
             <Switch>
                 <Route path={match.url} exact={true}>
-                    <div className="d-flex align-items-start">
-                        <Container className="p-0 mb-2 flex-grow-1">
-                            <EntityList filters={filters} onFiltersChange={onFiltersChange} size="sm" />
-                        </Container>
-                        <Container className="d-none d-md-block ml-2 position-relative">
-                            <Link
-                                to="/catalog/graph"
-                                className="h3 mb-0 text-center d-flex flex-column align-items-center stretched-link text-muted"
-                            >
-                                Graph
-                                <br />
-                                <GraphOutlineIcon className="icon-inline text-muted mt-1" />
-                            </Link>
-                        </Container>
-                    </div>
+                    <Container className="p-0 mb-2 flex-grow-1">
+                        <EntityList filters={filters} onFiltersChange={onFiltersChange} size="sm" />
+                    </Container>
                 </Route>
                 <Route path={`${match.url}/graph`} exact={true}>
                     <OverviewEntityGraph />
