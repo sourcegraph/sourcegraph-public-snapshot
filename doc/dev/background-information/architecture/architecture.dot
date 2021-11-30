@@ -103,11 +103,6 @@ digraph architecture {
                     fillcolor="#e2a8fd"
                     URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/searcher"
                 ]
-                query_runner [
-                    label="query runner"
-                    fillcolor="#aaffff"
-                    URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/query-runner"
-                ]
             }
 
             subgraph cluster_code_intelligence {
@@ -215,7 +210,7 @@ digraph architecture {
     codeintel_worker -> {postgres, codeintel_db} [ fillcolor="#eac1c1"]
 
     /* Internal routes */
-    frontend -> {searcher, symbols, query_runner, blob_store, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
+    frontend -> {searcher, symbols, blob_store, gitserver, repo_updater, zoekt_webserver, syntect_server} [fillcolor="#7e78dc"]
     searcher -> gitserver [fillcolor="#e2a8fd"]
     symbols -> gitserver [fillcolor="#c1eaea"]
     zoekt_indexserver -> {frontend, gitserver} [fillcolor="#aaccff"]

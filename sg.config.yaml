@@ -26,7 +26,6 @@ env:
   SEARCHER_URL: http://127.0.0.1:3181
   REPO_UPDATER_URL: http://127.0.0.1:3182
   REDIS_ENDPOINT: 127.0.0.1:6379
-  QUERY_RUNNER_URL: http://localhost:3183
   SYMBOLS_URL: http://localhost:3184
   SRC_SYNTECT_SERVER: http://localhost:9238
   SRC_FRONTEND_INTERNAL: localhost:3090
@@ -45,7 +44,6 @@ env:
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "enterprise-repo-updater", "Host": "127.0.0.1:6074" },
-      { "Name": "query-runner", "Host": "127.0.0.1:6067" },
       { "Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088" },
       { "Name": "worker", "Host": "127.0.0.1:6089" },
       { "Name": "enterprise-worker", "Host": "127.0.0.1:6089" },
@@ -240,19 +238,6 @@ commands:
       - cmd/repo-updater
       - enterprise/internal
       - enterprise/cmd/repo-updater
-
-  query-runner:
-    cmd: .bin/query-runner
-    install: |
-      if [ -n "$DELVE" ]; then
-        export GCFLAGS='all=-N -l'
-      fi
-      go build -gcflags="$GCFLAGS" -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
-    checkBinary: .bin/query-runner
-    watch:
-      - lib
-      - internal
-      - cmd/query-runner
 
   symbols:
     cmd: .bin/symbols
@@ -756,7 +741,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - web
       - caddy
       - docsite
@@ -781,7 +765,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -810,7 +793,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -837,7 +819,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
@@ -884,7 +865,6 @@ commandsets:
       - gitserver
       - searcher
       - symbols
-      - query-runner
       - caddy
       - docsite
       - syntax-highlighter
