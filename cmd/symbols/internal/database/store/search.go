@@ -6,6 +6,7 @@ import (
 	"regexp/syntax"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
@@ -113,7 +114,7 @@ func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sql
 func isLiteralEquality(expr string) (string, bool, error) {
 	regexp, err := syntax.Parse(expr, syntax.Perl)
 	if err != nil {
-		return "", false, err
+		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
 	}
 
 	// want a concat of size 3 which is [begin, literal, end]

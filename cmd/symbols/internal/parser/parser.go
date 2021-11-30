@@ -55,7 +55,7 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 	parseRequestOrErrors := p.repositoryFetcher.FetchRepositoryArchive(ctx, args, paths)
 	if err != nil {
 		endObservation(1, observation.Args{})
-		return nil, err
+		return nil, errors.Wrap(err, "repositoryFetcher.FetchRepositoryArchive")
 	}
 	defer func() {
 		if err != nil {
@@ -139,7 +139,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbols chan<- result.S
 
 	entries, err := parser.Parse(parseRequest.Path, parseRequest.Data)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parser.Parse")
 	}
 	traceLog(log.Int("numEntries", len(entries)))
 

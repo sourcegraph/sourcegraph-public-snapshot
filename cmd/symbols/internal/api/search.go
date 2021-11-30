@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
@@ -34,14 +35,17 @@ func (h *apiHandler) handleSearchInternal(ctx context.Context, args types.Search
 
 	dbFile, err := h.cachedDatabaseWriter.GetOrCreateDatabaseFile(ctx, args)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
 	}
 	traceLog(log.String("dbFile", dbFile))
 
 	var results result.Symbols
 	err = store.WithSQLiteStore(dbFile, func(db store.Store) (err error) {
-		results, err = db.Search(ctx, args)
-		return
+		if results, err = db.Search(ctx, args); err != nil {
+			return errors.Wrap(err, "store.Search")
+		}
+
+		return nil
 	})
 
 	return &results, err

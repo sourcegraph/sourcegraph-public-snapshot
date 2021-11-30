@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
@@ -80,7 +81,7 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, args typ
 
 	rc, err := f.gitserverClient.FetchTar(ctx, args.Repo, args.CommitID, paths)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "gitserverClient.FetchTar")
 	}
 	defer rc.Close()
 

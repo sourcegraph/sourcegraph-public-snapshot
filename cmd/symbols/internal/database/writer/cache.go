@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 )
@@ -36,7 +38,11 @@ func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args
 	}
 
 	cacheFile, err := w.cache.OpenWithPath(ctx, key, func(fetcherCtx context.Context, tempDBFile string) error {
-		return w.databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile)
+		if err := w.databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile); err != nil {
+			return errors.Wrap(err, "databaseWriter.WriteDBFile")
+		}
+
+		return nil
 	})
 	if err != nil {
 		return "", err

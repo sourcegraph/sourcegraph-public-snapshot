@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
@@ -42,7 +43,7 @@ func (e *cacheEvicter) Handle(ctx context.Context) error {
 
 	stats, err := e.cache.Evict(e.maxCacheSizeBytes)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cache.Evict")
 	}
 
 	e.metrics.cacheSizeBytes.Set(float64(stats.CacheSize))

@@ -4,6 +4,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
@@ -53,9 +55,12 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 		return "", "", false, err
 	}
 
-	err = store.WithSQLiteStore(newest, func(db store.Store) error {
-		commit, ok, err = db.GetCommit(ctx)
-		return err
+	err = store.WithSQLiteStore(newest, func(db store.Store) (err error) {
+		if commit, ok, err = db.GetCommit(ctx); err != nil {
+			return errors.Wrap(err, "store.GetCommit")
+		}
+
+		return nil
 	})
 	return newest, commit, ok, err
 }
@@ -63,19 +68,19 @@ func (w *databaseWriter) getNewestCommit(ctx context.Context, args types.SearchA
 func (w *databaseWriter) writeDBFile(ctx context.Context, args types.SearchArgs, dbFile string) error {
 	return w.parseAndWriteInTransaction(ctx, args, nil, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
 		if err := tx.CreateMetaTable(ctx); err != nil {
-			return err
+			return errors.Wrap(err, "store.CreateMetaTable")
 		}
 		if err := tx.CreateSymbolsTable(ctx); err != nil {
-			return err
+			return errors.Wrap(err, "store.CreateSymbolsTable")
 		}
 		if err := tx.InsertMeta(ctx, string(args.CommitID)); err != nil {
-			return err
+			return errors.Wrap(err, "store.InsertMeta")
 		}
 		if err := tx.WriteSymbols(ctx, symbols); err != nil {
-			return err
+			return errors.Wrap(err, "store.WriteSymbols")
 		}
 		if err := tx.CreateSymbolIndexes(ctx); err != nil {
-			return err
+			return errors.Wrap(err, "store.CreateSymbolIndexes")
 		}
 
 		return nil
@@ -96,7 +101,7 @@ const maxTotalPathsLength = 100000
 func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.SearchArgs, dbFile, newestDBFile, oldCommit string) (bool, error) {
 	changes, err := w.gitserverClient.GitDiff(ctx, args.Repo, api.CommitID(oldCommit), args.CommitID)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "gitserverClient.GitDiff")
 	}
 	paths := append(changes.Added, append(changes.Modified, changes.Deleted...)...)
 
@@ -118,13 +123,13 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 
 	return true, w.parseAndWriteInTransaction(ctx, args, paths, dbFile, func(tx store.Store, symbols <-chan result.Symbol) error {
 		if err := tx.UpdateMeta(ctx, string(args.CommitID)); err != nil {
-			return err
+			return errors.Wrap(err, "store.UpdateMeta")
 		}
 		if err := tx.DeletePaths(ctx, paths); err != nil {
-			return err
+			return errors.Wrap(err, "store.DeletePaths")
 		}
 		if err := tx.WriteSymbols(ctx, symbols); err != nil {
-			return err
+			return errors.Wrap(err, "store.WriteSymbols")
 		}
 
 		return nil
@@ -134,7 +139,7 @@ func (w *databaseWriter) writeFileIncrementally(ctx context.Context, args types.
 func (w *databaseWriter) parseAndWriteInTransaction(ctx context.Context, args types.SearchArgs, paths []string, dbFile string, callback func(tx store.Store, symbols <-chan result.Symbol) error) error {
 	symbols, err := w.parser.Parse(ctx, args, paths)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parser.Parse")
 	}
 
 	return store.WithSQLiteStoreTransaction(ctx, dbFile, func(tx store.Store) error {
