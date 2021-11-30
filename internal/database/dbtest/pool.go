@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
+// testDatabasePool handles creating and reusing migrated database instances
 type testDatabasePool struct {
 	db *sql.DB
 }
@@ -197,11 +198,16 @@ RETURNING %s
 `
 
 const getExistingMigratedDB = `
-SELECT %s
-FROM migrated_dbs
-WHERE claimed = false
-	AND clean = true
-LIMIT 1
+UPDATE migrated_dbs
+SET claimed = true
+WHERE id = (
+	SELECT id
+	FROM migrated_dbs
+	WHERE claimed = false
+		AND clean = true
+	LIMIT 1
+)
+RETURNING %s
 `
 
 // GetMigratedDB returns a new, clean, migrated db that is cloned from the given templated db. If an unclaimed,
@@ -283,7 +289,8 @@ DELETE FROM migrated_dbs
 WHERE id = %s
 `
 
-// DeleteMigratedDB deletes a database and untracks it in migrated_dbs
+// DeleteMigratedDB deletes a database and untracks it in migrated_dbs. This should
+// only be called by the caller who called GetMigratedDB
 func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) error {
 	_, err := t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
 	if err != nil {

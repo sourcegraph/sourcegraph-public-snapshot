@@ -73,7 +73,7 @@ func getDSN() string {
 		return dsn
 	}
 
-	return `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/postgres?sslmode=disable&timezone=UTC`
+	return `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC`
 }
 
 var (
@@ -118,6 +118,9 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 	// Open a connection to the clean database
 	testDBURL := urlWithDB(u, mdb.Name)
 	testDB := dbConn(t, testDBURL)
+	// Some tests that exercise concurrency need lots of connections or they block forever.
+	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
+	testDB.SetMaxOpenConns(10)
 	t.Cleanup(func() { testDB.Close() })
 
 	return testDB
@@ -140,6 +143,7 @@ func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
 			return
 		}
 
+		t.Logf("unclaining %s", mdb.Name)
 		err := pool.UnclaimCleanMigratedDB(ctx, mdb)
 		if err != nil {
 			t.Fatalf("failed to unclaim migrated db %q: %s", mdb.Name, err)
