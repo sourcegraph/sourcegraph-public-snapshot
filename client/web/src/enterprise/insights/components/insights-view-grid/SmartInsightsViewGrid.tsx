@@ -1,98 +1,13 @@
 import { isEqual } from 'lodash'
 import React, { memo } from 'react'
-import { Layout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import {
-    BreakpointName,
-    BREAKPOINTS_NAMES,
-    COLUMNS,
-    DEFAULT_HEIGHT,
-    DEFAULT_ITEMS_PER_ROW,
-    MIN_WIDTHS,
-    ViewGrid,
-} from '../../../../views'
-import { Insight, isSearchBasedInsight } from '../../core/types'
+import { ViewGrid } from '../../../../views'
+import { Insight } from '../../core/types'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
-
-const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts => {
-    return Object.fromEntries(
-        BREAKPOINTS_NAMES.map(breakpointName => [breakpointName, generateLayout(breakpointName)] as const)
-    )
-
-    function generateLayout(breakpointName: BreakpointName): Layout[] {
-        switch (breakpointName) {
-            case 'xs':
-            case 'sm':
-            case 'md': {
-                return insights.map((insight, index) => {
-                    const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
-                    return {
-                        i: insight.id,
-                        h: DEFAULT_HEIGHT,
-                        w: width,
-                        x: (index * width) % COLUMNS[breakpointName],
-                        y: Math.floor((index * width) / COLUMNS[breakpointName]),
-                        minW: MIN_WIDTHS[breakpointName],
-                        minH: 2,
-                    }
-                })
-            }
-
-            case 'lg': {
-                return insights
-                    .reduce<Layout[][]>(
-                        (grid, insight) => {
-                            const isManySeriesChart = isSearchBasedInsight(insight) && insight.series.length > 3
-                            const itemsPerRow = isManySeriesChart ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
-                            const columnsPerRow = COLUMNS[breakpointName]
-                            const width = columnsPerRow / itemsPerRow
-                            const lastRow = grid[grid.length - 1]
-                            const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
-
-                            // Move element on new line (row)
-                            if (lastRowCurrentWidth + width > columnsPerRow) {
-                                const newRow = [
-                                    {
-                                        i: insight.id,
-                                        h: DEFAULT_HEIGHT,
-                                        w: width,
-                                        x: 0,
-                                        y: grid.length,
-                                        minW: MIN_WIDTHS[breakpointName],
-                                        minH: 2,
-                                    },
-                                ]
-
-                                for (const [index, element] of lastRow.entries()) {
-                                    element.w = columnsPerRow / lastRow.length
-                                    element.x = (index * columnsPerRow) / lastRow.length
-                                }
-
-                                grid.push(newRow)
-                            } else {
-                                lastRow.push({
-                                    i: insight.id,
-                                    h: DEFAULT_HEIGHT,
-                                    w: width,
-                                    x: lastRowCurrentWidth,
-                                    y: grid.length - 1,
-                                    minW: MIN_WIDTHS[breakpointName],
-                                    minH: 2,
-                                })
-                            }
-
-                            return grid
-                        },
-                        [[]]
-                    )
-                    .flat()
-            }
-        }
-    }
-}
+import { insightLayoutGenerator } from './utils/grid-layout-generator'
 
 interface SmartInsightsViewGridProps extends TelemetryProps {
     /**

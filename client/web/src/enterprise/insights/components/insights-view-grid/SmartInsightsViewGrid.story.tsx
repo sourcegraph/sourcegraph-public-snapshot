@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { Meta } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -14,9 +14,10 @@ import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
 import { SmartInsightsViewGrid } from './SmartInsightsViewGrid'
 
-const { add } = storiesOf('web/insights/SmartInsightsViewGrid', module).addDecorator(story => (
-    <WebStory>{() => story()}</WebStory>
-))
+export default {
+    title: 'web/insights/SmartInsightsViewGrid',
+    decorators: [story => <WebStory>{() => story()}</WebStory>],
+} as Meta
 
 const insights: Insight[] = [
     {
@@ -56,24 +57,19 @@ class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
 
 const codeInsightsApi = new CodeInsightsStoryBackend()
 
-add('SmartInsightsViewGrid', () => (
+export const SmartInsightsViewGridExample = () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsApi}>
         <SmartInsightsViewGrid insights={insights} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>
-))
+)
 
-const insights2: Insight[] = [
+const insightsWithManyLines: Insight[] = [
     {
         id: 'searchInsights.insight.Backend_1',
         type: InsightExecutionType.Backend,
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [
-            { id: '', query: '', stroke: '', name: '' },
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-        ],
+        series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
     },
     {
@@ -102,12 +98,7 @@ const insights2: Insight[] = [
         type: InsightExecutionType.Backend,
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [
-            { id: '', query: '', stroke: '', name: '' },
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-        ],
+        series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
     },
     {
@@ -115,12 +106,7 @@ const insights2: Insight[] = [
         type: InsightExecutionType.Backend,
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [
-            { id: '', query: '', stroke: '', name: '' },
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-        ],
+        series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
     },
     {
@@ -128,12 +114,7 @@ const insights2: Insight[] = [
         type: InsightExecutionType.Backend,
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [
-            { id: '', query: '', stroke: '', name: '' },
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-        ],
+        series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
     },
     {
@@ -141,17 +122,12 @@ const insights2: Insight[] = [
         type: InsightExecutionType.Backend,
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [
-            { id: '', query: '', stroke: '', name: '' },
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-            // { id: '', query: '', stroke: '', name: ''},
-        ],
+        series: [{ id: '', query: '', stroke: '', name: '' }],
         visibility: 'personal',
     },
 ]
 
-class CodeInsightsStoryBackend2 extends CodeInsightsSettingsCascadeBackend {
+class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend {
     constructor() {
         super(SETTINGS_CASCADE_MOCK, {} as any)
     }
@@ -162,16 +138,16 @@ class CodeInsightsStoryBackend2 extends CodeInsightsSettingsCascadeBackend {
             view: {
                 title: 'Backend Insight Mock',
                 subtitle: 'Backend insight description text',
-                content: [LINE_CHART_WITH_MANY_LINES],
+                content: [input.series.length >= 3 ? LINE_CHART_WITH_MANY_LINES : LINE_CHART_CONTENT_MOCK],
                 isFetchingHistoricalData: false,
             },
         })
 }
 
-const codeInsightsApi2 = new CodeInsightsStoryBackend2()
+const codeInsightsApiWithManyLines = new StoryBackendWithManyLinesCharts()
 
-add('SmartInsightsViewGrid with many lines charts', () => (
-    <CodeInsightsBackendContext.Provider value={codeInsightsApi2}>
-        <SmartInsightsViewGrid insights={insights2} telemetryService={NOOP_TELEMETRY_SERVICE} />
+export const SmartInsightsViewGridWithManyLinesExample = () => (
+    <CodeInsightsBackendContext.Provider value={codeInsightsApiWithManyLines}>
+        <SmartInsightsViewGrid insights={insightsWithManyLines} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>
-))
+)

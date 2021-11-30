@@ -4,7 +4,8 @@ import classNames from 'classnames'
 import React, { ReactElement, useContext } from 'react'
 
 import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
-import { LineChartSettingsContext } from './line-chart-settings-provider'
+import { MINIMAL_HORIZONTAL_LAYOUT_WIDTH, MINIMAL_SERIES_FOR_ASIDE_LEGEND } from './constants'
+import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-chart-settings-provider'
 import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
@@ -28,7 +29,14 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
         )
     }
 
-    const isHorizontal = layout === 'horizontal'
+    const hasViewManySeries = otherProps.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
+
+    const isHorizontal = layout
+        ? // If layout is defined explicitly in line chart setting context use its value
+          layout === LineChartLayoutOrientation.Horizontal
+        : // Otherwise apply internal logic (based on how many x space and series we have)
+          hasViewManySeries && hasEnoughXSpace
 
     return (
         <EventEmitterProvider>

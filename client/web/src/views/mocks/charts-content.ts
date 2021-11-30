@@ -54,7 +54,7 @@ export const LINE_CHART_WITH_MANY_LINES: LineChartContent<any, string> = {
     series: [
         {
             dataKey: 'a',
-            name: 'A metric',
+            name: 'React functional components',
             stroke: 'var(--warning)',
             linkURLs: [
                 '#A:1st_data_point',
@@ -66,7 +66,7 @@ export const LINE_CHART_WITH_MANY_LINES: LineChartContent<any, string> = {
         },
         {
             dataKey: 'b',
-            name: 'B metric',
+            name: 'Class components',
             stroke: 'var(--warning)',
             linkURLs: [
                 '#B:1st_data_point',
@@ -76,9 +76,9 @@ export const LINE_CHART_WITH_MANY_LINES: LineChartContent<any, string> = {
                 '#B:5th_data_point',
             ],
         },
-        { dataKey: 'c', name: 'C metric with loooooong name', stroke: 'var(--blue)' },
-        { dataKey: 'd', name: 'D metric with simple name', stroke: 'var(--purple)' },
-        { dataKey: 'f', name: 'And F metric with nothing', stroke: 'var(--green)' },
+        { dataKey: 'c', name: 'useTheme adoption', stroke: 'var(--blue)' },
+        { dataKey: 'd', name: 'Class without CSS modules', stroke: 'var(--purple)' },
+        { dataKey: 'f', name: 'Functional components without CSS modules', stroke: 'var(--green)' },
     ],
     xAxis: {
         dataKey: 'x',

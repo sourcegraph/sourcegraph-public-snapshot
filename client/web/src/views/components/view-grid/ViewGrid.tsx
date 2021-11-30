@@ -53,17 +53,14 @@ export type ViewGridProps =
            * layouts for each grid element.
            */
           viewIds: string[]
-
-          /**
-           * Custom layout generator to able to set layouts from consumers.
-           */
-          customLayoutGenerator?: (viewIds: string[]) => ReactGridLayouts
           layouts?: never
       }
     | {
+          /**
+           * Sets custom layout for react-grid-layout library.
+           */
           layouts: ReactGridLayouts
           viewIds?: never
-          customLayoutGenerator?: never
       }
 
 interface ViewGridCommonProps extends TelemetryProps {
@@ -75,13 +72,7 @@ interface ViewGridCommonProps extends TelemetryProps {
  * Renders drag and drop and resizable views grid.
  */
 export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps & ViewGridCommonProps>> = props => {
-    const {
-        layouts,
-        customLayoutGenerator = DEFAULT_VIEWS_LAYOUT_GENERATOR,
-        telemetryService,
-        children,
-        className,
-    } = props
+    const { layouts, viewIds = [], telemetryService, children, className } = props
 
     const onResizeOrDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item) => {
@@ -112,7 +103,7 @@ export const ViewGrid: React.FunctionComponent<PropsWithChildren<ViewGridProps &
             <ResponsiveGridLayout
                 measureBeforeMount={true}
                 breakpoints={BREAKPOINTS}
-                layouts={layouts ?? customLayoutGenerator(props.viewIds)}
+                layouts={layouts ?? DEFAULT_VIEWS_LAYOUT_GENERATOR(viewIds)}
                 cols={COLUMNS}
                 autoSize={true}
                 rowHeight={6 * 16}
