@@ -61,15 +61,15 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                             edges: entity.relatedEntities.edges.map(edge =>
                                                 edge.type === 'DEPENDS_ON'
                                                     ? {
-                                                          outNode: entity,
-                                                          outType: edge.type,
-                                                          inNode: edge.node,
-                                                          inType: edge.type,
-                                                      }
-                                                    : {
                                                           outNode: edge.node,
                                                           outType: edge.type,
                                                           inNode: entity,
+                                                          inType: edge.type,
+                                                      }
+                                                    : {
+                                                          outNode: entity,
+                                                          outType: edge.type,
+                                                          inNode: edge.node,
                                                           inType: edge.type,
                                                       }
                                             ),

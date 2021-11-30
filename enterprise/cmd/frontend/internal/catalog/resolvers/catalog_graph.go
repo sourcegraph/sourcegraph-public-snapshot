@@ -37,10 +37,15 @@ func dummyGraph(db database.DB, filterID graphql.ID) *catalogGraphResolver {
 		}
 
 		key := outNode.ID() + inNode.ID()
+		key2 := inNode.ID() + outNode.ID()
 		if _, seen := seen[key]; seen {
 			continue
 		}
+		if _, seen := seen[key2]; seen {
+			continue
+		}
 		seen[key] = struct{}{}
+		seen[key2] = struct{}{}
 
 		edge := catalogEntityRelationEdgeResolver{
 			outNode: outNode,
