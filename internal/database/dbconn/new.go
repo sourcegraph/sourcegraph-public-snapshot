@@ -47,16 +47,16 @@ func New(opts Opts) (*sql.DB, func(err error) error, error) {
 		return nil, nil, err
 	}
 
-	if opts.DBName != "" {
-		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
-	}
-
 	close := func(err error) error {
 		if closeErr := db.Close(); closeErr != nil {
 			err = multierror.Append(err, closeErr)
 		}
 
 		return err
+	}
+
+	if opts.DBName != "" {
+		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	}
 
 	return db, close, nil
