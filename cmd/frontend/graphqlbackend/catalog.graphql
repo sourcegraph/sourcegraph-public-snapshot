@@ -69,9 +69,12 @@ type CatalogComponent implements Node & CatalogEntity {
     id: ID!
     type: CatalogEntityType!
     name: String!
-    kind: CatalogComponentKind!
     description: String
     url: String!
+    relatedEntities: CatalogEntityRelatedEntityConnection!
+
+    kind: CatalogComponentKind!
+
     sourceLocations: [TreeEntry!]!
     readme: File2
     commits(first: Int): GitCommitConnection
