@@ -280,11 +280,11 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                 )}
 
                 {showSignUpCta && (
-                    <div className={classNames('card my-2 mr-3 d-flex p-3 flex-md-row justify-content-between flex-column align-items-center', styles.streamingSearchResultsCtaContainer)}>
-                        <div className={classNames('my-3 w-10 col-md-1', styles.streamingSearchResultsCtaIcon)}>
+                    <div className="card my-2 mr-3 d-flex p-3 flex-md-row flex-column align-items-center">
+                        <div className="mr-md-3">
                             <SearchBetaIcon />
                         </div>
-                        <div className="col-md-7 px-md-0 text-md-start">
+                        <div className="flex-1 my-md-0 my-2">
                             <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
                                 <strong>
                                     Sign up to add your public and private repositories and unlock search flow
@@ -296,7 +296,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             </div>
                         </div>
                         <Link
-                            className="btn btn-primary col-md-3 col-12"
+                            className="btn btn-primary"
                             to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
                             onClick={onSignUpClick}
                         >

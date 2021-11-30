@@ -62,12 +62,6 @@
         &-description {
             font-size: 0.875rem;
         }
-
-        &-icon {
-            @media (--md-breakpoint-down) {
-                text-align: center;
-            }
-        }
     }
 
     &__content-centered {
