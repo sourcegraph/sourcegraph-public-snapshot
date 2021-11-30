@@ -42,6 +42,23 @@ func NewMockGitserverClient() *MockGitserverClient {
 	}
 }
 
+// NewStrictMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{
+		FetchTarFunc: &GitserverClientFetchTarFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error) {
+				panic("unexpected invocation of MockGitserverClient.FetchTar")
+			},
+		},
+		GitDiffFunc: &GitserverClientGitDiffFunc{
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, api.CommitID) (gitserver.Changes, error) {
+				panic("unexpected invocation of MockGitserverClient.GitDiff")
+			},
+		},
+	}
+}
+
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
