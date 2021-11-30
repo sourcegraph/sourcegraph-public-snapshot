@@ -76,6 +76,7 @@ trap docker_logs exit
 sleep 15
 
 # Run tests
+set +e
 check_available() {
   local URL=$1
   echo "--- TEST: Checking $URL is accessible"
@@ -95,6 +96,7 @@ for URL in {"http://localhost:7080","http://localhost:7080/healthz"}; do
   fi
   echo "Waiting for $URL... done"
 done
+set -e
 
 echo "--- TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
