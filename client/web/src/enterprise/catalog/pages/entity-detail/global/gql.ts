@@ -195,6 +195,7 @@ const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
             ...CatalogComponentAPIFields
         }
     }
+
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
@@ -209,5 +210,6 @@ export const CATALOG_ENTITY_BY_NAME = gql`
             ...CatalogEntityDetailFields
         }
     }
+
     ${CATALOG_ENTITY_DETAIL_FRAGMENT}
 `

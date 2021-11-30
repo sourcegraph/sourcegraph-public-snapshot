@@ -4,10 +4,32 @@ import (
 	"context"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/catalog"
 )
 
 func (r *catalogResolver) Graph(ctx context.Context) (gql.CatalogGraphResolver, error) {
-	return &catalogGraphResolver{}, nil
+	var graph catalogGraphResolver
+
+	components := catalog.Components()
+	var entities []gql.CatalogEntity
+	for _, c := range components {
+		entities = append(entities, &catalogComponentResolver{component: c, db: r.db})
+	}
+	graph.nodes = wrapInCatalogEntityInterfaceType(entities)
+
+	seeds := []int{1, 5, 7, 8, 11}
+	for _, x := range seeds {
+		edge := catalogEntityRelationEdgeResolver{
+			outNode: graph.nodes[x%len(graph.nodes)],
+			outType: "DEPENDS_ON",
+			inNode:  graph.nodes[(x*2)%len(graph.nodes)],
+			inType:  "DEPENDENCY_OF",
+		}
+
+		graph.edges = append(graph.edges, &edge)
+	}
+
+	return &graph, nil
 }
 
 type catalogGraphResolver struct {
