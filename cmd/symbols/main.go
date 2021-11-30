@@ -3,48 +3,65 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
-	"os/signal"
-	"runtime"
-	"strconv"
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/janitor"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/fetcher"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/parser"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-const port = "3184"
+const addr = ":3184"
 
 func main() {
-	var (
-		cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
-		cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
-		ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of ctags child processes to run")
-		sanityCheck    = env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not")
-	)
+	config.Load()
 
-	if sanityCheck == "true" {
+	// Set up Google Cloud Profiler when running in Cloud
+	if err := profiler.Init(); err != nil {
+		log.Fatalf("Failed to start profiler: %v", err)
+	}
+
+	env.Lock()
+	env.HandleHelpFlag()
+	conf.Init()
+	logging.Init()
+	tracer.Init(conf.DefaultClient())
+	sentry.Init(conf.DefaultClient())
+	trace.Init()
+
+	if err := config.Validate(); err != nil {
+		log.Fatalf("Failed to load configuration: %s", err)
+	}
+
+	if config.sanityCheck {
 		fmt.Print("Running sanity check...")
-		if err := symbols.SanityCheck(); err != nil {
+		if err := sqlite.SanityCheck(); err != nil {
 			fmt.Println("failed ❌", err)
 			os.Exit(1)
 		}
@@ -53,112 +70,54 @@ func main() {
 		os.Exit(0)
 	}
 
-	env.Lock()
-	env.HandleHelpFlag()
-	log.SetFlags(0)
-	conf.Init()
-	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
-	trace.Init()
+	// Initialize tracing/metrics
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
 
-	// Ready immediately
+	// Start debug server
 	ready := make(chan struct{})
-	close(ready)
 	go debugserver.NewServerRoutine(ready).Start()
 
-	service := symbols.Service{
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-			return gitserver.DefaultClient.Archive(ctx, repo, gitserver.ArchiveOptions{Treeish: string(commit), Format: "tar", Paths: paths})
-		},
-		GitDiff: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (*symbols.Changes, error) {
-			output, err := git.DiffSymbols(ctx, repo, commitA, commitB)
-			if err != nil {
-				return nil, err
-			}
+	ctagsParserFactory := parser.NewCtagsParserFactory(
+		config.ctagsCommand,
+		config.ctagsPatternLengthLimit,
+		config.ctagsLogErrors,
+		config.ctagsDebugLogs,
+	)
 
-			// The output is a repeated sequence of:
-			//
-			//     <status> NUL <path> NUL
-			//
-			// where NUL is the 0 byte.
-			//
-			// Example:
-			//
-			//     M NUL cmd/symbols/internal/symbols/fetch.go NUL
-
-			changes := symbols.NewChanges()
-			slices := bytes.Split(output, []byte{0})
-			for i := 0; i < len(slices)-1; i += 2 {
-				statusIdx := i
-				fileIdx := i + 1
-
-				if len(slices[statusIdx]) == 0 {
-					return nil, fmt.Errorf("unrecognized git diff output (from repo %q, commitA %q, commitB %q): status was empty at index %d", repo, commitA, commitB, i)
-				}
-
-				status := slices[statusIdx][0]
-				path := string(slices[fileIdx])
-
-				switch status {
-				case 'A':
-					changes.Added = append(changes.Added, path)
-				case 'M':
-					changes.Modified = append(changes.Modified, path)
-				case 'D':
-					changes.Deleted = append(changes.Deleted, path)
-				}
-			}
-
-			return &changes, nil
-		},
-		NewParser: symbols.NewParser,
-		Path:      cacheDir,
+	cache := &diskcache.Store{
+		Dir:               config.cacheDir,
+		Component:         "symbols",
+		BackgroundTimeout: 20 * time.Minute,
 	}
-	if mb, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
-		log.Fatalf("Invalid SYMBOLS_CACHE_SIZE_MB: %s", err)
-	} else {
-		service.MaxCacheSizeBytes = mb * 1000 * 1000
-	}
-	var err error
-	service.NumParserProcesses, err = strconv.Atoi(ctagsProcesses)
+
+	parserPool, err := parser.NewParserPool(ctagsParserFactory, config.numCtagsProcesses)
 	if err != nil {
-		log.Fatalf("Invalid CTAGS_PROCESSES: %s", err)
-	}
-	if err := service.Start(); err != nil {
-		log.Fatalln("Start:", err)
+		log.Fatalf("Failed to parser pool: %s", err)
 	}
 
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(service.Handler(), conf.DefaultClient()))
+	database.Init()
+	gitserverClient := gitserver.NewClient(observationContext)
+	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
+	parser := parser.NewParser(parserPool, repositoryFetcher, observationContext)
+	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
+	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
+	apiHandler := api.NewHandler(cachedDatabaseWriter, observationContext)
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
-	addr := net.JoinHostPort(host, port)
-	server := &http.Server{
+	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Addr:         addr,
-		Handler:      handler,
-	}
-	go shutdownOnSIGINT(server)
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(apiHandler, conf.DefaultClient())),
+	})
 
-	log15.Info("symbols: listening", "addr", addr)
-	err = server.ListenAndServe()
-	if err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
-}
+	evictionInterval := time.Second * 10
+	cacheSizeBytes := int64(config.cacheSizeMB) * 1000 * 1000
+	cacheEvicter := janitor.NewCacheEvicter(evictionInterval, cache, cacheSizeBytes, janitor.NewMetrics(observationContext))
 
-func shutdownOnSIGINT(s *http.Server) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	err := s.Shutdown(ctx)
-	if err != nil {
-		log.Fatal("graceful server shutdown failed, will exit:", err)
-	}
+	// Mark health server as ready and go!
+	close(ready)
+	goroutine.MonitorBackgroundRoutines(context.Background(), server, cacheEvicter)
 }

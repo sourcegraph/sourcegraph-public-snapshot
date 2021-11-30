@@ -804,6 +804,9 @@ commandsets:
       - minio
       - precise-code-intel-worker
       - codeintel-executor
+      - jaeger
+      - grafana
+      - prometheus
 
   enterprise-codeinsights:
     requiresDevPrivate: true

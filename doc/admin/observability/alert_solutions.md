@@ -4145,52 +4145,6 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
-## symbols: store_fetch_failures
-
-<p class="subtitle">store fetch failures every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 5+ store fetch failures every 5m
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-store-fetch-failures).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_store_fetch_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<br />
-
-## symbols: current_fetch_queue_size
-
-<p class="subtitle">current fetch queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 25+ current fetch queue size
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-current-fetch-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_current_fetch_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<br />
-
 ## symbols: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
