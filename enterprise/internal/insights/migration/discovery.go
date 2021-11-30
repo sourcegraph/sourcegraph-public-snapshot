@@ -22,21 +22,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 )
 
-func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) ([]insights.LangStatsInsight, error) {
+const schemaErrorPrefix = "insights oob migration schema error"
+
+func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) []insights.LangStatsInsight {
 	prefix := "codeStatsInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.LangStatsInsight, 0)
 
 	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
-		return nil, err
+		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "language usage insights failed to migrate due to unrecognized schema")
+		return results
 	}
 
 	for id, body := range raw {
 		var temp insights.LangStatsInsight
 		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
-			// a deprecated schema collides with this field name, so skip any deserialization errors
+			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "language usage insight failed to migrate due to unrecognized schema")
 			continue
 		}
 		temp.UserID = settingsRow.Subject.User
@@ -44,24 +47,25 @@ func getLangStatsInsights(ctx context.Context, settingsRow api.Settings) ([]insi
 		results = append(results, temp)
 	}
 
-	return results, nil
+	return results
 }
 
-func getFrontendInsights(ctx context.Context, settingsRow api.Settings) ([]insights.SearchInsight, error) {
+func getFrontendInsights(ctx context.Context, settingsRow api.Settings) []insights.SearchInsight {
 	prefix := "searchInsights."
 	var raw map[string]json.RawMessage
 	results := make([]insights.SearchInsight, 0)
 
 	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
-		return nil, err
+		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "search insights failed to migrate due to unrecognized schema")
+		return results
 	}
 
 	for id, body := range raw {
 		var temp insights.SearchInsight
 		temp.ID = makeUniqueId(id, settingsRow.Subject)
 		if err := json.Unmarshal(body, &temp); err != nil {
-			// a deprecated schema collides with this field name, so skip any deserialization errors
+			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "search insight failed to migrate due to unrecognized schema")
 			continue
 		}
 		temp.UserID = settingsRow.Subject.User
@@ -70,12 +74,11 @@ func getFrontendInsights(ctx context.Context, settingsRow api.Settings) ([]insig
 		results = append(results, temp)
 	}
 
-	return results, nil
+	return results
 }
 
-func getBackendInsights(ctx context.Context, setting api.Settings) ([]insights.SearchInsight, error) {
+func getBackendInsights(ctx context.Context, setting api.Settings) []insights.SearchInsight {
 	prefix := "insights.allrepos"
-	var multi error
 
 	results := make([]insights.SearchInsight, 0)
 	perms := permissionAssociations{
@@ -86,45 +89,42 @@ func getBackendInsights(ctx context.Context, setting api.Settings) ([]insights.S
 	var raw map[string]json.RawMessage
 	raw, err := insights.FilterSettingJson(setting.Contents, prefix)
 	if err != nil {
-		multi = multierror.Append(multi, err)
+		log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
+		return results
 	}
 
 	for _, val := range raw {
 		// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
-		temp, err := unmarshalBackendInsights(val, setting)
-		if err != nil {
-			// this isn't actually a total failure case, we could have partially parsed this dictionary.
-			multi = multierror.Append(multi, err)
+		temp := unmarshalBackendInsights(val, setting)
+		if len(temp) == 0 {
+			continue
 		}
 		results = append(results, temp.Insights(perms)...)
 	}
 
-	if multi != nil {
-		log15.Error("insights: deserialization errors parsing integrated insights", "error", multi)
-	}
-
-	return results, nil
+	return results
 }
 
-func getDashboards(ctx context.Context, settingsRow api.Settings) ([]insights.SettingDashboard, error) {
+func getDashboards(ctx context.Context, settingsRow api.Settings) []insights.SettingDashboard {
 	prefix := "insights.dashboards"
 
 	results := make([]insights.SettingDashboard, 0)
 	var raw map[string]json.RawMessage
 	raw, err := insights.FilterSettingJson(settingsRow.Contents, prefix)
 	if err != nil {
-		return nil, err
+		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
+		return results
 	}
 	for _, val := range raw {
 		// iterate for each instance of the prefix key in the settings. This should never be len > 1, but it's technically a map.
-		temp, err := unmarshalDashboard(val, settingsRow)
-		if err != nil {
+		temp := unmarshalDashboard(val, settingsRow)
+		if len(temp) == 0 {
 			continue
 		}
 		results = append(results, temp...)
 	}
 
-	return results, nil
+	return results
 }
 
 type permissionAssociations struct {
@@ -149,40 +149,40 @@ func (i IntegratedInsights) Insights(perms permissionAssociations) []insights.Se
 	return results
 }
 
-func unmarshalBackendInsights(raw json.RawMessage, setting api.Settings) (IntegratedInsights, error) {
+func unmarshalBackendInsights(raw json.RawMessage, setting api.Settings) IntegratedInsights {
 	var dict map[string]json.RawMessage
-	var multi error
 	result := make(IntegratedInsights)
 
 	if err := json.Unmarshal(raw, &dict); err != nil {
-		return result, err
+		log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insights failed to migrate due to unrecognized schema")
+		return result
 	}
 
 	for id, body := range dict {
 		var temp insights.SearchInsight
 		if err := json.Unmarshal(body, &temp); err != nil {
-			multi = multierror.Append(multi, err)
+			log15.Error(schemaErrorPrefix, "owner", getOwnerName(setting), "error msg", "search insight failed to migrate due to unrecognized schema")
 			continue
 		}
 		result[makeUniqueId(id, setting.Subject)] = temp
 	}
 
-	return result, multi
+	return result
 }
 
-func unmarshalDashboard(raw json.RawMessage, settingsRow api.Settings) ([]insights.SettingDashboard, error) {
+func unmarshalDashboard(raw json.RawMessage, settingsRow api.Settings) []insights.SettingDashboard {
 	var dict map[string]json.RawMessage
-	var multi error
 	result := []insights.SettingDashboard{}
 
 	if err := json.Unmarshal(raw, &dict); err != nil {
-		return result, err
+		log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
+		return result
 	}
 
 	for id, body := range dict {
 		var temp insights.SettingDashboard
 		if err := json.Unmarshal(body, &temp); err != nil {
-			multi = multierror.Append(multi, err)
+			log15.Error(schemaErrorPrefix, "owner", getOwnerName(settingsRow), "error msg", "dashboard failed to migrate due to unrecognized schema")
 			continue
 		}
 		temp.ID = id
@@ -192,7 +192,7 @@ func unmarshalDashboard(raw json.RawMessage, settingsRow api.Settings) ([]insigh
 		result = append(result, temp)
 	}
 
-	return result, multi
+	return result
 }
 
 func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.SearchInsight, batch migrationBatch) (int, error) {
@@ -203,6 +203,7 @@ func (m *migrator) migrateInsights(ctx context.Context, toMigrate []insights.Sea
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
 			// skippable error
 			count++
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(d), "error msg", "insight failed to migrate due to missing id")
 			continue
 		}
 		insight, err := m.insightStore.Get(ctx, store.InsightQueryArgs{UniqueID: d.ID, WithoutAuthorization: true})
@@ -233,6 +234,7 @@ func (m *migrator) migrateLangStatsInsights(ctx context.Context, toMigrate []ins
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
 			// since it can never be migrated, we count it towards the total
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromLangStatsInsight(d), "error msg", "insight failed to migrate due to missing id")
 			count++
 			continue
 		}
@@ -321,6 +323,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			if temp.Repositories == nil {
 				// this shouldn't be possible, but if for some reason we get here there is a malformed schema
 				// we can't do anything to fix this, so skip this insight
+				log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromInsight(from), "error msg", "insight failed to migrate due to missing repositories")
 				return nil
 			}
 			interval := parseTimeInterval(from)
@@ -348,7 +351,6 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		} else if exists && batch == backend {
 			oldId := discovery.Encode(timeSeries)
 			series = matched
-			log15.Info("insights migration: existing data series identified, attempting to preserve time series", "series_id", series.SeriesID, "unique_id", from.ID)
 			silentErr := updateSeriesId(tx, ctx, oldId, temp.SeriesID)
 			if silentErr != nil {
 				// it failed - not a big deal. This will get solved if / when this series is ever updated, it will just require a recalculation.
@@ -419,6 +421,7 @@ func (m *migrator) migrateDashboards(ctx context.Context, toMigrate []insights.S
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
 			// since it can never be migrated, we count it towards the total
+			log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromDashboard(d), "error msg", "dashboard failed to migrate due to missing id")
 			count++
 			continue
 		}
@@ -480,4 +483,52 @@ func makeUniqueId(id string, subject api.SettingsSubject) string {
 	} else {
 		return id
 	}
+}
+
+func getOwnerName(settingsRow api.Settings) string {
+	name := ""
+	if settingsRow.Subject.User != nil {
+		name = fmt.Sprintf("user id %d", *settingsRow.Subject.User)
+	} else if settingsRow.Subject.Org != nil {
+		name = fmt.Sprintf("org id %d", *settingsRow.Subject.Org)
+	} else {
+		name = "global"
+	}
+	return name
+}
+
+func getOwnerNameFromInsight(insight insights.SearchInsight) string {
+	name := ""
+	if insight.UserID != nil {
+		name = fmt.Sprintf("user id %d", *insight.UserID)
+	} else if insight.OrgID != nil {
+		name = fmt.Sprintf("org id %d", *insight.OrgID)
+	} else {
+		name = "global"
+	}
+	return name
+}
+
+func getOwnerNameFromLangStatsInsight(insight insights.LangStatsInsight) string {
+	name := ""
+	if insight.UserID != nil {
+		name = fmt.Sprintf("user id %d", *insight.UserID)
+	} else if insight.OrgID != nil {
+		name = fmt.Sprintf("org id %d", *insight.OrgID)
+	} else {
+		name = "global"
+	}
+	return name
+}
+
+func getOwnerNameFromDashboard(insight insights.SettingDashboard) string {
+	name := ""
+	if insight.UserID != nil {
+		name = fmt.Sprintf("user id %d", *insight.UserID)
+	} else if insight.OrgID != nil {
+		name = fmt.Sprintf("org id %d", *insight.OrgID)
+	} else {
+		name = "global"
+	}
+	return name
 }
