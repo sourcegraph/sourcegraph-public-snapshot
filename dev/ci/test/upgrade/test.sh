@@ -85,7 +85,7 @@ check_available() {
   done"
 }
 for URL in {"http://localhost:7080","http://localhost:7080/healthz"}; do
-  check_available $URL
+  check_available "$URL"
   # shellcheck disable=SC2181
   if [ $? -ne 0 ]; then
     echo "^^^ +++"
@@ -94,7 +94,7 @@ for URL in {"http://localhost:7080","http://localhost:7080/healthz"}; do
     exit 1
   fi
   echo "Waiting for $URL... done"
-done;
+done
 
 echo "--- TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
