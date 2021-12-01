@@ -145,7 +145,7 @@ export const SearchNotebookFileBlockInputs: React.FunctionComponent<SearchNotebo
                     dataTestId="file-block-file-path-input"
                 />
             </div>
-            <div className="d-flex mt-2">
+            <div className="d-flex mt-3">
                 {showRevisionInput && (
                     <div className="w-50 mr-2">
                         <label htmlFor={`file-revision-input-${id}`}>Revision</label>
