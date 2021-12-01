@@ -76,11 +76,11 @@ jobs:
           echo "::set-output name=cache::$(go env GOCACHE)"
           echo "::set-output name=modcache::$(go env GOMODCACHE)"
 
-      - name: Get asset name
-        id: asset
-        run: echo "::set-output name=filename::sg_${GOOS}_${GOARCH}${GOEXE}"
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
+      # - name: Get asset name
+      #   id: asset
+      #   run: echo "::set-output name=filename::sg_${GOOS}_${GOARCH}${GOEXE}"
+      #   env:
+      #     GOEXE: ${{ steps.go-env.outputs.exe }}
 
       - name: Build release asset for macOS
         if: startsWith(matrix.os, 'macos-') == true
@@ -88,37 +88,37 @@ jobs:
           cd dev/sg
           export CGO_ENABLED=1
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          go install -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          go build -o "sg_$(go env GOOS)_$(go env GOARCH)" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Build release asset for Linux
         if: startsWith(matrix.os, 'ubuntu-') == true
         run: |
           cd dev/sg
           export CGO_ENABLED=1
-          go install -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          go build -o "sg_$(go env GOOS)_$(go env GOARCH)" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
-      - name: Move asset to GOPATH/bin
-        if: ${{ steps.go-env.outputs.hostos != matrix.os || steps.go-env.outputs.hostarch != matrix.arch }}
-        working-directory: ${{ steps.go-env.outputs.path }}/bin/${{ matrix.os }}_${{ matrix.arch }}
-        run: mv sg"${GOEXE}" ..
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
+      # - name: Move asset to GOPATH/bin
+      #   if: ${{ steps.go-env.outputs.hostos != matrix.os || steps.go-env.outputs.hostarch != matrix.arch }}
+      #   working-directory: ${{ steps.go-env.outputs.path }}/bin/${{ matrix.os }}_${{ matrix.arch }}
+      #   run: mv sg"${GOEXE}" ..
+      #   env:
+      #     GOEXE: ${{ steps.go-env.outputs.exe }}
 
-      - name: Move asset to workspace
-        working-directory: ${{ steps.go-env.outputs.path }}/bin
-        run: mv sg"${GOEXE}" "${workspace}"/"${filename}"
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
-          workspace: ${{ github.workspace }}
-          filename: ${{ steps.asset.outputs.filename }}
+      # - name: Move asset to workspace
+      #   working-directory: ${{ steps.go-env.outputs.path }}/bin
+      #   run: mv sg"${GOEXE}" "${workspace}"/"${filename}"
+      #   env:
+      #     GOEXE: ${{ steps.go-env.outputs.exe }}
+      #     workspace: ${{ github.workspace }}
+      #     filename: ${{ steps.asset.outputs.filename }}
 
       - name: Upload release asset
         run: |
-          release_name="${{ needs.create_release.outputs.release_name }}"
-
+          # release_name="${{ needs.create_release.outputs.release_name }}"
+          ls -l .
           echo "filename=${filename}"
           # gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
           repo: sourcegraph/sg
-          filename: ${{ steps.asset.outputs.filename }}
+          # filename: ${{ steps.asset.outputs.filename }}
           # GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}
