@@ -29,7 +29,7 @@ jobs:
           # ATTENTION: release_name is a duplicate from the last step in this
           # file, because I can't get workflow outputs to work. If you change
           # one, make sure you change the other.
-          release_name="THORSTEN-TESTING"
+          release_name="${today}-${short_sha}"
 
           echo "### sg snapshot release" >> /tmp/release-notes.md
           echo "" >> /tmp/release-notes.md
@@ -76,7 +76,6 @@ jobs:
           cd dev/sg
           export CGO_ENABLED=1
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          go env
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Build and upload Linux
@@ -84,14 +83,12 @@ jobs:
         run: |
           cd dev/sg
           export CGO_ENABLED=1
-          go env
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Upload release asset
         run: |
           cd dev/sg
           release_name="${{ needs.create_release.outputs.release_name }}"
-          go env
           gh release upload -R="${repo}" ${release_name} "sg_$(go env GOOS)_${{ matrix.arch }}"
         env:
           repo: sourcegraph/sg
