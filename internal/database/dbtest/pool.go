@@ -33,7 +33,7 @@ func newTestDatabasePool(db *sql.DB) *testDatabasePool {
 	}
 }
 
-const poolSchemaVersion = 1
+const poolSchemaVersion = 2
 const poolSchema = `
 BEGIN;
 
@@ -56,7 +56,7 @@ CREATE TABLE schema_version (
 	version int NOT NULL
 );
 
-INSERT INTO schema_version (version) VALUES (1);
+INSERT INTO schema_version (version) VALUES (2);
 	
 COMMIT;
 `
