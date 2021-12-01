@@ -1,20 +1,23 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useRef, useState } from 'react'
 
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { CatalogEntityIcon } from '../../../enterprise/catalog/components/CatalogEntityIcon'
+import { Popover } from '../../../enterprise/insights/components/popover/Popover'
 import {
     RepositoryFields,
     TreeEntryCatalogEntityResult,
     TreeEntryCatalogEntityVariables,
+    TreeEntryCatalogEntityFields,
 } from '../../../graphql-operations'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 import styles from './CatalogEntityAction.module.scss'
 import { TREE_ENTRY_CATALOG_ENTITY } from './gql'
+import { CatalogEntityStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-list/EntityList'
 
 // TODO(sqs): LICENSE move to enterprise/
 
@@ -61,24 +64,51 @@ export const CatalogEntityAction: React.FunctionComponent<Props & RepoHeaderCont
         return null
     }
 
-    const catalogEntity = catalogEntities[0]
-
-    const icon = <CatalogEntityIcon entity={catalogEntity} className="icon-inline mr-1" />
+    const entity = catalogEntities[0]
 
     if (props.actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink to={catalogEntity.url} className="btn" file={true}>
-                {icon} {catalogEntity.name} (in catalog)
+            <RepoHeaderActionButtonLink to={entity.url} className="btn" file={true}>
+                <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name} (in catalog)
             </RepoHeaderActionButtonLink>
         )
     }
 
     return (
-        <RepoHeaderActionButtonLink
-            to={catalogEntity.url}
-            className={classNames('btn btn-icon small border border-primary', styles.btn)}
-        >
-            {icon} {catalogEntity.name}
-        </RepoHeaderActionButtonLink>
+        <CatalogEntityActionPopoverButton
+            entity={entity}
+            buttonClassName={classNames('btn btn-icon small border border-primary', styles.btn)}
+        />
+    )
+}
+
+const CatalogEntityActionPopoverButton: React.FunctionComponent<{
+    entity: TreeEntryCatalogEntityFields['catalogEntities'][0]
+    buttonClassName?: string
+}> = ({ entity, buttonClassName }) => {
+    const targetButtonReference = useRef<HTMLButtonElement>(null)
+    const [isOpen, setIsOpen] = useState(false)
+
+    return (
+        <>
+            <div ref={targetButtonReference}>
+                <RepoHeaderActionButtonLink to={entity.url} className={buttonClassName}>
+                    <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                </RepoHeaderActionButtonLink>
+            </div>
+            <Popover
+                isOpen={isOpen}
+                target={targetButtonReference}
+                interaction="hover"
+                onVisibilityChange={setIsOpen}
+                className="p-2"
+            >
+                <h4>
+                    <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                    <CatalogEntityStateIndicator entity={entity} className="ml-1" />
+                </h4>
+                {entity.description && <p>{entity.description}</p>}
+            </Popover>
+        </>
     )
 }

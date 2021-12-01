@@ -18,6 +18,7 @@ import {
     CatalogEntitiesResult,
     CatalogEntitiesVariables,
     CatalogEntityFields,
+    CatalogEntityStateFields,
     CatalogEntityStatusState,
 } from '../../../../../../graphql-operations'
 import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
@@ -126,16 +127,21 @@ const CatalogEntity: React.FunctionComponent<{
                 {node.name}
             </Link>
         </h3>
-        {size === 'lg' && (
-            <span className={`ml-2 text-${STATE_TO_COLOR[node.status.state]}`}>
-                {node.status.state === CatalogEntityStatusState.SUCCESS
-                    ? '\u2713'
-                    : node.status.state === CatalogEntityStatusState.FAILURE ||
-                      node.status.state === CatalogEntityStatusState.ERROR
-                    ? '\u00D7'
-                    : node.status.state.toLowerCase()}
-            </span>
-        )}
+        {size === 'lg' && <CatalogEntityStateIndicator entity={node} />}
         <div className="flex-1" />
     </li>
+)
+
+export const CatalogEntityStateIndicator: React.FunctionComponent<{
+    entity: CatalogEntityStateFields
+    className?: string
+}> = ({ entity, className }) => (
+    <span className={classNames(`ml-2 text-${STATE_TO_COLOR[entity.status.state]}`, className)}>
+        {entity.status.state === CatalogEntityStatusState.SUCCESS
+            ? '\u2713'
+            : entity.status.state === CatalogEntityStatusState.FAILURE ||
+              entity.status.state === CatalogEntityStatusState.ERROR
+            ? '\u00D7'
+            : entity.status.state.toLowerCase()}
+    </span>
 )

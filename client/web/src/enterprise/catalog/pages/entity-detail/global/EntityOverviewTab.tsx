@@ -22,7 +22,7 @@ import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
-import { OverviewStatusContexts, UsageStatusContext } from './OverviewStatusContexts'
+import { OverviewStatusContexts } from './OverviewStatusContexts'
 
 interface Props extends EntityDetailContentCardProps {
     entity: CatalogEntityDetailFields

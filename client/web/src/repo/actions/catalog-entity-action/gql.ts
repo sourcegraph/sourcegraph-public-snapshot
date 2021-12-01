@@ -1,4 +1,5 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { CATALOG_ENTITY_STATE_FRAGMENT } from '../../../enterprise/catalog/pages/overview/components/entity-list/gql'
 
 // TODO(sqs): only works for blobs not trees right now
 
@@ -27,6 +28,9 @@ export const TREE_ENTRY_CATALOG_ENTITY = gql`
             ... on CatalogComponent {
                 kind
             }
+            ...CatalogEntityStateFields
         }
     }
+
+    ${CATALOG_ENTITY_STATE_FRAGMENT}
 `
