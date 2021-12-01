@@ -57,7 +57,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
 
 	insightsMigrator := migration.NewMigrator(timescale, postgres)
-	// TODO: The int id should be gotten from somewhere else I think. It needs to map to the one we create in the db table.
+	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
 	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
 		log.Fatalf("failed to register settings migration job: %v", err)
 	}

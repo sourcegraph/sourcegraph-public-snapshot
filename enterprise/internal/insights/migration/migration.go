@@ -8,7 +8,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
@@ -112,7 +111,6 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 		return false, err
 	}
 	if allComplete {
-		log15.Info("insights migration: All jobs complete", "type", string(jobType))
 		return true, nil
 	}
 	jobs, err := jobStoreTx.GetNextSettingsMigrationJobs(ctx, jobType)
@@ -120,7 +118,6 @@ func (m *migrator) performBatchMigration(ctx context.Context, jobType store.Sett
 		return false, err
 	}
 	if len(jobs) == 0 {
-		log15.Info("insights migration: All jobs locked, but not complete", "type", string(jobType))
 		return false, nil
 	}
 
@@ -192,18 +189,9 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		return nil
 	}
 
-	langStatsInsights, err := getLangStatsInsights(ctx, *settings)
-	if err != nil {
-		return err
-	}
-	frontendInsights, err := getFrontendInsights(ctx, *settings)
-	if err != nil {
-		return err
-	}
-	backendInsights, err := getBackendInsights(ctx, *settings)
-	if err != nil {
-		return err
-	}
+	langStatsInsights := getLangStatsInsights(ctx, *settings)
+	frontendInsights := getFrontendInsights(ctx, *settings)
+	backendInsights := getBackendInsights(ctx, *settings)
 
 	// here we are constructing a total set of all of the insights defined in this specific settings block. This will help guide us
 	// to understand which insights are created here, versus which are referenced from elsewhere. This will be useful for example
@@ -249,10 +237,7 @@ func (m *migrator) performMigrationForRow(ctx context.Context, jobStoreTx *store
 		}
 	}
 
-	dashboards, err := getDashboards(ctx, *settings)
-	if err != nil {
-		return err
-	}
+	dashboards := getDashboards(ctx, *settings)
 	totalDashboards := len(dashboards)
 	if totalDashboards != job.MigratedDashboards {
 		err = jobStoreTx.UpdateTotalDashboards(ctx, job.UserId, job.OrgId, totalDashboards)
