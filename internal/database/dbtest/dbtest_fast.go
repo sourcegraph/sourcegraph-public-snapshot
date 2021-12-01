@@ -20,21 +20,9 @@ func NewFastDB(t testing.TB) *sql.DB {
 	}
 	t.Helper()
 
-	u, err := url.Parse(getDSN())
+	pool, u, err := getDefaultPool()
 	if err != nil {
-		t.Fatalf("failed to parse dsn: %s", err)
-	}
-	updateDSNFromEnv(u)
-
-	pool, err := newPoolFromURL(u)
-	if err != nil {
-		t.Fatalf("failed to create new pool: %s", err)
-	}
-	t.Cleanup(func() { pool.db.Close() })
-
-	err = cleanOldDBs(pool)
-	if err != nil {
-		t.Fatalf("failed to clean old dbs: %s", err)
+		t.Fatalf("error getting pool: %s", err)
 	}
 
 	return newFromPool(t, u, pool)
@@ -54,16 +42,11 @@ func NewFastDBWithDSN(t testing.TB, dsn string) *sql.DB {
 	}
 	updateDSNFromEnv(u)
 
-	pool, err := newPoolFromURL(u)
+	pool, closeDB, err := newPoolFromURL(u)
 	if err != nil {
 		t.Fatalf("failed to create new pool: %s", err)
 	}
-	t.Cleanup(func() { pool.db.Close() })
-
-	err = cleanOldDBs(pool)
-	if err != nil {
-		t.Fatalf("failed to clean old dbs: %s", err)
-	}
+	t.Cleanup(closeDB)
 
 	return newFromPool(t, u, pool)
 }
@@ -76,24 +59,39 @@ func NewFastTx(t testing.TB) *sql.Tx {
 	}
 	t.Helper()
 
-	u, err := url.Parse(getDSN())
+	pool, u, err := getDefaultPool()
 	if err != nil {
-		t.Fatalf("failed to parse dsn: %s", err)
-	}
-	updateDSNFromEnv(u)
-
-	pool, err := newPoolFromURL(u)
-	if err != nil {
-		t.Fatalf("failed to create new pool: %s", err)
-	}
-	t.Cleanup(func() { pool.db.Close() })
-
-	err = cleanOldDBs(pool)
-	if err != nil {
-		t.Fatalf("failed to clean old dbs: %s", err)
+		t.Fatalf("error getting pool: %s", err)
 	}
 
 	return newTxFromPool(t, u, pool)
+}
+
+var (
+	defaultOnce sync.Once
+	defaultPool *testDatabasePool
+	defaultURL  *url.URL
+	defaultErr  error
+)
+
+// getDefaultPool returns a pool initialized once per process. This keeps
+// us from opening a ton of parallel database connections per process.
+func getDefaultPool() (*testDatabasePool, *url.URL, error) {
+	defaultOnce.Do(func() {
+		defaultURL, defaultErr = url.Parse(getDSN())
+		if defaultErr != nil {
+			return
+		}
+		updateDSNFromEnv(defaultURL)
+
+		defaultPool, _, defaultErr = newPoolFromURL(defaultURL)
+		if defaultErr != nil {
+			return
+		}
+
+		defaultErr = defaultPool.CleanUpOldDBs(context.Background(), dbconn.Frontend, dbconn.CodeIntel)
+	})
+	return defaultPool, defaultURL, defaultErr
 }
 
 func getDSN() string {
@@ -102,19 +100,6 @@ func getDSN() string {
 	}
 
 	return `postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC`
-}
-
-var (
-	cleanupOnce sync.Once
-	cleanupErr  error
-)
-
-// Once per test process, we check for any databases from old migrations and clean them up
-func cleanOldDBs(pool *testDatabasePool) error {
-	cleanupOnce.Do(func() {
-		cleanupErr = pool.CleanUpOldDBs(context.Background(), dbconn.Frontend, dbconn.CodeIntel)
-	})
-	return cleanupErr
 }
 
 func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
@@ -195,10 +180,10 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 	return &uCopy
 }
 
-func newPoolFromURL(u *url.URL) (*testDatabasePool, error) {
+func newPoolFromURL(u *url.URL) (*testDatabasePool, func(), error) {
 	db, err := dbconn.New(dbconn.Opts{DSN: u.String()})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer db.Close()
 
@@ -209,27 +194,27 @@ func newPoolFromURL(u *url.URL) (*testDatabasePool, error) {
 	poolDBURL := urlWithDB(u, "dbtest_pool")
 	poolDB, err := dbconn.New(dbconn.Opts{DSN: poolDBURL.String()})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if !poolSchemaUpToDate(poolDB) {
 		poolDB.Close()
 		if _, err = db.Exec("DROP DATABASE dbtest_pool"); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if _, err = db.Exec("CREATE DATABASE dbtest_pool"); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		poolDB, err = dbconn.New(dbconn.Opts{DSN: poolDBURL.String()})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		if err := migratePoolDB(poolDB); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	return &testDatabasePool{Store: basestore.NewWithDB(db)}, nil
+	return &testDatabasePool{Store: basestore.NewWithDB(poolDB, sql.TxOptions{})}, func() { db.Close() }, nil
 }

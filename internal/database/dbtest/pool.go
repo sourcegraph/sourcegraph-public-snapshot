@@ -75,8 +75,8 @@ func (t *testDatabasePool) Transact(ctx context.Context) (*testDatabasePool, err
 }
 
 type TemplateDB struct {
-	ID            uint64
-	MigrationHash uint64
+	ID            int64
+	MigrationHash int64
 	Name          string
 	CreatedAt     time.Time
 	LastUsedAt    time.Time
@@ -108,12 +108,16 @@ RETURNING %s
 // migrated. If no template database exists with the same hash as the given migrations, a new template
 // database is created and the migrations are run.
 func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...*dbconn.Database) (_ *TemplateDB, err error) {
+	// Create a transaction so the exclusive lock is dropped at the end of this function.
 	tx, err := t.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = t.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
+	// Create an exclusive lock because we want exactly one template database per hash,
+	// and that's difficult to guarantee _and_ guarantee that we don't create the row
+	// until the template database is created and fully migrated.
 	err = tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE template_dbs IN ACCESS EXCLUSIVE MODE"))
 	if err != nil {
 		return nil, err
@@ -176,8 +180,8 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 }
 
 type MigratedDB struct {
-	ID       uint64
-	Template uint64
+	ID       int64
+	Template int64
 	Claimed  bool
 	Clean    bool
 	Name     string
@@ -206,6 +210,7 @@ WHERE id = (
 	WHERE claimed = false
 		AND clean = true
 	LIMIT 1
+	FOR UPDATE
 )
 RETURNING %s
 `
@@ -214,11 +219,13 @@ RETURNING %s
 // clean database already exists for the given template, that is claimed and returned. If it does not, a new
 // database is created from the given template and returned.
 func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (_ *MigratedDB, err error) {
+	// Run this in a transaction so if creating the database
+	// fails, creating the row is rolled back
 	tx, err := t.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = t.Done(err) }()
+	defer func() { err = tx.Done(err) }()
 
 	// Check to see if there is a clean, migrated DB already available
 	q := sqlf.Sprintf(
@@ -398,7 +405,7 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 // hashMigrations deterministically hashes all the migrations in the given
 // database definitions. This is used to determine whether a new template
 // database should be created for the given set of migrations.
-func hashMigrations(defs ...*dbconn.Database) (uint64, error) {
+func hashMigrations(defs ...*dbconn.Database) (int64, error) {
 	hash := fnv.New64()
 	for _, def := range defs {
 		root, err := def.FS.Open(".")
@@ -427,7 +434,7 @@ func hashMigrations(defs ...*dbconn.Database) (uint64, error) {
 			}
 		}
 	}
-	return hash.Sum64(), nil
+	return int64(hash.Sum64()), nil
 }
 
 func scanTemplateDBs(rows *sql.Rows) ([]*TemplateDB, error) {
