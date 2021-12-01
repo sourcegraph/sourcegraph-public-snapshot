@@ -6,13 +6,10 @@ import (
 	"database/sql"
 	"fmt"
 	"hash/crc32"
-	"hash/fnv"
-	"io"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -21,27 +18,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
-
-// MockHashPassword if non-nil is used instead of database.hashPassword. This is useful
-// when running tests since we can use a faster implementation.
-var (
-	MockHashPassword  func(password string) (sql.NullString, error)
-	MockValidPassword func(hash, password string) bool
-)
-
-func useFastPasswordMocks() {
-	// We can't care about security in tests, we care about speed.
-	MockHashPassword = func(password string) (sql.NullString, error) {
-		h := fnv.New64()
-		_, _ = io.WriteString(h, password)
-		return sql.NullString{Valid: true, String: strconv.FormatUint(h.Sum64(), 16)}, nil
-	}
-	MockValidPassword = func(hash, password string) bool {
-		h := fnv.New64()
-		_, _ = io.WriteString(h, password)
-		return hash == strconv.FormatUint(h.Sum64(), 16)
-	}
-}
 
 // BeforeTest functions are called before each test is run (by SetupGlobalTestDB).
 var BeforeTest []func()
@@ -55,7 +31,6 @@ var (
 // setupGlobalTestDB creates a temporary test DB handle, sets
 // `dbconn.Global` to it and setups other test configuration.
 func setupGlobalTestDB(t testing.TB) {
-	useFastPasswordMocks()
 
 	if testing.Short() {
 		t.Skip()
