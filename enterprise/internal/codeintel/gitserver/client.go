@@ -402,11 +402,6 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	return commitID, nil
 }
 
-// execGitCommand executes a git command for the given repository by identifier.
-func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
-	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
-}
-
 // execResolveRevGitCommand executes a git command for the given repository by identifier if the
 // given revision is resolvable prior to running the command.
 func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int, revision string, args ...string) (string, error) {
