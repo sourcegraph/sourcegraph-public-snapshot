@@ -90,6 +90,7 @@ type CatalogComponent implements Node & CatalogEntity {
     description: String
     lifecycle: CatalogEntityLifecycle!
     url: String!
+    status: CatalogEntityStatus!
     owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
 
