@@ -20,9 +20,10 @@ import (
 // See https://github.com/hexops/autogold for more information.
 
 func TestWriteDocumentationUpload(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+
+	// Get a documentation page we can use to test writes to the DB.
+	tmpStore := populateTestStore(t)
+
 	ctx := context.Background()
 
 	// Enable API docs search, so WriteDocumentationSearch is tested.
@@ -35,8 +36,6 @@ func TestWriteDocumentationUpload(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	// Get a documentation page we can use to test writes to the DB.
-	tmpStore := populateTestStore(t)
 	page, err := tmpStore.DocumentationPage(ctx, testBundleID, "/github.com/sourcegraph/lsif-go/internal/index")
 	if err != nil {
 		t.Fatal(err)
@@ -93,11 +92,7 @@ func TestWriteDocumentationUpload(t *testing.T) {
 }
 
 func TestWriteDocumentationPathInfo(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	ctx := context.Background()
-
 	db := dbtest.NewDB(t)
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
@@ -130,11 +125,7 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 }
 
 func TestWriteDocumentationMappings(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	ctx := context.Background()
-
 	db := dbtest.NewDB(t)
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 

@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -158,10 +157,11 @@ func serveRaw(db database.DB) handlerFunc {
 			w.Header().Set("Content-Type", contentType)
 			w.Header().Set("Content-Disposition", mime.FormatMediaType("Attachment", map[string]string{"filename": downloadName}))
 
-			format := vfsutil.ArchiveFormatZip
+			format := git.ArchiveFormatZip
 			if contentType == applicationXTar {
-				format = vfsutil.ArchiveFormatTar
+				format = git.ArchiveFormatTar
 			}
+
 			relativePath := strings.TrimPrefix(requestedPath, "/")
 			if relativePath == "" {
 				relativePath = "."
@@ -177,12 +177,11 @@ func serveRaw(db database.DB) handlerFunc {
 			metricRunning.Inc()
 			defer metricRunning.Dec()
 
-			f, err := openArchiveReader(r.Context(), vfsutil.ArchiveOpts{
-				Repo:         common.Repo.Name,
-				Commit:       common.CommitID,
-				Format:       format,
-				RelativePath: relativePath,
-			})
+			// NOTE: we do not use vfsutil since most archives are just streamed once so
+			// caching locally is not useful. Additionally we transfer the output over the
+			// internet, so we use default compression levels on zips (instead of no
+			// compression).
+			f, err := git.ArchiveReader(r.Context(), common.Repo.Name, format, common.CommitID, relativePath)
 			if err != nil {
 				return err
 			}
@@ -277,16 +276,6 @@ func serveRaw(db database.DB) handlerFunc {
 			return err
 		}
 	}
-}
-
-// openArchiveReader runs git archive and streams the output. Note: we do not
-// use vfsutil since most archives are just streamed once so caching locally
-// is not useful. Additionally we transfer the output over the internet, so we
-// use default compression levels on zips (instead of no compression).
-func openArchiveReader(ctx context.Context, opts vfsutil.ArchiveOpts) (io.ReadCloser, error) {
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(opts.Format), string(opts.Commit), opts.RelativePath)
-	cmd.Repo = opts.Repo
-	return gitserver.StdoutReader(ctx, cmd)
 }
 
 var metricRawDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{

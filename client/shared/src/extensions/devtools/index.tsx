@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback } from 'react'
 import { UncontrolledPopover } from 'reactstrap'
@@ -8,6 +9,7 @@ import { useLocalStorage } from '../../util/useLocalStorage'
 import { ExtensionsControllerProps } from '../controller'
 
 import { ActiveExtensionsPanel } from './ActiveExtensionsPanel'
+import styles from './index.module.scss'
 
 export interface ExtensionsDevelopmentToolsProps
     extends ExtensionsControllerProps,
@@ -34,7 +36,11 @@ const ExtensionDevelopmentTools: React.FunctionComponent<ExtensionsDevelopmentTo
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
 
     return (
-        <Tabs defaultIndex={tabIndex} className="extension-status card border-0 rounded-0" onChange={handleTabsChange}>
+        <Tabs
+            defaultIndex={tabIndex}
+            className={classNames('card border-0 rounded-0', styles.extensionStatus)}
+            onChange={handleTabsChange}
+        >
             <div className="tablist-wrapper w-100 align-items-center">
                 <TabList>
                     {TABS.map(({ label, id }) => (

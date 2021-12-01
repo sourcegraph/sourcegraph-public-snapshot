@@ -129,7 +129,8 @@ func mustInitializeDB() *sql.DB {
 	})
 
 	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "precise-code-intel-worker"}
-	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+	sqlDB, err := dbconn.New(opts)
+	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
 
@@ -139,7 +140,7 @@ func mustInitializeDB() *sql.DB {
 	ctx := context.Background()
 	go func() {
 		for range time.NewTicker(5 * time.Second).C {
-			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(dbconn.Global))
+			allowAccessByDefault, authzProviders, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), database.ExternalServices(sqlDB))
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -147,7 +148,7 @@ func mustInitializeDB() *sql.DB {
 	// END FLAILING
 	//
 
-	return dbconn.Global
+	return sqlDB
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
@@ -163,7 +164,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
+	if _, err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
 		log.Fatalf("Failed to perform codeintel database migration: %s", err)
 	}
 

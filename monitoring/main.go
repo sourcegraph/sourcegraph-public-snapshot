@@ -37,7 +37,6 @@ func main() {
 		definitions.GitHubProxy(),
 		definitions.Postgres(),
 		definitions.PreciseCodeIntelWorker(),
-		definitions.QueryRunner(),
 		definitions.Redis(),
 		definitions.Worker(),
 		definitions.RepoUpdater(),

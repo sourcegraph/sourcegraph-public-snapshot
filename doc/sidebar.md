@@ -53,9 +53,10 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Troubleshooting](admin/troubleshooting.md)
   - [How-to guides](admin/how-to/index.md)
 - [Development](dev/index.md)
-  - [Getting started](dev/getting-started/index.md)
+  - [Setup](dev/setup/index.md)
   - [How-to guides](dev/how-to/index.md)
   - [Background information](dev/background-information/index.md)
+  - [Contributing](dev/contributing.md)
 - <br/>
 - [★ Quick install](index.md#getting-started)
 - [★ Search query syntax](code_search/reference/queries.md)

@@ -31,7 +31,7 @@ var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{},
 		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
 	}
 
-	if err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
+	if _, err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
 		return nil, errors.Errorf("failed to perform codeintel database migration: %s", err)
 	}
 

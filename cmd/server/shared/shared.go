@@ -137,7 +137,6 @@ func Main() {
 		nginx,
 		`frontend: env CONFIGURATION_MODE=server frontend`,
 		gitserverLine,
-		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`searcher: searcher`,
 		`github-proxy: github-proxy`,

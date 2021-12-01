@@ -10,7 +10,8 @@ We keep this docs page up to date because pings are a vital component of our pro
 
 **Intended purpose:** To track how many times customers have created, edited, and removed insights, by week. 
 
-**Functional implementation:** This ping works by diffing settings files, because insight configs are currently stored in settings files. 
+**Functional implementation:** The current implementation of Code Insights stores insight configurations in settings files. This ping works by diffing settings files if users edit their settings in the setting editor at the setting edit page.
+Also, we track insight creating/editing/deleting events in the creation UI form and insight context menu component with standard telemetry service calls.
 
 **Other considerations:** This is an "imperfect" ping because not all additions + removals directly translate to a new insight or a deleted insight, due to the complications with using settings files as a source of truth. We'll be fixing this when we migrate to a backend database. Note also we're using this as a "total insights" metric for the same imperfect reason (additions - removals = total created) and when we migrate to the backend database we should build an additional separate ping that is just "total insights existing on the instance" per week. 
 

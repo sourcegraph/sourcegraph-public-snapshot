@@ -103,10 +103,6 @@ const (
 	// SourceBrowser indicates the request likely came from a web browser.
 	SourceBrowser SourceType = "browser"
 
-	// SourceQueryRunner indicates the request likely came from the
-	// query-runner service (saved searches).
-	SourceQueryRunner SourceType = "query-runner"
-
 	// SourceOther indicates the request likely came from a non-browser HTTP client.
 	SourceOther SourceType = "other"
 )

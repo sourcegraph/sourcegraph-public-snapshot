@@ -10,6 +10,7 @@ import { DEFAULT_SOURCEGRAPH_URL, getPlatformName } from '../../util/context'
 
 import { CodeHostContext } from './codeHost'
 import { SignInButton } from './SignInButton'
+import styles from './ViewOnSourcegraphButton.module.scss'
 
 export interface ViewOnSourcegraphButtonClassProps {
     className?: string
@@ -48,7 +49,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     onPrivateCloudError,
 }) => {
     className = classNames('open-on-sourcegraph', className)
-    const mutedIconClassName = classNames('open-on-sourcegraph__icon--muted', iconClassName)
+    const mutedIconClassName = classNames(styles.iconMuted, iconClassName)
     const commonProps: Partial<SourcegraphIconButtonProps> = {
         className,
         iconClassName,

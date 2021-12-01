@@ -160,6 +160,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         className="mt-2"
                         color="primary"
                         disabled={selectedSuggestedSearches.size === 0}
+                        data-testid="skipped-popover-form-submit-btn"
                     >
                         <SearchIcon className="icon-inline mr-1" />
                         Search again
