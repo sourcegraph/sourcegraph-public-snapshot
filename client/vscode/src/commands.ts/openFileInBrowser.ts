@@ -29,7 +29,8 @@ export async function openFileInBrowser(): Promise<void> {
     }
     const { remoteURL, branch, fileRelative } = repositoryInfo
 
-    const getSourcegraphUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
+    const getSourcegraphUrl =
+        vscode.workspace.getConfiguration('sourcegraph').get('url') || 'https://www.sourcegraph.com'
 
     // Open in browser.
     const finalUrl =
