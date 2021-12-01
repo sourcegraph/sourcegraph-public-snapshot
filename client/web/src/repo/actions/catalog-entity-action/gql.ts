@@ -1,4 +1,6 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { CATALOG_ENTITY_DETAIL_FRAGMENT } from '../../../enterprise/catalog/pages/entity-detail/global/gql'
 import { CATALOG_ENTITY_STATE_FRAGMENT } from '../../../enterprise/catalog/pages/overview/components/entity-list/gql'
 
 // TODO(sqs): only works for blobs not trees right now
@@ -29,8 +31,10 @@ export const TREE_ENTRY_CATALOG_ENTITY = gql`
                 kind
             }
             ...CatalogEntityStateFields
+            ...CatalogEntityDetailFields
         }
     }
 
     ${CATALOG_ENTITY_STATE_FRAGMENT}
+    ${CATALOG_ENTITY_DETAIL_FRAGMENT}
 `

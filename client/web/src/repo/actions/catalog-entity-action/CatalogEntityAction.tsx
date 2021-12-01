@@ -5,6 +5,9 @@ import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { CatalogEntityIcon } from '../../../enterprise/catalog/components/CatalogEntityIcon'
+import { OverviewStatusContexts } from '../../../enterprise/catalog/pages/entity-detail/global/OverviewStatusContexts'
+import { CatalogEntityStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-list/EntityList'
+import { positionBottomRight } from '../../../enterprise/insights/components/context-menu/utils'
 import { Popover } from '../../../enterprise/insights/components/popover/Popover'
 import {
     RepositoryFields,
@@ -17,7 +20,6 @@ import { RepoHeaderContext } from '../../RepoHeader'
 
 import styles from './CatalogEntityAction.module.scss'
 import { TREE_ENTRY_CATALOG_ENTITY } from './gql'
-import { CatalogEntityStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-list/EntityList'
 
 // TODO(sqs): LICENSE move to enterprise/
 
@@ -101,13 +103,16 @@ const CatalogEntityActionPopoverButton: React.FunctionComponent<{
                 target={targetButtonReference}
                 interaction="hover"
                 onVisibilityChange={setIsOpen}
-                className="p-2"
+                position={positionBottomRight}
+                className="p-3"
+                style={{ maxWidth: '50vw' }}
             >
-                <h4>
+                <h3>
                     <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
                     <CatalogEntityStateIndicator entity={entity} className="ml-1" />
-                </h4>
+                </h3>
                 {entity.description && <p>{entity.description}</p>}
+                <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
             </Popover>
         </>
     )

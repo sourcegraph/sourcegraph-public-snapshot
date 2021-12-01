@@ -112,7 +112,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = props => {
             role="dialog"
             {...otherProps}
         >
-            <FocusLock returnFocus={true}>{children}</FocusLock>
+            {interaction === 'click' ? <FocusLock returnFocus={true}>{children}</FocusLock> : children}
         </ReachPopover>
     )
 }

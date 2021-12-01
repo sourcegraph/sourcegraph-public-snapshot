@@ -224,7 +224,7 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
     }
 `
 
-const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
+export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
     fragment CatalogEntityDetailFields on CatalogEntity {
         __typename
         id
