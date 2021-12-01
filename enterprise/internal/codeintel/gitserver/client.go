@@ -307,7 +307,7 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 
 	id, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "git.ResolveRevision")
 	}
 
 	out, err := git.ReadFile(ctx, repo, id, file, 0)
