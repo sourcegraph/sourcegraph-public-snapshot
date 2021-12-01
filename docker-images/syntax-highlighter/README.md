@@ -246,14 +246,13 @@ $ cargo update -p syntect
 - Regular Expression (`re`)
 - reStructuredText (`rst`, `rest`)
 - Ruby (`rb`, `Appfile`, `Appraisals`, `Berksfile`, `Brewfile`, `capfile`, `cgi`, `Cheffile`, `config.ru`, `Deliverfile`, `Fastfile`, `fcgi`, `Gemfile`, `gemspec`, `Guardfile`, `irbrc`, `jbuilder`, `Podfile`, `podspec`, `prawn`, `rabl`, `rake`, `Rakefile`
-, `Rantfile`, `rbx`, `rjs`, `ruby.rail`, `Scanfile`, `simplecov`, `Snapfile`, `thor`, `Thorfile`, `Vagrantfile`)
+  , `Rantfile`, `rbx`, `rjs`, `ruby.rail`, `Scanfile`, `simplecov`, `Snapfile`, `thor`, `Thorfile`, `Vagrantfile`)
 - Cargo Build Results (``)
 - Rust Enhanced (`rs`)
 - Sass (`sass`, `scss`)
 - SQL (`sql`, `ddl`, `dml`)
 - Scala (`scala`, `sbt`, `sc`)
-- Bourne Again Shell (bash) (`sh`, `bash`, `zsh`, `ash`, `.bash_aliases`, `.bash_completions`, `.bash_functions`, `.bash_login`, `.bash_logout`, `.bash_profile`, `.bash_variables`, `.bashrc`, `.profile`, `.textmate_init`, `.zlogin`, `.zlogout`, `.zprofile
-`, `.zshenv`, `.zshrc`, `PKGBUILD`, `.ebuild`, `.eclass`)
+- Bourne Again Shell (bash) (`sh`, `bash`, `zsh`, `ash`, `.bash_aliases`, `.bash_completions`, `.bash_functions`, `.bash_login`, `.bash_logout`, `.bash_profile`, `.bash_variables`, `.bashrc`, `.profile`, `.textmate_init`, `.zlogin`, `.zlogout`, `.zprofile `, `.zshenv`, `.zshrc`, `PKGBUILD`, `.ebuild`, `.eclass`)
 - Shell-Unix-Generic (``)
 - commands-builtin-shell-bash (``)
 - Smalltalk (`st`)
