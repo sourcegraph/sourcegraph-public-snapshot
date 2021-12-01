@@ -42,7 +42,7 @@ const (
 
 func newQueryUsagePattern(query string) UsagePattern {
 	return UsagePattern{
-		Query: `count:13 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
+		Query: `count:35 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
 	}
 }
 
