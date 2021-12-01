@@ -76,7 +76,7 @@ type CatalogEntityStatusContextResolver interface {
 	Name() string
 	State() CatalogEntityStatusState
 	Title() string
-	Description() string
+	Description() *string
 	TargetURL() *string
 }
 

@@ -76,7 +76,7 @@ type CatalogEntityStatusContext implements Node {
     name: String!
     state: CatalogEntityStatusState!
     title: String!
-    description: String!
+    description: String
     targetURL: String
 }
 

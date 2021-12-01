@@ -2,7 +2,6 @@ import { LocationDescriptor } from 'history'
 import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { CatalogEntityStatusState } from '@sourcegraph/shared/src/graphql/schema'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
@@ -11,30 +10,57 @@ import {
     CatalogComponentUsageFields,
     CatalogEntityDetailFields,
     CatalogEntityOwnersFields,
+    CatalogEntityStatusFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
-export const OwnersStatusContext: React.FunctionComponent<{
-    entity: CatalogEntityOwnersFields & Pick<CatalogEntityDetailFields, 'url'>
+interface Props {
+    entity: CatalogEntityDetailFields
+    itemClassName?: string
+}
+
+export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity, itemClassName }) => (
+    <>
+        {entity.status.contexts.map(statusContext => {
+            switch (statusContext.name) {
+                case 'owners':
+                    return (
+                        <OwnersStatusContext entity={entity} statusContext={statusContext} className={itemClassName} />
+                    )
+                case 'authors':
+                    return (
+                        <AuthorsStatusContext entity={entity} statusContext={statusContext} className={itemClassName} />
+                    )
+                case 'usage':
+                    return (
+                        <UsageStatusContext entity={entity} statusContext={statusContext} className={itemClassName} />
+                    )
+                default:
+                    return (
+                        <OverviewStatusContextItem
+                            key={statusContext.id}
+                            statusContext={statusContext}
+                            className={itemClassName}
+                        />
+                    )
+            }
+        })}
+    </>
+)
+
+const OwnersStatusContext: React.FunctionComponent<{
+    entity: CatalogEntityOwnersFields
+    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
     className?: string
-}> = ({ entity, className }) => (
-    <OverviewStatusContextItem
-        statusContext={{
-            name: 'owners',
-            title: 'Owners',
-            description: '',
-            state: entity.owners?.length > 0 ? CatalogEntityStatusState.INFO : CatalogEntityStatusState.FAILURE,
-            targetURL: `${entity.url}/code`,
-        }}
-        className={className}
-    >
-        {entity.owners?.length > 0 ? (
+}> = ({ entity, statusContext, className }) => (
+    <OverviewStatusContextItem statusContext={statusContext} className={className}>
+        {!statusContext.description && (
             <TruncatedList
                 tag="ol"
                 className="list-inline mb-0"
-                moreUrl={`${entity.url}/code`}
+                moreUrl={`${statusContext.targetURL!}/code`}
                 moreClassName="list-inline-item"
                 moreLinkClassName="text-muted small"
             >
@@ -50,86 +76,72 @@ export const OwnersStatusContext: React.FunctionComponent<{
                     </li>
                 ))}
             </TruncatedList>
-        ) : (
-            <span>No code owners found</span>
         )}
     </OverviewStatusContextItem>
 )
 
-export const AuthorsStatusContext: React.FunctionComponent<{
-    entity: CatalogComponentAuthorsFields & Pick<CatalogEntityDetailFields, 'url'>
+const AuthorsStatusContext: React.FunctionComponent<{
+    entity: CatalogComponentAuthorsFields
+    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
     className?: string
-}> = ({ entity, className }) => (
-    <OverviewStatusContextItem
-        statusContext={{
-            name: 'authors',
-            title: 'Authors',
-            description: '',
-            state: CatalogEntityStatusState.INFO,
-            targetURL: `${entity.url}/code`,
-        }}
-        className={className}
-    >
-        <TruncatedList
-            tag="ol"
-            className="list-inline mb-0"
-            moreUrl={`${entity.url}/code`}
-            moreClassName="list-inline-item"
-            moreLinkClassName="text-muted small"
-        >
-            {entity.authors?.map(author => (
-                <li key={author.person.email} className="list-inline-item mr-2">
-                    <PersonLink person={author.person} />
-                    <span
-                        className="small text-muted ml-1"
-                        title={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
-                    >
-                        {author.authoredLineProportion >= 0.01
-                            ? `${(author.authoredLineProportion * 100).toFixed(0)}%`
-                            : '<1%'}
-                    </span>
-                    <span className="small text-muted ml-1">
-                        <Timestamp date={author.lastCommit.author.date} noAbout={true} />
-                    </span>
-                </li>
-            ))}
-        </TruncatedList>
+}> = ({ entity, statusContext, className }) => (
+    <OverviewStatusContextItem statusContext={statusContext} className={className}>
+        {!statusContext.description && (
+            <TruncatedList
+                tag="ol"
+                className="list-inline mb-0"
+                moreUrl={`${statusContext.targetURL!}/code`}
+                moreClassName="list-inline-item"
+                moreLinkClassName="text-muted small"
+            >
+                {entity.authors?.map(author => (
+                    <li key={author.person.email} className="list-inline-item mr-2">
+                        <PersonLink person={author.person} />
+                        <span
+                            className="small text-muted ml-1"
+                            title={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
+                        >
+                            {author.authoredLineProportion >= 0.01
+                                ? `${(author.authoredLineProportion * 100).toFixed(0)}%`
+                                : '<1%'}
+                        </span>
+                        <span className="small text-muted ml-1">
+                            <Timestamp date={author.lastCommit.author.date} noAbout={true} />
+                        </span>
+                    </li>
+                ))}
+            </TruncatedList>
+        )}
     </OverviewStatusContextItem>
 )
 
-export const UsageStatusContext: React.FunctionComponent<{
-    entity: CatalogComponentUsageFields & Pick<CatalogEntityDetailFields, 'url'>
+const UsageStatusContext: React.FunctionComponent<{
+    entity: CatalogComponentUsageFields
+    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
     className?: string
-}> = ({ entity, className }) => (
-    <OverviewStatusContextItem
-        statusContext={{
-            name: 'usage',
-            title: 'Usage',
-            description: '',
-            state: CatalogEntityStatusState.INFO,
-            targetURL: `${entity.url}/usage`,
-        }}
-        className={className}
-    >
-        <TruncatedList
-            tag="ol"
-            className="list-inline mb-0"
-            moreUrl={`${entity.url}/code`}
-            moreClassName="list-inline-item"
-            moreLinkClassName="text-muted small"
-        >
-            {entity.usage?.people.map(edge => (
-                <li key={edge.node.email} className="list-inline-item mr-2">
-                    <PersonLink person={edge.node} />
-                    <span className="small text-muted ml-1">
-                        {edge.authoredLineCount} {pluralize('use', edge.authoredLineCount)}
-                    </span>
-                    <span className="small text-muted ml-1">
-                        <Timestamp date={edge.lastCommit.author.date} noAbout={true} />
-                    </span>
-                </li>
-            ))}
-        </TruncatedList>
+}> = ({ entity, statusContext, className }) => (
+    <OverviewStatusContextItem statusContext={statusContext} className={className}>
+        {!statusContext.description && (
+            <TruncatedList
+                tag="ol"
+                className="list-inline mb-0"
+                moreUrl={`${statusContext.targetURL!}/code`}
+                moreClassName="list-inline-item"
+                moreLinkClassName="text-muted small"
+            >
+                {entity.usage?.people.map(edge => (
+                    <li key={edge.node.email} className="list-inline-item mr-2">
+                        <PersonLink person={edge.node} />
+                        <span className="small text-muted ml-1">
+                            {edge.authoredLineCount} {pluralize('use', edge.authoredLineCount)}
+                        </span>
+                        <span className="small text-muted ml-1">
+                            <Timestamp date={edge.lastCommit.author.date} noAbout={true} />
+                        </span>
+                    </li>
+                ))}
+            </TruncatedList>
+        )}
     </OverviewStatusContextItem>
 )
 

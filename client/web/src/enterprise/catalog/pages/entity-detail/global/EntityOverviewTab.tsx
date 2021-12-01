@@ -22,8 +22,7 @@ import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
-import { OverviewStatusContextItem } from './OverviewStatusContextItem'
-import { AuthorsStatusContext, OwnersStatusContext, UsageStatusContext } from './OverviewStatusContexts'
+import { OverviewStatusContexts, UsageStatusContext } from './OverviewStatusContexts'
 
 interface Props extends EntityDetailContentCardProps {
     entity: CatalogEntityDetailFields
@@ -58,16 +57,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                             {false && entity.commits?.nodes[0] && (
                                 <LastCommit commit={entity.commits?.nodes[0]} className="" />
                             )}
-                            <OwnersStatusContext entity={entity} className="mb-3" />
-                            <AuthorsStatusContext entity={entity} className="mb-3" />
-                            <UsageStatusContext entity={entity} className="mb-3" />
-                            {entity.status.contexts.map(statusContext => (
-                                <OverviewStatusContextItem
-                                    key={statusContext.id}
-                                    statusContext={statusContext}
-                                    className="mb-3"
-                                />
-                            ))}
+                            <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
                         </div>
                         <div className="col-md-4">
                             {/* owner-docs-API def -- authorities. then who you could ask. */}

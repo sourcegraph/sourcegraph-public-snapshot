@@ -12,21 +12,26 @@ import (
 )
 
 func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntityStatusResolver, error) {
-	return &catalogEntityStatusResolver{
-		component: r,
-	}, nil
-}
+	var statusContexts []gql.CatalogEntityStatusContextResolver
 
-type catalogEntityStatusResolver struct {
-	component *catalogComponentResolver
-}
+	{
+		// Owners
+		owners, err := r.Owners(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-func (r *catalogEntityStatusResolver) ID() graphql.ID {
-	return relay.MarshalID("CatalogEntityStatus", r.component.Name())
-}
+		sc := &catalogEntityStatusContextResolver{name: "owners", title: "Owners"}
+		if owners == nil || len(*owners) == 0 {
+			sc.state = "FAILURE"
+			sc.description = "No code owners found"
+		} else {
+			sc.state = "SUCCESS"
+		}
+		statusContexts = append(statusContexts, sc)
+	}
 
-func (r *catalogEntityStatusResolver) Contexts() []gql.CatalogEntityStatusContextResolver {
-	return []gql.CatalogEntityStatusContextResolver{
+	statusContexts = append(statusContexts,
 		&catalogEntityStatusContextResolver{
 			name:        "deploy",
 			state:       "SUCCESS",
@@ -40,7 +45,25 @@ func (r *catalogEntityStatusResolver) Contexts() []gql.CatalogEntityStatusContex
 			description: "Build `f38ca7d` passed 7 min ago",
 			targetURL:   "https://example.com",
 		},
-	}
+	)
+
+	return &catalogEntityStatusResolver{
+		contexts:  statusContexts,
+		component: r,
+	}, nil
+}
+
+type catalogEntityStatusResolver struct {
+	contexts  []gql.CatalogEntityStatusContextResolver
+	component *catalogComponentResolver
+}
+
+func (r *catalogEntityStatusResolver) ID() graphql.ID {
+	return relay.MarshalID("CatalogEntityStatus", r.component.Name())
+}
+
+func (r *catalogEntityStatusResolver) Contexts() []gql.CatalogEntityStatusContextResolver {
+	return r.contexts
 }
 
 type catalogEntityStatusContextResolver struct {
@@ -56,7 +79,12 @@ func (r *catalogEntityStatusContextResolver) ID() graphql.ID {
 func (r *catalogEntityStatusContextResolver) Name() string                        { return r.name }
 func (r *catalogEntityStatusContextResolver) State() gql.CatalogEntityStatusState { return r.state }
 func (r *catalogEntityStatusContextResolver) Title() string                       { return r.title }
-func (r *catalogEntityStatusContextResolver) Description() string                 { return r.description }
+func (r *catalogEntityStatusContextResolver) Description() *string {
+	if r.description == "" {
+		return nil
+	}
+	return &r.description
+}
 func (r *catalogEntityStatusContextResolver) TargetURL() *string {
 	if r.targetURL == "" {
 		return nil
