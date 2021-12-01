@@ -56,6 +56,10 @@ jobs:
         arch:
           - amd64
           - arm64
+        exclude:
+          # Compiling for arm64 on Linux requires more work
+          - os: ubuntu-latest
+            node: arm64
 
     steps:
       - name: Checkout
