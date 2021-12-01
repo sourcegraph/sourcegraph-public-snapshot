@@ -1,4 +1,6 @@
 .form-series-input {
+    line-height: 1.6;
+
     &__series-check {
         list-style: none;
         margin-left: 24px;
@@ -11,7 +13,13 @@
         svg {
             position: absolute;
             left: -24px;
-            fill: green;
         }
+    }
+
+    code {
+        background-color: lightblue;
+        padding: 1px;
+        border-radius: 2px;
+        font-weight: 600;
     }
 }

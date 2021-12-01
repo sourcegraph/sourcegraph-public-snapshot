@@ -58,40 +58,43 @@ interface FormSeriesInputProps {
 }
 
 const SearchQueryChecks: React.FunctionComponent = () => (
-    <>
-        <ul className={classNames(['mt-4', styles.formSeriesInputSeriesCheck])}>
+    <div className={classNames(styles.formSeriesInput)}>
+        <ul className={classNames(['mt-4 text-muted', styles.formSeriesInputSeriesCheck])}>
             <li>
-                <Check size={16} /> Contains a properly formatted regular expression with at least one capture group
+                <Check size={16} className="text-success" /> Contains a properly formatted regular expression with at
+                least one capture group
             </li>
             <li>
-                <Check size={16} /> Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular
-                expression boolean operators can still be used)
+                <Check size={16} className="text-success" /> Does not contain boolean operator <code>AND</code> and{' '}
+                <code>OR</code> (regular expression boolean operators can still be used)
             </li>
             <li>
-                <Check size={16} /> Does not contain <code>patternType:literal</code> and{' '}
+                <Check size={16} className="text-success" /> Does not contain <code>patternType:literal</code> and{' '}
                 <code>patternType:structural</code>
             </li>
             <li>
-                <Check size={16} /> The capture group matches file contents (not <code>repo</code> or <code>file</code>)
+                <Check size={16} className="text-success" /> The capture group matches file contents (not{' '}
+                <code>repo</code> or <code>file</code>)
             </li>
             <li>
-                <Check size={16} /> Does not contain <code>commit</code> or <code>diff</code> search
+                <Check size={16} className="text-success" /> Does not contain <code>commit</code> or <code>diff</code>{' '}
+                search
             </li>
             <li>
-                <Check size={16} /> Does not contain the <code>repo:</code> filter as it will be added automatically if
-                needed
+                <Check size={16} className="text-success" /> Does not contain the <code>repo:</code> filter as it will
+                be added automatically if needed
             </li>
         </ul>
-        <p className="mt-4">
+        <p className="mt-4 text-muted">
             Tip: use <code>archived:no</code> or <code>fork:no</code> to exclude results from archived or forked
             repositories. Explore <a href="#">example queries</a> and learn more about{' '}
             <a href="#">automatically generated data series</a>.
         </p>
-        <p className="mt-4">
-            <Info size={16} /> Name and color of each data seris will be generated automatically. Chart will display up
-            to 20 data series.
+        <p className="mt-4 text-muted">
+            <Info size={16} /> <b>Name</b> and <b>color</b> of each data seris will be generated automatically. Chart
+            will display <b>up to 20</b> data series.
         </p>
-    </>
+    </div>
 )
 
 /** Displays form series input (three field - name field, query field and color picker). */
