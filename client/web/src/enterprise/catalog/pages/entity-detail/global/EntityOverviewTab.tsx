@@ -4,24 +4,29 @@ import { uniqBy } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
+import PowerCycleIcon from 'mdi-react/PowerCycleIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CatalogEntityRelationType } from '@sourcegraph/shared/src/graphql/schema'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
 import {
     CatalogComponentAuthorsFields,
+    CatalogComponentDocumentationFields,
     CatalogComponentUsageFields,
     CatalogEntityDetailFields,
     CatalogEntityOwnersFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
+import { Popover } from '../../../../insights/components/popover/Popover'
 import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
@@ -68,11 +73,19 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                             {/* owner-docs-API def -- authorities. then who you could ask. */}
                             {entity.description && <p className="mb-3">{entity.description}</p>}
                             <div>
-                                <Link to="#" className="d-flex align-items-center text-body mb-3 mr-3">
-                                    <FileDocumentIcon className="icon-inline mr-2" />
-                                    Documentation
-                                </Link>
-                                <Link to="#" className="d-flex align-items-center text-body mb-3 mr-3">
+                                {entity.readme && (
+                                    <div className="d-flex align-items-start">
+                                        <Link
+                                            to={entity.readme.url}
+                                            className="d-flex align-items-center text-body mb-3 mr-2"
+                                        >
+                                            <FileDocumentIcon className="icon-inline mr-1" />
+                                            Documentation
+                                        </Link>
+                                        <FilePeekButton file={entity.readme} />
+                                    </div>
+                                )}
+                                <Link to="#" className="d-flex align-items-center text-body mb-3">
                                     <FileAlertIcon className="icon-inline mr-2" />
                                     Runbook
                                 </Link>
@@ -83,6 +96,15 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                                 <Link to="#" className="d-flex align-items-center text-body mb-3">
                                     <SlackIcon className="icon-inline mr-2" />
                                     #dev-frontend
+                                </Link>
+                                <hr className="my-3" />
+                                <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                    <PowerCycleIcon className="icon-inline mr-2" />
+                                    Lifecycle:&nbsp;<strong>{entity.lifecycle.toLowerCase()}</strong>
+                                </Link>
+                                <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                    <SettingsIcon className="icon-inline mr-2" />
+                                    Spec
                                 </Link>
                             </div>
                         </div>
@@ -272,5 +294,26 @@ const TruncatedList: React.FunctionComponent<{
                 </li>
             )}
         </Tag>
+    )
+}
+
+const FilePeekButton: React.FunctionComponent<{
+    file: NonNullable<CatalogComponentDocumentationFields['readme']>
+}> = ({ file }) => {
+    const targetButtonReference = useRef<HTMLButtonElement>(null)
+    const [isOpen, setIsOpen] = useState(false)
+
+    return (
+        <>
+            <button ref={targetButtonReference} type="button" className="badge badge-secondary">
+                peek
+            </button>
+            <Popover isOpen={isOpen} target={targetButtonReference} onVisibilityChange={setIsOpen}>
+                {/* eslint-disable-next-line react/forbid-dom-props */}
+                <div style={{ maxWidth: '75vw', maxHeight: '75vh' }} className="p-3">
+                    <Markdown dangerousInnerHTML={file.richHTML} />
+                </div>
+            </Popover>
+        </>
     )
 }

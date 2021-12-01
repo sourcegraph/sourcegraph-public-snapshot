@@ -10,7 +10,7 @@ type Component struct {
 	Kind          string
 	Name          string
 	Description   string
-	System        *string
+	Lifecycle     string
 	SourceRepo    api.RepoName
 	SourceCommit  api.CommitID
 	SourcePaths   []string
@@ -38,11 +38,16 @@ const (
 
 	PartOfRelation  = "PART_OF"
 	HasPartRelation = "HAS_PART"
+
+	//
+
+	LifecycleProduction   = "PRODUCTION"
+	LifecycleExperimental = "EXPERIMENTAL"
 )
 
 func newQueryUsagePattern(query string) UsagePattern {
 	return UsagePattern{
-		Query: `count:35 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
+		Query: `count:4 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
 	}
 }
 
@@ -55,6 +60,8 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "frontend",
+			Description:  "Serves the web app, public APIs, and internal APIs.",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/frontend", "enterprise/cmd/frontend"},
@@ -69,6 +76,7 @@ func Data() ([]Component, []Edge) {
 			Kind:         "SERVICE",
 			Name:         "gitserver",
 			Description:  "Mirrors repositories from their code host.",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/gitserver"},
@@ -78,10 +86,12 @@ func Data() ([]Component, []Edge) {
 				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/vcs/git" patterntype:literal`),
 			},
 			APIDefPath: "internal/gitserver/protocol/gitserver.go",
+			DependsOn:  []string{"repo-updater"},
 		},
 		{
 			Kind:         "SERVICE",
 			Name:         "repo-updater",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
@@ -91,6 +101,7 @@ func Data() ([]Component, []Edge) {
 			Kind:         "SERVICE",
 			Name:         "searcher",
 			Description:  "Provides on-demand unindexed search for repositories",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/searcher"},
@@ -102,6 +113,7 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "executor",
+			Lifecycle:    LifecycleExperimental,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/executor"},
@@ -110,14 +122,16 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "precise-code-intel-worker",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/precise-code-intel-worker"},
-			DependsOn:    []string{"frontend"},
+			DependsOn:    []string{"frontend", "worker"},
 		},
 		{
 			Kind:         "SERVICE",
 			Name:         "github-proxy",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/github-proxy"},
@@ -125,6 +139,7 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "query-runner",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/query-runner"},
@@ -133,6 +148,7 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "worker",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/worker", "enterprise/cmd/worker"},
@@ -140,6 +156,7 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "server",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/server", "enterprise/cmd/server"},
@@ -148,14 +165,16 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "symbols",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/symbols"},
-			DependsOn:    []string{"gitserver"},
+			DependsOn:    []string{"gitserver", "frontend"},
 		},
 		{
 			Kind:         "SERVICE",
 			Name:         "sitemap",
+			Lifecycle:    LifecycleExperimental,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/sitemap"},
@@ -165,6 +184,7 @@ func Data() ([]Component, []Edge) {
 			Kind:         "TOOL",
 			Name:         "sg",
 			Description:  "The Sourcegraph developer tool",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"dev/sg"},
@@ -177,6 +197,7 @@ func Data() ([]Component, []Edge) {
 			Kind:        "TOOL",
 			Name:        "src-cli",
 			Description: "Sourcegraph CLI",
+			Lifecycle:   LifecycleProduction,
 			// Only the gitlab mirror of this repo is loaded by the default dev-private config.
 			SourceRepo:    "gitlab.sgdev.org/sourcegraph/src-cli",
 			SourceCommit:  "4a4341bc1c53fc5306f09bdcb31e8892ee40e6c7",
@@ -190,6 +211,8 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "LIBRARY",
 			Name:         "client-web",
+			Description:  "Main web app UI",
+			Lifecycle:    LifecycleExperimental,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/web"},
@@ -198,6 +221,8 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "LIBRARY",
 			Name:         "client-browser",
+			Description:  "Browser extension and native code host extension",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/browser"},
@@ -206,6 +231,8 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "LIBRARY",
 			Name:         "client-shared",
+			Description:  "Frontend code shared by the web app and browser extension",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/shared"},
@@ -215,6 +242,7 @@ func Data() ([]Component, []Edge) {
 			Kind:         "LIBRARY",
 			Name:         "wildcard",
 			Description:  "The Wildcard component library is a collection of design-approved reusable components that are suitable for use within the Sourcegraph codebase.",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/wildcard"},
@@ -225,6 +253,8 @@ func Data() ([]Component, []Edge) {
 		{
 			Kind:         "LIBRARY",
 			Name:         "extension-api",
+			Description:  "Public TypeScript API for Sourcegraph extensions",
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/extension-api"},

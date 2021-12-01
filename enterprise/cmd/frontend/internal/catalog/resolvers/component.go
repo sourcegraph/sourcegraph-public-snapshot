@@ -35,6 +35,10 @@ func (r *catalogComponentResolver) Description() *string {
 	return &r.component.Description
 }
 
+func (r *catalogComponentResolver) Lifecycle() gql.CatalogEntityLifecycle {
+	return gql.CatalogEntityLifecycle(r.component.Lifecycle)
+}
+
 func (r *catalogComponentResolver) URL() string {
 	return "/catalog/entities/" + string(r.Name())
 }

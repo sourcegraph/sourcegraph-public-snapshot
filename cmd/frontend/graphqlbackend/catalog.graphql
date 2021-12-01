@@ -15,11 +15,17 @@ enum CatalogEntityType {
     COMPONENT
 }
 
+enum CatalogEntityLifecycle {
+    PRODUCTION
+    EXPERIMENTAL
+}
+
 interface CatalogEntity {
     id: ID!
     type: CatalogEntityType!
     name: String!
     description: String
+    lifecycle: CatalogEntityLifecycle!
     url: String!
     owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
@@ -69,6 +75,7 @@ type CatalogComponent implements Node & CatalogEntity {
     type: CatalogEntityType!
     name: String!
     description: String
+    lifecycle: CatalogEntityLifecycle!
     url: String!
     owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!

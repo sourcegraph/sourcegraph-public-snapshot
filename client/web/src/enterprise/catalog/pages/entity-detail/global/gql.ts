@@ -215,6 +215,7 @@ const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         type
         name
         description
+        lifecycle
         url
         ...CatalogEntityGraphFields
         ...CatalogEntityOwnersFields

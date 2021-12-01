@@ -85,41 +85,43 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                           element: <ComponentUsage {...props} {...cardProps} catalogComponent={entity} />,
                       }
                     : null,
-                {
-                    path: 'spec',
-                    label: 'Spec',
-                    element: (
-                        <>
-                            <p>
-                                Edit the JSON specification for this {entity.__typename.toLowerCase()} in source
-                                control.
-                            </p>
-                            <Container>
-                                <pre>
-                                    <code>
-                                        {JSON.stringify(
-                                            {
-                                                name: entity.name,
-                                                type: entity.type,
-                                                description: entity.description,
-                                                kind: 'kind' in entity ? entity.kind : undefined,
-                                                sourceLocations:
-                                                    'sourceLocations' in entity
-                                                        ? entity.sourceLocations.map(location_ => ({
-                                                              repo: location_.repository.name,
-                                                              path: location_.path,
-                                                          }))
-                                                        : undefined,
-                                            },
-                                            null,
-                                            2
-                                        )}
-                                    </code>
-                                </pre>
-                            </Container>
-                        </>
-                    ),
-                },
+                false
+                    ? {
+                          path: 'spec',
+                          label: 'Spec',
+                          element: (
+                              <>
+                                  <p>
+                                      Edit the JSON specification for this {entity.__typename.toLowerCase()} in source
+                                      control.
+                                  </p>
+                                  <Container>
+                                      <pre>
+                                          <code>
+                                              {JSON.stringify(
+                                                  {
+                                                      name: entity.name,
+                                                      type: entity.type,
+                                                      description: entity.description,
+                                                      kind: 'kind' in entity ? entity.kind : undefined,
+                                                      sourceLocations:
+                                                          'sourceLocations' in entity
+                                                              ? entity.sourceLocations.map(location_ => ({
+                                                                    repo: location_.repository.name,
+                                                                    path: location_.path,
+                                                                }))
+                                                              : undefined,
+                                                  },
+                                                  null,
+                                                  2
+                                              )}
+                                          </code>
+                                      </pre>
+                                  </Container>
+                              </>
+                          ),
+                      }
+                    : null,
             ].filter(isDefined),
         [entity, props]
     )

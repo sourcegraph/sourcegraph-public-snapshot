@@ -40,11 +40,14 @@ type CatalogGraphResolver interface {
 
 type CatalogEntityType string
 
+type CatalogEntityLifecycle string
+
 type CatalogEntity interface {
 	Node
 	Type() CatalogEntityType
 	Name() string
 	Description() *string
+	Lifecycle() CatalogEntityLifecycle
 	URL() string
 
 	Owners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
