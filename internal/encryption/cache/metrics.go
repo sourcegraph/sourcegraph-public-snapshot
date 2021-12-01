@@ -37,7 +37,7 @@ var (
 	evictTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "src_encryption_cache_eviction_total",
-			Help: "Total number of cache evictions encryption/cache",
+			Help: "Total number of cache evictions in encryption/cache",
 		},
 		[]string{},
 	)
