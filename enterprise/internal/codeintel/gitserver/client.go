@@ -300,12 +300,22 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", fmt.Sprintf("%s:%s", commit, file))
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return []byte(out), err
+	id, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := git.ReadFile(ctx, repo, id, file, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, err
 }
 
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
