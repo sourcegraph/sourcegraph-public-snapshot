@@ -21,12 +21,62 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 			return nil, err
 		}
 
-		sc := &catalogEntityStatusContextResolver{name: "owners", title: "Owners"}
+		sc := &catalogEntityStatusContextResolver{
+			name:      "owners",
+			title:     "Owners",
+			targetURL: r.URL() + "/code",
+		}
 		if owners == nil || len(*owners) == 0 {
 			sc.state = "FAILURE"
 			sc.description = "No code owners found"
 		} else {
-			sc.state = "SUCCESS"
+			sc.state = "INFO"
+		}
+		statusContexts = append(statusContexts, sc)
+	}
+
+	{
+		// Authors
+		authors, err := r.Authors(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		sc := &catalogEntityStatusContextResolver{
+			name:      "authors",
+			title:     "Authors",
+			targetURL: r.URL() + "/code",
+		}
+		if authors == nil || len(*authors) == 0 {
+			sc.state = "FAILURE"
+			sc.description = "No authors found"
+		} else {
+			sc.state = "INFO"
+		}
+		statusContexts = append(statusContexts, sc)
+	}
+
+	{
+		// Usage
+		usage, err := r.Usage(ctx, &gql.CatalogComponentUsageArgs{})
+		if err != nil {
+			return nil, err
+		}
+		usagePeople, err := usage.People(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		sc := &catalogEntityStatusContextResolver{
+			name:      "usage",
+			title:     "Usage",
+			targetURL: r.URL() + "/usage",
+		}
+		if usagePeople == nil || len(usagePeople) == 0 {
+			sc.state = "FAILURE"
+			sc.description = "No users found"
+		} else {
+			sc.state = "INFO"
 		}
 		statusContexts = append(statusContexts, sc)
 	}
