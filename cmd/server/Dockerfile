@@ -45,7 +45,7 @@ RUN apk update && apk add --no-cache --verbose \
     git-p4 \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs=14.18.1-r0' \
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/community \
     'postgresql=12.9-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main \
     'postgresql-contrib=12.9-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
 
