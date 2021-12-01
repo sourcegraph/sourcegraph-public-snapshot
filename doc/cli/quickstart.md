@@ -41,6 +41,12 @@ Invoke-WebRequest https://sourcegraph.com/.api/src-cli/src_windows_amd64.exe -Ou
 $env:Path += ';C:\Program Files\Sourcegraph'
 ```
 
+or via [Scoop](https://scoop.sh/)
+
+```powershell
+scoop install sourcegraph-cli
+```
+
 For other options, please refer to [the Windows specific `src` documentation](explanations/windows.md).
 
 ## Connect to Sourcegraph
