@@ -184,26 +184,35 @@ const OwnersInfoBox: React.FunctionComponent<{
     entity: CatalogEntityOwnersFields & Pick<CatalogEntityDetailFields, 'url'>
     className?: string
 }> = ({ entity, className }) => (
-    <InfoBox title="Owners" titleUrl={`${entity.url}/code`} color="success" className={className}>
-        <TruncatedList
-            tag="ol"
-            className="list-inline mb-0"
-            moreUrl={`${entity.url}/code`}
-            moreClassName="list-inline-item"
-            moreLinkClassName="text-muted small"
-        >
-            {entity.owners?.map(owner => (
-                <li key={owner.node} className="list-inline-item mr-2">
-                    {owner.node}
-                    <span
-                        className="small text-muted ml-1"
-                        title={`Owns ${owner.fileCount} ${pluralize('file', owner.fileCount)}`}
-                    >
-                        {owner.fileProportion >= 0.01 ? `${(owner.fileProportion * 100).toFixed(0)}%` : '<1%'}
-                    </span>
-                </li>
-            ))}
-        </TruncatedList>
+    <InfoBox
+        title="Owners"
+        titleUrl={`${entity.url}/code`}
+        color={entity.owners?.length > 0 ? 'success' : 'danger'}
+        className={className}
+    >
+        {entity.owners?.length > 0 ? (
+            <TruncatedList
+                tag="ol"
+                className="list-inline mb-0"
+                moreUrl={`${entity.url}/code`}
+                moreClassName="list-inline-item"
+                moreLinkClassName="text-muted small"
+            >
+                {entity.owners?.map(owner => (
+                    <li key={owner.node} className="list-inline-item mr-2">
+                        {owner.node}
+                        <span
+                            className="small text-muted ml-1"
+                            title={`Owns ${owner.fileCount} ${pluralize('file', owner.fileCount)}`}
+                        >
+                            {owner.fileProportion >= 0.01 ? `${(owner.fileProportion * 100).toFixed(0)}%` : '<1%'}
+                        </span>
+                    </li>
+                ))}
+            </TruncatedList>
+        ) : (
+            <span>No code owners found</span>
+        )}
     </InfoBox>
 )
 

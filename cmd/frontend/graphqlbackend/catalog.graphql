@@ -29,6 +29,7 @@ interface CatalogEntity {
     url: String!
     owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
+    status: CatalogEntityStatus!
 }
 
 type CatalogGraph {
@@ -54,6 +55,18 @@ enum CatalogEntityRelationType {
 type CatalogEntityRelatedEntityEdge {
     node: CatalogEntity!
     type: CatalogEntityRelationType!
+}
+
+type CatalogEntityStatus implements Node {
+    id: ID!
+    contexts: [CatalogEntityStatusContext!]!
+}
+
+type CatalogEntityStatusContext implements Node {
+    id: ID!
+    name: String!
+    title: String!
+    description: String!
 }
 
 type CatalogEntityConnection {
