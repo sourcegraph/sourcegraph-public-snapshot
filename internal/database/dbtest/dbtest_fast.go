@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
@@ -133,7 +132,7 @@ func newFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.DB {
 	}
 
 	// Get or create a database cloned from the template database
-	mdb, err := pool.GetMigratedDB(ctx, tdb)
+	mdb, err := pool.GetMigratedDB(ctx, false, tdb)
 	if err != nil {
 		t.Fatalf("failed to get or create migrated db: %s", err)
 	}
@@ -167,7 +166,7 @@ func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
 		t.Fatalf("failed to get or create template db: %s", err)
 	}
 
-	mdb, err := pool.GetMigratedDB(ctx, tdb)
+	mdb, err := pool.GetMigratedDB(ctx, true, tdb)
 	if err != nil {
 		t.Fatalf("failed to get or create migrated db: %s", err)
 	}
@@ -237,5 +236,5 @@ func newPoolFromURL(u *url.URL) (*testDatabasePool, func(), error) {
 		}
 	}
 
-	return &testDatabasePool{Store: basestore.NewWithDB(poolDB, sql.TxOptions{})}, func() { db.Close() }, nil
+	return newTestDatabasePool(poolDB), func() { poolDB.Close() }, nil
 }
