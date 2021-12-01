@@ -64,14 +64,14 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                           element: <EntityChangesTab {...props} {...cardProps} entity={entity} />,
                       }
                     : null,
-                entity.__typename === 'CatalogComponent'
+                false && entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'docs',
                           label: 'Docs',
                           element: <ComponentDocumentation catalogComponent={entity} />,
                       }
                     : null,
-                entity.__typename === 'CatalogComponent'
+                false && entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'api',
                           label: 'API',

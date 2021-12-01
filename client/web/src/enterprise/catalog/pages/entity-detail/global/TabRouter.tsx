@@ -1,8 +1,8 @@
 import React from 'react'
-import { RouteProps, useRouteMatch, matchPath, useLocation } from 'react-router'
-import { Link, Switch, Route } from 'react-router-dom'
+import { RouteProps, useRouteMatch } from 'react-router'
+import { NavLink, Switch, Route } from 'react-router-dom'
 
-import { TabList, Tab, Tabs } from '@sourcegraph/wildcard'
+import { Tab } from '@sourcegraph/wildcard'
 
 interface Props {
     tabs: Tab[]
@@ -16,31 +16,24 @@ interface Tab extends Pick<RouteProps, 'path' | 'exact'> {
 }
 
 export const TabRouter: React.FunctionComponent<Props> = ({ tabs }) => {
-    const location = useLocation()
     const match = useRouteMatch()
     return (
         <>
-            <Tabs
-                size="medium"
-                defaultIndex={tabs.findIndex(tab =>
-                    matchPath(location.pathname, { path: tabPath(match.url, tab), exact: tab.exact })
-                )}
-                className="mb-3"
-            >
-                <TabList>
-                    {tabs.map(tab => (
-                        <Tab
-                            key={tab.path}
-                            as={Link}
+            <ul className="nav nav-tabs w-100 mb-2">
+                {tabs.map(tab => (
+                    <li key={tab.path} className="nav-item">
+                        <NavLink
                             to={tabPath(match.url, tab)}
-                            data-tab-content={tab.label}
-                            className="px-3"
+                            exact={tab.exact}
+                            className="nav-link px-3"
+                            // TODO(sqs): hack so that active items when bolded don't shift the ones to the right over by a few px because bold text is wider
+                            style={{ minWidth: '6rem' }}
                         >
                             {tab.label}
-                        </Tab>
-                    ))}
-                </TabList>
-            </Tabs>
+                        </NavLink>
+                    </li>
+                ))}
+            </ul>
             <Switch>
                 {tabs.map(tab => (
                     <Route key={tab.path} path={tabPath(match.url, tab)} exact={tab.exact}>
