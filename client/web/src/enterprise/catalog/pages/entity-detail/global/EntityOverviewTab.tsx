@@ -37,7 +37,6 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
             <>
                 <div className="row">
                     <div className="col-md-7">
-                        {entity.description && <p className="mb-3 text-muted">{entity.description}</p>}
                         <div className="card">
                             <div className="card-body">
                                 <Link
@@ -71,6 +70,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                                     Owner
                                 </Link>
                             </div>
+                            {entity.description && <p className="mb-3">{entity.description}</p>}
                             <p className="mb-0">
                                 <Link to="#" className="d-flex align-items-center text-body mb-3">
                                     <FileDocumentIcon className="icon-inline mr-2" />
@@ -84,7 +84,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                                     <AlertCircleOutlineIcon className="icon-inline mr-2" />
                                     Issues
                                 </Link>
-
+                                <hr className="my-3" />
                                 <Link to="#" className="d-flex align-items-center text-body mb-3">
                                     <AccountGroupIcon className="icon-inline mr-2 d-none" />
                                     <span className="badge badge-primary bg-transparent border-primary border text-primary mr-2">
