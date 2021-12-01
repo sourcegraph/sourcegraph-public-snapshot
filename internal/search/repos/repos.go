@@ -366,7 +366,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	// Remove any repos that failed to have their revs validated.
+	// Remove any repos that failed to have their revs validated. We do this to preserve the original order.
 	valid := res.RepoRevs[:0]
 	for _, r := range res.RepoRevs {
 		if r != nil {
