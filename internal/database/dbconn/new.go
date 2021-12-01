@@ -20,6 +20,9 @@ type Opts struct {
 	// AppName overrides the application_name in the DSN. This separate parameter is needed
 	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
 	AppName string
+
+	// TODO - document
+	Databases []*Database
 }
 
 // New connects to the given data source and returns the handle.
@@ -47,7 +50,13 @@ func New(opts Opts) (*sql.DB, func(err error) error, error) {
 		return nil, nil, err
 	}
 
-	close := func(err error) error {
+	var closeFns []func()
+
+	closeAll := func(err error) error {
+		for i := len(closeFns) - 1; i >= 0; i-- {
+			closeFns[i]()
+		}
+
 		if closeErr := db.Close(); closeErr != nil {
 			err = multierror.Append(err, closeErr)
 		}
@@ -55,9 +64,18 @@ func New(opts Opts) (*sql.DB, func(err error) error, error) {
 		return err
 	}
 
+	for _, database := range opts.Databases {
+		close, err := migrateDB(db, database)
+		if err != nil {
+			return nil, nil, closeAll(err)
+		}
+
+		closeFns = append(closeFns, close)
+	}
+
 	if opts.DBName != "" {
 		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	}
 
-	return db, close, nil
+	return db, closeAll, nil
 }
