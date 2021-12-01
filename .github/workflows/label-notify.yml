@@ -21,7 +21,7 @@ jobs:
                   team/distribution=@dan-mckean
                   team/delivery=@dan-mckean @caugustus-sourcegraph
                   team/security=@dcomas
-                  team/dev-experience=@taylorsperry @pdubroy
+                  team/dev-experience=@taylorsperry @jhchabran @kstretch9
                   team/repo-management=@jplahn @dan-mckean
                   team/devops=@daxmc99 @bcreager
                   team/cloud-growth=@muratsu @rrhyne
