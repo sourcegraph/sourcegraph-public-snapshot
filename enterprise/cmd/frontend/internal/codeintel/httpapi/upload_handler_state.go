@@ -60,7 +60,7 @@ func (h *UploadHandler) constructUploadState(ctx context.Context, r *http.Reques
 		// No upload identifier supplied; this is a single payload upload or the start
 		// of a multi-part upload. Ensure that the repository and commit given in the
 		// request are resolvable. Subsequent multi-part requests will use the new
-		// upload `identifier returned in this response.
+		// upload identifier returned in this response.
 		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, database.NewDB(h.db), uploadState.repositoryName, uploadState.commit)
 		if err != nil {
 			return uploadState, statusCode, err
