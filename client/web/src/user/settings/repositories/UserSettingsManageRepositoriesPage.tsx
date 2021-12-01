@@ -386,7 +386,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, isOrgOwner])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
