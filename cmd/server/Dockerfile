@@ -47,7 +47,7 @@ RUN apk update && apk add --no-cache --verbose \
     python3 \
     'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs=14.18.1-r0' \
     'postgresql=12.9-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main \
-    postgresql-contrib
+    'postgresql-contrib=12.9-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
