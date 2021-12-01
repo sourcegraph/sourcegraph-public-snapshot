@@ -27,9 +27,9 @@ interface CatalogEntity {
     description: String
     lifecycle: CatalogEntityLifecycle!
     url: String!
+    status: CatalogEntityStatus!
     owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
-    status: CatalogEntityStatus!
 }
 
 type CatalogGraph {

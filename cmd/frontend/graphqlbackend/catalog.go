@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
@@ -49,7 +50,7 @@ type CatalogEntity interface {
 	Description() *string
 	Lifecycle() CatalogEntityLifecycle
 	URL() string
-
+	Status(context.Context) (CatalogEntityStatusResolver, error)
 	Owners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
 	RelatedEntities(context.Context) (CatalogEntityRelatedEntityConnectionResolver, error)
 }
@@ -61,6 +62,18 @@ type CatalogEntityResolver struct {
 func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
 	e, ok := r.CatalogEntity.(CatalogComponentResolver)
 	return e, ok
+}
+
+type CatalogEntityStatusResolver interface {
+	ID() graphql.ID
+	Contexts() []CatalogEntityStatusContextResolver
+}
+
+type CatalogEntityStatusContextResolver interface {
+	ID() graphql.ID
+	Name() string
+	Title() string
+	Description() string
 }
 
 type CatalogEntityRelationType string
