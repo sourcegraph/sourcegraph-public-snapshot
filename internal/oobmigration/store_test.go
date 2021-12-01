@@ -38,7 +38,6 @@ func TestList(t *testing.T) {
 }
 
 func TestListEnterprise(t *testing.T) {
-	t.Parallel()
 	db := dbtest.NewDB(t)
 	store := testStore(t, db)
 
