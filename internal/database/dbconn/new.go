@@ -21,7 +21,8 @@ type Opts struct {
 	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
 	AppName string
 
-	// TODO - document
+	// Databases is set of migration specs that should be executed on the fresh connection if the database
+	// appears to be out-of-date.
 	Databases []*Database
 }
 
@@ -38,7 +39,8 @@ type Opts struct {
 // string.
 //
 // This function returns a basestore-style method that closes the database. This should
-// be called instead of calling Close directly on the database handle.
+// be called instead of calling Close directly on the database handle as it also handles
+// closing migration objects associated with the handle.
 func New(opts Opts) (*sql.DB, func(err error) error, error) {
 	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
