@@ -390,6 +390,20 @@ module "credentials" {
   region          = <region>
   resource_prefix = ""
 }
+
+# For Google:
+output "instance_scraper_credentials_file" {
+  value = module.my-credentials.instance_scraper_credentials_file
+}
+
+# For AWS:
+output "instance_scraper_access_key_id" {
+  value = module.my-credentials.instance_scraper_access_key_id
+}
+
+output "instance_scraper_access_secret_key" {
+  value = module.my-credentials.instance_scraper_access_secret_key
+}
 ```
 
 Just as with [auto scaling](#configuring-auto-scaling), you use the `credentials` submodule to get properly configured credentials in the Terraform outputs. When applied, this will yield something like this:
@@ -420,6 +434,7 @@ type: Opaque
 metadata:
   name: prometheus-secrets
 data:
+  # The Terraform output for `instance_scraper_credentials_file`
   GCP_ACCOUNT_JSON: <THE_CREDENTIALS_FILE_CONTENT>
 ```
 
@@ -455,10 +470,10 @@ volumes:
   params:
     module: [executor]
   gce_sd_configs: &executor_gce_config
-    - project: {GCP_PROJECT}
+    - project: {GCP_PROJECT} # Change this to the GCP project ID
       port: 9999
-      zone: {GCP_ZONE}
-      filter: '(labels.executor_tag = {INSTANCE_TAG})'
+      zone: {GCP_ZONE} # Change this to the GCP zone
+      filter: '(labels.executor_tag = {INSTANCE_TAG})' # Change {INSTANCE_TAG} to the `executor_instance_tag` set in the Terraform modules
   relabel_configs: &executor_relabel_config
     - source_labels: [__meta_gce_public_ip]
       target_label: __address__
@@ -481,15 +496,17 @@ volumes:
     module: [node]
   gce_sd_configs: *executor_gce_config
   relabel_configs: *executor_relabel_config
+# If you've also used the Terraform modules to provision Docker registry
+# mirrors for executors:
 - job_name: 'sourcegraph-executors-docker-registry-mirrors'
   metrics_path: /proxy
   params:
     module: [registry]
   gce_sd_configs: &gce_executor_mirror_config
-    - project: {GCP_PROJECT}
+    - project: {GCP_PROJECT} # Change this to the GCP project ID
       port: 9999
-      zone: {GCP_ZONE}
-      filter: '(labels.executor_tag = {INSTANCE_TAG}-docker-mirror)'
+      zone: {GCP_ZONE} # Change this to the GCP zone
+      filter: '(labels.executor_tag = {INSTANCE_TAG}-docker-mirror)' # Change {INSTANCE_TAG} to the `executor_instance_tag` set in the Terraform modules
   relabel_configs: *executor_relabel_config
 - job_name: 'sourcegraph-executors-docker-registry-mirror-nodes'
   metrics_path: /proxy
@@ -517,8 +534,10 @@ containers:
   # [...]
   env:
   - name: AWS_ACCESS_KEY_ID
+    # The Terraform output for `instance_scraper_access_key_id`
     value: <THE_ACCESS_KEY_TO_CONFIGURE>
   - name: AWS_SECRET_ACCESS_KEY
+    # The Terraform output for `instance_scraper_access_secret_key`
     value: <THE_SECRET_KEY_TO_CONFIGURE>
 ```
 
@@ -530,11 +549,11 @@ containers:
   params:
     module: [executor]
   ec2_sd_configs: &executor_ec2_config
-    - region: {AWS_REGION}
+    - region: {AWS_REGION} # Change this to the AWS region
       port: 9999
       filters:
         - name: tag:executor_tag
-          values: [{INSTANCE_TAG}]
+          values: [{INSTANCE_TAG}] # Change {INSTANCE_TAG} to the `executor_instance_tag` set in the Terraform modules
   relabel_configs: &executor_relabel_config
     - source_labels: [__meta_ec2_public_ip]
       target_label: __address__
@@ -555,6 +574,8 @@ containers:
     module: [node]
   ec2_sd_configs: *executor_ec2_config
   relabel_configs: *executor_relabel_config
+# If you've also used the Terraform modules to provision Docker registry
+# mirrors for executors:
 - job_name: 'sourcegraph-executors-docker-registry-mirrors'
   metrics_path: /proxy
   params:

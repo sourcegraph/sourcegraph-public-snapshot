@@ -107,6 +107,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 		ctx,
 		s.Handle().DB(),
 		"changeset_jobs",
+		batch.MaxNumPostgresParameters,
 		changesetJobInsertColumns,
 		"",
 		changesetJobColumns,

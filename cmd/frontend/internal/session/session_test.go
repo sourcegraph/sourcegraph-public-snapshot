@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -24,7 +23,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
@@ -168,7 +167,7 @@ func TestSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("didn't find actor %v != %v", gotActor, actr)
 	}
@@ -182,7 +181,7 @@ func TestManualSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		user.ID = id
@@ -225,7 +224,7 @@ func TestCookieMiddleware(t *testing.T) {
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 	userCreatedAt := time.Now()
 
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
 			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
@@ -320,7 +319,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 	})
 	w := httptest.NewRecorder()
 
-	CookieMiddleware(new(dbtesting.MockDB), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
+	CookieMiddleware(database.NewDB(nil), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
 
 	// Want the request to succeed and clear the bad cookie.
 	resp := w.Result()
@@ -353,7 +352,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 		return user, nil
 	}
 	defer func() { database.Mocks = database.MockStores{} }()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	// Start a new session for the user with ID 1. Their creation time
 	// will be recorded into the session store.
@@ -414,7 +413,7 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 		return &types.User{ID: 1, CreatedAt: time.Now()}, nil
 	}
 	defer func() { database.Mocks = database.MockStores{} }()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	// Start a new session for the user with ID 1. Their creation time will not be
 	// be recorded into the session store.

@@ -119,7 +119,7 @@ func InitDB() (*sql.DB, error) {
 			return sqlDB, nil
 		}
 
-		if err := dbconn.MigrateDB(sqlDB, dbconn.Frontend); err != nil {
+		if _, err := dbconn.MigrateDB(sqlDB, dbconn.Frontend); err != nil {
 			return nil, err
 		}
 

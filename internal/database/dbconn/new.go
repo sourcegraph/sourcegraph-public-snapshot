@@ -23,6 +23,7 @@ type Opts struct {
 
 // New connects to the given data source and returns the handle.
 //
+// If dbname is set then metric will be reported for the returned handle.
 // dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
 // This is needed because in our dev environment we use a single physical database (and DSN) for all our different
 // logical databases. app, however is set as the application_name in the connection string. This is needed
@@ -42,18 +43,9 @@ func New(opts Opts) (*sql.DB, error) {
 		return nil, err
 	}
 
-	prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
-	return db, nil
-}
-
-// NewRaw connects to the given data source and returns the handle.
-//
-// Prefer to call New as it also configures a connection pool and metrics.
-// Use this method only in internal utilities (such as schemadoc).
-func NewRaw(dataSource string) (*sql.DB, error) {
-	cfg, err := buildConfig(dataSource, "")
-	if err != nil {
-		return nil, err
+	if opts.DBName != "" {
+		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	}
-	return newWithConfig(cfg)
+
+	return db, nil
 }

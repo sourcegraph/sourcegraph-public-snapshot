@@ -52,7 +52,7 @@ import {
     SearchStreamingProps,
 } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
-import { useGlobalStore } from '../stores/global'
+import { useNavbarQueryState } from '../stores'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
@@ -318,7 +318,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     // Update the navbar query to reflect the current repo / revision
     const { globbing } = props
-    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {

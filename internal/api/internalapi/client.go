@@ -36,40 +36,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
-// SavedQueriesListAll lists all saved queries, from every user, org, etc.
-func (c *internalClient) SavedQueriesListAll(ctx context.Context) (map[api.SavedQueryIDSpec]api.ConfigSavedQuery, error) {
-	var result []api.SavedQuerySpecAndConfig
-	err := c.postInternal(ctx, "saved-queries/list-all", nil, &result)
-	if err != nil {
-		return nil, err
-	}
-	m := map[api.SavedQueryIDSpec]api.ConfigSavedQuery{}
-	for _, r := range result {
-		m[r.Spec] = r.Config
-	}
-	return m, nil
-}
-
-// SavedQueriesGetInfo gets the info from the DB for the given saved query. nil
-// is returned if there is no existing info for the saved query.
-func (c *internalClient) SavedQueriesGetInfo(ctx context.Context, query string) (*api.SavedQueryInfo, error) {
-	var result *api.SavedQueryInfo
-	err := c.postInternal(ctx, "saved-queries/get-info", query, &result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-// SavedQueriesSetInfo sets the info in the DB for the given query.
-func (c *internalClient) SavedQueriesSetInfo(ctx context.Context, info *api.SavedQueryInfo) error {
-	return c.postInternal(ctx, "saved-queries/set-info", info, nil)
-}
-
-func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query string) error {
-	return c.postInternal(ctx, "saved-queries/delete-info", query, nil)
-}
-
 func (c *internalClient) SettingsGetForSubject(
 	ctx context.Context,
 	subject api.SettingsSubject,
