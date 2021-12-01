@@ -105,7 +105,7 @@ func main() {
 
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
-	parser := parser.NewParser(parserPool, repositoryFetcher, observationContext)
+	parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
 	apiHandler := api.NewHandler(cachedDatabaseWriter, observationContext)
