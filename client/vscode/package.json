@@ -21,6 +21,7 @@
   "activationEvents": [
     "onCommand:sourcegraph.openInBrowser",
     "onCommand:sourcegraph.search",
+    "onCommand:sourcegraph.copyFileLink",
     "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
     "onView:sourcegraph.searchSidebar"
@@ -37,6 +38,11 @@
         "command": "extension.openFile",
         "category": "Sourcegraph",
         "title": "Open File"
+      },
+      {
+        "command": "sourcegraph.copyFileLink",
+        "category": "Sourcegraph",
+        "title": "Copy Sourcegraph link to file"
       },
       {
         "command": "sourcegraph.openInBrowser",

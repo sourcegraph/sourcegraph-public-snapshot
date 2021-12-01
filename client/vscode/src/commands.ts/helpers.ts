@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import execa from 'execa'
-import vscode from 'vscode'
+import { TextEditor } from 'vscode'
 
 import { log } from '../log'
 
@@ -13,39 +13,22 @@ interface RepositoryInfo extends Branch {
     fileRelative: string
 }
 
-/**
- * Open active file in the browser on the configured Sourcegraph instance.
- *
- * TODO: implement opening remote Sourcegraph files. For now, just open local files in Sourcegraph.
- */
-export async function openFileInBrowser(): Promise<void> {
-    const editor = vscode.window.activeTextEditor
-    if (!editor) {
-        throw new Error('No active editor')
-    }
-    const repositoryInfo = await repoInfo(editor.document.uri.fsPath)
-    if (!repositoryInfo) {
-        return
-    }
-    const { remoteURL, branch, fileRelative } = repositoryInfo
+export type GitHelpers = typeof gitHelpers
 
-    const getSourcegraphUrl = vscode.workspace.getConfiguration('sourcegraph').get('url')
+export interface RemoteName {
+    /**
+     * Remote name of the upstream repository,
+     * or the first found remote name if no upstream is found
+     */
+    remoteName: string
+}
 
-    // Open in browser.
-    const finalUrl =
-        `${getSourcegraphUrl}/-/editor` +
-        `?remote_url=${encodeURIComponent(remoteURL)}` +
-        `&branch=${encodeURIComponent(branch)}` +
-        `&file=${encodeURIComponent(fileRelative)}` +
-        `&editor=${encodeURIComponent('VSCode')}` +
-        `&version=${encodeURIComponent('0.0.2')}` +
-        `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
-        `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
-        `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
-        `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
-
-    // Open in browser.
-    await vscode.env.openExternal(vscode.Uri.parse(finalUrl))
+export interface Branch {
+    /**
+     * Remote branch name, or 'HEAD' if it isn't found because
+     * e.g. detached HEAD state, upstream branch points to a local branch
+     */
+    branch: string
 }
 
 /**
@@ -73,23 +56,7 @@ export async function repoInfo(filePath: string): Promise<RepositoryInfo | undef
         return undefined
     }
 }
-export type GitHelpers = typeof gitHelpers
 
-export interface RemoteName {
-    /**
-     * Remote name of the upstream repository,
-     * or the first found remote name if no upstream is found
-     */
-    remoteName: string
-}
-
-export interface Branch {
-    /**
-     * Remote branch name, or 'HEAD' if it isn't found because
-     * e.g. detached HEAD state, upstream branch points to a local branch
-     */
-    branch: string
-}
 export async function gitRemoteNameAndBranch(
     repoDirectory: string,
     git: Pick<GitHelpers, 'branch' | 'remotes' | 'upstreamAndBranch'>,
@@ -183,6 +150,7 @@ export const gitHelpers = {
         return stdout
     },
 }
+
 /**
  * Returns the remote URL for the given remote name with remote URL replacements.
  * e.g. `origin` -> `git@github.com:foo/bar`
@@ -199,4 +167,27 @@ export async function gitRemoteUrlWithReplacements(
 
     log?.appendLine(`${stdoutBefore} became ${stdout}`)
     return stdout
+}
+
+export function getSourcegraphFileUrl(
+    SourcegraphUrl: string,
+    remoteURL: string,
+    branch: string,
+    fileRelative: string,
+    editor: TextEditor
+): string {
+    // construct final url
+    const finalUrl =
+        `${SourcegraphUrl}/-/editor` +
+        `?remote_url=${encodeURIComponent(remoteURL)}` +
+        `&branch=${encodeURIComponent(branch)}` +
+        `&file=${encodeURIComponent(fileRelative)}` +
+        `&editor=${encodeURIComponent('VSCode')}` +
+        `&version=${encodeURIComponent('0.0.2')}` +
+        `&start_row=${encodeURIComponent(String(editor.selection.start.line))}` +
+        `&start_col=${encodeURIComponent(String(editor.selection.start.character))}` +
+        `&end_row=${encodeURIComponent(String(editor.selection.end.line))}` +
+        `&end_col=${encodeURIComponent(String(editor.selection.end.character))}`
+
+    return finalUrl
 }
