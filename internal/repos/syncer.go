@@ -294,6 +294,9 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName) (repo *types.R
 				if err != nil {
 					log15.Error("Error syncing repo in the background", "name", name, "error", err)
 				}
+				// TODO: When calling this on a repo that's been recently made private from public, this error is
+				// triggered with "error: GitHub repository not found" and bubbles up and results in an "Unknown Error"
+				// on the frontend. I would think that we'd prefer to handle the error more gracefully than that?
 				return repo, err
 			})
 		}()

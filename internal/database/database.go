@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -22,6 +21,7 @@ type DB interface {
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
+	GitserverRepos() GitserverRepoStore
 	GlobalState() GlobalStateStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -109,6 +109,10 @@ func (d *db) ExternalServices() ExternalServiceStore {
 
 func (d *db) FeatureFlags() FeatureFlagStore {
 	return FeatureFlagsWith(d.Store)
+}
+
+func (d *db) GitserverRepos() GitserverRepoStore {
+	return NewGitserverReposWith(d.Store)
 }
 
 func (d *db) GlobalState() GlobalStateStore {

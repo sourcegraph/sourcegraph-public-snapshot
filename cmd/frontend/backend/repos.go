@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"github.com/inconshreveable/log15"
 	"net/url"
 	"time"
 
@@ -51,9 +52,18 @@ func NewRepos(repoStore database.RepoStore) *repos {
 	}
 }
 
+func (s *repos) WithGitserverRepoStore(gitserverRepoStore database.GitserverRepoStore) *repos {
+	return &repos{
+		store:               s.store,
+		cache:               s.cache,
+		gitserverReposStore: gitserverRepoStore,
+	}
+}
+
 type repos struct {
-	store database.RepoStore
-	cache *dbcache.IndexableReposLister
+	store               database.RepoStore
+	gitserverReposStore database.GitserverRepoStore
+	cache               *dbcache.IndexableReposLister
 }
 
 func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
@@ -81,13 +91,11 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 
 	sourceGraphDotComMode := envvar.SourcegraphDotComMode()
 
-	if sourceGraphDotComMode {
-		// TODO: handle the output from this somehow?
-		callRepoUpdaterForRepo(ctx, name)
-	}
-
 	switch repo, err := s.store.GetByName(ctx, name); {
 	case err == nil:
+		if sourceGraphDotComMode {
+			s.checkAndUpdateRepo(ctx, repo.ID, repo.Name)
+		}
 		return repo, nil
 	case !errcode.IsNotFound(err):
 		return nil, err
@@ -110,8 +118,34 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	}
 }
 
-// Looking up the repo in repo-updater makes it sync that repo to the
-// database on sourcegraph.com if that repo is from github.com or gitlab.com
+// checkAndUpdateRepo does a DB query to the gitserver_repos table for this repo to determine if there was an error
+// the last time this repo was updated. If there was no error, we pass through and do nothing, but if there was an
+// error we call the repo-updater service to update the repo. This code path handles the case where the
+// gitserverRepoStore was never initialized by just silently passing through.
+func (s *repos) checkAndUpdateRepo(ctx context.Context, repoID api.RepoID, name api.RepoName) {
+	if s.gitserverReposStore == nil {
+		// no gitserverRepoStore was initialized, so don't try to update the repo.
+		return
+	}
+	gsRepo, err := s.gitserverReposStore.GetByID(ctx, repoID)
+	if err != nil {
+		// Question: should we attempt to update the repo if we run into an error when fetching it from gitserver_repos?
+		log15.Error(fmt.Sprintf("Error getting repo from gitserver_repos: %s", err))
+		return
+	}
+	log15.Info("Successfully fetched from gs repo store")
+	if gsRepo != nil && gsRepo.LastError != "" {
+		// LastError is not empty, which means the last time we tried to update the repo there was an error.
+		// In this case, we should call out to the repo-updater to update the repo.
+		_, err := callRepoUpdaterForRepo(ctx, name)
+		if err != nil {
+			log15.Error(fmt.Sprintf("Error updating repo: %s", err))
+		}
+		log15.Info(fmt.Sprintf("last error for repo %s was non empty: (%s) so the repo was updated",
+			name, gsRepo.LastError))
+	}
+}
+
 func callRepoUpdaterForRepo(ctx context.Context, name api.RepoName) (api.RepoName, error) {
 	lookupResult, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
 	if lookupResult != nil && lookupResult.Repo != nil {
