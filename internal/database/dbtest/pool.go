@@ -68,11 +68,6 @@ func migratePoolDB(db *sql.DB) error {
 	return err
 }
 
-func (t *testDatabasePool) Transact(ctx context.Context) (*testDatabasePool, error) {
-	txBase, err := t.Store.Transact(ctx)
-	return &testDatabasePool{Store: txBase}, err
-}
-
 type TemplateDB struct {
 	ID            int64
 	MigrationHash int64
@@ -322,6 +317,13 @@ func (t *testDatabasePool) PutMigratedDB(ctx context.Context, mdb *MigratedDB) e
 	return t.Exec(ctx, q)
 }
 
+const lockMigratedDBQuery = `
+SELECT id 
+FROM migrated_dbs
+WHERE id = %s
+FOR UPDATE
+`
+
 const deleteMigratedDBQuery = `
 DELETE FROM migrated_dbs
 WHERE id = %s
@@ -329,14 +331,28 @@ WHERE id = %s
 
 // DeleteMigratedDB deletes a database and untracks it in migrated_dbs. This should
 // only be called by the caller who called GetMigratedDB
-func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) error {
-	q := sqlf.Sprintf(deleteMigratedDBQuery, mdb.ID)
-	err = t.Exec(ctx, q)
+func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) (err error) {
+	tx, err := t.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Lock the row for delete
+	err = tx.Exec(ctx, sqlf.Sprintf(lockMigratedDBQuery, mdb.ID))
 	if err != nil {
 		return err
 	}
 
-	return t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
+	// Delete the database outside of the transaction (dbs can't be created or removed
+	// within a transaction)
+	err = t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
+	if err != nil {
+		return err
+	}
+
+	// Remove the row in the transaction that locked it
+	return tx.Exec(ctx, sqlf.Sprintf(deleteMigratedDBQuery, mdb.ID))
 }
 
 const listOldTemplateDBs = `
