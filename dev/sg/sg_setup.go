@@ -994,12 +994,7 @@ func (d *dependency) IsMet() bool { return d.err == nil }
 
 func (d *dependency) Update(ctx context.Context) {
 	d.err = nil
-
-	err := d.check(ctx)
-	if err != nil {
-		d.err = err
-		return
-	}
+	d.err = d.check(ctx)
 }
 
 type dependencyCategory struct {
@@ -1087,7 +1082,7 @@ func retryCheck(check dependencyCheck, retries int, sleep time.Duration) depende
 		for i := 0; i < retries; i++ {
 			err = check(ctx)
 			if err != nil {
-				return nil
+				return err
 			}
 			time.Sleep(sleep)
 		}
