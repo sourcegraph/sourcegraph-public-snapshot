@@ -66,8 +66,10 @@ var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
 const executionPlaceInQueueFragment = `
 SELECT
 	exec.id,
-	ROW_NUMBER() OVER (ORDER BY COALESCE(exec.process_after, exec.created_at), exec.id) as place_in_queue
+	ROW_NUMBER() OVER (PARTITION BY (b.user_id) ORDER BY COALESCE(exec.process_after, exec.created_at), exec.id) as place_in_queue
 FROM batch_spec_workspace_execution_jobs exec
+JOIN batch_spec_workspaces w ON w.id = exec.batch_spec_workspace_id
+JOIN batch_specs b ON b.id = w.batch_spec_id
 WHERE exec.state = 'queued'
 `
 
@@ -184,7 +186,7 @@ func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetB
 	return &c, nil
 }
 
-var getBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+var getBatchSpecWorkspaceExecutionJobQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:GetBatchSpecWorkspaceExecutionJob
 SELECT
 	%s
@@ -211,7 +213,7 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 	}
 
 	return sqlf.Sprintf(
-		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		getBatchSpecWorkspaceExecutionJobQueryFmtstr,
 		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
