@@ -220,7 +220,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(8): {{IsDefaultBranch: true}},
 	}
 
@@ -278,7 +278,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
@@ -321,7 +321,7 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(2): {{IsDefaultBranch: true}},
 	}
 
@@ -390,7 +390,7 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(6): {{IsDefaultBranch: true}},
 	}
 
@@ -446,7 +446,7 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(5): {{IsDefaultBranch: true}},
 	}
 
@@ -490,7 +490,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 
@@ -585,7 +585,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		// stale
 		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
 		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
@@ -694,7 +694,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		// stale
 		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: t1}},
 		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: t1}},
@@ -799,7 +799,7 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
 	}
 
-	refDescriptions := map[string][]gitserver.RefDescription{
+	refDescriptions := map[string][]gitdomain.RefDescription{
 		makeCommit(3): {{IsDefaultBranch: true}},
 	}
 

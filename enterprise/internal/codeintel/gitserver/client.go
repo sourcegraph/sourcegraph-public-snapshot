@@ -212,14 +212,6 @@ func ParseCommitGraph(lines []string) *CommitGraph {
 	}
 }
 
-// RefDescription describes a commit at the head of a branch or tag.
-type RefDescription struct {
-	Name            string
-	Type            gitdomain.RefType
-	IsDefaultBranch bool
-	CreatedDate     time.Time
-}
-
 var refPrefixes = map[string]gitdomain.RefType{
 	"refs/heads/": gitdomain.RefTypeBranch,
 	"refs/tags/":  gitdomain.RefTypeTag,
@@ -227,7 +219,7 @@ var refPrefixes = map[string]gitdomain.RefType{
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]RefDescription, err error) {
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]gitdomain.RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -254,8 +246,8 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
-	refDescriptions := make(map[string][]RefDescription, len(lines))
+func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription, error) {
+	refDescriptions := make(map[string][]gitdomain.RefDescription, len(lines))
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -288,7 +280,7 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
-		refDescriptions[commit] = append(refDescriptions[commit], RefDescription{
+		refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,

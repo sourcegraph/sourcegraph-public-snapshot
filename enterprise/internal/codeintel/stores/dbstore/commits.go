@@ -259,7 +259,7 @@ func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
 	commitGraph *gitserver.CommitGraph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -787,7 +787,7 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {

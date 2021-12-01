@@ -165,15 +165,15 @@ func TestParseRefDescriptions(t *testing.T) {
 		return date
 	}
 
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) RefDescription {
-		return RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
+	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
 	}
 
-	makeTag := func(name, createdDate string) RefDescription {
-		return RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate)}
+	makeTag := func(name, createdDate string) gitdomain.RefDescription {
+		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate)}
 	}
 
-	expectedRefDescriptions := map[string][]RefDescription{
+	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"66a7ac584740245fc523da443a3f540a52f8af72": {makeBranch("bl/symbols", "2021-01-18T16:46:51-08:00", false)},
 		"58537c06cf7ba8a562a3f5208fb7a8efbc971d0e": {makeBranch("bl/symbols-2", "2021-02-24T06:21:20-08:00", false)},
 		"a40716031ae97ee7c5cdf1dec913567a4a7c50c8": {makeBranch("ef/wtf", "2021-02-10T10:50:08-06:00", false)},

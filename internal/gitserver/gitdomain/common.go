@@ -95,3 +95,11 @@ const (
 	RefTypeBranch
 	RefTypeTag
 )
+
+// RefDescription describes a commit at the head of a branch or tag.
+type RefDescription struct {
+	Name            string
+	Type            RefType
+	IsDefaultBranch bool
+	CreatedDate     time.Time
+}
