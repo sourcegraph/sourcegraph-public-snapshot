@@ -337,6 +337,10 @@ func newVersionPtr(major, minor int) *Version {
 func testStore(t *testing.T, db dbutil.DB) *Store {
 	store := NewStoreWithDB(db)
 
+	if _, err := db.ExecContext(context.Background(), "DELETE FROM out_of_band_migrations CASCADE"); err != nil {
+		t.Fatalf("unexpected error truncating migration: %s", err)
+	}
+
 	for i := range testMigrations {
 		if err := insertMigration(store, testMigrations[i], false); err != nil {
 			t.Fatalf("unexpected error inserting migration: %s", err)
