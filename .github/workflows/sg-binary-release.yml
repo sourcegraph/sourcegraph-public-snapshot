@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - mrn/testing-sg-cross-compiling
     paths:
       - 'dev/sg/**'
       - '.github/workflows/sg-binary-release.yml'
