@@ -228,7 +228,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	res.Resolved = Resolved{
-		RepoRevs: make([]*search.RepositoryRevisions, 0, len(repos)),
+		RepoRevs: make([]*search.RepositoryRevisions, len(repos)),
 		RepoSet:  make(map[api.RepoID]types.MinimalRepo, len(repos)),
 		Next:     next,
 	}
@@ -236,12 +236,12 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	sem := semaphore.NewWeighted(128) // same concurrency as filterRepoHasCommitAfter
 	g, ctx := errgroup.WithContext(ctx)
 
-	for _, repo := range repos {
+	for i, repo := range repos {
 		if err = sem.Acquire(ctx, 1); err != nil {
 			return res.Resolved, err
 		}
 
-		repo := repo // avoid race
+		repo, i := repo, i // avoid race
 
 		g.Go(func() error {
 			defer sem.Release(1)
@@ -331,18 +331,26 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			}
 
 			res.Lock()
-			res.RepoRevs = append(res.RepoRevs, &repoRev)
+			res.RepoRevs[i] = &repoRev
 			res.RepoSet[repoRev.Repo.ID] = repoRev.Repo
 			res.Unlock()
 
 			return nil
 		})
-
 	}
 
 	if err = g.Wait(); err != nil {
 		return res.Resolved, err
 	}
+
+	// Remove any repos that failed to have their revs validated.
+	valid := res.RepoRevs[:0]
+	for _, r := range res.RepoRevs {
+		if r != nil {
+			valid = append(valid, r)
+		}
+	}
+	res.RepoRevs = valid
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
