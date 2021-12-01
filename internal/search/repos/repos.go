@@ -319,7 +319,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	if len(res.MissingRepoRevs) > 0 {
-		err = &MissingRepoRevsError{Missing: res.MissingRepoRevs}
+		err = multierror.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
 	}
 
 	return res, err
