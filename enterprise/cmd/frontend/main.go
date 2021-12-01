@@ -80,13 +80,13 @@ func enterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable, outOfB
 		log.Fatal(err)
 	}
 
-	// Initialize enterprise-specific services with the code-intel services.
-	if err := executor.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
-		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
-	}
-
 	if err := codeintel.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services); err != nil {
 		log.Fatal(fmt.Sprintf("failed to initialize codeintel: %s", err))
+	}
+
+	// Initialize enterprise-specific services with the code-intel services.
+	if err := executor.Init(ctx, db, conf, outOfBandMigrationRunner, &enterpriseServices, observationContext, services.InternalUploadHandler); err != nil {
+		log.Fatal(fmt.Sprintf("failed to initialize executor: %s", err))
 	}
 
 	// Initialize all the enterprise-specific services that do not need the codeintel-specific services.
