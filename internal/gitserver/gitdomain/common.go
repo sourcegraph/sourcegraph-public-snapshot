@@ -87,3 +87,11 @@ type Signature struct {
 	Email string    `json:"Email,omitempty"`
 	Date  time.Time `json:"Date"`
 }
+
+type RefType int
+
+const (
+	RefTypeUnknown RefType = iota
+	RefTypeBranch
+	RefTypeTag
+)

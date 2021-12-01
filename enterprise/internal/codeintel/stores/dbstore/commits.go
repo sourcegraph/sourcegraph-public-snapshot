@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -789,9 +791,9 @@ func sanitizeCommitInput(
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
-	maxAges := map[gitserver.RefType]time.Duration{
-		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
-		gitserver.RefTypeTag:    maxAgeForNonStaleTags,
+	maxAges := map[gitdomain.RefType]time.Duration{
+		gitdomain.RefTypeBranch: maxAgeForNonStaleBranches,
+		gitdomain.RefTypeTag:    maxAgeForNonStaleTags,
 	}
 
 	nearestUploadsRowValues := make(chan []interface{})

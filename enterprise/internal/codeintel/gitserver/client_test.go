@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 func TestParseCommitGraph(t *testing.T) {
@@ -164,11 +166,11 @@ func TestParseRefDescriptions(t *testing.T) {
 	}
 
 	makeBranch := func(name, createdDate string, isDefaultBranch bool) RefDescription {
-		return RefDescription{Name: name, Type: RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
+		return RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate)}
 	}
 
 	makeTag := func(name, createdDate string) RefDescription {
-		return RefDescription{Name: name, Type: RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate)}
+		return RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate)}
 	}
 
 	expectedRefDescriptions := map[string][]RefDescription{

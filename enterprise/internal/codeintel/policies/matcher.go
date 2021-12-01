@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
@@ -80,11 +82,11 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 	for commit, refDescriptions := range refDescriptions {
 		for _, refDescription := range refDescriptions {
 			switch refDescription.Type {
-			case gitserver.RefTypeTag:
+			case gitdomain.RefTypeTag:
 				// Match tagged commits
 				m.matchTaggedCommits(context, commit, refDescription, now)
 
-			case gitserver.RefTypeBranch:
+			case gitdomain.RefTypeBranch:
 				// Match tips of branches
 				m.matchBranchHeads(context, commit, refDescription, now)
 			}

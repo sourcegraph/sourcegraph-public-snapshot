@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 )
 
@@ -60,7 +62,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		for branch, commit := range branchHeads {
 			refDescriptions[commit] = append(refDescriptions[commit], gitserver.RefDescription{
 				Name:            branch,
-				Type:            gitserver.RefTypeBranch,
+				Type:            gitdomain.RefTypeBranch,
 				IsDefaultBranch: branch == defaultBranchName,
 				CreatedDate:     createdAt[commit],
 			})
@@ -69,7 +71,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		for tag, commit := range tagHeads {
 			refDescriptions[commit] = append(refDescriptions[commit], gitserver.RefDescription{
 				Name:        tag,
-				Type:        gitserver.RefTypeTag,
+				Type:        gitdomain.RefTypeTag,
 				CreatedDate: createdAt[commit],
 			})
 		}

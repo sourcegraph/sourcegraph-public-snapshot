@@ -215,22 +215,14 @@ func ParseCommitGraph(lines []string) *CommitGraph {
 // RefDescription describes a commit at the head of a branch or tag.
 type RefDescription struct {
 	Name            string
-	Type            RefType
+	Type            gitdomain.RefType
 	IsDefaultBranch bool
 	CreatedDate     time.Time
 }
 
-type RefType int
-
-const (
-	RefTypeUnknown RefType = iota
-	RefTypeBranch
-	RefTypeTag
-)
-
-var refPrefixes = map[string]RefType{
-	"refs/heads/": RefTypeBranch,
-	"refs/tags/":  RefTypeTag,
+var refPrefixes = map[string]gitdomain.RefType{
+	"refs/heads/": gitdomain.RefTypeBranch,
+	"refs/tags/":  gitdomain.RefTypeTag,
 }
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
@@ -279,7 +271,7 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 		isDefaultBranch := parts[2] == "*"
 
 		var name string
-		var refType RefType
+		var refType gitdomain.RefType
 		for prefix, typ := range refPrefixes {
 			if strings.HasPrefix(parts[1], prefix) {
 				name = parts[1][len(prefix):]
@@ -287,7 +279,7 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 				break
 			}
 		}
-		if refType == RefTypeUnknown {
+		if refType == gitdomain.RefTypeUnknown {
 			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
