@@ -15,13 +15,14 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // testDatabasePool handles creating and reusing migrated database instances
 type testDatabasePool struct {
-	db *sql.DB
+	*basestore.Store
 }
 
 const poolSchemaVersion = 1
@@ -68,6 +69,11 @@ func migratePoolDB(db *sql.DB) error {
 	return err
 }
 
+func (t *testDatabasePool) Transact(ctx context.Context) (*testDatabasePool, error) {
+	txBase, err := t.Store.Transact(ctx)
+	return &testDatabasePool{Store: txBase}, err
+}
+
 type TemplateDB struct {
 	ID            uint64
 	MigrationHash uint64
@@ -102,19 +108,13 @@ RETURNING %s
 // migrated. If no template database exists with the same hash as the given migrations, a new template
 // database is created and the migrations are run.
 func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...*dbconn.Database) (_ *TemplateDB, err error) {
-	tx, err := t.db.BeginTx(ctx, nil)
+	tx, err := t.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer func() { err = t.Done(err) }()
 
-	_, err = tx.ExecContext(ctx, "LOCK TABLE template_dbs IN ACCESS EXCLUSIVE MODE")
+	err = tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE template_dbs IN ACCESS EXCLUSIVE MODE"))
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		hash,
 		sqlf.Join(templateDBColumns, ","),
 	)
-	row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row := tx.QueryRow(ctx, q)
 	tdb, err := scanTemplateDB(row)
 	if err == nil {
 		return tdb, nil
@@ -145,7 +145,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		hash,
 		sqlf.Join(templateDBColumns, ","),
 	)
-	row = tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row = tx.QueryRow(ctx, q)
 	tdb, err = scanTemplateDB(row)
 	if err != nil {
 		return nil, errors.Wrap(err, "insert template row")
@@ -155,7 +155,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 	// cannot be created inside a transaciton. This is safe because the whole
 	// template_dbs table is locked in the transaction above, so this
 	// will never happen concurrently.
-	_, err = t.db.ExecContext(ctx, "CREATE DATABASE"+pq.QuoteIdentifier(tdb.Name))
+	err = t.Exec(ctx, sqlf.Sprintf("CREATE DATABASE"+pq.QuoteIdentifier(tdb.Name)))
 	if err != nil {
 		return nil, errors.Wrap(err, "create template database")
 	}
@@ -214,24 +214,18 @@ RETURNING %s
 // clean database already exists for the given template, that is claimed and returned. If it does not, a new
 // database is created from the given template and returned.
 func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (_ *MigratedDB, err error) {
-	tx, err := t.db.BeginTx(ctx, nil)
+	tx, err := t.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer func() { err = t.Done(err) }()
 
 	// Check to see if there is a clean, migrated DB already available
 	q := sqlf.Sprintf(
 		getExistingMigratedDB,
 		sqlf.Join(migratedDBColumns, ","),
 	)
-	row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row := tx.QueryRow(ctx, q)
 	mdb, err := scanMigratedDB(row)
 	if err == nil {
 		return mdb, nil
@@ -247,7 +241,7 @@ func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (
 		false,
 		sqlf.Join(migratedDBColumns, ","),
 	)
-	row = tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	row = tx.QueryRow(ctx, q)
 	mdb, err = scanMigratedDB(row)
 	if err != nil {
 		return nil, err
@@ -255,7 +249,7 @@ func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (
 
 	// Create the new database outside of the transaction because databases
 	// cannot be created in a transaction.
-	_, err = t.db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", pq.QuoteIdentifier(mdb.Name), pq.QuoteIdentifier(tdb.Name)))
+	err = t.Exec(ctx, sqlf.Sprintf(fmt.Sprintf("CREATE DATABASE %s TEMPLATE %s", pq.QuoteIdentifier(mdb.Name), pq.QuoteIdentifier(tdb.Name))))
 	if err != nil {
 		return nil, err
 	}
@@ -279,9 +273,7 @@ func (t *testDatabasePool) UnclaimCleanMigratedDB(ctx context.Context, mdb *Migr
 		unclaimCleanMigratedDB,
 		mdb.ID,
 	)
-
-	_, err := t.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
+	return t.Exec(ctx, q)
 }
 
 const uninsertMigratedDB = `
@@ -292,13 +284,13 @@ WHERE id = %s
 // DeleteMigratedDB deletes a database and untracks it in migrated_dbs. This should
 // only be called by the caller who called GetMigratedDB
 func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) error {
-	_, err := t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
+	err := t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
-	_, err = t.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	err = t.Exec(ctx, q)
 	return err
 }
 
@@ -329,17 +321,11 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 		return err
 	}
 
-	tx, err := t.db.BeginTx(ctx, nil)
+	tx, err := t.Transact(ctx)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer func() { err = tx.Done(err) }()
 
 	// List any old template databases that don't have the same
 	// hash as the given database definitions
@@ -348,7 +334,7 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 		sqlf.Join(templateDBColumns, ","),
 		hash,
 	)
-	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := tx.Query(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -365,7 +351,7 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 			listMigratedDBsForTemplate,
 			tdb.ID,
 		)
-		rows, err = tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		rows, err = tx.Query(ctx, q)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
@@ -382,10 +368,10 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 		for _, mdb := range mdbs {
 			// Just a best effort delete in case this somehow gets out of sync
 			// and that database is already gone
-			_, _ = t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
+			_ = t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
 
 			q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
-			_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			err = tx.Exec(ctx, q)
 			if err != nil {
 				mdbErrs = multierror.Append(mdbErrs, err)
 			}
@@ -397,10 +383,10 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 
 		// Just a best effort delete in case this somehow gets out of sync
 		// and that database is already gone
-		_, _ = t.db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(tdb.Name))
+		_ = t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(tdb.Name)))
 
 		q = sqlf.Sprintf(uninsertTemplateDB, tdb.ID)
-		_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		err = tx.Exec(ctx, q)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}

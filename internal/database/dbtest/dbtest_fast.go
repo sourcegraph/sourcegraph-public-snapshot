@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
@@ -230,5 +231,5 @@ func newPoolFromURL(u *url.URL) (*testDatabasePool, error) {
 		}
 	}
 
-	return &testDatabasePool{db: poolDB}, nil
+	return &testDatabasePool{Store: basestore.NewWithDB(db)}, nil
 }
