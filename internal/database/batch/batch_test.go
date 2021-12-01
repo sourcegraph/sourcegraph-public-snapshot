@@ -3,7 +3,6 @@ package batch
 import (
 	"context"
 	"database/sql"
-	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -103,24 +102,20 @@ func BenchmarkBatchInserterLargePayload(b *testing.B) {
 	}
 }
 
-var setup sync.Once
-
 func setupTestTable(t testing.TB, db *sql.DB) {
-	setup.Do(func() {
-		createTableQuery := `
-			CREATE TABLE batch_inserter_test (
-				id SERIAL,
-				col1 integer NOT NULL UNIQUE,
-				col2 integer NOT NULL,
-				col3 integer NOT NULL,
-				col4 integer NOT NULL,
-				col5 text
-			)
-		`
-		if _, err := db.Exec(createTableQuery); err != nil {
-			t.Fatalf("unexpected error creating test table: %s", err)
-		}
-	})
+	createTableQuery := `
+		CREATE TABLE batch_inserter_test (
+			id SERIAL,
+			col1 integer NOT NULL UNIQUE,
+			col2 integer NOT NULL,
+			col3 integer NOT NULL,
+			col4 integer NOT NULL,
+			col5 text
+		)
+	`
+	if _, err := db.Exec(createTableQuery); err != nil {
+		t.Fatalf("unexpected error creating test table: %s", err)
+	}
 }
 
 func makeTestValues(tableSizeFactor, payloadSize int) [][]interface{} {
