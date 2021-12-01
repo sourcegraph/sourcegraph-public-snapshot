@@ -19,6 +19,7 @@
     "Other"
   ],
   "activationEvents": [
+    "onCommand:sourcegraph.openInBrowser",
     "onCommand:sourcegraph.search",
     "onCommand:extension.openFile",
     "onView:sourcegraph.extensionHost",
