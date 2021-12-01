@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - main
+      - mrn/testing-sg-cross-compiling
     paths:
       - 'dev/sg/**'
       - '.github/workflows/sg-binary-release.yml'
 
 env:
   GOFLAGS: -trimpath
-  CGO_ENABLED: '0'
+  CGO_ENABLED: '1'
 
 jobs:
   create_release:
@@ -28,7 +29,7 @@ jobs:
           # ATTENTION: release_name is a duplicate from the last step in this
           # file, because I can't get workflow outputs to work. If you change
           # one, make sure you change the other.
-          release_name="${today}-${short_sha}"
+          release_name="THORSTEN-TESTING"
 
           echo "### sg snapshot release" >> /tmp/release-notes.md
           echo "" >> /tmp/release-notes.md
@@ -45,27 +46,25 @@ jobs:
   build:
     name: build
     needs: [create_release]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - linux
-          - darwin
+          - ubuntu-latest
+          - macos-latest
         arch:
           - amd64
           - arm64
-    env:
-      GOOS: ${{ matrix.os }}
-      GOARCH: ${{ matrix.arch }}
+
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
-
-      - name: Checkout
-        uses: actions/checkout@v2
 
       - name: Get Go environment
         id: go-env
@@ -83,9 +82,20 @@ jobs:
         env:
           GOEXE: ${{ steps.go-env.outputs.exe }}
 
-      - name: Build release asset
+      - name: Build release asset for macOS
+        if: startsWith(matrix.os, 'macos-') == true
         run: |
-          cd dev/sg && go install -ldflags "-X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          cd dev/sg
+          export CGO_ENABLED=1
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          go install -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+
+      - name: Build release asset for Linux
+        if: startsWith(matrix.os, 'ubuntu-') == true
+        run: |
+          cd dev/sg
+          export CGO_ENABLED=1
+          go install -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Move asset to GOPATH/bin
         if: ${{ steps.go-env.outputs.hostos != matrix.os || steps.go-env.outputs.hostarch != matrix.arch }}
