@@ -9,11 +9,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/neelance/parallel"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -23,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
@@ -225,6 +222,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	var res struct {
 		sync.Mutex
 		Resolved
+		multierror.Error
 	}
 
 	res.Resolved = Resolved{
@@ -233,7 +231,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		Next:     next,
 	}
 
-	sem := semaphore.NewWeighted(128) // same concurrency as filterRepoHasCommitAfter
+	sem := semaphore.NewWeighted(128)
 	g, ctx := errgroup.WithContext(ctx)
 
 	for i, repo := range repos {
@@ -284,7 +282,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 					repoRev.Revs = append(repoRev.Revs, rev)
 					continue
 				}
-				if rev.RevSpec == "" { // skip default branch resolution to save time
+
+				if rev.RevSpec == "" && op.CommitAfter == "" { // skip default branch resolution to save time
 					repoRev.Revs = append(repoRev.Revs, rev)
 					continue
 				}
@@ -299,14 +298,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				trimmedRefSpec := strings.TrimPrefix(
-					rev.RevSpec,
-					"^",
-				) // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				if _, err := git.ResolveRevision(ctx, repoRev.GitserverRepo(), trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true}); err != nil {
-					if errors.Is(err, context.DeadlineExceeded) {
-						return context.DeadlineExceeded
-					}
+				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
+				commitID, err := git.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true})
+				if err != nil {
 					if errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err
 					}
@@ -327,6 +321,28 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 					// if there is one.
 					continue
 				}
+
+				if op.CommitAfter != "" {
+					n, err := git.CommitCount(ctx, repoRev.Repo.Name, git.CommitsOptions{
+						N:     1,
+						After: op.CommitAfter,
+						Range: string(commitID),
+					})
+
+					if err != nil {
+						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
+							res.Lock()
+							multierror.Append(&res.Error, err)
+							res.Unlock()
+						}
+						continue
+					}
+
+					if n == 0 {
+						continue
+					}
+				}
+
 				repoRev.Revs = append(repoRev.Revs, rev)
 			}
 
@@ -353,13 +369,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	res.RepoRevs = valid
 
 	tr.LazyPrintf("Associate/validate revs - done")
-
-	if op.CommitAfter != "" {
-		start := time.Now()
-		before := len(res.RepoRevs)
-		res.RepoRevs, err = filterRepoHasCommitAfter(ctx, res.RepoRevs, op.CommitAfter)
-		tr.LazyPrintf("repohascommitafter removed %d repos in %s", before-len(res.RepoRevs), time.Since(start))
-	}
 
 	if len(res.MissingRepoRevs) > 0 {
 		err = multierror.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
@@ -611,55 +620,6 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 		}
 	}
 	return
-}
-
-func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
-	var (
-		mut  sync.Mutex
-		pass []*search.RepositoryRevisions
-		res  = make(chan *search.RepositoryRevisions, 100)
-		run  = parallel.NewRun(128)
-	)
-
-	goroutine.Go(func() {
-		for rev := range res {
-			if len(rev.Revs) != 0 {
-				mut.Lock()
-				pass = append(pass, rev)
-				mut.Unlock()
-			}
-			run.Release()
-		}
-	})
-
-	for _, revs := range revisions {
-		run.Acquire()
-
-		revs := revs
-		goroutine.Go(func() {
-			var specifiers []search.RevisionSpecifier
-			for _, rev := range revs.Revs {
-				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
-				if err != nil {
-					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
-						continue
-					}
-
-					run.Error(err)
-					continue
-				}
-				if ok {
-					specifiers = append(specifiers, rev)
-				}
-			}
-			res <- &search.RepositoryRevisions{Repo: revs.Repo, Revs: specifiers}
-		})
-	}
-
-	err := run.Wait()
-	close(res)
-
-	return pass, err
 }
 
 func optimizeRepoPatternWithHeuristics(repoPattern string) string {
