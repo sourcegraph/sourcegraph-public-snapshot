@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -226,7 +225,7 @@ func orgInvitationURL(org *types.Org) *url.URL {
 // sendOrgInvitationNotification sends an email to the recipient of an org invitation with a link to
 // respond to the invitation. Callers should check conf.CanSendEmail() if they want to return a nice
 // error if sending email is not enabled.
-func sendOrgInvitationNotification(ctx context.Context, db dbutil.DB, org *types.Org, sender *types.User, recipientEmail string) error {
+func sendOrgInvitationNotification(ctx context.Context, db database.DB, org *types.Org, sender *types.User, recipientEmail string) error {
 	if envvar.SourcegraphDotComMode() {
 		// Basic abuse prevention for Sourcegraph.com.
 

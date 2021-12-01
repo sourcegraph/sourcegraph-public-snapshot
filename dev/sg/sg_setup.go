@@ -840,19 +840,22 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
-func checkCommandOutputContains(cmd, contains string) func(context.Context) (bool, error) {
-	return func(ctx context.Context) (bool, error) {
+func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
+	return func(ctx context.Context) error {
 		elems := strings.Split(cmd, " ")
 		out, _ := exec.Command(elems[0], elems[1:]...).CombinedOutput()
-		return strings.Contains(string(out), contains), nil
+		if !strings.Contains(string(out), contains) {
+			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
+		}
+		return nil
 	}
 }
 
-func checkFileContains(fileName, content string) func(context.Context) (bool, error) {
-	return func(ctx context.Context) (bool, error) {
+func checkFileContains(fileName, content string) func(context.Context) error {
+	return func(ctx context.Context) error {
 		file, err := os.Open(fileName)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to check that %q contains %q", fileName, content)
+			return errors.Wrapf(err, "failed to check that %q contains %q", fileName, content)
 		}
 		defer file.Close()
 
@@ -860,65 +863,65 @@ func checkFileContains(fileName, content string) func(context.Context) (bool, er
 		for scanner.Scan() {
 			line := scanner.Text()
 			if strings.Contains(line, content) {
-				return true, nil
+				return nil
 			}
 		}
 
 		if err := scanner.Err(); err != nil {
-			return false, err
+			return err
 		}
 
-		return false, errors.Newf("file %q did not contain %q", fileName, content)
+		return errors.Newf("file %q did not contain %q", fileName, content)
 	}
 }
 
-func checkInPath(cmd string) func(context.Context) (bool, error) {
-	return func(ctx context.Context) (bool, error) {
-		p, err := exec.LookPath(cmd)
+func checkInPath(cmd string) func(context.Context) error {
+	return func(ctx context.Context) error {
+		_, err := exec.LookPath(cmd)
 		if err != nil {
-			return false, errors.Newf("executable %q not found in $PATH", cmd)
+			return err
 		}
-		return p != "", nil
+		return nil
 	}
 }
 
-func checkInMainRepoOrRepoInDirectory(ctx context.Context) (bool, error) {
+func checkInMainRepoOrRepoInDirectory(ctx context.Context) error {
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		ok, err := pathExists("sourcegraph")
 		if !ok || err != nil {
-			return false, errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
+			return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
 		}
-		return true, nil
+		return nil
 	}
-	return true, nil
+	return nil
 }
 
-func checkDevPrivateInParentOrInCurrentDirectory(context.Context) (bool, error) {
+func checkDevPrivateInParentOrInCurrentDirectory(context.Context) error {
 	ok, err := pathExists("dev-private")
 	if ok && err == nil {
-		return true, nil
+		return nil
 	}
 	wd, err := os.Getwd()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to check for dev-private repository")
+		return errors.Wrap(err, "failed to check for dev-private repository")
 	}
 
 	p := filepath.Join(wd, "..", "dev-private")
 	ok, err = pathExists(p)
 	if ok && err == nil {
-		return true, nil
+		return nil
 	}
-	return false, errors.New("could not find dev-private repository either in current directory or one above")
+	return errors.New("could not find dev-private repository either in current directory or one above")
 }
 
-func checkPostgresConnection(ctx context.Context) (bool, error) {
+func checkPostgresConnection(ctx context.Context) error {
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
 	ok, _ := parseConf(*configFlag, *overwriteConfigFlag)
 	if !ok {
-		return false, errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}
 
 	getEnv := func(key string) string {
@@ -935,43 +938,43 @@ func checkPostgresConnection(ctx context.Context) (bool, error) {
 	dns := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dns)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to connect to Postgres database")
 	}
 	defer conn.Close(ctx)
 
 	var result int
 	row := conn.QueryRow(ctx, "SELECT 1;")
 	if err := row.Scan(&result); err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to read from Postgres database")
 	}
 	if result != 1 {
-		return false, errors.New("failed to read a test value from database")
+		return errors.New("failed to read a test value from Postgres database")
 	}
-	return true, nil
+	return nil
 }
 
-func checkRedisConnection(context.Context) (bool, error) {
+func checkRedisConnection(context.Context) error {
 	conn, err := redis.Dial("tcp", ":6379", redis.DialConnectTimeout(5*time.Second))
 	if err != nil {
-		return false, errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
+		return errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
 	}
 
 	if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to write to Redis at 127.0.0.1:6379")
 	}
 
 	retval, err := redis.String(conn.Do("GET", "sg-setup"))
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to read from Redis at 127.0.0.1:6379")
 	}
 
-	return retval == "was-here", nil
+	if retval != "was-here" {
+		return errors.New("failed to test write in Redis")
+	}
+	return nil
 }
 
-// TODO: We should change the signature to be `func(context.Context) error`
-// and use the convention "success = err == nil" and use the errors to
-// provide helpful messages as to why a check didn't pass.
-type dependencyCheck func(context.Context) (bool, error)
+type dependencyCheck func(context.Context) error
 
 type dependency struct {
 	name string
@@ -980,28 +983,18 @@ type dependency struct {
 
 	onlyEmployees bool
 
-	state bool
-	err   error
+	err error
 
 	instructionsComment    string
 	instructionsCommands   string
 	requiresSgSetupRestart bool
 }
 
-func (d *dependency) IsMet() bool { return d.err == nil && d.state }
+func (d *dependency) IsMet() bool { return d.err == nil }
 
 func (d *dependency) Update(ctx context.Context) {
 	d.err = nil
-	d.state = false
-
-	ok, err := d.check(ctx)
-	if err != nil {
-		d.err = err
-		d.state = false
-		return
-	}
-
-	d.state = ok
+	d.err = d.check(ctx)
 }
 
 type dependencyCategory struct {
@@ -1085,53 +1078,53 @@ func getChoice(choices map[int]string) (int, error) {
 }
 
 func retryCheck(check dependencyCheck, retries int, sleep time.Duration) dependencyCheck {
-	return func(ctx context.Context) (ok bool, err error) {
+	return func(ctx context.Context) (err error) {
 		for i := 0; i < retries; i++ {
-			ok, err = check(ctx)
-			if ok {
-				return true, nil
+			err = check(ctx)
+			if err != nil {
+				return err
 			}
 			time.Sleep(sleep)
 		}
-		return ok, err
+		return err
 	}
 }
 
 func wrapCheckErr(check dependencyCheck, message string) dependencyCheck {
-	return func(ctx context.Context) (bool, error) {
-		ok, err := check(ctx)
+	return func(ctx context.Context) error {
+		err := check(ctx)
 		if err != nil {
-			return ok, errors.Wrap(err, message)
+			return errors.Wrap(err, message)
 		}
-		return ok, err
+		return nil
 	}
 }
 
-func checkCaddyTrusted(ctx context.Context) (bool, error) {
+func checkCaddyTrusted(ctx context.Context) error {
 	certPath, err := caddySourcegraphCertificatePath()
 	if err != nil {
-		return false, errors.Wrap(err, "failed to determine path where proxy stores certificates")
+		return errors.Wrap(err, "failed to determine path where proxy stores certificates")
 	}
 
 	ok, err := pathExists(certPath)
 	if !ok || err != nil {
-		return false, errors.New("sourcegraph.test certificate not found. highly likely it's not trusted by system")
+		return errors.New("sourcegraph.test certificate not found. highly likely it's not trusted by system")
 	}
 
 	rawCert, err := os.ReadFile(certPath)
 	if err != nil {
-		return false, errors.Wrap(err, "could not read certificate")
+		return errors.Wrap(err, "could not read certificate")
 	}
 
 	cert, err := pemDecodeSingleCert(rawCert)
 	if err != nil {
-		return false, errors.Wrap(err, "decoding cert failed")
+		return errors.Wrap(err, "decoding cert failed")
 	}
 
 	if trusted(cert) {
-		return true, nil
+		return nil
 	}
-	return false, errors.New("doesn't look like certificate is trusted")
+	return errors.New("doesn't look like certificate is trusted")
 }
 
 // caddyAppDataDir returns the location of the sourcegraph.test certificate

@@ -57,6 +57,9 @@ var rngLock sync.Mutex
 // NewDB uses NewFromDSN to create a testing database, using the default
 // DSN.
 func NewDB(t testing.TB) *sql.DB {
+	if os.Getenv("USE_FAST_DBTEST") != "" {
+		return NewFastDB(t)
+	}
 	return NewFromDSN(t, "")
 }
 

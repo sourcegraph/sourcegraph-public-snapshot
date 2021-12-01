@@ -117,6 +117,7 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
                     : null
             }
             className={className}
+            chartContentClassName="pt-4"
             onUpdateClick={() => setLastPreviewVersion(version => version + 1)}
         />
     )

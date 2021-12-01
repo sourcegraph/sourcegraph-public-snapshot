@@ -11,6 +11,8 @@ import { createRequiredValidator } from '../../../../../../components/form/valid
 import { SearchBasedInsightSeries } from '../../../../../../core/types/insight/search-insight'
 import { DEFAULT_ACTIVE_COLOR, FormColorInput } from '../form-color-input/FormColorInput'
 
+import { DataSeriesQueryField } from './DataSeriesQueryField'
+
 const requiredNameField = createRequiredValidator('Name is a required field for data series.')
 const validQuery = createRequiredValidator('Query is a required field for data series.')
 
@@ -136,6 +138,7 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
             <FormInput
                 title="Search query"
                 required={true}
+                as={DataSeriesQueryField}
                 placeholder="Example: patternType:regexp const\s\w+:\s(React\.)?FunctionComponent"
                 description={
                     <span>
