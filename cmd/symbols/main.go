@@ -113,7 +113,7 @@ func main() {
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(apiHandler, conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPTraceMiddleware(apiHandler, conf.DefaultClient())),
 	})
 
 	evictionInterval := time.Second * 10

@@ -101,7 +101,7 @@ func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhoo
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
-	h = ot.Middleware(h)
+	h = ot.HTTPMiddleware(h)
 
 	return h, nil
 }
@@ -135,7 +135,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
 	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
-	h = ot.Middleware(h)
+	h = ot.HTTPMiddleware(h)
 	return h
 }
 
