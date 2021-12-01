@@ -3,7 +3,7 @@ import React from 'react'
 import { BadgeProps, Badge } from './Badge'
 import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
 
-type ProductStatusType = typeof PRODUCT_STATUSES[number]
+export type ProductStatusType = typeof PRODUCT_STATUSES[number]
 
 const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[number]> = {
     prototype: 'warning',

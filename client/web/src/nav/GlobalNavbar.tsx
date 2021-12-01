@@ -19,11 +19,10 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { WebCommandListPopoverButton } from '@sourcegraph/web/src/components/shared'
 import { FeedbackPrompt } from '@sourcegraph/web/src/nav/Feedback/FeedbackPrompt'
 import { StatusMessagesNavItem } from '@sourcegraph/web/src/nav/StatusMessagesNavItem'
-import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '@sourcegraph/wildcard'
 import { NavDropdown } from '@sourcegraph/wildcard/src/components/NavBar/NavDropdown'
 
 import { AuthenticatedUser } from '../auth'
@@ -219,7 +218,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                 path: '/contexts',
                                 content: (
                                     <>
-                                        Contexts <Badge className="ml-1" status="new" />
+                                        Contexts <ProductStatusBadge className="ml-1" status="new" />
                                     </>
                                 ),
                             },
