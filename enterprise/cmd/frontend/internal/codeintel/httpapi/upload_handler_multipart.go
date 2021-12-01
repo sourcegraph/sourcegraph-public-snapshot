@@ -105,9 +105,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(ctx context.Context, uplo
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	defer func() {
-		err = tx.Done(err)
-	}()
+	defer func() { err = tx.Done(err) }()
 
 	sources := make([]string, 0, uploadState.numParts)
 	for partNumber := 0; partNumber < uploadState.numParts; partNumber++ {
