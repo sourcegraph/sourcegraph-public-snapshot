@@ -25,9 +25,15 @@ export const EntityOwners: React.FunctionComponent<Props> = ({
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Owners</h3>
             </header>
-            <ol className={classNames('list-group list-group-horizontal', bodyClassName, bodyScrollableClassName)}>
+            <ol className={classNames('list-group list-group-horizontal border-0', bodyScrollableClassName)}>
                 {owners.map(owner => (
-                    <li key={owner.node} className={classNames('list-group-item text-center pt-2', styles.owner)}>
+                    <li
+                        key={owner.node}
+                        className={classNames(
+                            'list-group-item border-top-0 border-bottom-0 text-center pt-2',
+                            styles.owner
+                        )}
+                    >
                         {owner.node}
                         <div
                             className={classNames(styles.percent)}

@@ -1,9 +1,7 @@
 import path from 'path'
 
 import classNames from 'classnames'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -14,7 +12,6 @@ import { getFileDecorations } from '../../../../../backend/features'
 import { CatalogEntityDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
-import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
 
 interface Props
@@ -31,15 +28,6 @@ export const ComponentSources: React.FunctionComponent<Props> = ({
     ...props
 }) => (
     <div className={className}>
-        <ComponentSourceDefinitions catalogComponent={catalogComponent} className="mb-2" />
-        <div className="d-flex align-items-center justify-content-end">
-            <Link
-                to={`${catalogComponent.url}/spec`}
-                className="btn btn-link text-muted btn-sm p-0 d-flex align-items-center"
-            >
-                <SettingsIcon className="icon-inline mr-1" /> Configure sources
-            </Link>
-        </div>
         {catalogComponent.sourceLocations.length > 0 && (
             <ComponentFiles
                 {...props}

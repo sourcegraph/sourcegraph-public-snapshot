@@ -12,8 +12,6 @@ import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
-import { ComponentAuthors } from './ComponentAuthors'
-import { ComponentCommits } from './ComponentCommits'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
 import { EntityOwners } from './EntityOwners'
@@ -55,14 +53,71 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                         </div>
                     </div>
                     <div className="col-md-5">
-                        <EntityOwners
-                            entity={entity}
-                            className="card mb-2"
-                            headerClassName={headerClassName}
-                            titleClassName={titleClassName}
-                            bodyClassName={bodyClassName}
-                            bodyScrollableClassName={bodyScrollableClassName}
-                        />
+                        {/* owner-docs-API def -- authorities. then who you could ask. */}
+                        <div className="card">
+                            <div className="d-flex justify-content-between">
+                                <Link to="#" className="btn btn-lg btn-outline-secondary flex-grow-1 rounded-0">
+                                    Docs
+                                </Link>
+                                <Link to="#" className="btn btn-lg btn-outline-secondary flex-grow-1 rounded-0">
+                                    API
+                                </Link>
+                                <Link to="#" className="btn btn-lg btn-outline-secondary flex-grow-1 rounded-0">
+                                    Owner
+                                </Link>
+                            </div>
+                            <p className="card-body border-top mb-0">
+                                <strong>Authors</strong>&nbsp;{' '}
+                                <small>
+                                    @ziyang <span className="text-muted">81%</span> &nbsp;@fatima{' '}
+                                    <span className="text-muted">15%</span> &nbsp;@walter{' '}
+                                    <span className="text-muted">12%</span> &nbsp;
+                                </small>
+                            </p>
+                            <p className="card-body border-top mb-0">
+                                <strong>Callers</strong>&nbsp;{' '}
+                                <small>
+                                    @alice <span className="text-muted">51</span> &nbsp;@bob{' '}
+                                    <span className="text-muted">31</span> &nbsp;
+                                </small>
+                            </p>
+                        </div>
+                        {false && (
+                            <div className="card">
+                                <p className="card-body mb-0">
+                                    <strong>Owners</strong>&nbsp;{' '}
+                                    <small>
+                                        @unknwon <span className="text-muted">50%</span> &nbsp;@tsenart{' '}
+                                        <span className="text-muted">42%</span> &nbsp;
+                                    </small>
+                                </p>
+                                <p className="card-body border-top mb-0">
+                                    <strong>Authors</strong>&nbsp;{' '}
+                                    <small>
+                                        @ziyang <span className="text-muted">81%</span> &nbsp;@fatima{' '}
+                                        <span className="text-muted">15%</span> &nbsp;@walter{' '}
+                                        <span className="text-muted">12%</span> &nbsp;
+                                    </small>
+                                </p>
+                                <p className="card-body border-top mb-0">
+                                    <strong>Callers</strong>&nbsp;{' '}
+                                    <small>
+                                        @alice <span className="text-muted">51</span> &nbsp;@bob{' '}
+                                        <span className="text-muted">31</span> &nbsp;
+                                    </small>
+                                </p>
+                            </div>
+                        )}
+                        {false && (
+                            <EntityOwners
+                                entity={entity}
+                                className="card mb-2"
+                                headerClassName={headerClassName}
+                                titleClassName={titleClassName}
+                                bodyClassName={bodyClassName}
+                                bodyScrollableClassName={bodyScrollableClassName}
+                            />
+                        )}
                     </div>
                 </div>
 
@@ -85,26 +140,6 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                     }}
                     activeNodeID={entity.id}
                 />
-                {false && (
-                    <>
-                        <ComponentAuthors
-                            catalogComponent={entity}
-                            className="card mb-3"
-                            headerClassName={headerClassName}
-                            titleClassName={titleClassName}
-                            bodyClassName={bodyClassName}
-                            bodyScrollableClassName={bodyScrollableClassName}
-                        />
-                        <ComponentCommits
-                            catalogComponent={entity}
-                            className="card overflow-hidden"
-                            headerClassName={headerClassName}
-                            titleClassName={titleClassName}
-                            bodyClassName={bodyClassName}
-                            bodyScrollableClassName={bodyScrollableClassName}
-                        />
-                    </>
-                )}
             </>
         ) : (
             <div>Typename is {entity.__typename}</div>

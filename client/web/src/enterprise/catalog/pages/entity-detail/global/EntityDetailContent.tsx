@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useMemo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -14,6 +15,7 @@ import { catalogEntityIconComponent } from '../../../components/CatalogEntityIco
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
 import { ComponentUsage } from './ComponentUsage'
+import { EntityChangesTab } from './EntityChangesTab'
 import { EntityCodeTab } from './EntityCodeTab'
 import styles from './EntityDetailContent.module.scss'
 import { EntityOverviewTab } from './EntityOverviewTab'
@@ -32,9 +34,9 @@ export interface EntityDetailContentCardProps {
 }
 
 const cardProps: EntityDetailContentCardProps = {
-    headerClassName: styles.cardHeader,
-    titleClassName: styles.cardTitle,
-    bodyClassName: styles.cardBody,
+    headerClassName: classNames('card-header', styles.cardHeader),
+    titleClassName: classNames('card-title', styles.cardTitle),
+    bodyClassName: classNames('card-body', styles.cardBody),
     bodyScrollableClassName: styles.cardBodyScrollable,
 }
 
@@ -53,6 +55,13 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                           path: 'code',
                           label: 'Code',
                           element: <EntityCodeTab {...props} {...cardProps} entity={entity} />,
+                      }
+                    : null,
+                entity.__typename === 'CatalogComponent'
+                    ? {
+                          path: 'changes',
+                          label: 'Changes',
+                          element: <EntityChangesTab {...props} {...cardProps} entity={entity} />,
                       }
                     : null,
                 entity.__typename === 'CatalogComponent'

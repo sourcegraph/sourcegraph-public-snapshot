@@ -8,9 +8,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 
 import { ComponentAuthors } from './ComponentAuthors'
-import { ComponentCommits } from './ComponentCommits'
+import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
+import { EntityOwners } from './EntityOwners'
 
 interface Props
     extends EntityDetailContentCardProps,
@@ -31,31 +32,30 @@ export const EntityCodeTab: React.FunctionComponent<Props> = ({
     ...props
 }) => (
     <div>
-        {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
+        {entity.__typename === 'CatalogComponent' && (
+            <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
+        )}
+        <EntityOwners
+            entity={entity}
+            className="card mb-2"
+            headerClassName={headerClassName}
+            titleClassName={titleClassName}
+            bodyClassName={bodyClassName}
+            bodyScrollableClassName={bodyScrollableClassName}
+        />
+        <ComponentAuthors
+            catalogComponent={entity}
+            className="card mb-3"
+            headerClassName={headerClassName}
+            titleClassName={titleClassName}
+            bodyClassName={bodyClassName}
+            bodyScrollableClassName={bodyScrollableClassName}
+        />
         <ComponentSources
             {...props}
             catalogComponent={entity}
             className=""
             bodyScrollableClassName={bodyScrollableClassName}
         />
-        <div className="d-flex flex-column">
-            <ComponentAuthors
-                catalogComponent={entity}
-                className="card mb-3"
-                headerClassName={headerClassName}
-                titleClassName={titleClassName}
-                bodyClassName={bodyClassName}
-                bodyScrollableClassName={bodyScrollableClassName}
-            />
-            <ComponentCommits
-                catalogComponent={entity}
-                className="card overflow-hidden"
-                headerClassName={headerClassName}
-                titleClassName={titleClassName}
-                bodyClassName={bodyClassName}
-                bodyScrollableClassName={bodyScrollableClassName}
-            />
-        </div>
-        {/* TODO(sqs): add "Depends on" */}
     </div>
 )

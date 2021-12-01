@@ -28,7 +28,7 @@ export const ComponentAuthors: React.FunctionComponent<Props> = ({
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Authors</h3>
             </header>
-            <ol className={classNames('list-group list-group-horizontal', bodyClassName, bodyScrollableClassName)}>
+            <ol className={classNames('list-group list-group-horizontal', bodyScrollableClassName)}>
                 {authors.map(author => (
                     <li
                         key={author.person.email}
