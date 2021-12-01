@@ -238,7 +238,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	for i, repo := range repos {
 		if err = sem.Acquire(ctx, 1); err != nil {
-			return res.Resolved, err
+			return Resolved{}, err
 		}
 
 		repo, i := repo, i // avoid race
@@ -340,7 +340,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	if err = g.Wait(); err != nil {
-		return res.Resolved, err
+		return Resolved{}, err
 	}
 
 	// Remove any repos that failed to have their revs validated.
