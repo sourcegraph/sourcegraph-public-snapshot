@@ -69,11 +69,15 @@ type CatalogEntityStatusResolver interface {
 	Contexts() []CatalogEntityStatusContextResolver
 }
 
+type CatalogEntityStatusState string
+
 type CatalogEntityStatusContextResolver interface {
 	ID() graphql.ID
 	Name() string
+	State() CatalogEntityStatusState
 	Title() string
 	Description() string
+	TargetURL() *string
 }
 
 type CatalogEntityRelationType string

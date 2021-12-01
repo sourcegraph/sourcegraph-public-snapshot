@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { LocationDescriptor } from 'history'
 import { uniqBy } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
@@ -11,19 +10,11 @@ import SlackIcon from 'mdi-react/SlackIcon'
 import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { CatalogEntityRelationType } from '@sourcegraph/shared/src/graphql/schema'
-import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
-import {
-    CatalogComponentAuthorsFields,
-    CatalogComponentDocumentationFields,
-    CatalogComponentUsageFields,
-    CatalogEntityDetailFields,
-    CatalogEntityOwnersFields,
-} from '../../../../../graphql-operations'
+import { CatalogComponentDocumentationFields, CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { Popover } from '../../../../insights/components/popover/Popover'
@@ -31,6 +22,8 @@ import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
+import { OverviewStatusContextItem } from './OverviewStatusContextItem'
+import { AuthorsStatusContext, OwnersStatusContext, UsageStatusContext } from './OverviewStatusContexts'
 
 interface Props extends EntityDetailContentCardProps {
     entity: CatalogEntityDetailFields
@@ -63,11 +56,18 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                         <div className="col-md-8">
                             {searchSourcesCard}
                             {false && entity.commits?.nodes[0] && (
-                                <LastCommit commit={entity.commits.nodes[0]} className="" />
+                                <LastCommit commit={entity.commits?.nodes[0]} className="" />
                             )}
-                            <OwnersInfoBox entity={entity} className="mb-3" />
-                            <AuthorsInfoBox entity={entity} className="mb-3" />
-                            <UsageInfoBox entity={entity} className="mb-3" />
+                            <OwnersStatusContext entity={entity} className="mb-3" />
+                            <AuthorsStatusContext entity={entity} className="mb-3" />
+                            <UsageStatusContext entity={entity} className="mb-3" />
+                            {entity.status.contexts.map(statusContext => (
+                                <OverviewStatusContextItem
+                                    key={statusContext.id}
+                                    statusContext={statusContext}
+                                    className="mb-3"
+                                />
+                            ))}
                         </div>
                         <div className="col-md-4">
                             {/* owner-docs-API def -- authorities. then who you could ask. */}
@@ -155,156 +155,6 @@ const LastCommit: React.FunctionComponent<{
         </small>
     </div>
 )
-
-const InfoBox: React.FunctionComponent<{
-    title: string
-    titleUrl?: LocationDescriptor
-    color: 'success' | 'primary' | 'warning' | 'danger'
-    className?: string
-}> = ({ title, titleUrl, color, className, children }) => (
-    <div className={classNames('d-flex align-items-start', className)}>
-        <h4
-            className={classNames(`badge bg-transparent mb-0 mr-2 border border-${color} text-${color}`)}
-            // eslint-disable-next-line react/forbid-dom-props
-            style={{ marginTop: '-1px' }}
-        >
-            {titleUrl ? (
-                <Link to={titleUrl} className={`text-${color}`}>
-                    {title}
-                </Link>
-            ) : (
-                title
-            )}
-        </h4>
-        <div>{children}</div>
-    </div>
-)
-
-const OwnersInfoBox: React.FunctionComponent<{
-    entity: CatalogEntityOwnersFields & Pick<CatalogEntityDetailFields, 'url'>
-    className?: string
-}> = ({ entity, className }) => (
-    <InfoBox
-        title="Owners"
-        titleUrl={`${entity.url}/code`}
-        color={entity.owners?.length > 0 ? 'success' : 'danger'}
-        className={className}
-    >
-        {entity.owners?.length > 0 ? (
-            <TruncatedList
-                tag="ol"
-                className="list-inline mb-0"
-                moreUrl={`${entity.url}/code`}
-                moreClassName="list-inline-item"
-                moreLinkClassName="text-muted small"
-            >
-                {entity.owners?.map(owner => (
-                    <li key={owner.node} className="list-inline-item mr-2">
-                        {owner.node}
-                        <span
-                            className="small text-muted ml-1"
-                            title={`Owns ${owner.fileCount} ${pluralize('file', owner.fileCount)}`}
-                        >
-                            {owner.fileProportion >= 0.01 ? `${(owner.fileProportion * 100).toFixed(0)}%` : '<1%'}
-                        </span>
-                    </li>
-                ))}
-            </TruncatedList>
-        ) : (
-            <span>No code owners found</span>
-        )}
-    </InfoBox>
-)
-
-const AuthorsInfoBox: React.FunctionComponent<{
-    entity: CatalogComponentAuthorsFields & Pick<CatalogEntityDetailFields, 'url'>
-    className?: string
-}> = ({ entity, className }) => (
-    <InfoBox title="Authors" titleUrl={`${entity.url}/code`} color="primary" className={className}>
-        <TruncatedList
-            tag="ol"
-            className="list-inline mb-0"
-            moreUrl={`${entity.url}/code`}
-            moreClassName="list-inline-item"
-            moreLinkClassName="text-muted small"
-        >
-            {entity.authors?.map(author => (
-                <li key={author.person.email} className="list-inline-item mr-2">
-                    <PersonLink person={author.person} />
-                    <span
-                        className="small text-muted ml-1"
-                        title={`${author.authoredLineCount} ${pluralize('line', author.authoredLineCount)}`}
-                    >
-                        {author.authoredLineProportion >= 0.01
-                            ? `${(author.authoredLineProportion * 100).toFixed(0)}%`
-                            : '<1%'}
-                    </span>
-                    <span className="small text-muted ml-1">
-                        <Timestamp date={author.lastCommit.author.date} noAbout={true} />
-                    </span>
-                </li>
-            ))}
-        </TruncatedList>
-    </InfoBox>
-)
-
-const UsageInfoBox: React.FunctionComponent<{
-    entity: CatalogComponentUsageFields & Pick<CatalogEntityDetailFields, 'url'>
-    className?: string
-}> = ({ entity, className }) => (
-    <InfoBox title="Usage" titleUrl={`${entity.url}/usage`} color="primary" className={className}>
-        <TruncatedList
-            tag="ol"
-            className="list-inline mb-0"
-            moreUrl={`${entity.url}/code`}
-            moreClassName="list-inline-item"
-            moreLinkClassName="text-muted small"
-        >
-            {entity.usage?.people.map(edge => (
-                <li key={edge.node.email} className="list-inline-item mr-2">
-                    <PersonLink person={edge.node} />
-                    <span className="small text-muted ml-1">
-                        {edge.authoredLineCount} {pluralize('use', edge.authoredLineCount)}
-                    </span>
-                    <span className="small text-muted ml-1">
-                        <Timestamp date={edge.lastCommit.author.date} noAbout={true} />
-                    </span>
-                </li>
-            ))}
-        </TruncatedList>
-    </InfoBox>
-)
-
-const useListSeeMore = <T extends any>(list: T[], max: number): [T[], boolean] => {
-    if (list.length > max) {
-        return [list.slice(0, max), true]
-    }
-    return [list, false]
-}
-
-const TruncatedList: React.FunctionComponent<{
-    tag: 'ol' | 'ul'
-    max?: number
-    className?: string
-    moreUrl?: LocationDescriptor
-    moreClassName?: string
-    moreLinkClassName?: string
-}> = ({ tag: Tag, children, max = 5, className, moreUrl, moreClassName, moreLinkClassName }) => {
-    const childrenArray = React.Children.toArray(children)
-    const [firstChildren, seeMore] = useListSeeMore(childrenArray, max)
-    return (
-        <Tag className={className}>
-            {firstChildren}
-            {seeMore && (
-                <li className={moreClassName}>
-                    <LinkOrSpan to={moreUrl} className={moreLinkClassName}>
-                        ...{childrenArray.length - max} more
-                    </LinkOrSpan>
-                </li>
-            )}
-        </Tag>
-    )
-}
 
 const FilePeekButton: React.FunctionComponent<{
     file: NonNullable<CatalogComponentDocumentationFields['readme']>

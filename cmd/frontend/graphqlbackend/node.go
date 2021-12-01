@@ -255,3 +255,13 @@ func (r *NodeResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
 	n, ok := r.Node.(CatalogComponentResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToCatalogEntityStatus() (CatalogEntityStatusResolver, bool) {
+	n, ok := r.Node.(CatalogEntityStatusResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToCatalogEntityStatusContext() (CatalogEntityStatusContextResolver, bool) {
+	n, ok := r.Node.(CatalogEntityStatusContextResolver)
+	return n, ok
+}

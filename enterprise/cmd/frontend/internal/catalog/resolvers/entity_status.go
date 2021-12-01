@@ -29,19 +29,23 @@ func (r *catalogEntityStatusResolver) Contexts() []gql.CatalogEntityStatusContex
 	return []gql.CatalogEntityStatusContextResolver{
 		&catalogEntityStatusContextResolver{
 			name:        "deploy",
-			title:       "Deployed",
+			state:       "SUCCESS",
+			title:       "Deploy",
 			description: "Deployed `f38ca7d` to Sourcegraph.com 4 min ago ([monitor](#TODO))",
 		},
 		&catalogEntityStatusContextResolver{
 			name:        "ci",
+			state:       "SUCCESS",
 			title:       "CI",
 			description: "Build `f38ca7d` passed 7 min ago",
+			targetURL:   "https://example.com",
 		},
 	}
 }
 
 type catalogEntityStatusContextResolver struct {
-	name, title, description string
+	name, title, description, targetURL string
+	state                               gql.CatalogEntityStatusState
 }
 
 func (r *catalogEntityStatusContextResolver) ID() graphql.ID {
@@ -49,6 +53,13 @@ func (r *catalogEntityStatusContextResolver) ID() graphql.ID {
 	return relay.MarshalID("CatalogEntityStatus", base64.RawURLEncoding.EncodeToString(b[:16]))
 }
 
-func (r *catalogEntityStatusContextResolver) Name() string        { return r.name }
-func (r *catalogEntityStatusContextResolver) Title() string       { return r.title }
-func (r *catalogEntityStatusContextResolver) Description() string { return r.description }
+func (r *catalogEntityStatusContextResolver) Name() string                        { return r.name }
+func (r *catalogEntityStatusContextResolver) State() gql.CatalogEntityStatusState { return r.state }
+func (r *catalogEntityStatusContextResolver) Title() string                       { return r.title }
+func (r *catalogEntityStatusContextResolver) Description() string                 { return r.description }
+func (r *catalogEntityStatusContextResolver) TargetURL() *string {
+	if r.targetURL == "" {
+		return nil
+	}
+	return &r.targetURL
+}

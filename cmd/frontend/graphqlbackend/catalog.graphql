@@ -20,6 +20,15 @@ enum CatalogEntityLifecycle {
     EXPERIMENTAL
 }
 
+enum CatalogEntityStatusState {
+    EXPECTED
+    ERROR
+    FAILURE
+    PENDING
+    SUCCESS
+    INFO
+}
+
 interface CatalogEntity {
     id: ID!
     type: CatalogEntityType!
@@ -65,8 +74,10 @@ type CatalogEntityStatus implements Node {
 type CatalogEntityStatusContext implements Node {
     id: ID!
     name: String!
+    state: CatalogEntityStatusState!
     title: String!
     description: String!
+    targetURL: String
 }
 
 type CatalogEntityConnection {

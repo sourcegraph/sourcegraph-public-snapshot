@@ -34,6 +34,22 @@ const CATALOG_ENTITY_OWNERS_FRAGMENT = gql`
     }
 `
 
+const CATALOG_ENTITY_STATUS_FRAGMENT = gql`
+    fragment CatalogEntityStatusFields on CatalogEntity {
+        status {
+            id
+            contexts {
+                id
+                name
+                state
+                title
+                description
+                targetURL
+            }
+        }
+    }
+`
+
 const CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT = gql`
     fragment CatalogComponentDocumentationFields on CatalogComponent {
         readme {
@@ -219,6 +235,7 @@ const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         url
         ...CatalogEntityGraphFields
         ...CatalogEntityOwnersFields
+        ...CatalogEntityStatusFields
         ... on CatalogComponent {
             kind
             ...CatalogComponentDocumentationFields
@@ -232,6 +249,7 @@ const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
 
     ${CATALOG_ENTITY_GRAPH_FRAGMENT}
     ${CATALOG_ENTITY_OWNERS_FRAGMENT}
+    ${CATALOG_ENTITY_STATUS_FRAGMENT}
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}
