@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, error) {
@@ -26,7 +25,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 	return needsRepositoryConfiguration(ctx, r.db)
 }
 
-func needsRepositoryConfiguration(ctx context.Context, db dbutil.DB) (bool, error) {
+func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, error) {
 	kinds := make([]string, 0, len(database.ExternalServiceKinds))
 	for kind, config := range database.ExternalServiceKinds {
 		if config.CodeHost {

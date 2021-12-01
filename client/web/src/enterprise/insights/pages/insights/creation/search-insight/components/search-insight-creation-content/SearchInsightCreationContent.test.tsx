@@ -14,6 +14,11 @@ import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
 
+// Mock the Monaco input box to make this a shallow test
+jest.mock('../form-series-input/DataSeriesQueryField.tsx', () => ({
+    DataSeriesQueryField: (props: object) => <input {...props} />,
+}))
+
 const USER_TEST_SUBJECT: SupportedInsightSubject = {
     __typename: 'User' as const,
     id: 'user_test_id',

@@ -8,7 +8,7 @@ import (
 )
 
 func Executor() *monitoring.Container {
-	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches)"
+	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors)"
 
 	// frontend is sometimes called sourcegraph-frontend in various contexts
 	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker)"
@@ -57,8 +57,8 @@ func Executor() *monitoring.Container {
 			shared.CodeIntelligence.NewExecutorExecutionCommandGroup(containerName),
 			shared.CodeIntelligence.NewExecutorTeardownCommandGroup(containerName),
 
-			shared.NewNodeExporterGroup(containerName, "sourcegraph-code-intel-indexer-nodes", "Compute", "$instance"),
-			shared.NewNodeExporterGroup(containerName, "sourcegraph-code-intel-indexer-docker-registry-mirror-nodes", "Docker Registry Mirror", ".*"),
+			shared.NewNodeExporterGroup(containerName, "(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes)", "Compute", "$instance"),
+			shared.NewNodeExporterGroup(containerName, "(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)", "Docker Registry Mirror", ".*"),
 
 			// Resource monitoring
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

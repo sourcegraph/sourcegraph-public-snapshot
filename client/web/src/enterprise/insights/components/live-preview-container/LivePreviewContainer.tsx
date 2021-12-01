@@ -17,6 +17,7 @@ export interface LivePreviewContainerProps {
     loading: boolean
     disabled: boolean
     className?: string
+    chartContentClassName?: string
     dataOrError: ChartContent | Error | undefined
     defaultMock: ChartContent
     mockMessage: ReactNode
@@ -24,7 +25,17 @@ export interface LivePreviewContainerProps {
 }
 
 export function LivePreviewContainer(props: LivePreviewContainerProps): ReactElement {
-    const { disabled, loading, dataOrError, defaultMock, onUpdateClick, className, mockMessage, description } = props
+    const {
+        disabled,
+        loading,
+        dataOrError,
+        defaultMock,
+        onUpdateClick,
+        className,
+        chartContentClassName,
+        mockMessage,
+        description,
+    } = props
 
     return (
         <section className={classNames(styles.livePreview, className)}>
@@ -49,7 +60,7 @@ export function LivePreviewContainer(props: LivePreviewContainerProps): ReactEle
             {isErrorLike(dataOrError) && <ErrorAlert className="m-0" error={dataOrError} />}
 
             {!loading && !isErrorLike(dataOrError) && (
-                <div className={classNames(styles.livePreviewChartContainer, 'card')}>
+                <div className={classNames(styles.livePreviewChartContainer, chartContentClassName, 'card')}>
                     <ChartViewContent
                         className={classNames(styles.livePreviewChart, 'card-body', {
                             [styles.livePreviewChartWithMock]: !dataOrError,

@@ -57,6 +57,9 @@ var rngLock sync.Mutex
 // NewDB uses NewFromDSN to create a testing database, using the default
 // DSN.
 func NewDB(t testing.TB) *sql.DB {
+	if os.Getenv("USE_FAST_DBTEST") != "" {
+		return NewFastDB(t)
+	}
 	return NewFromDSN(t, "")
 }
 
@@ -146,7 +149,7 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 			dbconn.Frontend,
 			dbconn.CodeIntel,
 		} {
-			close, err := dbconn.DoMigrateDB(templateDB, database)
+			close, err := dbconn.MigrateDB(templateDB, database)
 			if err != nil {
 				t.Fatalf("failed to apply migrations: %s", err)
 			}
@@ -174,7 +177,7 @@ func wdHash() string {
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 	t.Helper()
-	db, err := dbconn.NewRaw(cfg.String())
+	db, err := dbconn.New(dbconn.Opts{DSN: cfg.String()})
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

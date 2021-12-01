@@ -1,8 +1,8 @@
 package batches
 
 type WorkspacesExecutionInput struct {
-	RawSpec   string    `json:"rawSpec"`
-	Workspace Workspace `json:"workspace"`
+	Spec      *BatchSpec `json:"spec"`
+	Workspace Workspace  `json:"workspace"`
 }
 
 type Workspace struct {

@@ -17,6 +17,7 @@ import { lazyComponent } from '../util/lazyComponent'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
+import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerContext, RepoRevisionContainerRoute } from './RepoRevisionContainer'
 
@@ -50,7 +51,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
-            <div className="repo-revision-container">
+            <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCommitPage {...context} />
                 </RepositoryGitDataContainer>
@@ -61,7 +62,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     location={context.location}
                     telemetryService={context.telemetryService}
                 />
-            </div>
+            </RepoRevisionWrapper>
         ),
     },
     {
@@ -83,7 +84,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/compare/:spec*',
         render: context => (
-            <div className="repo-revision-container">
+            <RepoRevisionWrapper>
                 <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                     <RepositoryCompareArea {...context} />
                 </RepositoryGitDataContainer>
@@ -94,7 +95,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     location={context.location}
                     telemetryService={context.telemetryService}
                 />
-            </div>
+            </RepoRevisionWrapper>
         ),
     },
     {
@@ -203,7 +204,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     {!hideRepoRevisionContent && (
                         // Add `.blob-status-bar__container` because this is the
                         // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                        <BlobStatusBarContainer className="repo-revision-container__content">
+                        <BlobStatusBarContainer>
                             <ErrorBoundary location={context.location}>
                                 {objectType === 'blob' ? (
                                     <BlobPage

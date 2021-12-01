@@ -79,7 +79,7 @@ func TestTransformRecord(t *testing.T) {
 	store.ListBatchSpecExecutionCacheEntriesFunc.SetDefaultReturn([]*btypes.BatchSpecExecutionCacheEntry{entry}, nil)
 
 	wantInput := batcheslib.WorkspacesExecutionInput{
-		RawSpec: batchSpec.RawSpec,
+		Spec: batchSpec.Spec,
 		Workspace: batcheslib.Workspace{
 			Repository: batcheslib.WorkspaceRepo{
 				ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),

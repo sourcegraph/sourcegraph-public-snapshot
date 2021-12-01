@@ -11,7 +11,7 @@ import { SearchPatternType } from './graphql-operations'
 import { Layout, LayoutProps } from './Layout'
 
 jest.mock('./theme', () => ({
-    useTheme: () => ({
+    useThemeProps: () => ({
         isLightTheme: true,
         themePreference: 'system',
         onThemePreferenceChange: () => {},

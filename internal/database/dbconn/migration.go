@@ -54,12 +54,7 @@ var (
 	}
 )
 
-func MigrateDB(db *sql.DB, database *Database) error {
-	_, err := DoMigrateDB(db, database)
-	return err
-}
-
-func DoMigrateDB(db *sql.DB, database *Database) (func(), error) {
+func MigrateDB(db *sql.DB, database *Database) (func(), error) {
 	m, err := newMigrate(db, database)
 	if err != nil {
 		return nil, err

@@ -54,7 +54,7 @@ export function testSingleFilePage({
             // by puppeteer-firefox doesn't support the latest version of Sourcegraph. For now,
             // simply assert on the link.
 
-            // await getDriver().page.click('.code-view-toolbar .open-on-sourcegraph')
+            // await getDriver().page.click('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
             // // The button opens a new tab, so get the new page whose opener is the current page, and get its url.
             // const currentPageTarget = getDriver().page.target()

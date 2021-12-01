@@ -12,7 +12,7 @@ import {
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { ThemePreference } from '../../theme'
+import { ThemePreference } from '../../stores/themeState'
 import { authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'

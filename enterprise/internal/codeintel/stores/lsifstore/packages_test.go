@@ -10,9 +10,6 @@ import (
 )
 
 func TestDatabasePackageInformation(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	if actual, exists, err := store.PackageInformation(context.Background(), testBundleID, "protocol/protocol.go", "114"); err != nil {
