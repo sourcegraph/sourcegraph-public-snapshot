@@ -160,12 +160,12 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		return nil, errors.Wrap(err, "create template database")
 	}
 
-	templateDB, err := dbconn.NewRaw(urlWithDB(u, tdb.Name).String())
+	templateDB, err := dbconn.New(dbconn.Opts{DSN: urlWithDB(u, tdb.Name).String()})
 	if err != nil {
 		return nil, err
 	}
 	for _, def := range defs {
-		done, err := dbconn.DoMigrateDB(templateDB, def)
+		done, err := dbconn.MigrateDB(templateDB, def)
 		if err != nil {
 			return nil, err
 		}
