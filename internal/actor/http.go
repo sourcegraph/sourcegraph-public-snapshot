@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -11,7 +12,10 @@ import (
 
 const (
 	// headerKeyActorUID is the header key for the actor's user ID.
-	headerKeyActorUID = "X-Sourcegraph-Actor-ID"
+	headerKeyActorUID = "X-Sourcegraph-Actor-UID"
+	// headerKeyLegacyActorUID is the old header key used for the actor's user ID.
+	// Prefer headerKeyActorUID where possible.
+	headerKeyLegacyActorUID = "X-Sourcegraph-User-ID"
 	// headerValueInternalActor indicates the request uses an internal actor.
 	headerValueInternalActor = "internal"
 	// headerValueNoActor indicates the request has no actor.
@@ -87,6 +91,11 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 		ctx := req.Context()
 
 		uidStr := req.Header.Get(headerKeyActorUID)
+		if uidStr == "" {
+			// Check legacy header as a fallback.
+			uidStr = req.Header.Get(headerKeyLegacyActorUID)
+		}
+
 		switch uidStr {
 		// Request associated with internal actor - add internal actor to context
 		case headerValueInternalActor:
@@ -105,7 +114,11 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 					"error", err,
 					"uid", uidStr)
 				metricIncomingActors.WithLabelValues(metricActorTypeInvalid).Inc()
-				break
+
+				// Do not proceed with request
+				rw.WriteHeader(http.StatusForbidden)
+				_, _ = rw.Write([]byte(fmt.Sprintf("%s was provided, but the value was invalid", headerKeyActorUID)))
+				return
 			}
 
 			// Valid user, add to context
