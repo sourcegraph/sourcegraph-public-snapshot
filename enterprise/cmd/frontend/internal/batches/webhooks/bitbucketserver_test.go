@@ -157,7 +157,7 @@ func testBitbucketWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			}
 		}
 
-		hook := NewBitbucketServerWebhook(s)
+		hook := NewBitbucketServerWebhook(s, NewOperations(&observation.TestContext, nil))
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {

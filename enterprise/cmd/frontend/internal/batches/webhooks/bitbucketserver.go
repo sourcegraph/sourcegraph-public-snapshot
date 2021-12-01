@@ -10,6 +10,7 @@ import (
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 
 	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -17,32 +18,41 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type BitbucketServerWebhook struct {
 	*Webhook
+	operations *Operations
 }
 
-func NewBitbucketServerWebhook(store *store.Store) *BitbucketServerWebhook {
+func NewBitbucketServerWebhook(store *store.Store, operations *Operations) *BitbucketServerWebhook {
 	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, extsvc.TypeBitbucketServer},
+		Webhook:    &Webhook{store, extsvc.TypeBitbucketServer},
+		operations: operations,
 	}
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var err error // TODO - you'll want to
+	ctx, traceLog, endObservation := h.operations.bitbucketServeHTTP.WithAndLogger(r.Context(), &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	e, extSvc, hErr := h.parseEvent(r)
 	if hErr != nil {
 		respond(w, hErr.code, hErr)
 		return
 	}
+	// etc...
+	traceLog(log.Int("extSvcID", int(extSvc.ID)))
 
-	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
+	fewebhooks.SetExternalServiceID(ctx, extSvc.ID)
 
 	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
 	// internal actor on the context.
-	ctx := actor.WithInternalActor(r.Context())
+	ctx = actor.WithInternalActor(ctx)
 
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {

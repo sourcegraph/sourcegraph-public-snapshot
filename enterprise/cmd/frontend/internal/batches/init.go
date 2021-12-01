@@ -33,11 +33,14 @@ func Init(ctx context.Context, db database.DB, _ conftypes.UnifiedWatchable, out
 	// Initialize store.
 	cstore := store.New(db, observationContext, keyring.Default().BatchChangesCredentialKey)
 
+	metrics := webhooks.NewREDMetrics(observationContext)
+	operations := webhooks.NewOperations(observationContext, metrics)
+
 	// Register enterprise services.
 	enterpriseServices.BatchChangesResolver = resolvers.New(cstore)
-	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore)
-	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore)
-	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore)
+	enterpriseServices.GitHubWebhook = webhooks.NewGitHubWebhook(cstore, operations)
+	enterpriseServices.BitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(cstore, operations)
+	enterpriseServices.GitLabWebhook = webhooks.NewGitLabWebhook(cstore, operations)
 
 	// Register Batch Changes OOB migrations.
 	return migrations.Register(cstore, outOfBandMigrationRunner)

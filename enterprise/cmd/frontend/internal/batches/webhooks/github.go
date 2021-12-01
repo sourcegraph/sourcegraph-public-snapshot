@@ -37,10 +37,11 @@ var (
 // and upserts them to the database.
 type GitHubWebhook struct {
 	*Webhook
+	operations *Operations
 }
 
-func NewGitHubWebhook(store *store.Store) *GitHubWebhook {
-	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}}
+func NewGitHubWebhook(store *store.Store, operations *Operations) *GitHubWebhook {
+	return &GitHubWebhook{&Webhook{store, extsvc.TypeGitHub}, operations}
 }
 
 // Register registers this webhook handler to handle events with the passed webhook router

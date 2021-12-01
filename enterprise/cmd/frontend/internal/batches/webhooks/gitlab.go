@@ -25,10 +25,11 @@ import (
 
 type GitLabWebhook struct {
 	*Webhook
+	operations *Operations
 }
 
-func NewGitLabWebhook(store *store.Store) *GitLabWebhook {
-	return &GitLabWebhook{&Webhook{store, extsvc.TypeGitLab}}
+func NewGitLabWebhook(store *store.Store, operations *Operations) *GitLabWebhook {
+	return &GitLabWebhook{&Webhook{store, extsvc.TypeGitLab}, operations}
 }
 
 // ServeHTTP implements the http.Handler interface.

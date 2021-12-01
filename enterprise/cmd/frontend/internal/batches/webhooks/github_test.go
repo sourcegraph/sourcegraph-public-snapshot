@@ -146,7 +146,7 @@ func testGitHubWebhook(db *sql.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		hook := NewGitHubWebhook(s)
+		hook := NewGitHubWebhook(s, NewOperations(&observation.TestContext, nil))
 
 		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
