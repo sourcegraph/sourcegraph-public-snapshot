@@ -16,29 +16,6 @@ import (
 )
 
 func TestActionRunner(t *testing.T) {
-	db := dbtest.NewDB(t)
-
-	externalURL := "https://www.sourcegraph.com"
-	testQuery := "test patternType:literal"
-
-	// Mocks.
-	got := email.TemplateDataNewSearchResults{}
-	email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
-		got = *data
-		return nil
-	}
-	email.MockExternalURL = func() *url.URL {
-		externalURL, _ := url.Parse("https://www.sourcegraph.com")
-		return externalURL
-	}
-
-	// Create a TestStore.
-	var err error
-	now := time.Now()
-	clock := func() time.Time { return now }
-	s := codemonitors.NewStoreWithClock(db, clock)
-	ctx, ts := storetest.NewTestStore(t)
-
 	tests := []struct {
 		name               string
 		numResults         int
@@ -56,13 +33,6 @@ func TestActionRunner(t *testing.T) {
 		},
 	}
 
-	want := email.TemplateDataNewSearchResults{
-		Priority:       "New",
-		SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
-		Description:    "test description",
-		CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
-	}
-
 	var (
 		queryID      int64 = 1
 		triggerEvent       = 1
@@ -70,8 +40,28 @@ func TestActionRunner(t *testing.T) {
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//Empty database, preserve schema.
 			db := dbtest.NewDB(t)
+
+			externalURL := "https://www.sourcegraph.com"
+			testQuery := "test patternType:literal"
+
+			// Mocks.
+			got := email.TemplateDataNewSearchResults{}
+			email.MockSendEmailForNewSearchResult = func(ctx context.Context, userID int32, data *email.TemplateDataNewSearchResults) error {
+				got = *data
+				return nil
+			}
+			email.MockExternalURL = func() *url.URL {
+				externalURL, _ := url.Parse("https://www.sourcegraph.com")
+				return externalURL
+			}
+
+			// Create a TestStore.
+			var err error
+			now := time.Now()
+			clock := func() time.Time { return now }
+			s := codemonitors.NewStoreWithClock(db, clock)
+			ctx, ts := storetest.NewTestStore(t, db)
 
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
@@ -101,6 +91,13 @@ func TestActionRunner(t *testing.T) {
 			err = a.Handle(ctx, record)
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			want := email.TemplateDataNewSearchResults{
+				Priority:       "New",
+				SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
+				Description:    "test description",
+				CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
 			}
 
 			want.NumberOfResultsWithDetail = tt.wantNumResultsText
