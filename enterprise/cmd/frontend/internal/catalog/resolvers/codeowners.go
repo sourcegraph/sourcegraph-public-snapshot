@@ -2,16 +2,18 @@ package resolvers
 
 import (
 	"bytes"
-	"log"
 	pathpkg "path"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type codeownersEntry struct {
 	pathPattern string
 	owners      []string
+
+	glob glob.Glob // set only by codeownersComputer
 }
 
 func parseCodeowners(data []byte) []codeownersEntry {
@@ -47,7 +49,7 @@ func (c *codeownersComputer) has(repo api.RepoName, commit api.CommitID, path st
 	return c.at[repoCommitKey{repo: repo, commit: commit}] != nil
 }
 
-func (c *codeownersComputer) add(repo api.RepoName, commit api.CommitID, path string, codeowners []byte) {
+func (c *codeownersComputer) add(repo api.RepoName, commit api.CommitID, path string, codeowners []byte) error {
 	dir := pathpkg.Dir(path)
 	if dir == ".github" {
 		dir = "."
@@ -56,6 +58,12 @@ func (c *codeownersComputer) add(repo api.RepoName, commit api.CommitID, path st
 	entries := parseCodeowners(codeowners)
 	for i := range entries {
 		entries[i].pathPattern = pathpkg.Join(dir, entries[i].pathPattern)
+
+		glob, err := glob.Compile(entries[i].pathPattern)
+		if err != nil {
+			return err
+		}
+		entries[i].glob = glob
 	}
 
 	key := repoCommitKey{repo: repo, commit: commit}
@@ -63,14 +71,14 @@ func (c *codeownersComputer) add(repo api.RepoName, commit api.CommitID, path st
 		c.at = map[repoCommitKey][]codeownersEntry{}
 	}
 	c.at[key] = append(c.at[key], entries...)
+
+	return nil
 }
 
 func (c *codeownersComputer) get(repo api.RepoName, commit api.CommitID, path string) (owners []string) {
 	entries := c.at[repoCommitKey{repo: repo, commit: commit}]
 	for _, e := range entries {
-		matched, _ := pathpkg.Match(e.pathPattern, path)
-		log.Printf("match(%q, %q) -> %v", e.pathPattern, path, matched)
-		if matched, _ := pathpkg.Match(e.pathPattern, path); matched {
+		if e.glob.Match(path) {
 			return e.owners
 		}
 	}

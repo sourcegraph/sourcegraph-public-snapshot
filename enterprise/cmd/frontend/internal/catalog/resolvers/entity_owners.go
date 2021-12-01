@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"io/fs"
-	"log"
 	"path"
 	"sort"
 	"sync"
@@ -67,7 +66,11 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 
 			mu.Lock()
 			defer mu.Unlock()
-			codeowners.add(r.component.SourceRepo, r.component.SourceCommit, p, data)
+			if err := codeowners.add(r.component.SourceRepo, r.component.SourceCommit, p, data); err != nil {
+				if codeownersErr == nil {
+					codeownersErr = err
+				}
+			}
 		}(p)
 	}
 	wg.Wait()
@@ -86,7 +89,6 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 
 		totalFileCount++
 		owners := codeowners.get(r.component.SourceRepo, r.component.SourceCommit, e.Name())
-		log.Println("e", e.Name(), len(owners))
 		for _, owner := range owners {
 			od := byOwner[owner]
 			if od == nil {
@@ -94,7 +96,6 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 				byOwner[owner] = od
 			}
 			od.FileCount++
-			log.Println("owner", owner, "path", e.Name(), "c", od.FileCount)
 		}
 	}
 
