@@ -131,7 +131,7 @@ export const SearchNotebookFileBlock: React.FunctionComponent<SearchNotebookFile
         () =>
             toPrettyBlobURL({
                 repoName: input.repositoryName,
-                commitID: input.revision,
+                revision: input.revision,
                 filePath: input.filePath,
                 range: input.lineRange
                     ? {
