@@ -2,7 +2,6 @@ package cli
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/NYTimes/gziphandler"
@@ -123,7 +122,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		withActor(
+		actor.HTTPMiddleware(
 			internalhttpapi.NewInternalHandler(
 				router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter()),
 				db,
@@ -138,28 +137,6 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 	h = tracepkg.HTTPTraceMiddleware(h, conf.DefaultClient())
 	h = ot.Middleware(h)
 	return h
-}
-
-// withActor wraps an existing HTTP handler by setting an actor in the HTTP request context.
-// It takes a user ID from the X-Sourcegraph-User-ID request header and if that fails to parse,
-// defaults to an internal actor.
-//
-// 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e., only use
-// for the internal endpoint), because internal requests can bypass repository permissions checks.
-func withActor(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var a actor.Actor
-
-		userID, err := strconv.ParseInt(r.Header.Get("X-Sourcegraph-User-ID"), 10, 32)
-		if err != nil || userID == 0 {
-			a.Internal = true
-		} else {
-			a.UID = int32(userID)
-		}
-
-		rWithActor := r.WithContext(actor.WithActor(r.Context(), &a))
-		h.ServeHTTP(w, rWithActor)
-	})
 }
 
 // corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware is

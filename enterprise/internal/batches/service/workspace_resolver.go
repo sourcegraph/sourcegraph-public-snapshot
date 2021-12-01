@@ -381,7 +381,6 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	if !a.IsAuthenticated() {
 		return errors.New("no user set in workspaceResolver.runSearch")
 	}
-	req.Header.Set("X-Sourcegraph-User-ID", a.UIDString())
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {

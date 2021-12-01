@@ -74,7 +74,9 @@ func main() {
 	}
 	service.Store.Start()
 
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(service, conf.DefaultClient()))
+	// Set up handler middleware
+	handler := trace.HTTPTraceMiddleware(service, conf.DefaultClient())
+	handler = ot.Middleware(handler)
 
 	host := ""
 	if env.InsecureDev {
