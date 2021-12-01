@@ -90,7 +90,11 @@ func (r *catalogComponentResolver) Authors(ctx context.Context) (*[]gql.CatalogC
 	}
 
 	sort.Slice(edges, func(i, j int) bool {
-		return edges[i].AuthoredLineCount() > edges[j].AuthoredLineCount()
+		ei, ej := edges[i], edges[j]
+		if ei.AuthoredLineCount() != ej.AuthoredLineCount() {
+			return ei.AuthoredLineCount() > ej.AuthoredLineCount()
+		}
+		return ei.Person().Email() < ej.Person().Email()
 	})
 
 	return &edges, nil

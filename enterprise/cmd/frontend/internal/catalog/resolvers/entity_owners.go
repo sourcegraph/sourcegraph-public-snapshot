@@ -109,7 +109,11 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 	}
 
 	sort.Slice(edges, func(i, j int) bool {
-		return edges[i].FileCount() > edges[j].FileCount()
+		ei, ej := edges[i], edges[j]
+		if ei.FileCount() != ej.FileCount() {
+			return ei.FileCount() > ej.FileCount()
+		}
+		return ei.Node() < ej.Node()
 	})
 
 	return &edges, nil

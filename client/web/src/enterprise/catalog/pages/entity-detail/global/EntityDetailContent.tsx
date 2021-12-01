@@ -59,7 +59,14 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                         <SearchIcon className="icon-inline" /> Search in {entity.name}...
                                     </Link>
                                     <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
-                                    <EntityOwners entity={entity} className="mb-2" />
+                                    <EntityOwners
+                                        entity={entity}
+                                        className="card mb-2"
+                                        headerClassName={classNames('card-header', styles.cardHeader)}
+                                        titleClassName={classNames('card-title', styles.cardTitle)}
+                                        bodyClassName={styles.cardBody}
+                                        bodyScrollableClassName={styles.cardBodyScrollable}
+                                    />
                                     <EntityGraph
                                         graph={{
                                             edges: entity.relatedEntities.edges.map(edge =>

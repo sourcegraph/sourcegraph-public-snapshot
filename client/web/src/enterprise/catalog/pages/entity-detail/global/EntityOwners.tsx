@@ -40,5 +40,5 @@ export const EntityOwners: React.FunctionComponent<Props> = ({
             </ol>
         </div>
     ) : (
-        <p>Unable to determine ownership</p>
+        <div className="alert alert-info">No owners</div>
     )
