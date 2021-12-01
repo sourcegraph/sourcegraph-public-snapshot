@@ -938,17 +938,17 @@ func checkPostgresConnection(ctx context.Context) error {
 	dns := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dns)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to connect to Postgres database")
 	}
 	defer conn.Close(ctx)
 
 	var result int
 	row := conn.QueryRow(ctx, "SELECT 1;")
 	if err := row.Scan(&result); err != nil {
-		return err
+		return errors.Wrap(err, "failed to read from Postgres database")
 	}
 	if result != 1 {
-		return errors.New("failed to read a test value from database")
+		return errors.New("failed to read a test value from Postgres database")
 	}
 	return nil
 }
@@ -960,12 +960,12 @@ func checkRedisConnection(context.Context) error {
 	}
 
 	if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
-		return err
+		return errors.Wrap(err, "failed to write to Redis at 127.0.0.1:6379")
 	}
 
 	retval, err := redis.String(conn.Do("GET", "sg-setup"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read from Redis at 127.0.0.1:6379")
 	}
 
 	if retval != "was-here" {
