@@ -47,9 +47,13 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	},
 	// This needs to be kept in sync with the placeInQueue fragment in the batch
 	// spec execution jobs store.
-	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.created_at, batch_spec_workspace_execution_jobs.id"),
+	// TODO: Make sure that the next job isn't only the subqueue that hasn't dequeued in the longest period but also that the queue
+	// has been waiting the longest.
+	OrderByExpression: sqlf.Sprintf("rank ASC, latest_dequeue ASC NULLS FIRST"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
-	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
+	// TODO: Fix QueuedCount query used in metrics and auto scaling.
+	ViewName:     "batch_spec_workspace_execution_jobs_subqueues batch_spec_workspace_execution_jobs",
+	MaxNumResets: batchSpecWorkspaceExecutionJobMaximumNumResets,
 	// Explicitly disable retries.
 	MaxNumRetries: 0,
 }

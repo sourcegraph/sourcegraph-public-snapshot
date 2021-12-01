@@ -2,16 +2,19 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -19,6 +22,112 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
+
+func TestNewBatchSpecWorkspaceExecutionWorkerStore_Dequeue(t *testing.T) {
+	ctx := context.Background()
+	db := dbtest.NewDB(t)
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	bs := New(db, &observation.TestContext, nil)
+	s := NewBatchSpecWorkspaceExecutionWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), &observation.TestContext)
+
+	user1 := ct.CreateTestUser(t, db, false)
+	user2 := ct.CreateTestUser(t, db, false)
+
+	batchSpec1 := &btypes.BatchSpec{UserID: user1.ID, NamespaceUserID: user1.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
+	}}
+	if err := bs.CreateBatchSpec(ctx, batchSpec1); err != nil {
+		t.Fatal(err)
+	}
+	batchSpec2 := &btypes.BatchSpec{UserID: user2.ID, NamespaceUserID: user2.ID, RawSpec: "horse", Spec: &batcheslib.BatchSpec{
+		ChangesetTemplate: &batcheslib.ChangesetTemplate{},
+	}}
+	if err := bs.CreateBatchSpec(ctx, batchSpec2); err != nil {
+		t.Fatal(err)
+	}
+
+	tts := []struct {
+		records []*btypes.BatchSpecWorkspace
+		name    string
+		want    []int
+	}{
+		{
+			name: "nothing in queue",
+			want: []int{},
+		},
+		{
+			name: "user 1 and user 2 are intertwined",
+			records: []*btypes.BatchSpecWorkspace{
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec2.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec2.ID, RepoID: repo.ID},
+			},
+			want: []int{1, 3, 2, 4},
+		},
+		{
+			name: "user 1 exceeds concurrency",
+			records: []*btypes.BatchSpecWorkspace{
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+				{BatchSpecID: batchSpec1.ID, RepoID: repo.ID},
+			},
+			// Is missing ID 5.
+			want: []int{1, 3, 2, 4},
+		},
+		{
+			name: "user 1 has dequeued last, user 2 has before and goes next",
+		},
+		{
+			name: "user 1 has dequeued last, user 2 has never and goes next",
+		},
+		{
+			name: "user 1 dequeues errored record next",
+		},
+		{
+			name: "user 1 has concurrency limit left but has exceeded hourly rate",
+		},
+	}
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() {
+				q := sqlf.Sprintf("DELETE FROM batch_spec_workspaces WHERE 1 = 1")
+				if _, err := db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+					t.Fatal(err)
+				}
+			})
+			for _, r := range tt.records {
+				// All records need a step to be considered when creating execution jobs.
+				r.Steps = []batcheslib.Step{{}}
+			}
+			if err := bs.CreateBatchSpecWorkspace(ctx, tt.records...); err != nil {
+				t.Fatal(err)
+			}
+			if err := bs.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec1.ID); err != nil {
+				t.Fatal(err)
+			}
+			if err := bs.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec2.ID); err != nil {
+				t.Fatal(err)
+			}
+			records := make([]int, 0, len(tt.want))
+			for {
+				record, ok, err := s.Dequeue(ctx, "", []*sqlf.Query{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !ok || len(records) > len(tt.want) {
+					break
+				}
+				records = append(records, record.RecordID())
+			}
+			if diff := cmp.Diff(tt.want, records); diff != "" {
+				t.Fatalf("invalid records returned: %s", diff)
+			}
+		})
+	}
+}
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	ctx := context.Background()
