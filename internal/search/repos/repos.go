@@ -86,7 +86,7 @@ func (r *Resolver) Paginate(ctx context.Context, op *search.RepoOptions, handle 
 		page, err := r.Resolve(ctx, opts)
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			if !errors.As(err, &MissingRepoRevsError{}) { // Non-fatal errors
+			if !errors.Is(err, &MissingRepoRevsError{}) { // Non-fatal errors
 				break
 			}
 		}

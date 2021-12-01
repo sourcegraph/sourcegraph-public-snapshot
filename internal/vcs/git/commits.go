@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -126,6 +127,56 @@ func Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*git
 	}
 
 	return commitLog(ctx, repo, opt)
+}
+
+// CommitsUniqueToBranch returns a map from commits that exist on a particular
+// branch in the given repository to their committer date. This set of commits is
+// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
+// commits on {branchName} not also on the tip of the default branch. If the
+// supplied branch name is the default branch, then this method instead returns
+// all commits reachable from HEAD.
+func CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	args := []string{"log", "--pretty=format:%H:%cI"}
+	if maxAge != nil {
+		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
+	}
+	if isDefaultBranch {
+		args = append(args, "HEAD")
+	} else {
+		args = append(args, branchName, "^HEAD")
+	}
+
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
+}
+
+func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
+	commitDates := make(map[string]time.Time, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
+		}
+
+		duration, err := time.Parse(time.RFC3339, parts[1])
+		if err != nil {
+			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
+		}
+
+		commitDates[parts[0]] = duration
+	}
+
+	return commitDates, nil
 }
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
@@ -289,6 +340,37 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitdomain.Commit,
 	return GetCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 }
 
+// CommitExists determines if the given commit exists in the given repository.
+func CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID) (bool, error) {
+	c, err := getCommit(ctx, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
+	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return c != nil, nil
+}
+
+// Head determines the tip commit of the default branch for the given repository.
+// If no HEAD revision exists for the given repository (which occurs with empty
+// repositories), a false-valued flag is returned along with a nil error and
+// empty revision.
+func Head(ctx context.Context, repo api.RepoName) (_ string, revisionExists bool, err error) {
+	cmd := gitserver.DefaultClient.Command("git", "rev-parse", "HEAD")
+	cmd.Repo = repo
+
+	out, err := cmd.Output(ctx)
+	if err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			err = nil
+		}
+		return "", false, err
+	}
+
+	return string(out), true, nil
+}
+
 const (
 	partsPerCommit = 10 // number of \x00-separated fields per commit
 
@@ -345,4 +427,35 @@ func parseCommitFromLog(data []byte) (commit *gitdomain.Commit, refs []string, r
 	}
 
 	return commit, refs, rest, nil
+}
+
+// BranchesContaining returns a map from branch names to branch tip hashes for
+// each branch containing the given commit.
+func BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
+	cmd := gitserver.DefaultClient.Command("git", "branch", "--contains", string(commit), "--format", "%(refname)")
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseBranchesContaining(strings.Split(string(out), "\n")), nil
+}
+
+var refReplacer = strings.NewReplacer("refs/heads/", "", "refs/tags/", "")
+
+func parseBranchesContaining(lines []string) []string {
+	names := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		line = refReplacer.Replace(line)
+		names = append(names, line)
+	}
+	sort.Strings(names)
+
+	return names
 }
