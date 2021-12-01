@@ -45,7 +45,7 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 Sourcegraph should now be running at https://sourcegraph.test:3443.
 
-For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/index.md).
+For detailed instructions and troubleshooting, see the [local development documentation](https://docs.sourcegraph.com/dev/setup).
 
 ## Development
 
