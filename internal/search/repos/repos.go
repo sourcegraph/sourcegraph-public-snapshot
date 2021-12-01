@@ -346,10 +346,12 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				repoRev.Revs = append(repoRev.Revs, rev)
 			}
 
-			res.Lock()
-			res.RepoRevs[i] = &repoRev
-			res.RepoSet[repoRev.Repo.ID] = repoRev.Repo
-			res.Unlock()
+			if len(repoRev.Revs) > 0 {
+				res.Lock()
+				res.RepoRevs[i] = &repoRev
+				res.RepoSet[repoRev.Repo.ID] = repoRev.Repo
+				res.Unlock()
+			}
 
 			return nil
 		})
