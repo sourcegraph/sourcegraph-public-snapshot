@@ -7,23 +7,25 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { CatalogEntityStatusFields, CatalogEntityStatusState } from '../../../../../graphql-operations'
 
+import styles from './OverviewStatusContextItem.module.scss'
+
 interface Props {
     statusContext: Omit<CatalogEntityStatusFields['status']['contexts'][0], 'id'>
     className?: string
 }
 
 export const OverviewStatusContextItem: React.FunctionComponent<Props> = ({ statusContext, className, children }) => {
-    console.log('XX')
     const color = STATE_TO_COLOR[statusContext.state]
     return (
         <div className={classNames('d-flex align-items-start', className)}>
             <h4
-                className={classNames(`badge bg-transparent mb-0 mr-2 border border-${color} text-${color}`)}
-                // eslint-disable-next-line react/forbid-dom-props
-                style={{ marginTop: '-1px' }}
+                className={classNames(
+                    `badge bg-transparent mb-0 mr-2 border border-${color} text-${color}`,
+                    styles.title
+                )}
             >
                 {statusContext.targetURL ? (
-                    <Link to={statusContext.targetURL} className={`text-${color}`}>
+                    <Link to={statusContext.targetURL} className={`d-block text-${color}`}>
                         {statusContext.title}
                     </Link>
                 ) : (
@@ -31,9 +33,20 @@ export const OverviewStatusContextItem: React.FunctionComponent<Props> = ({ stat
                 )}
             </h4>
             <div>
-                {statusContext.description && (
-                    <Markdown dangerousInnerHTML={renderMarkdown(statusContext.description)} />
-                )}
+                {statusContext.description || (statusContext.targetURL && !children) ? (
+                    <div className="d-flex align-items-center">
+                        {statusContext.description && (
+                            <Markdown dangerousInnerHTML={renderMarkdown(statusContext.description)} />
+                        )}
+                        {statusContext.targetURL && !children && (
+                            <span className="small ml-2">
+                                <Link to={statusContext.targetURL} className="text-muted">
+                                    Details
+                                </Link>
+                            </span>
+                        )}
+                    </div>
+                ) : null}
                 {children}
             </div>
         </div>
