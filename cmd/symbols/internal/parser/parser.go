@@ -23,20 +23,26 @@ type Parser interface {
 }
 
 type parser struct {
-	parserPool        ParserPool
-	repositoryFetcher fetcher.RepositoryFetcher
-	operations        *operations
+	parserPool         ParserPool
+	repositoryFetcher  fetcher.RepositoryFetcher
+	requestBufferSize  int
+	numParserProcesses int
+	operations         *operations
 }
 
 func NewParser(
 	parserPool ParserPool,
 	repositoryFetcher fetcher.RepositoryFetcher,
+	requestBufferSize int,
+	numParserProcesses int,
 	observationContext *observation.Context,
 ) Parser {
 	return &parser{
-		parserPool:        parserPool,
-		repositoryFetcher: repositoryFetcher,
-		operations:        newOperations(observationContext),
+		parserPool:         parserPool,
+		repositoryFetcher:  repositoryFetcher,
+		requestBufferSize:  requestBufferSize,
+		numParserProcesses: numParserProcesses,
+		operations:         newOperations(observationContext),
 	}
 }
 
@@ -67,11 +73,16 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 		}
 	}()
 
-	var wg sync.WaitGroup
-	var totalSymbols uint32
-	symbols := make(chan result.Symbol)
+	var (
+		wg                          sync.WaitGroup                                         // concurrency control
+		parseRequests               = make(chan fetcher.ParseRequest, p.requestBufferSize) // buffered requests
+		symbols                     = make(chan result.Symbol)                             // parsed responses
+		totalRequests, totalSymbols uint32                                                 // stats
+	)
 
 	defer func() {
+		close(parseRequests)
+
 		go func() {
 			defer func() {
 				endObservation(1, observation.Args{LogFields: []log.Field{
@@ -84,22 +95,32 @@ func (p *parser) Parse(ctx context.Context, args types.SearchArgs, paths []strin
 		}()
 	}()
 
-	totalRequests := 0
+	for i := 0; i < p.numParserProcesses; i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for parseRequest := range parseRequests {
+				_ = p.handleParseRequest(ctx, symbols, parseRequest, &totalSymbols)
+			}
+		}()
+	}
+
 	for v := range parseRequestOrErrors {
 		if v.Err != nil {
 			return nil, v.Err
 		}
 
-		wg.Add(1)
 		totalRequests++
 
-		go func(parseRequest fetcher.ParseRequest) {
-			defer wg.Done()
-
-			_ = p.handleParseRequest(ctx, symbols, parseRequest, &totalSymbols)
-		}(v.ParseRequest)
+		select {
+		case parseRequests <- v.ParseRequest:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 	}
-	traceLog(log.Int("numRequests", totalRequests))
+	traceLog(log.Int("numRequests", int(totalRequests)))
 
 	return symbols, nil
 }
