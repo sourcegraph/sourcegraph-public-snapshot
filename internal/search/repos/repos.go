@@ -33,9 +33,6 @@ import (
 type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
-	// Perf improvement: we precompute this map during repo resolution to save time
-	// on the critical path.
-	RepoSet         map[api.RepoID]types.MinimalRepo
 	MissingRepoRevs []*search.RepositoryRevisions
 	OverLimit       bool
 
@@ -227,7 +224,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	res.Resolved = Resolved{
 		RepoRevs: make([]*search.RepositoryRevisions, len(repos)),
-		RepoSet:  make(map[api.RepoID]types.MinimalRepo, len(repos)),
 		Next:     next,
 	}
 
@@ -354,7 +350,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			if len(repoRev.Revs) > 0 {
 				res.Lock()
 				res.RepoRevs[i] = &repoRev
-				res.RepoSet[repoRev.Repo.ID] = repoRev.Repo
 				res.Unlock()
 			}
 

@@ -323,14 +323,6 @@ func TestResolverPaginate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	setOf := func(repos []*search.RepositoryRevisions) map[api.RepoID]types.MinimalRepo {
-		m := make(map[api.RepoID]types.MinimalRepo, len(repos))
-		for _, r := range repos {
-			m[r.Repo.ID] = r.Repo
-		}
-		return m
-	}
-
 	for _, tc := range []struct {
 		name  string
 		opts  search.RepoOptions
@@ -350,7 +342,6 @@ func TestResolverPaginate(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[:3],
-					RepoSet:  setOf(all.RepoRevs[:3]),
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
@@ -358,7 +349,6 @@ func TestResolverPaginate(t *testing.T) {
 				},
 				{
 					RepoRevs: all.RepoRevs[3:],
-					RepoSet:  setOf(all.RepoRevs[3:]),
 				},
 			},
 		},
@@ -374,7 +364,6 @@ func TestResolverPaginate(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[3:],
-					RepoSet:  setOf(all.RepoRevs[3:]),
 				},
 			},
 		},
