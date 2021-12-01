@@ -21,6 +21,7 @@ interface CatalogEntity {
     name: String!
     description: String
     url: String!
+    owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
 }
 
@@ -69,6 +70,7 @@ type CatalogComponent implements Node & CatalogEntity {
     name: String!
     description: String
     url: String!
+    owners: [CatalogEntityOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
 
     kind: CatalogComponentKind!
@@ -77,7 +79,6 @@ type CatalogComponent implements Node & CatalogEntity {
     readme: File2
     commits(first: Int): GitCommitConnection
     authors: [CatalogComponentAuthorEdge!]
-    owners: [CatalogEntityOwnerEdge!]
     usage(query: String): CatalogComponentUsage
     api(query: String): CatalogComponentAPI
 }
@@ -91,7 +92,7 @@ type CatalogComponentAuthorEdge {
 }
 
 type CatalogEntityOwnerEdge {
-    owner: String!
+    node: String!
     fileCount: Int!
     fileProportion: Float!
 }

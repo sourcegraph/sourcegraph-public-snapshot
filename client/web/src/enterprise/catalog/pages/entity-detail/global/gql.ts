@@ -24,6 +24,16 @@ const CATALOG_ENTITY_GRAPH_FRAGMENT = gql`
     }
 `
 
+const CATALOG_ENTITY_OWNERS_FRAGMENT = gql`
+    fragment CatalogEntityOwnersFields on CatalogEntity {
+        owners {
+            node
+            fileCount
+            fileProportion
+        }
+    }
+`
+
 const CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT = gql`
     fragment CatalogComponentDocumentationFields on CatalogComponent {
         readme {
@@ -207,6 +217,7 @@ const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         description
         url
         ...CatalogEntityGraphFields
+        ...CatalogEntityOwnersFields
         ... on CatalogComponent {
             kind
             ...CatalogComponentDocumentationFields
@@ -219,6 +230,7 @@ const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
     }
 
     ${CATALOG_ENTITY_GRAPH_FRAGMENT}
+    ${CATALOG_ENTITY_OWNERS_FRAGMENT}
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}

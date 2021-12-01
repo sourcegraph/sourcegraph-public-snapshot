@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"bytes"
+	"log"
 	pathpkg "path"
 	"strings"
 
@@ -58,12 +59,17 @@ func (c *codeownersComputer) add(repo api.RepoName, commit api.CommitID, path st
 	}
 
 	key := repoCommitKey{repo: repo, commit: commit}
+	if c.at == nil {
+		c.at = map[repoCommitKey][]codeownersEntry{}
+	}
 	c.at[key] = append(c.at[key], entries...)
 }
 
 func (c *codeownersComputer) get(repo api.RepoName, commit api.CommitID, path string) (owners []string) {
 	entries := c.at[repoCommitKey{repo: repo, commit: commit}]
 	for _, e := range entries {
+		matched, _ := pathpkg.Match(e.pathPattern, path)
+		log.Printf("match(%q, %q) -> %v", e.pathPattern, path, matched)
 		if matched, _ := pathpkg.Match(e.pathPattern, path); matched {
 			return e.owners
 		}

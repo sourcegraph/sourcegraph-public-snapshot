@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"io/fs"
+	"log"
 	"path"
 	"sort"
 	"sync"
@@ -85,6 +86,7 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 
 		totalFileCount++
 		owners := codeowners.get(r.component.SourceRepo, r.component.SourceCommit, e.Name())
+		log.Println("e", e.Name(), len(owners))
 		for _, owner := range owners {
 			od := byOwner[owner]
 			if od == nil {
@@ -92,6 +94,7 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 				byOwner[owner] = od
 			}
 			od.FileCount++
+			log.Println("owner", owner, "path", e.Name(), "c", od.FileCount)
 		}
 	}
 
@@ -117,7 +120,7 @@ type catalogEntityOwnerEdgeResolver struct {
 	totalFileCount int
 }
 
-func (r *catalogEntityOwnerEdgeResolver) Owner() string    { return r.data.Owner }
+func (r *catalogEntityOwnerEdgeResolver) Node() string     { return r.data.Owner }
 func (r *catalogEntityOwnerEdgeResolver) FileCount() int32 { return int32(r.data.FileCount) }
 func (r *catalogEntityOwnerEdgeResolver) FileProportion() float64 {
 	return float64(r.data.FileCount) / float64(r.totalFileCount)

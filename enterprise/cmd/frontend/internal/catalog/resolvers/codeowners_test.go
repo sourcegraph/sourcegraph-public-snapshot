@@ -31,3 +31,17 @@ a/*/b @c @d
 		})
 	}
 }
+
+func TestCodeownersComputer(t *testing.T) {
+	var c codeownersComputer
+	c.add("repo1", "commit1", "CODEOWNERS", []byte("**/* u1"))
+	c.add("repo2", "commit2", "CODEOWNERS", []byte("baz/qux u2"))
+	c.add("repo2", "commit2", "foo/bar/CODEOWNERS", []byte("**/* u3"))
+
+	if got, want := c.get("repo2", "commit2", "foo/bar/baz/qux"), []string{"u3"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	if got, want := c.get("repo2", "commit2", "foo/bar/x/y/z"), []string{"u3"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}

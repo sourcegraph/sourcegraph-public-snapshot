@@ -47,6 +47,7 @@ type CatalogEntity interface {
 	Description() *string
 	URL() string
 
+	Owners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
 	RelatedEntities(context.Context) (CatalogEntityRelatedEntityConnectionResolver, error)
 }
 
@@ -90,7 +91,6 @@ type CatalogComponentResolver interface {
 	SourceLocations(context.Context) ([]*GitTreeEntryResolver, error)
 	Commits(context.Context, *graphqlutil.ConnectionArgs) (GitCommitConnectionResolver, error)
 	Authors(context.Context) (*[]CatalogComponentAuthorEdgeResolver, error)
-	Owners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
 	Usage(context.Context, *CatalogComponentUsageArgs) (CatalogComponentUsageResolver, error)
 	API(context.Context, *CatalogComponentAPIArgs) (CatalogComponentAPIResolver, error)
 }
@@ -106,7 +106,7 @@ type CatalogComponentAuthorEdgeResolver interface {
 }
 
 type CatalogEntityOwnerEdgeResolver interface {
-	Owner() string
+	Node() string
 	FileCount() int32
 	FileProportion() float64
 }

@@ -25,8 +25,8 @@ import { ComponentDocumentation } from './ComponentDocumentation'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
 import { ComponentUsage } from './ComponentUsage'
+import { EntityOwners } from './EntityOwners'
 import { TabRouter } from './TabRouter'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
@@ -59,6 +59,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                                         <SearchIcon className="icon-inline" /> Search in {entity.name}...
                                     </Link>
                                     <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
+                                    <EntityOwners entity={entity} className="mb-2" />
                                     <EntityGraph
                                         graph={{
                                             edges: entity.relatedEntities.edges.map(edge =>
