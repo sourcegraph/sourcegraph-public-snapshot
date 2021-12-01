@@ -43,7 +43,7 @@ func NewGitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
 	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *gitserverRepoStore) With(other basestore.ShareableStore) GitserverRepoStore{
+func (s *gitserverRepoStore) With(other basestore.ShareableStore) GitserverRepoStore {
 	return &gitserverRepoStore{Store: s.Store.With(other)}
 }
 

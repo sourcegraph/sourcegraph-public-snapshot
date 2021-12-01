@@ -3,9 +3,10 @@ package backend
 import (
 	"context"
 	"fmt"
-	"github.com/inconshreveable/log15"
 	"net/url"
 	"time"
+
+	"github.com/inconshreveable/log15"
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
