@@ -15,7 +15,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -30,7 +30,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	_, err := db.Exec(`
 		INSERT INTO event_logs
@@ -108,10 +108,12 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 }
 
 func TestWithCreationPings(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
 	user2 := "55555555-5555-5555-5555-555555555555"
@@ -178,7 +180,8 @@ func TestFilterSettingJson(t *testing.T) {
 }
 
 func TestGetSearchInsights(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {
@@ -256,7 +259,8 @@ func TestGetSearchInsights(t *testing.T) {
 }
 
 func TestGetLangStatsInsights(t *testing.T) {
-	db := dbtesting.GetDB(t)
+	t.Parallel()
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := db.Exec(`INSERT INTO orgs(id, name) VALUES (1, 'first-org'), (2, 'second-org');`)
 	if err != nil {

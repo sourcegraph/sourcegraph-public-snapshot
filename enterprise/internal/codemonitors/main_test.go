@@ -10,7 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -72,7 +72,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 
 func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, NewStoreWithClock(db, func() time.Time { return now })
 }

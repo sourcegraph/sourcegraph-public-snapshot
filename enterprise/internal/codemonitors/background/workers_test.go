@@ -12,13 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestActionRunner(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	db := dbtest.NewDB(t)
 
 	externalURL := "https://www.sourcegraph.com"
 	testQuery := "test patternType:literal"
@@ -36,7 +34,6 @@ func TestActionRunner(t *testing.T) {
 
 	// Create a TestStore.
 	var err error
-	db := dbtesting.GetDB(t)
 	now := time.Now()
 	clock := func() time.Time { return now }
 	s := codemonitors.NewStoreWithClock(db, clock)
@@ -74,7 +71,7 @@ func TestActionRunner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//Empty database, preserve schema.
-			db := dbtesting.GetDB(t)
+			db := dbtest.NewDB(t)
 
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 

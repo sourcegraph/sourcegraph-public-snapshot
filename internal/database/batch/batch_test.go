@@ -8,14 +8,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestBatchInserter(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	expectedValues := makeTestValues(2, 0)
@@ -44,10 +41,7 @@ func TestBatchInserter(t *testing.T) {
 }
 
 func TestBatchInserterWithReturn(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -65,10 +59,7 @@ func TestBatchInserterWithReturn(t *testing.T) {
 }
 
 func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -87,7 +78,7 @@ func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
 }
 
 func BenchmarkBatchInserter(b *testing.B) {
-	db := dbtesting.GetDB(b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 0)
 
@@ -100,7 +91,7 @@ func BenchmarkBatchInserter(b *testing.B) {
 }
 
 func BenchmarkBatchInserterLargePayload(b *testing.B) {
-	db := dbtesting.GetDB(b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 4096)
 
