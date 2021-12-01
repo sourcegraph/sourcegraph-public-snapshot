@@ -103,8 +103,14 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
 
 		// Request not associated with any actor
-		case "", headerValueNoActor:
+		case headerValueNoActor:
 			metricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()
+
+		// Request does not have any actor information provided - for legacy support, we
+		// treat these as internal requests.
+		case "":
+			ctx = WithInternalActor(ctx)
+			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
 
 		// Request associated with authenticated user - add user actor to context
 		default:
@@ -119,6 +125,13 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 				rw.WriteHeader(http.StatusForbidden)
 				_, _ = rw.Write([]byte(fmt.Sprintf("%s was provided, but the value was invalid", headerKeyActorUID)))
 				return
+			}
+
+			// Legacy support for indicating an internal user through a user ID of 0
+			if uid == 0 {
+				ctx = WithInternalActor(ctx)
+				metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
+				break
 			}
 
 			// Valid user, add to context
