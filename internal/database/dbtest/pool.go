@@ -90,6 +90,30 @@ var templateDBColumns = []*sqlf.Query{
 	sqlf.Sprintf("template_dbs.last_used_at"),
 }
 
+func scanTemplateDB(scanner dbutil.Scanner) (*TemplateDB, error) {
+	var t TemplateDB
+	err := scanner.Scan(
+		&t.ID,
+		&t.MigrationHash,
+		&t.Name,
+		&t.CreatedAt,
+		&t.LastUsedAt,
+	)
+	return &t, err
+}
+
+func scanTemplateDBs(rows *sql.Rows) ([]*TemplateDB, error) {
+	var tdbs []*TemplateDB
+	for rows.Next() {
+		tdb, err := scanTemplateDB(rows)
+		if err != nil {
+			return nil, err
+		}
+		tdbs = append(tdbs, tdb)
+	}
+	return tdbs, nil
+}
+
 const getTemplateDB = `
 UPDATE template_dbs
 SET last_used_at = now()
@@ -193,6 +217,30 @@ var migratedDBColumns = []*sqlf.Query{
 	sqlf.Sprintf("migrated_dbs.claimed"),
 	sqlf.Sprintf("migrated_dbs.clean"),
 	sqlf.Sprintf("migrated_dbs.name"),
+}
+
+func scanMigratedDB(scanner dbutil.Scanner) (*MigratedDB, error) {
+	var t MigratedDB
+	err := scanner.Scan(
+		&t.ID,
+		&t.Template,
+		&t.Claimed,
+		&t.Clean,
+		&t.Name,
+	)
+	return &t, err
+}
+
+func scanMigratedDBs(rows *sql.Rows) ([]*MigratedDB, error) {
+	var mdbs []*MigratedDB
+	for rows.Next() {
+		mdb, err := scanMigratedDB(rows)
+		if err != nil {
+			return nil, err
+		}
+		mdbs = append(mdbs, mdb)
+	}
+	return mdbs, nil
 }
 
 const insertMigratedDB = `
@@ -421,52 +469,4 @@ func hashMigrations(defs ...*dbconn.Database) (int64, error) {
 		}
 	}
 	return int64(hash.Sum64()), nil
-}
-
-func scanTemplateDBs(rows *sql.Rows) ([]*TemplateDB, error) {
-	var tdbs []*TemplateDB
-	for rows.Next() {
-		tdb, err := scanTemplateDB(rows)
-		if err != nil {
-			return nil, err
-		}
-		tdbs = append(tdbs, tdb)
-	}
-	return tdbs, nil
-}
-
-func scanTemplateDB(scanner dbutil.Scanner) (*TemplateDB, error) {
-	var t TemplateDB
-	err := scanner.Scan(
-		&t.ID,
-		&t.MigrationHash,
-		&t.Name,
-		&t.CreatedAt,
-		&t.LastUsedAt,
-	)
-	return &t, err
-}
-
-func scanMigratedDBs(rows *sql.Rows) ([]*MigratedDB, error) {
-	var mdbs []*MigratedDB
-	for rows.Next() {
-		mdb, err := scanMigratedDB(rows)
-		if err != nil {
-			return nil, err
-		}
-		mdbs = append(mdbs, mdb)
-	}
-	return mdbs, nil
-}
-
-func scanMigratedDB(scanner dbutil.Scanner) (*MigratedDB, error) {
-	var t MigratedDB
-	err := scanner.Scan(
-		&t.ID,
-		&t.Template,
-		&t.Claimed,
-		&t.Clean,
-		&t.Name,
-	)
-	return &t, err
 }
