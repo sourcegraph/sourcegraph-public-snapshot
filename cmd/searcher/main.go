@@ -78,7 +78,7 @@ func main() {
 	// Set up handler middleware
 	handler := actor.HTTPMiddleware(service)
 	handler = trace.HTTPTraceMiddleware(handler, conf.DefaultClient())
-	handler = ot.Middleware(handler)
+	handler = ot.HTTPMiddleware(handler)
 
 	host := ""
 	if env.InsecureDev {
