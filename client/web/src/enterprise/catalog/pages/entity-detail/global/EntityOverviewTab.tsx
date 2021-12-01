@@ -51,7 +51,11 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                             listGroupClassName="list-group-flush"
                             className="border-top"
                         />
+                        {entity.commits?.nodes[0] && (
+                            <LastCommit commit={entity.commits.nodes[0]} className="card-footer" />
+                        )}
                     </div>
+
                     {/* owner-docs-API def -- authorities. then who you could ask. */}
                     <div className="d-flex">
                         <Link to="#" className="d-flex align-items-center text-body mb-3 mr-3 p-2">
@@ -68,7 +72,6 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                         </Link>
                     </div>
                     <hr className="my-3" />
-                    {entity.commits?.nodes[0] && <LastCommit commit={entity.commits.nodes[0]} className="mb-3" />}
                     <Link to="#" className="d-flex align-items-center text-body mb-3">
                         <AccountGroupIcon className="icon-inline mr-2 d-none" />
                         <span className="badge badge-primary bg-transparent border-primary border text-primary mr-2">
@@ -99,28 +102,6 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                             <span className="text-muted">6</span> &nbsp; <span className="text-muted">3 more</span>
                         </small>
                     </Link>
-                    {false && (
-                        <div className="card">
-                            <p className="card-body mb-0">
-                                <strong>Owners</strong>&nbsp;{' '}
-                            </p>
-                            <p className="card-body border-top mb-0">
-                                <strong>Authors</strong>&nbsp;{' '}
-                                <small>
-                                    @ziyang <span className="text-muted">81%</span> &nbsp;@fatima{' '}
-                                    <span className="text-muted">15%</span> &nbsp;@walter{' '}
-                                    <span className="text-muted">12%</span> &nbsp;
-                                </small>
-                            </p>
-                            <p className="card-body border-top mb-0">
-                                <strong>Callers</strong>&nbsp;{' '}
-                                <small>
-                                    @alice <span className="text-muted">51</span> &nbsp;@bob{' '}
-                                    <span className="text-muted">31</span> &nbsp;
-                                </small>
-                            </p>
-                        </div>
-                    )}
                     {false && (
                         <EntityOwners
                             entity={entity}
@@ -170,6 +151,9 @@ const LastCommit: React.FunctionComponent<{
             {commit.subject}
         </Link>
         <small className="text-nowrap text-muted">
+            <Link to={commit.url} className="text-monospace text-muted mr-2 d-none d-md-inline">
+                {commit.abbreviatedOID}
+            </Link>
             <Timestamp date={commit.author.date} noAbout={true} />
         </small>
     </div>
