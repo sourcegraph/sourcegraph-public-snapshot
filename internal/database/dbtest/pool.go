@@ -40,8 +40,7 @@ CREATE TABLE template_dbs (
 CREATE TABLE migrated_dbs (
 	id			bigserial PRIMARY KEY,
 	template	bigint NOT NULL REFERENCES template_dbs(id) ON DELETE RESTRICT, -- restrict to avoid dangling dbs
-	claimed		bool NOT NULL,
-	clean		bool NOT NULL,
+	available	bool NOT NULL,
 	name		text GENERATED ALWAYS AS ('sourcegraph-dbtest-migrated-' || id::text) STORED
 );
 
@@ -204,18 +203,16 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 }
 
 type MigratedDB struct {
-	ID       int64
-	Template int64
-	Claimed  bool
-	Clean    bool
-	Name     string
+	ID        int64
+	Template  int64
+	Available bool
+	Name      string
 }
 
 var migratedDBColumns = []*sqlf.Query{
 	sqlf.Sprintf("migrated_dbs.id"),
 	sqlf.Sprintf("migrated_dbs.template"),
-	sqlf.Sprintf("migrated_dbs.claimed"),
-	sqlf.Sprintf("migrated_dbs.clean"),
+	sqlf.Sprintf("migrated_dbs.available"),
 	sqlf.Sprintf("migrated_dbs.name"),
 }
 
@@ -224,8 +221,7 @@ func scanMigratedDB(scanner dbutil.Scanner) (*MigratedDB, error) {
 	err := scanner.Scan(
 		&t.ID,
 		&t.Template,
-		&t.Claimed,
-		&t.Clean,
+		&t.Available,
 		&t.Name,
 	)
 	return &t, err
@@ -244,27 +240,26 @@ func scanMigratedDBs(rows *sql.Rows) ([]*MigratedDB, error) {
 }
 
 const insertMigratedDB = `
-INSERT INTO migrated_dbs (template, claimed, clean)
-VALUES (%s, %s, %s)
+INSERT INTO migrated_dbs (template, available)
+VALUES (%s, %s)
 RETURNING %s
 `
 
 const getExistingMigratedDB = `
 UPDATE migrated_dbs
-SET claimed = true
+SET available = false
 WHERE id = (
 	SELECT id
 	FROM migrated_dbs
-	WHERE claimed = false
-		AND clean = true
+	WHERE available = true
 	LIMIT 1
 	FOR UPDATE
 )
 RETURNING %s
 `
 
-// GetMigratedDB returns a new, clean, migrated db that is cloned from the given templated db. If an unclaimed,
-// clean database already exists for the given template, that is claimed and returned. If it does not, a new
+// GetMigratedDB returns a clean, available, migrated db that is cloned from the given templated db. If an available,
+// clean database already exists for the given template, that is made unavavailable and returned. If it does not, a new
 // database is created from the given template and returned.
 func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (_ *MigratedDB, err error) {
 	// Run this in a transaction so if creating the database
@@ -292,7 +287,6 @@ func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (
 	q = sqlf.Sprintf(
 		insertMigratedDB,
 		tdb.ID,
-		true,
 		false,
 		sqlf.Join(migratedDBColumns, ","),
 	)
@@ -313,19 +307,19 @@ func (t *testDatabasePool) GetMigratedDB(ctx context.Context, tdb *TemplateDB) (
 	return mdb, nil
 }
 
-const unclaimCleanMigratedDB = `
+const returnCleanMigratedDB = `
 UPDATE migrated_dbs
-SET (claimed, clean) = (false, true)
+SET available = true
 WHERE id = %s
 `
 
-// UnclaimCleanMigratedDB marks a clean database as unclaimed, allowing it to be returned by a
-// call to GetMigratedDB. A migrated db should never be unclaimed if it was written to, and should
+// PutMigratedDB marks a clean database as available, allowing it to be returned by a
+// call to GetMigratedDB. A migrated db should never be made available if it was written to, and should
 // be deleted instead. This should really only be called if the database was only used in a transaction
 // and that transaction was rolled back (as in NewFastTx).
-func (t *testDatabasePool) UnclaimCleanMigratedDB(ctx context.Context, mdb *MigratedDB) error {
+func (t *testDatabasePool) PutMigratedDB(ctx context.Context, mdb *MigratedDB) error {
 	q := sqlf.Sprintf(
-		unclaimCleanMigratedDB,
+		returnCleanMigratedDB,
 		mdb.ID,
 	)
 	return t.Exec(ctx, q)

@@ -177,7 +177,7 @@ func newTxFromPool(t testing.TB, u *url.URL, pool *testDatabasePool) *sql.Tx {
 			return
 		}
 
-		err := pool.UnclaimCleanMigratedDB(ctx, mdb)
+		err := pool.PutMigratedDB(ctx, mdb)
 		if err != nil {
 			t.Fatalf("failed to unclaim migrated db %q: %s", mdb.Name, err)
 		}
