@@ -320,46 +320,12 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 	}})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"log", "--pretty=format:%H:%cI"}
-	if maxAge != nil {
-		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
-	}
-	if isDefaultBranch {
-		args = append(args, "HEAD")
-	} else {
-		args = append(args, branchName, "^HEAD")
-	}
-
-	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseCommitsUniqueToBranch(strings.Split(out, "\n"))
-}
-
-func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
-	commitDates := make(map[string]time.Time, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
-		}
-
-		duration, err := time.Parse(time.RFC3339, parts[1])
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
-		}
-
-		commitDates[parts[0]] = duration
-	}
-
-	return commitDates, nil
+	return git.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge)
 }
 
 // BranchesContaining returns a map from branch names to branch tip hashes for each brach
