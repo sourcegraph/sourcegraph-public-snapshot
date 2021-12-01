@@ -59,7 +59,7 @@ jobs:
         exclude:
           # Compiling for arm64 on Linux requires more work
           - os: ubuntu-latest
-            node: arm64
+            arch: arm64
 
     steps:
       - name: Checkout
