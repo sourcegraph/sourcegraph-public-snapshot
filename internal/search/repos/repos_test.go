@@ -350,7 +350,6 @@ func TestResolverPaginate(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[:3],
-					RepoSet:  setOf(all.RepoRevs[:3]),
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
@@ -358,7 +357,6 @@ func TestResolverPaginate(t *testing.T) {
 				},
 				{
 					RepoRevs: all.RepoRevs[3:],
-					RepoSet:  setOf(all.RepoRevs[3:]),
 				},
 			},
 		},
@@ -374,7 +372,6 @@ func TestResolverPaginate(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[3:],
-					RepoSet:  setOf(all.RepoRevs[3:]),
 				},
 			},
 		},
