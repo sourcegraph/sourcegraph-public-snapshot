@@ -79,7 +79,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                                             to={entity.readme.url}
                                             className="d-flex align-items-center text-body mb-3 mr-2"
                                         >
-                                            <FileDocumentIcon className="icon-inline mr-1" />
+                                            <FileDocumentIcon className="icon-inline mr-2" />
                                             Documentation
                                         </Link>
                                         <FilePeekButton file={entity.readme} />
