@@ -298,6 +298,10 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
+				if rev.RevSpec == "" {
+					rev.RevSpec = "HEAD"
+				}
+
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
 				commitID, err := git.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, git.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
