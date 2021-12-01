@@ -423,17 +423,6 @@ WHERE
 FOR UPDATE
 `
 
-const deleteMigratedDBsForTemplate = `
-DELETE FROM migrated_dbs
-WHERE template = %s
-RETURNING %s
-`
-
-const uninsertTemplateDB = `
-DELETE FROM template_dbs
-WHERE id = %s
-`
-
 func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.Database) (err error) {
 	hash, err := hashMigrations(except...)
 	if err != nil {
