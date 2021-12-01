@@ -1,15 +1,20 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Route, Switch, useRouteMatch } from 'react-router'
 import { NavLink } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Page } from '@sourcegraph/web/src/components/Page'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../../catalog'
+import { Badge } from '../../../../../components/Badge'
+import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
+import { Popover } from '../../../../insights/components/popover/Popover'
 import { CatalogEntityFiltersProps } from '../../../core/entity-filters'
 import { EntityList } from '../components/entity-list/EntityList'
 import { OverviewEntityGraph } from '../components/overview-content/OverviewEntityGraph'
+
+import styles from './OverviewPage.module.scss'
 
 interface Props extends CatalogEntityFiltersProps, TelemetryProps {}
 
@@ -29,6 +34,7 @@ export const OverviewPage: React.FunctionComponent<Props> = ({ filters, onFilter
                 path={[{ icon: CatalogIcon, text: 'Catalog' }]}
                 className="mb-4"
                 description="Explore software components, services, libraries, APIs, and more."
+                actions={<FeedbackPopoverButton />}
             />
 
             <ul className="nav nav-tabs w-100 mb-2">
@@ -55,5 +61,31 @@ export const OverviewPage: React.FunctionComponent<Props> = ({ filters, onFilter
                 </Route>
             </Switch>
         </Page>
+    )
+}
+
+const FeedbackPopoverButton: React.FunctionComponent = () => {
+    const buttonReference = useRef<HTMLButtonElement>(null)
+    const [isVisible, setVisibility] = useState(false)
+
+    return (
+        <div className="d-flex align-items-center px-2">
+            <Badge status="wip" className="text-uppercase mr-2" />
+            <Button ref={buttonReference} variant="link" size="sm">
+                Share feedback
+            </Button>
+            <Popover
+                isOpen={isVisible}
+                target={buttonReference}
+                onVisibilityChange={setVisibility}
+                className={styles.feedbackPrompt}
+            >
+                <FeedbackPromptContent
+                    closePrompt={() => setVisibility(false)}
+                    textPrefix="Catalog: "
+                    routeMatch="/catalog"
+                />
+            </Popover>
+        </div>
     )
 }
