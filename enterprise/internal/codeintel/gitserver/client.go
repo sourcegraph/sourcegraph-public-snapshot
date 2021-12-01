@@ -42,15 +42,11 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "cat-file", "-t", commit)
-	if err == nil {
-		return true, nil
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return false, err
 	}
-
-	if strings.Contains(out, "Not a valid object name") {
-		err = nil
-	}
-	return false, err
+	return git.CommitExists(ctx, repo, api.CommitID(commit))
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
@@ -62,16 +58,12 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	}})
 	defer endObservation(1, observation.Args{})
 
-	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
-		}
-
 		return "", false, err
 	}
 
-	return revision, true, nil
+	return git.Head(ctx, repo)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
