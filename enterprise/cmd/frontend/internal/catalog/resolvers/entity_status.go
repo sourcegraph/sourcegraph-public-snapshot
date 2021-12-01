@@ -62,23 +62,26 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 		if err != nil {
 			return nil, err
 		}
-		usagePeople, err := usage.People(ctx)
-		if err != nil {
-			return nil, err
-		}
 
-		sc := &catalogEntityStatusContextResolver{
-			name:      "usage",
-			title:     "Usage",
-			targetURL: r.URL() + "/usage",
+		if usage != nil {
+			usagePeople, err := usage.People(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			sc := &catalogEntityStatusContextResolver{
+				name:      "usage",
+				title:     "Usage",
+				targetURL: r.URL() + "/usage",
+			}
+			if usagePeople == nil || len(usagePeople) == 0 {
+				sc.state = "FAILURE"
+				sc.description = "No users found"
+			} else {
+				sc.state = "INFO"
+			}
+			statusContexts = append(statusContexts, sc)
 		}
-		if usagePeople == nil || len(usagePeople) == 0 {
-			sc.state = "FAILURE"
-			sc.description = "No users found"
-		} else {
-			sc.state = "INFO"
-		}
-		statusContexts = append(statusContexts, sc)
 	}
 
 	statusContexts = append(statusContexts,
