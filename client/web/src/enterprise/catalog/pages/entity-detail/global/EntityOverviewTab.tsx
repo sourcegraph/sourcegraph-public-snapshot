@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { uniqBy } from 'lodash'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
@@ -5,7 +6,10 @@ import { Link } from 'react-router-dom'
 
 import { CatalogEntityRelationType } from '@sourcegraph/shared/src/graphql/schema'
 
+import { Timestamp } from '../../../../../components/time/Timestamp'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
+import { PersonLink } from '../../../../../person/PersonLink'
+import { UserAvatar } from '../../../../../user/UserAvatar'
 import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentAuthors } from './ComponentAuthors'
@@ -29,21 +33,39 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
     <div className="d-flex flex-column">
         {entity.__typename === 'CatalogComponent' ? (
             <>
-                <Link
-                    to={`/search?q=context:c/${entity.name}`}
-                    className="d-flex align-items-center mb-2 btn btn-outline-secondary"
-                >
-                    <SearchIcon className="icon-inline" /> Search in {entity.name}...
-                </Link>
-                <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
-                <EntityOwners
-                    entity={entity}
-                    className="card mb-2"
-                    headerClassName={headerClassName}
-                    titleClassName={titleClassName}
-                    bodyClassName={bodyClassName}
-                    bodyScrollableClassName={bodyScrollableClassName}
-                />
+                <div className="row">
+                    <div className="col-md-8">
+                        <div className="card">
+                            <div className="card-body">
+                                <Link
+                                    to={`/search?q=context:c/${entity.name}`}
+                                    className="d-flex align-items-center btn btn-outline-secondary"
+                                >
+                                    <SearchIcon className="icon-inline" /> Search in {entity.name}...
+                                </Link>
+                            </div>
+                            {entity.commits?.nodes[0] && (
+                                <LastCommit commit={entity.commits.nodes[0]} className="card-footer" />
+                            )}
+                            <ComponentSourceDefinitions
+                                catalogComponent={entity}
+                                listGroupClassName="list-group-flush"
+                                className="border-top"
+                            />
+                        </div>
+                    </div>
+                    <div className="col-md-4">
+                        <EntityOwners
+                            entity={entity}
+                            className="card mb-2"
+                            headerClassName={headerClassName}
+                            titleClassName={titleClassName}
+                            bodyClassName={bodyClassName}
+                            bodyScrollableClassName={bodyScrollableClassName}
+                        />
+                    </div>
+                </div>
+
                 <EntityGraph
                     graph={{
                         edges: entity.relatedEntities.edges.map(edge =>
@@ -87,5 +109,21 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
         ) : (
             <div>Typename is {entity.__typename}</div>
         )}
+    </div>
+)
+
+const LastCommit: React.FunctionComponent<{
+    commit: NonNullable<CatalogEntityDetailFields['commits']>['nodes'][0]
+    className?: string
+}> = ({ commit, className }) => (
+    <div className={classNames('d-flex align-items-center', className)}>
+        <UserAvatar className="icon-inline mr-2 flex-shrink-0" user={commit.author.person} size={14} />
+        <PersonLink person={commit.author.person} className="font-weight-bold mr-2 flex-shrink-0" />
+        <Link to={commit.url} className="text-truncate flex-grow-1 text-body mr-2" title={commit.message}>
+            {commit.subject}
+        </Link>
+        <small className="text-nowrap text-muted">
+            <Timestamp date={commit.author.date} noAbout={true} />
+        </small>
     </div>
 )

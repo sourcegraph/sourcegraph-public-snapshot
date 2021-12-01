@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
@@ -7,18 +8,20 @@ import { CatalogComponentSourcesFields } from '../../../../../graphql-operations
 
 interface Props {
     catalogComponent: CatalogComponentSourcesFields
+    listGroupClassName?: string
     className?: string
 }
 
 export const ComponentSourceDefinitions: React.FunctionComponent<Props> = ({
     catalogComponent: { sourceLocations },
+    listGroupClassName,
     className,
 }) => (
     <div className={className}>
         {sourceLocations.length > 0 ? (
-            <ol className="list-group mb-0">
+            <ol className={classNames('list-group mb-0', listGroupClassName)}>
                 {sourceLocations.map(sourceLocation => (
-                    <li key={sourceLocation.url} className="list-group-item">
+                    <li key={sourceLocation.url} className="list-group-item py-2">
                         <RepoFileLink
                             repoName={sourceLocation.repository.name}
                             repoURL={sourceLocation.repository.url}
