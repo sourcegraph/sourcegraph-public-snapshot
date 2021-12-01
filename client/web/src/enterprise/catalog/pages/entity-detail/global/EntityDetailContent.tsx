@@ -1,11 +1,6 @@
-import classNames from 'classnames'
-import { uniqBy } from 'lodash'
-import SearchIcon from 'mdi-react/SearchIcon'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { CatalogEntityRelationType } from '@sourcegraph/shared/src/graphql/schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -15,17 +10,13 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { catalogEntityIconComponent } from '../../../components/CatalogEntityIcon'
-import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentAPI } from './ComponentApi'
-import { ComponentAuthors } from './ComponentAuthors'
-import { ComponentCommits } from './ComponentCommits'
-import styles from './ComponentDetailContent.module.scss'
 import { ComponentDocumentation } from './ComponentDocumentation'
-import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
-import { ComponentSources } from './ComponentSources'
 import { ComponentUsage } from './ComponentUsage'
-import { EntityOwners } from './EntityOwners'
+import { EntityCodeTab } from './EntityCodeTab'
+import styles from './EntityDetailContent.module.scss'
+import { EntityOverviewTab } from './EntityOverviewTab'
 import { TabRouter } from './TabRouter'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
@@ -40,6 +31,13 @@ export interface EntityDetailContentCardProps {
     bodyScrollableClassName?: string
 }
 
+const cardProps: EntityDetailContentCardProps = {
+    headerClassName: styles.cardHeader,
+    titleClassName: styles.cardTitle,
+    bodyClassName: styles.cardBody,
+    bodyScrollableClassName: styles.cardBodyScrollable,
+}
+
 export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ...props }) => {
     const tabs = useMemo<React.ComponentProps<typeof TabRouter>['tabs']>(
         () =>
@@ -48,108 +46,13 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     path: '',
                     exact: true,
                     label: 'Overview',
-                    element: (
-                        <div className="d-flex flex-column">
-                            {entity.__typename === 'CatalogComponent' ? (
-                                <>
-                                    <Link
-                                        to={`/search?q=context:c/${entity.name}`}
-                                        className="d-flex align-items-center mb-2 btn btn-outline-secondary"
-                                    >
-                                        <SearchIcon className="icon-inline" /> Search in {entity.name}...
-                                    </Link>
-                                    <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
-                                    <EntityOwners
-                                        entity={entity}
-                                        className="card mb-2"
-                                        headerClassName={classNames('card-header', styles.cardHeader)}
-                                        titleClassName={classNames('card-title', styles.cardTitle)}
-                                        bodyClassName={styles.cardBody}
-                                        bodyScrollableClassName={styles.cardBodyScrollable}
-                                    />
-                                    <EntityGraph
-                                        graph={{
-                                            edges: entity.relatedEntities.edges.map(edge =>
-                                                edge.type === CatalogEntityRelationType.DEPENDS_ON
-                                                    ? {
-                                                          type: edge.type,
-                                                          outNode: entity,
-                                                          inNode: edge.node,
-                                                      }
-                                                    : {
-                                                          type: CatalogEntityRelationType.DEPENDS_ON,
-                                                          outNode: edge.node,
-                                                          inNode: entity,
-                                                      }
-                                            ),
-                                            nodes: uniqBy(
-                                                entity.relatedEntities.edges.map(edge => edge.node).concat(entity),
-                                                'id'
-                                            ),
-                                        }}
-                                        activeNodeID={entity.id}
-                                    />
-                                    {false && (
-                                        <>
-                                            <ComponentAuthors
-                                                catalogComponent={entity}
-                                                className="card mb-3"
-                                                headerClassName={classNames('card-header', styles.cardHeader)}
-                                                titleClassName={classNames('card-title', styles.cardTitle)}
-                                                bodyClassName={styles.cardBody}
-                                                bodyScrollableClassName={styles.cardBodyScrollable}
-                                            />
-                                            <ComponentCommits
-                                                catalogComponent={entity}
-                                                className="card overflow-hidden"
-                                                headerClassName={classNames('card-header', styles.cardHeader)}
-                                                titleClassName={classNames('card-title', styles.cardTitle)}
-                                                bodyClassName={styles.cardBody}
-                                                bodyScrollableClassName={styles.cardBodyScrollable}
-                                            />
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <div>Typename is {entity.__typename}</div>
-                            )}
-                        </div>
-                    ),
+                    element: <EntityOverviewTab {...cardProps} entity={entity} />,
                 },
                 entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'code',
                           label: 'Code',
-                          element: (
-                              <div className={styles.grid}>
-                                  {/* TODO(sqs): group sources "by owner" "by tree" "by lang" etc. */}
-                                  <ComponentSources
-                                      {...props}
-                                      catalogComponent={entity}
-                                      className=""
-                                      bodyScrollableClassName={styles.cardBodyScrollable}
-                                  />
-                                  <div className="d-flex flex-column">
-                                      <ComponentAuthors
-                                          catalogComponent={entity}
-                                          className="card mb-3"
-                                          headerClassName={classNames('card-header', styles.cardHeader)}
-                                          titleClassName={classNames('card-title', styles.cardTitle)}
-                                          bodyClassName={styles.cardBody}
-                                          bodyScrollableClassName={styles.cardBodyScrollable}
-                                      />
-                                      <ComponentCommits
-                                          catalogComponent={entity}
-                                          className="card overflow-hidden"
-                                          headerClassName={classNames('card-header', styles.cardHeader)}
-                                          titleClassName={classNames('card-title', styles.cardTitle)}
-                                          bodyClassName={styles.cardBody}
-                                          bodyScrollableClassName={styles.cardBodyScrollable}
-                                      />
-                                  </div>
-                                  {/* TODO(sqs): add "Depends on" */}
-                              </div>
-                          ),
+                          element: <EntityCodeTab {...props} {...cardProps} entity={entity} />,
                       }
                     : null,
                 entity.__typename === 'CatalogComponent'
@@ -163,22 +66,14 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     ? {
                           path: 'api',
                           label: 'API',
-                          element: <ComponentAPI {...props} catalogComponent={entity} className="" />,
+                          element: <ComponentAPI {...props} catalogComponent={entity} />,
                       }
                     : null,
                 entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'usage',
                           label: 'Usage',
-                          element: (
-                              <ComponentUsage
-                                  {...props}
-                                  catalogComponent={entity}
-                                  className=""
-                                  bodyClassName={styles.cardBody}
-                                  bodyScrollableClassName={styles.cardBodyScrollable}
-                              />
-                          ),
+                          element: <ComponentUsage {...props} {...cardProps} catalogComponent={entity} />,
                       }
                     : null,
                 {
