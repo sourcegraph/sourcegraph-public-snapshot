@@ -18,9 +18,11 @@ import {
     CatalogEntitiesResult,
     CatalogEntitiesVariables,
     CatalogEntityFields,
+    CatalogEntityStatusState,
 } from '../../../../../../graphql-operations'
 import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
 import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
+import { STATE_TO_COLOR } from '../../../entity-detail/global/OverviewStatusContextItem'
 
 import { EntityListFilters } from './EntityListFilters'
 import { CATALOG_ENTITIES } from './gql'
@@ -124,6 +126,16 @@ const CatalogEntity: React.FunctionComponent<{
                 {node.name}
             </Link>
         </h3>
+        {size === 'lg' && (
+            <span className={`ml-2 text-${STATE_TO_COLOR[node.status.state]}`}>
+                {node.status.state === CatalogEntityStatusState.SUCCESS
+                    ? '\u2713'
+                    : node.status.state === CatalogEntityStatusState.FAILURE ||
+                      node.status.state === CatalogEntityStatusState.ERROR
+                    ? '\u00D7'
+                    : node.status.state.toLowerCase()}
+            </span>
+        )}
         <div className="flex-1" />
     </li>
 )

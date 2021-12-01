@@ -47,7 +47,7 @@ export const OverviewPage: React.FunctionComponent<Props> = ({ filters, onFilter
             <Switch>
                 <Route path={match.url} exact={true}>
                     <Container className="p-0 mb-2 flex-grow-1">
-                        <EntityList filters={filters} onFiltersChange={onFiltersChange} size="sm" />
+                        <EntityList filters={filters} onFiltersChange={onFiltersChange} size="lg" />
                     </Container>
                 </Route>
                 <Route path={`${match.url}/graph`} exact={true}>

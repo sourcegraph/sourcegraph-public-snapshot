@@ -20,5 +20,10 @@ export const CATALOG_ENTITIES = gql`
         ... on CatalogComponent {
             kind
         }
+
+        status {
+            id
+            state
+        }
     }
 `

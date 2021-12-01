@@ -27,15 +27,30 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
             switch (statusContext.name) {
                 case 'owners':
                     return (
-                        <OwnersStatusContext entity={entity} statusContext={statusContext} className={itemClassName} />
+                        <OwnersStatusContext
+                            key={statusContext.id}
+                            entity={entity}
+                            statusContext={statusContext}
+                            className={itemClassName}
+                        />
                     )
                 case 'authors':
                     return (
-                        <AuthorsStatusContext entity={entity} statusContext={statusContext} className={itemClassName} />
+                        <AuthorsStatusContext
+                            key={statusContext.id}
+                            entity={entity}
+                            statusContext={statusContext}
+                            className={itemClassName}
+                        />
                     )
                 case 'usage':
                     return (
-                        <UsageStatusContext entity={entity} statusContext={statusContext} className={itemClassName} />
+                        <UsageStatusContext
+                            key={statusContext.id}
+                            entity={entity}
+                            statusContext={statusContext}
+                            className={itemClassName}
+                        />
                     )
                 default:
                     return (

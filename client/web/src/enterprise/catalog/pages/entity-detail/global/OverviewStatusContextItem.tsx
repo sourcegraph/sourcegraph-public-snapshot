@@ -53,7 +53,7 @@ export const OverviewStatusContextItem: React.FunctionComponent<Props> = ({ stat
     )
 }
 
-const STATE_TO_COLOR: Record<
+export const STATE_TO_COLOR: Record<
     CatalogEntityStatusState,
     'primary' | 'success' | 'warning' | 'danger' | 'info' | 'secondary'
 > = {

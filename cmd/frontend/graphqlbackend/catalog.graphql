@@ -69,6 +69,11 @@ type CatalogEntityRelatedEntityEdge {
 type CatalogEntityStatus implements Node {
     id: ID!
     contexts: [CatalogEntityStatusContext!]!
+
+    """
+    The combined status (from all status contexts).
+    """
+    state: CatalogEntityStatusState!
 }
 
 type CatalogEntityStatusContext implements Node {

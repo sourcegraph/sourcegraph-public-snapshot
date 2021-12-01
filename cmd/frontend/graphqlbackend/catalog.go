@@ -67,6 +67,7 @@ func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, 
 type CatalogEntityStatusResolver interface {
 	ID() graphql.ID
 	Contexts() []CatalogEntityStatusContextResolver
+	State() CatalogEntityStatusState
 }
 
 type CatalogEntityStatusState string

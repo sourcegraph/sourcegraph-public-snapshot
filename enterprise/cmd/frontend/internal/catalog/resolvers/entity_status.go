@@ -18,21 +18,23 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 		// Owners
 		owners, err := r.Owners(ctx)
 		if err != nil {
-			return nil, err
+			// return nil, err
 		}
 
-		sc := &catalogEntityStatusContextResolver{
-			name:      "owners",
-			title:     "Owners",
-			targetURL: r.URL() + "/code",
+		if err == nil {
+			sc := &catalogEntityStatusContextResolver{
+				name:      "owners",
+				title:     "Owners",
+				targetURL: r.URL() + "/code",
+			}
+			if owners == nil || len(*owners) == 0 {
+				sc.state = "FAILURE"
+				sc.description = "No code owners found"
+			} else {
+				sc.state = "INFO"
+			}
+			statusContexts = append(statusContexts, sc)
 		}
-		if owners == nil || len(*owners) == 0 {
-			sc.state = "FAILURE"
-			sc.description = "No code owners found"
-		} else {
-			sc.state = "INFO"
-		}
-		statusContexts = append(statusContexts, sc)
 	}
 
 	{
@@ -117,6 +119,16 @@ func (r *catalogEntityStatusResolver) ID() graphql.ID {
 
 func (r *catalogEntityStatusResolver) Contexts() []gql.CatalogEntityStatusContextResolver {
 	return r.contexts
+}
+
+func (r *catalogEntityStatusResolver) State() gql.CatalogEntityStatusState {
+	for _, sc := range r.contexts {
+		switch sc.State() {
+		case "FAILURE", "ERROR", "PENDING", "EXPECTED":
+			return sc.State()
+		}
+	}
+	return "SUCCESS"
 }
 
 type catalogEntityStatusContextResolver struct {
