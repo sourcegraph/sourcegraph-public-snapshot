@@ -45,7 +45,7 @@ INSERT INTO out_of_band_migrations(id, team, component, description, non_destruc
                                    apply_reverse, is_enterprise, introduced_version_major, introduced_version_minor)
 VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs',
         'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.',
-        TRUE, FALSE, TRUE, 3, 34)
+        TRUE, FALSE, TRUE, 3, 35)
 ON CONFLICT DO NOTHING;
 
 COMMIT;
