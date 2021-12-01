@@ -34,7 +34,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
         {entity.__typename === 'CatalogComponent' ? (
             <>
                 <div className="row">
-                    <div className="col-md-8">
+                    <div className="col-md-7">
                         <div className="card">
                             <div className="card-body">
                                 <Link
@@ -54,7 +54,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({
                             />
                         </div>
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-5">
                         <EntityOwners
                             entity={entity}
                             className="card mb-2"
