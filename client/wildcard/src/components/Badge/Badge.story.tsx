@@ -4,9 +4,9 @@ import React from 'react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
+import { BADGE_VARIANTS } from './constants'
 
-import { Badge, ProductStatusBadge } from '.'
+import { Badge } from '.'
 
 const config: Meta = {
     title: 'wildcard/Badge',
@@ -52,25 +52,5 @@ export const Badges = () => (
         <Badge href="https://example.com" variant="link">
             I am a link
         </Badge>
-    </>
-)
-
-export const ProductStatuses = () => (
-    <>
-        <h1>Product status badges</h1>
-        <p>
-            We often want to label different parts of our products with badges to ensure they are accurately presented
-            to users.
-        </p>
-        {PRODUCT_STATUSES.map(status => (
-            <ProductStatusBadge key={status} status={status} className="mr-2" />
-        ))}
-        <h2 className="mt-4">Linked product status badges</h2>
-        <p>
-            In some cases, we will want to automatically link to a relevant docs page for a particular status. This is
-            also possible!
-        </p>
-        <ProductStatusBadge status="beta" linkToDocs={true} className="mr-3" />
-        <ProductStatusBadge status="experimental" linkToDocs={true} className="mr-3" />
     </>
 )
