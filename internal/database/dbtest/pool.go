@@ -318,14 +318,11 @@ WHERE id = %s
 // be deleted instead. This should really only be called if the database was only used in a transaction
 // and that transaction was rolled back (as in NewFastTx).
 func (t *testDatabasePool) PutMigratedDB(ctx context.Context, mdb *MigratedDB) error {
-	q := sqlf.Sprintf(
-		returnCleanMigratedDB,
-		mdb.ID,
-	)
+	q := sqlf.Sprintf(returnCleanMigratedDB, mdb.ID)
 	return t.Exec(ctx, q)
 }
 
-const uninsertMigratedDB = `
+const deleteMigratedDBQuery = `
 DELETE FROM migrated_dbs
 WHERE id = %s
 `
@@ -333,14 +330,13 @@ WHERE id = %s
 // DeleteMigratedDB deletes a database and untracks it in migrated_dbs. This should
 // only be called by the caller who called GetMigratedDB
 func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) error {
-	err := t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
+	q := sqlf.Sprintf(deleteMigratedDBQuery, mdb.ID)
+	err = t.Exec(ctx, q)
 	if err != nil {
 		return err
 	}
 
-	q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
-	err = t.Exec(ctx, q)
-	return err
+	return t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
 }
 
 const listOldTemplateDBs = `
