@@ -18,7 +18,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -76,8 +75,7 @@ func main() {
 	service.Store.Start()
 
 	// Set up handler middleware
-	handler := actor.HTTPMiddleware(service)
-	handler = trace.HTTPTraceMiddleware(handler, conf.DefaultClient())
+	handler := trace.HTTPTraceMiddleware(service, conf.DefaultClient())
 	handler = ot.Middleware(handler)
 
 	host := ""
