@@ -5,8 +5,7 @@ import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { PRODUCT_STATUSES } from './constants'
-
-import { ProductStatusBadge } from '.'
+import { ProductStatusBadge } from './ProductStatusBadge'
 
 const config: Meta = {
     title: 'wildcard/ProductStatusBadge',

@@ -6,7 +6,7 @@ import { BADGE_SIZES, BADGE_VARIANTS } from './constants'
 
 export interface BadgeProps {
     /**
-     * The variant style of the badge. Defaults to `primary`
+     * The variant style of the badge.
      */
     variant?: typeof BADGE_VARIANTS[number]
     /**
@@ -28,9 +28,12 @@ export interface BadgeProps {
     className?: string
 }
 
+/**
+ * An abstract UI component which renders a small "badge" with specific styles to help annotate content.
+ */
 export const Badge: React.FunctionComponent<BadgeProps> = ({
     children,
-    variant = 'primary',
+    variant,
     size,
     pill,
     tooltip,
@@ -41,10 +44,10 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
         'data-tooltip': tooltip,
         className: classNames(
             'badge',
-            `badge-${variant}`,
+            styles.badge,
+            variant && `badge-${variant}`,
             size && `badge-${size}`,
             pill && 'badge-pill',
-            styles.badge,
             className
         ),
     }

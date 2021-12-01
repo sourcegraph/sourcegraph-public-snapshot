@@ -5,6 +5,9 @@ import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
 
 export type ProductStatusType = typeof PRODUCT_STATUSES[number]
 
+/**
+ * Product statuses mapped to Badge style variants
+ */
 const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[number]> = {
     prototype: 'warning',
     wip: 'warning',
@@ -15,6 +18,7 @@ const STATUS_VARIANT_MAPPING: Record<ProductStatusType, typeof BADGE_VARIANTS[nu
 
 type Extends<T, U extends T> = U
 export type ProductStatusLinked = Extends<ProductStatusType, 'beta' | 'experimental'>
+
 /**
  * Map badge status to a relevant docs page describing that product status
  */
@@ -41,6 +45,10 @@ export interface PossibleLinkedProductStatusBadge extends BaseBadgeProps {
 }
 export type ProductStatusBadgeProps = BaseProductStatusBadgeProps | PossibleLinkedProductStatusBadge
 
+/**
+ * A specific Badge component wrapper to describe a product status.
+ * Can also be used to link to the relevant docs page for that status.
+ */
 export const ProductStatusBadge: React.FunctionComponent<ProductStatusBadgeProps> = props => {
     const variant = STATUS_VARIANT_MAPPING[props.status]
 
