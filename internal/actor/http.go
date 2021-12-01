@@ -16,6 +16,9 @@ const (
 	// headerKeyLegacyActorUID is the old header key used for the actor's user ID.
 	// Prefer headerKeyActorUID where possible.
 	headerKeyLegacyActorUID = "X-Sourcegraph-User-ID"
+)
+
+const (
 	// headerValueInternalActor indicates the request uses an internal actor.
 	headerValueInternalActor = "internal"
 	// headerValueNoActor indicates the request has no actor.
@@ -81,7 +84,8 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 // HTTPMiddleware wraps the given handle func and attaches the actor indicated in incoming
-// requests to the request header.
+// requests to the request header. This should only be used to wrap internal handlers for
+// communication between Sourcegraph services.
 //
 // 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e.
 // only use for internal endpoints), because internal requests can bypass repository
@@ -106,8 +110,12 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 		case headerValueNoActor:
 			metricIncomingActors.WithLabelValues(metricActorTypeNone).Inc()
 
-		// Request does not have any actor information provided - for legacy support, we
-		// treat these as internal requests.
+		// Request does not have any actor information provided - for internal requests,
+		// these will likely come from a non-first-party service like Zoekt that will
+		// explicitly want to be treated as an internal user for full access.
+		//
+		// 🚨 SECURITY: Wherever possible, prefer to set the actor ID explicitly through
+		// actor.HTTPTransport or similar.
 		case "":
 			ctx = WithInternalActor(ctx)
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
