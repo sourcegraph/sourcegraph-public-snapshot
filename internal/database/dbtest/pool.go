@@ -310,11 +310,10 @@ WHERE
 FOR UPDATE
 `
 
-const listMigratedDBsForTemplate = `
-SELECT %s
-FROM migrated_dbs
+const deleteMigratedDBsForTemplate = `
+DELETE FROM migrated_dbs
 WHERE template = %s
-FOR UPDATE
+RETURNING %s
 `
 
 const uninsertTemplateDB = `
@@ -354,10 +353,7 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 
 	var errs *multierror.Error
 	for _, tdb := range oldTDBs {
-		q = sqlf.Sprintf(
-			listMigratedDBsForTemplate,
-			tdb.ID,
-		)
+		q = sqlf.Sprintf(deleteMigratedDBsForTemplate, tdb.ID, sqlf.Join(migratedDBColumns, ","))
 		rows, err = tx.Query(ctx, q)
 		if err != nil {
 			errs = multierror.Append(errs, err)
@@ -371,32 +367,22 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 			continue
 		}
 
-		var mdbErrs *multierror.Error
 		for _, mdb := range mdbs {
 			// Just a best effort delete in case this somehow gets out of sync
 			// and that database is already gone
 			_ = t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
-
-			q := sqlf.Sprintf(uninsertMigratedDB, mdb.ID)
-			err = tx.Exec(ctx, q)
-			if err != nil {
-				mdbErrs = multierror.Append(mdbErrs, err)
-			}
 		}
-		if mdbErrs != nil {
-			errs = multierror.Append(mdbErrs)
-			continue
-		}
-
-		// Just a best effort delete in case this somehow gets out of sync
-		// and that database is already gone
-		_ = t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(tdb.Name)))
 
 		q = sqlf.Sprintf(uninsertTemplateDB, tdb.ID)
 		err = tx.Exec(ctx, q)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
+
+		// Just a best effort delete in case this somehow gets out of sync
+		// and that database is already gone
+		_ = t.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(tdb.Name)))
+
 	}
 
 	return errs.ErrorOrNil()

@@ -8,6 +8,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
@@ -65,6 +68,24 @@ func NewFastTx(t testing.TB) *sql.Tx {
 	}
 
 	return newTxFromPool(t, u, pool)
+}
+
+func Savepoint(t testing.TB, tx *sql.Tx) (rollback func()) {
+	u, err := uuid.NewRandom()
+	if err != nil {
+		t.Fatalf("failed to create uuid: %s", err)
+	}
+
+	_, err = tx.Exec("SAVEPOINT " + pq.QuoteIdentifier(u.String()))
+	if err != nil {
+		t.Fatalf("failed to create savepoint: %s", err)
+	}
+	return func() {
+		_, err := tx.Exec("ROLLBACK TO SAVEPOINT " + pq.QuoteIdentifier(u.String()))
+		if err != nil {
+			t.Fatalf("failed to roll back: %s", err)
+		}
+	}
 }
 
 var (
