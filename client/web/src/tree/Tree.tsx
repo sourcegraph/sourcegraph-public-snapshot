@@ -7,6 +7,7 @@ import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo, formatSearchParameters } from '@sourcegraph/shared/src/util/url'
 
@@ -16,7 +17,7 @@ import styles from './Tree.module.scss'
 import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
 
-interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
+interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     history: H.History
     location: H.Location
     scrollRootSelector?: string
@@ -339,6 +340,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     sizeKey={this.props.sizeKey}
                     extensionsController={this.props.extensionsController}
                     isLightTheme={this.props.isLightTheme}
+                    telemetryService={this.props.telemetryService}
                 />
             </div>
         )

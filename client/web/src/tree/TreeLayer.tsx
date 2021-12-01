@@ -17,6 +17,7 @@ import { FileDecoration } from 'sourcegraph'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
@@ -39,7 +40,7 @@ import {
     treePadding,
 } from './util'
 
-export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps {
+export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     location: H.Location
     activeNode: TreeNode
     activePath: string
@@ -385,6 +386,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
      * linkRowClick is the click handler for <Link>
      */
     private linkRowClick: React.MouseEventHandler<HTMLAnchorElement> = () => {
+        this.props.telemetryService.log('FileTreeClick')
         this.props.setActiveNode(this.node)
         this.props.onSelect(this.node)
     }
