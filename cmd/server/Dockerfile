@@ -33,21 +33,27 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk update && apk add --no-cache --verbose \
+RUN apk add --no-cache --verbose \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
+    'redis=~5.0' \
+    'nodejs-current=14.5.0-r0'  \
+    'postgresql=12.9-r0'  \
+    'postgresql-contrib=12.9-r0'  \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/community
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache --verbose \
     'bash=5.1.4-r0' \
-    'redis=~5.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     git-p4 \
     python2 \
     python3 \
-    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec 'nodejs-current=14.5.0-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/community \
-    'postgresql=12.9-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main \
-    'postgresql-contrib=12.9-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.12/main
+    'nginx>=1.18.0' openssh-client pcre sqlite-libs su-exec
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
