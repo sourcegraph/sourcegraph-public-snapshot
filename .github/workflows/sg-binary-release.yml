@@ -115,7 +115,7 @@ jobs:
       - name: Upload release asset
         run: |
           # release_name="${{ needs.create_release.outputs.release_name }}"
-          ls -l .
+          ls -l "dev/sg/sg_$(go env GOOS)_$(go env GOARCH)"
           echo "filename=${filename}"
           # gh release upload -R="${repo}" ${release_name} "${filename}"
         env:
