@@ -159,3 +159,15 @@ type CatalogComponentAPI {
     symbols(first: Int): SymbolConnection!
     schema: File2
 }
+
+extend interface TreeEntry {
+    catalogEntities: [CatalogEntity!]!
+}
+
+extend type GitBlob {
+    catalogEntities: [CatalogEntity!]!
+}
+
+extend type GitTree {
+    catalogEntities: [CatalogEntity!]!
+}

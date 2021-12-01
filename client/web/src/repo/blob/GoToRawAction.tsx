@@ -26,7 +26,13 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionAnchor href={to} onClick={this.onClick.bind(this)} className="btn" download={true}>
+                <RepoHeaderActionAnchor
+                    href={to}
+                    onClick={this.onClick.bind(this)}
+                    className="btn"
+                    download={true}
+                    file={true}
+                >
                     <FileDownloadOutlineIcon className="icon-inline" />
                     <span>{descriptiveText}</span>
                 </RepoHeaderActionAnchor>

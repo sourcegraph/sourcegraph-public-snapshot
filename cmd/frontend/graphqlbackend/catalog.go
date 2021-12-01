@@ -16,6 +16,8 @@ type CatalogRootResolver interface {
 	Catalog(context.Context) (CatalogResolver, error)
 	CatalogEntity(context.Context, *CatalogEntityArgs) (*CatalogEntityResolver, error)
 
+	GitTreeEntryCatalogEntities(context.Context, *GitTreeEntryResolver) ([]*CatalogEntityResolver, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -166,4 +168,8 @@ type CatalogComponentAPIResolver interface {
 type CatalogComponentAPISymbolsArgs struct {
 	graphqlutil.ConnectionArgs
 	Query *string
+}
+
+func (r *GitTreeEntryResolver) CatalogEntities(ctx context.Context) ([]*CatalogEntityResolver, error) {
+	return EnterpriseResolvers.catalogRootResolver.GitTreeEntryCatalogEntities(ctx, r)
 }
