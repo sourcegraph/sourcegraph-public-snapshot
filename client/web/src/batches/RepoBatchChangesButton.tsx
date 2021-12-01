@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { encodeURIPathComponent } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { queryRepoChangesetsStats as _queryRepoChangesetsStats } from './backend'
 import { BatchChangesIcon } from './icons'
@@ -33,20 +34,22 @@ export const RepoBatchChangesButton: FC<RepoBatchChangesButtonProps> = ({
         <Link className={className} to={`/${encodeURIPathComponent(repoName)}/-/batch-changes`}>
             <BatchChangesIcon className="icon-inline" /> Batch Changes
             {open > 0 && (
-                <span
-                    className="d-inline-block badge badge-success batch-change-badge ml-2"
-                    data-tooltip={`${open} open batch changesets`}
+                <Badge
+                    tooltip={`${open} open batch changesets`}
+                    variant="success"
+                    className="d-inline-block batch-change-badge ml-2"
                 >
                     {open}
-                </span>
+                </Badge>
             )}
             {merged > 0 && (
-                <span
-                    className="d-inline-block badge badge-merged batch-change-badge ml-2"
-                    data-tooltip={`${merged} merged batch changesets`}
+                <Badge
+                    tooltip={`${merged} merged batch changesets`}
+                    variant="merged"
+                    className="d-inline-block batch-change-badge ml-2"
                 >
                     {merged}
-                </span>
+                </Badge>
             )}
         </Link>
     )

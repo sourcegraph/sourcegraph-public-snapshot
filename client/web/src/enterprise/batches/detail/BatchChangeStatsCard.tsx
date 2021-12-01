@@ -4,6 +4,7 @@ import ProgressCheckIcon from 'mdi-react/ProgressCheckIcon'
 import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
 import { BatchChangeFields, ChangesetsStatsFields, DiffStatFields } from '../../../graphql-operations'
@@ -105,7 +106,9 @@ export const BatchChangeStatsTotalAction: React.FunctionComponent<{ count: numbe
         )}
     >
         <span className={styles.batchChangeStatsCardChangesetsPill}>
-            <span className="badge badge-pill badge-secondary">{count}</span>
+            <Badge variant="secondary" pill={true}>
+                {count}
+            </Badge>
         </span>
         <span className="text-muted">{pluralize('Changeset', count)}</span>
     </div>

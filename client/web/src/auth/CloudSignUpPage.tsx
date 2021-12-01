@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
@@ -161,8 +162,8 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     <ul className={styles.featureList}>
                         <li>
                             <div className="d-flex align-items-center">
-                                <span className="badge badge-info text-uppercase mr-1">Beta</span> Search across all
-                                your public and private repositories
+                                <ProductStatusBadge status="beta" className="mr-1" />
+                                Search across all your public and private repositories
                             </div>
                         </li>
                         <li>Monitor code for changes</li>

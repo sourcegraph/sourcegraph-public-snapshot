@@ -17,6 +17,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -59,7 +60,9 @@ export const SearchContextMenuItem: React.FunctionComponent<{
                 {description}
             </small>
             {isDefault && (
-                <span className={classNames('badge badge-secondary text-uppercase', styles.itemDefault)}>Default</span>
+                <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
+                    Default
+                </Badge>
             )}
         </DropdownItem>
     )

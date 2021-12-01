@@ -1,12 +1,22 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { Badge } from '@sourcegraph/wildcard'
+
 export const BatchChangeStateBadge: React.FunctionComponent<{ isClosed: boolean; className?: string }> = ({
     isClosed,
     className,
 }) => {
     if (isClosed) {
-        return <span className={classNames('badge badge-danger text-uppercase', className)}>Closed</span>
+        return (
+            <Badge variant="danger" className={classNames('text-uppercase', className)}>
+                Closed
+            </Badge>
+        )
     }
-    return <span className={classNames('badge badge-success text-uppercase', className)}>Open</span>
+    return (
+        <Badge variant="success" className={classNames('text-uppercase', className)}>
+            Open
+        </Badge>
+    )
 }

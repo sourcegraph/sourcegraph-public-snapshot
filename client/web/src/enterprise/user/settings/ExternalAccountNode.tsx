@@ -5,6 +5,7 @@ import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
@@ -132,8 +133,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                                 &mdash;{' '}
                             </>
                         )}
-                        <span className="badge badge-secondary">{this.props.node.serviceType}</span>{' '}
-                        {this.props.node.accountID}
+                        <Badge variant="secondary">{this.props.node.serviceType}</Badge> {this.props.node.accountID}
                         {(this.props.node.serviceID || this.props.node.clientID) && (
                             <small className="text-muted">
                                 <br />

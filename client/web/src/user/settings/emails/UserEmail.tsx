@@ -2,6 +2,7 @@ import React, { useState, FunctionComponent } from 'react'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Badge } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
@@ -134,11 +135,21 @@ export const UserEmail: FunctionComponent<Props> = ({
             <div className="d-flex align-items-center justify-content-between">
                 <div className="d-flex align-items-center">
                     <span className="mr-2">{email}</span>
-                    {verified && <span className="badge badge-success mr-1">Verified</span>}
-                    {!verified && !verificationPending && (
-                        <span className="badge badge-secondary mr-1">Not verified</span>
+                    {verified && (
+                        <Badge variant="success" className="mr-1">
+                            Verified
+                        </Badge>
                     )}
-                    {isPrimary && <span className="badge badge-primary mr-1">Primary</span>}
+                    {!verified && !verificationPending && (
+                        <Badge variant="secondary" className="mr-1">
+                            Not verified
+                        </Badge>
+                    )}
+                    {isPrimary && (
+                        <Badge variant="primary" className="mr-1">
+                            Primary
+                        </Badge>
+                    )}
                     {!verified && verificationPending && (
                         <span>
                             <span className={styles.dot}>&bull;&nbsp;</span>

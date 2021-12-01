@@ -4,6 +4,8 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import React, { useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
+import { Badge } from '@sourcegraph/wildcard'
+
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { BatchChangesCodeHostFields, Scalars } from '../../../graphql-operations'
 
@@ -78,13 +80,13 @@ export const CodeHostConnectionNode: React.FunctionComponent<CodeHostConnectionN
                         )}
                         <Icon className="icon-inline mx-2" /> {node.externalServiceURL}{' '}
                         {!isEnabled && node.credential?.isSiteCredential && (
-                            <span
-                                className="badge badge-secondary"
-                                data-tooltip="Changesets on this code host will
+                            <Badge
+                                variant="secondary"
+                                tooltip="Changesets on this code host will
                             be created with a global token until a personal access token is added."
                             >
                                 Global token
-                            </span>
+                            </Badge>
                         )}
                     </h3>
                     <div className="mb-0 d-flex justify-content-end flex-grow-1">
