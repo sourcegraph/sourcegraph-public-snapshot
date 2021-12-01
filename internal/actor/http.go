@@ -115,7 +115,8 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 		// explicitly want to be treated as an internal user for full access.
 		//
 		// 🚨 SECURITY: Wherever possible, prefer to set the actor ID explicitly through
-		// actor.HTTPTransport or similar.
+		// actor.HTTPTransport or similar, since assuming internal actor grants a lot of
+		// access in some cases.
 		case "":
 			ctx = WithInternalActor(ctx)
 			metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
@@ -133,13 +134,6 @@ func HTTPMiddleware(next http.Handler) http.Handler {
 				rw.WriteHeader(http.StatusForbidden)
 				_, _ = rw.Write([]byte(fmt.Sprintf("%s was provided, but the value was invalid", headerKeyActorUID)))
 				return
-			}
-
-			// Legacy support for indicating an internal user through a user ID of 0
-			if uid == 0 {
-				ctx = WithInternalActor(ctx)
-				metricIncomingActors.WithLabelValues(metricActorTypeInternal).Inc()
-				break
 			}
 
 			// Valid user, add to context
