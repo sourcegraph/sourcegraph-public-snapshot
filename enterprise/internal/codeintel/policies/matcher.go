@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type Matcher struct {
