@@ -384,6 +384,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     </div>
     <button
       class="mt-2 btn btn-primary disabled"
+      data-testid="skipped-popover-form-submit-btn"
       disabled=""
       type="submit"
     >

@@ -11,13 +11,13 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -55,29 +54,6 @@ type RepoWorkspace struct {
 	Unsupported bool
 }
 
-func CacheKeyForWorkspace(spec *btypes.BatchSpec, w *RepoWorkspace) cache.ExecutionKey {
-	fileMatches := w.FileMatches
-	sort.Strings(fileMatches)
-
-	executionKey := cache.ExecutionKey{
-		Repository: batcheslib.Repository{
-			ID:          string(relay.MarshalID("Repository", w.Repo.ID)),
-			Name:        string(w.Repo.Name),
-			BaseRef:     git.EnsureRefPrefix(w.Branch),
-			BaseRev:     string(w.Commit),
-			FileMatches: fileMatches,
-		},
-		Path:               w.Path,
-		OnlyFetchWorkspace: w.OnlyFetchWorkspace,
-		Steps:              w.Steps,
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-		},
-	}
-	return executionKey
-}
-
 type WorkspaceResolver interface {
 	ResolveWorkspacesForBatchSpec(
 		ctx context.Context,
@@ -91,7 +67,7 @@ type WorkspaceResolver interface {
 type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
 
 func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{store: s, frontendInternalURL: api.InternalClient.URL + "/.internal"}
+	return &workspaceResolver{store: s, frontendInternalURL: internalapi.Client.URL + "/.internal"}
 }
 
 type workspaceResolver struct {
@@ -438,7 +414,6 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	if !a.IsAuthenticated() {
 		return errors.New("no user set in workspaceResolver.runSearch")
 	}
-	req.Header.Set("X-Sourcegraph-User-ID", a.UIDString())
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
@@ -610,9 +585,14 @@ func findWorkspaces(
 	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
 	var errs *multierror.Error
 	for _, conf := range spec.Workspaces {
-		g, err := glob.Compile(conf.In)
+		in := conf.In
+		// Empty `in` should fall back to matching all, instead of nothing.
+		if in == "" {
+			in = "*"
+		}
+		g, err := glob.Compile(in)
 		if err != nil {
-			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", conf.In, err)))
+			errs = multierror.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
 		}
 		workspaceMatchers[conf] = g
 	}

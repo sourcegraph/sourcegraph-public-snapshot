@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 )
 
 func TestServer_handleRepoLookup(t *testing.T) {
@@ -357,7 +358,7 @@ func TestServer_RepoLookup(t *testing.T) {
 		stored      types.Repos
 		result      *protocol.RepoLookupResult
 		src         repos.Source
-		assert      types.ReposAssertion
+		assert      typestest.ReposAssertion
 		assertDelay time.Duration
 		err         string
 	}{
@@ -450,7 +451,7 @@ func TestServer_RepoLookup(t *testing.T) {
 					Commit: "github.com/foo/bar/commit/{commit}",
 				},
 			}},
-			assert: types.Assert.ReposEqual(githubRepository),
+			assert: typestest.Assert.ReposEqual(githubRepository),
 		},
 		{
 			name: "found - GitHub.com on Sourcegraph.com already exists",
@@ -485,7 +486,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
 			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: types.Assert.ReposEqual(),
+			assert: typestest.Assert.ReposEqual(),
 		},
 		{
 			name: "unauthorized - GitHub.com on Sourcegraph.com",
@@ -495,7 +496,7 @@ func TestServer_RepoLookup(t *testing.T) {
 			src:    repos.NewFakeSource(&githubSource, &github.APIError{Code: http.StatusUnauthorized}),
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
 			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: types.Assert.ReposEqual(),
+			assert: typestest.Assert.ReposEqual(),
 		},
 		{
 			name: "temporarily unavailable - GitHub.com on Sourcegraph.com",
@@ -509,7 +510,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				api.RepoName("github.com/foo/bar"),
 				true,
 			),
-			assert: types.Assert.ReposEqual(),
+			assert: typestest.Assert.ReposEqual(),
 		},
 		{
 			name:   "found - gitlab.com on Sourcegraph.com",
@@ -533,7 +534,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 				ExternalRepo: gitlabRepository.ExternalRepo,
 			}},
-			assert: types.Assert.ReposEqual(gitlabRepository),
+			assert: typestest.Assert.ReposEqual(gitlabRepository),
 		},
 		{
 			name:   "found - gitlab.com on Sourcegraph.com already exists",
@@ -596,7 +597,7 @@ func TestServer_RepoLookup(t *testing.T) {
 				},
 			}},
 			assertDelay: time.Second,
-			assert:      types.Assert.ReposEqual(),
+			assert:      typestest.Assert.ReposEqual(),
 		},
 	}
 

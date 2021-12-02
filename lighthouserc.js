@@ -28,6 +28,16 @@ const config = {
     upload: {
       target: 'temporary-public-storage',
     },
+    assert: {
+      assertions: {
+        // The following assertions should remain in warn mode as Lighthouse is not setup to block CI.
+        // Future issue to address this: https://github.com/sourcegraph/sourcegraph/issues/26347
+        'categories:accessibility': ['warn', { minScore: 1 }],
+        'categories:best-practices': ['warn', { minScore: 1 }],
+        'categories:seo': ['warn', { minScore: 1 }],
+        'categories:performance': ['warn', { minScore: 0.75 }],
+      },
+    },
   },
 }
 

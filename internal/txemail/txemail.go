@@ -71,7 +71,7 @@ func render(message Message) (*email.Email, error) {
 
 // Send sends a transactional email.
 //
-// Callers that do not live in the frontend should call api.InternalClient.SendEmail
+// Callers that do not live in the frontend should call internalapi.Client.SendEmail
 // instead. TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
 func Send(ctx context.Context, message Message) error {
 	if MockSend != nil {

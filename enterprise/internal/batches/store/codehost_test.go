@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,7 +52,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}

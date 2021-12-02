@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -24,7 +23,7 @@ func (r *schemaResolver) SetExternalServiceRepos(ctx context.Context, args struc
 		return nil, err
 	}
 
-	extsvcStore := database.ExternalServices(r.db)
+	extsvcStore := r.db.ExternalServices()
 	es, err := extsvcStore.GetByID(ctx, id)
 	if err != nil {
 		return nil, err

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -27,7 +26,7 @@ import (
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
 	clientID string
-	db       dbutil.DB
+	db       database.DB
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
@@ -47,7 +46,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
 	// because the GitLab API does not return whether an email has been verified. The user's primary
 	// email on GitLab is always verified, so we use that.
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, database.NewDB(s.db), auth.GetAndSaveUserOp{
+	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        login,
 			Email:           gUser.Email,

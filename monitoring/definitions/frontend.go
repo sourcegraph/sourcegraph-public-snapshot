@@ -108,7 +108,11 @@ func Frontend() *monitoring.Container {
 							Owner:    monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+								- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+							`,
+							Interpretation: `
+								Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
 							`,
 						},
 						{
@@ -373,7 +377,7 @@ func Frontend() *monitoring.Container {
 							`,
 						},
 						{
-							Name:        "internal_api_error_responses",
+							Name:        "internalapi_error_responses",
 							Description: "internal API error responses every 5m by route",
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5, nil).For(15 * time.Minute),

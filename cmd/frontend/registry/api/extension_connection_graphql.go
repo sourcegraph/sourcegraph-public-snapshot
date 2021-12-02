@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // makePrioritizeExtensionIDsSet returns a set whose values are the elements of
@@ -36,7 +36,7 @@ func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *graphq
 type registryExtensionConnectionResolver struct {
 	args graphqlbackend.RegistryExtensionConnectionArgs
 
-	db                           dbutil.DB
+	db                           database.DB
 	listRemoteRegistryExtensions func(_ context.Context, query string) ([]*registry.Extension, error)
 
 	// cache results because they are used by multiple fields
@@ -48,12 +48,12 @@ type registryExtensionConnectionResolver struct {
 var (
 	// ListLocalRegistryExtensions lists and returns local registry extensions according to the args. If
 	// there is no local extension registry, it is not implemented.
-	ListLocalRegistryExtensions func(context.Context, dbutil.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error)
+	ListLocalRegistryExtensions func(context.Context, database.DB, graphqlbackend.RegistryExtensionConnectionArgs) ([]graphqlbackend.RegistryExtension, error)
 
 	// CountLocalRegistryExtensions returns the count of local registry extensions according to the
 	// args. Pagination-related args are ignored. If there is no local extension registry, it is not
 	// implemented.
-	CountLocalRegistryExtensions func(context.Context, dbutil.DB, graphqlbackend.RegistryExtensionConnectionArgs) (int, error)
+	CountLocalRegistryExtensions func(context.Context, database.DB, graphqlbackend.RegistryExtensionConnectionArgs) (int, error)
 )
 
 func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]graphqlbackend.RegistryExtension, error) {

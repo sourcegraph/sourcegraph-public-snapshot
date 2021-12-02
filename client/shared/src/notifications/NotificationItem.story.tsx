@@ -9,7 +9,6 @@ import { NotificationType } from '@sourcegraph/extension-api-classes'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { NotificationItem } from './NotificationItem'
-import notificationItemStyles from './NotificationItem.scss'
 
 const notificationClassNames = {
     [NotificationType.Log]: 'alert alert-secondary',
@@ -24,7 +23,6 @@ const onDismiss = action('onDismiss')
 const decorator: DecoratorFn = story => (
     <>
         <style>{webStyles}</style>
-        <style>{notificationItemStyles}</style>
         <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
     </>
 )

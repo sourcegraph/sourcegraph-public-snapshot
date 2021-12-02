@@ -261,7 +261,12 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             >
                                 {submitButtonLabel}
                             </button>
-                            <button type="button" className="btn btn-secondary test-cancel-monitor" onClick={onCancel}>
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={onCancel}
+                                data-testid="cancel-monitor"
+                            >
                                 Cancel
                             </button>
                         </div>
@@ -269,8 +274,9 @@ export const CodeMonitorForm: React.FunctionComponent<CodeMonitorFormProps> = ({
                             <div>
                                 <button
                                     type="button"
-                                    className="btn btn-outline-danger test-delete-monitor"
+                                    className="btn btn-outline-danger"
                                     onClick={toggleDeleteModal}
+                                    data-testid="delete-monitor"
                                 >
                                     Delete
                                 </button>

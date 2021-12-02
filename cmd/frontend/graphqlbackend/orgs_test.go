@@ -60,8 +60,12 @@ func TestListOrgsForCloud(t *testing.T) {
 	users := dbmock.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
+	orgs := dbmock.NewMockOrgStore()
+	orgs.CountFunc.SetDefaultReturn(42, nil)
+
 	db := dbmock.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgsFunc.SetDefaultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{
@@ -69,7 +73,7 @@ func TestListOrgsForCloud(t *testing.T) {
 			Query: `
 				{
 					organizations {
-						nodes { name }
+						nodes { name },
 						totalCount
 					}
 				}
@@ -80,11 +84,24 @@ func TestListOrgsForCloud(t *testing.T) {
 					Message: "listing organizations is not allowed",
 					Path:    []interface{}{string("organizations"), string("nodes")},
 				},
-				{
-					Message: "counting organizations is not allowed",
-					Path:    []interface{}{string("organizations"), string("totalCount")},
-				},
 			},
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					organizations {
+						totalCount
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+					"organizations": {
+						"totalCount": 42
+					}
+				}
+			`,
 		},
 	})
 }

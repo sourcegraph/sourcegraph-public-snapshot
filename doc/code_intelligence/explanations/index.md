@@ -7,6 +7,7 @@
   - [Go to definition](./features.md#go-to-definition)
   - [Find references](./features.md#find-references)
   - [Symbol search](./features.md#symbol-search)
+- [Precise code intelligence uploads](uploads.md)
 - [Writing an indexer](writing_an_indexer.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing](auto_indexing.md)
 - <span class="badge badge-experimental">Experimental</span> [Auto-indexing inference](auto_indexing_inference.md)

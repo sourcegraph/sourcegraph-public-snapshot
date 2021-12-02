@@ -10,7 +10,7 @@ on:
 
 env:
   GOFLAGS: -trimpath
-  CGO_ENABLED: '0'
+  CGO_ENABLED: '1'
 
 jobs:
   create_release:
@@ -45,69 +45,50 @@ jobs:
   build:
     name: build
     needs: [create_release]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - linux
-          - darwin
+          - ubuntu-latest
+          - macos-latest
         arch:
           - amd64
           - arm64
-    env:
-      GOOS: ${{ matrix.os }}
-      GOARCH: ${{ matrix.arch }}
+        exclude:
+          # Compiling for arm64 on Linux requires more work
+          - os: ubuntu-latest
+            arch: arm64
+
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Install Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
 
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get Go environment
-        id: go-env
+      - name: Build and upload macOS
+        if: startsWith(matrix.os, 'macos-') == true
         run: |
-          echo "::set-output name=path::$(go env GOPATH)"
-          echo "::set-output name=exe::$(go env GOEXE)"
-          echo "::set-output name=hostos::$(go env GOHOSTOS)"
-          echo "::set-output name=hostarch::$(go env GOHOSTARCH)"
-          echo "::set-output name=cache::$(go env GOCACHE)"
-          echo "::set-output name=modcache::$(go env GOMODCACHE)"
+          cd dev/sg
+          export CGO_ENABLED=1
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
-      - name: Get asset name
-        id: asset
-        run: echo "::set-output name=filename::sg_${GOOS}_${GOARCH}${GOEXE}"
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
-
-      - name: Build release asset
+      - name: Build and upload Linux
+        if: startsWith(matrix.os, 'ubuntu-') == true
         run: |
-          cd dev/sg && go install -ldflags "-X main.BuildCommit=$(git rev-list -1 HEAD .)" .
-
-      - name: Move asset to GOPATH/bin
-        if: ${{ steps.go-env.outputs.hostos != matrix.os || steps.go-env.outputs.hostarch != matrix.arch }}
-        working-directory: ${{ steps.go-env.outputs.path }}/bin/${{ matrix.os }}_${{ matrix.arch }}
-        run: mv sg"${GOEXE}" ..
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
-
-      - name: Move asset to workspace
-        working-directory: ${{ steps.go-env.outputs.path }}/bin
-        run: mv sg"${GOEXE}" "${workspace}"/"${filename}"
-        env:
-          GOEXE: ${{ steps.go-env.outputs.exe }}
-          workspace: ${{ github.workspace }}
-          filename: ${{ steps.asset.outputs.filename }}
+          cd dev/sg
+          export CGO_ENABLED=1
+          GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Upload release asset
         run: |
+          cd dev/sg
           release_name="${{ needs.create_release.outputs.release_name }}"
-
-          gh release upload -R="${repo}" ${release_name} "${filename}"
+          gh release upload -R="${repo}" ${release_name} "sg_$(go env GOOS)_${{ matrix.arch }}"
         env:
           repo: sourcegraph/sg
-          filename: ${{ steps.asset.outputs.filename }}
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}

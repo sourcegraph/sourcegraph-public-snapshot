@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -200,6 +201,55 @@ func TestRepository_FirstEverCommit(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("got %q, want %q", got, tc.want)
 		}
+	}
+}
+
+func TestHead(t *testing.T) {
+	t.Parallel()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	repo := MakeGitRepository(t, gitCommands...)
+	ctx := context.Background()
+
+	head, exists, err := Head(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantHead := "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"
+	if head != wantHead {
+		t.Fatalf("Want %q, got %q", wantHead, head)
+	}
+	if !exists {
+		t.Fatal("Should exist")
+	}
+}
+
+func TestCommitExists(t *testing.T) {
+	t.Parallel()
+
+	gitCommands := []string{
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+	}
+	repo := MakeGitRepository(t, gitCommands...)
+	ctx := context.Background()
+
+	wantCommit := api.CommitID("ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
+	exists, err := CommitExists(ctx, repo, wantCommit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !exists {
+		t.Fatal("Should exist")
+	}
+
+	exists, err = CommitExists(ctx, repo, NonExistentCommitID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if exists {
+		t.Fatal("Should not exist")
 	}
 }
 
@@ -488,4 +538,111 @@ func TestMessage(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestParseCommitsUniqueToBranch(t *testing.T) {
+	mustParseDate := func(s string) time.Time {
+		date, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			t.Fatalf("unexpected error parsing date string: %s", err)
+		}
+
+		return date
+	}
+
+	commits, err := parseCommitsUniqueToBranch([]string{
+		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
+		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347:2020-04-16T16:20:26-04:00",
+		"7886287b8758d1baf19cf7b8253856128369a2a7:2020-04-16T16:55:58-04:00",
+		"b69f89473bbcc04dc52cafaf6baa504e34791f5a:2020-04-20T12:10:49-04:00",
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e:2020-04-20T12:37:36-04:00",
+		"5bc35c78fb5fb388891ca944cd12d85fd6dede95:2020-05-05T12:53:18-05:00",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error parsing commits: %s", err)
+	}
+
+	expectedCommits := map[string]time.Time{
+		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00"),
+		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00"),
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00"),
+		"7886287b8758d1baf19cf7b8253856128369a2a7": mustParseDate("2020-04-16T16:55:58-04:00"),
+		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": mustParseDate("2020-04-20T12:10:49-04:00"),
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e": mustParseDate("2020-04-20T12:37:36-04:00"),
+		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": mustParseDate("2020-05-05T12:53:18-05:00"),
+	}
+	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+		t.Errorf("unexpected commits (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseBranchesContaining(t *testing.T) {
+	names := parseBranchesContaining([]string{
+		"refs/tags/v0.7.0",
+		"refs/tags/v0.5.1",
+		"refs/tags/v1.1.4",
+		"refs/heads/symbols", "refs/heads/bl/symbols",
+		"refs/tags/v1.2.0",
+		"refs/tags/v1.1.0",
+		"refs/tags/v0.10.0",
+		"refs/tags/v1.0.0",
+		"refs/heads/garo/index-specific-files",
+		"refs/heads/bl/symbols-2",
+		"refs/tags/v1.3.1",
+		"refs/tags/v0.5.2",
+		"refs/tags/v1.1.2",
+		"refs/tags/v0.8.0",
+		"refs/heads/ef/wtf",
+		"refs/tags/v1.5.0",
+		"refs/tags/v0.9.0",
+		"refs/heads/garo/go-and-typescript-lsif-indexing",
+		"refs/heads/master",
+		"refs/heads/sg/document-symbols",
+		"refs/tags/v1.1.1",
+		"refs/tags/v1.4.0",
+		"refs/heads/nsc/bump-go-version",
+		"refs/heads/nsc/random",
+		"refs/heads/nsc/markupcontent",
+		"refs/tags/v0.6.0",
+		"refs/tags/v1.1.3",
+		"refs/tags/v0.5.3",
+		"refs/tags/v1.3.0",
+	})
+
+	expectedNames := []string{
+		"bl/symbols",
+		"bl/symbols-2",
+		"ef/wtf",
+		"garo/go-and-typescript-lsif-indexing",
+		"garo/index-specific-files",
+		"master",
+		"nsc/bump-go-version",
+		"nsc/markupcontent",
+		"nsc/random",
+		"sg/document-symbols",
+		"symbols",
+		"v0.10.0",
+		"v0.5.1",
+		"v0.5.2",
+		"v0.5.3",
+		"v0.6.0",
+		"v0.7.0",
+		"v0.8.0",
+		"v0.9.0",
+		"v1.0.0",
+		"v1.1.0",
+		"v1.1.1",
+		"v1.1.2",
+		"v1.1.3",
+		"v1.1.4",
+		"v1.2.0",
+		"v1.3.0",
+		"v1.3.1",
+		"v1.4.0",
+		"v1.5.0",
+	}
+	if diff := cmp.Diff(expectedNames, names); diff != "" {
+		t.Errorf("unexpected names (-want +got):\n%s", diff)
+	}
 }

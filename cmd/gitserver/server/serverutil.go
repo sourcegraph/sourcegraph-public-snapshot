@@ -103,7 +103,8 @@ type tlsConfig struct {
 }
 
 var tlsExternal = conf.Cached(func() interface{} {
-	c := conf.Get().ExperimentalFeatures.TlsExternal
+	exp := conf.ExperimentalFeatures()
+	c := exp.TlsExternal
 
 	if c == nil {
 		return &tlsConfig{}

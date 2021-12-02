@@ -12,15 +12,16 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 type configurationPolicyResolver struct {
+	db                  database.DB
 	configurationPolicy store.ConfigurationPolicy
 }
 
-func NewConfigurationPolicyResolver(configurationPolicy store.ConfigurationPolicy) gql.CodeIntelligenceConfigurationPolicyResolver {
+func NewConfigurationPolicyResolver(db database.DB, configurationPolicy store.ConfigurationPolicy) gql.CodeIntelligenceConfigurationPolicyResolver {
 	return &configurationPolicyResolver{
+		db:                  db,
 		configurationPolicy: configurationPolicy,
 	}
 }
@@ -34,16 +35,15 @@ func (r *configurationPolicyResolver) Name() string {
 }
 
 func (r *configurationPolicyResolver) Repository(ctx context.Context) (*gql.RepositoryResolver, error) {
-	db := database.NewDB(dbconn.Global)
 	if r.configurationPolicy.RepositoryID == nil {
 		return nil, nil
 	}
-	repo, err := backend.NewRepos(db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	repo, err := backend.NewRepos(r.db.Repos()).Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
 	if err != nil {
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(db, repo), nil
+	return gql.NewRepositoryResolver(r.db, repo), nil
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
