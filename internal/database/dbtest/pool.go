@@ -15,21 +15,18 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // testDatabasePool handles creating and reusing migrated database instances
 type testDatabasePool struct {
-	untransacted *basestore.Store
-	*basestore.Store
+	*sql.DB
 }
 
 func newTestDatabasePool(db *sql.DB) *testDatabasePool {
 	return &testDatabasePool{
-		untransacted: basestore.NewWithDB(db, sql.TxOptions{}),
-		Store:        basestore.NewWithDB(db, sql.TxOptions{}),
+		DB: db,
 	}
 }
 
@@ -74,14 +71,6 @@ func poolSchemaUpToDate(db *sql.DB) bool {
 func migratePoolDB(db *sql.DB) error {
 	_, err := db.Exec(poolSchema)
 	return err
-}
-
-func (t *testDatabasePool) Transact(ctx context.Context) (*testDatabasePool, error) {
-	txBase, err := t.Store.Transact(ctx)
-	return &testDatabasePool{
-		untransacted: t.untransacted,
-		Store:        txBase,
-	}, err
 }
 
 type TemplateDB struct {
@@ -143,16 +132,21 @@ RETURNING %s
 // database is created and the migrations are run.
 func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...*dbconn.Database) (_ *TemplateDB, err error) {
 	// Create a transaction so the exclusive lock is dropped at the end of this function.
-	tx, err := t.Transact(ctx)
+	tx, err := t.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+		err = tx.Commit()
+	}()
 
 	// Create an exclusive lock because we want exactly one template database per hash,
 	// and that's difficult to guarantee _and_ guarantee that we don't create the row
 	// until the template database is created and fully migrated.
-	err = tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE template_dbs IN ACCESS EXCLUSIVE MODE"))
+	_, err = tx.ExecContext(ctx, "LOCK TABLE template_dbs IN ACCESS EXCLUSIVE MODE")
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +162,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		hash,
 		sqlf.Join(templateDBColumns, ","),
 	)
-	row := tx.QueryRow(ctx, q)
+	row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	tdb, err := scanTemplateDB(row)
 	if err == nil {
 		return tdb, nil
@@ -183,7 +177,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		hash,
 		sqlf.Join(templateDBColumns, ","),
 	)
-	row = tx.QueryRow(ctx, q)
+	row = tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	tdb, err = scanTemplateDB(row)
 	if err != nil {
 		return nil, errors.Wrap(err, "insert template row")
@@ -193,7 +187,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 	// cannot be created inside a transaciton. This is safe because the whole
 	// template_dbs table is locked in the transaction above, so this
 	// will never happen concurrently.
-	err = tx.untransacted.Exec(ctx, sqlf.Sprintf("CREATE DATABASE"+pq.QuoteIdentifier(tdb.Name)))
+	_, err = t.DB.ExecContext(ctx, "CREATE DATABASE"+pq.QuoteIdentifier(tdb.Name))
 	if err != nil {
 		return nil, errors.Wrap(err, "create template database")
 	}
@@ -218,30 +212,25 @@ DELETE FROM migrated_dbs
 WHERE id = %s
 `
 
-// DeleteTemplateDB deletes a database and untracks it in migrated_dbs. This should
-// only be called by the caller who called GetMigratedDB
-func (t *testDatabasePool) DeleteTemplateDB(ctx context.Context, tdb *TemplateDB) (err error) {
-	tx, err := t.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
+func deleteTemplateDB(ctx context.Context, db *sql.DB, tx *sql.Tx, tdb *TemplateDB) (err error) {
 	// Lock the row for delete
-	err = tx.Exec(ctx, sqlf.Sprintf(lockTemplateDBQuery, tdb.ID))
+	q := sqlf.Sprintf(lockTemplateDBQuery, tdb.ID)
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
 
 	// Delete the database outside of the transaction (dbs can't be created or removed
 	// within a transaction)
-	err = tx.untransacted.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(tdb.Name)))
+	_, err = db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(tdb.Name))
 	if err != nil {
 		return err
 	}
 
 	// Remove the row in the transaction that locked it
-	return tx.Exec(ctx, sqlf.Sprintf(deleteTemplateDBQuery, tdb.ID))
+	q = sqlf.Sprintf(deleteTemplateDBQuery, tdb.ID)
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 type MigratedDB struct {
@@ -306,11 +295,16 @@ RETURNING %s
 func (t *testDatabasePool) GetMigratedDB(ctx context.Context, reuse bool, tdb *TemplateDB) (_ *MigratedDB, err error) {
 	// Run this in a transaction so if creating the database
 	// fails, creating the row is rolled back
-	tx, err := t.Transact(ctx)
+	tx, err := t.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+		err = tx.Commit()
+	}()
 
 	// Only reuse a database if the caller says it's okay. Even a "clean" database that
 	// has had all transactions rolled back will have updated sequences, and some tests
@@ -318,7 +312,7 @@ func (t *testDatabasePool) GetMigratedDB(ctx context.Context, reuse bool, tdb *T
 	if reuse {
 		// Check to see if there is a clean, migrated DB already available
 		q := sqlf.Sprintf(getExistingMigratedDB, sqlf.Join(migratedDBColumns, ","))
-		row := tx.QueryRow(ctx, q)
+		row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		mdb, err := scanMigratedDB(row)
 		if err == nil {
 			return mdb, nil
@@ -334,18 +328,18 @@ func (t *testDatabasePool) GetMigratedDB(ctx context.Context, reuse bool, tdb *T
 		false,
 		sqlf.Join(migratedDBColumns, ","),
 	)
-	row := tx.QueryRow(ctx, q)
+	row := tx.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	mdb, err := scanMigratedDB(row)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create the new database outside of the transaction because databases cannot be created in a transaction.
-	err = tx.untransacted.Exec(ctx, sqlf.Sprintf(fmt.Sprintf(
+	_, err = t.DB.ExecContext(ctx, fmt.Sprintf(
 		"CREATE DATABASE %s TEMPLATE %s",
 		pq.QuoteIdentifier(mdb.Name),
 		pq.QuoteIdentifier(tdb.Name),
-	)))
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -366,7 +360,8 @@ WHERE id = %s
 // and that transaction was rolled back (as in NewFastTx).
 func (t *testDatabasePool) PutMigratedDB(ctx context.Context, mdb *MigratedDB) error {
 	q := sqlf.Sprintf(returnCleanMigratedDB, mdb.ID)
-	return t.Exec(ctx, q)
+	_, err := t.DB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 const lockMigratedDBQuery = `
@@ -384,27 +379,39 @@ WHERE id = %s
 // DeleteMigratedDB deletes a database and untracks it in migrated_dbs. This should
 // only be called by the caller who called GetMigratedDB
 func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB) (err error) {
-	tx, err := t.Transact(ctx)
+	tx, err := t.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+		err = tx.Commit()
+	}()
 
+	return deleteMigratedDB(ctx, t.DB, tx, mdb)
+}
+
+func deleteMigratedDB(ctx context.Context, db *sql.DB, tx *sql.Tx, mdb *MigratedDB) (err error) {
 	// Lock the row for delete
-	err = tx.Exec(ctx, sqlf.Sprintf(lockMigratedDBQuery, mdb.ID))
+	q := sqlf.Sprintf(lockMigratedDBQuery, mdb.ID)
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
 
 	// Delete the database outside of the transaction (dbs can't be created or removed
 	// within a transaction)
-	err = tx.untransacted.Exec(ctx, sqlf.Sprintf("DROP DATABASE "+pq.QuoteIdentifier(mdb.Name)))
+	_, err = db.ExecContext(ctx, "DROP DATABASE "+pq.QuoteIdentifier(mdb.Name))
 	if err != nil {
 		return err
 	}
 
 	// Remove the row in the transaction that locked it
-	return tx.Exec(ctx, sqlf.Sprintf(deleteMigratedDBQuery, mdb.ID))
+	q = sqlf.Sprintf(deleteMigratedDBQuery, mdb.ID)
+	_, err = tx.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 const listOldTemplateDBs = `
@@ -422,16 +429,21 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 		return err
 	}
 
-	tx, err := t.Transact(ctx)
+	tx, err := t.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer func() { err = tx.Done(err) }()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+		err = tx.Commit()
+	}()
 
 	// List any old template databases that don't have the same
 	// hash as the given database definitions
 	q := sqlf.Sprintf(listOldTemplateDBs, sqlf.Join(templateDBColumns, ","), hash)
-	rows, err := tx.Query(ctx, q)
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -444,21 +456,21 @@ func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.
 
 	var errs *multierror.Error
 	for _, tdb := range oldTDBs {
-		mdbs, err := tx.ListMigratedDBs(ctx, tdb.ID)
+		mdbs, err := listMigratedDBs(ctx, tx, tdb.ID)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 			continue
 		}
 
 		for _, mdb := range mdbs {
-			err = tx.DeleteMigratedDB(ctx, mdb)
+			err = deleteMigratedDB(ctx, t.DB, tx, mdb)
 			if err != nil {
 				errs = multierror.Append(errs, err)
 				continue
 			}
 		}
 
-		err = tx.DeleteTemplateDB(ctx, tdb)
+		err = deleteTemplateDB(ctx, t.DB, tx, tdb)
 		if err != nil {
 			errs = multierror.Append(errs, err)
 		}
@@ -474,9 +486,9 @@ WHERE template = %s
 FOR UPDATE
 `
 
-func (t *testDatabasePool) ListMigratedDBs(ctx context.Context, template int64) ([]*MigratedDB, error) {
+func listMigratedDBs(ctx context.Context, tx *sql.Tx, template int64) ([]*MigratedDB, error) {
 	q := sqlf.Sprintf(listMigratedDBsQuery, sqlf.Join(migratedDBColumns, ","), template)
-	rows, err := t.Query(ctx, q)
+	rows, err := tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}

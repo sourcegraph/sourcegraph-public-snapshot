@@ -15,7 +15,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
@@ -74,7 +74,7 @@ func TestMigrations(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	for _, tt := range []struct {
 		name     string

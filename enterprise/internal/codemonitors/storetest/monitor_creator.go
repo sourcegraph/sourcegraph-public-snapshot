@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -76,9 +75,8 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 	return m, nil
 }
 
-func NewTestStore(t *testing.T) (context.Context, *TestStore) {
+func NewTestStore(t *testing.T, db dbutil.DB) (context.Context, *TestStore) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, &TestStore{codemonitors.NewStoreWithClock(db, func() time.Time { return now })}
 }

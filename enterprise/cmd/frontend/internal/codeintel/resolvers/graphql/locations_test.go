@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -30,7 +29,7 @@ const numCommits = 10 // per repo
 const numPaths = 10   // per commit
 
 func TestCachedLocationResolver(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -169,7 +168,7 @@ func TestCachedLocationResolver(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -199,7 +198,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -233,7 +232,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 }
 
 func TestResolveLocations(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
