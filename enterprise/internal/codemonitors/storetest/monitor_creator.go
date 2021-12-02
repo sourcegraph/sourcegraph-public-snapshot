@@ -23,7 +23,7 @@ type TestStore struct {
 	codemonitors.CodeMonitorStore
 }
 
-func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codemonitors.Monitor, error) {
+func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codemonitors.Monitor, *codemonitors.QueryTrigger, error) {
 	t.Helper()
 
 	actions := []*codemonitors.EmailActionArgs{
@@ -47,13 +47,13 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 		NamespaceUserID: &uid,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Create trigger.
-	_, err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	q, err := s.CreateQueryTrigger(ctx, m.ID, testQuery)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, a := range actions {
@@ -63,16 +63,16 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 			Header:   a.Header,
 		})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
-	return m, nil
+	return m, q, nil
 }
 
 func NewTestStore(t *testing.T, db dbutil.DB) (context.Context, *TestStore) {

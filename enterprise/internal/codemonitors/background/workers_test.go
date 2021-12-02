@@ -63,7 +63,7 @@ func TestActionRunner(t *testing.T) {
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			_, err := ts.InsertTestMonitor(userCtx, t)
+			_, _, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
 			triggerJobs, err := ts.EnqueueQueryTriggerJobs(ctx)
