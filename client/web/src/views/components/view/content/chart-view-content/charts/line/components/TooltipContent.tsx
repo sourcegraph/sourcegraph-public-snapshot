@@ -55,14 +55,12 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
                     const value = line.point.y
                     const datumKey = tooltipData?.nearestDatum?.key
 
-                    const backgroundColor = datumKey === line.dataKey ? getLineStroke(line) : ''
-                    const markColor = datumKey === line.dataKey ? 'white' : getLineStroke(line)
-                    const color = datumKey === line.dataKey ? 'white' : ''
+                    const backgroundColor = datumKey === line.dataKey ? 'var(--secondary-2)' : ''
 
                     /* eslint-disable react/forbid-dom-props */
                     return (
-                        <li key={line.dataKey as string} className={styles.item} style={{ backgroundColor, color }}>
-                            <div style={{ backgroundColor: markColor }} className={styles.mark} />
+                        <li key={line.dataKey as string} className={styles.item} style={{ backgroundColor }}>
+                            <div style={{ backgroundColor: getLineStroke(line) }} className={styles.mark} />
 
                             <span className={styles.legendText}>{line?.name ?? 'unknown series'}</span>
 
