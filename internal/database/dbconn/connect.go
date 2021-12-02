@@ -7,62 +7,38 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Opts contain arguments passed to database connection initialisation functions.
-type Opts struct {
-	// DSN (data source name) is a URI like string containing all data needed to connect to the database.
-	DSN string
-
-	// DBName is used only for Prometheus metrics instead of whatever actual database name is set in DSN.
-	// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
-	// logical databases.
-	DBName string
-
-	// AppName overrides the application_name in the DSN. This separate parameter is needed
-	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
-	AppName string
-
-	// DatabasesToMigrate is set of migration specs that should be executed on the fresh connection if the database
-	// appears to be out-of-date.
-	DatabasesToMigrate []*Database
-}
-
-func NewFrontendDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := connect(Opts{DSN: dsn, DBName: "frontend", AppName: appName, DatabasesToMigrate: []*Database{Frontend}})
-	return db, err
-}
-
-func NewCodeIntelDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := connect(Opts{DSN: dsn, DBName: "codeintel", AppName: appName, DatabasesToMigrate: []*Database{CodeIntel}})
-	return db, err
-}
-
-func NewCodeInsightsDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := connect(Opts{DSN: dsn, DBName: "codeinsight", AppName: appName, DatabasesToMigrate: []*Database{CodeInsights}})
-	return db, err
-}
-
-// TODO - oh weird
-func ConnectRaw(dsn string, databasesToMigrate ...*Database) (*sql.DB, func(err error) error, error) {
-	return connect(Opts{DSN: dsn, DatabasesToMigrate: databasesToMigrate})
-}
-
-// Connect to the given data source and return the handle.
+// ConnectRaw connects to the given data source and returns the handle. After successful connection,
+// the schema version of the database will be compared against an expected version and the supplied
+// migrations may be run (taking an advisory lock to ensure exclusive access).
 //
-// If dbname is set then metric will be reported for the returned handle.
-// dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
-// This is needed because in our dev environment we use a single physical database (and DSN) for all our different
-// logical databases. app, however is set as the application_name in the connection string. This is needed
-// because we have multiple apps connecting to the same database, but have a single shared DSN.
-//
-// Note: github.com/jackc/pgx parses the environment as well. This function will
-// also use the value of PGDATASOURCE if supplied and dataSource is the empty
-// string.
-//
-// This function returns a basestore-style method that closes the database. This should
+// This function returns a basestore-style callback that closes the database. This should
 // be called instead of calling Close directly on the database handle as it also handles
 // closing migration objects associated with the handle.
-func connect(opts Opts) (*sql.DB, func(err error) error, error) {
-	cfg, err := buildConfig(opts.DSN, opts.AppName)
+//
+// DO NOT USE THIS FUNCTION OUTSIDE OF DEV TOOLS AND UNIT TESTS.
+func ConnectRaw(dsn string, schemas ...*Schema) (*sql.DB, func(err error) error, error) {
+	return connect(dsn, "", "", schemas)
+}
+
+// Connect to the given data source and return the handle. After successful connection, the schema version
+// of the database will be compared against an expected version and the supplied migrations may be run
+// (taking an advisory lock to ensure exclusive access).
+//
+// This function returns a basestore-style callback that closes the database. This should be called
+// instead of calling Close directly on the database handle as it also handles closing migration objects
+// associated with the handle.
+//
+// If appName is supplied, then it overrides the application_name field in the DSN. This is a separate
+// parameter needed because we have multiple apps connecting to the same database but have a single shared
+// DSN configured.
+//
+// If dbName is supplied, then metrics will be reported for activity on the returned handle. This value is
+// used for its Prometheus label value instead of whatever actual value is set in dataSource.
+//
+// Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
+// of PGDATASOURCE if supplied and dataSource is the empty string.
+func connect(dsn, appName, dbName string, schemas []*Schema) (*sql.DB, func(err error) error, error) {
+	cfg, err := buildConfig(dsn, appName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,8 +62,8 @@ func connect(opts Opts) (*sql.DB, func(err error) error, error) {
 		return err
 	}
 
-	for _, database := range opts.DatabasesToMigrate {
-		close, err := migrateDB(db, database)
+	for _, schema := range schemas {
+		close, err := migrateDB(db, schema)
 		if err != nil {
 			return nil, nil, closeAll(err)
 		}
@@ -95,8 +71,8 @@ func connect(opts Opts) (*sql.DB, func(err error) error, error) {
 		closeFns = append(closeFns, close)
 	}
 
-	if opts.DBName != "" {
-		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
+	if dbName != "" {
+		prometheus.MustRegister(newMetricsCollector(db, dbName, appName))
 	}
 
 	return db, closeAll, nil

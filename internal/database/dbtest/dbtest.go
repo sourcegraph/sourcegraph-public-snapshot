@@ -144,7 +144,7 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 
 		cfgCopy := *config
 		cfgCopy.Path = "/" + templateName
-		_, close := dbConnInternal(t, &cfgCopy, []*dbconn.Database{
+		_, close := dbConnInternal(t, &cfgCopy, []*dbconn.Schema{
 			dbconn.Frontend,
 			dbconn.CodeIntel,
 		})
@@ -173,9 +173,9 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 	return db
 }
 
-func dbConnInternal(t testing.TB, cfg *url.URL, databases []*dbconn.Database) (*sql.DB, func(err error) error) {
+func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*dbconn.Schema) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, close, err := dbconn.ConnectRaw(cfg.String(), databases...)
+	db, close, err := dbconn.ConnectRaw(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
