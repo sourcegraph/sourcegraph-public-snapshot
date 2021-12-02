@@ -25,7 +25,7 @@ const sidebarProps: RepoRevisionSidebarSymbolsProps = {
     repoID: 'repo-id',
     revision: 'some-branch',
     activePath: 'src/index.js',
-    onHandleSymbolClick: jest.fn(),
+    onHandleSymbolClick: () => {},
 }
 
 const symbolsMock: MockedResponse<SymbolsResult> = {
