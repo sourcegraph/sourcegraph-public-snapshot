@@ -29,10 +29,14 @@
     line-height: 1.2;
 
     &--horizontal {
+        overflow: auto;
+        flex-wrap: nowrap;
         flex-direction: column;
         flex-grow: 1;
         flex-shrink: 0;
-        flex-basis: 11rem;
+        min-width: 11rem;
+        padding-left: 1rem;
+        width: 30%;
     }
 }
 
