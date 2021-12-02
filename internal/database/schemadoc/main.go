@@ -35,9 +35,9 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 var versionRe = lazyregexp.New(`\b12\.\d+\b`)
 
-var databases = map[*dbconn.Database]string{
-	dbconn.Frontend:  "schema.md",
-	dbconn.CodeIntel: "schema.codeintel.md",
+var schemas = map[string]*dbconn.Schema{
+	"schema.md":           dbconn.Frontend,
+	"schema.codeintel.md": dbconn.CodeIntel,
 }
 
 // This script generates markdown formatted output containing descriptions of
@@ -62,10 +62,10 @@ func mainLocal() error {
 	dataSourcePrefix := "dbname=" + databaseNamePrefix
 
 	g, _ := errgroup.WithContext(context.Background())
-	for database, destinationFile := range databases {
-		database, destinationFile := database, destinationFile
+	for destinationFile, schema := range schemas {
+		destinationFile, schema := destinationFile, schema
 		g.Go(func() error {
-			return generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile)
+			return generateAndWrite(schema, dataSourcePrefix+schema.Name, nil, destinationFile)
 		})
 	}
 
@@ -84,30 +84,30 @@ func mainContainer() error {
 	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
 
 	g, _ := errgroup.WithContext(context.Background())
-	for database, destinationFile := range databases {
-		database, destinationFile := database, destinationFile
+	for destinationFile, schema := range schemas {
+		destinationFile, schema := destinationFile, schema
 		g.Go(func() error {
-			return generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile)
+			return generateAndWrite(schema, dataSourcePrefix+schema.Name, prefix, destinationFile)
 		})
 	}
 
 	return g.Wait()
 }
 
-func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefix []string, destinationFile string) error {
+func generateAndWrite(schema *dbconn.Schema, dataSource string, commandPrefix []string, destinationFile string) error {
 	run := runWithPrefix(commandPrefix)
 
 	// Try to drop a database if it already exists
-	_, _ = run(true, "dropdb", databaseNamePrefix+database.Name)
+	_, _ = run(true, "dropdb", databaseNamePrefix+schema.Name)
 
 	// Let's also try to clean up after ourselves
-	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+database.Name) }()
+	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+schema.Name) }()
 
-	if out, err := run(false, "createdb", databaseNamePrefix+database.Name); err != nil {
+	if out, err := run(false, "createdb", databaseNamePrefix+schema.Name); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
-	out, err := generateInternal(database, dataSource, run)
+	out, err := generateInternal(schema, dataSource, run)
 	if err != nil {
 		return err
 	}
@@ -157,23 +157,19 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
 }
 
-func generateInternal(database *dbconn.Database, dataSource string, run runFunc) (string, error) {
-	db, closeDB, err := dbconn.New(dbconn.Opts{DSN: dataSource, DatabasesToMigrate: []*dbconn.Database{database}})
+func generateInternal(schema *dbconn.Schema, dataSource string, run runFunc) (_ string, err error) {
+	db, closeDB, err := dbconn.ConnectRawClownTown(dataSource, schema)
 	if err != nil {
 		return "", errors.Wrap(err, "NewRaw")
 	}
-	defer func() {
-		if err := closeDB(nil); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	defer func() { err = closeDB(err) }()
 
 	tables, err := getTables(db)
 	if err != nil {
 		return "", err
 	}
 
-	tableDescriptions, err := fetchTableAndViewDescriptions(database.Name, run)
+	tableDescriptions, err := fetchTableAndViewDescriptions(schema.Name, run)
 	if err != nil {
 		return "", err
 	}
@@ -202,7 +198,7 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 			for table := range ch {
 				logger.Println("describe", table.name)
 
-				doc, err := describeTable(db, database.Name, table, tableDescriptions)
+				doc, err := describeTable(db, schema.Name, table, tableDescriptions)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue

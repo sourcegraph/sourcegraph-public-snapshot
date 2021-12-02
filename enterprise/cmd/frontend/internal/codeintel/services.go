@@ -104,14 +104,10 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
 	})
-
-	db, _, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "frontend", DatabasesToMigrate: []*dbconn.Database{dbconn.CodeIntel}})
+	db, err := dbconn.NewCodeIntelDB(dsn, "frontend", true)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

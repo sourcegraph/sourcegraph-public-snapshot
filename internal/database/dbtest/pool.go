@@ -130,7 +130,7 @@ RETURNING %s
 // The given migrations are hashed and used to identify template databases that have already been
 // migrated. If no template database exists with the same hash as the given migrations, a new template
 // database is created and the migrations are run.
-func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...*dbconn.Database) (_ *TemplateDB, err error) {
+func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, schemas ...*dbconn.Schema) (_ *TemplateDB, err error) {
 	// Create a transaction so the exclusive lock is dropped at the end of this function.
 	tx, err := t.BeginTx(ctx, nil)
 	if err != nil {
@@ -151,7 +151,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		return nil, err
 	}
 
-	hash, err := hashMigrations(defs...)
+	hash, err := hashSchema(schemas...)
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +192,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		return nil, errors.Wrap(err, "create template database")
 	}
 
-	_, closeTemplateDB, err := dbconn.New(dbconn.Opts{DSN: urlWithDB(u, tdb.Name).String(), DatabasesToMigrate: defs})
+	_, closeTemplateDB, err := dbconn.ConnectRawClownTown(urlWithDB(u, tdb.Name).String(), schemas...)
 	if err != nil {
 		return nil, err
 	}
@@ -423,8 +423,8 @@ WHERE
 FOR UPDATE
 `
 
-func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.Database) (err error) {
-	hash, err := hashMigrations(except...)
+func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.Schema) (err error) {
+	hash, err := hashSchema(except...)
 	if err != nil {
 		return err
 	}
@@ -496,12 +496,12 @@ func listMigratedDBs(ctx context.Context, tx *sql.Tx, template int64) ([]*Migrat
 	return scanMigratedDBs(rows)
 }
 
-// hashMigrations deterministically hashes all the migrations in the given
-// database definitions. This is used to determine whether a new template
+// hashSchema deterministically hashes all the migrations in the given
+// schema description. This is used to determine whether a new template
 // database should be created for the given set of migrations.
-func hashMigrations(defs ...*dbconn.Database) (int64, error) {
+func hashSchema(schemas ...*dbconn.Schema) (int64, error) {
 	hash := fnv.New64()
-	for _, def := range defs {
+	for _, def := range schemas {
 		root, err := def.FS.Open(".")
 		if err != nil {
 			return 0, err

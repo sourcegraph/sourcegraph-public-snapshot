@@ -70,14 +70,10 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
-	timescaleDSN := conf.Get().ServiceConnections().CodeInsightsTimescaleDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeInsightsTimescaleDSN; timescaleDSN != newDSN {
-			log.Fatalf("Detected codeinsights database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeInsightsTimescaleDSN
 	})
-
-	db, _, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app, DatabasesToMigrate: []*dbconn.Database{dbconn.CodeInsights}})
+	db, err := dbconn.NewCodeInsightsDB(dsn, app, true)
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
