@@ -13,7 +13,7 @@ export function isCatalogEnabled(settingsCascade: SettingsCascadeOrError): boole
         return false
     }
 
-    return Boolean(settingsCascade.final?.experimentalFeatures.catalog)
+    return Boolean(settingsCascade.final?.experimentalFeatures?.catalog)
 }
 
 export const CatalogIcon = BookOpenBlankVariantIcon
