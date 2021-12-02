@@ -68,13 +68,10 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 		}
 	})
 
-	db, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app})
+	db, _, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app, DatabasesToMigrate: []*dbconn.Database{dbconn.CodeInsights}})
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	if _, err := dbconn.MigrateDB(db, dbconn.CodeInsights); err != nil {
-		return nil, errors.Errorf("Failed to perform codeinsights database migration: %s", err)
-	}
 	return db, nil
 }

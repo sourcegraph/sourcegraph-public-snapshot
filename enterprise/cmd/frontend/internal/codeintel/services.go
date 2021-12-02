@@ -87,14 +87,9 @@ func mustInitializeCodeIntelDB() *sql.DB {
 		}
 	})
 
-	db, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "frontend"})
+	db, _, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "frontend", DatabasesToMigrate: []*dbconn.Database{dbconn.CodeIntel}})
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}
-
-	if _, err := dbconn.MigrateDB(db, dbconn.CodeIntel); err != nil {
-		log.Fatalf("Failed to perform codeintel database migration: %s", err)
-	}
-
 	return db
 }

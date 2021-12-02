@@ -27,7 +27,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
-	initConn, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN})
+	initConn, closeInitConn, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN})
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
@@ -62,23 +62,17 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, err = dbconn.New(dbconn.Opts{DSN: timescaleDSN})
+	db, closeDBConn, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DatabasesToMigrate: []*dbconn.Database{dbconn.CodeInsights}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Perform DB migrations.
-	close, err := dbconn.MigrateDB(db, dbconn.CodeInsights)
-	if err != nil {
-		t.Fatalf("Failed to perform codeinsights database migration: %s", err)
-	}
 	cleanup = func() {
-		close()
-
-		if err := db.Close(); err != nil {
+		if err := closeDBConn(nil); err != nil {
 			t.Log(err)
 		}
-		defer initConn.Close()
+		defer closeInitConn(nil)
 		// It would be nice to cleanup by dropping the test DB we just created. But we can't:
 		//
 		// 	dropping test database ERROR: database "insights_test_testresolver_insights" is being accessed by other users (SQLSTATE 55006)
