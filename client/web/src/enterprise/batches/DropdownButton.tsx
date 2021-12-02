@@ -183,7 +183,7 @@ const DropdownItem: React.FunctionComponent<DropdownItemProps> = ({ action, setS
                     {action.experimental && (
                         <>
                             {' '}
-                            <ProductStatusBadge status="experimental" />
+                            <ProductStatusBadge status="experimental" as="small" />
                         </>
                     )}
                 </h4>

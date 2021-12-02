@@ -58,7 +58,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
             <header className="d-flex align-items-center justify-content-between mb-3">
                 <h2 className="d-flex align-items-center mb-0">
                     <ChartLineIcon className="icon-inline mr-2" /> Code statistics{' '}
-                    <Badge variant="secondary" className="text-uppercase ml-2">
+                    <Badge variant="secondary" className="text-uppercase ml-2" as="small">
                         Experimental
                     </Badge>
                 </h2>

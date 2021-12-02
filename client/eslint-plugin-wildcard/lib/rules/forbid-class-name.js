@@ -19,7 +19,7 @@ const config = {
      */
     const extractStringLiteral = attributeNode => {
       if (attributeNode.type === 'JSXExpressionContainer') {
-        return attributeNode.expression?.arguments
+        return attributeNode.expression.arguments
           ?.filter(argument => argument.type === 'Literal')
           .flatMap(argument => argument.value.split(' '))
       }

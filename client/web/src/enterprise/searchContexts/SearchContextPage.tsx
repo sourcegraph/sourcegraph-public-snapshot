@@ -175,6 +175,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                                             'ml-2',
                                                             styles.searchContextPagePrivateBadge
                                                         )}
+                                                        as="div"
                                                     >
                                                         Private
                                                     </Badge>

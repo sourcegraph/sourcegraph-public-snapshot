@@ -116,7 +116,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
                     {badgeText && (
-                        <Badge variant="secondary" className="m-0">
+                        <Badge variant="secondary" className="m-0" as="p">
                             {badgeText}
                         </Badge>
                     )}

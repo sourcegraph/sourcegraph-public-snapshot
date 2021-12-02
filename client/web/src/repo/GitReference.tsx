@@ -68,7 +68,7 @@ export const GitReferenceNode: React.FunctionComponent<GitReferenceNodeProps> = 
         >
             <span className="d-flex align-items-center">
                 {Icon && <Icon className="icon-inline mr-1" />}
-                <Badge>{node.displayName}</Badge>
+                <Badge as="code">{node.displayName}</Badge>
                 {mostRecentSig && (
                     <small className="pl-2">
                         Updated <Timestamp date={mostRecentSig.date} />{' '}

@@ -133,7 +133,7 @@ export const RepositoryNode: React.FunctionComponent<RepositoryNodeProps> = ({
                     </div>
                     <div>
                         {isPrivate && (
-                            <Badge variant="secondary" className="text-muted">
+                            <Badge variant="secondary" className="text-muted" as="div">
                                 Private
                             </Badge>
                         )}

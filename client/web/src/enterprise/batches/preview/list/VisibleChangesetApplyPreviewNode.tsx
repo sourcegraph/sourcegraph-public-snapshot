@@ -516,8 +516,7 @@ const References: React.FunctionComponent<{ spec: VisibleChangesetApplyPreviewFi
             {spec.delta.baseRefChanged &&
                 spec.targets.__typename === 'VisibleApplyPreviewTargetsUpdate' &&
                 spec.targets.changeset.currentSpec?.description.__typename === 'GitBranchChangesetDescription' && (
-                    // TODO: Check this
-                    <Badge variant="danger" className="mr-2">
+                    <Badge variant="danger" className="mr-2" as="del">
                         {spec.targets.changeset.currentSpec?.description.baseRef}
                     </Badge>
                 )}

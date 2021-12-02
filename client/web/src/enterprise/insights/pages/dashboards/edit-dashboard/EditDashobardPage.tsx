@@ -65,9 +65,11 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 title="Oops, we couldn't find the dashboard"
                 subtitle={
                     <span>
-                        We couldn't find that dashboard. Try to find the dashboard with ID: {/* TODO: Check */}
-                        <Badge variant="secondary">{dashboardId}</Badge> in your{' '}
-                        <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
+                        We couldn't find that dashboard. Try to find the dashboard with ID:
+                        <Badge variant="secondary" as="code">
+                            {dashboardId}
+                        </Badge>{' '}
+                        in your <Link to={`/users/${authenticatedUser?.username}/settings`}>user or org settings</Link>
                     </span>
                 }
             />

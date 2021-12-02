@@ -26,7 +26,7 @@ export const SearchContextNode: React.FunctionComponent<SearchContextNodeProps> 
                     <strong>{node.spec}</strong>
                 </Link>
                 {!node.public && (
-                    <Badge variant="secondary" pill={true} className="ml-1">
+                    <Badge variant="secondary" pill={true} className="ml-1" as="div">
                         Private
                     </Badge>
                 )}

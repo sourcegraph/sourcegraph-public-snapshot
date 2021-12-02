@@ -119,7 +119,6 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                 <div className="d-flex justify-content-center">
                     <div className={classNames('card', styles.ctaCard)}>
                         <div className="d-flex align-items-center">
-                            {/* TODO: Check with design */}
                             <Badge variant="merged" className="text-uppercase mr-2">
                                 Beta
                             </Badge>

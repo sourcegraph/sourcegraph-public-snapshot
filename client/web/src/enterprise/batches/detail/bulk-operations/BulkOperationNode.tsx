@@ -66,7 +66,7 @@ export const BulkOperationNode: React.FunctionComponent<BulkOperationNodeProps> 
             )}
         >
             <div className={classNames(styles.bulkOperationNodeChangesetCounts, 'text-center')}>
-                <Badge variant="secondary" className="mb-2">
+                <Badge variant="secondary" className="mb-2" as="p">
                     {node.changesetCount}
                 </Badge>
                 <p className="mb-0">{pluralize('changeset', node.changesetCount)}</p>
