@@ -71,7 +71,7 @@ func TestActionRunner(t *testing.T) {
 			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
 			require.NoError(t, err)
 
-			err = ts.EnqueueActionJobsForQuery(ctx, query.ID, triggerEventID)
+			_, err = ts.EnqueueActionJobsForQuery(ctx, query.ID, triggerEventID)
 			require.NoError(t, err)
 
 			record, err := ts.GetActionJob(ctx, 1)

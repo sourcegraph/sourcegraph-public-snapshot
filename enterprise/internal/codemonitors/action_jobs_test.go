@@ -18,7 +18,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, triggerJobs, 1)
 
-	err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
+	_, err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
 	require.NoError(t, err)
 
 	got, err := s.GetActionJob(ctx, 1)
@@ -60,7 +60,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	err = s.UpdateTriggerJobWithResults(ctx, 1, wantQuery, wantNumResults)
 	require.NoError(t, err)
 
-	err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
+	_, err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
 	require.NoError(t, err)
 
 	got, err := s.GetActionJobMetadata(ctx, 1)
@@ -91,7 +91,7 @@ func TestScanActionJobs(t *testing.T) {
 	require.Len(t, triggerJobs, 1)
 	triggerJobID := triggerJobs[0].ID
 
-	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, triggerJobID)
+	_, err = s.EnqueueActionJobsForQuery(ctx, testQueryID, triggerJobID)
 	require.NoError(t, err)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
