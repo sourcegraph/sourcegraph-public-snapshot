@@ -10,10 +10,6 @@ import (
 )
 
 func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
@@ -48,10 +44,6 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 func int64Ptr(i int64) *int64 { return &i }
 
 func TestGetActionJobMetadata(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
@@ -84,10 +76,6 @@ func TestGetActionJobMetadata(t *testing.T) {
 }
 
 func TestScanActionJobs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	var (
 		testRecordID             = 1
 		testTriggerEventID       = 1

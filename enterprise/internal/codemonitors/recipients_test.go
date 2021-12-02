@@ -7,10 +7,6 @@ import (
 )
 
 func TestAllRecipientsForEmailIDInt64(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)

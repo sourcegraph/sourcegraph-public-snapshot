@@ -8,10 +8,6 @@ import (
 )
 
 func TestQueryByRecordID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
@@ -39,10 +35,6 @@ func TestQueryByRecordID(t *testing.T) {
 }
 
 func TestTriggerQueryNextRun(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
@@ -76,10 +68,6 @@ func TestTriggerQueryNextRun(t *testing.T) {
 }
 
 func TestResetTriggerQueryTimestamps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
