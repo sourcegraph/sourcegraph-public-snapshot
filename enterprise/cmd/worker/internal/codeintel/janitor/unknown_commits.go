@@ -20,6 +20,7 @@ type unknownCommitJanitor struct {
 	metrics                   *metrics
 	minimumTimeSinceLastCheck time.Duration
 	batchSize                 int
+	maximumCommitLag          time.Duration
 	clock                     glock.Clock
 }
 
@@ -38,6 +39,7 @@ func NewUnknownCommitJanitor(
 	dbStore DBStore,
 	minimumTimeSinceLastCheck time.Duration,
 	batchSize int,
+	maximumCommitLag time.Duration,
 	interval time.Duration,
 	metrics *metrics,
 ) goroutine.BackgroundRoutine {
@@ -45,6 +47,7 @@ func NewUnknownCommitJanitor(
 		dbStore,
 		minimumTimeSinceLastCheck,
 		batchSize,
+		maximumCommitLag,
 		metrics,
 		glock.NewRealClock(),
 	)
@@ -56,6 +59,7 @@ func newJanitor(
 	dbStore DBStore,
 	minimumTimeSinceLastCheck time.Duration,
 	batchSize int,
+	maximumCommitLag time.Duration,
 	metrics *metrics,
 	clock glock.Clock,
 ) *unknownCommitJanitor {
@@ -64,6 +68,7 @@ func newJanitor(
 		metrics:                   metrics,
 		minimumTimeSinceLastCheck: minimumTimeSinceLastCheck,
 		batchSize:                 batchSize,
+		maximumCommitLag:          maximumCommitLag,
 		clock:                     clock,
 	}
 }
@@ -125,8 +130,7 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 	}
 
 	if shouldDelete {
-		maximumCommitLag := time.Minute // TODO - configure this parameter
-		_, uploadsDeleted, indexesDeleted, err := tx.DeleteSourcedCommits(ctx, repositoryID, commit, maximumCommitLag, j.clock.Now())
+		_, uploadsDeleted, indexesDeleted, err := tx.DeleteSourcedCommits(ctx, repositoryID, commit, j.maximumCommitLag, j.clock.Now())
 		if err != nil {
 			return errors.Wrap(err, "dbstore.DeleteSourcedCommits")
 		}
