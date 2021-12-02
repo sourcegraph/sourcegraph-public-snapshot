@@ -961,9 +961,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	if honey.Enabled() || traceLogs {
 		act := actor.FromContext(ctx)
-		if act.UID == 0 && !act.IsInternal() {
-			act = legacyActorFromReq(r)
-		}
 		ev := honey.NewEvent("gitserver-search")
 		ev.SetSampleRate(honeySampleRate("", act.IsInternal()))
 		ev.AddField("repo", args.Repo)
@@ -1197,9 +1194,6 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 			isSlowFetch := fetchDuration > 10*time.Second
 			if honey.Enabled() || traceLogs || isSlow || isSlowFetch {
 				act := actor.FromContext(ctx)
-				if act.UID == 0 && !act.IsInternal() {
-					act = legacyActorFromReq(r)
-				}
 				ev := honey.NewEvent("gitserver-exec")
 				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
 				ev.AddField("repo", req.Repo)
@@ -1437,9 +1431,6 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 			isSlow := cmdDuration > 30*time.Second
 			if honey.Enabled() || traceLogs || isSlow {
 				act := actor.FromContext(ctx)
-				if act.UID == 0 && !act.IsInternal() {
-					act = legacyActorFromReq(r)
-				}
 				ev := honey.NewEvent("gitserver-p4exec")
 				ev.SetSampleRate(honeySampleRate(cmd, act.IsInternal()))
 				ev.AddField("p4port", req.P4Port)
@@ -2484,18 +2475,4 @@ func isAbsoluteRevision(s string) bool {
 		}
 	}
 	return true
-}
-
-// legacyActorFromReq generates an actor using the legacy method of propagating
-// actors for gitserver observability, for the purposes of backcompat.
-//
-// TODO(@bobheadxi): Remove when all deployments are updated.
-func legacyActorFromReq(req *http.Request) *actor.Actor {
-	actStr := req.Header.Get("X-Sourcegraph-Actor")
-	if actStr == "internal" {
-		return &actor.Actor{Internal: true}
-	}
-	// Just let 0 value be ID for simplicity
-	actID, _ := strconv.Atoi(actStr)
-	return &actor.Actor{UID: int32(actID)}
 }

@@ -31,6 +31,7 @@ import (
 
 	"github.com/sourcegraph/go-rendezvous"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
@@ -1021,6 +1022,19 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, 
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO(@bobheadxi): This is here for the purposes of backcompat, remove when
+	// deployments are updated.
+	req.Header.Set("X-Sourcegraph-Actor", func() string {
+		a := actor.FromContext(ctx)
+		if a == nil {
+			return "0"
+		}
+		if a.Internal {
+			return "internal"
+		}
+		return a.UIDString()
+	}())
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", c.UserAgent)
