@@ -51,7 +51,7 @@ func TestBatchInserterWithReturn(t *testing.T) {
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
-	numRows := maxNumParameters * tableSizeFactor
+	numRows := MaxNumPostgresParameters * tableSizeFactor
 	expectedValues := makeTestValues(tableSizeFactor, 0)
 
 	var expectedIDs []int
@@ -73,7 +73,7 @@ func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
 
 	tableSizeFactor := 2
 	duplicationFactor := 2
-	numRows := maxNumParameters * tableSizeFactor
+	numRows := MaxNumPostgresParameters * tableSizeFactor
 	expectedValues := makeTestValues(tableSizeFactor, 0)
 
 	var expectedIDs []int
@@ -134,7 +134,7 @@ func setupTestTable(t testing.TB, db *sql.DB) {
 
 func makeTestValues(tableSizeFactor, payloadSize int) [][]interface{} {
 	var expectedValues [][]interface{}
-	for i := 0; i < maxNumParameters*tableSizeFactor; i++ {
+	for i := 0; i < MaxNumPostgresParameters*tableSizeFactor; i++ {
 		expectedValues = append(expectedValues, []interface{}{
 			i,
 			i + 1,
@@ -159,7 +159,7 @@ func makePayload(size int) string {
 func testInsert(t testing.TB, db *sql.DB, expectedValues [][]interface{}) {
 	ctx := context.Background()
 
-	inserter := NewInserter(ctx, db, "batch_inserter_test", "col1", "col2", "col3", "col4", "col5")
+	inserter := NewInserter(ctx, db, "batch_inserter_test", MaxNumPostgresParameters, "col1", "col2", "col3", "col4", "col5")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
@@ -178,6 +178,7 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 		ctx,
 		db,
 		"batch_inserter_test",
+		MaxNumPostgresParameters,
 		[]string{"col1", "col2", "col3", "col4", "col5"},
 		"",
 		[]string{"id"},
@@ -212,6 +213,7 @@ func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expected
 		ctx,
 		db,
 		"batch_inserter_test",
+		MaxNumPostgresParameters,
 		[]string{"id", "col1", "col2", "col3", "col4", "col5"},
 		"ON CONFLICT DO NOTHING",
 		[]string{"id"},

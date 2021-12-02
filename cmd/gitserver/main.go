@@ -141,7 +141,7 @@ func main() {
 	// Create Handler now since it also initializes state
 
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
+	handler := ot.HTTPMiddleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -284,7 +284,8 @@ func getDB() (dbutil.DB, error) {
 		}
 	})
 
-	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	db, _, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	return db, err
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,

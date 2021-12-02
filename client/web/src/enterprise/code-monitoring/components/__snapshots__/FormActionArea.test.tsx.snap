@@ -27,6 +27,7 @@ exports[`FormActionArea Error is shown if code monitor has empty description 1`]
     </span>
     <div
       class="form-group mt-4 test-action-form"
+      data-testid="action-form"
     >
       <label
         for="code-monitoring-form-actions-recipients"

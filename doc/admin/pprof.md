@@ -64,7 +64,6 @@ This is a table of Sourcegraph backend debug ports in the two deployment context
 | searcher          | 6060       | 6069   |
 | symbols           | 6060       | 6071   |
 | repo-updater      | 6060       | 6074   |
-| query-runner      | 6060       | 6067   |
 | zoekt-indexserver | 6060       | 6072   |
 | zoekt-webserver   | 6060       | 3070   |
 

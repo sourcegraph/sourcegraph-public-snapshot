@@ -77,7 +77,7 @@ func (r *statusMessageResolver) Message() (string, error) {
 
 func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
 	id := r.message.ExternalServiceSyncError.ExternalServiceId
-	externalService, err := database.ExternalServices(r.db).GetByID(ctx, id)
+	externalService, err := r.db.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

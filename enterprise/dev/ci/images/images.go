@@ -72,7 +72,6 @@ var DeploySourcegraphDockerImages = []string{
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
-	"query-runner",
 	"redis-cache",
 	"redis-store",
 	"redis_exporter",
@@ -82,6 +81,7 @@ var DeploySourcegraphDockerImages = []string{
 	"symbols",
 	"syntax-highlighter",
 	"worker",
+	"migrator",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

@@ -92,13 +92,21 @@ describe('GitHub', () => {
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
 
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph', { timeout: 10000 })
-        assert.strictEqual((await driver.page.$$('.code-view-toolbar .open-on-sourcegraph')).length, 1)
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]', {
+            timeout: 10000,
+        })
+        assert.strictEqual(
+            (await driver.page.$$('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')).length,
+            1
+        )
 
         await retry(async () => {
             assert.strictEqual(
                 await driver.page.evaluate(
-                    () => document.querySelector<HTMLAnchorElement>('.code-view-toolbar .open-on-sourcegraph')?.href
+                    () =>
+                        document.querySelector<HTMLAnchorElement>(
+                            '[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]'
+                        )?.href
                 ),
                 `${driver.sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=${driver.browserType}-extension`
             )
@@ -146,7 +154,7 @@ describe('GitHub', () => {
         await driver.page.goto(
             'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go'
         )
-        await driver.page.waitForSelector('.code-view-toolbar .open-on-sourcegraph')
+        await driver.page.waitForSelector('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
 
         // Pause to give codeintellify time to register listeners for
         // tokenization (only necessary in CI, not sure why).

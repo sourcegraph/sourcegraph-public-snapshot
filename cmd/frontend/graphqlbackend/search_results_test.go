@@ -38,8 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var mockCount = func(_ context.Context, options database.ReposListOptions) (int, error) { return 0, nil }
-
 func TestSearchResults(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		// #25936: Some unit tests rely on external services that break

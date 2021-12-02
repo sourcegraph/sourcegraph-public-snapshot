@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -96,34 +95,17 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
-	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend", DatabasesToMigrate: []*dbconn.Database{dbconn.Frontend}}
+	sqlDB, _, err := dbconn.New(opts)
+	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	ctx := context.Background()
-	migrate := true
-
-	for {
-		// We need this loop so that we handle the missing versions table,
-		// which would be added by running the migrations. Once we detect that
-		// it's missing, we run the migrations and try to update the version again.
-
-		err := backend.UpdateServiceVersion(ctx, database.NewDB(dbconn.Global), "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
-			return nil, err
-		}
-
-		if !migrate {
-			return dbconn.Global, nil
-		}
-
-		if err := dbconn.MigrateDB(dbconn.Global, dbconn.Frontend); err != nil {
-			return nil, err
-		}
-
-		migrate = false
+	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+		return nil, err
 	}
+
+	return sqlDB, nil
 }
 
 // Main is the main entrypoint for the frontend server program.
@@ -263,12 +245,6 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable,
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
-
-	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
-	// being initialized
-	if dbconn.Global == nil {
-		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
-	}
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,

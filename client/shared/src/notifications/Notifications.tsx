@@ -10,6 +10,7 @@ import { asError } from '../util/errors'
 
 import { Notification } from './notification'
 import { NotificationItem, NotificationClassNameProps } from './NotificationItem'
+import styles from './Notifications.module.scss'
 
 interface Props extends ExtensionsControllerProps, NotificationClassNameProps {}
 
@@ -129,7 +130,7 @@ export class Notifications extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="sourcegraph-notifications">
+            <div className={styles.sourcegraphNotifications}>
                 {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
                     <NotificationItem
                         key={notification.id}

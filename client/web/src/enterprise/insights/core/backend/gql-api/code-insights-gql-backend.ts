@@ -48,7 +48,7 @@ import { getLangStatsInsightContent } from '../core/api/get-lang-stats-insight-c
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
 import { getSearchInsightContent } from '../core/api/get-search-insight-content/get-search-insight-content'
-import { createLineChartContent } from '../utils/create-line-chart-content'
+import { createLineChartContentFromIndexedSeries } from '../utils/create-line-chart-content'
 import { InsightInProcessError } from '../utils/errors'
 import { parseDashboardScope } from '../utils/parse-dashboard-scope'
 
@@ -162,7 +162,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     title: insight.title ?? insight.title,
                     // TODO: is this still used anywhere?
                     subtitle: '',
-                    content: [createLineChartContent({ series: data.dataSeries }, insight.series)],
+                    content: [createLineChartContentFromIndexedSeries(data.dataSeries, insight.series)],
                     isFetchingHistoricalData: data.dataSeries.some(
                         ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
                     ),

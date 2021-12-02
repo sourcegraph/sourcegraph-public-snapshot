@@ -1,6 +1,7 @@
+import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import * as H from 'history'
 import React from 'react'
-import renderer from 'react-test-renderer'
 import { NEVER } from 'rxjs'
 
 import { createBarrier } from '../api/integration-test/testHelpers'
@@ -16,7 +17,7 @@ describe('ActionItem', () => {
     const history = H.createMemoryHistory()
 
     test('non-actionItem variant', () => {
-        const component = renderer.create(
+        const component = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -26,11 +27,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('actionItem variant', () => {
-        const component = renderer.create(
+        const component = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -41,11 +42,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('noop command', () => {
-        const component = renderer.create(
+        const component = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -55,11 +56,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('pressed toggle actionItem', () => {
-        const component = renderer.create(
+        const component = render(
             <ActionItem
                 active={true}
                 action={{ id: 'a', command: 'c', actionItem: { pressed: true, label: 'b' } }}
@@ -70,11 +71,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('non-pressed actionItem', () => {
-        const component = renderer.create(
+        const component = render(
             <ActionItem
                 active={true}
                 action={{ id: 'a', command: 'c', actionItem: { pressed: false, label: 'b' } }}
@@ -85,11 +86,11 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('title element', () => {
-        const component = renderer.create(
+        const component = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -101,13 +102,13 @@ describe('ActionItem', () => {
                 platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(component.asFragment()).toMatchSnapshot()
     })
 
     test('run command', async () => {
         const { wait, done } = createBarrier()
 
-        const component = renderer.create(
+        const { container, asFragment } = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -121,23 +122,20 @@ describe('ActionItem', () => {
         )
 
         // Run command and wait for execution to finish.
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        userEvent.click(container)
+        expect(asFragment()).toMatchSnapshot()
 
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(asFragment()).toMatchSnapshot()
     })
 
     test('run command with showLoadingSpinnerDuringExecution', async () => {
         const { wait, done } = createBarrier()
 
-        const component = renderer.create(
+        const { asFragment } = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -151,21 +149,23 @@ describe('ActionItem', () => {
         )
 
         // Run command and wait for execution to finish.
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        userEvent.click(screen.getByRole('button'))
+
+        await waitFor(() => {
+            expect(screen.getByTestId('action-item-spinner')).toBeInTheDocument()
+        })
+
+        expect(asFragment()).toMatchSnapshot()
 
         // Finish execution. (Use setTimeout to wait for the executeCommand resolution to result in the setState
         // call.)
         done()
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+        expect(asFragment()).toMatchSnapshot()
     })
 
     test('run command with error', async () => {
-        const component = renderer.create(
+        const { asFragment } = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -183,15 +183,15 @@ describe('ActionItem', () => {
 
         // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
         // to result in the setState call.)
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
+        userEvent.click(screen.getByRole('button'))
+
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+
+        expect(asFragment()).toMatchSnapshot()
     })
 
     test('run command with error with showInlineError', async () => {
-        const component = renderer.create(
+        const { asFragment } = render(
             <ActionItem
                 active={true}
                 action={{ id: 'c', command: 'c', title: 't', description: 'd', iconURL: 'u', category: 'g' }}
@@ -209,18 +209,18 @@ describe('ActionItem', () => {
 
         // Run command (which will reject with an error). (Use setTimeout to wait for the executeCommand resolution
         // to result in the setState call.)
-        let tree = component.toJSON()
-        tree!.props.onClick({ preventDefault: () => undefined, currentTarget: { blur: () => undefined } })
+        userEvent.click(screen.getByRole('button'))
+
         await new Promise<void>(resolve => setTimeout(resolve))
-        tree = component.toJSON()
-        expect(tree).toMatchSnapshot()
+
+        expect(asFragment()).toMatchSnapshot()
     })
 
     describe('"open" command', () => {
         it('renders as link', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const component = renderer.create(
+            const { asFragment } = render(
                 <ActionItem
                     active={true}
                     action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
@@ -230,13 +230,13 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(asFragment()).toMatchSnapshot()
         })
 
         it('renders as link with icon and opens a new tab for a different origin', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const component = renderer.create(
+            const { asFragment } = render(
                 <ActionItem
                     active={true}
                     action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
@@ -246,13 +246,13 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(asFragment()).toMatchSnapshot()
         })
 
         it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
             jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-            const component = renderer.create(
+            const { asFragment } = render(
                 <ActionItem
                     active={true}
                     action={{ id: 'c1', command: 'whatever', title: 'primary' }}
@@ -263,7 +263,7 @@ describe('ActionItem', () => {
                     platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )
-            expect(component.toJSON()).toMatchSnapshot()
+            expect(asFragment()).toMatchSnapshot()
         })
     })
 })

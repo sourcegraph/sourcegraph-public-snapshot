@@ -30,12 +30,12 @@ interface TriggerAreaProps {
 const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 const isLiteralOrRegexp = (value: string): boolean => value === 'literal' || value === 'regexp'
 
-const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?: string; className?: string }> = ({
-    checked,
-    children,
-    hint,
-    className,
-}) => {
+const ValidQueryChecklistItem: React.FunctionComponent<{
+    checked: boolean
+    hint?: string
+    className?: string
+    dataTestid?: string
+}> = ({ checked, children, hint, className, dataTestid }) => {
     const tooltipTarget = useRef<HTMLElement | null>(null)
     const [tooltipOpen, setTooltipOpen] = useState(false)
     const toggleTooltip = useCallback(() => setTooltipOpen(isOpen => !isOpen), [])
@@ -50,7 +50,7 @@ const ValidQueryChecklistItem: React.FunctionComponent<{ checked: boolean; hint?
             onFocus={showTooltip}
             onBlur={hideTooltip}
         >
-            <input className="sr-only" type="checkbox" disabled={true} checked={checked} />
+            <input className="sr-only" type="checkbox" disabled={true} checked={checked} data-testid={dataTestid} />
 
             {checked ? (
                 <CheckIcon
@@ -247,33 +247,33 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                                 <ul className={styles.checklist}>
                                     <li>
                                         <ValidQueryChecklistItem
-                                            className="test-patterntype-checkbox"
                                             checked={hasValidPatternTypeFilter}
                                             hint="Code monitors support literal and regex search. Searches are literal by default."
+                                            dataTestid="patterntype-checkbox"
                                         >
                                             Is <code>patternType:literal</code> or <code>patternType:regexp</code>
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
                                         <ValidQueryChecklistItem
-                                            className="test-type-checkbox"
                                             checked={hasTypeDiffOrCommitFilter}
                                             hint="type:diff targets code present in new commits, while type:commit targets commit messages"
+                                            dataTestid="type-checkbox"
                                         >
                                             Contains a <code>type:diff</code> or <code>type:commit</code> filter
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
                                         <ValidQueryChecklistItem
-                                            className="test-repo-checkbox"
                                             checked={hasRepoFilter}
                                             hint="Code monitors can watch a maximum of 50 repos at a time. Target your query with repo: filters to narrow down your search."
+                                            dataTestid="repo-checkbox"
                                         >
                                             Contains a <code>repo:</code> filter
                                         </ValidQueryChecklistItem>
                                     </li>
                                     <li>
-                                        <ValidQueryChecklistItem checked={isValidQuery} className="test-valid-checkbox">
+                                        <ValidQueryChecklistItem checked={isValidQuery} dataTestid="valid-checkbox">
                                             Is a valid search query
                                         </ValidQueryChecklistItem>
                                     </li>
@@ -334,10 +334,7 @@ export const FormTriggerArea: React.FunctionComponent<TriggerAreaProps> = ({
                             </div>
                             {triggerCompleted ? (
                                 <code
-                                    className={classNames(
-                                        'text-break text-muted test-existing-query',
-                                        styles.queryLabel
-                                    )}
+                                    className={classNames('text-break text-muted', styles.queryLabel)}
                                     data-testid="trigger-query-existing"
                                 >
                                     {query}

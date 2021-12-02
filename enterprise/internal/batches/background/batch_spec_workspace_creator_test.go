@@ -19,7 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
@@ -221,7 +223,22 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
-		key := service.CacheKeyForWorkspace(batchSpec, workspace)
+		key := cache.KeyForWorkspace(
+			&template.BatchChangeAttributes{
+				Name:        batchSpec.Spec.Name,
+				Description: batchSpec.Spec.Description,
+			},
+			batcheslib.Repository{
+				ID:          string(graphqlbackend.MarshalRepositoryID(workspace.Repo.ID)),
+				Name:        string(workspace.Repo.Name),
+				BaseRef:     workspace.Branch,
+				BaseRev:     string(workspace.Commit),
+				FileMatches: workspace.FileMatches,
+			},
+			workspace.Path,
+			workspace.OnlyFetchWorkspace,
+			workspace.Steps,
+		)
 		rawKey, err := key.Key()
 		if err != nil {
 			t.Fatal(err)

@@ -16,11 +16,8 @@ import (
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewFastTx(t)
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -41,11 +38,8 @@ func TestOrgs_ValidNames(t *testing.T) {
 }
 
 func TestOrgs_Count(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewFastTx(t)
 	ctx := context.Background()
 
 	org, err := Orgs(db).Create(ctx, "a", nil)
@@ -71,11 +65,8 @@ func TestOrgs_Count(t *testing.T) {
 }
 
 func TestOrgs_Delete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewFastTx(t)
 	ctx := context.Background()
 
 	displayName := "a"
@@ -110,7 +101,7 @@ func TestOrgs_Delete(t *testing.T) {
 }
 
 func TestOrgs_GetByID(t *testing.T) {
-	createOrg := func(ctx context.Context, db *sql.DB, name string, displayName string) *types.Org {
+	createOrg := func(ctx context.Context, db *sql.Tx, name string, displayName string) *types.Org {
 		org, err := Orgs(db).Create(ctx, name, &displayName)
 		if err != nil {
 			t.Fatal(err)
@@ -119,7 +110,7 @@ func TestOrgs_GetByID(t *testing.T) {
 		return org
 	}
 
-	createUser := func(ctx context.Context, db *sql.DB, name string) *types.User {
+	createUser := func(ctx context.Context, db *sql.Tx, name string) *types.User {
 		user, err := Users(db).Create(ctx, NewUser{
 			Username: name,
 		})
@@ -130,7 +121,7 @@ func TestOrgs_GetByID(t *testing.T) {
 		return user
 	}
 
-	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) *types.OrgMembership {
+	createOrgMember := func(ctx context.Context, db *sql.Tx, userID int32, orgID int32) *types.OrgMembership {
 		member, err := OrgMembers(db).Create(ctx, orgID, userID)
 		if err != nil {
 			t.Fatal(err)
@@ -139,11 +130,8 @@ func TestOrgs_GetByID(t *testing.T) {
 		return member
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewFastTx(t)
 	ctx := context.Background()
 
 	createOrg(ctx, db, "org1", "org1")
@@ -165,7 +153,7 @@ func TestOrgs_GetByID(t *testing.T) {
 }
 
 func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
-	createOrg := func(ctx context.Context, db *sql.DB, name string, displayName string) *types.Org {
+	createOrg := func(ctx context.Context, db *sql.Tx, name string, displayName string) *types.Org {
 		org, err := Orgs(db).Create(ctx, name, &displayName)
 		if err != nil {
 			t.Fatal(err)
@@ -174,7 +162,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return org
 	}
 
-	createUser := func(ctx context.Context, db *sql.DB, name string) *types.User {
+	createUser := func(ctx context.Context, db *sql.Tx, name string) *types.User {
 		user, err := Users(db).Create(ctx, NewUser{
 			Username: name,
 		})
@@ -185,7 +173,7 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return user
 	}
 
-	createOrgMember := func(ctx context.Context, db *sql.DB, userID int32, orgID int32) *types.OrgMembership {
+	createOrgMember := func(ctx context.Context, db *sql.Tx, userID int32, orgID int32) *types.OrgMembership {
 		member, err := OrgMembers(db).Create(ctx, orgID, userID)
 		if err != nil {
 			t.Fatal(err)
@@ -194,11 +182,8 @@ func TestOrgs_GetOrgsWithRepositoriesByUserID(t *testing.T) {
 		return member
 	}
 
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
-	db := dbtest.NewDB(t)
+	db := dbtest.NewFastTx(t)
 	ctx := context.Background()
 
 	org1 := createOrg(ctx, db, "org1", "org1")
