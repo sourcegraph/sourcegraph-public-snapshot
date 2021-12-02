@@ -226,7 +226,11 @@ WITH
 delete_uploads AS (
 	UPDATE lsif_uploads u
 	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
-	WHERE id IN (SELECT id FROM candidate_uploads)
+	WHERE
+		u.id IN (SELECT id FROM candidate_uploads)
+		-- AND
+		-- TODO - put a timer on here
+		-- u.state NOT IN ('uploading', 'queued', 'processing')
 	RETURNING 1
 ),
 delete_indexes AS (
