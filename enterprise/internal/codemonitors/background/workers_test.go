@@ -33,9 +33,6 @@ func TestActionRunner(t *testing.T) {
 		},
 	}
 
-	var (
-		queryID int64 = 1
-	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			db := dbtest.NewDB(t)
@@ -63,7 +60,7 @@ func TestActionRunner(t *testing.T) {
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			_, _, err := ts.InsertTestMonitor(userCtx, t)
+			_, query, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
 			triggerJobs, err := ts.EnqueueQueryTriggerJobs(ctx)
@@ -74,7 +71,7 @@ func TestActionRunner(t *testing.T) {
 			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
 			require.NoError(t, err)
 
-			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEventID)
+			err = ts.EnqueueActionJobsForQuery(ctx, query.ID, triggerEventID)
 			require.NoError(t, err)
 
 			record, err := ts.GetActionJob(ctx, 1)
