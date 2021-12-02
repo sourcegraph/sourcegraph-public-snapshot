@@ -43,6 +43,7 @@ func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidato
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
 			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
+				traceLog(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
 
