@@ -264,7 +264,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		GetQueryTriggerForJobFunc: &CodeMonitorStoreGetQueryTriggerForJobFunc{
-			defaultHook: func(context.Context, int) (*QueryTrigger, error) {
+			defaultHook: func(context.Context, int32) (*QueryTrigger, error) {
 				return nil, nil
 			},
 		},
@@ -471,7 +471,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		GetQueryTriggerForJobFunc: &CodeMonitorStoreGetQueryTriggerForJobFunc{
-			defaultHook: func(context.Context, int) (*QueryTrigger, error) {
+			defaultHook: func(context.Context, int32) (*QueryTrigger, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.GetQueryTriggerForJob")
 			},
 		},
@@ -3224,15 +3224,15 @@ func (c CodeMonitorStoreGetMonitorFuncCall) Results() []interface{} {
 // GetQueryTriggerForJob method of the parent MockCodeMonitorStore instance
 // is invoked.
 type CodeMonitorStoreGetQueryTriggerForJobFunc struct {
-	defaultHook func(context.Context, int) (*QueryTrigger, error)
-	hooks       []func(context.Context, int) (*QueryTrigger, error)
+	defaultHook func(context.Context, int32) (*QueryTrigger, error)
+	hooks       []func(context.Context, int32) (*QueryTrigger, error)
 	history     []CodeMonitorStoreGetQueryTriggerForJobFuncCall
 	mutex       sync.Mutex
 }
 
 // GetQueryTriggerForJob delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) GetQueryTriggerForJob(v0 context.Context, v1 int) (*QueryTrigger, error) {
+func (m *MockCodeMonitorStore) GetQueryTriggerForJob(v0 context.Context, v1 int32) (*QueryTrigger, error) {
 	r0, r1 := m.GetQueryTriggerForJobFunc.nextHook()(v0, v1)
 	m.GetQueryTriggerForJobFunc.appendCall(CodeMonitorStoreGetQueryTriggerForJobFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -3241,7 +3241,7 @@ func (m *MockCodeMonitorStore) GetQueryTriggerForJob(v0 context.Context, v1 int)
 // SetDefaultHook sets function that is called when the
 // GetQueryTriggerForJob method of the parent MockCodeMonitorStore instance
 // is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultHook(hook func(context.Context, int) (*QueryTrigger, error)) {
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultHook(hook func(context.Context, int32) (*QueryTrigger, error)) {
 	f.defaultHook = hook
 }
 
@@ -3250,7 +3250,7 @@ func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultHook(hook func(con
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) PushHook(hook func(context.Context, int) (*QueryTrigger, error)) {
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) PushHook(hook func(context.Context, int32) (*QueryTrigger, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -3259,7 +3259,7 @@ func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) PushHook(hook func(context.C
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
-	f.SetDefaultHook(func(context.Context, int) (*QueryTrigger, error) {
+	f.SetDefaultHook(func(context.Context, int32) (*QueryTrigger, error) {
 		return r0, r1
 	})
 }
@@ -3267,12 +3267,12 @@ func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) SetDefaultReturn(r0 *QueryTr
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) PushReturn(r0 *QueryTrigger, r1 error) {
-	f.PushHook(func(context.Context, int) (*QueryTrigger, error) {
+	f.PushHook(func(context.Context, int32) (*QueryTrigger, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) nextHook() func(context.Context, int) (*QueryTrigger, error) {
+func (f *CodeMonitorStoreGetQueryTriggerForJobFunc) nextHook() func(context.Context, int32) (*QueryTrigger, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -3312,7 +3312,7 @@ type CodeMonitorStoreGetQueryTriggerForJobFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *QueryTrigger

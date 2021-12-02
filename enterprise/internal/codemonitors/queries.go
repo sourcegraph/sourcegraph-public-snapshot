@@ -136,11 +136,11 @@ INNER JOIN cm_trigger_jobs j ON cm_queries.id = j.query
 WHERE j.id = %s
 `
 
-func (s *codeMonitorStore) GetQueryTriggerForJob(ctx context.Context, recordID int) (*QueryTrigger, error) {
+func (s *codeMonitorStore) GetQueryTriggerForJob(ctx context.Context, triggerJob int32) (*QueryTrigger, error) {
 	q := sqlf.Sprintf(
 		getQueryByRecordIDFmtStr,
 		sqlf.Join(queryColumns, ","),
-		recordID,
+		triggerJob,
 	)
 	row := s.QueryRow(ctx, q)
 	return scanTriggerQuery(row)

@@ -148,7 +148,12 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	defer func() { err = s.Done(err) }()
 
-	q, err := s.GetQueryTriggerForJob(ctx, record.RecordID())
+	triggerJob, ok := record.(*cm.TriggerJob)
+	if !ok {
+		return errors.Errorf("unexpected record type %T", record)
+	}
+
+	q, err := s.GetQueryTriggerForJob(ctx, triggerJob.ID)
 	if err != nil {
 		return err
 	}
