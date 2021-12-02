@@ -60,7 +60,7 @@ func TestActionRunner(t *testing.T) {
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			monitor, query, err := ts.InsertTestMonitor(userCtx, t)
+			monitor, _, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
 			triggerJobs, err := ts.EnqueueQueryTriggerJobs(ctx)
@@ -71,7 +71,7 @@ func TestActionRunner(t *testing.T) {
 			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
 			require.NoError(t, err)
 
-			actionJobs, err := ts.EnqueueActionJobsForQuery(ctx, query.ID, triggerEventID)
+			actionJobs, err := ts.EnqueueActionJobsForMonitor(ctx, monitor.ID, triggerEventID)
 			require.NoError(t, err)
 			require.Len(t, actionJobs, 2) // Two actions are created in InsertTestMonitor
 

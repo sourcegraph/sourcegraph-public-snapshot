@@ -11,14 +11,14 @@ import (
 func TestEnqueueActionEmailsForQuery(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
-	_, _, err := s.insertTestMonitor(userCTX, t)
+	m, _, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 	require.Len(t, triggerJobs, 1)
 
-	actionJobs, err := s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
+	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJobs[0].ID)
 	require.NoError(t, err)
 	require.Len(t, actionJobs, 2) // two actions are created by insertTestMonitor
 
@@ -58,7 +58,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantNumResults)
 	require.NoError(t, err)
 
-	actionJobs, err := s.EnqueueActionJobsForQuery(ctx, 1, triggerJobID)
+	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJobID)
 	require.NoError(t, err)
 	require.Len(t, actionJobs, 2)
 
@@ -77,7 +77,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 func TestScanActionJobs(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
-	_, q, err := s.insertTestMonitor(userCTX, t)
+	m, _, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -85,7 +85,7 @@ func TestScanActionJobs(t *testing.T) {
 	require.Len(t, triggerJobs, 1)
 	triggerJobID := triggerJobs[0].ID
 
-	actionJobs, err := s.EnqueueActionJobsForQuery(ctx, q.ID, triggerJobID)
+	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJobID)
 	require.NoError(t, err)
 	require.Len(t, actionJobs, 2)
 

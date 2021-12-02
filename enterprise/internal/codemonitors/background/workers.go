@@ -176,9 +176,9 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		_, err := s.EnqueueActionJobsForQuery(ctx, q.ID, triggerJob.ID)
+		_, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
-			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
+			return errors.Errorf("store.EnqueueActionJobsForMonitor: %w", err)
 		}
 	}
 	// Log next_run and latest_result to table cm_queries.
