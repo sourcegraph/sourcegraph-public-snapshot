@@ -142,20 +142,11 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 
 		cfgCopy := *config
 		cfgCopy.Path = "/" + templateName
-		templateDB := dbConn(t, &cfgCopy)
-		defer templateDB.Close()
-
-		for _, database := range []*dbconn.Database{
+		_, close := dbConnInternal(t, &cfgCopy, []*dbconn.Database{
 			dbconn.Frontend,
 			dbconn.CodeIntel,
-		} {
-			close, err := dbconn.MigrateDB(templateDB, database)
-			if err != nil {
-				t.Fatalf("failed to apply migrations: %s", err)
-			}
-
-			defer close()
-		}
+		})
+		defer close(nil)
 	})
 }
 
@@ -176,12 +167,17 @@ func wdHash() string {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
+	db, _ := dbConnInternal(t, cfg, nil)
+	return db
+}
+
+func dbConnInternal(t testing.TB, cfg *url.URL, databases []*dbconn.Database) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, err := dbconn.New(dbconn.Opts{DSN: cfg.String()})
+	db, close, err := dbconn.New(dbconn.Opts{DSN: cfg.String(), DatabasesToMigrate: databases})
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
-	return db
+	return db, close
 }
 
 func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {

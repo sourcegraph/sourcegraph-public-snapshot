@@ -3,6 +3,7 @@ package dbconn
 import (
 	"database/sql"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -19,6 +20,10 @@ type Opts struct {
 	// AppName overrides the application_name in the DSN. This separate parameter is needed
 	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
 	AppName string
+
+	// DatabasesToMigrate is set of migration specs that should be executed on the fresh connection if the database
+	// appears to be out-of-date.
+	DatabasesToMigrate []*Database
 }
 
 // New connects to the given data source and returns the handle.
@@ -32,20 +37,47 @@ type Opts struct {
 // Note: github.com/jackc/pgx parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func New(opts Opts) (*sql.DB, error) {
+//
+// This function returns a basestore-style method that closes the database. This should
+// be called instead of calling Close directly on the database handle as it also handles
+// closing migration objects associated with the handle.
+func New(opts Opts) (*sql.DB, func(err error) error, error) {
 	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	db, err := newWithConfig(cfg)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	var closeFns []func()
+
+	closeAll := func(err error) error {
+		for i := len(closeFns) - 1; i >= 0; i-- {
+			closeFns[i]()
+		}
+
+		if closeErr := db.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
+		}
+
+		return err
+	}
+
+	for _, database := range opts.DatabasesToMigrate {
+		close, err := migrateDB(db, database)
+		if err != nil {
+			return nil, nil, closeAll(err)
+		}
+
+		closeFns = append(closeFns, close)
 	}
 
 	if opts.DBName != "" {
 		prometheus.MustRegister(newMetricsCollector(db, opts.DBName, opts.AppName))
 	}
 
-	return db, nil
+	return db, closeAll, nil
 }

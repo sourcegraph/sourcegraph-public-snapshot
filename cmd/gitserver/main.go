@@ -284,7 +284,8 @@ func getDB() (dbutil.DB, error) {
 		}
 	})
 
-	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	db, _, err := dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	return db, err
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
@@ -318,7 +319,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -328,7 +329,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil

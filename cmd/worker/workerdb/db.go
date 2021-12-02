@@ -26,7 +26,7 @@ var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	})
 
 	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "worker"}
-	sqlDB, err := dbconn.New(opts)
+	sqlDB, _, err := dbconn.New(opts)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}

@@ -57,7 +57,7 @@ CREATE TABLE schema_version (
 );
 
 INSERT INTO schema_version (version) VALUES (2);
-	
+
 COMMIT;
 `
 
@@ -198,19 +198,12 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		return nil, errors.Wrap(err, "create template database")
 	}
 
-	templateDB, err := dbconn.New(dbconn.Opts{DSN: urlWithDB(u, tdb.Name).String()})
+	_, closeTemplateDB, err := dbconn.New(dbconn.Opts{DSN: urlWithDB(u, tdb.Name).String(), DatabasesToMigrate: defs})
 	if err != nil {
 		return nil, err
 	}
-	for _, def := range defs {
-		done, err := dbconn.MigrateDB(templateDB, def)
-		if err != nil {
-			return nil, err
-		}
-		defer done()
-	}
 
-	return tdb, nil
+	return tdb, closeTemplateDB(nil)
 }
 
 const lockTemplateDBQuery = `
@@ -377,7 +370,7 @@ func (t *testDatabasePool) PutMigratedDB(ctx context.Context, mdb *MigratedDB) e
 }
 
 const lockMigratedDBQuery = `
-SELECT id 
+SELECT id
 FROM migrated_dbs
 WHERE id = %s
 FOR UPDATE
@@ -417,7 +410,7 @@ func (t *testDatabasePool) DeleteMigratedDB(ctx context.Context, mdb *MigratedDB
 const listOldTemplateDBs = `
 SELECT %s
 FROM template_dbs
-WHERE 
+WHERE
 	migration_hash != %s
 	AND last_used_at < NOW() - INTERVAL '1 day'
 FOR UPDATE

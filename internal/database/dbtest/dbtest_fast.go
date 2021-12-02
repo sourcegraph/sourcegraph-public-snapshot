@@ -201,24 +201,25 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 }
 
 func newPoolFromURL(u *url.URL) (*testDatabasePool, func(), error) {
-	db, err := dbconn.New(dbconn.Opts{DSN: u.String()})
+	db, closeDB, err := dbconn.New(dbconn.Opts{DSN: u.String()})
 	if err != nil {
 		return nil, nil, err
 	}
-	defer db.Close()
+	defer closeDB(nil)
 
 	// Ignore already exists error
 	// TODO: return error if it's not an already exists error
 	_, _ = db.Exec("CREATE DATABASE dbtest_pool")
 
 	poolDBURL := urlWithDB(u, "dbtest_pool")
-	poolDB, err := dbconn.New(dbconn.Opts{DSN: poolDBURL.String()})
+	poolDB, closePoolDB, err := dbconn.New(dbconn.Opts{DSN: poolDBURL.String()})
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if !poolSchemaUpToDate(poolDB) {
-		poolDB.Close()
+		closePoolDB(nil)
+
 		if _, err = db.Exec("DROP DATABASE dbtest_pool"); err != nil {
 			return nil, nil, err
 		}
@@ -226,7 +227,7 @@ func newPoolFromURL(u *url.URL) (*testDatabasePool, func(), error) {
 			return nil, nil, err
 		}
 
-		poolDB, err = dbconn.New(dbconn.Opts{DSN: poolDBURL.String()})
+		poolDB, closePoolDB, err = dbconn.New(dbconn.Opts{DSN: poolDBURL.String()})
 		if err != nil {
 			return nil, nil, err
 		}
@@ -236,5 +237,5 @@ func newPoolFromURL(u *url.URL) (*testDatabasePool, func(), error) {
 		}
 	}
 
-	return newTestDatabasePool(poolDB), func() { poolDB.Close() }, nil
+	return newTestDatabasePool(poolDB), func() { closePoolDB(nil) }, nil
 }

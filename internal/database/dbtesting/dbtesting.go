@@ -155,19 +155,12 @@ func initTest() error {
 		}
 	}
 
-	opts := dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests"}
-	sqlDB, err := dbconn.New(opts)
-	if err != nil {
-		return err
-	}
-
-	for _, database := range []*dbconn.Database{
+	sqlDB, _, err := dbconn.New(dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests", DatabasesToMigrate: []*dbconn.Database{
 		dbconn.Frontend,
 		dbconn.CodeIntel,
-	} {
-		if _, err := dbconn.MigrateDB(sqlDB, database); err != nil {
-			return err
-		}
+	}})
+	if err != nil {
+		return err
 	}
 
 	globalTestDB = sqlDB

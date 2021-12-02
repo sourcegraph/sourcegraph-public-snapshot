@@ -35,7 +35,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -96,35 +95,17 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
-	sqlDB, err := dbconn.New(opts)
+	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend", DatabasesToMigrate: []*dbconn.Database{dbconn.Frontend}}
+	sqlDB, _, err := dbconn.New(opts)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	ctx := context.Background()
-	migrate := true
-
-	for {
-		// We need this loop so that we handle the missing versions table,
-		// which would be added by running the migrations. Once we detect that
-		// it's missing, we run the migrations and try to update the version again.
-
-		err := backend.UpdateServiceVersion(ctx, database.NewDB(sqlDB), "frontend", version.Version())
-		if err != nil && !dbutil.IsPostgresError(err, "42P01") {
-			return nil, err
-		}
-
-		if !migrate {
-			return sqlDB, nil
-		}
-
-		if _, err := dbconn.MigrateDB(sqlDB, dbconn.Frontend); err != nil {
-			return nil, err
-		}
-
-		migrate = false
+	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+		return nil, err
 	}
+
+	return sqlDB, nil
 }
 
 // Main is the main entrypoint for the frontend server program.
