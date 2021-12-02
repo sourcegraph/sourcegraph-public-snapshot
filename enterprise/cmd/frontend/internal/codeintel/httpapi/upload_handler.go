@@ -89,7 +89,6 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 			return nil, statusCode, err
 		}
 		traceLog(
-			log.String("repositoryName", uploadState.repositoryName),
 			log.Int("repositoryID", uploadState.repositoryID),
 			log.Int("uploadID", uploadState.uploadID),
 			log.String("commit", uploadState.commit),
