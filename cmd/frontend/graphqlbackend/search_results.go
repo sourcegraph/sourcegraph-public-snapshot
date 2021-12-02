@@ -223,9 +223,7 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 	tr, _ := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -389,9 +387,7 @@ var (
 // been performed.
 func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 	var types []string
 	resultTypes, _ := si.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
