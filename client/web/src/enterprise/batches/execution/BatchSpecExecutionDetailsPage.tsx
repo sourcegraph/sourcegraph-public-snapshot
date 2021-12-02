@@ -219,7 +219,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                 {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
                             </span>
                         )}
-                        {batchSpec.state === BatchSpecState.COMPLETED && batchSpec.applyURL && (
+                        {batchSpec.applyURL && (
                             <span>
                                 <Link to={batchSpec.applyURL} className="btn btn-primary">
                                     Preview
