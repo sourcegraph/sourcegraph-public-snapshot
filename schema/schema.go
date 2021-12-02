@@ -1484,6 +1484,8 @@ type Settings struct {
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
 	// SearchUppercase description: REMOVED. Previously, when active, any uppercase characters in the pattern will make the entire query case-sensitive.
 	SearchUppercase *bool `json:"search.uppercase,omitempty"`
+	// SidebarToggle description: Whether the sidebar on the repo view should be open by default.
+	SidebarToggle bool `json:"sidebarToggle,omitempty"`
 }
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.

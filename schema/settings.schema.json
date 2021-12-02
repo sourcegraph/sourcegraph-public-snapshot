@@ -312,6 +312,11 @@
         "$ref": "#/definitions/QuickLink"
       }
     },
+    "sidebarToggle": {
+      "description": "Whether the sidebar on the repo view should be open by default.",
+      "type": "boolean",
+      "default": true
+    },
     "motd": {
       "description": "DEPRECATED: Use `notices` instead.\n\nAn array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
