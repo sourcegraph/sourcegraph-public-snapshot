@@ -83,6 +83,7 @@ import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
+import { setExperimentalFeaturesFromSettings } from './stores'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -184,11 +185,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showMultilineSearchConsole: boolean
 
     /**
-     * Whether we show the search notebook.
-     */
-    showSearchNotebook: boolean
-
-    /**
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
@@ -272,7 +268,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
-            showSearchNotebook: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -306,6 +301,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 authenticatedUser.pipe(startWith(undefined)),
             ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
+                    setExperimentalFeaturesFromSettings(settingsCascade)
+
                     this.setState(state => ({
                         settingsCascade,
                         authenticatedUser,
@@ -495,7 +492,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
                                                     globbing={this.state.globbing}
                                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                                    showSearchNotebook={this.state.showSearchNotebook}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
