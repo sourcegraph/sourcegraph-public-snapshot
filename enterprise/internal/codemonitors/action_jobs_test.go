@@ -14,10 +14,11 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	_, err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
 
-	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
+	err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
 	require.NoError(t, err)
 
 	got, err := s.GetActionJob(ctx, 1)
@@ -47,8 +48,9 @@ func TestGetActionJobMetadata(t *testing.T) {
 	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	_, err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
 
 	var (
 		wantNumResults       = 42
@@ -58,7 +60,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	err = s.UpdateTriggerJobWithResults(ctx, 1, wantQuery, wantNumResults)
 	require.NoError(t, err)
 
-	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
+	err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
 	require.NoError(t, err)
 
 	got, err := s.GetActionJobMetadata(ctx, 1)
@@ -75,9 +77,8 @@ func TestGetActionJobMetadata(t *testing.T) {
 
 func TestScanActionJobs(t *testing.T) {
 	var (
-		testRecordID             = 1
-		testTriggerEventID int32 = 1
-		testQueryID        int64 = 1
+		testRecordID       = 1
+		testQueryID  int64 = 1
 	)
 
 	ctx, db, s := newTestStore(t)
@@ -85,10 +86,12 @@ func TestScanActionJobs(t *testing.T) {
 	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	_, err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	triggerJobID := triggerJobs[0].ID
 
-	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, testTriggerEventID)
+	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, triggerJobID)
 	require.NoError(t, err)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
