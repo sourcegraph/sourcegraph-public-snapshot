@@ -179,6 +179,8 @@ const insightIntervalCountsQuery = `
 SELECT COUNT(DISTINCT(ivs.insight_view_id)), series.sample_interval_value, series.sample_interval_unit FROM insight_series AS series
 JOIN insight_view_series AS ivs ON series.id = ivs.insight_series_id
 WHERE series.sample_interval_value != 0
+	AND series.sample_interval_value IS NOT NULL
+	AND series.sample_interval_unit IS NOT NULL
 GROUP BY series.sample_interval_value, series.sample_interval_unit;
 `
 
