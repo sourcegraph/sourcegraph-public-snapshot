@@ -3,6 +3,7 @@ package insights
 import (
 	"context"
 	"database/sql"
+	"log"
 	"os"
 	"strconv"
 	"time"
