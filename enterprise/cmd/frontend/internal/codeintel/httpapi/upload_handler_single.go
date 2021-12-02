@@ -43,20 +43,20 @@ func (h *UploadHandler) handleEnqueueSinglePayload(ctx context.Context, uploadSt
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	traceLog(log.Int("id", id))
+	traceLog(log.Int("uploadID", id))
 
 	size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	traceLog(log.Int("id", int(size)))
+	traceLog(log.Int("gzippedUploadSize", int(size)))
 
 	if err := tx.MarkQueued(ctx, id, &size); err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
 
 	log15.Info(
-		"Enqueued upload",
+		"codeintel.httpapi: enqueued upload",
 		"id", id,
 		"repository_id", uploadState.repositoryID,
 		"commit", uploadState.commit,

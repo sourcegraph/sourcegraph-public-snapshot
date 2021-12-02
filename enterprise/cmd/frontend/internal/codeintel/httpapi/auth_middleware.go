@@ -48,6 +48,10 @@ func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidato
 			}
 
 			if statusCode, err := validator(ctx, query, repositoryName); err != nil {
+				if statusCode >= 500 {
+					log15.Error("codeintel.httpapi: failed to authorize request", "error", err)
+				}
+
 				http.Error(w, err.Error(), statusCode)
 				return
 			}
@@ -56,6 +60,7 @@ func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidato
 			return
 		}
 
+		log15.Warn("codeintel.httpapi: verification not supported for code host", "repositoryName", repositoryName)
 		http.Error(w, "verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
 	})
 }
@@ -67,7 +72,7 @@ func isSiteAdmin(ctx context.Context, db dbutil.DB) bool {
 			return false
 		}
 
-		log15.Error("precise-code-intel proxy: failed to get up current user", "error", err)
+		log15.Error("codeintel.httpapi: failed to get up current user", "error", err)
 		return false
 	}
 

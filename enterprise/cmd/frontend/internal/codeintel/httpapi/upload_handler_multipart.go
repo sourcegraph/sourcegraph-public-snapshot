@@ -45,10 +45,10 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
-	traceLog(log.Int("id", id))
+	traceLog(log.Int("uploadID", id))
 
 	log15.Info(
-		"Enqueued upload",
+		"codeintel.httpapi: enqueued upload",
 		"id", id,
 		"repository_id", uploadState.repositoryID,
 		"commit", uploadState.commit,
@@ -63,7 +63,7 @@ func (h *UploadHandler) handleEnqueueMultipartSetup(ctx context.Context, uploadS
 // handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
 // data to the bundle manager and marks the part index in the upload record.
 func (h *UploadHandler) handleEnqueueMultipartUpload(ctx context.Context, uploadState uploadState, body io.Reader) (_ interface{}, statusCode int, err error) {
-	ctx, endObservation := h.operations.handleEnqueueMultipartUpload.With(ctx, &err, observation.Args{})
+	ctx, traceLog, endObservation := h.operations.handleEnqueueMultipartUpload.WithAndLogger(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("statusCode", statusCode),
@@ -74,10 +74,12 @@ func (h *UploadHandler) handleEnqueueMultipartUpload(ctx context.Context, upload
 		return nil, http.StatusBadRequest, errors.Errorf("illegal part index: index %d is outside the range [0, %d)", uploadState.index, uploadState.numParts)
 	}
 
-	if _, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", uploadState.uploadID, uploadState.index), body); err != nil {
+	size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", uploadState.uploadID, uploadState.index), body)
+	if err != nil {
 		h.markUploadAsFailed(context.Background(), h.dbStore, uploadState.uploadID, err)
 		return nil, http.StatusInternalServerError, err
 	}
+	traceLog(log.Int("gzippedUploadPartSize", int(size)))
 
 	if err := h.dbStore.AddUploadPart(ctx, uploadState.uploadID, uploadState.index); err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -121,7 +123,7 @@ func (h *UploadHandler) handleEnqueueMultipartFinalize(ctx context.Context, uplo
 		h.markUploadAsFailed(context.Background(), tx, uploadState.uploadID, err)
 		return nil, http.StatusInternalServerError, err
 	}
-	traceLog(log.Int("size", int(size)))
+	traceLog(log.Int("composedObjectSize", int(size)))
 
 	if err := tx.MarkQueued(ctx, uploadState.uploadID, &size); err != nil {
 		return nil, http.StatusInternalServerError, err
@@ -149,6 +151,6 @@ func (h *UploadHandler) markUploadAsFailed(ctx context.Context, tx DBStore, uplo
 	}
 
 	if markErr := tx.MarkFailed(ctx, uploadID, reason); markErr != nil {
-		log15.Error("Failed to mark upload as failed", "error", markErr)
+		log15.Error("codeintel.httpapi: failed to mark upload as failed", "error", markErr)
 	}
 }

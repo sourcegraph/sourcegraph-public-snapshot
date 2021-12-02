@@ -76,7 +76,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 	// executed so that we can instrument the duration and the resulting error more
 	// easily. The remainder of the function simply serializes the result to the
 	// HTTP response writer.
-	if payload, statusCode, err := func() (_ interface{}, statusCode int, err error) {
+	payload, statusCode, err := func() (_ interface{}, statusCode int, err error) {
 		ctx, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
 		defer func() {
 			endObservation(1, observation.Args{LogFields: []log.Field{
@@ -94,17 +94,34 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		}
 
 		return nil, http.StatusBadRequest, errUnprocessableRequest
-	}(); err != nil {
-		log15.Error("Failed to enqueue payload", "error", err)
+	}()
+	if err != nil {
+		if statusCode >= 500 {
+			log15.Error("codeintel.httpapi: failed to enqueue payload", "error", err)
+		}
+
 		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), statusCode)
 		return
-	} else if payload != nil {
-		// 202 with identifier payload
-		w.WriteHeader(http.StatusAccepted)
-		writeJSON(w, payload)
-	} else {
+	}
+
+	if payload == nil {
 		// 204 with no body
 		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		log15.Error("codeintel.httpapi: failed to serialize result", "error", err)
+		http.Error(w, fmt.Sprintf("failed to serialize result: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	// 202 with identifier payload
+	w.WriteHeader(http.StatusAccepted)
+
+	if _, err := io.Copy(w, bytes.NewReader(data)); err != nil {
+		log15.Error("codeintel.httpapi: failed to write payload to client", "error", err)
 	}
 }
 
@@ -128,24 +145,4 @@ func (h *UploadHandler) selectUploadHandlerFunc(uploadState uploadState) uploadH
 	}
 
 	return nil
-}
-
-// copyAll writes the contents of r to w and logs on write failure.
-func copyAll(w http.ResponseWriter, r io.Reader) {
-	if _, err := io.Copy(w, r); err != nil {
-		log15.Error("Failed to write payload to client", "error", err)
-	}
-}
-
-// writeJSON writes the JSON-encoded payload to w and logs on write failure.
-// If there is an encoding error, then a 500-level status is written to w.
-func writeJSON(w http.ResponseWriter, payload interface{}) {
-	data, err := json.Marshal(payload)
-	if err != nil {
-		log15.Error("Failed to serialize result", "error", err)
-		http.Error(w, fmt.Sprintf("failed to serialize result: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-
-	copyAll(w, bytes.NewReader(data))
 }
