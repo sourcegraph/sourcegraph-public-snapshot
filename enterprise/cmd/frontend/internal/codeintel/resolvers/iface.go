@@ -10,13 +10,14 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type GitserverClient interface {
 	CommitExists(ctx context.Context, repositoryID int, commit string) (bool, error)
-	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)
+	CommitGraph(ctx context.Context, repositoryID int, options git.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }
 
 type DBStore interface {

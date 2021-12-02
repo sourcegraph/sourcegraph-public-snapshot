@@ -9,10 +9,10 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // Updater periodically re-calculates the commit and upload visibility graph for repositories
@@ -164,7 +164,7 @@ func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 	// back any more data than we wanted.
 	commitDate = commitDate.Add(-time.Second)
 
-	commitGraph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, gitserver.CommitGraphOptions{
+	commitGraph, err := u.gitserverClient.CommitGraph(ctx, repositoryID, git.CommitGraphOptions{
 		AllRefs: true,
 		Since:   &commitDate,
 	})
