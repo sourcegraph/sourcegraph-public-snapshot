@@ -157,16 +157,12 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
 }
 
-func generateInternal(database *dbconn.Database, dataSource string, run runFunc) (string, error) {
-	db, closeDB, err := dbconn.Connect(dbconn.Opts{DSN: dataSource, DatabasesToMigrate: []*dbconn.Database{database}})
+func generateInternal(database *dbconn.Database, dataSource string, run runFunc) (_ string, err error) {
+	db, closeDB, err := dbconn.ConnectRaw(dataSource, database)
 	if err != nil {
 		return "", errors.Wrap(err, "NewRaw")
 	}
-	defer func() {
-		if err := closeDB(nil); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	defer func() { err = closeDB(err) }()
 
 	tables, err := getTables(db)
 	if err != nil {

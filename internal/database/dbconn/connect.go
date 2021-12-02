@@ -27,18 +27,23 @@ type Opts struct {
 }
 
 func NewFrontendDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := Connect(Opts{DSN: dsn, DBName: "frontend", AppName: appName, DatabasesToMigrate: []*Database{Frontend}})
+	db, _, err := connect(Opts{DSN: dsn, DBName: "frontend", AppName: appName, DatabasesToMigrate: []*Database{Frontend}})
 	return db, err
 }
 
 func NewCodeIntelDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := Connect(Opts{DSN: dsn, DBName: "codeintel", AppName: appName, DatabasesToMigrate: []*Database{CodeIntel}})
+	db, _, err := connect(Opts{DSN: dsn, DBName: "codeintel", AppName: appName, DatabasesToMigrate: []*Database{CodeIntel}})
 	return db, err
 }
 
 func NewCodeInsightsDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := Connect(Opts{DSN: dsn, DBName: "codeinsight", AppName: appName, DatabasesToMigrate: []*Database{CodeInsights}})
+	db, _, err := connect(Opts{DSN: dsn, DBName: "codeinsight", AppName: appName, DatabasesToMigrate: []*Database{CodeInsights}})
 	return db, err
+}
+
+// TODO - oh weird
+func ConnectRaw(dsn string, databasesToMigrate ...*Database) (*sql.DB, func(err error) error, error) {
+	return connect(Opts{DSN: dsn, DatabasesToMigrate: databasesToMigrate})
 }
 
 // Connect to the given data source and return the handle.
@@ -56,7 +61,7 @@ func NewCodeInsightsDB(dsn, appName string) (*sql.DB, error) {
 // This function returns a basestore-style method that closes the database. This should
 // be called instead of calling Close directly on the database handle as it also handles
 // closing migration objects associated with the handle.
-func Connect(opts Opts) (*sql.DB, func(err error) error, error) {
+func connect(opts Opts) (*sql.DB, func(err error) error, error) {
 	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
 		return nil, nil, err

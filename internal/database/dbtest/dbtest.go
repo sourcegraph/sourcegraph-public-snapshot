@@ -130,15 +130,17 @@ var templateOnce sync.Once
 // rather than running the full migration every time.
 func initTemplateDB(t testing.TB, config *url.URL) {
 	templateOnce.Do(func() {
-		templateName := templateDBName()
 		db := dbConn(t, config)
+		defer db.Close()
+
+		templateName := templateDBName()
+
 		// We must first drop the template database because
 		// migrations would not run on it if they had already ran,
 		// even if the content of the migrations had changed during development.
 		name := pq.QuoteIdentifier(templateName)
 		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
 		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
-		defer db.Close()
 
 		cfgCopy := *config
 		cfgCopy.Path = "/" + templateName
@@ -146,7 +148,7 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 			dbconn.Frontend,
 			dbconn.CodeIntel,
 		})
-		defer close(nil)
+		close(nil)
 	})
 }
 
@@ -173,7 +175,7 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 
 func dbConnInternal(t testing.TB, cfg *url.URL, databases []*dbconn.Database) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, close, err := dbconn.Connect(dbconn.Opts{DSN: cfg.String(), DatabasesToMigrate: databases})
+	db, close, err := dbconn.ConnectRaw(cfg.String(), databases...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}

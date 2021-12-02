@@ -155,10 +155,7 @@ func initTest() error {
 		}
 	}
 
-	sqlDB, _, err := dbconn.Connect(dbconn.Opts{DSN: "dbname=" + dbname, DBName: dbname, AppName: "tests", DatabasesToMigrate: []*dbconn.Database{
-		dbconn.Frontend,
-		dbconn.CodeIntel,
-	}})
+	sqlDB, _, err := dbconn.ConnectRaw("dbname="+dbname, dbconn.Frontend, dbconn.CodeIntel)
 	if err != nil {
 		return err
 	}
