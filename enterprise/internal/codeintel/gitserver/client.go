@@ -305,17 +305,25 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 		return nil, err
 	}
 
-	id, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{})
-	if err != nil {
-		return nil, errors.Wrap(err, "git.ResolveRevision")
+	out, err := git.ReadFile(ctx, repo, api.CommitID(commit), file, 0)
+	if err == nil {
+		return out, nil
 	}
 
-	out, err := git.ReadFile(ctx, repo, id, file, 0)
-	if err != nil {
-		return nil, err
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
+		}
 	}
 
-	return out, err
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "gitserver.ReadFile")
 }
 
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
