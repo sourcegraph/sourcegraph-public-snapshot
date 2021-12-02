@@ -60,7 +60,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
               >
                 beta
               </span>
-              Search across all your public and private repositories
+               Search across all your public and private repositories
             </div>
           </li>
           <li>

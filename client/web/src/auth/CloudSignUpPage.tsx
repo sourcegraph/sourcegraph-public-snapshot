@@ -162,8 +162,8 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                     <ul className={styles.featureList}>
                         <li>
                             <div className="d-flex align-items-center">
-                                <ProductStatusBadge status="beta" className="text-uppercase mr-1" />
-                                Search across all your public and private repositories
+                                <ProductStatusBadge status="beta" className="text-uppercase mr-1" /> Search across all
+                                your public and private repositories
                             </div>
                         </li>
                         <li>Monitor code for changes</li>
