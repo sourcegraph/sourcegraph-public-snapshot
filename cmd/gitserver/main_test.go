@@ -6,15 +6,11 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-
-	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestParsePercent(t *testing.T) {
