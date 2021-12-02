@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -55,7 +54,7 @@ func (r *Resolver) checkLicense() error {
 	return nil
 }
 
-func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
+func NewResolver(db database.DB, clock func() time.Time) graphqlbackend.AuthzResolver {
 	return &Resolver{
 		store:             edb.Perms(db, clock),
 		repoupdaterClient: repoupdater.DefaultClient,
@@ -269,7 +268,7 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 	}
 
 	return &repositoryConnectionResolver{
-		db:    r.store.Handle().DB(),
+		db:    database.NewDB(r.store.Handle().DB()),
 		ids:   ids,
 		first: args.First,
 		after: args.After,
@@ -314,7 +313,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}
 
 	return &userConnectionResolver{
-		db:    r.store.Handle().DB(),
+		db:    database.NewDB(r.store.Handle().DB()),
 		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,

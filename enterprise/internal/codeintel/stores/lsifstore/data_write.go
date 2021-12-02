@@ -303,6 +303,6 @@ ON CONFLICT DO NOTHING
 // the maximum number of CPUs that can be executing simultaneously.
 func withBatchInserter(ctx context.Context, db dbutil.DB, tableName string, columns []string, f func(inserter *batch.Inserter) error) (err error) {
 	return goroutine.RunWorkers(goroutine.SimplePoolWorker(func() error {
-		return batch.WithInserter(ctx, db, tableName, columns, f)
+		return batch.WithInserter(ctx, db, tableName, batch.MaxNumPostgresParameters, columns, f)
 	}))
 }

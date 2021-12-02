@@ -3,7 +3,7 @@
 // application of this library is not recommended at this point.
 // It is used here because it solves a very real performance issue
 // (see https://github.com/sourcegraph/sourcegraph/issues/21200).
-import { StateCreator } from 'zustand'
+import create from 'zustand'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -81,7 +81,7 @@ export interface NavbarQueryState {
     submitSearch: (parameters: Omit<SubmitSearchParameters, 'query'>, updates?: QueryUpdate[]) => void
 }
 
-export const createNavbarQueryStateStore: StateCreator<NavbarQueryState> = (set, get) => ({
+export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
     setQueryState: queryStateUpdate => {
         if (typeof queryStateUpdate === 'function') {
@@ -96,4 +96,4 @@ export const createNavbarQueryStateStore: StateCreator<NavbarQueryState> = (set,
             submitSearch({ ...parameters, query })
         }
     },
-})
+}))

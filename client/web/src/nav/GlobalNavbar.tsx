@@ -50,7 +50,7 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useGlobalStore } from '../stores/global'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -147,7 +147,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         )
     )
 
-    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in

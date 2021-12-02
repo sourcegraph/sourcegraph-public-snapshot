@@ -14,7 +14,7 @@ import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHel
 
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
-import { ThemePreference } from '../../theme'
+import { ThemePreference } from '../../stores/themeState'
 import { _fetchRecentFileViews, _fetchRecentSearches, _fetchSavedSearches, authUser } from '../panels/utils'
 
 import { SearchPage, SearchPageProps } from './SearchPage'

@@ -340,7 +340,11 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Vers
 	v3Client := NewV3Client(c.apiURL, c.auth, c.httpClient)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "fetchGitHubVersion", "apiURL", c.apiURL, "err", err)
+		log15.Warn("Failed to fetch GitHub enterprise version",
+			"method", "fetchGitHubVersion",
+			"apiURL", c.apiURL,
+			"err", err,
+		)
 		return
 	}
 

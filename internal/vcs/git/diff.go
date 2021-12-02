@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 type DiffOptions struct {
@@ -82,6 +83,13 @@ func DiffPath(ctx context.Context, repo api.RepoName, sourceCommit, targetCommit
 		return nil, err
 	}
 	return d.Hunks, nil
+}
+
+// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
+func DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
+	command := gitserver.DefaultClient.Command("git", "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
+	command.Repo = repo
+	return command.Output(ctx)
 }
 
 type DiffFileIterator struct {

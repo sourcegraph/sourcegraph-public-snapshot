@@ -11,14 +11,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestGetDumpsByIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// Dumps do not exist initially
@@ -86,10 +83,7 @@ func TestGetDumpsByIDs(t *testing.T) {
 }
 
 func TestFindClosestDumps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -154,10 +148,7 @@ func TestFindClosestDumps(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -216,10 +207,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 }
 
 func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -271,10 +259,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 }
 
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -323,10 +308,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -405,10 +387,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 }
 
 func TestFindClosestDumpsIndexerName(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -484,10 +463,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 }
 
 func TestFindClosestDumpsIntersectingPath(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -530,10 +506,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 }
 
 func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	// This database has the following commit graph:
@@ -700,10 +673,7 @@ func testPresence(needle int, haystack []int) bool {
 }
 
 func TestDeleteOverlappingDumps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{
@@ -727,10 +697,7 @@ func TestDeleteOverlappingDumps(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{
@@ -766,10 +733,7 @@ func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
 }
 
 func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db, Upload{

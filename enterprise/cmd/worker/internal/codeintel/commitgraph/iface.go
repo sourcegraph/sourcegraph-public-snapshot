@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type DBStore interface {
@@ -14,7 +15,7 @@ type DBStore interface {
 		ctx context.Context,
 		repositoryID int,
 		graph *gitserver.CommitGraph,
-		refDescriptions map[string][]gitserver.RefDescription,
+		refDescriptions map[string][]gitdomain.RefDescription,
 		maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration,
 		dirtyToken int,
 		now time.Time,
@@ -27,6 +28,6 @@ type Locker interface {
 }
 
 type GitserverClient interface {
-	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitserver.RefDescription, error)
+	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitdomain.RefDescription, error)
 	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
 }

@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -212,7 +211,7 @@ func handleSignUp(db database.DB, w http.ResponseWriter, r *http.Request, failIf
 	}
 }
 
-func getByEmailOrUsername(ctx context.Context, db dbutil.DB, emailOrUsername string) (*types.User, error) {
+func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
 		return database.Users(db).GetByVerifiedEmail(ctx, emailOrUsername)
 	}
@@ -300,7 +299,7 @@ func logSignInEvent(r *http.Request, db database.DB, usr *types.User, name *data
 }
 
 // HandleCheckUsernameTaken checks availability of username for signup form
-func HandleCheckUsernameTaken(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
+func HandleCheckUsernameTaken(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := auth.NormalizeUsername(vars["username"])
