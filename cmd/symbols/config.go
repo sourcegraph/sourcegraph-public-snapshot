@@ -20,6 +20,7 @@ type Config struct {
 	cacheDir          string
 	cacheSizeMB       int
 	numCtagsProcesses int
+	requestBufferSize int
 }
 
 var config = &Config{}
@@ -35,4 +36,5 @@ func (c *Config) Load() {
 	c.cacheDir = c.Get("CACHE_DIR", "/tmp/symbols-cache", "directory in which to store cached symbols")
 	c.cacheSizeMB = c.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)")
 	c.numCtagsProcesses = c.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run")
+	c.requestBufferSize = c.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel")
 }
