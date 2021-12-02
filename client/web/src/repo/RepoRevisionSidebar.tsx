@@ -46,6 +46,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         })
         setToggleSidebar(!toggleSidebar)
     }, [setToggleSidebar, toggleSidebar, props.telemetryService])
+    const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
+        props.telemetryService,
+    ])
 
     if (!toggleSidebar) {
         return (
@@ -111,6 +114,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
                                             extensionsController={props.extensionsController}
                                             isLightTheme={props.isLightTheme}
+                                            telemetryService={props.telemetryService}
                                         />
                                     )}
                                 </TabPanel>
@@ -121,6 +125,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             repoID={props.repoID}
                                             revision={props.revision}
                                             activePath={props.filePath}
+                                            onHandleSymbolClick={handleSymbolClick}
                                         />
                                     )}
                                 </TabPanel>
