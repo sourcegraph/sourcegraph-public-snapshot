@@ -155,7 +155,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             getDocumentHighlights: hoveredToken =>
                 getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.onHandleDiffMode = this.onHandleDiffMode.bind(this)

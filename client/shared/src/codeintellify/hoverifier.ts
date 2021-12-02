@@ -14,7 +14,6 @@ import {
     Subscribable,
     SubscribableOrPromise,
     Subscription,
-    zip,
     race,
     MonoTypeOperatorFunction,
 } from 'rxjs'
@@ -49,7 +48,6 @@ import {
     convertNode,
     DiffPart,
     DOMFunctions,
-    findElementWithOffset,
     getCodeElementsInRange,
     getTokenAtPositionOrRange,
     HoveredToken,
@@ -102,11 +100,6 @@ export interface HoverifierOptions<C extends object, D, A> {
      * Called to get the actions to display in the hover.
      */
     getActions: ActionsProvider<C, A>
-
-    /**
-     * Whether or not hover tooltips can be pinned.
-     */
-    pinningEnabled: boolean
 
     /**
      * Whether or not code views need to be tokenized. Defaults to true.
@@ -417,7 +410,6 @@ export function createHoverifier<C extends object, D, A>({
     getHover,
     getDocumentHighlights,
     getActions,
-    pinningEnabled,
     tokenize = true,
     selectionHighlightClassName = defaultSelectionHighlightClassName,
     documentHighlightClassName = defaultDocumentHighlightClassName,
@@ -463,7 +455,6 @@ export function createHoverifier<C extends object, D, A>({
     ): event is MouseEventTrigger & { eventType: T } => event.eventType === type
     const allCodeMouseMoves = allPositionsFromEvents.pipe(filter(isEventType('mousemove')), suppressWhileOverlayShown())
     const allCodeMouseOvers = allPositionsFromEvents.pipe(filter(isEventType('mouseover')), suppressWhileOverlayShown())
-    const allCodeClicks = allPositionsFromEvents.pipe(filter(isEventType('click')))
 
     const allPositionJumps = new Subject<PositionJump & EventOptions<C>>()
 
@@ -474,17 +465,6 @@ export function createHoverifier<C extends object, D, A>({
     const allUnhoverifies = new Subject<symbol>()
 
     const subscription = new Subscription()
-
-    /**
-     * click events on the code element, ignoring click events caused by the user selecting text.
-     * Selecting text should not mess with the hover, hover pinning nor the URL.
-     */
-    const codeClicksWithoutSelections = allCodeClicks.pipe(
-        filter(() => {
-            const selection = window.getSelection()
-            return selection === null || selection.toString() === ''
-        })
-    )
 
     // Mouse is moving, don't show the tooltip
     subscription.add(
@@ -539,82 +519,6 @@ export function createHoverifier<C extends object, D, A>({
         share()
     )
 
-    const codeClickTargets = codeClicksWithoutSelections.pipe(
-        filter(({ event }) => event.currentTarget !== null),
-        map(({ event, ...rest }) => ({
-            target: event.target as HTMLElement,
-            ...rest,
-        })),
-        switchMap(({ adjustPosition, codeView, resolveContext, position, ...rest }) =>
-            adjustPosition && position
-                ? from(
-                      adjustPosition({
-                          codeView,
-                          position: { ...position, ...resolveContext(position) },
-                          direction: AdjustmentDirection.CodeViewToActual,
-                      })
-                  ).pipe(
-                      map(({ line, character }) => ({
-                          codeView,
-                          resolveContext,
-                          position: { ...position, line, character },
-                          adjustPosition,
-                          ...rest,
-                      }))
-                  )
-                : of({ adjustPosition, codeView, resolveContext, position, ...rest })
-        ),
-        share()
-    )
-
-    /**
-     * Emits DOM elements at new positions found in the URL. When pinning is
-     * disabled, this does not emit at all because the tooltip doesn't get
-     * pinned at the jump target.
-     */
-    const jumpTargets = pinningEnabled
-        ? allPositionJumps.pipe(
-              // Only use line and character for comparison
-              map(({ position: { line, character, part }, ...rest }) => ({
-                  position: { line, character, part },
-                  ...rest,
-              })),
-              // Ignore same values
-              // It's important to do this before filtering otherwise navigating from
-              // a position, to a line-only position, back to the first position would get ignored
-              distinctUntilChanged((a, b) => isEqual(a, b)),
-              map(({ position, codeView, dom, overrideTokenize, ...rest }) => {
-                  let cell: HTMLElement | null
-                  let target: HTMLElement | undefined
-                  let part: DiffPart | undefined
-                  if (isPosition(position)) {
-                      cell = dom.getCodeElementFromLineNumber(codeView, position.line, position.part)
-                      if (cell) {
-                          target = findElementWithOffset(
-                              cell,
-                              { offsetStart: position.character },
-                              shouldTokenize({ tokenize, overrideTokenize })
-                          )
-                          if (target) {
-                              part = dom.getDiffCodePart?.(target)
-                          } else {
-                              console.warn('Could not find target for position in file', position)
-                          }
-                      }
-                  }
-                  return {
-                      ...rest,
-                      eventType: 'jump' as const,
-                      target,
-                      position: { ...position, part },
-                      codeView,
-                      dom,
-                      overrideTokenize,
-                  }
-              })
-          )
-        : EMPTY
-
     // REPOSITIONING
     // On every componentDidUpdate (after the component was rerendered, e.g. from a hover state update) resposition
     // the tooltip
@@ -625,7 +529,7 @@ export function createHoverifier<C extends object, D, A>({
         from(hoverOverlayRerenders)
             .pipe(
                 // with the latest target that came from either a mouseover, click or location change (whatever was the most recent)
-                withLatestFrom(merge(codeMouseOverTargets, codeClickTargets, jumpTargets)),
+                withLatestFrom(merge(codeMouseOverTargets)),
                 map(
                     ([
                         { hoverOverlayElement, relativeElement },
@@ -687,7 +591,7 @@ export function createHoverifier<C extends object, D, A>({
     )
 
     /** Emits new positions including context at which a tooltip needs to be shown from clicks, mouseovers and URL changes. */
-    const resolvedPositionEvents = merge(codeMouseOverTargets, jumpTargets, codeClickTargets).pipe(
+    const resolvedPositionEvents = merge(codeMouseOverTargets).pipe(
         map(({ position, resolveContext, eventType, ...rest }) => ({
             ...rest,
             eventType,
@@ -1060,48 +964,6 @@ export function createHoverifier<C extends object, D, A>({
                 container.update({ actionsOrError })
             })
     )
-
-    if (pinningEnabled) {
-        // DEFERRED HOVER OVERLAY PINNING
-        // If the new position came from a click or the URL,
-        // and either the hover or the definition turn out non-empty, pin the tooltip.
-        // If they both turn out empty, unpin it so we don't end up with an invisible tooltip.
-        //
-        // zip together the corresponding hover and definition
-        subscription.add(
-            combineLatest([
-                zip(hoverObservables, actionObservables),
-                resolvedPositionEvents.pipe(map(({ eventType }) => eventType)),
-            ])
-                .pipe(
-                    switchMap(([[hoverObservable, actionObservable], eventType]) => {
-                        // If the position was triggered by a mouseover, never pin
-                        if (eventType !== 'click' && eventType !== 'jump') {
-                            return [false]
-                        }
-                        // combine the latest values for them, so we have access to both values
-                        // and can reevaluate our pinning decision whenever one of the two updates,
-                        // independent of the order in which they emit
-                        return combineLatest([hoverObservable, actionObservable]).pipe(
-                            map(([{ hoverOrError }, actionsOrError]) =>
-                                // In the time between the click/jump and the loader being displayed,
-                                // pin the hover overlay so mouseover events get ignored
-                                // If the hover comes back empty (and the definition) it will get unpinned again
-                                Boolean(
-                                    hoverOrError === undefined ||
-                                        (actionsOrError &&
-                                            !(Array.isArray(actionsOrError) && actionsOrError.length === 0) &&
-                                            !isErrorLike(actionsOrError))
-                                )
-                            )
-                        )
-                    })
-                )
-                .subscribe(hoverOverlayIsFixed => {
-                    container.update({ hoverOverlayIsFixed })
-                })
-        )
-    }
 
     const resetHover = (): void => {
         container.update({

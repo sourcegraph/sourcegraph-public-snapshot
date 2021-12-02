@@ -131,7 +131,6 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             getDocumentHighlights: hoveredToken =>
                 getDocumentHighlights(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
-            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState

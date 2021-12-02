@@ -172,7 +172,4 @@ export const bitbucketCloudCodeHost: CodeHost = {
     },
     notificationClassNames: { 1: '', 2: '', 3: '', 4: '', 5: '' },
     codeViewsRequireTokenization: true,
-    // Virtualized code views make pinned hovers seemingly "float", since they're attached the the same line
-    // element whose content changes on scroll.
-    pinningEnabled: false,
 }

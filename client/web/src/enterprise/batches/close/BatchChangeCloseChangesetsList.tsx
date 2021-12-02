@@ -124,7 +124,6 @@ export const BatchChangeCloseChangesetsList: React.FunctionComponent<Props> = ({
                 getDocumentHighlights: hoveredToken =>
                     getDocumentHighlights(getLSPTextDocumentPositionParameters(hoveredToken), { extensionsController }),
                 getActions: context => getHoverActions({ extensionsController, platformContext }, context),
-                pinningEnabled: true,
             }),
         [
             closeButtonClicks,

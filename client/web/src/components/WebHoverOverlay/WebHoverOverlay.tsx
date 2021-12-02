@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
+import { urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HoverOverlay, HoverOverlayProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -19,7 +20,9 @@ const iconKindToAlertKind = {
 const getAlertClassName: HoverOverlayProps['getAlertClassName'] = iconKind =>
     `alert alert-${iconKindToAlertKind[iconKind]}`
 
-export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverThresholdProps> = props => {
+export const WebHoverOverlay: React.FunctionComponent<
+    HoverOverlayProps & HoverThresholdProps & { hoveredTokenElement?: HTMLElement; nav?: (url: string) => void }
+> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {
@@ -49,6 +52,44 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps & HoverT
             onHoverShown?.()
         }
     }, [hoveredToken?.filePath, hoveredToken?.line, hoveredToken?.character, onHoverShown, hoverHasValue])
+
+    const def = (() => {
+        const action =
+            Array.isArray(props.actionsOrError) &&
+            props.actionsOrError.find(a => a.action.id === 'goToDefinition.preloaded')
+        if (!action) {
+            return undefined
+        }
+        return urlForClientCommandOpen(action.action, props.location)
+    })()
+
+    const nav = props.nav
+
+    useEffect(() => {
+        const token = props.hoveredTokenElement
+        if (!token || !def || !nav) {
+            return
+        }
+
+        const oldCursor = token.style.cursor
+        token.style.cursor = 'pointer'
+
+        const listener = (): void => {
+            const selection = window.getSelection()
+            if (selection !== null && selection.toString() !== '') {
+                return
+            }
+
+            nav(def)
+        }
+
+        token.addEventListener('click', listener)
+
+        return () => {
+            token.removeEventListener('click', listener)
+            token.style.cursor = oldCursor
+        }
+    }, [props.hoveredTokenElement, def, nav])
 
     return (
         <HoverOverlay

@@ -58,23 +58,6 @@ export const findPositionsFromEvents = ({
                     convertCodeElementIdempotent(code)
                 }
             })
-        ),
-        from(elements).pipe(
-            switchMap(element => fromEvent<MouseEvent>(element, 'click')),
-            map(event => ({ event, eventType: 'click' as const })),
-            // ignore click events caused by the user selecting text.
-            // Selecting text should not mess with the hover, hover pinning nor the URL.
-            filter(() => {
-                const selection = window.getSelection()
-                return selection === null || selection.toString() === ''
-            }),
-            filter(({ event }) => event.currentTarget !== null),
-            map(({ event, ...rest }) => ({
-                event,
-                target: event.target as HTMLElement,
-                codeView: event.currentTarget as HTMLElement,
-                ...rest,
-            }))
         )
     ).pipe(
         // Find out the position that was hovered over
