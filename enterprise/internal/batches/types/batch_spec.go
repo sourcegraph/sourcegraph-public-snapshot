@@ -122,6 +122,12 @@ func (s BatchSpecState) Finished() bool {
 		s == BatchSpecStateCanceled
 }
 
+// FinishedUncanceled returns whether the execution of the BatchSpec ran
+// through and finished without being canceled.
+func (s BatchSpecState) FinishedUncanceled() bool {
+	return s == BatchSpecStateCompleted || s == BatchSpecStateFailed
+}
+
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.
 func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
 	if !spec.CreatedFromRaw {

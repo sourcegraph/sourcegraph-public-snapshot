@@ -391,7 +391,6 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.ApplyURL = &applyUrl
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
-	want.ApplyURL = nil
 
 	// 1/3 jobs is failed, 2/3 completed
 	message1 := "failure message"
@@ -399,7 +398,11 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobFailed(t, ctx, bstore, jobs[1])
 	want.State = "FAILED"
 	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
+	// We still want an applyURL
+	want.ApplyURL = &applyUrl
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	want.ApplyURL = nil
 
 	// 1/3 jobs is failed, 2/3 still processing
 	setJobProcessing(t, ctx, bstore, jobs[0])

@@ -534,7 +534,7 @@ func (r *batchSpecResolver) finishedExecutionWithoutValidationErrors(ctx context
 		return false
 	}
 
-	if state != btypes.BatchSpecStateCompleted && state != btypes.BatchSpecStateFailed {
+	if !state.FinishedUncanceled() {
 		return false
 	}
 
