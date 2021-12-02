@@ -175,7 +175,7 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 
 func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*dbconn.Schema) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, close, err := dbconn.ConnectRawClownTown(cfg.String(), schemas...)
+	db, close, err := dbconn.ConnectRawForTestDatabase(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
