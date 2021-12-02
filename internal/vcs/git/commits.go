@@ -536,3 +536,37 @@ func parseRefDescriptions(lines []string) (map[string][]gitdomain.RefDescription
 
 	return refDescriptions, nil
 }
+
+// CommitDate returns the time that the given commit was committed. If the given
+// revision does not exist, a false-valued flag is returned along with a nil
+// error and zero-valued time.
+func CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
+	cmd := gitserver.DefaultClient.Command("git", "show", "-s", "--format=%H:%cI", string(commit))
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			err = nil
+		}
+		return "", time.Time{}, false, err
+	}
+	outs := string(out)
+
+	line := strings.TrimSpace(outs)
+	if line == "" {
+		return "", time.Time{}, false, nil
+	}
+
+	parts := strings.SplitN(line, ":", 2)
+	if len(parts) != 2 {
+		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
+	}
+
+	duration, err := time.Parse(time.RFC3339, parts[1])
+	if err != nil {
+		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
+	}
+
+	return parts[0], duration, true, nil
+}
