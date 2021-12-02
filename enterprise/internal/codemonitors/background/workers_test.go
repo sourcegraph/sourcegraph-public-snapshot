@@ -60,7 +60,7 @@ func TestActionRunner(t *testing.T) {
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			_, query, err := ts.InsertTestMonitor(userCtx, t)
+			monitor, query, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
 			triggerJobs, err := ts.EnqueueQueryTriggerJobs(ctx)
@@ -85,7 +85,7 @@ func TestActionRunner(t *testing.T) {
 				Priority:       "New",
 				SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
 				Description:    "test description",
-				CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
+				CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", monitor.ID)) + "?utm_source=code-monitoring-email",
 			}
 
 			want.NumberOfResultsWithDetail = tt.wantNumResultsText
