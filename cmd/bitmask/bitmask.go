@@ -13,61 +13,46 @@ import (
 
 var cache = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
 var estimate = 0.01
+var query = "COM"
 
-func main() {
-	createCache()
-	queryCache()
-
-}
-
-type TrigramIndexes struct {
-	Indexes []TrigramIndex
-}
 type TrigramIndex struct {
-	Path   string
-	Filter []byte
-	Size   uint
-}
-type DecodedTrigramIndex struct {
 	Filter *bloom.BloomFilter
 	Path   string
 }
 
-func queryCache() {
-	indexes := readCache()
-	query := []byte("Pag")
+func QueryCache() {
+	indexes := ReadCache()
+	fmt.Printf("INDEXES %v\n", len(indexes))
 	for _, index := range indexes {
-		if index.Filter.Test(query) {
-			fmt.Println(index.Path)
+		if index.Filter != nil {
+			if index.Filter.TestString(query) {
+				fmt.Printf("path %v\n", index.Path)
+			}
 		}
 	}
 }
 
-func readCache() []DecodedTrigramIndex {
+func ReadCache() []TrigramIndex {
 	file, err := os.Open(cache)
 	if err != nil {
+		fmt.Printf("err %v\n", err)
 		panic(err)
 	}
 	decoder := gob.NewDecoder(file)
-	indexes := TrigramIndexes{}
+	var indexes []TrigramIndex
 	err = decoder.Decode(&indexes)
 	if err != nil {
 		panic(err)
 	}
-	result := make([]DecodedTrigramIndex, len(indexes.Indexes))
-	for _, index := range indexes.Indexes {
-		filter := bloom.NewWithEstimates(index.Size, estimate)
-		result = append(result, DecodedTrigramIndex{Filter: filter, Path: index.Path})
-	}
-	return result
+	return indexes
 }
 
-func createCache() {
+func WriteCache() {
 	//path := os.Getenv("HOME") + "/dev/sgtest/megarepo"
-	dir := os.Getenv("HOME") + "/dev/sourcegraph/sourcegraph"
+	dir := os.Getenv("HOME") + "/dev/sgtest/megarepo"
 	//fmt.Println(path)
 
-	cmd := exec.Command("git", "ls-files", "-z")
+	cmd := exec.Command("git", "ls-files", "-z", "--with-tree=main")
 	cmd.Dir = dir
 	var out bytes.Buffer
 	cmd.Stdout = &out
@@ -80,16 +65,23 @@ func createCache() {
 	NUL := string([]byte{0})
 	lines := strings.Split(stdout, NUL)
 	indexes := make([]TrigramIndex, len(lines))
+	trigrams := make(map[string]struct{})
 	for i, line := range lines {
-		if i > 10 {
-			break
+		if i%100 == 0 {
+			fmt.Println(i)
 		}
 		abspath := path.Join(dir, line)
+		stat, err := os.Stat(abspath)
+		if err != nil {
+			panic(err)
+		}
+		if stat.Size() > 1_000_000 {
+			continue
+		}
 		textBytes, _ := os.ReadFile(abspath)
 		text := string(textBytes)
-		trigrams := make(map[string]struct{})
 		for i = 0; i < len(text)-3; i++ {
-			trigram := text[i : i+2]
+			trigram := text[i : i+3]
 			trigrams[trigram] = struct{}{}
 		}
 		size := len(trigrams)
@@ -97,31 +89,29 @@ func createCache() {
 		for trigram, _ := range trigrams {
 			filter.AddString(trigram)
 		}
-		cacheOut := path.Join(cache, line)
-		var buf bytes.Buffer
-		_, err = filter.WriteTo(&buf)
 		indexes = append(
 			indexes,
 			TrigramIndex{
 				Path:   line,
-				Filter: buf.Bytes(),
-				Size:   uint(size),
+				Filter: filter,
 			},
 		)
-		fmt.Println(cacheOut)
 	}
 	_ = os.Remove(cache)
 	cacheOut, err := os.Create(cache)
 	if err != nil {
 		panic(err)
 	}
-	err = cacheOut.Close()
 	if err != nil {
 		panic(err)
 	}
 	encoder := gob.NewEncoder(cacheOut)
-	_ = encoder.Encode(TrigramIndexes{Indexes: indexes})
-	fmt.Printf("out: %v", cache)
+	err = encoder.Encode(indexes)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("out: %v\n", cache)
+	err = cacheOut.Close()
 	//fmt.Println("Hello world!")
 	//filter := bloom.NewWithEstimates(1000, 0.1)
 	//filter.Add([]byte("Love"))
