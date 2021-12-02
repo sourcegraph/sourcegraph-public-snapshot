@@ -5,11 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -95,26 +92,44 @@ func (s *codeMonitorStore) DeleteOldTriggerJobs(ctx context.Context, retentionIn
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteOldJobLogsFmtStr, retentionInDays))
 }
 
+type ListTriggerJobsOpts struct {
+	QueryID *int64
+	First   *int
+	After   *int64
+}
+
+func (o ListTriggerJobsOpts) Conds() *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("true")}
+	if o.QueryID != nil {
+		conds = append(conds, sqlf.Sprintf("query = %s", *o.QueryID))
+	}
+	if o.After != nil {
+		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+	}
+	return sqlf.Join(conds, "AND")
+}
+
+func (o ListTriggerJobsOpts) Limit() *sqlf.Query {
+	if o.First == nil {
+		return sqlf.Sprintf("ALL")
+	}
+	return sqlf.Sprintf("%s", *o.First)
+}
+
 const getEventsForQueryIDInt64FmtStr = `
 SELECT id, query, query_string, results, num_results, state, failure_message, started_at, finished_at, process_after, num_resets, num_failures, log_contents
 FROM cm_trigger_jobs
 WHERE ((state = 'completed' AND results IS TRUE) OR (state != 'completed'))
-AND query = %s
-AND id > %s
+AND %s
 ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error) {
-	after, err := unmarshalAfter(args.After)
-	if err != nil {
-		return nil, err
-	}
+func (s *codeMonitorStore) ListQueryTriggerJobs(ctx context.Context, opts ListTriggerJobsOpts) ([]*TriggerJob, error) {
 	q := sqlf.Sprintf(
 		getEventsForQueryIDInt64FmtStr,
-		queryID,
-		after,
-		args.First,
+		opts.Conds(),
+		opts.Limit(),
 	)
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
@@ -198,14 +213,4 @@ var TriggerJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_trigger_jobs.num_resets"),
 	sqlf.Sprintf("cm_trigger_jobs.num_failures"),
 	sqlf.Sprintf("cm_trigger_jobs.log_contents"),
-}
-
-func unmarshalAfter(after *string) (int, error) {
-	if after == nil {
-		return 0, nil
-	}
-
-	var a int
-	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-	return a, err
 }

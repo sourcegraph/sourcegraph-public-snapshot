@@ -169,8 +169,9 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
+- Explore the data returned by the query in the dashboard panel and filter by different labels to identify any patterns
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#frontend-page-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
@@ -534,7 +535,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 <br />
 
-## frontend: internal_api_error_responses
+## frontend: internalapi_error_responses
 
 <p class="subtitle">internal API error responses every 5m by route</p>
 
@@ -545,12 +546,12 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 **Possible solutions**
 
 - May not be a substantial issue, check the `frontend` logs for potential causes.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internal-api-error-responses).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-internalapi-error-responses).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
 ```json
 "observability.silenceAlerts": [
-  "warning_frontend_internal_api_error_responses"
+  "warning_frontend_internalapi_error_responses"
 ]
 ```
 
@@ -649,6 +650,32 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```
 
 <sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<br />
+
+## frontend: cloudkms_cryptographic_requests
+
+<p class="subtitle">cryptographic requests to Cloud KMS every 1m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> frontend: 15000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+- <span class="badge badge-critical">critical</span> frontend: 30000+ cryptographic requests to Cloud KMS every 1m for 5m0s
+
+**Possible solutions**
+
+- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-cloudkms-cryptographic-requests).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_frontend_cloudkms_cryptographic_requests",
+  "critical_frontend_cloudkms_cryptographic_requests"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <br />
 
@@ -2124,255 +2151,6 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 ```
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<br />
-
-## query-runner: frontend_internal_api_error_responses
-
-<p class="subtitle">frontend-internal API error responses every 5m by route</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 2%+ frontend-internal API error responses every 5m by route for 5m0s
-
-**Possible solutions**
-
-- **Single-container deployments:** Check `docker logs $CONTAINER_ID` for logs starting with `repo-updater` that indicate requests to the frontend service are failing.
-- **Kubernetes:**
-	- Confirm that `kubectl get pods` shows the `frontend` pods are healthy.
-	- Check `kubectl logs query-runner` for logs indicate request failures to `frontend` or `frontend-internal`.
-- **Docker Compose:**
-	- Confirm that `docker ps` shows the `frontend-internal` container is healthy.
-	- Check `docker logs query-runner` for logs indicating request failures to `frontend` or `frontend-internal`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-frontend-internal-api-error-responses).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_frontend_internal_api_error_responses"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: container_cpu_usage
-
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 99%+ container cpu usage total (1m average) across all cores by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-container-cpu-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_container_cpu_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 99%+ container memory usage by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-container-memory-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the query-runner service.
-- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the query-runner service.
-- **Docker Compose:** Consider increasing `memory:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-cpu-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 90%+ container memory usage (5m maximum) by instance
-
-**Possible solutions**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of query-runner container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-provisioning-container-memory-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_provisioning_container_memory_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: go_goroutines
-
-<p class="subtitle">maximum active goroutines</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 10000+ maximum active goroutines for 10m0s
-
-**Possible solutions**
-
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#query-runner-go-goroutines).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_go_goroutines"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: go_gc_duration_seconds
-
-<p class="subtitle">maximum go garbage collection duration</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> query-runner: 2s+ maximum go garbage collection duration
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-go-gc-duration-seconds).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_query-runner_go_gc_duration_seconds"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
-
-<br />
-
-## query-runner: pods_available_percentage
-
-<p class="subtitle">percentage pods available</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> query-runner: less than 90% percentage pods available for 10m0s
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#query-runner-pods-available-percentage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_query-runner_pods_available_percentage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <br />
 
@@ -4364,52 +4142,6 @@ with your code hosts connections or networking issues affecting communication wi
 ```
 
 <sub>*Managed by the [Sourcegraph Search-core team](https://handbook.sourcegraph.com/engineering/search/core).*</sub>
-
-<br />
-
-## symbols: store_fetch_failures
-
-<p class="subtitle">store fetch failures every 5m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 5+ store fetch failures every 5m
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-store-fetch-failures).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_store_fetch_failures"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<br />
-
-## symbols: current_fetch_queue_size
-
-<p class="subtitle">current fetch queue size</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> symbols: 25+ current fetch queue size
-
-**Possible solutions**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-current-fetch-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_symbols_current_fetch_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <br />
 

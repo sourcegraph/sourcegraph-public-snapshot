@@ -20,9 +20,10 @@ import (
 // See https://github.com/hexops/autogold for more information.
 
 func TestWriteDocumentationUpload(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+
+	// Get a documentation page we can use to test writes to the DB.
+	tmpStore := populateTestStore(t)
+
 	ctx := context.Background()
 
 	// Enable API docs search, so WriteDocumentationSearch is tested.
@@ -35,8 +36,6 @@ func TestWriteDocumentationUpload(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	// Get a documentation page we can use to test writes to the DB.
-	tmpStore := populateTestStore(t)
 	page, err := tmpStore.DocumentationPage(ctx, testBundleID, "/github.com/sourcegraph/lsif-go/internal/index")
 	if err != nil {
 		t.Fatal(err)
@@ -73,7 +72,7 @@ func TestWriteDocumentationUpload(t *testing.T) {
 		documentationPages := make(chan *precise.DocumentationPageData, 1)
 		documentationPages <- page
 		close(documentationPages)
-		err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, repositoryNameID, languageNameID)
+		_, err = tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, repositoryNameID, languageNameID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -93,11 +92,7 @@ func TestWriteDocumentationUpload(t *testing.T) {
 }
 
 func TestWriteDocumentationPathInfo(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	ctx := context.Background()
-
 	db := dbtest.NewDB(t)
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
@@ -114,7 +109,7 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 	documentationPathInfo := make(chan *precise.DocumentationPathInfoData, 1)
 	documentationPathInfo <- pathInfo
 	close(documentationPathInfo)
-	err := store.WriteDocumentationPathInfo(ctx, testBundleID, documentationPathInfo)
+	_, err := store.WriteDocumentationPathInfo(ctx, testBundleID, documentationPathInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,11 +125,7 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 }
 
 func TestWriteDocumentationMappings(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	ctx := context.Background()
-
 	db := dbtest.NewDB(t)
 	store := NewStore(db, conf.DefaultClient(), &observation.TestContext)
 
@@ -149,7 +140,7 @@ func TestWriteDocumentationMappings(t *testing.T) {
 	documentationMappings := make(chan precise.DocumentationMapping, 1)
 	documentationMappings <- mapping
 	close(documentationMappings)
-	err := store.WriteDocumentationMappings(ctx, testBundleID, documentationMappings)
+	_, err := store.WriteDocumentationMappings(ctx, testBundleID, documentationMappings)
 	if err != nil {
 		t.Fatal(err)
 	}

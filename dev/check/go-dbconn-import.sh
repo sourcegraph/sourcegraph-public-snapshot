@@ -19,6 +19,8 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-
+  # Doesn't connect but uses db internals for use with sqlite
+  github.com/sourcegraph/sourcegraph/cmd/symbols
 )
 
 # Create regex ^(a|b|c)

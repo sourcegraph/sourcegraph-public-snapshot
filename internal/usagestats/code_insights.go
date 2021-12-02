@@ -10,8 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/lib/pq"
@@ -171,63 +169,53 @@ func GetTotalInsightCounts(ctx context.Context, db dbutil.DB) (types.InsightTota
 }
 
 func GetTimeStepCounts(ctx context.Context, db dbutil.DB) ([]types.InsightTimeIntervalPing, error) {
-	definedInsights, err := insights.GetSearchInsights(ctx, db, insights.All)
+	store := database.EventLogs(db)
+	name := InsightsIntervalCountsPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
 	if err != nil {
 		return []types.InsightTimeIntervalPing{}, err
+	} else if len(all) == 0 {
+		return []types.InsightTimeIntervalPing{}, nil
 	}
 
-	daysCounts := make(map[int]int)
-	for _, insight := range definedInsights {
-		days := convertStepToDays(insight)
-		daysCounts[days] += 1
+	latest := all[0]
+	var intervalCounts []types.InsightTimeIntervalPing
+	err = json.Unmarshal([]byte(latest.Argument), &intervalCounts)
+	if err != nil {
+		return []types.InsightTimeIntervalPing{}, errors.Wrap(err, "Unmarshal")
 	}
-
-	results := make([]types.InsightTimeIntervalPing, 0)
-	for interval, count := range daysCounts {
-		results = append(results, types.InsightTimeIntervalPing{
-			IntervalDays: interval,
-			TotalCount:   count,
-		})
-	}
-
-	return results, nil
-}
-
-// convertStepToDays converts the step interval defined in the insight settings to days, rounded down
-func convertStepToDays(insight insights.SearchInsight) int {
-	if insight.Step.Days != nil {
-		return *insight.Step.Days
-	} else if insight.Step.Hours != nil {
-		return 0
-	} else if insight.Step.Weeks != nil {
-		return *insight.Step.Weeks * 7
-	} else if insight.Step.Months != nil {
-		return *insight.Step.Months * 30
-	} else if insight.Step.Years != nil {
-		return *insight.Step.Years * 365
-	}
-
-	return 0
+	return intervalCounts, nil
 }
 
 func GetOrgInsightCounts(ctx context.Context, db dbutil.DB) ([]types.OrgVisibleInsightPing, error) {
-
-	definedInsights, err := insights.GetSearchInsights(ctx, db, insights.Org)
+	store := database.EventLogs(db)
+	name := InsightsOrgVisibleInsightsPingName
+	all, err := store.ListAll(ctx, database.EventLogsListOptions{
+		LimitOffset: &database.LimitOffset{
+			Limit:  1,
+			Offset: 0,
+		},
+		EventName: &name,
+	})
 	if err != nil {
 		return []types.OrgVisibleInsightPing{}, err
+	} else if len(all) == 0 {
+		return []types.OrgVisibleInsightPing{}, nil
 	}
 
-	search := types.OrgVisibleInsightPing{Type: "search"}
-	search.TotalCount = len(definedInsights)
-
-	langStatsInsights, err := insights.GetLangStatsInsights(ctx, db, insights.Org)
+	latest := all[0]
+	var orgVisibleInsightCounts []types.OrgVisibleInsightPing
+	err = json.Unmarshal([]byte(latest.Argument), &orgVisibleInsightCounts)
 	if err != nil {
-		return []types.OrgVisibleInsightPing{}, err
+		return []types.OrgVisibleInsightPing{}, errors.Wrap(err, "Unmarshal")
 	}
-	lang := types.OrgVisibleInsightPing{Type: "lang-stats"}
-	lang.TotalCount = len(langStatsInsights)
-
-	return []types.OrgVisibleInsightPing{search, lang}, nil
+	return orgVisibleInsightCounts, nil
 }
 
 func GetCreationViewUsage(ctx context.Context, db dbutil.DB, timeSupplier func() time.Time) ([]types.AggregatedPingStats, error) {
@@ -332,3 +320,5 @@ GROUP BY name;
 `
 
 const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
+const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
+const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`

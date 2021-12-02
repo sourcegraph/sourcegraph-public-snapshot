@@ -168,10 +168,13 @@ describe('Code insight create insight page', () => {
         )
 
         // Add first series query
-        await driver.page.type(
-            '[data-testid="series-form"]:nth-child(1) input[name="seriesQuery"]',
-            'test series #1 query'
-        )
+        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
+        await driver.replaceText({
+            selector: '[data-testid="series-form"]:nth-child(1) #monaco-query-input',
+            newText: 'test series #1 query',
+            enterTextMethod: 'type',
+            selectMethod: 'keyboard',
+        })
 
         // Pick first series color
         await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
@@ -186,10 +189,13 @@ describe('Code insight create insight page', () => {
         )
 
         // Add second series query
-        await driver.page.type(
-            '[data-testid="series-form"]:nth-child(2) input[name="seriesQuery"]',
-            'test series #2 query'
-        )
+        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
+        await driver.replaceText({
+            selector: '[data-testid="series-form"]:nth-child(2) #monaco-query-input',
+            newText: 'test series #2 query',
+            enterTextMethod: 'type',
+            selectMethod: 'keyboard',
+        })
 
         // With two filled data series our mock for live preview should work - render line chart with two lines
         await driver.page.waitForSelector('[data-testid="line-chart__content"] svg circle')

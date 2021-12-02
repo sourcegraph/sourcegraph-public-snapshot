@@ -35,9 +35,14 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 var versionRe = lazyregexp.New(`\b12\.\d+\b`)
 
-var databases = map[*dbconn.Database]string{
-	dbconn.Frontend:  "schema.md",
-	dbconn.CodeIntel: "schema.codeintel.md",
+type databaseFactory func(dsn string, appName string, migrate bool) (*sql.DB, error)
+
+var schemas = map[string]struct {
+	destinationFilename string
+	factory             databaseFactory
+}{
+	"frontend":  {"schema.md", dbconn.NewFrontendDB},
+	"codeintel": {"schema.codeintel.md", dbconn.NewCodeIntelDB},
 }
 
 // This script generates markdown formatted output containing descriptions of
@@ -62,10 +67,10 @@ func mainLocal() error {
 	dataSourcePrefix := "dbname=" + databaseNamePrefix
 
 	g, _ := errgroup.WithContext(context.Background())
-	for database, destinationFile := range databases {
-		database, destinationFile := database, destinationFile
+	for name, schema := range schemas {
+		name, schema := name, schema
 		g.Go(func() error {
-			return generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile)
+			return generateAndWrite(name, schema.factory, dataSourcePrefix+name, nil, schema.destinationFilename)
 		})
 	}
 
@@ -84,30 +89,36 @@ func mainContainer() error {
 	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
 
 	g, _ := errgroup.WithContext(context.Background())
-	for database, destinationFile := range databases {
-		database, destinationFile := database, destinationFile
+	for name, schema := range schemas {
+		name, schema := name, schema
 		g.Go(func() error {
-			return generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile)
+			return generateAndWrite(name, schema.factory, dataSourcePrefix+name, prefix, schema.destinationFilename)
 		})
 	}
 
 	return g.Wait()
 }
 
-func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefix []string, destinationFile string) error {
+func generateAndWrite(name string, factory databaseFactory, dataSource string, commandPrefix []string, destinationFile string) error {
 	run := runWithPrefix(commandPrefix)
 
 	// Try to drop a database if it already exists
-	_, _ = run(true, "dropdb", databaseNamePrefix+database.Name)
+	_, _ = run(true, "dropdb", databaseNamePrefix+name)
 
 	// Let's also try to clean up after ourselves
-	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+database.Name) }()
+	defer func() { _, _ = run(true, "dropdb", databaseNamePrefix+name) }()
 
-	if out, err := run(false, "createdb", databaseNamePrefix+database.Name); err != nil {
+	if out, err := run(false, "createdb", databaseNamePrefix+name); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("run: %s", out))
 	}
 
-	out, err := generateInternal(database, dataSource, run)
+	db, err := factory(dataSource, "", true)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	out, err := generateInternal(db, name, run)
 	if err != nil {
 		return err
 	}
@@ -157,27 +168,13 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 	return []string{"docker", "exec", "-u", "postgres", containerName}, shutdown, nil
 }
 
-func generateInternal(database *dbconn.Database, dataSource string, run runFunc) (string, error) {
-	db, err := dbconn.NewRaw(dataSource)
-	if err != nil {
-		return "", errors.Wrap(err, "NewRaw")
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	if err := dbconn.MigrateDB(db, database); err != nil {
-		return "", errors.Wrap(err, "MigrateDB")
-	}
-
+func generateInternal(db *sql.DB, name string, run runFunc) (_ string, err error) {
 	tables, err := getTables(db)
 	if err != nil {
 		return "", err
 	}
 
-	tableDescriptions, err := fetchTableAndViewDescriptions(database.Name, run)
+	tableDescriptions, err := fetchTableAndViewDescriptions(name, run)
 	if err != nil {
 		return "", err
 	}
@@ -206,7 +203,7 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 			for table := range ch {
 				logger.Println("describe", table.name)
 
-				doc, err := describeTable(db, database.Name, table, tableDescriptions)
+				doc, err := describeTable(db, name, table, tableDescriptions)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue

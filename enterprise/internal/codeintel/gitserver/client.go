@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -42,15 +41,11 @@ func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit stri
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execGitCommand(ctx, repositoryID, "cat-file", "-t", commit)
-	if err == nil {
-		return true, nil
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
+	if err != nil {
+		return false, err
 	}
-
-	if strings.Contains(out, "Not a valid object name") {
-		err = nil
-	}
-	return false, err
+	return git.CommitExists(ctx, repo, api.CommitID(commit))
 }
 
 // Head determines the tip commit of the default branch for the given repository. If no HEAD revision exists
@@ -62,16 +57,12 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	}})
 	defer endObservation(1, observation.Args{})
 
-	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
-		}
-
 		return "", false, err
 	}
 
-	return revision, true, nil
+	return git.Head(ctx, repo)
 }
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
@@ -221,99 +212,20 @@ func ParseCommitGraph(lines []string) *CommitGraph {
 	}
 }
 
-// RefDescription describes a commit at the head of a branch or tag.
-type RefDescription struct {
-	Name            string
-	Type            RefType
-	IsDefaultBranch bool
-	CreatedDate     time.Time
-}
-
-type RefType int
-
-const (
-	RefTypeUnknown RefType = iota
-	RefTypeBranch
-	RefTypeTag
-)
-
-var refPrefixes = map[string]RefType{
-	"refs/heads/": RefTypeBranch,
-	"refs/tags/":  RefTypeTag,
-}
-
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]RefDescription, err error) {
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]gitdomain.RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"for-each-ref", "--format=%(objectname):%(refname):%(HEAD):%(creatordate:iso8601-strict)"}
-	for prefix := range refPrefixes {
-		args = append(args, prefix)
-	}
-
-	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseRefDescriptions(strings.Split(out, "\n"))
-}
-
-// parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a map from commits to RefDescription objects. Each line should conform to the format
-// string `%(objectname):%(refname):%(HEAD):%(creatordate)`, where
-//
-// - %(objectname) is the 40-character revhash
-// - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
-// - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
-	refDescriptions := make(map[string][]RefDescription, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, ":", 4)
-		if len(parts) != 4 {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
-		}
-
-		commit := parts[0]
-		isDefaultBranch := parts[2] == "*"
-
-		var name string
-		var refType RefType
-		for prefix, typ := range refPrefixes {
-			if strings.HasPrefix(parts[1], prefix) {
-				name = parts[1][len(prefix):]
-				refType = typ
-				break
-			}
-		}
-		if refType == RefTypeUnknown {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
-		}
-
-		createdDate, err := time.Parse(time.RFC3339, parts[3])
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
-		}
-
-		refDescriptions[commit] = append(refDescriptions[commit], RefDescription{
-			Name:            name,
-			Type:            refType,
-			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDate,
-		})
-	}
-
-	return refDescriptions, nil
+	return git.RefDescriptions(ctx, repo)
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
@@ -328,81 +240,22 @@ func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, br
 	}})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"log", "--pretty=format:%H:%cI"}
-	if maxAge != nil {
-		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
-	}
-	if isDefaultBranch {
-		args = append(args, "HEAD")
-	} else {
-		args = append(args, branchName, "^HEAD")
-	}
-
-	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseCommitsUniqueToBranch(strings.Split(out, "\n"))
+	return git.CommitsUniqueToBranch(ctx, repo, branchName, isDefaultBranch, maxAge)
 }
 
-func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
-	commitDates := make(map[string]time.Time, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
-			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
-		}
-
-		duration, err := time.Parse(time.RFC3339, parts[1])
-		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
-		}
-
-		commitDates[parts[0]] = duration
-	}
-
-	return commitDates, nil
-}
-
-// BranchesContaining returns a map from branch names to branch tip hashes for each brach
+// BranchesContaining returns a map from branch names to branch tip hashes for each branch
 // containing the given commit.
 func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
-	out, err := c.execGitCommand(ctx, repositoryID, "branch", "--contains", commit, "--format", "%(refname)")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
-
-	return parseBranchesContaining(strings.Split(out, "\n")), nil
-}
-
-func parseBranchesContaining(lines []string) []string {
-	names := make([]string, 0, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		refname := line
-
-		// Remove refs/heads/ or ref/tags/ prefix
-		for prefix := range refPrefixes {
-			if strings.HasPrefix(line, prefix) {
-				refname = line[len(prefix):]
-			}
-		}
-
-		names = append(names, refname)
-	}
-	sort.Strings(names)
-
-	return names
+	return git.BranchesContaining(ctx, repo, api.CommitID(commit))
 }
 
 // DefaultBranchContains tells if the default branch contains the given commit ID.
@@ -547,11 +400,6 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	}
 
 	return commitID, nil
-}
-
-// execGitCommand executes a git command for the given repository by identifier.
-func (c *Client) execGitCommand(ctx context.Context, repositoryID int, args ...string) (string, error) {
-	return c.execResolveRevGitCommand(ctx, repositoryID, "", args...)
 }
 
 // execResolveRevGitCommand executes a git command for the given repository by identifier if the

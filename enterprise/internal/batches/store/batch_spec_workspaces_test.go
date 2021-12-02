@@ -11,7 +11,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -20,7 +20,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 	esStore := database.ExternalServicesWith(s)
 
 	repo := ct.TestRepo(t, esStore, extsvc.KindGitHub)
-	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(types.Opt.RepoDeletedAt(clock.Now()))
+	deletedRepo := ct.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
 	if err := repoStore.Create(ctx, repo, deletedRepo); err != nil {
 		t.Fatal(err)

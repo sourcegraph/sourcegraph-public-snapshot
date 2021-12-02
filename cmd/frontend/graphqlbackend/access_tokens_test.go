@@ -111,7 +111,6 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 	})
 
 	t.Run("authenticated as site admin, using site-admin-only scopes", func(t *testing.T) {
-		resetMocks()
 		accessTokens := newMockAccessTokens(t, 1, []string{authz.ScopeSiteAdminSudo, authz.ScopeUserAll})
 		users := dbmock.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)

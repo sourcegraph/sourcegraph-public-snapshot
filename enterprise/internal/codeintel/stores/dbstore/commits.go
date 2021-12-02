@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -257,7 +259,7 @@ func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
 	commitGraph *gitserver.CommitGraph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -423,6 +425,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads",
+			batch.MaxNumPostgresParameters,
 			[]string{"commit_bytea", "uploads"},
 			sanitizedInput.nearestUploadsRowValues,
 		)
@@ -436,6 +439,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_nearest_uploads_links",
+			batch.MaxNumPostgresParameters,
 			[]string{"commit_bytea", "ancestor_commit_bytea", "distance"},
 			sanitizedInput.nearestUploadsLinksRowValues,
 		)
@@ -448,6 +452,7 @@ func (s *Store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitiz
 			ctx,
 			s.Handle().DB(),
 			"t_lsif_uploads_visible_at_tip",
+			batch.MaxNumPostgresParameters,
 			[]string{"upload_id", "branch_or_tag_name", "is_default_branch"},
 			sanitizedInput.uploadsVisibleAtTipRowValues,
 		)
@@ -782,13 +787,13 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
-	maxAges := map[gitserver.RefType]time.Duration{
-		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
-		gitserver.RefTypeTag:    maxAgeForNonStaleTags,
+	maxAges := map[gitdomain.RefType]time.Duration{
+		gitdomain.RefTypeBranch: maxAgeForNonStaleBranches,
+		gitdomain.RefTypeTag:    maxAgeForNonStaleTags,
 	}
 
 	nearestUploadsRowValues := make(chan []interface{})

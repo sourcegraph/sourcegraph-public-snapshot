@@ -166,7 +166,7 @@ describe('ResultContainer', () => {
         // 1 is the value of subsetMatches
         expect(expandedItems.length).toBe(1)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
 
         fireEvent.click(button!)
@@ -185,7 +185,7 @@ describe('ResultContainer', () => {
     it('displays the collapse label when expanded', () => {
         const { container } = render(<ResultContainer {...defaultProps} />)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
 
         fireEvent.click(button!)
@@ -206,7 +206,7 @@ describe('ResultContainer', () => {
         let expandedItems = container.querySelectorAll('[data-testid="file-match-children-item"]')
         expect(expandedItems.length).toBe(5)
 
-        const button = container.querySelector('.result-container__toggle-matches-container')
+        const button = container.querySelector('[data-testid="toggle-matches-container"]')
         expect(button).toBeVisible()
         fireEvent.click(button!)
 

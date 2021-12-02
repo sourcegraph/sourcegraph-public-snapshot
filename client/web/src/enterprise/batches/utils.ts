@@ -1,4 +1,4 @@
-import { HoveredToken } from '@sourcegraph/codeintellify'
+import { HoveredToken } from '@sourcegraph/shared/src/codeintellify/tokenPosition'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import {
     RepoSpec,

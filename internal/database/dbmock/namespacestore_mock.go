@@ -64,6 +64,38 @@ func NewMockNamespaceStore() *MockNamespaceStore {
 	}
 }
 
+// NewStrictMockNamespaceStore creates a new mock of the NamespaceStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockNamespaceStore() *MockNamespaceStore {
+	return &MockNamespaceStore{
+		GetByIDFunc: &NamespaceStoreGetByIDFunc{
+			defaultHook: func(context.Context, int32, int32) (*database.Namespace, error) {
+				panic("unexpected invocation of MockNamespaceStore.GetByID")
+			},
+		},
+		GetByNameFunc: &NamespaceStoreGetByNameFunc{
+			defaultHook: func(context.Context, string) (*database.Namespace, error) {
+				panic("unexpected invocation of MockNamespaceStore.GetByName")
+			},
+		},
+		HandleFunc: &NamespaceStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockNamespaceStore.Handle")
+			},
+		},
+		TransactFunc: &NamespaceStoreTransactFunc{
+			defaultHook: func(context.Context) (database.NamespaceStore, error) {
+				panic("unexpected invocation of MockNamespaceStore.Transact")
+			},
+		},
+		WithFunc: &NamespaceStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.NamespaceStore {
+				panic("unexpected invocation of MockNamespaceStore.With")
+			},
+		},
+	}
+}
+
 // NewMockNamespaceStoreFrom creates a new mock of the MockNamespaceStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

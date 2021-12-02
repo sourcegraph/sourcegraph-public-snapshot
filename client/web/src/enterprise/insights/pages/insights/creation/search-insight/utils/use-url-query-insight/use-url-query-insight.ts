@@ -6,7 +6,7 @@ import { isRepoFilter } from '@sourcegraph/shared/src/search/query/validate'
 import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 import { dedupeWhitespace } from '@sourcegraph/shared/src/util/strings'
 
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { INITIAL_INSIGHT_VALUES } from '../../components/search-insight-creation-content/initial-insight-values'
 import { CreateInsightFormFields } from '../../types'
@@ -88,7 +88,7 @@ export interface UseURLQueryInsightResult {
  * Returns initial values for the search insight from query param.
  */
 export function useURLQueryInsight(queryParameters: string): UseURLQueryInsightResult {
-    const { getResolvedSearchRepositories } = useContext(InsightsApiContext)
+    const { getResolvedSearchRepositories } = useContext(CodeInsightsBackendContext)
     const [insightFormFields, setInsightFormFields] = useState<CreateInsightFormFields | ErrorLike | undefined>()
 
     const query = new URLSearchParams(queryParameters).get('query')

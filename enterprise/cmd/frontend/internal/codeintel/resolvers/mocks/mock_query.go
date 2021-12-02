@@ -121,6 +121,73 @@ func NewMockQueryResolver() *MockQueryResolver {
 	}
 }
 
+// NewStrictMockQueryResolver creates a new mock of the QueryResolver
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockQueryResolver() *MockQueryResolver {
+	return &MockQueryResolver{
+		DefinitionsFunc: &QueryResolverDefinitionsFunc{
+			defaultHook: func(context.Context, int, int) ([]resolvers.AdjustedLocation, error) {
+				panic("unexpected invocation of MockQueryResolver.Definitions")
+			},
+		},
+		DiagnosticsFunc: &QueryResolverDiagnosticsFunc{
+			defaultHook: func(context.Context, int) ([]resolvers.AdjustedDiagnostic, int, error) {
+				panic("unexpected invocation of MockQueryResolver.Diagnostics")
+			},
+		},
+		DocumentationFunc: &QueryResolverDocumentationFunc{
+			defaultHook: func(context.Context, int, int) ([]*resolvers.Documentation, error) {
+				panic("unexpected invocation of MockQueryResolver.Documentation")
+			},
+		},
+		DocumentationDefinitionsFunc: &QueryResolverDocumentationDefinitionsFunc{
+			defaultHook: func(context.Context, string) ([]resolvers.AdjustedLocation, error) {
+				panic("unexpected invocation of MockQueryResolver.DocumentationDefinitions")
+			},
+		},
+		DocumentationPageFunc: &QueryResolverDocumentationPageFunc{
+			defaultHook: func(context.Context, string) (*precise.DocumentationPageData, error) {
+				panic("unexpected invocation of MockQueryResolver.DocumentationPage")
+			},
+		},
+		DocumentationPathInfoFunc: &QueryResolverDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, string) (*precise.DocumentationPathInfoData, error) {
+				panic("unexpected invocation of MockQueryResolver.DocumentationPathInfo")
+			},
+		},
+		DocumentationReferencesFunc: &QueryResolverDocumentationReferencesFunc{
+			defaultHook: func(context.Context, string, int, string) ([]resolvers.AdjustedLocation, string, error) {
+				panic("unexpected invocation of MockQueryResolver.DocumentationReferences")
+			},
+		},
+		HoverFunc: &QueryResolverHoverFunc{
+			defaultHook: func(context.Context, int, int) (string, lsifstore.Range, bool, error) {
+				panic("unexpected invocation of MockQueryResolver.Hover")
+			},
+		},
+		ImplementationsFunc: &QueryResolverImplementationsFunc{
+			defaultHook: func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+				panic("unexpected invocation of MockQueryResolver.Implementations")
+			},
+		},
+		RangesFunc: &QueryResolverRangesFunc{
+			defaultHook: func(context.Context, int, int) ([]resolvers.AdjustedCodeIntelligenceRange, error) {
+				panic("unexpected invocation of MockQueryResolver.Ranges")
+			},
+		},
+		ReferencesFunc: &QueryResolverReferencesFunc{
+			defaultHook: func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+				panic("unexpected invocation of MockQueryResolver.References")
+			},
+		},
+		StencilFunc: &QueryResolverStencilFunc{
+			defaultHook: func(context.Context) ([]lsifstore.Range, error) {
+				panic("unexpected invocation of MockQueryResolver.Stencil")
+			},
+		},
+	}
+}
+
 // NewMockQueryResolverFrom creates a new mock of the MockQueryResolver
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

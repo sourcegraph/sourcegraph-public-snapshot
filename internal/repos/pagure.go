@@ -23,6 +23,7 @@ type PagureSource struct {
 	svc       *types.ExternalService
 	cli       *pagure.Client
 	serviceID string
+	perPage   int
 }
 
 // NewPagureSource returns a new PagureSource from the given external service.
@@ -50,13 +51,14 @@ func NewPagureSource(svc *types.ExternalService, cf *httpcli.Factory) (*PagureSo
 		svc:       svc,
 		cli:       cli,
 		serviceID: extsvc.NormalizeBaseURL(cli.URL).String(),
+		perPage:   100,
 	}, nil
 }
 
 // ListRepos returns all Pagure repositories configured with this PagureSource's config.
 func (s *PagureSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	args := pagure.ListProjectsArgs{
-		Cursor:    &pagure.Pagination{PerPage: 100, Page: 1},
+		Cursor:    &pagure.Pagination{PerPage: s.perPage, Page: 1},
 		Tags:      s.cli.Config.Tags,
 		Pattern:   s.cli.Config.Pattern,
 		Namespace: s.cli.Config.Namespace,
@@ -83,7 +85,7 @@ func (s *PagureSource) ListRepos(ctx context.Context, results chan SourceResult)
 			break
 		}
 
-		args.Cursor = page.Pagination
+		args.Cursor.Page++
 	}
 }
 

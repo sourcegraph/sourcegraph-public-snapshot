@@ -39,7 +39,7 @@ Referenced by:
  closed_at          | timestamp with time zone |           |          | 
  batch_spec_id      | bigint                   |           | not null | 
  last_applier_id    | bigint                   |           |          | 
- last_applied_at    | timestamp with time zone |           | not null | 
+ last_applied_at    | timestamp with time zone |           |          | 
 Indexes:
     "batch_changes_pkey" PRIMARY KEY, btree (id)
     "batch_changes_namespace_org_id" btree (namespace_org_id)
@@ -170,6 +170,7 @@ Foreign-key constraints:
  unsupported          | boolean                  |           | not null | false
  skipped              | boolean                  |           | not null | false
  cached_result_found  | boolean                  |           | not null | false
+ step_cache_results   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -946,16 +947,15 @@ Referenced by:
 
 # Table "public.gitserver_repos"
 ```
-        Column         |           Type           | Collation | Nullable |      Default       
------------------------+--------------------------+-----------+----------+--------------------
- repo_id               | integer                  |           | not null | 
- clone_status          | text                     |           | not null | 'not_cloned'::text
- last_external_service | bigint                   |           |          | 
- shard_id              | text                     |           | not null | 
- last_error            | text                     |           |          | 
- updated_at            | timestamp with time zone |           | not null | now()
- last_fetched          | timestamp with time zone |           | not null | now()
- last_changed          | timestamp with time zone |           | not null | now()
+    Column    |           Type           | Collation | Nullable |      Default       
+--------------+--------------------------+-----------+----------+--------------------
+ repo_id      | integer                  |           | not null | 
+ clone_status | text                     |           | not null | 'not_cloned'::text
+ shard_id     | text                     |           | not null | 
+ last_error   | text                     |           |          | 
+ updated_at   | timestamp with time zone |           | not null | now()
+ last_fetched | timestamp with time zone |           | not null | now()
+ last_changed | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
@@ -1039,6 +1039,24 @@ Stores data points for a code insight that do not need to be queried directly, b
 **job_id**: Foreign key to the job that owns this record.
 
 **recording_time**: The time for which this dependency should be recorded at using the parents value.
+
+# Table "public.insights_settings_migration_jobs"
+```
+       Column        |            Type             | Collation | Nullable |                           Default                            
+---------------------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id                  | integer                     |           | not null | nextval('insights_settings_migration_jobs_id_seq'::regclass)
+ user_id             | integer                     |           |          | 
+ org_id              | integer                     |           |          | 
+ global              | boolean                     |           |          | 
+ settings_id         | integer                     |           | not null | 
+ total_insights      | integer                     |           | not null | 0
+ migrated_insights   | integer                     |           | not null | 0
+ total_dashboards    | integer                     |           | not null | 0
+ migrated_dashboards | integer                     |           | not null | 0
+ runs                | integer                     |           | not null | 0
+ completed_at        | timestamp without time zone |           |          | 
+
+```
 
 # Table "public.lsif_configuration_policies"
 ```

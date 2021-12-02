@@ -154,6 +154,93 @@ func NewMockUserEmailsStore() *MockUserEmailsStore {
 	}
 }
 
+// NewStrictMockUserEmailsStore creates a new mock of the UserEmailsStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockUserEmailsStore() *MockUserEmailsStore {
+	return &MockUserEmailsStore{
+		AddFunc: &UserEmailsStoreAddFunc{
+			defaultHook: func(context.Context, int32, string, *string) error {
+				panic("unexpected invocation of MockUserEmailsStore.Add")
+			},
+		},
+		DoneFunc: &UserEmailsStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockUserEmailsStore.Done")
+			},
+		},
+		GetFunc: &UserEmailsStoreGetFunc{
+			defaultHook: func(context.Context, int32, string) (string, bool, error) {
+				panic("unexpected invocation of MockUserEmailsStore.Get")
+			},
+		},
+		GetInitialSiteAdminEmailFunc: &UserEmailsStoreGetInitialSiteAdminEmailFunc{
+			defaultHook: func(context.Context) (string, error) {
+				panic("unexpected invocation of MockUserEmailsStore.GetInitialSiteAdminEmail")
+			},
+		},
+		GetLatestVerificationSentEmailFunc: &UserEmailsStoreGetLatestVerificationSentEmailFunc{
+			defaultHook: func(context.Context, string) (*database.UserEmail, error) {
+				panic("unexpected invocation of MockUserEmailsStore.GetLatestVerificationSentEmail")
+			},
+		},
+		GetPrimaryEmailFunc: &UserEmailsStoreGetPrimaryEmailFunc{
+			defaultHook: func(context.Context, int32) (string, bool, error) {
+				panic("unexpected invocation of MockUserEmailsStore.GetPrimaryEmail")
+			},
+		},
+		GetVerifiedEmailsFunc: &UserEmailsStoreGetVerifiedEmailsFunc{
+			defaultHook: func(context.Context, ...string) ([]*database.UserEmail, error) {
+				panic("unexpected invocation of MockUserEmailsStore.GetVerifiedEmails")
+			},
+		},
+		HandleFunc: &UserEmailsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockUserEmailsStore.Handle")
+			},
+		},
+		ListByUserFunc: &UserEmailsStoreListByUserFunc{
+			defaultHook: func(context.Context, database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+				panic("unexpected invocation of MockUserEmailsStore.ListByUser")
+			},
+		},
+		RemoveFunc: &UserEmailsStoreRemoveFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserEmailsStore.Remove")
+			},
+		},
+		SetLastVerificationFunc: &UserEmailsStoreSetLastVerificationFunc{
+			defaultHook: func(context.Context, int32, string, string) error {
+				panic("unexpected invocation of MockUserEmailsStore.SetLastVerification")
+			},
+		},
+		SetPrimaryEmailFunc: &UserEmailsStoreSetPrimaryEmailFunc{
+			defaultHook: func(context.Context, int32, string) error {
+				panic("unexpected invocation of MockUserEmailsStore.SetPrimaryEmail")
+			},
+		},
+		SetVerifiedFunc: &UserEmailsStoreSetVerifiedFunc{
+			defaultHook: func(context.Context, int32, string, bool) error {
+				panic("unexpected invocation of MockUserEmailsStore.SetVerified")
+			},
+		},
+		TransactFunc: &UserEmailsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.UserEmailsStore, error) {
+				panic("unexpected invocation of MockUserEmailsStore.Transact")
+			},
+		},
+		VerifyFunc: &UserEmailsStoreVerifyFunc{
+			defaultHook: func(context.Context, int32, string, string) (bool, error) {
+				panic("unexpected invocation of MockUserEmailsStore.Verify")
+			},
+		},
+		WithFunc: &UserEmailsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.UserEmailsStore {
+				panic("unexpected invocation of MockUserEmailsStore.With")
+			},
+		},
+	}
+}
+
 // NewMockUserEmailsStoreFrom creates a new mock of the MockUserEmailsStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

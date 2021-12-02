@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -31,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
@@ -138,9 +140,10 @@ func main() {
 	}
 
 	// Create Handler now since it also initializes state
-
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
+	handler := gitserver.Handler()
+	handler = actor.HTTPMiddleware(handler)
+	handler = ot.HTTPMiddleware(trace.HTTPTraceMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -175,16 +178,23 @@ func main() {
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+
+	// Once we receive one of the signals from above, continues with the shutdown
+	// process.
 	<-c
 	go func() {
+		// If a second signal is received, exit immediately.
 		<-c
 		os.Exit(0)
 	}()
 
-	// Stop accepting requests. In the future we should use graceful shutdown.
-	if err := srv.Close(); err != nil {
-		log15.Error("closing http server", "error", err)
+	// Wait for at most for the configured shutdown timeout.
+	ctx, cancel = context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
+	defer cancel()
+	// Stop accepting requests.
+	if err := srv.Shutdown(ctx); err != nil {
+		log15.Error("shutting down http server", "error", err)
 	}
 
 	// The most important thing this does is kill all our clones. If we just
@@ -252,31 +262,16 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
-	//
-	// START FLAILING
-
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
 	//
 	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
-	// END FLAILING
-	//
-
-	dsn := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		newDSN := conf.Get().ServiceConnections().PostgresDSN
-		if dsn != newDSN {
-			// The DSN was changed (e.g. by someone modifying the env vars on
-			// the frontend). We need to respect the new DSN. Easiest way to do
-			// that is to restart our service (kubernetes/docker/goreman will
-			// handle starting us back up).
-			log.Fatalf("Detected repository DSN change, restarting to take effect: %q", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
 	})
-
-	return dbconn.New(dbconn.Opts{DSN: dsn, DBName: "frontend", AppName: "gitserver"})
+	return dbconn.NewFrontendDB(dsn, "gitserver", false)
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
@@ -310,7 +305,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -320,7 +315,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil

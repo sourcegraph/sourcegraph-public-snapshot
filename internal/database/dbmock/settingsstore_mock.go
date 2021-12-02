@@ -89,6 +89,53 @@ func NewMockSettingsStore() *MockSettingsStore {
 	}
 }
 
+// NewStrictMockSettingsStore creates a new mock of the SettingsStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockSettingsStore() *MockSettingsStore {
+	return &MockSettingsStore{
+		CreateIfUpToDateFunc: &SettingsStoreCreateIfUpToDateFunc{
+			defaultHook: func(context.Context, api.SettingsSubject, *int32, *int32, string) (*api.Settings, error) {
+				panic("unexpected invocation of MockSettingsStore.CreateIfUpToDate")
+			},
+		},
+		DoneFunc: &SettingsStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockSettingsStore.Done")
+			},
+		},
+		GetLastestSchemaSettingsFunc: &SettingsStoreGetLastestSchemaSettingsFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+				panic("unexpected invocation of MockSettingsStore.GetLastestSchemaSettings")
+			},
+		},
+		GetLatestFunc: &SettingsStoreGetLatestFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*api.Settings, error) {
+				panic("unexpected invocation of MockSettingsStore.GetLatest")
+			},
+		},
+		HandleFunc: &SettingsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockSettingsStore.Handle")
+			},
+		},
+		ListAllFunc: &SettingsStoreListAllFunc{
+			defaultHook: func(context.Context, string) ([]*api.Settings, error) {
+				panic("unexpected invocation of MockSettingsStore.ListAll")
+			},
+		},
+		TransactFunc: &SettingsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.SettingsStore, error) {
+				panic("unexpected invocation of MockSettingsStore.Transact")
+			},
+		},
+		WithFunc: &SettingsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) database.SettingsStore {
+				panic("unexpected invocation of MockSettingsStore.With")
+			},
+		},
+	}
+}
+
 // NewMockSettingsStoreFrom creates a new mock of the MockSettingsStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

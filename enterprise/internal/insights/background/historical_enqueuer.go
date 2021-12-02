@@ -506,6 +506,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	}
 
 	// Build the search query we will run. The most important part here is
+
 	query = withCountUnlimited(query)
 	query = fmt.Sprintf("%s repo:^%s$@%s", query, regexp.QuoteMeta(repoName), revision)
 

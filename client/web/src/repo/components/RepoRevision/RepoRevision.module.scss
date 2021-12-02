@@ -1,0 +1,13 @@
+.repo-revision-container {
+    flex: 1 1 auto;
+
+    display: flex;
+    min-height: 0;
+
+    position: relative; // for sidebar toggle
+}
+
+.breadcrumb-icon {
+    margin-left: 0.125rem;
+    margin-right: -0.25rem;
+}

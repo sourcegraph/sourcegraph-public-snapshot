@@ -1,167 +1,159 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`UserProductSubscriptionStatus toggle: license key hidden 1`] = `
-<div
-  className="card test-product-certificate"
->
+<DocumentFragment>
   <div
-    className="card-body d-flex align-items-center"
-  >
-    <img
-      alt="Sourcegraph logo"
-      className="logo mr-1 p-2"
-      src="/.assets/img/sourcegraph-mark.svg?v2"
-    />
-    <div>
-      <h2
-        className="font-weight-normal mb-1"
-      >
-        P
-      </h2>
-      <h3
-        className="text-muted font-weight-normal"
-      >
-        123-user
-         license,
-         
-        <span>
-          expired on 
-          <span
-            title="Jan 1, 1970, 12:00:23 AM"
-          >
-            1970-01-01
-          </span>
-           (36 years ago)
-        </span>
-      </h3>
-    </div>
-  </div>
-  <div
-    className="bg"
-  />
-  <div
-    className="footer"
+    class="card test-product-certificate"
   >
     <div
-      className="card-footer d-flex align-items-center justify-content-between flex-wrap"
+      class="card-body d-flex align-items-center"
     >
-      <button
-        className="btn btn-primary mr-4 my-1"
-        onClick={[Function]}
-        type="button"
+      <img
+        alt="Sourcegraph logo"
+        class="logo mr-1 p-2"
+        src="/.assets/img/sourcegraph-mark.svg?v2"
+      />
+      <div>
+        <h2
+          class="font-weight-normal mb-1"
+        >
+          P
+        </h2>
+        <h3
+          class="text-muted font-weight-normal"
+        >
+          123-user license, 
+          <span>
+            expired on 
+            <span
+              title="Jan 1, 1970, 12:00:23 AM"
+            >
+              1970-01-01
+            </span>
+             (36 years ago)
+          </span>
+        </h3>
+      </div>
+    </div>
+    <div
+      class="bg"
+    />
+    <div
+      class="footer"
+    >
+      <div
+        class="card-footer d-flex align-items-center justify-content-between flex-wrap"
       >
-        <KeyIcon
-          className="icon-inline"
+        <button
+          class="btn btn-primary mr-4 my-1"
+          type="button"
+        >
+          <keyicon
+            class="icon-inline"
+          />
+           Reveal license key
+        </button>
+        <div
+          class="flex-fill"
         />
-         
-        Reveal
-         license key
-      </button>
-      <div
-        className="flex-fill"
-      />
-      <div
-        className="my-1"
-      />
+        <div
+          class="my-1"
+        />
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;
 
 exports[`UserProductSubscriptionStatus toggle: license key revealed 1`] = `
-<div
-  className="card test-product-certificate"
->
+<DocumentFragment>
   <div
-    className="card-body d-flex align-items-center"
+    class="card test-product-certificate"
   >
-    <img
-      alt="Sourcegraph logo"
-      className="logo mr-1 p-2"
-      src="/.assets/img/sourcegraph-mark.svg?v2"
-    />
-    <div>
-      <h2
-        className="font-weight-normal mb-1"
-      >
-        P
-      </h2>
-      <h3
-        className="text-muted font-weight-normal"
-      >
-        123-user
-         license,
-         
-        <span>
-          expired on 
-          <span
-            title="Jan 1, 1970, 12:00:23 AM"
-          >
-            1970-01-01
+    <div
+      class="card-body d-flex align-items-center"
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo mr-1 p-2"
+        src="/.assets/img/sourcegraph-mark.svg?v2"
+      />
+      <div>
+        <h2
+          class="font-weight-normal mb-1"
+        >
+          P
+        </h2>
+        <h3
+          class="text-muted font-weight-normal"
+        >
+          123-user license, 
+          <span>
+            expired on 
+            <span
+              title="Jan 1, 1970, 12:00:23 AM"
+            >
+              1970-01-01
+            </span>
+             (36 years ago)
           </span>
-           (36 years ago)
-        </span>
-      </h3>
-    </div>
-  </div>
-  <div
-    className="bg"
-  />
-  <div
-    className="footer"
-  >
-    <div
-      className="card-footer d-flex align-items-center justify-content-between flex-wrap"
-    >
-      <button
-        className="btn btn-primary mr-4 my-1"
-        onClick={[Function]}
-        type="button"
-      >
-        <KeyIcon
-          className="icon-inline"
-        />
-         
-        Hide
-         license key
-      </button>
-      <div
-        className="flex-fill"
-      />
-      <div
-        className="my-1"
-      />
+        </h3>
+      </div>
     </div>
     <div
-      className="card-footer"
+      class="bg"
+    />
+    <div
+      class="footer"
     >
-      <h3>
-        License key
-      </h3>
-      <CopyableText
-        className="d-block"
-        text="lk"
-      />
-      <small
-        className="mt-2 d-flex align-items-center"
+      <div
+        class="card-footer d-flex align-items-center justify-content-between flex-wrap"
       >
-        <InformationIcon
-          className="icon-inline mr-1"
+        <button
+          class="btn btn-primary mr-4 my-1"
+          type="button"
+        >
+          <keyicon
+            class="icon-inline"
+          />
+           Hide license key
+        </button>
+        <div
+          class="flex-fill"
         />
-         
-        <span>
-          Use this license key as the
+        <div
+          class="my-1"
+        />
+      </div>
+      <div
+        class="card-footer"
+      >
+        <h3>
+          License key
+        </h3>
+        <copyabletext
+          class="d-block"
+          text="lk"
+        />
+        <small
+          class="mt-2 d-flex align-items-center"
+        >
+          <informationicon
+            class="icon-inline mr-1"
+          />
            
-          <code>
-            <strong>
-              licenseKey
-            </strong>
-          </code>
-           
-          property value in Sourcegraph site configuration.
-        </span>
-      </small>
+          <span>
+            Use this license key as the 
+            <code>
+              <strong>
+                licenseKey
+              </strong>
+            </code>
+             property value in Sourcegraph site configuration.
+          </span>
+        </small>
+      </div>
     </div>
   </div>
-</div>
+</DocumentFragment>
 `;

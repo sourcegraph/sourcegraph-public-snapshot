@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -45,11 +44,11 @@ var (
 	parsedSchema    *graphql.Schema
 )
 
-func mustParseGraphQLSchema(t *testing.T, db dbutil.DB) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
 	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(database.NewDB(db), nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil)
+		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(db, nil, nil, nil, NewResolver(db, clock), nil, nil, nil, nil, nil)
 	})
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
@@ -99,7 +98,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				mutation {
 					setRepositoryPermissionsForUsers(
@@ -141,7 +140,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				mutation {
 					setRepositoryPermissionsForUsers(
@@ -411,7 +410,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check authorized repos via email",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -439,7 +438,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check authorized repos via username",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -467,7 +466,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check pending authorized repos via email",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -495,7 +494,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 			name: "check pending authorized repos via username",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					authorizedUserRepositories(
@@ -567,7 +566,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 			name: "list pending users with their bind IDs",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					usersWithPendingPermissions
@@ -648,7 +647,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			name: "get authorized users",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
@@ -730,7 +729,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
@@ -808,7 +807,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 			name: "get permissions information",
 			gqlTests: []*gqltesting.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, nil),
+					Schema: mustParseGraphQLSchema(t, database.NewDB(nil)),
 					Query: `
 				{
 					currentUser {

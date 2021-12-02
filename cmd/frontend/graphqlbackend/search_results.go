@@ -24,12 +24,12 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
+	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -222,9 +222,7 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 	tr, _ := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -388,9 +386,7 @@ var (
 // been performed.
 func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 	var types []string
 	resultTypes, _ := si.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
@@ -701,7 +697,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &symbol.SymbolSearch{
+				jobs = append(jobs, &symbol.RepoSubsetSymbolSearch{
 					ZoektArgs:         zoektArgs,
 					PatternInfo:       args.PatternInfo,
 					Limit:             r.MaxResults(),
@@ -711,6 +707,20 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
 				})
 			}
+		}
+
+		if args.ResultTypes.Has(result.TypeCommit) || args.ResultTypes.Has(result.TypeDiff) {
+			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+
+			diff := args.ResultTypes.Has(result.TypeDiff)
+			jobs = append(jobs, &commit.CommitSearch{
+				Query:         commit.QueryToGitQuery(args.Query, diff),
+				RepoOpts:      repoOptions,
+				Diff:          diff,
+				HasTimeFilter: commit.HasTimeFilter(args.Query),
+				Limit:         int(args.PatternInfo.FileMatchLimit),
+				Db:            r.db,
+			})
 		}
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
@@ -1043,7 +1053,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 		if srr != nil {
 			n = len(srr.Matches)
 		}
-		ev := honey.SearchEvent(ctx, honey.SearchEventArgs{
+		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
 			OriginalQuery: r.rawQuery(),
 			Typ:           requestName,
 			Source:        requestSource,
@@ -1054,9 +1064,7 @@ func (r *searchResolver) logBatch(ctx context.Context, srr *SearchResultsResolve
 			Error:         err,
 		})
 
-		if honey.Enabled() {
-			_ = ev.Send()
-		}
+		_ = ev.Send()
 
 		if isSlow {
 			log15.Warn("slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
@@ -1599,36 +1607,14 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		argsIndexed := *args
 
 		userID := int32(0)
+
 		if envvar.SourcegraphDotComMode() {
 			if a := actor.FromContext(ctx); a != nil {
 				userID = a.UID
 			}
 		}
 
-		// Get all private repos for the the current actor. On sourcegraph.com, those are
-		// only the repos directly added by the user. Otherwise it's all repos the user has
-		// access to on all connected code hosts / external services.
-		//
-		// TODO: We should use repos.Resolve here. However, the logic for
-		// UserID is different to repos.Resolve, so we need to work out how
-		// best to address that first.
-		userPrivateRepos, err := r.db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-			UserID:         userID, // Zero valued when not in sourcegraph.com mode
-			OnlyPrivate:    true,
-			LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
-			OnlyForks:      args.RepoOptions.OnlyForks,
-			NoForks:        args.RepoOptions.NoForks,
-			OnlyArchived:   args.RepoOptions.OnlyArchived,
-			NoArchived:     args.RepoOptions.NoArchived,
-			ExcludePattern: repos.UnionRegExps(args.RepoOptions.MinusRepoFilters),
-		})
-
-		if err != nil {
-			log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
-			tr.LazyPrintf("error resolving user private repos: %v", err)
-		} else {
-			argsIndexed.UserPrivateRepos = userPrivateRepos
-		}
+		argsIndexed.UserPrivateRepos = repos.PrivateReposForUser(ctx, r.db, userID, args.RepoOptions)
 
 		wg := waitGroup(true)
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
@@ -1696,36 +1682,13 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	addCommitSearch := func(diff bool) {
-		j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit), args.RepoOptions)
-		if err != nil {
-			agg.Error(err)
-			return
-		}
-
-		if err := j.ExpandUsernames(ctx, r.db); err != nil {
-			agg.Error(err)
-			return
-		}
-
-		jobs = append(jobs, j)
-	}
-
-	if args.ResultTypes.Has(result.TypeCommit) {
-		addCommitSearch(false)
-	}
-
-	if args.ResultTypes.Has(result.TypeDiff) {
-		addCommitSearch(true)
-	}
-
 	wgForJob := func(job run.Job) *sync.WaitGroup {
 		switch job.Name() {
 		case "Diff":
 			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		case "Commit":
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-		case "Symbol":
+		case "RepoSubsetSymbol":
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		case "Repo":
 			return waitGroup(true)

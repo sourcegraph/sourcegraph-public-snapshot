@@ -61,7 +61,16 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	newArgs := *args
 	newArgs.First += 1
 
-	ms, err := r.store.ListMonitors(ctx, userID, &newArgs)
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	ms, err := r.store.ListMonitors(ctx, cm.ListMonitorsOpts{
+		UserID: &userID,
+		First:  intPtr(int(newArgs.First)),
+		After:  intPtrToInt64Ptr(after),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -109,29 +118,62 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (m graphqlbac
 	}, nil
 }
 
-func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
-	err = r.isAllowedToCreate(ctx, args.Monitor.Namespace)
+func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
+	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
+		return nil, err
+	}
+
+	// Start transaction.
+	tx, err := r.transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var mo *cm.Monitor
-	mo, err = r.store.CreateCodeMonitor(ctx, args)
+	defer func() { err = tx.store.Done(err) }()
+
+	var userID, orgID int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Namespace, &userID, &orgID); err != nil {
+		return nil, err
+	}
+
+	// Create monitor.
+	m, err := tx.store.CreateMonitor(ctx, cm.MonitorArgs{
+		Description:     args.Monitor.Description,
+		Enabled:         args.Monitor.Enabled,
+		NamespaceUserID: nilOrInt32(userID),
+		NamespaceOrgID:  nilOrInt32(orgID),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Create trigger.
+	err = tx.store.CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create actions.
+	err = tx.createActions(ctx, m.ID, args.Actions)
 	if err != nil {
 		return nil, err
 	}
 	return &monitor{
 		Resolver: r,
-		Monitor:  mo,
+		Monitor:  m,
 	}, nil
 }
 
 func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (mr graphqlbackend.MonitorResolver, err error) {
 	err = r.isAllowedToEdit(ctx, args.Id)
 	if err != nil {
-		return nil, errors.Errorf("ToggleCodeMonitor: %w", err)
+		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
 	}
-	var mo *cm.Monitor
-	mo, err = r.store.ToggleMonitor(ctx, args)
+	var monitorID int64
+	if err := relay.UnmarshalSpec(args.Id, &monitorID); err != nil {
+		return nil, err
+	}
+
+	mo, err := r.store.UpdateMonitorEnabled(ctx, monitorID, args.Enabled)
 	if err != nil {
 		return nil, err
 	}
@@ -143,8 +185,13 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	if err != nil {
 		return nil, errors.Errorf("DeleteCodeMonitor: %w", err)
 	}
-	err = r.store.DeleteMonitor(ctx, args)
-	if err != nil {
+
+	var monitorID int64
+	if err := relay.UnmarshalSpec(args.Id, &monitorID); err != nil {
+		return nil, err
+	}
+
+	if err := r.store.DeleteMonitor(ctx, monitorID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -190,7 +237,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	if err != nil {
 		return nil, err
 	}
-	err = tx.store.CreateActions(ctx, toCreate, monitorID)
+	err = tx.createActions(ctx, monitorID, toCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -201,6 +248,49 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	// Hydrate monitor with Resolver.
 	m.(*monitor).Resolver = r
 	return m, nil
+}
+
+func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*graphqlbackend.CreateActionArgs) error {
+	for _, a := range args {
+		if a.Email != nil {
+			e, err := r.store.CreateEmailAction(ctx, monitorID, &cm.EmailActionArgs{
+				Enabled:  a.Email.Enabled,
+				Priority: a.Email.Priority,
+				Header:   a.Email.Header,
+			})
+			if err != nil {
+				return err
+			}
+
+			if err := r.createRecipients(ctx, e.ID, a.Email.Recipients); err != nil {
+				return err
+			}
+		}
+		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return nil
+}
+
+func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipients []graphql.ID) error {
+	for _, recipient := range recipients {
+		var userID, orgID int32
+		if err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID); err != nil {
+			return errors.Wrap(err, "UnmarshalNamespaceID")
+		}
+
+		err := r.store.CreateRecipient(ctx, emailID, nilOrInt32(userID), nilOrInt32(orgID))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func nilOrInt32(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
 }
 
 // ResetTriggerQueryTimestamps is a convenience function which resets the
@@ -303,13 +393,33 @@ func splitActionIDs(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorA
 
 func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (m graphqlbackend.MonitorResolver, err error) {
 	// Update monitor.
-	var mo *cm.Monitor
-	mo, err = r.store.UpdateMonitor(ctx, args)
+	var monitorID int64
+	if err := relay.UnmarshalSpec(args.Monitor.Id, &monitorID); err != nil {
+		return nil, err
+	}
+
+	var userID, orgID int32
+	if err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID); err != nil {
+		return nil, err
+	}
+
+	mo, err := r.store.UpdateMonitor(ctx, monitorID, cm.MonitorArgs{
+		Description:     args.Monitor.Update.Description,
+		Enabled:         args.Monitor.Update.Enabled,
+		NamespaceUserID: nilOrInt32(userID),
+		NamespaceOrgID:  nilOrInt32(orgID),
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	var triggerID int64
+	if err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID); err != nil {
+		return nil, err
+	}
+
 	// Update trigger.
-	err = r.store.UpdateQueryTrigger(ctx, args)
+	err = r.store.UpdateQueryTrigger(ctx, triggerID, args.Trigger.Update.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -334,11 +444,16 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err != nil {
 			return nil, err
 		}
-		e, err = r.store.UpdateEmailAction(ctx, mo.ID, action)
+
+		e, err = r.store.UpdateEmailAction(ctx, emailID, &cm.EmailActionArgs{
+			Enabled:  action.Email.Update.Enabled,
+			Priority: action.Email.Update.Priority,
+			Header:   action.Email.Update.Header,
+		})
 		if err != nil {
 			return nil, err
 		}
-		err = r.store.CreateRecipients(ctx, action.Email.Update.Recipients, e.ID)
+		err = r.createRecipients(ctx, e.ID, action.Email.Update.Recipients)
 		if err != nil {
 			return nil, err
 		}
@@ -401,7 +516,7 @@ func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (owner gra
 		return "", err
 	}
 
-	return graphqlbackend.MarshalUserID(monitor.NamespaceUserID), nil
+	return graphqlbackend.MarshalUserID(monitor.UserID), nil
 }
 
 //
@@ -467,7 +582,7 @@ func (m *monitor) Enabled() bool {
 }
 
 func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
-	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.NamespaceUserID)
+	n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.UserID)
 	return n, err
 }
 
@@ -544,7 +659,15 @@ func (q *monitorQuery) Query() string {
 }
 
 func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
-	es, err := q.store.ListQueryTriggerJobs(ctx, q.QueryTrigger.ID, args)
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
+	es, err := q.store.ListQueryTriggerJobs(ctx, cm.ListTriggerJobsOpts{
+		QueryID: &q.QueryTrigger.ID,
+		First:   intPtr(int(args.First)),
+		After:   intPtrToInt64Ptr(after),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -683,8 +806,16 @@ type monitorEmail struct {
 }
 
 func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (c graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, err error) {
+	after, err := unmarshalAfter(args.After)
+	if err != nil {
+		return nil, err
+	}
 	var ms []*cm.Recipient
-	ms, err = m.store.ListRecipientsForEmailAction(ctx, m.EmailAction.ID, args)
+	ms, err = m.store.ListRecipients(ctx, cm.ListRecipientsOpts{
+		EmailID: &m.EmailAction.ID,
+		First:   intPtr(int(args.First)),
+		After:   intPtrToInt64Ptr(after),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -765,6 +896,13 @@ func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEven
 }
 
 func intPtr(i int) *int { return &i }
+func intPtrToInt64Ptr(i *int) *int64 {
+	if i == nil {
+		return nil
+	}
+	j := int64(*i)
+	return &j
+}
 
 func unmarshalAfter(after *string) (*int, error) {
 	if after == nil {
