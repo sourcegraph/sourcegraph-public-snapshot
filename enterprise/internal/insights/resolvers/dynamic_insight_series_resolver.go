@@ -16,8 +16,6 @@ var _ graphqlbackend.InsightStatusResolver = &emptyInsightStatusResolver{}
 // dynamicInsightSeriesResolver is a series resolver that expands based on matches from a search query.
 type dynamicInsightSeriesResolver struct {
 	generated *query.GeneratedTimeSeries
-
-	baseInsightResolver
 }
 
 func (d *dynamicInsightSeriesResolver) SeriesId() string {
