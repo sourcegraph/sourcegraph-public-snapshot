@@ -9,6 +9,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,7 +36,7 @@ var errVerificaitonNotSupported = errors.New("verification not supported for cod
 func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		statusCode, err := func() (_ int, err error) {
-			ctx, endObservation := operation.With(r.Context(), &err, observation.Args{})
+			ctx, traceLog, endObservation := operation.WithAndLogger(r.Context(), &err, observation.Args{})
 			defer endObservation(1, observation.Args{})
 
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
@@ -49,9 +50,12 @@ func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidato
 			repositoryName := getQuery(r, "repository")
 
 			for codeHost, validator := range authValidators {
-				if strings.HasPrefix(repositoryName, codeHost) {
-					return validator(ctx, query, repositoryName)
+				if !strings.HasPrefix(repositoryName, codeHost) {
+					continue
 				}
+				traceLog(log.String("codeHost", codeHost))
+
+				return validator(ctx, query, repositoryName)
 			}
 
 			return http.StatusUnprocessableEntity, errVerificaitonNotSupported
