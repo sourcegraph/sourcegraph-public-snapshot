@@ -43,7 +43,7 @@ VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error {
+func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error) {
 	now := s.Now()
 	a := actor.FromContext(ctx)
 	q := sqlf.Sprintf(
@@ -58,7 +58,8 @@ func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int
 		now,
 		sqlf.Join(queryColumns, ", "),
 	)
-	return s.Exec(ctx, q)
+	row := s.QueryRow(ctx, q)
+	return scanTriggerQuery(row)
 }
 
 const updateTriggerQueryFmtStr = `
