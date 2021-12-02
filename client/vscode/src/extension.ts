@@ -82,12 +82,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Open remote Sourcegraph file in VS Code
     context.subscriptions.push(
-        vscode.commands.registerCommand('extension.openFile', async uri => {
+        vscode.commands.registerCommand('extension.openFile', async () => {
+            const editor = vscode.window.activeTextEditor
+            if (!editor) {
+                throw new Error('No active editor')
+            }
+            const uri = editor.document.uri
             if (typeof uri === 'string') {
                 await openSourcegraphUriCommand(fs, SourcegraphUri.parse(uri))
             } else {
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                log.error(`extension.openFile(${uri}) argument is not a string`)
+                log.error(`extension.openRemoteFile(${uri}) argument is not a string`)
             }
         })
     )
