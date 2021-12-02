@@ -171,6 +171,9 @@ func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Contex
 
 	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
 }
+func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups() (bool, error) {
+	return s.series.GeneratedFromCaptureGroups, nil
+}
 
 type insightIntervalTimeScopeResolver struct {
 	unit  string
@@ -698,13 +701,18 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	}
 
 	if !foundSeries {
+		var dynamic bool
+		if series.GeneratedFromCaptureGroups != nil {
+			dynamic = *series.GeneratedFromCaptureGroups
+		}
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:            ksuid.New().String(),
-			Query:               series.Query,
-			CreatedAt:           time.Now(),
-			Repositories:        series.RepositoryScope.Repositories,
-			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
+			SeriesID:                   ksuid.New().String(),
+			Query:                      series.Query,
+			CreatedAt:                  time.Now(),
+			Repositories:               series.RepositoryScope.Repositories,
+			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
+			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
+			GeneratedFromCaptureGroups: dynamic,
 		})
 		if err != nil {
 			return errors.Wrap(err, "CreateSeries")
