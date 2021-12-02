@@ -5,7 +5,11 @@ import { of } from 'rxjs'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
-import { LINE_CHART_CONTENT_MOCK, LINE_CHART_WITH_MANY_LINES } from '../../../../views/mocks/charts-content'
+import {
+    LINE_CHART_CONTENT_MOCK,
+    LINE_CHART_WITH_HUGE_NUMBER_OF_LINES,
+    LINE_CHART_WITH_MANY_LINES,
+} from '../../../../views/mocks/charts-content'
 import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/setting-based-api/code-insights-setting-cascade-backend'
 import { Insight, InsightExecutionType, InsightType } from '../../core/types'
@@ -106,7 +110,14 @@ const insightsWithManyLines: Insight[] = [
         type: InsightExecutionType.Backend,
         viewType: InsightType.SearchBased,
         title: 'Backend insight #2',
-        series: [{ id: '', query: '', stroke: '', name: '' }],
+        series: [
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+            { id: '', query: '', stroke: '', name: '' },
+        ],
         visibility: 'personal',
     },
     {
@@ -138,7 +149,13 @@ class StoryBackendWithManyLinesCharts extends CodeInsightsSettingsCascadeBackend
             view: {
                 title: 'Backend Insight Mock',
                 subtitle: 'Backend insight description text',
-                content: [input.series.length >= 3 ? LINE_CHART_WITH_MANY_LINES : LINE_CHART_CONTENT_MOCK],
+                content: [
+                    input.series.length >= 3
+                        ? input.series.length >= 5
+                            ? LINE_CHART_WITH_HUGE_NUMBER_OF_LINES
+                            : LINE_CHART_WITH_MANY_LINES
+                        : LINE_CHART_CONTENT_MOCK,
+                ],
                 isFetchingHistoricalData: false,
             },
         })
