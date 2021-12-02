@@ -1,7 +1,6 @@
 package codemonitors
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -21,8 +20,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
 	require.NoError(t, err)
 
-	var got *ActionJob
-	got, err = s.GetActionJob(ctx, 1)
+	got, err := s.GetActionJob(ctx, 1)
 	require.NoError(t, err)
 
 	want := &ActionJob{
@@ -93,8 +91,7 @@ func TestScanActionJobs(t *testing.T) {
 	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, testTriggerEventID)
 	require.NoError(t, err)
 
-	var rows *sql.Rows
-	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
+	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
 	record, _, err := ScanActionJobRecord(rows, err)
 	require.NoError(t, err)
 

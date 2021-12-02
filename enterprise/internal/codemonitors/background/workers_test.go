@@ -56,7 +56,6 @@ func TestActionRunner(t *testing.T) {
 			}
 
 			// Create a TestStore.
-			var err error
 			now := time.Now()
 			clock := func() time.Time { return now }
 			s := codemonitors.NewStoreWithClock(db, clock)
@@ -65,7 +64,7 @@ func TestActionRunner(t *testing.T) {
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			_, err = ts.InsertTestMonitor(userCtx, t)
+			_, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
 			err = ts.EnqueueQueryTriggerJobs(ctx)
