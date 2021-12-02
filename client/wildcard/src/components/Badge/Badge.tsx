@@ -4,7 +4,7 @@ import React from 'react'
 import styles from './Badge.module.scss'
 import { BADGE_SIZES, BADGE_VARIANTS } from './constants'
 
-export interface BadgeProps {
+export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
     /**
      * The variant style of the badge.
      */
@@ -25,6 +25,10 @@ export interface BadgeProps {
      * Used to render the badge as a link to a specific URL
      */
     href?: string
+    /**
+     * Used to change the element that is rendered.
+     */
+    as?: React.ElementType
     className?: string
 }
 
@@ -39,6 +43,8 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
     tooltip,
     className,
     href,
+    as: Component = 'span',
+    ...otherProps
 }) => {
     const commonProps = {
         'data-tooltip': tooltip,
@@ -50,6 +56,7 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
             pill && 'badge-pill',
             className
         ),
+        ...otherProps,
     }
 
     if (href) {
@@ -60,5 +67,5 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
         )
     }
 
-    return <span {...commonProps}>{children}</span>
+    return <Component {...commonProps}>{children}</Component>
 }
