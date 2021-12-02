@@ -7,4 +7,6 @@
     To avoid visual merging/overlapping here, we use non-standard
    */
     --badge-base: var(--color-bg-2) !important;
+    display: inline-block;
+    text-transform: none;
 }

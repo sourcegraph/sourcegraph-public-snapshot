@@ -200,7 +200,13 @@ export const CheckboxRepositoryNode: React.FunctionComponent<CheckboxRepositoryN
                         onClick={handleOnClick}
                     />
                 </div>
-                <div>{isPrivate && <div className="badge bg-color-2 text-muted">Private</div>}</div>
+                <div>
+                    {isPrivate && (
+                        <Badge className="bg-color-2 text-muted" as="div">
+                            Private
+                        </Badge>
+                    )}
+                </div>
             </RepositoryNodeContainer>
         </tr>
     )
