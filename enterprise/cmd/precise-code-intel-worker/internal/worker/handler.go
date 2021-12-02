@@ -238,7 +238,7 @@ const requeueDelay = time.Minute
 // fail on.
 func requeueIfCloningOrCommitUnknown(ctx context.Context, db database.DB, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	_, err := backend.NewRepos(db.Repos()).ResolveRev(ctx, repo, upload.Commit)
-	if err != nil {
+	if err == nil {
 		// commit is resolvable
 		return false, nil
 	}
