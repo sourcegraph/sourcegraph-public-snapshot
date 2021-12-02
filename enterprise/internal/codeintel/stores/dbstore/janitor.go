@@ -197,9 +197,10 @@ candidate_indexes AS (
 // and index records modified.
 //
 // If a maximum commit lag is supplied, then any upload records in the uploading, queued, or processing states
-// younger than the provided lag will not be modified. This configurable parameter enables support for remote
-// code hosts that are not the source of truth; if we deleted all pending records without resolvable commits
-// introduce races between the customer's Sourcegraph instance and their CI (and their CI will usually win).
+// younger than the provided lag will not be deleted, but its timestamp will be modified as if the sibling method
+// UpdateSourcedCommits was called instead. This configurable parameter enables support for remote code hosts
+// that are not the source of truth; if we deleted all pending records without resolvable commits introduce races
+// between the customer's Sourcegraph instance and their CI (and their CI will usually win).
 func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (
 	uploadsUpdated int,
 	uploadsDeleted int,
