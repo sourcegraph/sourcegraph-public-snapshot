@@ -74,7 +74,9 @@ func connect(dsn, appName, dbName string, schemas []*Schema) (*sql.DB, func(err 
 	}
 
 	if dbName != "" {
-		prometheus.MustRegister(newMetricsCollector(db, dbName, appName))
+		if err := prometheus.Register(newMetricsCollector(db, dbName, appName)); err != nil {
+			return nil, nil, closeAll(err)
+		}
 	}
 
 	return db, closeAll, nil
