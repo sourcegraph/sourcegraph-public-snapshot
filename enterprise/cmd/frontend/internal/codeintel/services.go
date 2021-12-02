@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"net/http"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/repoupdater"
@@ -30,6 +32,10 @@ type Services struct {
 	lsifStore   *lsifstore.Store
 	repoStore   database.RepoStore
 	uploadStore uploadstore.Store
+
+	// shared with executorqueue
+	InternalUploadHandler http.Handler
+	ExternalUploadHandler http.Handler
 
 	locker          *locker.Locker
 	gitserverClient *gitserver.Client
@@ -60,6 +66,21 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		log.Fatalf("Failed to initialize upload store: %s", err)
 	}
 
+	// Initialize http endpoints
+	operations := httpapi.NewOperations(observationContext)
+	newUploadHandler := func(internal bool) http.Handler {
+		return httpapi.NewUploadHandler(
+			db,
+			&httpapi.DBStoreShim{Store: dbStore},
+			uploadStore,
+			internal,
+			httpapi.DefaultValidatorByCodeHost,
+			operations,
+		)
+	}
+	internalUploadHandler := newUploadHandler(true)
+	externalUploadHandler := newUploadHandler(false)
+
 	// Initialize gitserver client
 	gitserverClient := gitserver.New(dbStore, observationContext)
 	repoUpdaterClient := repoupdater.New(observationContext)
@@ -72,6 +93,9 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 		lsifStore:   lsifStore,
 		repoStore:   database.ReposWith(dbStore.Store),
 		uploadStore: uploadStore,
+
+		InternalUploadHandler: internalUploadHandler,
+		ExternalUploadHandler: externalUploadHandler,
 
 		locker:          locker,
 		gitserverClient: gitserverClient,
