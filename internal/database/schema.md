@@ -1039,6 +1039,24 @@ Stores data points for a code insight that do not need to be queried directly, b
 
 **recording_time**: The time for which this dependency should be recorded at using the parents value.
 
+# Table "public.insights_settings_migration_jobs"
+```
+       Column        |            Type             | Collation | Nullable |                           Default                            
+---------------------+-----------------------------+-----------+----------+--------------------------------------------------------------
+ id                  | integer                     |           | not null | nextval('insights_settings_migration_jobs_id_seq'::regclass)
+ user_id             | integer                     |           |          | 
+ org_id              | integer                     |           |          | 
+ global              | boolean                     |           |          | 
+ settings_id         | integer                     |           | not null | 
+ total_insights      | integer                     |           | not null | 0
+ migrated_insights   | integer                     |           | not null | 0
+ total_dashboards    | integer                     |           | not null | 0
+ migrated_dashboards | integer                     |           | not null | 0
+ runs                | integer                     |           | not null | 0
+ completed_at        | timestamp without time zone |           |          | 
+
+```
+
 # Table "public.lsif_configuration_policies"
 ```
            Column            |           Type           | Collation | Nullable |                         Default                         

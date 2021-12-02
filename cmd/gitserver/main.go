@@ -140,9 +140,10 @@ func main() {
 	}
 
 	// Create Handler now since it also initializes state
-
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.HTTPMiddleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
+	handler := gitserver.Handler()
+	handler = actor.HTTPMiddleware(handler)
+	handler = ot.HTTPMiddleware(trace.HTTPTraceMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -304,7 +305,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -314,7 +315,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil

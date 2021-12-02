@@ -20,16 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -80,12 +76,8 @@ func TestCreateCodeMonitor(t *testing.T) {
 }
 
 func TestListCodeMonitors(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -170,11 +162,7 @@ func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -236,11 +224,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -312,12 +296,8 @@ func (u *testUser) id() graphql.ID {
 }
 
 func TestQueryMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -584,12 +564,8 @@ query($userName: String!, $actionCursor: String!){
 `
 
 func TestEditCodeMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.

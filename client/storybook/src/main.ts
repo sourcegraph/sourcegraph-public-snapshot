@@ -6,18 +6,10 @@ import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import webpack, {
-    DllReferencePlugin,
-    Configuration,
-    DefinePlugin,
-    ProgressPlugin,
-    RuleSetUseItem,
-    RuleSetUse,
-    RuleSetRule,
-} from 'webpack'
+import webpack, { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer'
 
-import { ROOT_PATH } from '@sourcegraph/build-config'
+import { ROOT_PATH, getCSSLoaders } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { environment } from './environment-config'
@@ -52,19 +44,6 @@ const getStoriesGlob = (): string[] => {
 
     return [...storiesGlobs, chromaticStoriesGlob]
 }
-
-const getCSSLoaders = (...loaders: RuleSetUseItem[]): RuleSetUse => [
-    ...loaders,
-    'postcss-loader',
-    {
-        loader: 'sass-loader',
-        options: {
-            sassOptions: {
-                includePaths: [path.resolve(ROOT_PATH, 'node_modules'), path.resolve(ROOT_PATH, 'client')],
-            },
-        },
-    },
-]
 
 const getDllScriptTag = (): string => {
     ensureDllBundleIsReady()
