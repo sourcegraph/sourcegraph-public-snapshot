@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
@@ -257,7 +259,7 @@ func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
 	commitGraph *gitserver.CommitGraph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -785,13 +787,13 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string][]gitserver.RefDescription,
+	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
-	maxAges := map[gitserver.RefType]time.Duration{
-		gitserver.RefTypeBranch: maxAgeForNonStaleBranches,
-		gitserver.RefTypeTag:    maxAgeForNonStaleTags,
+	maxAges := map[gitdomain.RefType]time.Duration{
+		gitdomain.RefTypeBranch: maxAgeForNonStaleBranches,
+		gitdomain.RefTypeTag:    maxAgeForNonStaleTags,
 	}
 
 	nearestUploadsRowValues := make(chan []interface{})

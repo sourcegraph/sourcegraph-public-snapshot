@@ -105,7 +105,7 @@ func main() {
 
 	gitserverClient := gitserver.NewClient(observationContext)
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, 15, observationContext)
-	parser := parser.NewParser(parserPool, repositoryFetcher, observationContext)
+	parser := parser.NewParser(parserPool, repositoryFetcher, config.requestBufferSize, config.numCtagsProcesses, observationContext)
 	databaseWriter := writer.NewDatabaseWriter(config.cacheDir, gitserverClient, parser)
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
 	apiHandler := api.NewHandler(cachedDatabaseWriter, observationContext)
@@ -113,7 +113,7 @@ func main() {
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(apiHandler, conf.DefaultClient())),
+		Handler:      ot.HTTPMiddleware(trace.HTTPTraceMiddleware(apiHandler, conf.DefaultClient())),
 	})
 
 	evictionInterval := time.Second * 10

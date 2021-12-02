@@ -10,15 +10,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestUsageStatsArchiveHandler(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := database.NewDB(dbtesting.GetDB(t))
+	db := database.NewDB(dbtest.NewDB(t))
 
 	t.Run("non-admins can't download archive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)

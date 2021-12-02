@@ -84,7 +84,7 @@ func main() {
 	}
 	h = instrumentHandler(prometheus.DefaultRegisterer, h)
 	h = trace.HTTPTraceMiddleware(h, conf.DefaultClient())
-	h = ot.Middleware(h)
+	h = ot.HTTPMiddleware(h)
 	http.Handle("/", h)
 
 	host := ""

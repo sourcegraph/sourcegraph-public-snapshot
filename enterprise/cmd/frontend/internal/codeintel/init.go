@@ -27,13 +27,8 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 		return err
 	}
 
-	uploadHandler, err := newUploadHandler(ctx, conf, db, services)
-	if err != nil {
-		return err
-	}
-
 	enterpriseServices.CodeIntelResolver = resolver
-	enterpriseServices.NewCodeIntelUploadHandler = uploadHandler
+	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 	return nil
 }
 
@@ -63,24 +58,14 @@ func newResolver(ctx context.Context, db database.DB, observationContext *observ
 	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
 }
 
-func newUploadHandler(ctx context.Context, conf conftypes.SiteConfigQuerier, db database.DB, services *Services) (func(internal bool) http.Handler, error) {
-	internalHandler, err := NewCodeIntelUploadHandler(ctx, conf, db, true, services)
-	if err != nil {
-		return nil, err
-	}
-
-	externalHandler, err := NewCodeIntelUploadHandler(ctx, conf, db, false, services)
-	if err != nil {
-		return nil, err
-	}
-
+func newUploadHandler(services *Services) func(internal bool) http.Handler {
 	uploadHandler := func(internal bool) http.Handler {
 		if internal {
-			return internalHandler
+			return services.InternalUploadHandler
 		}
 
-		return externalHandler
+		return services.ExternalUploadHandler
 	}
 
-	return uploadHandler, nil
+	return uploadHandler
 }

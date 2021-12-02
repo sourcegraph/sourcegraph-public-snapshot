@@ -8,9 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -41,15 +42,11 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 		Enabled:         true,
 		NamespaceUserID: &uid,
 	})
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	// Create trigger.
 	err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	for _, a := range actions {
 		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
@@ -57,14 +54,10 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 			Priority: a.Priority,
 			Header:   a.Header,
 		})
-		if err != nil {
-			return nil, err
-		}
+		require.NoError(t, err)
 
 		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
-		if err != nil {
-			return nil, err
-		}
+		require.NoError(t, err)
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
 	return m, nil
@@ -72,7 +65,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 
 func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, NewStoreWithClock(db, func() time.Time { return now })
 }
@@ -92,8 +85,6 @@ func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
 	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	return userID
 }
