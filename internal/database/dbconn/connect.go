@@ -26,7 +26,22 @@ type Opts struct {
 	DatabasesToMigrate []*Database
 }
 
-// New connects to the given data source and returns the handle.
+func NewFrontendDB(dsn, appName string) (*sql.DB, error) {
+	db, _, err := Connect(Opts{DSN: dsn, DBName: "frontend", AppName: appName, DatabasesToMigrate: []*Database{Frontend}})
+	return db, err
+}
+
+func NewCodeIntelDB(dsn, appName string) (*sql.DB, error) {
+	db, _, err := Connect(Opts{DSN: dsn, DBName: "codeintel", AppName: appName, DatabasesToMigrate: []*Database{CodeIntel}})
+	return db, err
+}
+
+func NewCodeInsightsDB(dsn, appName string) (*sql.DB, error) {
+	db, _, err := Connect(Opts{DSN: dsn, DBName: "codeinsight", AppName: appName, DatabasesToMigrate: []*Database{CodeInsights}})
+	return db, err
+}
+
+// Connect to the given data source and return the handle.
 //
 // If dbname is set then metric will be reported for the returned handle.
 // dbname is used for its Prometheus label value instead of whatever actual value is set in dataSource.
@@ -41,7 +56,7 @@ type Opts struct {
 // This function returns a basestore-style method that closes the database. This should
 // be called instead of calling Close directly on the database handle as it also handles
 // closing migration objects associated with the handle.
-func New(opts Opts) (*sql.DB, func(err error) error, error) {
+func Connect(opts Opts) (*sql.DB, func(err error) error, error) {
 	cfg, err := buildConfig(opts.DSN, opts.AppName)
 	if err != nil {
 		return nil, nil, err

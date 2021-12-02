@@ -173,7 +173,7 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 
 func dbConnInternal(t testing.TB, cfg *url.URL, databases []*dbconn.Database) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, close, err := dbconn.New(dbconn.Opts{DSN: cfg.String(), DatabasesToMigrate: databases})
+	db, close, err := dbconn.Connect(dbconn.Opts{DSN: cfg.String(), DatabasesToMigrate: databases})
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
