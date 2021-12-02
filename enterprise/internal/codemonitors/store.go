@@ -36,7 +36,7 @@ type CodeMonitorStore interface {
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
 	GetQueryTriggerForJob(ctx context.Context, jobID int) (*QueryTrigger, error)
-	EnqueueQueryTriggerJobs(context.Context) error
+	EnqueueQueryTriggerJobs(context.Context) ([]*TriggerJob, error)
 	ListQueryTriggerJobs(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 

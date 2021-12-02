@@ -38,7 +38,8 @@ func newTriggerQueryEnqueuer(ctx context.Context, store cm.CodeMonitorStore) gor
 	enqueueActive := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_query_enqueuer",
 		func(ctx context.Context) error {
-			return store.EnqueueQueryTriggerJobs(ctx)
+			_, err := store.EnqueueQueryTriggerJobs(ctx)
+			return err
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }

@@ -14,7 +14,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	_, err = s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 
 	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
@@ -47,7 +47,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	_, err = s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 
 	var (
@@ -85,7 +85,7 @@ func TestScanActionJobs(t *testing.T) {
 	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	_, err = s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 
 	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, testTriggerEventID)

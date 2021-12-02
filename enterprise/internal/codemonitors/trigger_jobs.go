@@ -51,10 +51,16 @@ busy AS (
 )
 INSERT INTO cm_trigger_jobs (query)
 SELECT id from due EXCEPT SELECT id from busy ORDER BY id
+RETURNING %s
 `
 
-func (s *codeMonitorStore) EnqueueQueryTriggerJobs(ctx context.Context) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr))
+func (s *codeMonitorStore) EnqueueQueryTriggerJobs(ctx context.Context) ([]*TriggerJob, error) {
+	rows, err := s.Store.Query(ctx, sqlf.Sprintf(enqueueTriggerQueryFmtStr, sqlf.Join(TriggerJobsColumns, ",")))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanTriggerJobs(rows)
 }
 
 const logSearchFmtStr = `

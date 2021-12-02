@@ -28,7 +28,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add 1 job and date it back to a long time ago.
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	_, err = s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 
 	longTimeAgo := s.Now().AddDate(0, 0, -(retentionInDays + 1))
@@ -36,7 +36,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	require.NoError(t, err)
 
 	// Add second job.
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	_, err = s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 
 	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, s.Now(), s.Now(), 2))

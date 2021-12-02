@@ -67,7 +67,7 @@ func TestActionRunner(t *testing.T) {
 			_, err := ts.InsertTestMonitor(userCtx, t)
 			require.NoError(t, err)
 
-			err = ts.EnqueueQueryTriggerJobs(ctx)
+			_, err = ts.EnqueueQueryTriggerJobs(ctx)
 			require.NoError(t, err)
 
 			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
