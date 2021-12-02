@@ -372,6 +372,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
+	err = res.ErrorOrNil()
 	if len(res.MissingRepoRevs) > 0 {
 		err = multierror.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
 	}
