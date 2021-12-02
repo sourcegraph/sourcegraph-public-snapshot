@@ -135,7 +135,7 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                         text: entity.name,
                     },
                 ]}
-                className="mb-1"
+                className="mt-3 mb-1"
             />
             <div className="mb-4" />
             <TabRouter tabs={tabs} />

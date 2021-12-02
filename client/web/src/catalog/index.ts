@@ -1,4 +1,4 @@
-import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
+import ApplicationBracketsOutlineIcon from 'mdi-react/ApplicationBracketsOutlineIcon'
 
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -16,7 +16,7 @@ export function isCatalogEnabled(settingsCascade: SettingsCascadeOrError): boole
     return Boolean(settingsCascade.final?.experimentalFeatures?.catalog)
 }
 
-export const CatalogIcon = BookOpenBlankVariantIcon
+export const CatalogIcon = ApplicationBracketsOutlineIcon
 
 /**
  * Common props for components needing to render catalog components.

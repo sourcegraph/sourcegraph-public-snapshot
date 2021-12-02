@@ -60,6 +60,7 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({
         }
     )
 
+    const disableSidebar = true
     const [showSidebar, setShowSidebar] = useTemporarySetting('catalog.sidebar.visible', true)
 
     return (
@@ -75,31 +76,32 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({
                         : data.catalogEntity.name
                 }
             />
-            {showSidebar ? (
-                <Sidebar>
-                    <EntityList
-                        selectedEntityName={entityName}
-                        filters={filters}
-                        onFiltersChange={onFiltersChange}
-                        className="flex-1"
-                        size="sm"
-                    />
-                    <div className="flex-1" />
-                    <button type="button" className="btn btn-link btn-sm" onClick={() => setShowSidebar(false)}>
-                        Hide sidebar
+            {!disableSidebar &&
+                (showSidebar ? (
+                    <Sidebar>
+                        <EntityList
+                            selectedEntityName={entityName}
+                            filters={filters}
+                            onFiltersChange={onFiltersChange}
+                            className="flex-1"
+                            size="sm"
+                        />
+                        <div className="flex-1" />
+                        <button type="button" className="btn btn-link btn-sm" onClick={() => setShowSidebar(false)}>
+                            Hide sidebar
+                        </button>
+                    </Sidebar>
+                ) : (
+                    <button
+                        type="button"
+                        className={classNames('btn btn-secondary btn-sm', styles.showSidebarBtn)}
+                        onClick={() => setShowSidebar(true)}
+                        title="Show sidebar"
+                    >
+                        <FormatListBulletedIcon className="icon-inline" />
                     </button>
-                </Sidebar>
-            ) : (
-                <button
-                    type="button"
-                    className={classNames('btn btn-secondary btn-sm', styles.showSidebarBtn)}
-                    onClick={() => setShowSidebar(true)}
-                    title="Show sidebar"
-                >
-                    <FormatListBulletedIcon className="icon-inline" />
-                </button>
-            )}
-            <div className="pt-2 px-3 pb-4 overflow-auto w-100">
+                ))}
+            <div className="pt-2 container-fluid pb-4 overflow-auto w-100">
                 {loading && !data ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : error && !data ? (

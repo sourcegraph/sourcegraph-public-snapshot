@@ -28,104 +28,90 @@ interface Props extends EntityDetailContentCardProps {
     entity: CatalogEntityDetailFields
 }
 
-export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, className }) => {
-    const searchSourcesCard = (
-        <div className="card mb-3">
-            <div className="card-body">
-                <Link
-                    to={`/search?q=context:c/${entity.name}`}
-                    className="d-flex align-items-center btn btn-outline-secondary"
-                >
-                    <SearchIcon className="icon-inline" /> Search in {entity.name}...
-                </Link>
-            </div>
-            <ComponentSourceDefinitions
-                catalogComponent={entity}
-                listGroupClassName="list-group-flush"
-                className="border-top"
-            />
-        </div>
-    )
-
-    return (
-        <div className={classNames('d-flex flex-column', className)}>
-            {entity.__typename === 'CatalogComponent' ? (
-                <>
-                    <div className="row">
-                        <div className="col-md-8">
-                            {searchSourcesCard}
-                            {false && entity.commits?.nodes[0] && (
-                                <LastCommit commit={entity.commits?.nodes[0]} className="" />
+export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, className }) => (
+    <div className={classNames('d-flex flex-column', className)}>
+        {entity.__typename === 'CatalogComponent' ? (
+            <>
+                <div className="row">
+                    <div className="col-md-8">
+                        <ComponentSourceDefinitions catalogComponent={entity} listGroupClassName="" />
+                        {false && entity.commits?.nodes[0] && (
+                            <LastCommit commit={entity.commits?.nodes[0]} className="" />
+                        )}
+                        <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
+                    </div>
+                    <div className="col-md-4">
+                        {/* owner-docs-API def -- authorities. then who you could ask. */}
+                        {entity.description && <p className="mb-3">{entity.description}</p>}
+                        <div>
+                            <Link
+                                to={`/search?q=context:c/${entity.name}`}
+                                className="d-inline-flex align-items-center btn btn-outline-secondary mb-3"
+                            >
+                                <SearchIcon className="icon-inline" /> Search...
+                            </Link>
+                            {entity.readme && (
+                                <div className="d-flex align-items-start">
+                                    <Link
+                                        to={entity.readme.url}
+                                        className="d-flex align-items-center text-body mb-3 mr-2"
+                                    >
+                                        <FileDocumentIcon className="icon-inline mr-2" />
+                                        Documentation
+                                    </Link>
+                                    <FilePeekButton file={entity.readme} />
+                                </div>
                             )}
-                            <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
-                        </div>
-                        <div className="col-md-4">
-                            {/* owner-docs-API def -- authorities. then who you could ask. */}
-                            {entity.description && <p className="mb-3">{entity.description}</p>}
-                            <div>
-                                {entity.readme && (
-                                    <div className="d-flex align-items-start">
-                                        <Link
-                                            to={entity.readme.url}
-                                            className="d-flex align-items-center text-body mb-3 mr-2"
-                                        >
-                                            <FileDocumentIcon className="icon-inline mr-2" />
-                                            Documentation
-                                        </Link>
-                                        <FilePeekButton file={entity.readme} />
-                                    </div>
-                                )}
-                                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                    <FileAlertIcon className="icon-inline mr-2" />
-                                    Runbook
-                                </Link>
-                                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                    <AlertCircleOutlineIcon className="icon-inline mr-2" />
-                                    Issues
-                                </Link>
-                                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                    <SlackIcon className="icon-inline mr-2" />
-                                    #dev-frontend
-                                </Link>
-                                <hr className="my-3" />
-                                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                    <PowerCycleIcon className="icon-inline mr-2" />
-                                    Lifecycle:&nbsp;<strong>{entity.lifecycle.toLowerCase()}</strong>
-                                </Link>
-                                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                    <SettingsIcon className="icon-inline mr-2" />
-                                    Spec
-                                </Link>
-                            </div>
+                            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                <FileAlertIcon className="icon-inline mr-2" />
+                                Runbook
+                            </Link>
+                            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                <AlertCircleOutlineIcon className="icon-inline mr-2" />
+                                Issues
+                            </Link>
+                            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                <SlackIcon className="icon-inline mr-2" />
+                                #dev-frontend
+                            </Link>
+                            <hr className="my-3" />
+                            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                <PowerCycleIcon className="icon-inline mr-2" />
+                                Lifecycle:&nbsp;<strong>{entity.lifecycle.toLowerCase()}</strong>
+                            </Link>
+                            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                                <SettingsIcon className="icon-inline mr-2" />
+                                Spec
+                            </Link>
                         </div>
                     </div>
-                    <EntityGraph
-                        graph={{
-                            edges: entity.relatedEntities.edges.map(edge =>
-                                edge.type === CatalogEntityRelationType.DEPENDS_ON
-                                    ? {
-                                          type: edge.type,
-                                          outNode: entity,
-                                          inNode: edge.node,
-                                      }
-                                    : {
-                                          type: CatalogEntityRelationType.DEPENDS_ON,
-                                          outNode: edge.node,
-                                          inNode: entity,
-                                      }
-                            ),
-                            nodes: uniqBy(entity.relatedEntities.edges.map(edge => edge.node).concat(entity), 'id'),
-                        }}
-                        activeNodeID={entity.id}
-                        className="border-top my-3"
-                    />
-                </>
-            ) : (
-                <div>Typename is {entity.__typename}</div>
-            )}
-        </div>
-    )
-}
+                </div>
+                <EntityGraph
+                    graph={{
+                        edges: entity.relatedEntities.edges.map(edge =>
+                            edge.type === CatalogEntityRelationType.DEPENDS_ON
+                                ? {
+                                      type: edge.type,
+                                      outNode: entity,
+                                      inNode: edge.node,
+                                  }
+                                : {
+                                      type: CatalogEntityRelationType.DEPENDS_ON,
+                                      outNode: edge.node,
+                                      inNode: entity,
+                                  }
+                        ),
+                        nodes: uniqBy(entity.relatedEntities.edges.map(edge => edge.node).concat(entity), 'id'),
+                    }}
+                    activeNodeID={entity.id}
+                    className="border-top my-3"
+                />
+            </>
+        ) : (
+            <div>Typename is {entity.__typename}</div>
+        )}
+    </div>
+)
 
 const LastCommit: React.FunctionComponent<{
     commit: NonNullable<CatalogEntityDetailFields['commits']>['nodes'][0]

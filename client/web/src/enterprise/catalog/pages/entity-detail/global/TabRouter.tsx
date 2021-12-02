@@ -19,7 +19,7 @@ export const TabRouter: React.FunctionComponent<Props> = ({ tabs }) => {
     const match = useRouteMatch()
     return (
         <>
-            <ul className="nav nav-tabs w-100 mb-2">
+            <ul className="nav nav-tabs w-100 mb-3">
                 {tabs.map(tab => (
                     <li key={tab.path} className="nav-item">
                         <NavLink
