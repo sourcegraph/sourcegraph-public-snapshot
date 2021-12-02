@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { BadgeProps, Badge } from './Badge'
@@ -51,17 +52,18 @@ export type ProductStatusBadgeProps = BaseProductStatusBadgeProps | PossibleLink
  */
 export const ProductStatusBadge: React.FunctionComponent<ProductStatusBadgeProps> = props => {
     const variant = STATUS_VARIANT_MAPPING[props.status]
+    const className = classNames('text-capitalize', props.className)
 
     if ('linkToDocs' in props) {
         return (
-            <Badge href={STATUS_LINK_MAPPING[props.status]} variant={variant} className={props.className}>
+            <Badge href={STATUS_LINK_MAPPING[props.status]} variant={variant} className={className}>
                 {props.status}
             </Badge>
         )
     }
 
     return (
-        <Badge {...props} variant={variant} className={props.className}>
+        <Badge {...props} variant={variant} className={className}>
             {props.status}
         </Badge>
     )
