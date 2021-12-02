@@ -267,7 +267,7 @@ func getDB() (dbutil.DB, error) {
 	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	return dbconn.NewFrontendDB(dsn, "gitserver", false)

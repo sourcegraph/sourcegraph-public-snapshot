@@ -80,7 +80,7 @@ func NewServices(ctx context.Context, siteConfig conftypes.SiteConfigQuerier, db
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 	db, err := dbconn.NewCodeIntelDB(dsn, "frontend", true)

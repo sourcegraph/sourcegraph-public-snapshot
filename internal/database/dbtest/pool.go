@@ -198,7 +198,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, schemas 
 		return nil, errors.Wrap(err, "create template database")
 	}
 
-	_, closeTemplateDB, err := dbconn.ConnectRaw(urlWithDB(u, tdb.Name).String(), schemas...)
+	_, closeTemplateDB, err := dbconn.ConnectRawClownTown(urlWithDB(u, tdb.Name).String(), schemas...)
 	if err != nil {
 		return nil, err
 	}

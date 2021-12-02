@@ -22,7 +22,7 @@ func Init() (*sql.DB, error) {
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	db, err := dbconn.NewFrontendDB(dsn, "worker", false)

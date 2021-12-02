@@ -158,7 +158,7 @@ func startDocker() (commandPrefix []string, shutdown func(), _ error) {
 }
 
 func generateInternal(schema *dbconn.Schema, dataSource string, run runFunc) (_ string, err error) {
-	db, closeDB, err := dbconn.ConnectRaw(dataSource, schema)
+	db, closeDB, err := dbconn.ConnectRawClownTown(dataSource, schema)
 	if err != nil {
 		return "", errors.Wrap(err, "NewRaw")
 	}

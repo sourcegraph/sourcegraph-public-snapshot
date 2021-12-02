@@ -113,7 +113,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("error initialising encryption keyring: %v", err)
 	}
 
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	sqlDB, err := dbconn.NewFrontendDB(dsn, "repo-updater", false)

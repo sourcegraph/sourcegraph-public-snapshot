@@ -122,7 +122,7 @@ func main() {
 }
 
 func mustInitializeDB() *sql.DB {
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 	sqlDB, err := dbconn.NewFrontendDB(dsn, "precise-code-intel-worker", false)
@@ -148,7 +148,7 @@ func mustInitializeDB() *sql.DB {
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 	db, err := dbconn.NewCodeIntelDB(dsn, "precise-code-intel-worker", true)

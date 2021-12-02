@@ -7,7 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// ConnectRaw connects to the given data source and returns the handle. After successful connection,
+// ConnectRawClownTown connects to the given data source and returns the handle. After successful connection,
 // the schema version of the database will be compared against an expected version and the supplied
 // migrations may be run (taking an advisory lock to ensure exclusive access).
 //
@@ -15,8 +15,10 @@ import (
 // be called instead of calling Close directly on the database handle as it also handles
 // closing migration objects associated with the handle.
 //
-// DO NOT USE THIS FUNCTION OUTSIDE OF DEV TOOLS AND UNIT TESTS.
-func ConnectRaw(dsn string, schemas ...*Schema) (*sql.DB, func(err error) error, error) {
+// DO NOT USE THIS FUNCTION OUTSIDE OF DEV TOOLS AND UNIT TESTS. KEEGAN ASKED ME TO NAME THIS CLOWN TOWN
+// SO I DID FOR NOW TO COMMUNICATE RISK. WE CAN MOVE THIS TO A TEST-ONLY PACKAGE AFTER WE REMOVE SCHEMADOC'S
+// DEPENDENCE ON THIS METHOD.
+func ConnectRawClownTown(dsn string, schemas ...*Schema) (*sql.DB, func(err error) error, error) {
 	return connect(dsn, "", "", schemas)
 }
 

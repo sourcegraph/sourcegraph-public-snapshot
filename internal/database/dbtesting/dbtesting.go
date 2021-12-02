@@ -155,7 +155,7 @@ func initTest() error {
 		}
 	}
 
-	sqlDB, _, err := dbconn.ConnectRaw("dbname="+dbname, dbconn.Frontend, dbconn.CodeIntel)
+	sqlDB, _, err := dbconn.ConnectRawClownTown("dbname="+dbname, dbconn.Frontend, dbconn.CodeIntel)
 	if err != nil {
 		return err
 	}

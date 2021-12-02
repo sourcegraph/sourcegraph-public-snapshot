@@ -60,7 +60,7 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
 func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsTimescaleDSN
 	})
 	db, err := dbconn.NewCodeInsightsDB(dsn, app, true)

@@ -22,7 +22,7 @@ func InitCodeIntelDatabase() (*sql.DB, error) {
 }
 
 var initCodeIntelDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
-	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 	db, err := dbconn.NewCodeIntelDB(dsn, "worker", false)

@@ -201,7 +201,7 @@ func urlWithDB(u *url.URL, dbName string) *url.URL {
 }
 
 func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, err error) {
-	db, closeDB, err := dbconn.ConnectRaw(u.String())
+	db, closeDB, err := dbconn.ConnectRawClownTown(u.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -212,7 +212,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, e
 	_, _ = db.Exec("CREATE DATABASE dbtest_pool")
 
 	poolDBURL := urlWithDB(u, "dbtest_pool")
-	poolDB, closePoolDB, err := dbconn.ConnectRaw(poolDBURL.String())
+	poolDB, closePoolDB, err := dbconn.ConnectRawClownTown(poolDBURL.String())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -229,7 +229,7 @@ func newPoolFromURL(u *url.URL) (_ *testDatabasePool, _ func(err error) error, e
 			return nil, nil, err
 		}
 
-		poolDB, closePoolDB, err = dbconn.ConnectRaw(poolDBURL.String())
+		poolDB, closePoolDB, err = dbconn.ConnectRawClownTown(poolDBURL.String())
 		if err != nil {
 			return nil, nil, err
 		}

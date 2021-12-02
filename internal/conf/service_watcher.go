@@ -6,13 +6,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-// WatchServiceConnectionValue returns the value returned by the given function when passed the
+// GetServiceConnectionValueAndRestartOnChange returns the value returned by the given function when passed the
 // current service connection configuration. If this function returns a different value in the
 // future for an updated service connection configuration, a fatal log will be emitted to
 // restart the service to pick up changes.
 //
 // This method should only be called for critical values like database connection config.
-func WatchServiceConnectionValue(f func(serviceConnections conftypes.ServiceConnections) string) string {
+func GetServiceConnectionValueAndRestartOnChange(f func(serviceConnections conftypes.ServiceConnections) string) string {
 	value := f(Get().ServiceConnections())
 	Watch(func() {
 		if newValue := f(Get().ServiceConnections()); value != newValue {
