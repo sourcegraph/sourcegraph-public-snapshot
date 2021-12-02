@@ -858,6 +858,7 @@ describe('Batches', () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/users/alice/settings/batch-changes')
             // View settings page.
             await driver.page.waitForSelector('.test-batches-settings-page')
+            await percySnapshotWithVariants(driver.page, 'User batch changes settings page')
             // Wait for list to load.
             await driver.page.waitForSelector('.test-code-host-connection-node')
             // Check no credential is configured.
