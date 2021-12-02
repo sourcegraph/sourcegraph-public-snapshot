@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
+func TestEnqueueActionEmailsForQuery(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
@@ -18,11 +18,9 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, triggerJobs, 1)
 
-	_, err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
+	actionJobs, err := s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
 	require.NoError(t, err)
-
-	got, err := s.GetActionJob(ctx, 1)
-	require.NoError(t, err)
+	require.Len(t, actionJobs, 2) // two actions are created by insertTestMonitor
 
 	want := &ActionJob{
 		ID:             1,
@@ -37,7 +35,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 		NumFailures:    0,
 		LogContents:    nil,
 	}
-	require.Equal(t, want, got)
+	require.Equal(t, want, actionJobs[0])
 }
 
 func int64Ptr(i int64) *int64 { return &i }
@@ -60,10 +58,11 @@ func TestGetActionJobMetadata(t *testing.T) {
 	err = s.UpdateTriggerJobWithResults(ctx, 1, wantQuery, wantNumResults)
 	require.NoError(t, err)
 
-	_, err = s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
+	actionJobs, err := s.EnqueueActionJobsForQuery(ctx, 1, triggerJobs[0].ID)
 	require.NoError(t, err)
+	require.Len(t, actionJobs, 2)
 
-	got, err := s.GetActionJobMetadata(ctx, 1)
+	got, err := s.GetActionJobMetadata(ctx, actionJobs[0].ID)
 	require.NoError(t, err)
 
 	want := &ActionJobMetadata{
@@ -77,8 +76,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 
 func TestScanActionJobs(t *testing.T) {
 	var (
-		testRecordID       = 1
-		testQueryID  int64 = 1
+		testQueryID int64 = 1
 	)
 
 	ctx, db, s := newTestStore(t)
@@ -91,12 +89,13 @@ func TestScanActionJobs(t *testing.T) {
 	require.Len(t, triggerJobs, 1)
 	triggerJobID := triggerJobs[0].ID
 
-	_, err = s.EnqueueActionJobsForQuery(ctx, testQueryID, triggerJobID)
+	actionJobs, err := s.EnqueueActionJobsForQuery(ctx, testQueryID, triggerJobID)
 	require.NoError(t, err)
+	require.Len(t, actionJobs, 2)
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
+	rows, err := s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), actionJobs[0].ID))
 	record, _, err := ScanActionJobRecord(rows, err)
 	require.NoError(t, err)
 
-	require.Equal(t, testRecordID, record.RecordID())
+	require.Equal(t, int(actionJobs[0].ID), record.RecordID())
 }

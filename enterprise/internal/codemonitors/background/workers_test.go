@@ -71,14 +71,12 @@ func TestActionRunner(t *testing.T) {
 			err = ts.UpdateTriggerJobWithResults(ctx, triggerEventID, testQuery, tt.numResults)
 			require.NoError(t, err)
 
-			_, err = ts.EnqueueActionJobsForQuery(ctx, query.ID, triggerEventID)
+			actionJobs, err := ts.EnqueueActionJobsForQuery(ctx, query.ID, triggerEventID)
 			require.NoError(t, err)
-
-			record, err := ts.GetActionJob(ctx, 1)
-			require.NoError(t, err)
+			require.Len(t, actionJobs, 2) // Two actions are created in InsertTestMonitor
 
 			a := actionRunner{s}
-			err = a.Handle(ctx, record)
+			err = a.Handle(ctx, actionJobs[0])
 			require.NoError(t, err)
 
 			want := email.TemplateDataNewSearchResults{
