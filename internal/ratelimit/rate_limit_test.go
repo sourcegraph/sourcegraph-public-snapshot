@@ -124,9 +124,9 @@ func TestMonitor_Update(t *testing.T) {
 			name:   "RateLimit headers are set",
 			before: &Monitor{HeaderPrefix: "X-", clock: clock},
 			h: http.Header{
-				"X-RateLimit-Limit":     []string{"500"},
-				"X-RateLimit-Remaining": []string{"1"},
-				"X-RateLimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+				"X-RateLimit-Limit":            []string{"500"},
+				"X-RateLimit-Remaining":        []string{"1"},
+				"X-RateLimit-EmitHashAndClear": []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
 			},
 			after: &Monitor{
 				HeaderPrefix: "X-",
@@ -141,9 +141,9 @@ func TestMonitor_Update(t *testing.T) {
 			name:   "RateLimit headers are set for GitLab",
 			before: &Monitor{clock: clock},
 			h: http.Header{
-				"Ratelimit-Limit":     []string{"500"},
-				"Ratelimit-Remaining": []string{"1"},
-				"Ratelimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+				"Ratelimit-Limit":            []string{"500"},
+				"Ratelimit-Remaining":        []string{"1"},
+				"Ratelimit-EmitHashAndClear": []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
 			},
 			after: &Monitor{
 				HeaderPrefix: "",
@@ -157,10 +157,10 @@ func TestMonitor_Update(t *testing.T) {
 			name:   "Responses with X-From-Cache header are ignored",
 			before: &Monitor{clock: clock},
 			h: http.Header{
-				"X-From-Cache":        []string{"1"},
-				"RateLimit-Limit":     []string{"500"},
-				"RateLimit-Remaining": []string{"1"},
-				"RateLimit-Reset":     []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
+				"X-From-Cache":               []string{"1"},
+				"RateLimit-Limit":            []string{"500"},
+				"RateLimit-Remaining":        []string{"1"},
+				"RateLimit-EmitHashAndClear": []string{strconv.FormatInt(now.Add(time.Minute).Unix(), 10)},
 			},
 			after: &Monitor{},
 		},

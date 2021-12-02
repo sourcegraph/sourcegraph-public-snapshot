@@ -483,7 +483,7 @@ func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.Chan
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Reset syncer error message state.
+	// EmitHashAndClear syncer error message state.
 	c.SyncErrorMessage = nil
 
 	err = tx.UpdateChangesetCodeHostState(ctx, c)

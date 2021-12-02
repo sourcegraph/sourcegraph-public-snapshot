@@ -355,7 +355,7 @@ func (op OpDatabaseDown) Execute(options *OperationOptions) error {
 	return nil
 }
 func (op OpDatabaseDown) Reset(options *OperationOptions) error {
-	logger := mLogger{block: options.Block, prefix: "  OpDbDown - Reset: "}
+	logger := mLogger{block: options.Block, prefix: "  OpDbDown - EmitHashAndClear: "}
 	m, err := getMigrate(options.Database, logger)
 	if err != nil {
 		return err

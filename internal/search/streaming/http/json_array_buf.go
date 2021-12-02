@@ -39,7 +39,7 @@ func (j *JSONArrayBuf) Append(v interface{}) error {
 
 	enc := json.NewEncoder(&j.buf)
 	if err := enc.Encode(v); err != nil {
-		// Reset the buffer to where it was before failing to marshal
+		// EmitHashAndClear the buffer to where it was before failing to marshal
 		j.buf.Truncate(oldLen)
 		return err
 	}

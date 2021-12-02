@@ -109,10 +109,10 @@ loop:
 		}
 
 		for id, lastHeartbeatAge := range resetLastHeartbeatsByIDs {
-			log15.Warn("Reset stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
+			log15.Warn("EmitHashAndClear stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
 		}
 		for id, lastHeartbeatAge := range failedLastHeartbeatsByIDs {
-			log15.Warn("Reset stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
+			log15.Warn("EmitHashAndClear stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
 		}
 
 		r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))

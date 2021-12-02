@@ -324,7 +324,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 }
 
 func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// Reset pagination cursor to get correct total count
+	// EmitHashAndClear pagination cursor to get correct total count
 	opt := r.opt
 	opt.AfterID = 0
 	count, err := r.db.ExternalServices().Count(ctx, opt)

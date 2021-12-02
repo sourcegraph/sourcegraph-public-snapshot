@@ -185,7 +185,7 @@ func (c *Monitor) Update(h http.Header) {
 		c.known = false
 		return
 	}
-	resetAtSeconds, err := strconv.ParseInt(h.Get(c.HeaderPrefix+"RateLimit-Reset"), 10, 64)
+	resetAtSeconds, err := strconv.ParseInt(h.Get(c.HeaderPrefix+"RateLimit-EmitHashAndClear"), 10, 64)
 	if err != nil {
 		c.known = false
 		return

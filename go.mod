@@ -23,6 +23,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.18.0
 	github.com/aws/smithy-go v1.9.0
 	github.com/beevik/etree v1.1.0
+	github.com/bits-and-blooms/bloom/v3 v3.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/cespare/xxhash v1.1.0
 	github.com/cespare/xxhash/v2 v2.1.2
@@ -95,6 +96,7 @@ require (
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.4
+	github.com/loov/hrtime v1.0.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.9
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
@@ -275,7 +277,6 @@ require (
 	github.com/snabb/diagio v1.0.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
-	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/stretchr/objx v0.3.0 // indirect

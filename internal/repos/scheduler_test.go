@@ -828,7 +828,7 @@ func TestUpdateQueue_PrioritiseUncloned(t *testing.T) {
 
 	assertFront(cloned1.Name)
 
-	// Reset the time to now and do prioritiseUncloned. We then verify that notcloned
+	// EmitHashAndClear the time to now and do prioritiseUncloned. We then verify that notcloned
 	// is now at the front of the queue.
 	mockTime(defaultTime)
 	s.schedule.prioritiseUncloned([]string{"notcloned"})

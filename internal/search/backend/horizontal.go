@@ -187,7 +187,7 @@ func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
 
 // Done must be called once per endpoint once it has finished streaming.
 func (q *resultQueue) Done(endpoint string) {
-	// Clear pending priority because the endpoint is done sending results--
+	// EmitHashAndClear pending priority because the endpoint is done sending results--
 	// otherwise, an endpoint with 0 results could delay results returning,
 	// because it would never set its maxPendingPriority to 0 in the
 	// StreamSearch callback.

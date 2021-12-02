@@ -75,7 +75,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		bulkMonikerResults:              op("BulkMonikerResults"),
-		clear:                           op("Clear"),
+		clear:                           op("EmitHashAndClear"),
 		definitions:                     op("Definitions"),
 		deleteOldSearchRecords:          op("DeleteOldSearchRecords"),
 		diagnostics:                     op("Diagnostics"),

@@ -1,0 +1,74 @@
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	0.239s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    2061	    631684 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116283 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.072s
+signal: interrupt
+FAIL	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	0.131s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    2018	    609854 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116282 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.006s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    2061	    605880 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116282 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.013s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    1746	    632319 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116283 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	1.910s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    2030	    814461 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116283 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.437s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    1969	    611265 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116282 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	1.994s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    1682	    646670 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116283 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	1.886s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    1834	    693256 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116283 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.079s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    2018	    650384 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116282 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	2.100s
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/bitmask/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQuerySourcegraphShort-12    	    1872	    608396 ns/op	         0.9176 false-positive/true-positive	        78.00 false-positives	      7164 index-size	        85.00 true-positives	  116282 B/op	      26 allocs/op
+PASS
+ok  	github.com/sourcegraph/sourcegraph/cmd/bitmask/bench	1.929s

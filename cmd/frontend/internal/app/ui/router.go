@@ -242,7 +242,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
 	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
 	router.Get(routeSiteAdmin).Handler(brandedNoIndex("Admin"))
-	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
+	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("EmitHashAndClear password"))
 	router.Get(routeAPIConsole).Handler(brandedIndex("API console"))
 	router.Get(routeRepoSettings).Handler(brandedNoIndex("Repository settings"))
 	router.Get(routeRepoCodeIntelligence).Handler(brandedNoIndex("Code intelligence"))

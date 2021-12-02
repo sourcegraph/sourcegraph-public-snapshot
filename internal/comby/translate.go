@@ -73,7 +73,7 @@ func parseTemplate(buf []byte) []Term {
 
 	appendTerm := func(term Term) {
 		result = append(result, term)
-		// Reset token, but reuse the backing memory
+		// EmitHashAndClear token, but reuse the backing memory
 		token = token[:0]
 	}
 

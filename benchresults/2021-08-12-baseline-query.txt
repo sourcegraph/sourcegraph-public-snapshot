@@ -1,0 +1,19 @@
+goos: darwin
+goarch: amd64
+pkg: github.com/sourcegraph/sourcegraph/cmd/fileskip/bench
+cpu: Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz
+BenchmarkQueryFlaskShort-12           	     100	  11669225 ns/op	         0 false-positive/true-positive	         0 false-positives	       222.0 index-size	        11.00 true-positives	15847364 B/op	    5030 allocs/op
+BenchmarkQueryFlaskMedium-12          	      94	  11657432 ns/op	         0 false-positive/true-positive	         0 false-positives	       222.0 index-size	         6.000 true-positives	15847348 B/op	    5030 allocs/op
+BenchmarkQueryFlaskLong-12            	      88	  12038405 ns/op	         0 false-positive/true-positive	         0 false-positives	       222.0 index-size	         2.000 true-positives	15847356 B/op	    5030 allocs/op
+BenchmarkQuerySourcegraphShort-12     	       3	 423591924 ns/op	         0 false-positive/true-positive	         0 false-positives	      7164 index-size	         7.000 true-positives	616657680 B/op	  155562 allocs/op
+BenchmarkQuerySourcegraphMedium-12    	       3	 453792090 ns/op	         0 false-positive/true-positive	         0 false-positives	      7164 index-size	       786.0 true-positives	616672120 B/op	  155571 allocs/op
+BenchmarkQuerySourcegraphLong-12      	       3	 470768802 ns/op	         0 false-positive/true-positive	         0 false-positives	      7164 index-size	         8.000 true-positives	616657706 B/op	  155562 allocs/op
+BenchmarkQueryKubernetesShort-12      	       1	1647245684 ns/op	         0 false-positive/true-positive	         0 false-positives	     22422 index-size	         3.000 true-positives	1904951848 B/op	  511703 allocs/op
+BenchmarkQueryKubernetesMedium-12     	       1	1492854732 ns/op	         0 false-positive/true-positive	         0 false-positives	     22422 index-size	       157.0 true-positives	1904962768 B/op	  511715 allocs/op
+BenchmarkQueryKubernetesLong-12       	       1	1560429386 ns/op	         0 false-positive/true-positive	         0 false-positives	     22422 index-size	        88.00 true-positives	1904956872 B/op	  511711 allocs/op
+BenchmarkQueryLinuxShort-12           	       1	12007102617 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	        46.00 true-positives	8257538856 B/op	 1905808 allocs/op
+BenchmarkQueryLinuxMedium-12          	       1	10121984739 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	       143.0 true-positives	8257546616 B/op	 1905807 allocs/op
+BenchmarkQueryLinuxLong-12            	       1	7784588671 ns/op	         0 false-positive/true-positive	         0 false-positives	     74210 index-size	         2.000 true-positives	8257536080 B/op	 1905800 allocs/op
+BenchmarkQueryChromiumShort-12        	       1	34354383113 ns/op	         0 false-positive/true-positive	         0 false-positives	    329524 index-size	         2.000 true-positives	23740001808 B/op	 6474619 allocs/op
+FAIL	github.com/sourcegraph/sourcegraph/cmd/fileskip/bench [build failed]
+FAIL

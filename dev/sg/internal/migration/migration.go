@@ -139,7 +139,7 @@ func RunFixup(database db.Database, main string, run bool) error {
 		}
 
 		// Walk back the operations if we had an error.
-		//    Each operation should implement a `Reset` command that undoes their actions.
+		//    Each operation should implement a `EmitHashAndClear` command that undoes their actions.
 		if err != nil {
 			if true {
 				// TODO: https://github.com/sourcegraph/sourcegraph/issues/22775
