@@ -55,7 +55,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 		wantQuery            = testQuery + " after:\"" + s.Now().UTC().Format(time.RFC3339) + "\""
 		wantMonitorID  int64 = 1
 	)
-	err = s.UpdateTriggerJobWithResults(ctx, wantQuery, wantNumResults, 1)
+	err = s.UpdateTriggerJobWithResults(ctx, 1, wantQuery, wantNumResults)
 	require.NoError(t, err)
 
 	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
@@ -76,7 +76,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 func TestScanActionJobs(t *testing.T) {
 	var (
 		testRecordID             = 1
-		testTriggerEventID       = 1
+		testTriggerEventID int32 = 1
 		testQueryID        int64 = 1
 	)
 

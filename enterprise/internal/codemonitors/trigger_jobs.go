@@ -71,8 +71,8 @@ SET query_string = %s,
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, recordID))
+func (s *codeMonitorStore) UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(logSearchFmtStr, queryString, numResults > 0, numResults, triggerJobID))
 }
 
 const deleteObsoleteJobLogsFmtStr = `

@@ -35,7 +35,7 @@ func TestActionRunner(t *testing.T) {
 
 	var (
 		queryID      int64 = 1
-		triggerEvent       = 1
+		triggerEvent int32 = 1
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -70,7 +70,7 @@ func TestActionRunner(t *testing.T) {
 			_, err = ts.EnqueueQueryTriggerJobs(ctx)
 			require.NoError(t, err)
 
-			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
+			err = ts.UpdateTriggerJobWithResults(ctx, triggerEvent, testQuery, tt.numResults)
 			require.NoError(t, err)
 
 			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEvent)

@@ -41,7 +41,7 @@ type CodeMonitorStore interface {
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
 	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error
+	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int) error
 	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
 	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
@@ -60,7 +60,7 @@ type CodeMonitorStore interface {
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
-	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerEventID int) error
+	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJob int32) error
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models
