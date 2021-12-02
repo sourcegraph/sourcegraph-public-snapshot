@@ -848,3 +848,221 @@ func (codeIntelligence) NewDependencyReposStoreGroup(containerName string) monit
 		},
 	})
 }
+
+func (codeIntelligence) NewSymbolsAPIGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Symbols API",
+			Hidden:          false,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_symbols_api",
+				MetricDescriptionRoot: "API",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}
+
+func (codeIntelligence) NewSymbolsParserGroup(containerName string) monitoring.Group {
+	group := Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Symbols parser",
+			Hidden:          false,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_symbols_parser",
+				MetricDescriptionRoot: "parser",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+
+	queueRow := monitoring.Row{
+		{
+			Name:           containerName,
+			Description:    "in-flight parse jobs",
+			Owner:          monitoring.ObservableOwnerCodeIntel,
+			Query:          "max(src_codeintel_symbols_parsing{job=~\"^symbols.*\"})",
+			NoAlert:        true,
+			Interpretation: "none",
+			Panel:          monitoring.Panel(),
+		},
+		{
+			Name:           containerName,
+			Description:    "parser queue size",
+			Owner:          monitoring.ObservableOwnerCodeIntel,
+			Query:          "max(src_codeintel_symbols_parse_queue_size{job=~\"^symbols.*\"})",
+			NoAlert:        true,
+			Interpretation: "none",
+			Panel:          monitoring.Panel(),
+		},
+		{
+			Name:           containerName,
+			Description:    "parse queue timeouts",
+			Owner:          monitoring.ObservableOwnerCodeIntel,
+			Query:          "max(src_codeintel_symbols_parse_queue_timeouts_total{job=~\"^symbols.*\"})",
+			NoAlert:        true,
+			Interpretation: "none",
+			Panel:          monitoring.Panel(),
+		},
+		{
+			Name:           containerName,
+			Description:    "parse failures every 5m",
+			Owner:          monitoring.ObservableOwnerCodeIntel,
+			Query:          "rate(src_codeintel_symbols_parse_failed_total{job=~\"^symbols.*\"}[5m])",
+			NoAlert:        true,
+			Interpretation: "none",
+			Panel:          monitoring.Panel(),
+		},
+	}
+
+	group.Rows = append([]monitoring.Row{queueRow}, group.Rows...)
+
+	return group
+}
+
+func (codeIntelligence) NewSymbolsCacheJanitorGroup(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  fmt.Sprintf("%s: %s", "Codeintel", "Symbols cache janitor"),
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				{
+					Name:           containerName,
+					Description:    "size in bytes of the on-disk cache",
+					Owner:          monitoring.ObservableOwnerCodeIntel,
+					Query:          "src_codeintel_symbols_store_cache_size_bytes",
+					NoAlert:        true,
+					Interpretation: "no",
+					Panel:          monitoring.Panel().Unit(monitoring.Bytes),
+				},
+				{
+					Name:           containerName,
+					Description:    "cache eviction operations every 5m",
+					Owner:          monitoring.ObservableOwnerCodeIntel,
+					Query:          "rate(src_codeintel_symbols_store_evictions_total[5m])",
+					NoAlert:        true,
+					Interpretation: "no",
+					Panel:          monitoring.Panel(),
+				},
+				{
+					Name:           containerName,
+					Description:    "cache eviction operation errors every 5m",
+					Owner:          monitoring.ObservableOwnerCodeIntel,
+					Query:          "rate(src_codeintel_symbols_store_errors_total[5m])",
+					NoAlert:        true,
+					Interpretation: "no",
+					Panel:          monitoring.Panel(),
+				},
+			},
+		},
+	}
+}
+
+func (codeIntelligence) NewSymbolsRepositoryFetcherGroup(containerName string) monitoring.Group {
+	group := Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Symbols repository fetcher",
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_symbols_repository_fetcher",
+				MetricDescriptionRoot: "fetcher",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+
+	queueRow := monitoring.Row{
+		{
+			Name:           containerName,
+			Description:    "in-flight repository fetch operations",
+			Owner:          monitoring.ObservableOwnerCodeIntel,
+			Query:          "src_codeintel_symbols_fetching",
+			NoAlert:        true,
+			Interpretation: "none",
+			Panel:          monitoring.Panel(),
+		},
+		{
+			Name:           containerName,
+			Description:    "repository fetch queue size",
+			Owner:          monitoring.ObservableOwnerCodeIntel,
+			Query:          "max(src_codeintel_symbols_fetch_queue_size{job=~\"^symbols.*\"})",
+			NoAlert:        true,
+			Interpretation: "none",
+			Panel:          monitoring.Panel(),
+		},
+	}
+
+	group.Rows = append([]monitoring.Row{queueRow}, group.Rows...)
+
+	return group
+}
+
+func (codeIntelligence) NewSymbolsGitserverClientGroup(containerName string) monitoring.Group {
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+		GroupConstructorOptions: GroupConstructorOptions{
+			Namespace:       "codeintel",
+			DescriptionRoot: "Symbols gitserver client",
+			Hidden:          true,
+			ObservableConstructorOptions: ObservableConstructorOptions{
+				MetricNameRoot:        "codeintel_symbols_gitserver",
+				MetricDescriptionRoot: "gitserver client",
+				Filters:               []string{},
+				By:                    []string{"op"},
+			},
+		},
+		SharedObservationGroupOptions: SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+		Aggregate: &SharedObservationGroupOptions{
+			Total:     NoAlertsOption("none"),
+			Duration:  NoAlertsOption("none"),
+			Errors:    NoAlertsOption("none"),
+			ErrorRate: NoAlertsOption("none"),
+		},
+	})
+}

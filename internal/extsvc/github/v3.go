@@ -13,6 +13,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -153,6 +154,12 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result interface{
 	// Enable the GitHub App API. See
 	// https://developer.github.com/v3/apps/installations/#list-repositories
 	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+		// Include "visibility" in the REST API response for getting a repository. See
+		// https://docs.github.com/en/enterprise-server@2.22/rest/reference/repos#get-a-repository
+		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
+	}
 
 	err = c.rateLimit.Wait(ctx)
 	if err != nil {

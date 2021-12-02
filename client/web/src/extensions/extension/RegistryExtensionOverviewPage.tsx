@@ -179,7 +179,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<Props> = ({
                 {categories && (
                     <div className={classNames('pb-0', styles.sidebarSection)}>
                         <h3>Categories</h3>
-                        <ul className="list-inline test-registry-extension-categories">
+                        <ul className="list-inline" data-testid="test-registry-extension-categories">
                             {categories.map(category => (
                                 <li key={category} className="list-inline-item mb-2">
                                     <Link

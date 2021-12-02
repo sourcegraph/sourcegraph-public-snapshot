@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -137,7 +136,7 @@ func overrideSiteConfig(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
+func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil

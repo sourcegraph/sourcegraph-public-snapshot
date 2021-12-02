@@ -296,7 +296,6 @@
     "puppeteer-firefox": "^0.5.1",
     "react-refresh": "^0.10.0",
     "react-spring": "^9.0.0",
-    "react-test-renderer": "^16.14.0",
     "sass": "^1.32.4",
     "sass-loader": "^12.1.0",
     "shelljs": "^0.8.4",

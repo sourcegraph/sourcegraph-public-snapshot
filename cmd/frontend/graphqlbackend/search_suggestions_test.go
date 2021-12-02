@@ -7,14 +7,15 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -30,13 +31,13 @@ func TestSearchSuggestions(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		// #25936: Some unit tests rely on external services that break
 		// in CI but not locally. They should be removed or improved.
-		t.Skip("TestSeachSuggestions only works in local dev and is not reliable in CI")
+		t.Skip("TestSearchSuggestions only works in local dev and is not reliable in CI")
 	}
-	db := new(dbtesting.MockDB)
 
+	db := dbmock.NewMockDB()
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{db: database.NewDB(db)}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
+		r, err := newSchemaResolver(db).Search(context.Background(), &SearchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -100,10 +101,11 @@ func TestSearchSuggestions(t *testing.T) {
 		mu := sync.Mutex{}
 		var calledReposListNamesAll, calledReposListFoo bool
 
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			if reflect.DeepEqual(op.IncludePatterns, []string{"foo"}) {
+			if reflect.DeepEqual(opt.IncludePatterns, []string{"foo"}) {
 				// when treating term as repo: field
 				calledReposListFoo = true
 				return []types.MinimalRepo{{Name: "foo-repo"}}, nil
@@ -112,16 +114,19 @@ func TestSearchSuggestions(t *testing.T) {
 				calledReposListNamesAll = true
 				return []types.MinimalRepo{{Name: "bar-repo"}}, nil
 			}
-		}
-		database.Mocks.Repos.Count = mockCount
-		database.Mocks.Repos.MockGetByName(t, "repo", 1)
-		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
+		})
+		repos.CountFunc.SetDefaultReturn(0, nil)
+		repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "repo"}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
 
-		defer func() { database.Mocks = database.MockStores{} }()
+		backend.Mocks.Repos.MockResolveRev_NoCheck(t, "deadbeef")
 		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-			return api.CommitID("deadbeef"), nil
+			return "deadbeef", nil
 		}
-		defer git.ResetMocks()
+		defer func() {
+			backend.Mocks = backend.MockServices{}
+			git.ResetMocks()
+		}()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
@@ -153,18 +158,17 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		calledReposListMinimalRepos := false
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledReposListMinimalRepos = true
 
-			require.Equal(t, []string{"foo"}, op.IncludePatterns)
+			require.Equal(t, []string{"foo"}, opt.IncludePatterns)
 
 			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
-		}
-		database.Mocks.Repos.Count = mockCount
-		defer func() { database.Mocks.Repos.ListMinimalRepos = nil }()
+		})
+		repos.CountFunc.SetDefaultReturn(0, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
@@ -183,9 +187,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo", v, []string{"repo:foo-repo"})
-			if !calledReposListMinimalRepos {
-				t.Error("!calledReposListMinimalRepos")
-			}
+			mockrequire.Called(t, repos.ListMinimalReposFunc)
 		}
 	})
 
@@ -193,35 +195,32 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		database.Mocks.Repos.List = func(_ context.Context, have database.ReposListOptions) ([]*types.Repo, error) {
+		repos := dbmock.NewMockRepoStore()
+		repos.ListFunc.SetDefaultHook(func(ctx context.Context, have database.ReposListOptions) ([]*types.Repo, error) {
 			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				LimitOffset: &database.LimitOffset{
 					Limit: 1,
 				},
 			}
-			if diff := cmp.Diff(have, want, cmp.AllowUnexported(database.ReposListOptions{})); diff != "" {
-				t.Error(diff)
-			}
+			assert.Equal(t, want, have)
 			return []*types.Repo{{Name: "foo-repo"}}, nil
-		}
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, have database.ReposListOptions) ([]types.MinimalRepo, error) {
+		})
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, have database.ReposListOptions) ([]types.MinimalRepo, error) {
 			want := database.ReposListOptions{
 				IncludePatterns: []string{"foo"},
 				LimitOffset: &database.LimitOffset{
 					Limit: 1,
 				},
 			}
-			if diff := cmp.Diff(have, want, cmp.AllowUnexported(database.ReposListOptions{})); diff != "" {
-				t.Error(diff)
-			}
+			assert.Equal(t, have, want)
 			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
-		}
-		database.Mocks.Repos.Count = mockCount
-		defer func() { database.Mocks.Repos.List = nil }()
-		defer func() { database.Mocks.Repos.ListMinimalRepos = nil }()
+		})
+		repos.CountFunc.SetDefaultReturn(0, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
 		git.Mocks.ResolveRevision = func(rev string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-			return api.CommitID("deadbeef"), nil
+			return "deadbeef", nil
 		}
 		defer git.ResetMocks()
 
@@ -260,18 +259,17 @@ func TestSearchSuggestions(t *testing.T) {
 		mockDecodedViewerFinalSettings = &schema.Settings{}
 		defer func() { mockDecodedViewerFinalSettings = nil }()
 
-		calledReposListMinimalRepos := false
-		database.Mocks.Repos.ListMinimalRepos = func(_ context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
+		repos := dbmock.NewMockRepoStore()
+		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			calledReposListMinimalRepos = true
 
-			require.Equal(t, []string{"foo"}, op.IncludePatterns)
+			require.Equal(t, []string{"foo"}, opt.IncludePatterns)
 
 			return []types.MinimalRepo{{Name: "foo-repo"}}, nil
-		}
-		database.Mocks.Repos.Count = mockCount
-		defer func() { database.Mocks.Repos.ListMinimalRepos = nil }()
+		})
+		repos.CountFunc.SetDefaultReturn(0, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
 
 		// Mock to bypass language suggestions.
 		mockShowLangSuggestions = func() ([]SearchSuggestionResolver, error) { return nil, nil }
@@ -288,9 +286,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 		for _, v := range searchVersions {
 			testSuggestions(t, "repo:foo file:bar", v, []string{"file:dir/bar-file"})
-			if !calledReposListMinimalRepos {
-				t.Error("!calledReposListMinimalRepos")
-			}
+			mockrequire.Called(t, repos.ListMinimalReposFunc)
 			if !calledSearchFilesInRepos.Load() {
 				t.Error("!calledSearchFilesInRepos")
 			}

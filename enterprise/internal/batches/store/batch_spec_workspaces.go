@@ -134,6 +134,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 		ctx,
 		s.Handle().DB(),
 		"batch_spec_workspaces",
+		batch.MaxNumPostgresParameters,
 		batchSpecWorkspaceInsertColumns,
 		"",
 		BatchSpecWorkspaceColums,

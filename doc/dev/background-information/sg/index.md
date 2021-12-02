@@ -44,7 +44,7 @@ Learn more about the tool's overall vision in [`sg` Vision](./vision.md), and ho
 
 3. Once the `enterprise-web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
 
-A more detailed introduction is available in the [development quickstart guide](../../getting-started/quickstart.md).
+A more detailed introduction is available in the [development quickstart guide](../../setup/quickstart.md).
 
 ## Installation
 
@@ -321,6 +321,19 @@ With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batche
 ### Attach a debugger
 
 To attach the [Delve](https://github.com/go-delve/delve) debugger, pass the environment variable `DELVE=true` into `sg`. [Read more here](https://docs.sourcegraph.com/dev/how-to/debug_live_code#debug-go-code)
+
+### Offline development
+
+Sometimes you will want to develop Sourcegraph but it just so happens you will be on a plane or a
+train or perhaps a beach, and you will have no WiFi. And you may raise your fist toward heaven and
+say something like, "Why, we can put a man on the moon, so why can't we develop high-quality code
+search without an Internet connection?" But lower your hand back to your keyboard and fret no
+further, you *can* develop Sourcegraph with no connectivity by setting the
+`OFFLINE` environment variable:
+
+```bash
+OFFLINE=true sg start
+```
 
 ## Contributing to `sg`
 
