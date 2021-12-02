@@ -45,7 +45,7 @@ func NewUploadHandler(
 
 	// 🚨 SECURITY: Non-internal installations of this handler will require a user/repo
 	// visibility check with the remote code host (if enabled via site configuration).
-	return authMiddleware(http.HandlerFunc(handler.handleEnqueue), db, authValidators)
+	return authMiddleware(http.HandlerFunc(handler.handleEnqueue), db, authValidators, operations.authMiddleware)
 }
 
 var errUnprocessableRequest = errors.New("unprocessable request: missing expected query arguments (uploadId, index, or done)")

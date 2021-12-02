@@ -2,16 +2,19 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type AuthValidator func(context.Context, url.Values, string) (int, error)
@@ -27,41 +30,40 @@ var DefaultValidatorByCodeHost = AuthValidatorMap{
 // request contains sufficient evidence of authorship for the target repository.
 //
 // When LSIF auth is not enforced on the instance, this middleware no-ops.
-func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidatorMap) http.Handler {
+func authMiddleware(next http.Handler, db dbutil.DB, authValidators AuthValidatorMap, operation *observation.Operation) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		statusCode, err := func() (_ int, err error) {
+			ctx, endObservation := operation.With(r.Context(), &err, observation.Args{})
+			defer endObservation(1, observation.Args{})
 
-		// Skip auth check if it's not enabled in the instance's site configuration, if this
-		// user is a site admin (who can upload LSIF to any repository on the instance), or
-		// if the request a subsequent request of a multi-part upload.
-		if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		query := r.URL.Query()
-		repositoryName := getQuery(r, "repository")
-
-		for codeHost, validator := range authValidators {
-			if !strings.HasPrefix(repositoryName, codeHost) {
-				continue
+			// Skip auth check if it's not enabled in the instance's site configuration, if this
+			// user is a site admin (who can upload LSIF to any repository on the instance), or
+			// if the request a subsequent request of a multi-part upload.
+			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
+				return 0, nil
 			}
 
-			if statusCode, err := validator(ctx, query, repositoryName); err != nil {
-				if statusCode >= 500 {
-					log15.Error("codeintel.httpapi: failed to authorize request", "error", err)
+			query := r.URL.Query()
+			repositoryName := getQuery(r, "repository")
+
+			for codeHost, validator := range authValidators {
+				if strings.HasPrefix(repositoryName, codeHost) {
+					return validator(ctx, query, repositoryName)
 				}
-
-				http.Error(w, err.Error(), statusCode)
-				return
 			}
 
-			next.ServeHTTP(w, r)
+			return http.StatusUnprocessableEntity, errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967")
+		}()
+		if err != nil {
+			if statusCode >= 500 {
+				log15.Error("codeintel.httpapi: failed to authorize request", "error", err)
+			}
+
+			http.Error(w, fmt.Sprintf("failed to authorize request: %s", err.Error()), statusCode)
 			return
 		}
 
-		log15.Warn("codeintel.httpapi: verification not supported for code host", "repositoryName", repositoryName)
-		http.Error(w, "verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
+		next.ServeHTTP(w, r)
 	})
 }
 
