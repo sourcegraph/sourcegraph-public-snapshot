@@ -25,7 +25,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { SearchContextProps, SearchStreamingProps } from '../../search'
 import { StreamingSearchResultsListProps } from '../../search/results/StreamingSearchResultsList'
-import { useExperimentalFeatures } from '../../stores'
+import { useSearchStack, useExperimentalFeatures } from '../../stores'
 import { toTreeURL } from '../../util/url'
 import { fetchRepository, resolveRevision } from '../backend'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
@@ -79,6 +79,18 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
     useEffect(() => {
         props.telemetryService.logViewEvent('Blob', { repoName, filePath })
     }, [repoName, commitID, filePath, renderMode, props.telemetryService])
+
+    useSearchStack(
+        useMemo(
+            () => ({
+                type: 'file',
+                path: filePath,
+                repo: repoName,
+                revision,
+            }),
+            [filePath, repoName, revision]
+        )
+    )
 
     useBreadcrumb(
         useMemo(() => {

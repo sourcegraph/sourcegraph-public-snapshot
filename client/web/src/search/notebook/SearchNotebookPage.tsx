@@ -14,9 +14,10 @@ import { SearchStreamingProps } from '..'
 import { fetchRepository, resolveRevision } from '../../repo/backend'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 
+import { serializeBlocks } from './helpers'
 import { SearchNotebook } from './SearchNotebook'
 import styles from './SearchNotebookPage.module.scss'
-import { deserializeBlockInput, serializeBlockInput } from './serialize'
+import { deserializeBlockInput } from './serialize'
 
 import { Block, BlockInput } from '.'
 
@@ -38,14 +39,7 @@ export const SearchNotebookPage: React.FunctionComponent<SearchNotebookPageProps
 
     const onSerializeBlocks = useCallback(
         (blocks: Block[]) => {
-            const serializedBlocks = blocks
-                .map(
-                    block =>
-                        `${encodeURIComponent(block.type)}:${encodeURIComponent(
-                            serializeBlockInput(block, window.location.origin)
-                        )}`
-                )
-                .join(',')
+            const serializedBlocks = serializeBlocks(blocks)
             history.replace({ hash: serializedBlocks })
         },
         [history]

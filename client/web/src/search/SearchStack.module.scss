@@ -1,0 +1,57 @@
+.root {
+    position: fixed;
+    right: 0.5rem;
+    bottom: 0rem;
+
+    color: var(--body-color);
+    background-color: var(--color-bg-1);
+
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+
+    box-shadow: var(--dropdown-shadow);
+    border: 1px solid var(--border-color-2);
+
+    h4 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+    summary {
+        white-space: nowrap;
+        margin-bottom: 0.5rem;
+    }
+
+    details {
+        margin: 0.25rem 0.5rem;
+    }
+
+    ul {
+        padding: 0;
+        margin: 0;
+        margin-left: 0.75rem;
+        list-style: none;
+    }
+
+    .close-button {
+        float: right;
+    }
+
+    &.open {
+        .header {
+            border-bottom: 1px solid var(--border-color-2);
+        }
+    }
+
+    .open-visible {
+        display: none;
+    }
+
+    &.open {
+        max-width: 15rem;
+
+        .open-visible {
+            display: initial;
+        }
+    }
+}
