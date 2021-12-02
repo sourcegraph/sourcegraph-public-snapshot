@@ -153,15 +153,19 @@ func TestDeleteSourcedCommits(t *testing.T) {
 		Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
 	)
 
-	uploadsUpdated, indexesUpdated, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), now)
+	uploadsUpdated, uploadsDeleted, indexesDeleted, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), time.Hour, now)
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
-	if uploadsUpdated != 2 {
-		t.Fatalf("unexpected uploads updated. want=%d have=%d", 1, uploadsUpdated)
+	if uploadsUpdated != 0 {
+		// TODO - modify test to include this
+		t.Fatalf("unexpected number of uploads updated. want=%d have=%d", 0, uploadsUpdated)
 	}
-	if indexesUpdated != 1 {
-		t.Fatalf("unexpected indexes updated. want=%d have=%d", 1, indexesUpdated)
+	if uploadsDeleted != 2 {
+		t.Fatalf("unexpected number of uploads deleted. want=%d have=%d", 2, uploadsDeleted)
+	}
+	if indexesDeleted != 1 {
+		t.Fatalf("unexpected number of indexes deleted. want=%d have=%d", 1, indexesDeleted)
 	}
 
 	uploadStates, err := getUploadStates(db, 1, 2, 3, 4, 5, 6)
