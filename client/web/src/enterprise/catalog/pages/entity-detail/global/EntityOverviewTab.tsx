@@ -34,10 +34,15 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
             <>
                 <div className="row">
                     <div className="col-md-8">
-                        <ComponentSourceDefinitions catalogComponent={entity} listGroupClassName="" />
-                        {false && entity.commits?.nodes[0] && (
-                            <LastCommit commit={entity.commits?.nodes[0]} className="" />
-                        )}
+                        <div className="card mb-3">
+                            <ComponentSourceDefinitions
+                                catalogComponent={entity}
+                                listGroupClassName="list-group-flush"
+                            />
+                            {entity.commits?.nodes[0] && (
+                                <LastCommit commit={entity.commits?.nodes[0]} className="card-footer" />
+                            )}
+                        </div>
                         <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
                     </div>
                     <div className="col-md-4">
@@ -118,7 +123,7 @@ const LastCommit: React.FunctionComponent<{
     className?: string
 }> = ({ commit, className }) => (
     <div className={classNames('d-flex align-items-center', className)}>
-        <UserAvatar className="icon-inline mr-2 flex-shrink-0" user={commit.author.person} size={12} />
+        <UserAvatar className="icon-inline mr-2 flex-shrink-0" user={commit.author.person} size={18} />
         <PersonLink person={commit.author.person} className="font-weight-bold mr-2 flex-shrink-0" />
         <Link to={commit.url} className="text-truncate flex-grow-1 text-body mr-2" title={commit.message}>
             {commit.subject}
