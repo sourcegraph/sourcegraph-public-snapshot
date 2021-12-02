@@ -319,7 +319,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 	switch r.ExternalRepo.ServiceType {
 	case extsvc.TypePerforce:
 		var c schema.PerforceConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.PerforceDepotSyncer{
@@ -329,7 +329,7 @@ func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalSer
 		}, nil
 	case extsvc.TypeJVMPackages:
 		var c schema.JVMPackagesConnection
-		if err := extractOptions(c); err != nil {
+		if err := extractOptions(&c); err != nil {
 			return nil, err
 		}
 		return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
