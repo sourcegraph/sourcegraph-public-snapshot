@@ -257,9 +257,14 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 		return revs, true, err
 	}
 
-	if on.Repository != "" && len(on.Branches) > 0 {
-		revs := make([]*RepoRevision, len(on.Branches))
-		for i, branch := range on.Branches {
+	branches, err := on.Branches()
+	if err != nil {
+		return nil, false, err
+	}
+
+	if on.Repository != "" && len(branches) > 0 {
+		revs := make([]*RepoRevision, len(branches))
+		for i, branch := range branches {
 			repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, branch)
 			if err != nil {
 				return nil, false, err

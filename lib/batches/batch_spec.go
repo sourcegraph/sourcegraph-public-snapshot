@@ -1,7 +1,6 @@
 package batches
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -73,53 +72,20 @@ type WorkspaceConfiguration struct {
 type OnQueryOrRepository struct {
 	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
 	Repository                string   `json:"repository,omitempty" yaml:"repository"`
-	Branches                  []string `json:"branches,omitempty" yaml:"branch"`
+	RawBranch                 string   `json:"branch,omitempty" yaml:"branch"`
+	RawBranches               []string `json:"branches,omitempty" yaml:"branches"`
 }
 
-func (oqor *OnQueryOrRepository) UnmarshalJSON(data []byte) error {
-	// We need to unmarshal OnQueryOrRepository through rawOnQueryOrRepository
-	// to be able to handle the possibility of the branches field being named
-	// branch, which was its original name.
-	raw := rawOnQueryOrRepository{}
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
+var errConflictingBranches = errors.New("both branch and branches specified")
+
+func (oqor *OnQueryOrRepository) Branches() ([]string, error) {
+	if oqor.RawBranch != "" {
+		if len(oqor.RawBranches) > 0 {
+			return nil, errConflictingBranches
+		}
+		return []string{oqor.RawBranch}, nil
 	}
-
-	raw.overwrite(oqor)
-	return nil
-}
-
-func (oqor *OnQueryOrRepository) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	// We need to unmarshal OnQueryOrRepository through rawOnQueryOrRepository
-	// to be able to handle the possibility of the branches field being named
-	// branch, which was its original name.
-	raw := rawOnQueryOrRepository{}
-	if err := unmarshal(&raw); err != nil {
-		return err
-	}
-
-	raw.overwrite(oqor)
-	return nil
-}
-
-type rawOnQueryOrRepository struct {
-	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
-	Repository                string   `json:"repository,omitempty" yaml:"repository"`
-	Branch                    branches `json:"branch,omitempty" yaml:"branch"`
-	Branches                  branches `json:"branches,omitempty" yaml:"branches"`
-}
-
-func (raw *rawOnQueryOrRepository) overwrite(oqor *OnQueryOrRepository) {
-	oqor.RepositoriesMatchingQuery = raw.RepositoriesMatchingQuery
-	oqor.Repository = raw.Repository
-
-	// Only one of Branch or Branches is allowed to be set per the JSON schema.
-	oqor.Branches = []string{}
-	if len(raw.Branch) > 0 {
-		oqor.Branches = raw.Branch
-	} else {
-		oqor.Branches = raw.Branches
-	}
+	return oqor.RawBranches, nil
 }
 
 type Step struct {

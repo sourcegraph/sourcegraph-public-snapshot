@@ -166,8 +166,8 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		batchSpec := &batcheslib.BatchSpec{
 			On: []batcheslib.OnQueryOrRepository{
 				{Repository: string(rs[0].Name)},
-				{Repository: string(rs[1].Name), Branches: []string{"non-default-branch"}},
-				{Repository: string(rs[2].Name), Branches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
+				{Repository: string(rs[1].Name), RawBranch: "non-default-branch"},
+				{Repository: string(rs[2].Name), RawBranches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
 				{Repository: string(rs[3].Name)},
 				{Repository: string(unsupported[0].Name)},
 			},
@@ -213,9 +213,9 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				// results further down to return rs[2].
 				{RepositoriesMatchingQuery: "r:rs-2"},
 				{Repository: string(rs[0].Name)},
-				{Repository: string(rs[1].Name), Branches: []string{"non-default-branch"}},
-				{Repository: string(rs[1].Name), Branches: []string{"a-different-non-default-branch"}},
-				{Repository: string(rs[2].Name), Branches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
+				{Repository: string(rs[1].Name), RawBranch: "non-default-branch"},
+				{Repository: string(rs[1].Name), RawBranch: "a-different-non-default-branch"},
+				{Repository: string(rs[2].Name), RawBranches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
 				{Repository: string(rs[3].Name)},
 				{Repository: string(unsupported[0].Name)},
 			},

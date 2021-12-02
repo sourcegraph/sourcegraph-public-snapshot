@@ -54,10 +54,15 @@ const BatchSpecJSON = `{
                 "examples": ["github.com/foo/bar"]
               },
               "branch": {
-                "$ref": "#/definitions/branch"
+                "description": "The repository branch to propose changes to. If unset, the repository's default branch is used. If this field is defined, branches cannot be.",
+                "type": "string"
               },
               "branches": {
-                "$ref": "#/definitions/branch"
+                "description": "The repository branches to propose changes to. If unset, the repository's default branch is used. If this field is defined, branch cannot be.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             },
             "$comment": "This is a convoluted way of saying either ` + "`" + `branch` + "`" + ` or ` + "`" + `branches` + "`" + ` can be provided, but not both at once, and neither are required.",
@@ -371,22 +376,6 @@ const BatchSpecJSON = `{
           ]
         }
       }
-    }
-  },
-  "definitions": {
-    "branch": {
-      "description": "The branch or branches on the repository to propose changes to. If unset, the repository's default branch is used.",
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      ]
     }
   }
 }

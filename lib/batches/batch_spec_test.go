@@ -1,12 +1,10 @@
 package batches
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
 )
 
 func TestParseBatchSpec(t *testing.T) {
@@ -180,7 +178,7 @@ description: Add Hello World to READMEs
 on:
   - repository: github.com/foo/bar
     branch: foo
-    branches: bar
+    branches: [bar]
 steps:
   - run: echo Hello World | tee -a $(find -name README.md)
     container: alpine:3
@@ -247,49 +245,47 @@ changesetTemplate:
 	})
 }
 
-func TestOnQueryOrRepository(t *testing.T) {
-	// Note that we're not testing the full set of branch value possibilities
-	// here: there are tests in branch_test.go to handle that. This is just
-	// ensuring that the unmarshalling does sensible things.
-	for name, tc := range map[string]struct {
-		input string
-		want  OnQueryOrRepository
-	}{
-		"branch": {
-			input: `{"repository": "github.com/a/b", "branch": "foo"}`,
-			want: OnQueryOrRepository{
-				Repository: "github.com/a/b",
-				Branches:   []string{"foo"},
+func TestOnQueryOrRepository_Branches(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		for name, tc := range map[string]struct {
+			input *OnQueryOrRepository
+			want  []string
+		}{
+			"no branches": {
+				input: &OnQueryOrRepository{},
+				want:  nil,
 			},
-		},
-		"branches": {
-			input: `{"repository": "github.com/a/b", "branches": "foo"}`,
-			want: OnQueryOrRepository{
-				Repository: "github.com/a/b",
-				Branches:   []string{"foo"},
+			"single branch": {
+				input: &OnQueryOrRepository{RawBranch: "foo"},
+				want:  []string{"foo"},
 			},
-		},
-		"no branches": {
-			input: `{"repositoriesMatchingQuery": "foo"}`,
-			want: OnQueryOrRepository{
-				RepositoriesMatchingQuery: "foo",
+			"single branch, non-nil but empty branches": {
+				input: &OnQueryOrRepository{
+					RawBranch:   "foo",
+					RawBranches: []string{},
+				},
+				want: []string{"foo"},
 			},
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			t.Run("json", func(t *testing.T) {
-				have := OnQueryOrRepository{}
-				err := json.Unmarshal([]byte(tc.input), &have)
+			"multiple branches": {
+				input: &OnQueryOrRepository{
+					RawBranches: []string{"foo", "bar"},
+				},
+				want: []string{"foo", "bar"},
+			},
+		} {
+			t.Run(name, func(t *testing.T) {
+				have, err := tc.input.Branches()
 				assert.Nil(t, err)
 				assert.Equal(t, tc.want, have)
 			})
+		}
+	})
 
-			t.Run("yaml", func(t *testing.T) {
-				have := OnQueryOrRepository{}
-				err := yaml.Unmarshal([]byte(tc.input), &have)
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, have)
-			})
-		})
-	}
+	t.Run("error", func(t *testing.T) {
+		_, err := (&OnQueryOrRepository{
+			RawBranch:   "foo",
+			RawBranches: []string{"bar"},
+		}).Branches()
+		assert.Equal(t, errConflictingBranches, err)
+	})
 }
