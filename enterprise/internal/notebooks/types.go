@@ -48,7 +48,7 @@ type Notebook struct {
 	Title         string
 	Blocks        []NotebookBlock
 	Public        bool
-	CreatorUserID *int32
+	CreatorUserID int32
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
