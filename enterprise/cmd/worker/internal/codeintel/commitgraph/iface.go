@@ -14,7 +14,7 @@ type DBStore interface {
 	CalculateVisibleUploads(
 		ctx context.Context,
 		repositoryID int,
-		graph *gitserver.CommitGraph,
+		graph *gitdomain.CommitGraph,
 		refDescriptions map[string][]gitdomain.RefDescription,
 		maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration,
 		dirtyToken int,
@@ -29,5 +29,5 @@ type Locker interface {
 
 type GitserverClient interface {
 	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitdomain.RefDescription, error)
-	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitserver.CommitGraph, error)
+	CommitGraph(ctx context.Context, repositoryID int, options gitserver.CommitGraphOptions) (*gitdomain.CommitGraph, error)
 }

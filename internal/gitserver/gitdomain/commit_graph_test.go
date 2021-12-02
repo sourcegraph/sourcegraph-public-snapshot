@@ -1,4 +1,4 @@
-package gitserver
+package gitdomain
 
 import (
 	"testing"

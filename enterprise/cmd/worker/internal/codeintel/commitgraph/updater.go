@@ -10,6 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -144,7 +145,7 @@ func (u *Updater) update(ctx context.Context, repositoryID, dirtyToken int) (err
 // The number of commits pulled back here should not grow over time unless the repo is growing at an
 // accelerating rate, as we routinely expire old information for active repositories in a janitor
 // process.
-func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitserver.CommitGraph, error) {
+func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitdomain.CommitGraph, error) {
 	commitDate, ok, err := u.dbStore.GetOldestCommitDate(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -155,7 +156,7 @@ func (u *Updater) getCommitGraph(ctx context.Context, repositoryID int) (*gitser
 		// latter case, we'll end up retrying to recalculate the commit graph for this repository
 		// again once the migration fills the commit dates for this repository's uploads.
 		log15.Warn("No oldest commit date found", "repositoryID", repositoryID)
-		return gitserver.ParseCommitGraph(nil), nil
+		return gitdomain.ParseCommitGraph(nil), nil
 	}
 
 	// The --since flag for git log is exclusive, but we want to include the commit where the
