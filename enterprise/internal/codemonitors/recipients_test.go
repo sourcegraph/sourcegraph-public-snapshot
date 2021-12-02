@@ -3,7 +3,7 @@ package codemonitors
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAllRecipientsForEmailIDInt64(t *testing.T) {
@@ -14,23 +14,20 @@ func TestAllRecipientsForEmailIDInt64(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	var (
 		wantEmailID     int64 = 1
 		wantRecipientID int64 = 1
 	)
 	rs, err := s.ListRecipients(ctx, ListRecipientsOpts{EmailID: &wantEmailID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(rs, []*Recipient{{
+	require.NoError(t, err)
+
+	want := []*Recipient{{
 		ID:              wantRecipientID,
 		Email:           wantEmailID,
 		NamespaceUserID: &id,
 		NamespaceOrgID:  nil,
-	}}); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	}}
+	require.Equal(t, want, rs)
 }

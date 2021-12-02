@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
@@ -17,23 +17,17 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var got *ActionJob
 	got, err = s.GetActionJob(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	want := &ActionJob{
 		ID:             1,
@@ -48,9 +42,7 @@ func TestEnqueueActionEmailsForQueryIDInt64QueryByRecordID(t *testing.T) {
 		NumFailures:    0,
 		LogContents:    nil,
 	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 func int64Ptr(i int64) *int64 { return &i }
@@ -63,13 +55,10 @@ func TestGetActionJobMetadata(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	var (
 		wantNumResults       = 42
@@ -77,17 +66,13 @@ func TestGetActionJobMetadata(t *testing.T) {
 		wantMonitorID  int64 = 1
 	)
 	err = s.UpdateTriggerJobWithResults(ctx, wantQuery, wantNumResults, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueActionJobsForQuery(ctx, 1, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	got, err := s.GetActionJobMetadata(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	want := &ActionJobMetadata{
 		Description: testDescription,
@@ -95,9 +80,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 		NumResults:  &wantNumResults,
 		MonitorID:   wantMonitorID,
 	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 func TestScanActionJobs(t *testing.T) {
@@ -114,25 +97,18 @@ func TestScanActionJobs(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueActionJobsForQuery(ctx, testQueryID, testTriggerEventID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	var rows *sql.Rows
 	rows, err = s.Query(ctx, sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), testRecordID))
 	record, _, err := ScanActionJobRecord(rows, err)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	if record.RecordID() != testRecordID {
-		t.Fatalf("got %d, want %d", record.RecordID(), testRecordID)
-	}
+	require.Equal(t, testRecordID, record.RecordID())
 }
