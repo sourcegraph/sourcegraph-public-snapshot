@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestQueryByRecordID(t *testing.T) {
+func TestQueryTriggerForJob(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
+	m, _, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -23,7 +23,7 @@ func TestQueryByRecordID(t *testing.T) {
 
 	now := s.Now()
 	want := &QueryTrigger{
-		ID:           1,
+		ID:           got.ID, // ignore ID
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
@@ -39,7 +39,7 @@ func TestQueryByRecordID(t *testing.T) {
 func TestTriggerQueryNextRun(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
+	m, q, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -50,14 +50,14 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
 
-	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
+	err = s.SetQueryTriggerNextRun(ctx, q.ID, wantNextRun, wantLatestResult)
 	require.NoError(t, err)
 
 	got, err := s.GetQueryTriggerForJob(ctx, triggerJobID)
 	require.NoError(t, err)
 
 	want := &QueryTrigger{
-		ID:           1,
+		ID:           got.ID, // ignore ID
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      wantNextRun,
@@ -74,12 +74,15 @@ func TestTriggerQueryNextRun(t *testing.T) {
 func TestResetTriggerQueryTimestamps(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
+	m, q, err := s.insertTestMonitor(userCTX, t)
+	require.NoError(t, err)
+
+	got, err := s.triggerQueryByIDInt64(ctx, 1)
 	require.NoError(t, err)
 
 	now := s.Now()
 	want := &QueryTrigger{
-		ID:           1,
+		ID:           got.ID, // ignore ID
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
@@ -89,19 +92,16 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		ChangedBy:    id,
 		ChangedAt:    now,
 	}
-	got, err := s.triggerQueryByIDInt64(ctx, 1)
-	require.NoError(t, err)
-
 	require.Equal(t, want, got)
 
-	err = s.ResetQueryTriggerTimestamps(ctx, 1)
+	err = s.ResetQueryTriggerTimestamps(ctx, q.ID)
 	require.NoError(t, err)
 
 	got, err = s.triggerQueryByIDInt64(ctx, 1)
 	require.NoError(t, err)
 
 	want = &QueryTrigger{
-		ID:           1,
+		ID:           got.ID, // ignore ID
 		Monitor:      m.ID,
 		QueryString:  testQuery,
 		NextRun:      now,

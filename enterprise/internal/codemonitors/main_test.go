@@ -20,7 +20,7 @@ const (
 	testDescription = "test description"
 )
 
-func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
+func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, *QueryTrigger, error) {
 	t.Helper()
 
 	actions := []*EmailActionArgs{
@@ -45,7 +45,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 	require.NoError(t, err)
 
 	// Create trigger.
-	_, err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	q, err := s.CreateQueryTrigger(ctx, m.ID, testQuery)
 	require.NoError(t, err)
 
 	for _, a := range actions {
@@ -60,7 +60,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 		require.NoError(t, err)
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
-	return m, nil
+	return m, q, nil
 }
 
 func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {

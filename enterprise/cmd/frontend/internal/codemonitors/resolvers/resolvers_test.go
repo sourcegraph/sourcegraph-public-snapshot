@@ -341,7 +341,7 @@ func TestQueryMonitor(t *testing.T) {
 		func() error {
 			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
-		func() error { _, err := return r.store.EnqueueActionJobsForQuery(ctx, 1, 1); return err },
+		func() error { _, err := r.store.EnqueueActionJobsForQuery(ctx, 1, 1); return err },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
 		// created another monitor, there is still a second trigger job (id = 2) which
 		// remains in status queued.

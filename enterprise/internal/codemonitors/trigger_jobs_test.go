@@ -24,7 +24,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	retentionInDays := 7
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
-	_, err := s.insertTestMonitor(userCTX, t)
+	_, _, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	// Add 1 job and date it back to a long time ago.
