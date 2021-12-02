@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import React, { ReactElement, useContext } from 'react'
 
 import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
+import { ScrollBox } from './components/scroll-box/ScrollBox'
 import { MINIMAL_HORIZONTAL_LAYOUT_WIDTH, MINIMAL_SERIES_FOR_ASIDE_LEGEND } from './constants'
 import { LineChartLayoutOrientation, LineChartSettingsContext } from './line-chart-settings-provider'
 import styles from './LineChart.module.scss'
@@ -54,9 +55,12 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
-                <ul
+                <ScrollBox
+                    as="ul"
+                    scrollEnabled={isHorizontal}
                     aria-hidden={true}
-                    className={classNames(styles.legend, { [styles.legendHorizontal]: isHorizontal })}
+                    rootClassName={classNames({ [styles.legendHorizontal]: isHorizontal })}
+                    className={classNames(styles.legendContent, { [styles.legendContentHorizontal]: isHorizontal })}
                 >
                     {props.series.map(line => (
                         <li key={line.dataKey.toString()} className={styles.legendItem}>
@@ -68,7 +72,7 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                             {line.name}
                         </li>
                     ))}
-                </ul>
+                </ScrollBox>
             </div>
         </EventEmitterProvider>
     )

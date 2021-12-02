@@ -18,6 +18,16 @@
 }
 
 .legend {
+    &--horizontal {
+        flex-grow: 1;
+        flex-shrink: 0;
+        min-width: 11rem;
+        margin-left: 1rem;
+        width: 30%;
+    }
+}
+
+.legend-content {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -29,14 +39,9 @@
     line-height: 1.2;
 
     &--horizontal {
-        overflow: auto;
+        margin-top: 0;
         flex-wrap: nowrap;
         flex-direction: column;
-        flex-grow: 1;
-        flex-shrink: 0;
-        min-width: 11rem;
-        padding-left: 1rem;
-        width: 30%;
     }
 }
 
