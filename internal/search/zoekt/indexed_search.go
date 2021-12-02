@@ -260,7 +260,7 @@ func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.S
 	if s.Args == nil {
 		return nil
 	}
-	return doZoektSearchGlobal(ctx, s.Args, c)
+	return DoZoektSearchGlobal(ctx, s.Args, c)
 }
 
 // IndexedRepos for a request over the indexed universe cannot answer which
@@ -437,7 +437,7 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 	}, nil
 }
 
-func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
