@@ -139,9 +139,10 @@ func main() {
 	}
 
 	// Create Handler now since it also initializes state
-
 	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := ot.HTTPMiddleware(trace.HTTPTraceMiddleware(gitserver.Handler(), conf.DefaultClient()))
+	handler := gitserver.Handler()
+	handler = actor.HTTPMiddleware(handler)
+	handler = ot.HTTPMiddleware(trace.HTTPTraceMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
