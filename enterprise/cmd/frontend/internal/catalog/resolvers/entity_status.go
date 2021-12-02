@@ -45,13 +45,13 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 		}
 
 		sc := &catalogEntityStatusContextResolver{
-			name:      "authors",
-			title:     "Authors",
+			name:      "contributors",
+			title:     "Contributors",
 			targetURL: r.URL() + "/code",
 		}
 		if authors == nil || len(*authors) == 0 {
 			sc.state = "FAILURE"
-			sc.description = "No authors found"
+			sc.description = "No contributors found"
 		} else {
 			sc.state = "INFO"
 		}

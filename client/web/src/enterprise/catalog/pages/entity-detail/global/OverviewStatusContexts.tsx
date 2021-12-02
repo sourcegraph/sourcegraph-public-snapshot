@@ -34,9 +34,9 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                             className={itemClassName}
                         />
                     )
-                case 'authors':
+                case 'contributors':
                     return (
-                        <AuthorsStatusContext
+                        <ContributorsStatusContext
                             key={statusContext.id}
                             entity={entity}
                             statusContext={statusContext}
@@ -95,7 +95,7 @@ const OwnersStatusContext: React.FunctionComponent<{
     </OverviewStatusContextItem>
 )
 
-const AuthorsStatusContext: React.FunctionComponent<{
+const ContributorsStatusContext: React.FunctionComponent<{
     entity: CatalogComponentAuthorsFields
     statusContext: CatalogEntityStatusFields['status']['contexts'][0]
     className?: string
