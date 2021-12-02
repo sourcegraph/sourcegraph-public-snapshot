@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -692,4 +693,33 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		Status:     search.RepoStatusSingleton(repoRev.Repo.ID, status),
 		IsLimitHit: limitHit,
 	}, fatalErr
+}
+
+func PrivateReposForUser(ctx context.Context, db database.DB, userID int32, repoOptions search.RepoOptions) []types.MinimalRepo {
+	tr, ctx := trace.New(ctx, "privateReposForUser", strconv.Itoa(int(userID)))
+	defer tr.Finish()
+
+	// Get all private repos for the the current actor. On sourcegraph.com, those are
+	// only the repos directly added by the user. Otherwise it's all repos the user has
+	// access to on all connected code hosts / external services.
+	//
+	// TODO: We should use repos.Resolve here. However, the logic for
+	// UserID is different to repos.Resolve, so we need to work out how
+	// best to address that first.
+	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
+		UserID:         userID, // Zero valued when not in sourcegraph.com mode
+		OnlyPrivate:    true,
+		LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
+		OnlyForks:      repoOptions.OnlyForks,
+		NoForks:        repoOptions.NoForks,
+		OnlyArchived:   repoOptions.OnlyArchived,
+		NoArchived:     repoOptions.NoArchived,
+		ExcludePattern: UnionRegExps(repoOptions.MinusRepoFilters),
+	})
+
+	if err != nil {
+		log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
+		tr.LazyPrintf("error resolving user private repos: %v", err)
+	}
+	return userPrivateRepos
 }
