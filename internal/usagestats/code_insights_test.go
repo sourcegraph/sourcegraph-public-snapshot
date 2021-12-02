@@ -100,7 +100,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 
 	want.WeeklyAggregatedUsage = wantedWeeklyUsage
 	want.InsightTimeIntervals = []types.InsightTimeIntervalPing{}
-	want.InsightOrgVisible = []types.OrgVisibleInsightPing{{Type: "search"}, {Type: "lang-stats"}}
+	want.InsightOrgVisible = []types.OrgVisibleInsightPing{}
 
 	if diff := cmp.Diff(want, have); diff != "" {
 		t.Fatal(diff)
