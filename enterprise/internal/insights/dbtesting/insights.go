@@ -62,7 +62,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, closeDBConn, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, Databases: []*dbconn.Database{dbconn.CodeInsights}})
+	db, closeDBConn, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DatabasesToMigrate: []*dbconn.Database{dbconn.CodeInsights}})
 	if err != nil {
 		t.Fatal(err)
 	}

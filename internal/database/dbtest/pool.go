@@ -198,7 +198,7 @@ func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, defs ...
 		return nil, errors.Wrap(err, "create template database")
 	}
 
-	_, closeTemplateDB, err := dbconn.New(dbconn.Opts{DSN: urlWithDB(u, tdb.Name).String(), Databases: defs})
+	_, closeTemplateDB, err := dbconn.New(dbconn.Opts{DSN: urlWithDB(u, tdb.Name).String(), DatabasesToMigrate: defs})
 	if err != nil {
 		return nil, err
 	}

@@ -21,9 +21,9 @@ type Opts struct {
 	// because we have multiple apps connecting to the same database, but have a single shared DSN configured.
 	AppName string
 
-	// Databases is set of migration specs that should be executed on the fresh connection if the database
+	// DatabasesToMigrate is set of migration specs that should be executed on the fresh connection if the database
 	// appears to be out-of-date.
-	Databases []*Database
+	DatabasesToMigrate []*Database
 }
 
 // New connects to the given data source and returns the handle.
@@ -66,7 +66,7 @@ func New(opts Opts) (*sql.DB, func(err error) error, error) {
 		return err
 	}
 
-	for _, database := range opts.Databases {
+	for _, database := range opts.DatabasesToMigrate {
 		close, err := migrateDB(db, database)
 		if err != nil {
 			return nil, nil, closeAll(err)

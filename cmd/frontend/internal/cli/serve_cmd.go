@@ -95,7 +95,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
 func InitDB() (*sql.DB, error) {
-	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend", Databases: []*dbconn.Database{dbconn.Frontend}}
+	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend", DatabasesToMigrate: []*dbconn.Database{dbconn.Frontend}}
 	sqlDB, _, err := dbconn.New(opts)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)

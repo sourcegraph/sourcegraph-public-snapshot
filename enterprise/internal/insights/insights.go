@@ -68,7 +68,7 @@ func InitializeCodeInsightsDB(app string) (*sql.DB, error) {
 		}
 	})
 
-	db, _, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app, Databases: []*dbconn.Database{dbconn.CodeInsights}})
+	db, _, err := dbconn.New(dbconn.Opts{DSN: timescaleDSN, DBName: "codeinsights", AppName: app, DatabasesToMigrate: []*dbconn.Database{dbconn.CodeInsights}})
 	if err != nil {
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
