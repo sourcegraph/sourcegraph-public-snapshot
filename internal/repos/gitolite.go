@@ -42,8 +42,8 @@ func NewGitoliteSource(svc *types.ExternalService, cf *httpcli.Factory) (*Gitoli
 	gitserverDoer, err := cf.Doer(
 		httpcli.NewMaxIdleConnsPerHostOpt(500),
 		// The provided httpcli.Factory is one used for external services - however,
-		// GitoliteSource asks gitserver to gitolite instead, so we have to ensure
-		// that the actor transport used for internal clients is provided.
+		// GitoliteSource asks gitserver to communicate to gitolite instead, so we
+		// have to ensure that the actor transport used for internal clients is provided.
 		httpcli.ActorTransportOpt)
 	if err != nil {
 		return nil, err
