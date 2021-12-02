@@ -6,10 +6,12 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/migration"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -53,6 +55,13 @@ func Init(ctx context.Context, postgres database.DB, _ conftypes.UnifiedWatchabl
 		return err
 	}
 	enterpriseServices.InsightsResolver = resolvers.New(timescale, postgres)
+
+	insightsMigrator := migration.NewMigrator(timescale, postgres)
+	// This id (14) was defined arbitrarily in this migration file: 1528395945_settings_migration_out_of_band.up.sql.
+	if err := outOfBandMigrationRunner.Register(14, insightsMigrator, oobmigration.MigratorOptions{Interval: 10 * time.Second}); err != nil {
+		log.Fatalf("failed to register settings migration job: %v", err)
+	}
+
 	return nil
 }
 
