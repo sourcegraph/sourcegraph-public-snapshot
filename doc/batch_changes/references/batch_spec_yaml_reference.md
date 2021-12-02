@@ -89,7 +89,7 @@ A specific repository (and, optionally, one or more branches) to be added to the
 
 > NOTE: Before Sourcegraph 3.35, only the last named branch would be used if multiple branches were specified, and only a single `branch` could be provided. In Sourcegraph 3.35 and later versions, all branches are used.
 
-If present, a `branches` attribute can be used to specify the branches on the repository to propose changes to. If unset, the repository's default branch is used. For backward compatibility reasons, this attribute may also be named `branch`, and may be a single string. Only one of `branch` or `branches` can be set.
+To match a branch other than the default, `branch` or `branches` can be used to specify one or multiple branches, respectively. Only one of `branch` or `branches` can be set.
 
 > WARNING: If multiple branches are matched for the same repository, then [`changesetTemplate.branch`](#changesettemplate-branch) will need to have a different value for each branch.
 
@@ -103,7 +103,7 @@ on:
 ```yaml
 on:
   - repository: github.com/sourcegraph/sourcegraph
-    branches: 3.19-beta
+    branch: 3.19-beta
   - repository: github.com/sourcegraph/src-cli
 ```
 
@@ -113,7 +113,7 @@ In the following example, the `repositoriesMatchingQuery` returns both repositor
 on:
   - repositoriesMatchingQuery: repo:sourcegraph\/(sourcegraph|src-cli)$
   - repository: github.com/sourcegraph/sourcegraph
-    branches: 3.23
+    branch: 3.23
 ```
 
 In this example, both the `3.19-beta` and `3.23` branches are used:
