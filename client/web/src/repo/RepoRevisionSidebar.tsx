@@ -14,8 +14,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { Tree } from '../tree/Tree'
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
+import { Tree } from '../tree/Tree'
 
 import styles from './RepoRevisionSidebar.module.scss'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
