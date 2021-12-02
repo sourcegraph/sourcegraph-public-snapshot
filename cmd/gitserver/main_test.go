@@ -52,7 +52,7 @@ func TestGetVCSSyncer(t *testing.T) {
 				ServiceType: extsvc.TypePerforce,
 			},
 			Sources: map[string]*types.SourceInfo{
-				"a": &types.SourceInfo{
+				"a": {
 					ID:       "abc",
 					CloneURL: "example.com",
 				},
