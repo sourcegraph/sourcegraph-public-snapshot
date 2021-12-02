@@ -1,7 +1,8 @@
 import classNames from 'classnames'
 import { camelCase } from 'lodash'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
-import React, { useCallback, useContext, useRef, useState } from 'react'
+import React, { Ref, useCallback, useContext, useRef, useState } from 'react'
+import { useMergeRefs } from 'use-callback-ref'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -30,13 +31,15 @@ interface BackendInsightProps
     extends TelemetryProps,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
+
+    innerRef: Ref<HTMLElement>
 }
 
 /**
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, ref, ...otherProps } = props
+    const { telemetryService, insight, innerRef, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
@@ -44,6 +47,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
+    const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -131,7 +135,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             {...otherProps}
             data-testid={`insight-card.${insight.id}`}
             title={insight.title}
-            innerRef={insightCardReference}
+            innerRef={mergedInsightCardReference}
             actions={
                 <>
                     <DrillDownFiltersAction
