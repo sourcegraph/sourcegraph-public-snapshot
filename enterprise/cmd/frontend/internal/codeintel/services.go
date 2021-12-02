@@ -83,7 +83,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := dbconn.NewCodeIntelDB(dsn, "frontend")
+	db, err := dbconn.NewCodeIntelDB(dsn, "frontend", true)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

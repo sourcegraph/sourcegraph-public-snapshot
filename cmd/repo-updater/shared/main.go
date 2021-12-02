@@ -116,7 +116,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := dbconn.NewFrontendDB(dsn, "repo-updater")
+	sqlDB, err := dbconn.NewFrontendDB(dsn, "repo-updater", false)
 	if err != nil {
 		log.Fatalf("failed to initialize database store: %v", err)
 	}

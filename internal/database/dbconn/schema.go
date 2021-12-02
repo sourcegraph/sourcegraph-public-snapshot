@@ -43,9 +43,18 @@ var (
 // the schema version of the database will be compared against an expected version and migrations
 // may be run (taking an advisory lock to ensure exclusive access).
 //
+// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
+// the version. When false, we give back a handle without running any migrations and assume that
+// the database schema is up to date.
+//
 // This connection is not expected to be closed but last the life of the calling application.
-func NewFrontendDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := connect(dsn, appName, "frontend", []*Schema{Frontend})
+func NewFrontendDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+	migrations := []*Schema{Frontend}
+	if !migrate {
+		migrations = nil
+	}
+
+	db, _, err := connect(dsn, appName, "frontend", migrations)
 	return db, err
 }
 
@@ -53,9 +62,18 @@ func NewFrontendDB(dsn, appName string) (*sql.DB, error) {
 // the schema version of the database will be compared against an expected version and migrations
 // may be run (taking an advisory lock to ensure exclusive access).
 //
+// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
+// the version. When false, we give back a handle without running any migrations and assume that
+// the database schema is up to date.
+//
 // This connection is not expected to be closed but last the life of the calling application.
-func NewCodeIntelDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := connect(dsn, appName, "codeintel", []*Schema{CodeIntel})
+func NewCodeIntelDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+	migrations := []*Schema{CodeIntel}
+	if !migrate {
+		migrations = nil
+	}
+
+	db, _, err := connect(dsn, appName, "codeintel", migrations)
 	return db, err
 }
 
@@ -63,8 +81,17 @@ func NewCodeIntelDB(dsn, appName string) (*sql.DB, error) {
 // connection, the schema version of the database will be compared against an expected version and
 // migrations may be run (taking an advisory lock to ensure exclusive access).
 //
+// TEMPORARY: The migrate flag controls whether or not migrations/version checks are performed on
+// the version. When false, we give back a handle without running any migrations and assume that
+// the database schema is up to date.
+//
 // This connection is not expected to be closed but last the life of the calling application.
-func NewCodeInsightsDB(dsn, appName string) (*sql.DB, error) {
-	db, _, err := connect(dsn, appName, "codeinsight", []*Schema{CodeInsights})
+func NewCodeInsightsDB(dsn, appName string, migrate bool) (*sql.DB, error) {
+	migrations := []*Schema{CodeInsights}
+	if !migrate {
+		migrations = nil
+	}
+
+	db, _, err := connect(dsn, appName, "codeinsight", migrations)
 	return db, err
 }

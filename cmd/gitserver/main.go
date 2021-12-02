@@ -270,7 +270,7 @@ func getDB() (dbutil.DB, error) {
 	dsn := conf.WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	return dbconn.NewFrontendDB(dsn, "gitserver")
+	return dbconn.NewFrontendDB(dsn, "gitserver", false)
 }
 
 func getVCSSyncer(ctx context.Context, externalServiceStore database.ExternalServiceStore, repoStore database.RepoStore,
