@@ -29,49 +29,61 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
             <div className="col-md-3">
                 {group.title && <h2>{group.title}</h2>}
                 {group.description && <p className="mb-3">{group.description}</p>}
-                {group.parentGroup && (
-                    <div className="card position-relative mb-3">
-                        <header className={classNames(headerClassName)}>
-                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Parent group</h4>
-                        </header>
-                        <div className={classNames('d-flex align-items-center position-relative', bodyClassName)}>
-                            <Link
-                                to={group.parentGroup.url}
-                                className="mr-2 flex-shrink-0 d-flex align-items-center stretched-link"
-                            >
-                                <CatalogGroupIcon className="icon-inline text-muted mr-1" /> {group.parentGroup.name}
-                            </Link>
-                            {group.parentGroup.description && (
-                                <p className="mb-0 text-muted text-truncate">{group.parentGroup.description}</p>
+                {(group.parentGroup || (group.childGroups && group.childGroups.length > 0)) && (
+                    <>
+                        <dl className="mb-2">
+                            {group.parentGroup && (
+                                <>
+                                    <dt className={classNames('mb-0 mr-2', titleClassName)}>Parent group</dt>
+                                    <dd className={classNames('mb-0 d-flex align-items-center position-relative')}>
+                                        <Link
+                                            to={group.parentGroup.url}
+                                            className="mr-2 py-1 flex-shrink-0 d-flex align-items-center stretched-link"
+                                        >
+                                            <CatalogGroupIcon className="icon-inline text-muted mr-1" />{' '}
+                                            {group.parentGroup.name}
+                                        </Link>
+                                        {false && group.parentGroup.description && (
+                                            <p className="mb-0 text-muted text-truncate">
+                                                {group.parentGroup.description}
+                                            </p>
+                                        )}
+                                    </dd>
+                                </>
                             )}
-                        </div>
-                    </div>
+                            {group.childGroups && group.childGroups.length > 0 && (
+                                <>
+                                    <dt className={classNames('mb-0 mr-2', titleClassName)}>Subgroups</dt>
+                                    <dd className="mb-0">
+                                        <ul className="list-unstyled mb-0">
+                                            {group.childGroups.map(childGroup => (
+                                                <li
+                                                    key={childGroup.id}
+                                                    className="d-flex align-items-center position-relative"
+                                                >
+                                                    <Link
+                                                        to={childGroup.url}
+                                                        className="mr-2 py-1 flex-shrink-0 d-flex align-items-center stretched-link"
+                                                    >
+                                                        <CatalogGroupIcon className="icon-inline text-muted mr-1" />{' '}
+                                                        {childGroup.name}
+                                                    </Link>
+                                                    {false && childGroup.description && (
+                                                        <p className="mb-0 text-muted text-truncate">
+                                                            {childGroup.description}
+                                                        </p>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </dd>
+                                </>
+                            )}
+                        </dl>
+                        <hr className="mb-3" />
+                    </>
                 )}
-                {group.childGroups && group.childGroups.length > 0 && (
-                    <div className="card mb-3">
-                        <header className={classNames(headerClassName)}>
-                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Subgroups</h4>
-                        </header>
-                        <ul className="list-group list-group-flush">
-                            {group.childGroups.map(childGroup => (
-                                <li
-                                    key={childGroup.id}
-                                    className="list-group-item d-flex align-items-center position-relative"
-                                >
-                                    <Link
-                                        to={childGroup.url}
-                                        className="mr-2 flex-shrink-0 d-flex align-items-center stretched-link"
-                                    >
-                                        <CatalogGroupIcon className="icon-inline text-muted mr-1" /> {childGroup.name}
-                                    </Link>
-                                    {childGroup.description && (
-                                        <p className="mb-0 text-muted text-truncate">{childGroup.description}</p>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+
                 <div>
                     <Link
                         to={`/search?q=context:g/${group.name}`}
