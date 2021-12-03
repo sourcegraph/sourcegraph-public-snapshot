@@ -19,6 +19,13 @@ func maybeMinio() []string {
 	// with our default credentials running in a sibling container.
 	SetDefaultEnv("MINIO_ROOT_USER", "AKIAIOSFODNN7EXAMPLE")
 	SetDefaultEnv("MINIO_ROOT_PASSWORD", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+
+	// Sunset deprecated MinIO environment variables (#26529)
+	// CI requires this change is merged before removal.
+	// Once sourcegraph/deploy-sourcegraph-docker passes CI, we can remove these.
+	SetDefaultEnv("MINIO_ACCESS_KEY", "AKIAIOSFODNN7EXAMPLE")
+	SetDefaultEnv("MINIO_SECRET_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+
 	SetDefaultEnv("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://127.0.0.1:9000")
 
 	// Configure MinIO service
