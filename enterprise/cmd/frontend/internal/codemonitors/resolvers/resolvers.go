@@ -130,8 +130,8 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 	defer func() { err = tx.store.Done(err) }()
 
-	var userID, orgID int32
-	if err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Namespace, &userID, &orgID); err != nil {
+	userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
+	if err != nil {
 		return nil, err
 	}
 
@@ -139,8 +139,8 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	m, err := tx.store.CreateMonitor(ctx, cm.MonitorArgs{
 		Description:     args.Monitor.Description,
 		Enabled:         args.Monitor.Enabled,
-		NamespaceUserID: nilOrInt32(userID),
-		NamespaceOrgID:  nilOrInt32(orgID),
+		NamespaceUserID: userID,
+		NamespaceOrgID:  orgID,
 	})
 	if err != nil {
 		return nil, err
@@ -273,24 +273,17 @@ func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*g
 
 func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipients []graphql.ID) error {
 	for _, recipient := range recipients {
-		var userID, orgID int32
-		if err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID); err != nil {
+		userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(recipient)
+		if err != nil {
 			return errors.Wrap(err, "UnmarshalNamespaceID")
 		}
 
-		_, err := r.store.CreateRecipient(ctx, emailID, nilOrInt32(userID), nilOrInt32(orgID))
+		_, err = r.store.CreateRecipient(ctx, emailID, userID, orgID)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func nilOrInt32(n int32) *int32 {
-	if n == 0 {
-		return nil
-	}
-	return &n
 }
 
 // ResetTriggerQueryTimestamps is a convenience function which resets the
@@ -398,16 +391,16 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	var userID, orgID int32
-	if err := graphqlbackend.UnmarshalNamespaceID(args.Monitor.Update.Namespace, &userID, &orgID); err != nil {
+	userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Update.Namespace)
+	if err != nil {
 		return nil, err
 	}
 
 	mo, err := r.store.UpdateMonitor(ctx, monitorID, cm.MonitorArgs{
 		Description:     args.Monitor.Update.Description,
 		Enabled:         args.Monitor.Update.Enabled,
-		NamespaceUserID: nilOrInt32(userID),
-		NamespaceOrgID:  nilOrInt32(orgID),
+		NamespaceUserID: userID,
+		NamespaceOrgID:  orgID,
 	})
 	if err != nil {
 		return nil, err
