@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Sourcegraph services now listen to SIGTERM signals. This allows smoother rollouts in kubernetes deployments. [#27958](https://github.com/sourcegraph/sourcegraph/pull/27958)
 - The sourcegraph-frontend ingress now uses the networking.k8s.io/v1 api. This adds support for k8s v1.22 and later, and deprecates support for versions older than v1.18.x [#4029](https://github.com/sourcegraph/deploy-sourcegraph/pull/4029)
+- MinIO environment variables updated to use new names. This begins the deprecation of `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY`. [#26529](https://github.com/sourcegraph/sourcegraph/issues/26529)
 
 ### Fixed
 
