@@ -16,6 +16,13 @@ type Recipient struct {
 	NamespaceOrgID  *int32
 }
 
+var recipientColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_recipients.id"),
+	sqlf.Sprintf("cm_recipients.email"),
+	sqlf.Sprintf("cm_recipients.namespace_user_id"),
+	sqlf.Sprintf("cm_recipients.namespace_org_id"),
+}
+
 const createRecipientFmtStr = `
 INSERT INTO cm_recipients (email, namespace_user_id, namespace_org_id)
 VALUES (%s,%s,%s)
@@ -63,7 +70,7 @@ func (l ListRecipientsOpts) Limit() *sqlf.Query {
 }
 
 const readRecipientQueryFmtStr = `
-SELECT id, email, namespace_user_id, namespace_org_id
+SELECT %s -- recipientColumns
 FROM cm_recipients
 WHERE %s
 ORDER BY id ASC
@@ -73,6 +80,7 @@ LIMIT %s;
 func (s *codeMonitorStore) ListRecipients(ctx context.Context, args ListRecipientsOpts) ([]*Recipient, error) {
 	q := sqlf.Sprintf(
 		readRecipientQueryFmtStr,
+		sqlf.Join(recipientColumns, ","),
 		args.Conds(),
 		args.Limit(),
 	)
