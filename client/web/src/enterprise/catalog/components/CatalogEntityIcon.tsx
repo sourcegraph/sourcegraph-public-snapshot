@@ -8,7 +8,7 @@ import React from 'react'
 import { CatalogComponentKind } from '../../../graphql-operations'
 
 interface PartialEntity {
-    __typename: 'CatalogComponent'
+    __typename: 'CatalogComponent' | undefined
     kind: CatalogComponentKind
 }
 

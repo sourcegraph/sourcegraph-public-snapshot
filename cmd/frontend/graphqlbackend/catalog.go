@@ -91,6 +91,7 @@ type GroupResolver interface {
 	ParentGroup() GroupResolver
 	ChildGroups() []GroupResolver
 	Members() []*PersonResolver
+	OwnedEntities() []*CatalogEntityResolver
 }
 
 type CatalogEntityStatusResolver interface {

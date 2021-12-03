@@ -14,8 +14,8 @@ import {
     CatalogEntityOwnerFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
-
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
+
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
 interface Props {
@@ -86,7 +86,7 @@ const OwnerStatusContext: React.FunctionComponent<{
     className?: string
 }> = ({ entity, statusContext, className }) => (
     <OverviewStatusContextItem statusContext={statusContext} className={className}>
-        {statusContext.description || <EntityOwner owner={entity.owner} />}
+        {!statusContext.description && <EntityOwner owner={entity.owner} />}
     </OverviewStatusContextItem>
 )
 

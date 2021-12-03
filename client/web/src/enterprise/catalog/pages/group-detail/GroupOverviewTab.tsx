@@ -8,7 +8,9 @@ import { Link } from 'react-router-dom'
 
 import { GroupDetailFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
+import { CatalogEntityIcon } from '../../components/CatalogEntityIcon'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
+import { CatalogEntityStateIndicator } from '../overview/components/entity-state-indicator/EntityStateIndicator'
 
 import { GroupDetailContentCardProps } from './GroupDetailContent'
 
@@ -107,25 +109,47 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                 </div>
             </div>
             <div className="col-md-9">
-                <ul className="list-unstyled">
-                    {group.members && group.members.length > 0 && (
-                        <div className="card mb-3">
-                            <header className={classNames(headerClassName)}>
-                                <h4 className={classNames('mb-0 mr-2', titleClassName)}>Members</h4>
-                            </header>
-                            <ul className="list-group list-group-flush">
-                                {group.members.map(member => (
-                                    <li
-                                        key={member.email}
-                                        className="list-group-item d-flex align-items-center position-relative"
-                                    >
-                                        <PersonLink person={member} />
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-                </ul>
+                {group.ownedEntities && group.ownedEntities.length > 0 && (
+                    <div className="card mb-3">
+                        <header className={classNames(headerClassName)}>
+                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Components</h4>
+                        </header>
+                        <ul className="list-group list-group-flush">
+                            {group.ownedEntities.map(entity => (
+                                <li
+                                    key={entity.id}
+                                    className="list-group-item d-flex align-items-center position-relative"
+                                >
+                                    <Link to={entity.url} className="d-flex align-items-center mr-1">
+                                        <CatalogEntityIcon entity={entity} className="icon-inline text-muted mr-1" />
+
+                                        {entity.name}
+                                    </Link>
+                                    {entity.__typename === 'CatalogComponent' && (
+                                        <CatalogEntityStateIndicator entity={entity} />
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                {group.members && group.members.length > 0 && (
+                    <div className="card mb-3">
+                        <header className={classNames(headerClassName)}>
+                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Members</h4>
+                        </header>
+                        <ul className="list-group list-group-flush">
+                            {group.members.map(member => (
+                                <li
+                                    key={member.email}
+                                    className="list-group-item d-flex align-items-center position-relative"
+                                >
+                                    <PersonLink person={member} />
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </div>
         </div>
     </div>

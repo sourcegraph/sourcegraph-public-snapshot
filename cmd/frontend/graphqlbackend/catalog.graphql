@@ -55,6 +55,7 @@ type Group implements Node {
     parentGroup: Group
     childGroups: [Group!]!
     members: [Person!]!
+    ownedEntities: [CatalogEntity!]!
 }
 
 type CatalogGraph {

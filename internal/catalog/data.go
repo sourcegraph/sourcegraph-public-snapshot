@@ -235,7 +235,7 @@ func Data() ([]Component, []Group, []Edge) {
 			Kind:         "LIBRARY",
 			Name:         "client-web",
 			Description:  "Main web app UI",
-			Lifecycle:    LifecycleExperimental,
+			Lifecycle:    LifecycleProduction,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/web"},

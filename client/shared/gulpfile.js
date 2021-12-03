@@ -114,6 +114,7 @@ async function shouldRegenerateGraphQlOperations(type, name) {
  * Generates the new query-specific types on file changes.
  */
 function watchGraphQlOperations() {
+  return // TODO(sqs) this is super slow
   // Although graphql-codegen has watching capabilities, they don't appear to
   // use chokidar correctly and rely on polling. Instead, let's get gulp to
   // watch for us, since we know it'll do it more efficiently, and then we can
