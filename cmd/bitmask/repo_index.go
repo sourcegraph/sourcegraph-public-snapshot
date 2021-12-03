@@ -27,7 +27,7 @@ var (
 const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
-	bloomSizePadding         = 10
+	bloomSizePadding         = 5
 )
 
 type RepoIndex struct {
@@ -79,28 +79,24 @@ func NewNgrams() Ngrams {
 }
 func (g *Ngrams) Update(index int, b byte) {
 	g.Unigram.Update(b)
-	if index > 0 {
-		g.Bigram1.Update(b)
-		g.Bigram2.Update(b)
-	}
-	if index > 1 {
-		g.Trigram1.Update(b)
-		g.Trigram2.Update(b)
-		g.Trigram3.Update(b)
-	}
-	if index > 2 {
-		g.Quadgram1.Update(b)
-		g.Quadgram2.Update(b)
-		g.Quadgram3.Update(b)
-		g.Quadgram4.Update(b)
-	}
-	if index > 3 {
-		g.Pentagram1.Update(b)
-		g.Pentagram2.Update(b)
-		g.Pentagram3.Update(b)
-		g.Pentagram4.Update(b)
-		g.Pentagram5.Update(b)
-	}
+
+	g.Bigram1.Update(b)
+	g.Bigram2.Update(b)
+
+	g.Trigram1.Update(b)
+	g.Trigram2.Update(b)
+	g.Trigram3.Update(b)
+
+	g.Quadgram1.Update(b)
+	g.Quadgram2.Update(b)
+	g.Quadgram3.Update(b)
+	g.Quadgram4.Update(b)
+
+	g.Pentagram1.Update(b)
+	g.Pentagram2.Update(b)
+	g.Pentagram3.Update(b)
+	g.Pentagram4.Update(b)
+	g.Pentagram5.Update(b)
 }
 
 func (g *Ngrams) OnIndex(index int, b byte, onBytes func(b []byte)) {
@@ -259,7 +255,7 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 		})
 		sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
 		if sizeRatio > 0.5 {
-			fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
+			//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
 		}
 		indexes = append(
 			indexes,

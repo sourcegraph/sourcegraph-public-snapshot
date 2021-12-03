@@ -10,10 +10,11 @@ import (
 
 var result = 0
 var dir = os.Getenv("HOME") + "/dev/sourcegraph/sourcegraph"
+var benchmarkCacheDir = os.Getenv("HOME") + "/dev/sourcegraph/benchmark-cache"
 
 func BenchmarkIndex(b *testing.B) {
 	for j := 0; j < b.N; j++ {
-		err := WriteCache(dir, cacheFile)
+		err := WriteCache(dir, benchmarkCacheDir)
 		if err != nil {
 			panic(err)
 		}
