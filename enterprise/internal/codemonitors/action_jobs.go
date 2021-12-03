@@ -16,7 +16,7 @@ type ActionJob struct {
 	Email        *int64
 	Webhook      *int64
 	SlackWebhook *int64
-	TriggerEvent int
+	TriggerEvent int32
 
 	// Fields demanded by any dbworker.
 	State          string
