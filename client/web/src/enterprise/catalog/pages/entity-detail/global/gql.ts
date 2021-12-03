@@ -224,6 +224,8 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
     }
 `
 
+// TODO(sqs): show Group owner
+
 export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
     fragment CatalogEntityDetailFields on CatalogEntity {
         __typename
