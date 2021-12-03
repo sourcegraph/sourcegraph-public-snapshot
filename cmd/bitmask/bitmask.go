@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/bits-and-blooms/bloom/v3"
+	"github.com/go-enry/go-enry/v2"
 	"os"
 	"os/exec"
 	"path"
@@ -15,41 +16,28 @@ var cache = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
 var estimate = 0.01
 var query = "COM"
 
-type TrigramIndex struct {
+type BlobIndex struct {
 	Filter *bloom.BloomFilter
 	Path   string
 }
 
-func QueryCache() {
-	indexes := ReadCache()
-	fmt.Printf("INDEXES %v\n", len(indexes))
-	for _, index := range indexes {
-		if index.Filter != nil {
-			if index.Filter.TestString(query) {
-				fmt.Printf("path %v\n", index.Path)
-			}
-		}
-	}
-}
-
-func ReadCache() []TrigramIndex {
+func ReadCache() RepoIndex {
 	file, err := os.Open(cache)
 	if err != nil {
 		fmt.Printf("err %v\n", err)
 		panic(err)
 	}
 	decoder := gob.NewDecoder(file)
-	var indexes []TrigramIndex
+	var indexes []BlobIndex
 	err = decoder.Decode(&indexes)
 	if err != nil {
 		panic(err)
 	}
-	return indexes
+	return RepoIndex{indexes}
 }
 
-func WriteCache() {
+func WriteCache(dir string, maxLines int) {
 	//path := os.Getenv("HOME") + "/dev/sgtest/megarepo"
-	dir := os.Getenv("HOME") + "/dev/sgtest/megarepo"
 	//fmt.Println(path)
 
 	cmd := exec.Command("git", "ls-files", "-z", "--with-tree=main")
@@ -64,34 +52,48 @@ func WriteCache() {
 	stdout := string(out.Bytes())
 	NUL := string([]byte{0})
 	lines := strings.Split(stdout, NUL)
-	indexes := make([]TrigramIndex, len(lines))
+	indexes := make([]BlobIndex, len(lines))
 	trigrams := make(map[string]struct{})
 	for i, line := range lines {
 		if i%100 == 0 {
 			fmt.Println(i)
+		}
+		if i > maxLines {
+			break
 		}
 		abspath := path.Join(dir, line)
 		stat, err := os.Stat(abspath)
 		if err != nil {
 			panic(err)
 		}
+		if stat.IsDir() {
+			continue
+		}
 		if stat.Size() > 1_000_000 {
 			continue
 		}
-		textBytes, _ := os.ReadFile(abspath)
+		textBytes, err := os.ReadFile(abspath)
+		if err != nil {
+			panic(err)
+		}
+		if enry.IsBinary(textBytes) {
+			fmt.Printf("isBinary %v\n", abspath)
+			continue
+		}
 		text := string(textBytes)
 		for i = 0; i < len(text)-3; i++ {
 			trigram := text[i : i+3]
 			trigrams[trigram] = struct{}{}
 		}
 		size := len(trigrams)
+		//fmt.Printf("size %v %v\n", size, abspath)
 		filter := bloom.NewWithEstimates(uint(size), estimate)
-		for trigram, _ := range trigrams {
+		for trigram := range trigrams {
 			filter.AddString(trigram)
 		}
 		indexes = append(
 			indexes,
-			TrigramIndex{
+			BlobIndex{
 				Path:   line,
 				Filter: filter,
 			},
