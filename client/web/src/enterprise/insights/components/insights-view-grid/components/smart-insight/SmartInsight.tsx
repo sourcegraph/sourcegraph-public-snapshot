@@ -46,6 +46,6 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps<keyof View
             {...otherProps}
         />
     )
-}) as // Cast here is needed since forwardRef doesn't support generics properly cause of static nature
-// of this wrapper.
-<D extends keyof ViewContexts>(p: SmartInsightProps<D> & { ref?: Ref<HTMLElement> }) => ReactElement
+    // Cast here is needed since forwardRef doesn't support generics properly
+    // cause of static nature
+}) as <D extends keyof ViewContexts>(p: SmartInsightProps<D> & { ref?: Ref<HTMLElement> }) => ReactElement
