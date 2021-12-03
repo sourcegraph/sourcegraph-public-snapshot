@@ -34,11 +34,20 @@ interface CatalogEntity {
     type: CatalogEntityType!
     name: String!
     description: String
+    owner: EntityOwner
     lifecycle: CatalogEntityLifecycle!
     url: String!
     status: CatalogEntityStatus!
-    owners: [CatalogEntityOwnerEdge!]
+    codeOwners: [CatalogEntityCodeOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
+}
+
+union EntityOwner = Person | Group
+
+type Group {
+    id: ID!
+    name: String!
+    title: String!
 }
 
 type CatalogGraph {
@@ -59,6 +68,8 @@ type CatalogEntityRelatedEntityConnection {
 enum CatalogEntityRelationType {
     DEPENDS_ON
     DEPENDENCY_OF
+    PART_OF
+    HAS_PART
 }
 
 type CatalogEntityRelatedEntityEdge {
@@ -104,10 +115,11 @@ type CatalogComponent implements Node & CatalogEntity {
     type: CatalogEntityType!
     name: String!
     description: String
+    owner: EntityOwner
     lifecycle: CatalogEntityLifecycle!
     url: String!
     status: CatalogEntityStatus!
-    owners: [CatalogEntityOwnerEdge!]
+    codeOwners: [CatalogEntityCodeOwnerEdge!]
     relatedEntities: CatalogEntityRelatedEntityConnection!
 
     kind: CatalogComponentKind!
@@ -128,7 +140,7 @@ type CatalogComponentAuthorEdge {
     lastCommit: GitCommit!
 }
 
-type CatalogEntityOwnerEdge {
+type CatalogEntityCodeOwnerEdge {
     node: String!
     fileCount: Int!
     fileProportion: Float!

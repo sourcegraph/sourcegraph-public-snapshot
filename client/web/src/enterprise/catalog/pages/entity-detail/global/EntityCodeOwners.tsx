@@ -3,16 +3,16 @@ import React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { CatalogEntityOwnersFields } from '../../../../../graphql-operations'
+import { CatalogEntityCodeOwnersFields } from '../../../../../graphql-operations'
 
 import styles from './ComponentAuthors.module.scss'
 import { EntityDetailContentCardProps } from './EntityDetailContent'
 
 interface Props extends EntityDetailContentCardProps {
-    entity: CatalogEntityOwnersFields
+    entity: CatalogEntityCodeOwnersFields
 }
 
-export const EntityOwners: React.FunctionComponent<Props> = ({
+export const EntityCodeOwners: React.FunctionComponent<Props> = ({
     entity: { owners },
     className,
     headerClassName,

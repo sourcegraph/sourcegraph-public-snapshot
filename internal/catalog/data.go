@@ -19,10 +19,18 @@ type Component struct {
 
 	// Edges
 	DependsOn []string
+	OwnedBy   string
 }
 
 type UsagePattern struct {
 	Query string
+}
+
+type Group struct {
+	Name        string
+	Title       string
+	ParentGroup string
+	Members     []string
 }
 
 type Edge struct {
@@ -39,6 +47,9 @@ const (
 	PartOfRelation  = "PART_OF"
 	HasPartRelation = "HAS_PART"
 
+	MemberOfRelation  = "MEMBER_OF"
+	HasMemberRelation = "HAS_MEMBER"
+
 	//
 
 	LifecycleProduction   = "PRODUCTION"
@@ -51,7 +62,9 @@ func newQueryUsagePattern(query string) UsagePattern {
 	}
 }
 
-func Data() ([]Component, []Edge) {
+func Data() ([]Component, []Group, []Edge) {
+	var edges []Edge
+
 	const (
 		sourceRepo   = "github.com/sourcegraph/sourcegraph"
 		sourceCommit = "2ada4911722e2c812cc4f1bbfb6d5d1756891392"
@@ -71,6 +84,7 @@ func Data() ([]Component, []Edge) {
 			},
 			APIDefPath: "cmd/frontend/graphqlbackend/schema.graphql",
 			DependsOn:  []string{"gitserver", "client-web", "repo-updater", "executor", "github-proxy", "precise-code-intel-worker", "query-runner", "searcher", "sitemap", "symbols"},
+			OwnedBy:    "search-core",
 		},
 		{
 			Kind:         "SERVICE",
@@ -87,6 +101,7 @@ func Data() ([]Component, []Edge) {
 			},
 			APIDefPath: "internal/gitserver/protocol/gitserver.go",
 			DependsOn:  []string{"repo-updater"},
+			OwnedBy:    "repo-mgmt",
 		},
 		{
 			Kind:         "SERVICE",
@@ -96,6 +111,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
 			DependsOn:    []string{"gitserver", "github-proxy"},
+			OwnedBy:      "repo-mgmt",
 		},
 		{
 			Kind:         "SERVICE",
@@ -109,6 +125,7 @@ func Data() ([]Component, []Edge) {
 				newQueryUsagePattern(`lang:go \bsearcher\.Search\( patterntype:regexp`),
 			},
 			DependsOn: []string{"gitserver"},
+			OwnedBy:   "search-core",
 		},
 		{
 			Kind:         "SERVICE",
@@ -118,6 +135,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/executor"},
 			DependsOn:    []string{"frontend"},
+			OwnedBy:      "code-intel",
 		},
 		{
 			Kind:         "SERVICE",
@@ -127,6 +145,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/precise-code-intel-worker"},
 			DependsOn:    []string{"frontend", "worker"},
+			OwnedBy:      "code-intel",
 		},
 		{
 			Kind:         "SERVICE",
@@ -135,6 +154,7 @@ func Data() ([]Component, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/github-proxy"},
+			OwnedBy:      "repo-mgmt",
 		},
 		{
 			Kind:         "SERVICE",
@@ -144,6 +164,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/query-runner"},
 			DependsOn:    []string{"frontend"},
+			OwnedBy:      "search-product",
 		},
 		{
 			Kind:         "SERVICE",
@@ -170,6 +191,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/symbols"},
 			DependsOn:    []string{"gitserver", "frontend"},
+			OwnedBy:      "code-intel",
 		},
 		{
 			Kind:         "SERVICE",
@@ -217,6 +239,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/web"},
 			DependsOn:    []string{"extension-api", "client-shared", "wildcard", "frontend"},
+			OwnedBy:      "frontend-platform",
 		},
 		{
 			Kind:         "LIBRARY",
@@ -237,6 +260,7 @@ func Data() ([]Component, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/shared"},
 			DependsOn:    []string{"extension-api", "wildcard", "frontend"},
+			OwnedBy:      "frontend-platform",
 		},
 		{
 			Kind:         "LIBRARY",
@@ -249,6 +273,7 @@ func Data() ([]Component, []Edge) {
 			UsagePatterns: []UsagePattern{
 				newQueryUsagePattern(`lang:typescript import @sourcegraph/wildcard patterntype:regexp`),
 			},
+			OwnedBy: "frontend-platform",
 		},
 		{
 			Kind:         "LIBRARY",
@@ -264,8 +289,6 @@ func Data() ([]Component, []Edge) {
 		},
 	}
 	sort.Slice(components, func(i, j int) bool { return components[i].Name < components[j].Name })
-
-	var edges []Edge
 	for _, c := range components {
 		for _, dependsOn := range c.DependsOn {
 			edges = append(edges, Edge{
@@ -281,11 +304,66 @@ func Data() ([]Component, []Edge) {
 		}
 	}
 
-	return components, edges
+	groups := []Group{
+		{
+			Name:  "code-graph",
+			Title: "Code graph",
+		},
+		{
+			Name:        "search-core",
+			Title:       "Search core",
+			ParentGroup: "code-graph",
+			Members:     []string{"jeffwarner", "ryanhitchman", "stefanhengl", "tomas", "keegancs"},
+		},
+		{
+			Name:        "search-product",
+			Title:       "Search product",
+			ParentGroup: "code-graph",
+			Members:     []string{"lguychard", "fkling", "ccheek", "rok", "juliana", "rijnard"},
+		},
+		{
+			Name:        "code-intel",
+			Title:       "Code intelligence",
+			ParentGroup: "code-graph",
+			Members:     []string{"oconvey", "vgandhi", "cesarj", "chrismwendt", "teej", "olaf", "noahsc", "efritz"},
+		},
+		{
+			Name:  "enablement",
+			Title: "Enablement",
+		},
+		{
+			Name:        "repo-mgmt",
+			Title:       "Repo management",
+			ParentGroup: "enablement",
+			Members:     []string{"jplahn", "indrag", "rslade", "mweitzel", "alexo"},
+		},
+		{
+			Name:        "frontend-platform",
+			Title:       "Frontend platform",
+			ParentGroup: "enablement",
+			Members:     []string{"pdubroy", "valeryb", "tomross"},
+		},
+	}
+	for _, g := range groups {
+		if g.ParentGroup != "" {
+			edges = append(edges, Edge{
+				Type: PartOfRelation,
+				Out:  g.Name,
+				In:   g.ParentGroup,
+			})
+			edges = append(edges, Edge{
+				Type: HasPartRelation,
+				Out:  g.ParentGroup,
+				In:   g.Name,
+			})
+		}
+	}
+
+	return components, groups, edges
 }
 
 func Components() []Component {
-	components, _ := Data()
+	components, _, _ := Data()
 	return components
 }
 
@@ -293,6 +371,20 @@ func ComponentByName(name string) *Component {
 	for _, c := range Components() {
 		if c.Name == name {
 			return &c
+		}
+	}
+	return nil
+}
+
+func Groups() []Group {
+	_, groups, _ := Data()
+	return groups
+}
+
+func GroupByName(name string) *Group {
+	for _, g := range Groups() {
+		if g.Name == name {
+			return &g
 		}
 	}
 	return nil

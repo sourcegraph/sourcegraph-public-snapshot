@@ -24,8 +24,8 @@ const CATALOG_ENTITY_GRAPH_FRAGMENT = gql`
     }
 `
 
-const CATALOG_ENTITY_OWNERS_FRAGMENT = gql`
-    fragment CatalogEntityOwnersFields on CatalogEntity {
+const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
+    fragment CatalogEntityCodeOwnersFields on CatalogEntity {
         owners {
             node
             fileCount
@@ -234,7 +234,7 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         lifecycle
         url
         ...CatalogEntityGraphFields
-        ...CatalogEntityOwnersFields
+        ...CatalogEntityCodeOwnersFields
         ...CatalogEntityStatusFields
         ... on CatalogComponent {
             kind
@@ -248,7 +248,7 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
     }
 
     ${CATALOG_ENTITY_GRAPH_FRAGMENT}
-    ${CATALOG_ENTITY_OWNERS_FRAGMENT}
+    ${CATALOG_ENTITY_CODE_OWNERS_FRAGMENT}
     ${CATALOG_ENTITY_STATUS_FRAGMENT}
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}

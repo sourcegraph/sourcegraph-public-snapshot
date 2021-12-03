@@ -12,12 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type ownerData struct {
+type codeOwnerData struct {
 	Owner     string
 	FileCount int // count of owned files
 }
 
-func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEntityOwnerEdgeResolver, error) {
+func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.CatalogEntityOwnerEdgeResolver, error) {
 	var allEntries []fs.FileInfo
 	for _, sourcePath := range r.component.SourcePaths {
 		// TODO(sqs): doesnt check perms? SECURITY
@@ -79,7 +79,7 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 	}
 
 	var (
-		byOwner        = map[string]*ownerData{}
+		byOwner        = map[string]*codeOwnerData{}
 		totalFileCount int
 	)
 	for _, e := range allEntries {
@@ -92,7 +92,7 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 		for _, owner := range owners {
 			od := byOwner[owner]
 			if od == nil {
-				od = &ownerData{Owner: owner}
+				od = &codeOwnerData{Owner: owner}
 				byOwner[owner] = od
 			}
 			od.FileCount++
@@ -101,7 +101,7 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 
 	edges := make([]gql.CatalogEntityOwnerEdgeResolver, 0, len(byOwner))
 	for _, od := range byOwner {
-		edges = append(edges, &catalogEntityOwnerEdgeResolver{
+		edges = append(edges, &catalogEntityCodeOwnerEdgeResolver{
 			db:             r.db,
 			data:           od,
 			totalFileCount: totalFileCount,
@@ -119,14 +119,14 @@ func (r *catalogComponentResolver) Owners(ctx context.Context) (*[]gql.CatalogEn
 	return &edges, nil
 }
 
-type catalogEntityOwnerEdgeResolver struct {
+type catalogEntityCodeOwnerEdgeResolver struct {
 	db             database.DB
-	data           *ownerData
+	data           *codeOwnerData
 	totalFileCount int
 }
 
-func (r *catalogEntityOwnerEdgeResolver) Node() string     { return r.data.Owner }
-func (r *catalogEntityOwnerEdgeResolver) FileCount() int32 { return int32(r.data.FileCount) }
-func (r *catalogEntityOwnerEdgeResolver) FileProportion() float64 {
+func (r *catalogEntityCodeOwnerEdgeResolver) Node() string     { return r.data.Owner }
+func (r *catalogEntityCodeOwnerEdgeResolver) FileCount() int32 { return int32(r.data.FileCount) }
+func (r *catalogEntityCodeOwnerEdgeResolver) FileProportion() float64 {
 	return float64(r.data.FileCount) / float64(r.totalFileCount)
 }

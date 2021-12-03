@@ -50,10 +50,11 @@ type CatalogEntity interface {
 	Type() CatalogEntityType
 	Name() string
 	Description() *string
+	Owner(context.Context) (*EntityOwnerResolver, error)
 	Lifecycle() CatalogEntityLifecycle
 	URL() string
 	Status(context.Context) (CatalogEntityStatusResolver, error)
-	Owners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
+	CodeOwners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
 	RelatedEntities(context.Context) (CatalogEntityRelatedEntityConnectionResolver, error)
 }
 
@@ -64,6 +65,20 @@ type CatalogEntityResolver struct {
 func (r *CatalogEntityResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
 	e, ok := r.CatalogEntity.(CatalogComponentResolver)
 	return e, ok
+}
+
+type EntityOwnerResolver struct {
+	Person *PersonResolver
+	Group  GroupResolver
+}
+
+func (r *EntityOwnerResolver) ToPerson() (*PersonResolver, bool) { return r.Person, r.Person != nil }
+func (r *EntityOwnerResolver) ToGroup() (GroupResolver, bool)    { return r.Group, r.Group != nil }
+
+type GroupResolver interface {
+	Node
+	Name() string
+	Title() string
 }
 
 type CatalogEntityStatusResolver interface {

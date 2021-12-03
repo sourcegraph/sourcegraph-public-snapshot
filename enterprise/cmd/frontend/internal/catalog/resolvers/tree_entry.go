@@ -11,7 +11,7 @@ import (
 func (r *rootResolver) GitTreeEntryCatalogEntities(ctx context.Context, treeEntry *gql.GitTreeEntryResolver) ([]*gql.CatalogEntityResolver, error) {
 	var matches []*gql.CatalogEntityResolver
 
-	entities, _ := catalog.Data()
+	entities, _, _ := catalog.Data()
 	for _, e := range entities {
 		// TODO(sqs): dont require match on commit
 		if e.SourceRepo == treeEntry.Repository().RepoName() {

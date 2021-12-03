@@ -16,18 +16,18 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 
 	{
 		// Owners
-		owners, err := r.Owners(ctx)
+		codeOwners, err := r.CodeOwners(ctx)
 		if err != nil {
 			// return nil, err
 		}
 
 		if err == nil {
 			sc := &catalogEntityStatusContextResolver{
-				name:      "owners",
-				title:     "Owners",
+				name:      "codeOwners",
+				title:     "Code owners",
 				targetURL: r.URL() + "/code",
 			}
-			if owners == nil || len(*owners) == 0 {
+			if codeOwners == nil || len(*codeOwners) == 0 {
 				sc.state = "FAILURE"
 				sc.description = "No code owners found"
 			} else {

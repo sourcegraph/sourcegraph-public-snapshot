@@ -10,8 +10,7 @@ import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { ComponentAuthors } from './ComponentAuthors'
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
-import { EntityDetailContentCardProps } from './EntityDetailContent'
-import { EntityOwners } from './EntityOwners'
+import { EntityCodeOwners } from './EntityCodeOwners'
 
 interface Props
     extends EntityDetailContentCardProps,
@@ -35,7 +34,7 @@ export const EntityCodeTab: React.FunctionComponent<Props> = ({
         {entity.__typename === 'CatalogComponent' && (
             <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
         )}
-        <EntityOwners
+        <EntityCodeOwners
             entity={entity}
             className="card mb-2"
             headerClassName={headerClassName}

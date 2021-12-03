@@ -9,7 +9,7 @@ import {
     CatalogComponentAuthorsFields,
     CatalogComponentUsageFields,
     CatalogEntityDetailFields,
-    CatalogEntityOwnersFields,
+    CatalogEntityCodeOwnersFields,
     CatalogEntityStatusFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
@@ -25,9 +25,9 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
     <>
         {entity.status.contexts.map(statusContext => {
             switch (statusContext.name) {
-                case 'owners':
+                case 'codeOwners':
                     return (
-                        <OwnersStatusContext
+                        <CodeOwnersStatusContext
                             key={statusContext.id}
                             entity={entity}
                             statusContext={statusContext}
@@ -65,8 +65,8 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
     </>
 )
 
-const OwnersStatusContext: React.FunctionComponent<{
-    entity: CatalogEntityOwnersFields
+const CodeOwnersStatusContext: React.FunctionComponent<{
+    entity: CatalogEntityCodeOwnersFields
     statusContext: CatalogEntityStatusFields['status']['contexts'][0]
     className?: string
 }> = ({ entity, statusContext, className }) => (
@@ -79,14 +79,16 @@ const OwnersStatusContext: React.FunctionComponent<{
                 moreClassName="list-inline-item"
                 moreLinkClassName="text-muted small"
             >
-                {entity.owners?.map(owner => (
-                    <li key={owner.node} className="list-inline-item mr-2">
-                        {owner.node}
+                {entity.codeOwners?.map(codeOwner => (
+                    <li key={codeOwner.node} className="list-inline-item mr-2">
+                        {codeOwner.node}
                         <span
                             className="small text-muted ml-1"
-                            title={`Owns ${owner.fileCount} ${pluralize('file', owner.fileCount)}`}
+                            title={`Owns ${codeOwner.fileCount} ${pluralize('file', codeOwner.fileCount)}`}
                         >
-                            {owner.fileProportion >= 0.01 ? `${(owner.fileProportion * 100).toFixed(0)}%` : '<1%'}
+                            {codeOwner.fileProportion >= 0.01
+                                ? `${(codeOwner.fileProportion * 100).toFixed(0)}%`
+                                : '<1%'}
                         </span>
                     </li>
                 ))}

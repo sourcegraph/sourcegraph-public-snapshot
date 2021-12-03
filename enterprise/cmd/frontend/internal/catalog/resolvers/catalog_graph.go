@@ -12,7 +12,7 @@ import (
 func makeGraphData(db database.DB, filterID graphql.ID) *catalogGraphResolver {
 	var graph catalogGraphResolver
 
-	components, edges := catalog.Data()
+	components, _, edges := catalog.Data()
 	var entities []gql.CatalogEntity
 	for _, c := range components {
 		entities = append(entities, &catalogComponentResolver{component: c, db: db})
