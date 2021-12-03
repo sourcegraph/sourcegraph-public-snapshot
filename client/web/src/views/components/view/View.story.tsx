@@ -3,7 +3,6 @@ import { Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
 import { LineChartContent } from 'sourcegraph'
 
@@ -76,7 +75,7 @@ export const ViewWithChartContent: Story = () => (
 
 export const ViewWithLoadingContent: Story = () => (
     <View.Root {...standardViewProps} title="Loading view">
-        <View.LoadingContent text="Loading insight" description="searchInsights.insight.id" icon={PuzzleIcon} />
+        <View.LoadingContent text="Loading insight" />
     </View.Root>
 )
 
@@ -86,11 +85,7 @@ export const ViewWithErrorLikeContent: Story = () => (
         title="Error view"
         subtitle="View with errored content example"
     >
-        <View.ErrorContent
-            title="searchInsights.insight.id"
-            error={new Error("We couldn't find code insight")}
-            icon={PuzzleIcon}
-        />
+        <View.ErrorContent title="searchInsights.insight.id" error={new Error("We couldn't find code insight")} />
     </View.Root>
 )
 

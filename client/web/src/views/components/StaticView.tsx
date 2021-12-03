@@ -1,4 +1,3 @@
-import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React from 'react'
 
 import { ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -34,9 +33,9 @@ export const StaticView: React.FunctionComponent<StaticView> = props => {
             {...otherProps}
         >
             {view === undefined ? (
-                <View.LoadingContent text="Loading code insight" description={contentId} icon={PuzzleIcon} />
+                <View.LoadingContent text="Loading code insight" />
             ) : isErrorLike(view) ? (
-                <View.ErrorContent error={view} title={contentId} icon={PuzzleIcon} />
+                <View.ErrorContent error={view} title={contentId} />
             ) : (
                 <View.Content
                     telemetryService={telemetryService}
