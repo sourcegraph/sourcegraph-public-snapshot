@@ -19,15 +19,15 @@ func TestNotebookBlockMarshalling(t *testing.T) {
 	}{
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput},
-			want:  autogold.Want("marshals query block", `{"id":"id1","type":"query","input":{"text":"repo:a b"}}`),
+			want:  autogold.Want("marshals query block", `{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`),
 		},
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput},
-			want:  autogold.Want("marshals markdown block", `{"id":"id1","type":"md","input":{"text":"# Title"}}`),
+			want:  autogold.Want("marshals markdown block", `{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`),
 		},
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput},
-			want:  autogold.Want("marshals file block", `{"id":"id1","type":"file","input":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`),
+			want:  autogold.Want("marshals file block", `{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`),
 		},
 	}
 
@@ -51,15 +51,15 @@ func TestNotebookBlockUnmarshalling(t *testing.T) {
 		want autogold.Value
 	}{
 		{
-			json: `{"id":"id1","type":"query","input":{"text":"repo:a b"}}`,
+			json: `{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`,
 			want: autogold.Want("marshals query block", NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput}),
 		},
 		{
-			json: `{"id":"id1","type":"md","input":{"text":"# Title"}}`,
+			json: `{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`,
 			want: autogold.Want("marshals markdown block", NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput}),
 		},
 		{
-			json: `{"id":"id1","type":"file","input":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`,
+			json: `{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`,
 			want: autogold.Want("marshals file block", NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput}),
 		},
 	}

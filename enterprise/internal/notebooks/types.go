@@ -38,9 +38,9 @@ type NotebookFileBlockInput struct {
 type NotebookBlock struct {
 	ID            string                      `json:"id"`
 	Type          NotebookBlockType           `json:"type"`
-	QueryInput    *NotebookQueryBlockInput    `json:"-"`
-	MarkdownInput *NotebookMarkdownBlockInput `json:"-"`
-	FileInput     *NotebookFileBlockInput     `json:"-"`
+	QueryInput    *NotebookQueryBlockInput    `json:"queryInput,omitempty"`
+	MarkdownInput *NotebookMarkdownBlockInput `json:"markdownInput,omitempty"`
+	FileInput     *NotebookFileBlockInput     `json:"fileInput,omitempty"`
 }
 
 type Notebook struct {
