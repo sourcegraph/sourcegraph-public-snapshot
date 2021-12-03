@@ -13,7 +13,7 @@ import (
 )
 
 var cache = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
-var estimate = 0.01
+var estimate = 0.001
 var query = "COM"
 
 type BlobIndex struct {
