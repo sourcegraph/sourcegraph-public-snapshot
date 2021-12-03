@@ -103,22 +103,6 @@ func (s *codeMonitorStore) GetQueryTriggerForMonitor(ctx context.Context, monito
 	return scanTriggerQuery(row)
 }
 
-const triggerQueryByIDFmtStr = `
-SELECT %s -- queryColumns
-FROM cm_queries
-WHERE id = %s;
-`
-
-func (s *codeMonitorStore) triggerQueryByIDInt64(ctx context.Context, queryID int64) (*QueryTrigger, error) {
-	q := sqlf.Sprintf(
-		triggerQueryByIDFmtStr,
-		sqlf.Join(queryColumns, ","),
-		queryID,
-	)
-	row := s.QueryRow(ctx, q)
-	return scanTriggerQuery(row)
-}
-
 const resetTriggerQueryTimestamps = `
 UPDATE cm_queries
 SET latest_result = null,
