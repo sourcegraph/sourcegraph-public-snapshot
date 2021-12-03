@@ -245,7 +245,18 @@ func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOrigi
 
 	if r.Method == "OPTIONS" {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		// Only trusted origins are allowed to send the secure X-Requested-With and X-Sourcegraph-Client
+		// headers, which indicate the client passed CORS AND is a trusted origin.
+		//
+		// In the future, untrusted origins will be allowed to send cross-origin requests with
+		// authentication, but we will only respect session authentication iff the secure header
+		// X-Requested-With is present, indicating the request came from a trusted origin or a
+		// client that does not respect CORS (e.g. curl.)
+		if isTrustedOrigin(r) {
+			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		} else {
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+		}
 		w.WriteHeader(http.StatusOK)
 		return true // we handled the request
 	}
