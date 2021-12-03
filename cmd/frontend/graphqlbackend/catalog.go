@@ -88,6 +88,9 @@ type GroupResolver interface {
 	Title() string
 	Description() *string
 	URL() string
+	ParentGroup() GroupResolver
+	ChildGroups() []GroupResolver
+	Members() []*PersonResolver
 }
 
 type CatalogEntityStatusResolver interface {

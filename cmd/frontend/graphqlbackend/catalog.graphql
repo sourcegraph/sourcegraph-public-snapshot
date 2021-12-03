@@ -52,6 +52,9 @@ type Group implements Node {
     title: String!
     description: String
     url: String!
+    parentGroup: Group
+    childGroups: [Group!]!
+    members: [Person!]!
 }
 
 type CatalogGraph {
