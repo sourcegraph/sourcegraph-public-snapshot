@@ -22,6 +22,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     executorsEnabled: true,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
+    codeInsightsGqlApiEnabled: false,
     externalServicesUserMode: 'disabled',
     productResearchPageEnabled: true,
     csrfToken: 'test-csrf-token',
