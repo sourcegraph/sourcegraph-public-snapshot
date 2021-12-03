@@ -189,14 +189,6 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
 			{name: "git", check: checkInPath("git"), instructionsCommands: stringer(`brew install git`)},
-			{
-				name:  "asdf",
-				check: checkCommandOutputContains("asdf", "version", false),
-				// Uses `&&` to avoid appending the shell config on failed installations attempts.
-				instructionsCommands: lazyString(func() string {
-					return `brew install asdf && echo ". /opt/homebrew/opt/asdf/libexec/asdf.sh" >> ` + userShellRC
-				}),
-			},
 			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: stringer("brew install gnu-sed")},
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: stringer("brew install comby")},
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: stringer(`brew install pcre`)},
@@ -260,6 +252,14 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 		requiresRepository: true,
 		autoFixing:         true,
 		dependencies: []*dependency{
+			{
+				name:  "asdf",
+				check: checkCommandOutputContains("asdf", "version", false),
+				// Uses `&&` to avoid appending the shell config on failed installations attempts.
+				instructionsCommands: lazyString(func() string {
+					return `brew install asdf && echo ". /opt/homebrew/opt/asdf/libexec/asdf.sh" >> ` + userShellRC
+				}),
+			},
 			{
 				name:  "go",
 				check: checkCommandOutputContains("asdf current golang", ".tool-versions", false),
