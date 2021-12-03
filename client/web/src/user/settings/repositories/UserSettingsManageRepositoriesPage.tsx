@@ -8,8 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { Badge } from '@sourcegraph/web/src/components/Badge'
-import { Container, PageSelector } from '@sourcegraph/wildcard'
+import { ProductStatusBadge, Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
 import {
@@ -770,7 +769,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         <UserSettingReposContainer>
             <PageTitle title="Manage Repositories" />
             <h2 className="d-flex mb-2">
-                Manage Repositories <Badge status="beta" className="ml-2" useLink={true} />
+                Manage Repositories <ProductStatusBadge status="beta" className="ml-2" linkToDocs={true} />
             </h2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.
