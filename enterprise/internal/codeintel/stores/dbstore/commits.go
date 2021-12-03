@@ -9,16 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -258,7 +256,7 @@ func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirty
 func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
-	commitGraph *gitserver.CommitGraph,
+	commitGraph *gitdomain.CommitGraph,
 	refDescriptions map[string][]gitdomain.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,

@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
 )
 
 // testDatabasePool handles creating and reusing migrated database instances
@@ -130,7 +131,7 @@ RETURNING %s
 // The given migrations are hashed and used to identify template databases that have already been
 // migrated. If no template database exists with the same hash as the given migrations, a new template
 // database is created and the migrations are run.
-func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, schemas ...*dbconn.Schema) (_ *TemplateDB, err error) {
+func (t *testDatabasePool) GetTemplate(ctx context.Context, u *url.URL, schemas ...*migrations.Schema) (_ *TemplateDB, err error) {
 	// Create a transaction so the exclusive lock is dropped at the end of this function.
 	tx, err := t.BeginTx(ctx, nil)
 	if err != nil {
@@ -426,7 +427,7 @@ WHERE
 FOR UPDATE
 `
 
-func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*dbconn.Schema) (err error) {
+func (t *testDatabasePool) CleanUpOldDBs(ctx context.Context, except ...*migrations.Schema) (err error) {
 	hash, err := hashSchema(except...)
 	if err != nil {
 		return errors.Wrap(err, "hash schema")
@@ -533,7 +534,7 @@ func createDB(ctx context.Context, db *sql.DB, name string, template string) err
 // hashSchema deterministically hashes all the migrations in the given
 // schema description. This is used to determine whether a new template
 // database should be created for the given set of migrations.
-func hashSchema(schemas ...*dbconn.Schema) (int64, error) {
+func hashSchema(schemas ...*migrations.Schema) (int64, error) {
 	hash := fnv.New64()
 	for _, def := range schemas {
 		root, err := def.FS.Open(".")

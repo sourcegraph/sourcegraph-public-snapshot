@@ -12,10 +12,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1141,7 +1141,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 		}
 
 		// Only call this to update the updated_at field in the lsif_dirty_repositories table
-		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitserver.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
+		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitdomain.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
 			t.Fatalf("unexpected error updating commit graph: %s", err)
 		}
 	}

@@ -143,7 +143,7 @@ func main() {
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPTraceMiddleware(handler, conf.DefaultClient()))
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -259,8 +259,7 @@ func getPercent(p int) (int, error) {
 	return p, nil
 }
 
-// getStores initializes a connection to the database and returns RepoStore and
-// ExternalServiceStore.
+// getDB initializes a connection to the database and returns a dbutil.DB
 func getDB() (dbutil.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.

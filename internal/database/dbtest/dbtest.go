@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
 )
 
 // NewTx opens a transaction off of the given database, returning that
@@ -144,9 +145,9 @@ func initTemplateDB(t testing.TB, config *url.URL) {
 
 		cfgCopy := *config
 		cfgCopy.Path = "/" + templateName
-		_, close := dbConnInternal(t, &cfgCopy, []*dbconn.Schema{
-			dbconn.Frontend,
-			dbconn.CodeIntel,
+		_, close := dbConnInternal(t, &cfgCopy, []*migrations.Schema{
+			migrations.Frontend,
+			migrations.CodeIntel,
 		})
 		close(nil)
 	})
@@ -173,7 +174,7 @@ func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
 	return db
 }
 
-func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*dbconn.Schema) (*sql.DB, func(err error) error) {
+func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*migrations.Schema) (*sql.DB, func(err error) error) {
 	t.Helper()
 	db, close, err := dbconn.ConnectRawForTestDatabase(cfg.String(), schemas...)
 	if err != nil {

@@ -28,6 +28,7 @@ type InsightViewSeries struct {
 	DefaultFilterExcludeRepoRegex *string
 	OtherThreshold                *float64
 	PresentationType              PresentationType
+	GeneratedFromCaptureGroups    bool
 }
 
 type Insight struct {
@@ -66,20 +67,21 @@ type InsightView struct {
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
 // as its unique series ID.
 type InsightSeries struct {
-	ID                  int
-	SeriesID            string
-	Query               string
-	CreatedAt           time.Time
-	OldestHistoricalAt  time.Time
-	LastRecordedAt      time.Time
-	NextRecordingAfter  time.Time
-	LastSnapshotAt      time.Time
-	NextSnapshotAfter   time.Time
-	BackfillQueuedAt    time.Time
-	Enabled             bool
-	Repositories        []string
-	SampleIntervalUnit  string
-	SampleIntervalValue int
+	ID                         int
+	SeriesID                   string
+	Query                      string
+	CreatedAt                  time.Time
+	OldestHistoricalAt         time.Time
+	LastRecordedAt             time.Time
+	NextRecordingAfter         time.Time
+	LastSnapshotAt             time.Time
+	NextSnapshotAfter          time.Time
+	BackfillQueuedAt           time.Time
+	Enabled                    bool
+	Repositories               []string
+	SampleIntervalUnit         string
+	SampleIntervalValue        int
+	GeneratedFromCaptureGroups bool
 }
 
 type IntervalUnit string

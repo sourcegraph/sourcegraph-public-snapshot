@@ -13,10 +13,9 @@ const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
-const { getCSSLoaders } = require('@sourcegraph/build-config')
+const { getMonacoWebpackPlugin, getCSSLoaders } = require('@sourcegraph/build-config')
 
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
-const { MONACO_LANGUAGES_AND_FEATURES } = require('./dev/webpack/monacoWebpack')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -164,7 +163,7 @@ const config = {
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES),
+    getMonacoWebpackPlugin(),
     !shouldServeIndexHTML &&
       new WebpackManifestPlugin({
         writeToFileEmit: true,

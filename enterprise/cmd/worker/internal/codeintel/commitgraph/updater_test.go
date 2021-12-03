@@ -5,13 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func TestUpdater(t *testing.T) {
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		"a",
 		"b a",
 	})
