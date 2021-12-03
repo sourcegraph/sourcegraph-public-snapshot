@@ -12,24 +12,24 @@
 }
 
 .fader {
-    &:before,
-    &:after {
+    &::before,
+    &::after {
         display: none;
         content: '';
         position: absolute;
         z-index: 1;
-        height: 50px;
+        height: 3rem;
         width: 100%;
     }
 
-    &:before {
+    &::before {
         top: 0;
         left: 0;
 
         background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--card-bg) 100%);
     }
 
-    &:after {
+    &::after {
         bottom: 0;
         left: 0;
 
@@ -37,13 +37,13 @@
     }
 
     &--has-top-scroll {
-        &:before {
+        &::before {
             display: block;
         }
     }
 
     &--has-bottom-scroll {
-        &:after {
+        &::after {
             display: block;
         }
     }
