@@ -208,6 +208,10 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	go syncScheduler(ctx, scheduler, store)
 
+	if envvar.SourcegraphDotComMode() {
+		go syncer.RunSyncReposWithLastErrorsWorker(ctx)
+	}
+
 	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
 
 	if !envvar.SourcegraphDotComMode() {
