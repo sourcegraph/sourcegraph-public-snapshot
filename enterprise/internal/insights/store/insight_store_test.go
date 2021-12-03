@@ -891,6 +891,36 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			t.Errorf("mismatched insight data series want/got: %v", diff)
 		}
 	})
+
+	t.Run("test create and get series just in time generation method", func(t *testing.T) {
+		series := types.InsightSeries{
+			SeriesID:           "unique-1-gm-jit",
+			Query:              "query-1-abc",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
+			JustInTime:         true,
+			GenerationMethod:   types.Search,
+		}
+		created, err := store.CreateSeries(ctx, series)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []types.InsightSeries{created}
+
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched insight data series want/got: %v", diff)
+		}
+	})
 }
 
 func TestInsightStore_StampRecording(t *testing.T) {

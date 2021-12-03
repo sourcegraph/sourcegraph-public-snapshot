@@ -341,6 +341,8 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.SampleIntervalUnit,
 			&temp.SampleIntervalValue,
 			&temp.GeneratedFromCaptureGroups,
+			&temp.JustInTime,
+			&temp.GenerationMethod,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -382,6 +384,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.OtherThreshold,
 			&temp.PresentationType,
 			&temp.GeneratedFromCaptureGroups,
+			&temp.JustInTime,
+			&temp.GenerationMethod,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -593,6 +597,8 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.SampleIntervalUnit,
 		series.SampleIntervalValue,
 		series.GeneratedFromCaptureGroups,
+		series.JustInTime,
+		series.GenerationMethod,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -767,8 +773,9 @@ const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
-							sample_interval_unit, sample_interval_value, generated_from_capture_groups)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
+							just_in_time, generation_method)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
@@ -777,7 +784,7 @@ SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups
+iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -789,7 +796,9 @@ const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
 select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
-sample_interval_unit, sample_interval_value, generated_from_capture_groups from insight_series
+sample_interval_unit, sample_interval_value, generated_from_capture_groups,
+just_in_time, generation_method
+from insight_series
 WHERE %s
 `
 
@@ -799,7 +808,7 @@ SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups
+	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method
 FROM (%s) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
