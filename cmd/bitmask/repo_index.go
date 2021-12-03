@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/bits-and-blooms/bloom/v3"
+	"github.com/cockroachdb/errors"
 	"github.com/go-enry/go-enry/v2"
 	"io"
 	"os"
@@ -13,21 +14,34 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
 	Yellow = color("\033[1;33m%s\033[0m")
 )
 
+const (
+	estimate         = 0.01
+	maxFileSize      = 1 << 20 // 1_048_576
+	bloomSizePadding = 2.0
+	gramSize         = 3
+)
+
 type RepoIndex struct {
+	Dir   string
 	Blobs []BlobIndex
+}
+type BlobIndex struct {
+	Filter *bloom.BloomFilter
+	Path   string
 }
 
 func trigrams(query string) [][]byte {
 	var result [][]byte
 	queryBytes := []byte(query)
-	for i := 0; i < len(queryBytes)-3; i++ {
-		result = append(result, queryBytes[i:i+3])
+	for i := 0; i < len(queryBytes)-gramSize; i++ {
+		result = append(result, queryBytes[i:i+gramSize])
 	}
 	return result
 }
@@ -66,11 +80,25 @@ func DeserializeRepoIndex(reader io.Reader) (*RepoIndex, error) {
 }
 
 func NewRepoIndex(dir string) (*RepoIndex, error) {
-	cmd := exec.Command("git", "ls-files", "-z", "--with-tree=main")
+	var branch bytes.Buffer
+	branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	branchCmd.Dir = dir
+	branchCmd.Stdout = &branch
+	err := branchCmd.Run()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to infer the default branch")
+	}
+	cmd := exec.Command(
+		"git",
+		"ls-files",
+		"-z",
+		"--with-tree",
+		strings.Trim(branch.String(), "\n"),
+	)
 	cmd.Dir = dir
 	var out bytes.Buffer
 	cmd.Stdout = &out
-	err := cmd.Run()
+	err = cmd.Run()
 
 	if err != nil {
 		return nil, err
@@ -95,8 +123,8 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 		if enry.IsBinary(textBytes) {
 			continue
 		}
-		for i = 0; i < len(textBytes)-3; i++ {
-			trigram := textBytes[i : i+3]
+		for i = 0; i < len(textBytes)-gramSize; i++ {
+			trigram := textBytes[i : i+gramSize]
 			filter.Add(trigram)
 		}
 		indexes = append(
@@ -107,18 +135,19 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 			},
 		)
 	}
-	return &RepoIndex{indexes}, nil
+	return &RepoIndex{Dir: dir, Blobs: indexes}, nil
 }
 
 func (r *RepoIndex) Grep(query string) {
+	start := time.Now()
 	matchingPaths := r.PathsMatchingQuery(query)
 	falsePositive := 0
 	truePositive := 0
 	for matchingPath := range matchingPaths {
 		hasMatch := false
-		textBytes, err := os.ReadFile(matchingPath)
+		textBytes, err := os.ReadFile(filepath.Join(r.Dir, matchingPath))
 		if err != nil {
-			return
+			continue
 		}
 		text := string(textBytes)
 		start := 0
@@ -146,11 +175,14 @@ func (r *RepoIndex) Grep(query string) {
 		if hasMatch {
 			truePositive++
 		} else {
-			fmt.Println(matchingPath)
+			//fmt.Println(matchingPath)
 			falsePositive++
 		}
 	}
-	fmt.Printf("fpr %v", float64(falsePositive)/float64(truePositive+falsePositive))
+	end := time.Now()
+	elapsed := (end.UnixNano() - start.UnixNano()) / int64(time.Millisecond)
+	falsePositiveRatio := float64(falsePositive) / float64(truePositive+falsePositive)
+	fmt.Printf("query '%v' time %vms fpr %v\n", query, elapsed, falsePositiveRatio)
 }
 
 func color(colorString string) func(...interface{}) string {

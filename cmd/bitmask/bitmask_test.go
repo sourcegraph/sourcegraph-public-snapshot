@@ -10,11 +10,10 @@ import (
 
 var result = 0
 var dir = os.Getenv("HOME") + "/dev/sourcegraph/sourcegraph"
-var cacheDir = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
 
 func BenchmarkIndex(b *testing.B) {
 	for j := 0; j < b.N; j++ {
-		err := WriteCache(dir, cacheDir)
+		err := WriteCache(dir, cacheFile)
 		if err != nil {
 			panic(err)
 		}
@@ -22,9 +21,12 @@ func BenchmarkIndex(b *testing.B) {
 }
 
 func BenchmarkQuery(b *testing.B) {
-	repo := ReadCache(cacheDir)
+	repo, err := ReadCache(cacheFile)
+	if err != nil {
+		panic(err)
+	}
 	b.ResetTimer()
-	query := "Visitor"
+	query := "Case"
 	matchingPaths := make(map[string]struct{})
 	for j := 0; j < b.N; j++ {
 		paths := repo.PathsMatchingQuery(query)
@@ -35,7 +37,7 @@ func BenchmarkQuery(b *testing.B) {
 	b.StopTimer()
 	falsePositives := 0
 	for relpath := range matchingPaths {
-		abspath := filepath.Join(dir, relpath)
+		abspath := filepath.Join(repo.Dir, relpath)
 		b, err := os.ReadFile(abspath)
 		if err != nil {
 			panic(err)
@@ -54,5 +56,5 @@ func BenchmarkQuery(b *testing.B) {
 	fmt.Printf("fp %v len %v\n", float64(falsePositives)/float64(len(matchingPaths)), len(matchingPaths))
 }
 
-// TODO: serialize
-// TODO: deserialize
+// TODO CPU: serialize, deserialize
+// TODO Size: serialized file, in-memory index

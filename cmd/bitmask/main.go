@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var cacheDir = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
+var cacheFile = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
 
 func main2() {
 	b := bloom.NewWithEstimates(100_000, 0.01)
@@ -28,16 +28,21 @@ func main() {
 		switch os.Args[1] {
 		case "index":
 			dir := os.Args[2]
-			err := WriteCache(dir, cacheDir)
+			err := WriteCache(dir, cacheFile)
 			if err != nil {
 				panic(err)
 			}
 		case "grep":
-			r := ReadCache(cacheDir)
+			r, err := ReadCache(cacheFile)
+			if err != nil {
+				panic(err)
+			}
 			for _, arg := range os.Args[2:] {
-				fmt.Printf("query=%v\n", arg)
 				r.Grep(arg)
 			}
+		default:
+			fmt.Printf("unknown command '%v'. Expected 'index' or 'grep'", os.Args[1])
+			os.Exit(1)
 		}
 	}
 	//QueryCache()
