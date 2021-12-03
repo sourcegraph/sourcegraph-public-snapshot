@@ -56,9 +56,6 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		t.Fatal("creating test database", err)
 	}
 
-
-
-
 	// Connect to the new DB.
 	u, err := url.Parse(timescaleDSN)
 	if err != nil {
