@@ -11,4 +11,5 @@
 	Enabled:                    true,
 	SampleIntervalUnit:         "MONTH",
 	GeneratedFromCaptureGroups: true,
+	GenerationMethod:           types.GenerationMethod("search"),
 }}

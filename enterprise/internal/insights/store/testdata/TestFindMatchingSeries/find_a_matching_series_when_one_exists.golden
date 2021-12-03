@@ -12,4 +12,5 @@ types.InsightSeries{
 	Enabled:             true,
 	SampleIntervalUnit:  "WEEK",
 	SampleIntervalValue: 1,
+	GenerationMethod:    types.GenerationMethod("search"),
 }

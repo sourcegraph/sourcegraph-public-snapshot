@@ -13,4 +13,5 @@ types.InsightSeries{
 	SampleIntervalUnit:         "WEEK",
 	SampleIntervalValue:        1,
 	GeneratedFromCaptureGroups: true,
+	GenerationMethod:           types.GenerationMethod("search-compute"),
 }
