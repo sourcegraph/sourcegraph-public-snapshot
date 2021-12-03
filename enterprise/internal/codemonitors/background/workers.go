@@ -218,7 +218,7 @@ func (r *actionRunner) Handle(ctx context.Context, record workerutil.Record) (er
 		return errors.Errorf("type assertion failed")
 	}
 
-	m, err := s.GetActionJobMetadata(ctx, record.RecordID())
+	m, err := s.GetActionJobMetadata(ctx, j.ID)
 	if err != nil {
 		return errors.Errorf("store.GetActionJobMetadata: %w", err)
 	}

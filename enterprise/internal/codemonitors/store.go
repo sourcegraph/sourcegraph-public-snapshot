@@ -58,8 +58,8 @@ type CodeMonitorStore interface {
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
-	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
-	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
+	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
+	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJob int32) error
 }
 
