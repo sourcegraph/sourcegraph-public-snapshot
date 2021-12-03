@@ -15,8 +15,8 @@ import { GroupDetailFields } from '../../../../graphql-operations'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { TabRouter } from '../entity-detail/global/TabRouter'
 
-import { GroupOverviewTab } from './GroupOverviewTab'
 import styles from './GroupDetailContent.module.scss'
+import { GroupOverviewTab } from './GroupOverviewTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     group: GroupDetailFields
@@ -62,11 +62,13 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
                 actions={
                     // eslint-disable-next-line react/forbid-dom-props
                     <nav className="d-flex align-items-center" style={{ marginBottom: '-5px' }}>
-                        <div className="d-inline-block mr-4">
-                            <span className="small font-weight-bold">Parent group</span>
-                            <br />
-                            ParentGroup
-                        </div>
+                        {group.parentGroup && (
+                            <div className="d-inline-block mr-4">
+                                <span className="small font-weight-bold">Parent group</span>
+                                <br />
+                                <Link to={group.parentGroup.url}>{group.parentGroup.name}</Link>
+                            </div>
+                        )}
                         <Link to="#" className="d-inline-block btn btn-secondary btn-sm p-2 mb-0">
                             <SettingsIcon className="icon-inline" />
                         </Link>
