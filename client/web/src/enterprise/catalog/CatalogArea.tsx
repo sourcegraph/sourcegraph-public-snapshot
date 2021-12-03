@@ -11,6 +11,7 @@ import { HeroPage } from '../../components/HeroPage'
 
 import styles from './CatalogArea.module.scss'
 import { EntityDetailPage } from './pages/entity-detail/global/EntityDetailPage'
+import { GroupDetailPage } from './pages/group-detail/GroupDetailPage'
 import { ExplorePage } from './pages/overview/global/ExplorePage'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
@@ -30,6 +31,16 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                             key={1}
                             {...props}
                             entityName={matchProps.match.params.name}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                </Route>
+                <Route path={`${match.url}/groups/:name`}>
+                    {(matchProps: RouteComponentProps<{ name: string }>) => (
+                        <GroupDetailPage
+                            key={1}
+                            {...props}
+                            groupName={matchProps.match.params.name}
                             telemetryService={telemetryService}
                         />
                     )}

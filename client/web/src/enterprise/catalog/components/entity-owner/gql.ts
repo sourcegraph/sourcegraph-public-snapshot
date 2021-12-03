@@ -13,6 +13,7 @@ export const CATALOG_ENTITY_OWNER_FRAGMENT = gql`
                 id
                 name
                 title
+                url
             }
         }
     }

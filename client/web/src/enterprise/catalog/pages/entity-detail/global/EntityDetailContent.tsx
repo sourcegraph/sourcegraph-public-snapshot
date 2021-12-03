@@ -146,11 +146,11 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                             <br />
                             {entity.lifecycle.toLowerCase()}
                         </div>
-                        <Link to="#" className="text-body d-inline-block mr-4">
+                        <div className="text-body d-inline-block mr-4">
                             <span className="small font-weight-bold">Owner</span>
                             <br />
                             <EntityOwner owner={entity.owner} />
-                        </Link>
+                        </div>
                         <Link to="#" className="d-inline-block btn btn-secondary btn-sm p-2 mb-0">
                             <SettingsIcon className="icon-inline" />
                         </Link>

@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 import { CatalogEntityOwnerFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
@@ -14,7 +15,9 @@ export const EntityOwner: React.FunctionComponent<Props> = ({ owner, blankIfNone
         owner.__typename === 'Person' ? (
             <PersonLink person={owner} className={className} />
         ) : owner.__typename === 'Group' ? (
-            <span className={className}>{owner.name}</span>
+            <Link to={owner.url} className={className}>
+                {owner.name}
+            </Link>
         ) : (
             <span className={className}>Unknown</span>
         )

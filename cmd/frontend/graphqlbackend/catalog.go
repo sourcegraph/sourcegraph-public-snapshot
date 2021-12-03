@@ -15,7 +15,9 @@ import (
 type CatalogRootResolver interface {
 	Catalog(context.Context) (CatalogResolver, error)
 	CatalogEntity(context.Context, *CatalogEntityArgs) (*CatalogEntityResolver, error)
+
 	Groups() []GroupResolver
+	Group(context.Context, *GroupArgs) (GroupResolver, error)
 
 	GitTreeEntryCatalogEntities(context.Context, *GitTreeEntryResolver) ([]*CatalogEntityResolver, error)
 
@@ -23,6 +25,10 @@ type CatalogRootResolver interface {
 }
 
 type CatalogEntityArgs struct {
+	Name string
+}
+
+type GroupArgs struct {
 	Name string
 }
 
@@ -80,6 +86,8 @@ type GroupResolver interface {
 	Node
 	Name() string
 	Title() string
+	Description() *string
+	URL() string
 }
 
 type CatalogEntityStatusResolver interface {
