@@ -74,31 +74,30 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%H:%cI", commit)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			err = nil
-		}
-
-		return "", time.Time{}, false, err
-	}
-
-	line := strings.TrimSpace(out)
-	if line == "" {
 		return "", time.Time{}, false, nil
 	}
 
-	parts := strings.SplitN(line, ":", 2)
-	if len(parts) != 2 {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
+	rev, tm, ok, err := git.CommitDate(ctx, repo, api.CommitID(commit))
+	if err == nil {
+		return rev, tm, ok, nil
 	}
 
-	duration, err := time.Parse(time.RFC3339, parts[1])
-	if err != nil {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return "", time.Time{}, false, errors.Wrap(err, "git.ResolveRevision")
+		}
 	}
 
-	return parts[0], duration, true, nil
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return "", time.Time{}, false, errors.Wrap(err, "git.CommitDate")
 }
 
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
@@ -300,12 +299,30 @@ func (c *Client) RawContents(ctx context.Context, repositoryID int, commit, file
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", fmt.Sprintf("%s:%s", commit, file))
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return []byte(out), err
+	out, err := git.ReadFile(ctx, repo, api.CommitID(commit), file, 0)
+	if err == nil {
+		return out, nil
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
+		}
+	}
+
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.ReadFile")
 }
 
 // DirectoryChildren determines all children known to git for the given directory names via an invocation
@@ -366,19 +383,30 @@ func (c *Client) ListFiles(ctx context.Context, repositoryID int, commit string,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "ls-tree", "--name-only", "-r", commit, "--")
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	var matching []string
-	for _, path := range strings.Split(out, "\n") {
-		if pattern.MatchString(path) {
-			matching = append(matching, path)
+	matching, err := git.ListFiles(ctx, repo, api.CommitID(commit), pattern)
+	if err == nil {
+		return matching, nil
+	}
+
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) {
+		if _, err := git.ResolveRevision(ctx, repo, commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
 
-	return matching, nil
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.ListFiles")
 }
 
 // ResolveRevision returns the absolute commit for a commit-ish spec.
