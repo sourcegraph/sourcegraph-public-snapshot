@@ -26,7 +26,7 @@ const CATALOG_ENTITY_GRAPH_FRAGMENT = gql`
 
 const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
     fragment CatalogEntityCodeOwnersFields on CatalogEntity {
-        owners {
+        codeOwners {
             node
             fileCount
             fileProportion
