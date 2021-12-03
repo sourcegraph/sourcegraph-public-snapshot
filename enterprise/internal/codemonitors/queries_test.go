@@ -10,7 +10,7 @@ import (
 func TestQueryTriggerForJob(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, _, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -24,7 +24,7 @@ func TestQueryTriggerForJob(t *testing.T) {
 	now := s.Now()
 	want := &QueryTrigger{
 		ID:           got.ID, // ignore ID
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
 		LatestResult: &now,
@@ -39,7 +39,7 @@ func TestQueryTriggerForJob(t *testing.T) {
 func TestTriggerQueryNextRun(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, q, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -50,7 +50,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
 
-	err = s.SetQueryTriggerNextRun(ctx, q.ID, wantNextRun, wantLatestResult)
+	err = s.SetQueryTriggerNextRun(ctx, fixtures.query.ID, wantNextRun, wantLatestResult)
 	require.NoError(t, err)
 
 	got, err := s.GetQueryTriggerForJob(ctx, triggerJobID)
@@ -58,7 +58,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 
 	want := &QueryTrigger{
 		ID:           got.ID, // ignore ID
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      wantNextRun,
 		LatestResult: &wantLatestResult,
@@ -74,7 +74,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 func TestResetTriggerQueryTimestamps(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, q, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	got, err := s.triggerQueryByIDInt64(ctx, 1)
@@ -83,7 +83,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 	now := s.Now()
 	want := &QueryTrigger{
 		ID:           got.ID, // ignore ID
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
 		LatestResult: &now,
@@ -94,7 +94,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 	}
 	require.Equal(t, want, got)
 
-	err = s.ResetQueryTriggerTimestamps(ctx, q.ID)
+	err = s.ResetQueryTriggerTimestamps(ctx, fixtures.query.ID)
 	require.NoError(t, err)
 
 	got, err = s.triggerQueryByIDInt64(ctx, 1)
@@ -102,7 +102,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 
 	want = &QueryTrigger{
 		ID:           got.ID, // ignore ID
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
 		LatestResult: nil,

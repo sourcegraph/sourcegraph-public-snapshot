@@ -9,7 +9,7 @@ import (
 func TestAllRecipientsForEmailIDInt64(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	_, _, err := s.insertTestMonitor(userCTX, t)
+	_, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	var (

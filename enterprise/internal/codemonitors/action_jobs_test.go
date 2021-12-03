@@ -11,14 +11,14 @@ import (
 func TestEnqueueActionEmailsForQuery(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
-	m, _, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 	require.Len(t, triggerJobs, 1)
 
-	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJobs[0].ID)
+	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobs[0].ID)
 	require.NoError(t, err)
 	require.Len(t, actionJobs, 2) // two actions are created by insertTestMonitor
 
@@ -43,7 +43,7 @@ func int64Ptr(i int64) *int64 { return &i }
 func TestGetActionJobMetadata(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
-	m, _, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -58,7 +58,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 	err = s.UpdateTriggerJobWithResults(ctx, triggerJobID, wantQuery, wantNumResults)
 	require.NoError(t, err)
 
-	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJobID)
+	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobID)
 	require.NoError(t, err)
 	require.Len(t, actionJobs, 2)
 
@@ -69,7 +69,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 		Description: testDescription,
 		Query:       wantQuery,
 		NumResults:  &wantNumResults,
-		MonitorID:   m.ID,
+		MonitorID:   fixtures.monitor.ID,
 	}
 	require.Equal(t, want, got)
 }
@@ -77,7 +77,7 @@ func TestGetActionJobMetadata(t *testing.T) {
 func TestScanActionJobs(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
-	m, _, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -85,7 +85,7 @@ func TestScanActionJobs(t *testing.T) {
 	require.Len(t, triggerJobs, 1)
 	triggerJobID := triggerJobs[0].ID
 
-	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJobID)
+	actionJobs, err := s.EnqueueActionJobsForMonitor(ctx, fixtures.monitor.ID, triggerJobID)
 	require.NoError(t, err)
 	require.Len(t, actionJobs, 2)
 
