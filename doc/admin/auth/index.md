@@ -88,7 +88,7 @@ Then add the following lines to your site configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false,  // Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
+      "allowSignup": false,  // CAUTION: Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
       "allowOrgs": ["your-org-name"] // Restrict logins and signups if enabled to members of these orgs.
     }
   ]
@@ -104,6 +104,8 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 (typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
+
+> WARNING: If `allowSignup` is set to `true`, anyone with access to both your Sourcegraph instance and your Github url are able to gain access. In particular, if url is set to `https://github.com`, this means that anyone with a Github account could log in to your Sourcegraph instance. Make sure to also configure the `allowOrgs` field described below to limit signups to your org, or limit public access to your Sourcegraph instance via IP restrictions / VPN. For assistance, contact support.
 
 The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
 
