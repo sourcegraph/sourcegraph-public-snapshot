@@ -147,7 +147,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}
 
 	// Create trigger.
-	err = tx.store.CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
+	_, err = tx.store.CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
 	if err != nil {
 		return nil, err
 	}

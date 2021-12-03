@@ -45,7 +45,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 	require.NoError(t, err)
 
 	// Create trigger.
-	err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	_, err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
 	require.NoError(t, err)
 
 	for _, a := range actions {
