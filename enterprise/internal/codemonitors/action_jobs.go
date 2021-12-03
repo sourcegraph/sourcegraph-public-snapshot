@@ -164,10 +164,10 @@ func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionJ
 
 const enqueueActionEmailFmtStr = `
 WITH due AS (
-	SELECT e.id
-	FROM cm_emails e
-	INNER JOIN cm_queries q ON e.monitor = q.monitor
-	WHERE q.id = %s AND e.enabled = true
+	SELECT id
+	FROM cm_emails
+	WHERE monitor = %s 
+		AND enabled = true
 ),
 busy AS (
 	SELECT DISTINCT email as id FROM cm_action_jobs
@@ -180,11 +180,11 @@ RETURNING %s
 `
 
 // TODO(camdencheek): could/should we enqueue based on monitor ID rather than query ID? Would avoid joins above.
-func (s *codeMonitorStore) EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJobID int32) ([]*ActionJob, error) {
+func (s *codeMonitorStore) EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJobID int32) ([]*ActionJob, error) {
 	// TODO(camdencheek): Enqueue actions other than emails here
 	q := sqlf.Sprintf(
 		enqueueActionEmailFmtStr,
-		queryID,
+		monitorID,
 		triggerJobID,
 		triggerJobID,
 		sqlf.Join(ActionJobColumns, ","),
