@@ -172,12 +172,18 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
 			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
+			// TODO we should check that .profile is being sourced to avoid issues with custom dotfiles making this check fail.
+			// Possible fix: define and export in variable there, start a new shell and check that the env var is defined.
+			// Then remove it. If it fails, print an error about sourcing .profile.
+			// Possible fix: pick zshrc or bashrc depending on the shell the user is running. Anyone with custom doftiles will see
+			// it if they version them, signaling them that they may want to move it in a different place.
+			{name: "asdf", check: checkCommandOutputContains("asdf", "version", false), instructionsCommands: `brew install asdf && echo ". /opt/homebrew/opt/asdf/libexec/asdf.sh" >> ~/.zshrc`},
 			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
 			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
-			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5"), instructionsCommands: `brew install bash`},
+			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5", false), instructionsCommands: `brew install bash`},
 			{
 				name:                 "docker",
 				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
@@ -191,7 +197,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 		dependencies: []*dependency{
 			{
 				name:  "SSH authentication with GitHub.com",
-				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated"),
+				check: checkCommandOutputContains("ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com", "successfully authenticated", true),
 				instructionsComment: `` +
 					`Make sure that you can clone git repositories from GitHub via SSH.
 See here on how to set that up:
@@ -705,16 +711,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
-	// Look up which shell the user is using, because that's most likely the
-	// one that has all the environment correctly setup.
-	shell, ok := os.LookupEnv("SHELL")
-	if !ok {
-		// If we can't find the shell in the environment, we fall back to `bash`
-		shell = "bash"
-	}
-
-	// The most common shells (bash, zsh, fish, ash) support the `-c` flag.
-	cmd := exec.CommandContext(ctx, shell, "-c", dep.instructionsCommands)
+	cmd := sourceExec(ctx, dep.instructionsCommands)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -840,10 +837,12 @@ func removeEntry(s []int, val int) (result []int) {
 	return result
 }
 
-func checkCommandOutputContains(cmd, contains string) func(context.Context) error {
+func checkCommandOutputContains(cmd, contains string, ignoreExitCode bool) func(context.Context) error {
 	return func(ctx context.Context) error {
-		elems := strings.Split(cmd, " ")
-		out, _ := exec.Command(elems[0], elems[1:]...).CombinedOutput()
+		out, err := combinedSourceExec(cmd)
+		if !ignoreExitCode && err != nil {
+			return errors.Newf("command %q returned an error: %s", cmd, err)
+		}
 		if !strings.Contains(string(out), contains) {
 			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
 		}
@@ -875,11 +874,49 @@ func checkFileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
+func guessUserShell() (shell string, shellrc string) {
+	// Look up which shell the user is using, because that's most likely the
+	// one that has all the environment correctly setup.
+	shell, ok := os.LookupEnv("SHELL")
+	if !ok {
+		// If we can't find the shell in the environment, we fall back to `bash`
+		shell = "bash"
+	}
+	switch {
+	case strings.Contains(shell, "bash"):
+		shellrc = "~/.bashrc"
+	case strings.Contains(shell, "zsh"):
+		shellrc = "~/.zshrc"
+	case strings.Contains(shell, "fish"):
+		shellrc = "~/.config/fish/config.fish"
+	default:
+		// hope for the best
+		shellrc = "~/.profile"
+	}
+	return
+}
+
+// sourceExec returns a command wrapped in a new shell process, enabling
+// changes added by various checks to be run. This negates the new to ask the
+// user to restart sg for many checks.
+func sourceExec(ctx context.Context, cmd string) *exec.Cmd {
+	shell, shellrc := guessUserShell()
+	command := fmt.Sprintf("source %s ; %s", shellrc, cmd)
+	return exec.CommandContext(ctx, shell, "-c", command)
+}
+
+// combinedSourceExec runs a command in a fresh shell environment,
+// and returns stderr and stdout combined, along with an error.
+func combinedSourceExec(cmd string) ([]byte, error) {
+	return sourceExec(context.Background(), cmd).CombinedOutput()
+}
+
 func checkInPath(cmd string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		_, err := exec.LookPath(cmd)
+		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
+		_, err := combinedSourceExec(hashCmd)
 		if err != nil {
-			return err
+			return errors.Newf("executable %q not found in $PATH", cmd)
 		}
 		return nil
 	}
