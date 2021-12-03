@@ -1985,3 +1985,76 @@ func assertDeletedRepoCount(ctx context.Context, t *testing.T, store *repos.Stor
 		t.Fatalf("Expected %d rows, got %d", want, rowCount)
 	}
 }
+
+func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		repoName := api.RepoName("github.com/foo/bar")
+
+		dbRepo := &types.Repo{
+			Name:        repoName,
+			Description: "Test",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "foo-external-12345",
+				ServiceID:   "https://github.com/",
+				ServiceType: extsvc.TypeGitHub,
+			},
+		}
+		// Insert the repo into our database
+		if err := s.RepoStore.Create(ctx, dbRepo); err != nil {
+			t.Fatal(err)
+		}
+
+		// Create an entry in gitserver_repos for this repo which indicates there's been an issue fetching the repo
+		if err := s.GitserverReposStore.Upsert(ctx, &types.GitserverRepo{
+			RepoID:      dbRepo.ID,
+			ShardID:     "test",
+			CloneStatus: types.CloneStatusCloned,
+			LastError:   "error fetching repo: Not found",
+		}); err != nil {
+			t.Fatal(err)
+		}
+
+		// Validate that the repo exists and we can fetch it
+		_, err := s.RepoStore.GetByName(ctx, dbRepo.Name)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		servicesPerKind := createExternalServices(t, s, func(svc *types.ExternalService) { svc.CloudDefault = true })
+		syncer := &repos.Syncer{
+			Now:    time.Now,
+			Store:  s,
+			Synced: make(chan repos.Diff, 1),
+			Sourcer: repos.NewFakeSourcer(
+				nil,
+				repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub],
+					&database.RepoNotFoundErr{Name: dbRepo.Name}, // Create the situation where the repo is not found
+					dbRepo),
+			),
+		}
+
+		// Run the syncer, which should find the repo with non-empty last_error and delete it
+		syncer.SyncReposWithLastErrors(ctx)
+
+		// TODO: figure out how to do this without a sleep (i.e. subscribing to a channel or something)
+		time.Sleep(5 * time.Second)
+
+		// Try to fetch the repo to verify that it was deleted by the syncer
+		myRepo, err := s.RepoStore.GetByName(ctx, dbRepo.Name)
+		if err == nil {
+			t.Fatalf("repo should've been deleted. expected a repo not found error")
+		}
+		if !isRepoNotFoundErr(err) {
+			t.Fatalf("expected a RepoNotFound error, got %s", err)
+		}
+		if myRepo != nil {
+			t.Fatalf("repo should've been deleted: %v", myRepo)
+		}
+	}
+}
+
+func isRepoNotFoundErr(err error) bool {
+	_, ok := err.(*database.RepoNotFoundErr)
+	return ok
+}

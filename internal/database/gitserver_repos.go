@@ -24,7 +24,7 @@ type GitserverRepoStore interface {
 	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
 	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
 	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
-	GetWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
+	IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -83,7 +83,7 @@ INSERT INTO
 	return errors.Wrap(err, "creating GitserverRepo")
 }
 
-func (s *gitserverRepoStore) GetWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error {
+func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo types.RepoGitserverStatus) error) error {
 	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
 	if err != nil {
 		return errors.Wrap(err, "fetching repos with nonempty last_error")

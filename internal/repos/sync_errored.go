@@ -22,7 +22,7 @@ func (s *Syncer) RunSyncReposWithLastErrorsWorker(ctx context.Context) {
 }
 
 func (s *Syncer) SyncReposWithLastErrors(ctx context.Context) {
-	err := s.Store.GitserverReposStore.GetWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+	err := s.Store.GitserverReposStore.IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
 		_, err := s.SyncRepo(ctx, repo.Name)
 		if err != nil {
 			return err
