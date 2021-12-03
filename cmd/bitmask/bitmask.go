@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"os"
 )
 
@@ -10,13 +9,7 @@ func ReadCache(cacheDir string) (*RepoIndex, error) {
 	if err != nil {
 		return nil, err
 	}
-	decoder := gob.NewDecoder(file)
-	r := &RepoIndex{}
-	err = decoder.Decode(r)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
+	return DeserializeRepoIndex(file)
 }
 
 func WriteCache(dir, cacheDir string) error {
@@ -24,9 +17,5 @@ func WriteCache(dir, cacheDir string) error {
 	if err != nil {
 		return err
 	}
-	err = r.SerializeToFile(cacheDir)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r.SerializeToFile(cacheDir)
 }

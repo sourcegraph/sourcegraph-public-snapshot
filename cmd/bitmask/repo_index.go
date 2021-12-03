@@ -24,8 +24,7 @@ var (
 const (
 	estimate         = 0.01
 	maxFileSize      = 1 << 20 // 1_048_576
-	bloomSizePadding = 2.0
-	gramSize         = 3
+	bloomSizePadding = 10
 )
 
 type RepoIndex struct {
@@ -37,12 +36,32 @@ type BlobIndex struct {
 	Path   string
 }
 
-func trigrams(query string) [][]byte {
-	var result [][]byte
-	queryBytes := []byte(query)
-	for i := 0; i < len(queryBytes)-gramSize; i++ {
-		result = append(result, queryBytes[i:i+gramSize])
+func onGrams(textBytes []byte, onBytes func(b []byte)) {
+	for i, _ := range textBytes {
+		onBytes(textBytes[i : i+1]) // unigram
+		if i > 0 {
+			onBytes(textBytes[i-1 : i+1]) // bigram
+		}
+		if i > 1 {
+			onBytes(textBytes[i-2 : i+1]) // trigram
+		}
+		if i > 2 {
+			onBytes(textBytes[i-3 : i+1]) // quadgram
+		}
+		if i > 3 {
+			onBytes(textBytes[i-4 : i+1]) // pentagram
+		}
+		if i > 4 {
+			onBytes(textBytes[i-3 : i+1]) // hexagram
+		}
 	}
+}
+
+func collectGrams(query string) [][]byte {
+	var result [][]byte
+	onGrams([]byte(query), func(b []byte) {
+		result = append(result, b)
+	})
 	return result
 }
 
@@ -119,13 +138,17 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 		if len(textBytes) > maxFileSize {
 			continue
 		}
-		filter := bloom.NewWithEstimates(uint(len(textBytes)*bloomSizePadding), estimate)
+		bloomSize := uint(len(textBytes) * bloomSizePadding)
+		filter := bloom.NewWithEstimates(bloomSize, estimate)
 		if enry.IsBinary(textBytes) {
 			continue
 		}
-		for i = 0; i < len(textBytes)-gramSize; i++ {
-			trigram := textBytes[i : i+gramSize]
-			filter.Add(trigram)
+		onGrams(textBytes, func(b []byte) {
+			filter.Add(b)
+		})
+		sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
+		if sizeRatio > 0.5 {
+			fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
 		}
 		indexes = append(
 			indexes,
@@ -194,7 +217,7 @@ func color(colorString string) func(...interface{}) string {
 }
 
 func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
-	grams := trigrams(query)
+	grams := collectGrams(query)
 	res := make(chan string, len(r.Blobs))
 	batchSize := 5_000
 	var wg sync.WaitGroup
