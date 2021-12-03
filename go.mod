@@ -325,6 +325,7 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hashicorp/go-hclog v0.16.2 // indirect
 	github.com/prometheus/common/sigv4 v0.1.0 // indirect
+	golang.org/x/perf v0.0.0-20211012211434-03971e389cd3 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
 )
