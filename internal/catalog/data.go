@@ -59,7 +59,7 @@ const (
 
 func newQueryUsagePattern(query string) UsagePattern {
 	return UsagePattern{
-		Query: `count:4 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
+		Query: `count:1000 repo:^github\.com/sourcegraph/sourcegraph$ ` + query,
 	}
 }
 
@@ -98,10 +98,10 @@ func Data() ([]Component, []Group, []Edge) {
 			UsagePatterns: []UsagePattern{
 				newQueryUsagePattern(`lang:go \bgitserver\.Client\b patterntype:regexp`),
 				newQueryUsagePattern(`lang:go \bgit\.[A-Z]\w+\(ctx, patterntype:regexp`),
-				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/vcs/git" patterntype:literal`),
+				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/vcs/git" AND git. patterntype:literal`),
 			},
 			APIDefPath: "internal/gitserver/protocol/gitserver.go",
-			DependsOn:  []string{"repo-updater"},
+			DependsOn:  []string{"repo-updater", "searcher"},
 			OwnedBy:    "repo-mgmt",
 		},
 		{
@@ -111,8 +111,12 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
-			DependsOn:    []string{"gitserver", "github-proxy"},
-			OwnedBy:      "repo-mgmt",
+			UsagePatterns: []UsagePattern{
+				newQueryUsagePattern(`repo-updater patterntype:regexp`),
+				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/repoupdater" AND repoupdater patterntype:literal`),
+			},
+			DependsOn: []string{"gitserver", "github-proxy"},
+			OwnedBy:   "repo-mgmt",
 		},
 		{
 			Kind:         "SERVICE",
@@ -135,8 +139,11 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/executor"},
-			DependsOn:    []string{"frontend"},
-			OwnedBy:      "code-intel",
+			UsagePatterns: []UsagePattern{
+				newQueryUsagePattern(`lang:go \bexecutor\b patterntype:regexp`),
+			},
+			DependsOn: []string{"frontend"},
+			OwnedBy:   "code-intel",
 		},
 		{
 			Kind:         "SERVICE",
@@ -145,8 +152,11 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"enterprise/cmd/precise-code-intel-worker"},
-			DependsOn:    []string{"frontend", "worker"},
-			OwnedBy:      "code-intel",
+			UsagePatterns: []UsagePattern{
+				newQueryUsagePattern(`lang:go \bprecise-code-intel-worker\b patterntype:regexp`),
+			},
+			DependsOn: []string{"frontend", "worker"},
+			OwnedBy:   "code-intel",
 		},
 		{
 			Kind:         "SERVICE",
@@ -155,7 +165,10 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/github-proxy"},
-			OwnedBy:      "repo-mgmt",
+			UsagePatterns: []UsagePattern{
+				newQueryUsagePattern(`GITHUB_PROXY`),
+			},
+			OwnedBy: "repo-mgmt",
 		},
 		{
 			Kind:         "SERVICE",
@@ -174,6 +187,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/worker", "enterprise/cmd/worker"},
+			OwnedBy:      "code-intel",
 		},
 		{
 			Kind:         "SERVICE",
@@ -183,6 +197,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/server", "enterprise/cmd/server"},
 			DependsOn:    []string{"frontend", "repo-updater", "symbols", "query-runner", "gitserver"},
+			OwnedBy:      "delivery",
 		},
 		{
 			Kind:         "SERVICE",
@@ -202,6 +217,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/sitemap"},
 			DependsOn:    []string{"frontend"},
+			OwnedBy:      "cloud-growth",
 		},
 		{
 			Kind:         "TOOL",
@@ -215,6 +231,7 @@ func Data() ([]Component, []Group, []Edge) {
 				newQueryUsagePattern(`lang:markdown ` + "`" + `sg[` + "`" + `\s] patterntype:regexp`),
 				newQueryUsagePattern(`lang:markdown (^|\s*\$ )sg\s patterntype:regexp`),
 			},
+			OwnedBy: "dev-experience",
 		},
 		{
 			Kind:        "TOOL",
@@ -222,14 +239,15 @@ func Data() ([]Component, []Group, []Edge) {
 			Description: "Sourcegraph CLI",
 			Lifecycle:   LifecycleProduction,
 			// Only the gitlab mirror of this repo is loaded by the default dev-private config.
-			SourceRepo:    "gitlab.sgdev.org/sourcegraph/src-cli",
-			SourceCommit:  "4a4341bc1c53fc5306f09bdcb31e8892ee40e6c7",
-			SourcePaths:   []string{"."},
+			SourceRepo:   "gitlab.sgdev.org/sourcegraph/src-cli",
+			SourceCommit: "4a4341bc1c53fc5306f09bdcb31e8892ee40e6c7",
+			SourcePaths:  []string{"."},
 			UsagePatterns: []UsagePattern{
-				// newQueryUsagePattern(`lang:markdown ` + "`" + `src[` + "`" + `\s] patterntype:regexp`),
-				// newQueryUsagePattern(`lang:markdown (^|\s*\$ )src\s patterntype:regexp`),
+				newQueryUsagePattern(`lang:markdown ` + "`" + `src[` + "`" + `\s] patterntype:regexp`),
+				newQueryUsagePattern(`lang:markdown (^|\s*\$ )src\s patterntype:regexp`),
 			},
 			DependsOn: []string{"frontend"},
+			OwnedBy:   "batch-changes",
 		},
 		{
 			Kind:         "LIBRARY",
@@ -251,6 +269,7 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/browser"},
 			DependsOn:    []string{"extension-api", "client-shared", "wildcard", "frontend"},
+			OwnedBy:      "extensibility",
 		},
 		{
 			Kind:         "LIBRARY",
@@ -260,8 +279,11 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"client/shared"},
-			DependsOn:    []string{"extension-api", "wildcard", "frontend"},
-			OwnedBy:      "frontend-platform",
+			UsagePatterns: []UsagePattern{
+				newQueryUsagePattern(`lang:typescript import @sourcegraph/shared patterntype:regexp`),
+			},
+			DependsOn: []string{"extension-api", "wildcard", "frontend"},
+			OwnedBy:   "frontend-platform",
 		},
 		{
 			Kind:         "LIBRARY",
@@ -287,6 +309,7 @@ func Data() ([]Component, []Group, []Edge) {
 			UsagePatterns: []UsagePattern{
 				newQueryUsagePattern(`lang:typescript import from ['"]sourcegraph['"] patterntype:regexp`),
 			},
+			OwnedBy: "extensibility",
 		},
 	}
 	sort.Slice(components, func(i, j int) bool { return components[i].Name < components[j].Name })
@@ -314,30 +337,35 @@ func Data() ([]Component, []Group, []Edge) {
 		{
 			Name:        "search-core",
 			Title:       "Search core",
+			Description: "The search core team owns all parts of Sourcegraph that map an interpreted search query to a set of results: indexed and unindexed search (Zoekt & Searcher), diff/commit search, and result ranking.",
 			ParentGroup: "code-graph",
 			Members:     []string{"jeffwarner", "ryanhitchman", "stefanhengl", "tomas", "keegancs"},
 		},
 		{
 			Name:        "search-product",
 			Title:       "Search product",
+			Description: "The search product team owns all parts of Sourcegraph that help users Compose search queries and navigate search results: search field, search results UI, search contexts, query language (including structural search), the search homepage, homepage panels, and repogroup pages. It also owns a subset of features built on top of Sourcegraph search: code monitoring and saved searches.",
 			ParentGroup: "code-graph",
 			Members:     []string{"lguychard", "fkling", "ccheek", "rok", "juliana", "rijnard"},
 		},
 		{
 			Name:        "code-intel",
 			Title:       "Code intelligence",
+			Description: "The Code Intelligence team builds tools and services that provide contextual information around code, taking into account its lexical, syntactic, and semantic structure.",
 			ParentGroup: "code-graph",
 			Members:     []string{"oconvey", "vgandhi", "cesarj", "chrismwendt", "teej", "olaf", "noahsc", "efritz"},
 		},
 		{
 			Name:        "batch-changes",
 			Title:       "Batch Changes",
+			Description: "Batch Changes is a tool to find code that needs to be changed and change it at scale by running code. ",
 			ParentGroup: "code-graph",
 			Members:     []string{"chris-pine", "kelli-rockwell", "adeola-akinsiku", "adam-harvey", "erik-seliger", "thorsten-ball"},
 		},
 		{
 			Name:        "code-insights",
 			Title:       "Code insights",
+			Description: "The code insights team is responsible for building and delivering code insights to engineering leaders, empowering data-driven decisions in engineering organizations.",
 			ParentGroup: "code-graph",
 			Members:     []string{"felix-becker", "cristina-birkel", "justin-boyson", "coury-clark", "vova-kulikov"},
 		},
@@ -378,33 +406,38 @@ func Data() ([]Component, []Group, []Edge) {
 		},
 
 		{
-			Name:    "cloud",
-			Title:   "Cloud",
-			Members: []string{"billcreager"},
+			Name:        "cloud",
+			Title:       "Cloud",
+			Description: "Offer the fastest, most seamless way for development teams to bring Sourcegraph into their workflows, wherever they are.",
+			Members:     []string{"billcreager"},
 		},
 		{
-			Name:        "growth",
-			Title:       "Growth",
+			Name:        "cloud-growth",
+			Title:       "Cloud growth",
+			Description: "The cloud growth team focuses on the growth of Sourcegraph.com, both as a SaaS product and lead generator for Sourcegraph as an on-prem product.",
 			ParentGroup: "cloud",
 			Members:     []string{"stephengutekanst"},
 		},
 		{
 			Name:        "extensibility",
 			Title:       "Extensibility",
+			Description: "The extensibility team owns our code host and third-party integrations (including our browser extension) and our Sourcegraph extensions. Our mission is to bring the value of Sourcegraph to everywhere you work with code and to bring the value of other developer tools into Sourcegraph.",
 			ParentGroup: "cloud",
 			Members:     []string{"murat-sutunc", "erzhan-torokulov", "beatrix-woo", "tharuntej-kandala"},
 		},
 		{
 			Name:        "security",
 			Title:       "Security",
+			Description: "We think that security is an enabler for the business. Sourcegraph is committed to proactive security, and addressing vulnerabilities in a timely manner. We approach security with a can-do philosophy, and look to achieve product goals while maintaining a positive posture, and increasing our security stance over time.",
 			ParentGroup: "cloud",
 			Members:     []string{"diego-comas", "lauren-chapman", "david-sandy", "mohammad-alam", "andre-eleuterio"},
 		},
 		{
 			Name:        "devops",
 			Title:       "DevOps",
+			Description: "The two primary pillars of the Cloud Team are Availability and Observability as defined in RFC 498. This team ensures that Sourcegraph.com has the same reliability and availability as other world-class SaaS offerings. This team is also responsible for Observability monitoring and tooling to ensure that we are meeting these goals.",
 			ParentGroup: "cloud",
-			Members:     []string{"jennifer-mitchell", "dax-mcdonald"},
+			Members:     []string{"jennifer-mitchell", "dax-mcdonald", "daniel-dides"},
 		},
 		{
 			Name:        "cloud-saas",
