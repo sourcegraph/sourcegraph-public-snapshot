@@ -259,8 +259,7 @@ func getPercent(p int) (int, error) {
 	return p, nil
 }
 
-// getStores initializes a connection to the database and returns RepoStore and
-// ExternalServiceStore.
+// getDB initializes a connection to the database and returns a dbutil.DB
 func getDB() (dbutil.DB, error) {
 	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
 	// user requests.
