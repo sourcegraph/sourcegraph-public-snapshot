@@ -8,17 +8,45 @@ import { Link } from 'react-router-dom'
 
 import { GroupDetailFields } from '../../../../graphql-operations'
 
-interface Props {
+import { GroupDetailContentCardProps } from './GroupDetailContent'
+
+interface Props extends GroupDetailContentCardProps {
     group: GroupDetailFields
     className?: string
 }
 
-export const GroupOverviewTab: React.FunctionComponent<Props> = ({ group, className }) => (
+export const GroupOverviewTab: React.FunctionComponent<Props> = ({
+    group,
+    headerClassName,
+    titleClassName,
+    bodyClassName,
+    className,
+}) => (
     <div className={classNames('d-flex flex-column', className)}>
         <div className="row">
-            <div className="col-md-8">hello</div>
-            <div className="col-md-4">
+            <div className="col-md-3">
+                {group.title && <h2>{group.title}</h2>}
                 {group.description && <p className="mb-3">{group.description}</p>}
+                {(group.parentGroup || group.childGroups.length > 0) && (
+                    <ul className="list-unstyled">
+                        {group.parentGroup && (
+                            <li>
+                                <strong>Parent group</strong>&nbsp;
+                                <Link to={group.parentGroup.url}>{group.parentGroup.name}</Link>
+                            </li>
+                        )}
+                        {group.childGroups && group.childGroups.length > 0 && (
+                            <li>
+                                <strong>Child groups</strong>&nbsp;
+                                {group.childGroups.map(childGroup => (
+                                    <React.Fragment key={childGroup.id}>
+                                        <Link to={childGroup.url}>{childGroup.name}</Link>&nbsp;
+                                    </React.Fragment>
+                                ))}
+                            </li>
+                        )}
+                    </ul>
+                )}
                 <div>
                     <Link
                         to={`/search?q=context:g/${group.name}`}
@@ -26,14 +54,10 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({ group, classN
                     >
                         <SearchIcon className="icon-inline mr-1" /> Search...
                     </Link>
-                    {group.readme && (
-                        <div className="d-flex align-items-start">
-                            <Link to={group.readme.url} className="d-flex align-items-center text-body mb-3 mr-2">
-                                <FileDocumentIcon className="icon-inline mr-2" />
-                                Handbook page
-                            </Link>
-                        </div>
-                    )}
+                    <Link to="#" className="d-flex align-items-center text-body mb-3 mr-2">
+                        <FileDocumentIcon className="icon-inline mr-2" />
+                        Handbook page
+                    </Link>
                     <Link to="#" className="d-flex align-items-center text-body mb-3">
                         <AlertCircleOutlineIcon className="icon-inline mr-2" />
                         Issues
@@ -44,6 +68,9 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({ group, classN
                     </Link>
                     <hr className="my-3" />
                 </div>
+            </div>
+            <div className="col-md-9">
+                <div className="card">asdf</div>
             </div>
         </div>
     </div>

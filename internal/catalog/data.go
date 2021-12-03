@@ -29,6 +29,7 @@ type UsagePattern struct {
 type Group struct {
 	Name        string
 	Title       string
+	Description string
 	ParentGroup string
 	Members     []string
 }

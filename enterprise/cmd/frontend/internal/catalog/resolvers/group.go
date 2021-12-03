@@ -19,16 +19,20 @@ func (r *groupResolver) Name() string   { return r.group.Name }
 func (r *groupResolver) Title() string  { return r.group.Title }
 
 func (r *groupResolver) Description() *string {
-	if r.group.Title == "" {
+	if r.group.Description == "" {
 		return nil
 	}
-	return &r.group.Title
+	return &r.group.Description
 }
 
 func (r *groupResolver) URL() string { return "/catalog/groups/" + r.group.Name }
 
 func (r *groupResolver) ParentGroup() gql.GroupResolver {
-	return groupByName(r.db, r.group.ParentGroup)
+	g := groupByName(r.db, r.group.ParentGroup)
+	if g != nil {
+		return g
+	}
+	return nil
 }
 
 func (r *groupResolver) ChildGroups() []gql.GroupResolver {

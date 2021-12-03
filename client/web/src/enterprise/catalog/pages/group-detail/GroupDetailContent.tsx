@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -15,9 +16,23 @@ import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { TabRouter } from '../entity-detail/global/TabRouter'
 
 import { GroupOverviewTab } from './GroupOverviewTab'
+import styles from './GroupDetailContent.module.scss'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     group: GroupDetailFields
+}
+
+export interface GroupDetailContentCardProps {
+    className?: string
+    headerClassName?: string
+    titleClassName?: string
+    bodyClassName?: string
+}
+
+const cardProps: GroupDetailContentCardProps = {
+    headerClassName: classNames('card-header', styles.cardHeader),
+    titleClassName: classNames('card-title', styles.cardTitle),
+    bodyClassName: classNames('card-body', styles.cardBody),
 }
 
 export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...props }) => {
@@ -28,7 +43,7 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
                     path: '',
                     exact: true,
                     label: 'Overview',
-                    element: <GroupOverviewTab group={group} />,
+                    element: <GroupOverviewTab {...cardProps} group={group} />,
                 },
                 // TODO(sqs): show group code/changes/etc. tabs
             ].filter(isDefined),
