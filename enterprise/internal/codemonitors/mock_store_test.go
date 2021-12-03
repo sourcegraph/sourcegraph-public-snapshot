@@ -65,10 +65,10 @@ type MockCodeMonitorStore struct {
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *CodeMonitorStoreDoneFunc
-	// EnqueueActionJobsForQueryFunc is an instance of a mock function
+	// EnqueueActionJobsForMonitorFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// EnqueueActionJobsForQuery.
-	EnqueueActionJobsForQueryFunc *CodeMonitorStoreEnqueueActionJobsForQueryFunc
+	// EnqueueActionJobsForMonitor.
+	EnqueueActionJobsForMonitorFunc *CodeMonitorStoreEnqueueActionJobsForMonitorFunc
 	// EnqueueQueryTriggerJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method EnqueueQueryTriggerJobs.
 	EnqueueQueryTriggerJobsFunc *CodeMonitorStoreEnqueueQueryTriggerJobsFunc
@@ -228,7 +228,7 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 				return nil
 			},
 		},
-		EnqueueActionJobsForQueryFunc: &CodeMonitorStoreEnqueueActionJobsForQueryFunc{
+		EnqueueActionJobsForMonitorFunc: &CodeMonitorStoreEnqueueActionJobsForMonitorFunc{
 			defaultHook: func(context.Context, int64, int32) ([]*ActionJob, error) {
 				return nil, nil
 			},
@@ -435,9 +435,9 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 				panic("unexpected invocation of MockCodeMonitorStore.Done")
 			},
 		},
-		EnqueueActionJobsForQueryFunc: &CodeMonitorStoreEnqueueActionJobsForQueryFunc{
+		EnqueueActionJobsForMonitorFunc: &CodeMonitorStoreEnqueueActionJobsForMonitorFunc{
 			defaultHook: func(context.Context, int64, int32) ([]*ActionJob, error) {
-				panic("unexpected invocation of MockCodeMonitorStore.EnqueueActionJobsForQuery")
+				panic("unexpected invocation of MockCodeMonitorStore.EnqueueActionJobsForMonitor")
 			},
 		},
 		EnqueueQueryTriggerJobsFunc: &CodeMonitorStoreEnqueueQueryTriggerJobsFunc{
@@ -611,8 +611,8 @@ func NewMockCodeMonitorStoreFrom(i CodeMonitorStore) *MockCodeMonitorStore {
 		DoneFunc: &CodeMonitorStoreDoneFunc{
 			defaultHook: i.Done,
 		},
-		EnqueueActionJobsForQueryFunc: &CodeMonitorStoreEnqueueActionJobsForQueryFunc{
-			defaultHook: i.EnqueueActionJobsForQuery,
+		EnqueueActionJobsForMonitorFunc: &CodeMonitorStoreEnqueueActionJobsForMonitorFunc{
+			defaultHook: i.EnqueueActionJobsForMonitor,
 		},
 		EnqueueQueryTriggerJobsFunc: &CodeMonitorStoreEnqueueQueryTriggerJobsFunc{
 			defaultHook: i.EnqueueQueryTriggerJobs,
@@ -2454,37 +2454,37 @@ func (c CodeMonitorStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// CodeMonitorStoreEnqueueActionJobsForQueryFunc describes the behavior when
-// the EnqueueActionJobsForQuery method of the parent MockCodeMonitorStore
-// instance is invoked.
-type CodeMonitorStoreEnqueueActionJobsForQueryFunc struct {
+// CodeMonitorStoreEnqueueActionJobsForMonitorFunc describes the behavior
+// when the EnqueueActionJobsForMonitor method of the parent
+// MockCodeMonitorStore instance is invoked.
+type CodeMonitorStoreEnqueueActionJobsForMonitorFunc struct {
 	defaultHook func(context.Context, int64, int32) ([]*ActionJob, error)
 	hooks       []func(context.Context, int64, int32) ([]*ActionJob, error)
-	history     []CodeMonitorStoreEnqueueActionJobsForQueryFuncCall
+	history     []CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall
 	mutex       sync.Mutex
 }
 
-// EnqueueActionJobsForQuery delegates to the next hook function in the
+// EnqueueActionJobsForMonitor delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) EnqueueActionJobsForQuery(v0 context.Context, v1 int64, v2 int32) ([]*ActionJob, error) {
-	r0, r1 := m.EnqueueActionJobsForQueryFunc.nextHook()(v0, v1, v2)
-	m.EnqueueActionJobsForQueryFunc.appendCall(CodeMonitorStoreEnqueueActionJobsForQueryFuncCall{v0, v1, v2, r0, r1})
+func (m *MockCodeMonitorStore) EnqueueActionJobsForMonitor(v0 context.Context, v1 int64, v2 int32) ([]*ActionJob, error) {
+	r0, r1 := m.EnqueueActionJobsForMonitorFunc.nextHook()(v0, v1, v2)
+	m.EnqueueActionJobsForMonitorFunc.appendCall(CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// EnqueueActionJobsForQuery method of the parent MockCodeMonitorStore
+// EnqueueActionJobsForMonitor method of the parent MockCodeMonitorStore
 // instance is invoked and the hook queue is empty.
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) SetDefaultHook(hook func(context.Context, int64, int32) ([]*ActionJob, error)) {
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) SetDefaultHook(hook func(context.Context, int64, int32) ([]*ActionJob, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// EnqueueActionJobsForQuery method of the parent MockCodeMonitorStore
+// EnqueueActionJobsForMonitor method of the parent MockCodeMonitorStore
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) PushHook(hook func(context.Context, int64, int32) ([]*ActionJob, error)) {
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) PushHook(hook func(context.Context, int64, int32) ([]*ActionJob, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2492,7 +2492,7 @@ func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) PushHook(hook func(conte
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) SetDefaultReturn(r0 []*ActionJob, r1 error) {
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) SetDefaultReturn(r0 []*ActionJob, r1 error) {
 	f.SetDefaultHook(func(context.Context, int64, int32) ([]*ActionJob, error) {
 		return r0, r1
 	})
@@ -2500,13 +2500,13 @@ func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) SetDefaultReturn(r0 []*A
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) PushReturn(r0 []*ActionJob, r1 error) {
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) PushReturn(r0 []*ActionJob, r1 error) {
 	f.PushHook(func(context.Context, int64, int32) ([]*ActionJob, error) {
 		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) nextHook() func(context.Context, int64, int32) ([]*ActionJob, error) {
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) nextHook() func(context.Context, int64, int32) ([]*ActionJob, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2519,28 +2519,28 @@ func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) nextHook() func(context.
 	return hook
 }
 
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) appendCall(r0 CodeMonitorStoreEnqueueActionJobsForQueryFuncCall) {
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) appendCall(r0 CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
 // History returns a sequence of
-// CodeMonitorStoreEnqueueActionJobsForQueryFuncCall objects describing the
-// invocations of this function.
-func (f *CodeMonitorStoreEnqueueActionJobsForQueryFunc) History() []CodeMonitorStoreEnqueueActionJobsForQueryFuncCall {
+// CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall objects describing
+// the invocations of this function.
+func (f *CodeMonitorStoreEnqueueActionJobsForMonitorFunc) History() []CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall {
 	f.mutex.Lock()
-	history := make([]CodeMonitorStoreEnqueueActionJobsForQueryFuncCall, len(f.history))
+	history := make([]CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// CodeMonitorStoreEnqueueActionJobsForQueryFuncCall is an object that
-// describes an invocation of method EnqueueActionJobsForQuery on an
+// CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall is an object that
+// describes an invocation of method EnqueueActionJobsForMonitor on an
 // instance of MockCodeMonitorStore.
-type CodeMonitorStoreEnqueueActionJobsForQueryFuncCall struct {
+type CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -2560,13 +2560,13 @@ type CodeMonitorStoreEnqueueActionJobsForQueryFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c CodeMonitorStoreEnqueueActionJobsForQueryFuncCall) Args() []interface{} {
+func (c CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c CodeMonitorStoreEnqueueActionJobsForQueryFuncCall) Results() []interface{} {
+func (c CodeMonitorStoreEnqueueActionJobsForMonitorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
