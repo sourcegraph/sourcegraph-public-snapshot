@@ -343,31 +343,36 @@ func Data() ([]Component, []Group, []Edge) {
 		},
 
 		{
-			Name:    "enablement",
-			Title:   "Enablement",
-			Members: []string{"jean-du-plessis"},
+			Name:        "enablement",
+			Title:       "Enablement",
+			Description: "Technical foundations critical to the business, our customers, and our products. We do this by ensuring we have the best tools, processes, and services in place, for use by both customers and our own engineers when using or developing Sourcegraph.",
+			Members:     []string{"jean-du-plessis"},
 		},
 		{
 			Name:        "repo-mgmt",
 			Title:       "Repo management",
+			Description: "Maintain and evolve the methods by which code is pulled into Sourcegraph from code hosts, in a way that supports all required functionality while maximizing performance, reliability, and ease of use.",
 			ParentGroup: "enablement",
 			Members:     []string{"jplahn", "indrag", "rslade", "mweitzel", "alex-ostrikov"},
 		},
 		{
 			Name:        "delivery",
 			Title:       "Delivery",
+			Description: "Enable any Sourcegraph customer or user to trial or run (in production) Sourcegraph in a way fits within their environment, supports their level of technical expertise and allows them to easily access the value that our product provides.",
 			ParentGroup: "enablement",
 			Members:     []string{"jean-du-plessis", "kevin-wojkovich", "crystal-augustus"},
 		},
 		{
 			Name:        "dev-experience",
 			Title:       "Dev experience",
+			Description: "The Dev Experience team, or DevX for short, is a team focused on improving the developer experience of Sourcegraph.",
 			ParentGroup: "enablement",
 			Members:     []string{"kristen-stretch", "jh-chabran", "robert-lin", "dave-try"},
 		},
 		{
 			Name:        "frontend-platform",
 			Title:       "Frontend platform",
+			Description: "The Frontend Platform team defines and maintains the standards and tools for web development at Sourcegraph.",
 			ParentGroup: "enablement",
 			Members:     []string{"patrick-dubroy", "valeryb", "tomross"},
 		},
@@ -404,6 +409,7 @@ func Data() ([]Component, []Group, []Edge) {
 		{
 			Name:        "cloud-saas",
 			Title:       "Cloud SaaS",
+			Description: "The Cloud Software-as-a-Service (SaaS) Team is responsible for the service management part of the Sourcegraph Cloud product. The team provides both customer-facing and internal capabilities that enable our customers to use the Sourcegraph Cloud product as a service.",
 			ParentGroup: "cloud",
 			Members:     []string{"rafal-leszczynski", "rafal-gajdulewicz", "milan-freml", "artem-ruts", "joe-cheng"},
 		},

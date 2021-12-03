@@ -1,6 +1,8 @@
 package resolvers
 
 import (
+	"sort"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -46,9 +48,30 @@ func (r *groupResolver) ChildGroups() []gql.GroupResolver {
 }
 
 func (r *groupResolver) Members() []*gql.PersonResolver {
-	var members []*gql.PersonResolver
-	for _, member := range r.group.Members {
+	var (
+		members []*gql.PersonResolver
+		seen    = map[string]struct{}{}
+	)
+	recordMember := func(member string) {
+		if _, seen := seen[member]; seen {
+			return
+		}
 		members = append(members, gql.NewPersonResolver(r.db, "", member+"@sourcegraph.com", false))
+		seen[member] = struct{}{}
 	}
+
+	for _, member := range r.group.Members {
+		recordMember(member)
+	}
+	for _, childGroup := range r.ChildGroups() {
+		for _, member := range childGroup.(*groupResolver).group.Members {
+			recordMember(member)
+		}
+	}
+
+	sort.Slice(members, func(i, j int) bool {
+		return members[i].Email() < members[j].Email()
+	})
+
 	return members
 }
