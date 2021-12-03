@@ -1081,8 +1081,8 @@ func retryCheck(check dependencyCheck, retries int, sleep time.Duration) depende
 	return func(ctx context.Context) (err error) {
 		for i := 0; i < retries; i++ {
 			err = check(ctx)
-			if err != nil {
-				return err
+			if err == nil {
+				return nil
 			}
 			time.Sleep(sleep)
 		}
