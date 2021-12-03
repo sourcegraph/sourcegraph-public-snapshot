@@ -2,9 +2,12 @@ import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
 import Info from 'mdi-react/InfoCircleOutlineIcon'
 import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 import { noop } from 'rxjs'
 
+import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
+import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { Button } from '@sourcegraph/wildcard/src'
 
 import { FormInput } from '../../../../../../components/form/form-input/FormInput'
@@ -66,43 +69,53 @@ const CheckListItem: React.FunctionComponent<{ valid?: boolean }> = ({ children,
             <RadioboxBlankIcon size={16} className="icon-inline" style={{ top: '3px' }} />
         )
     return (
-        <li>
+        <>
             <StatusIcon /> {children}
-        </li>
+        </>
     )
 }
 
-const SearchQueryChecks: React.FunctionComponent = () => (
+interface SearchQueryChecksProps {
+    checks: {
+        isValidRegex: boolean
+        isValidOperator: boolean
+        isValidPatternType: boolean
+        isNotRepoOrFile: boolean
+        isNotCommitOrDiff: boolean
+        isNoRepoFilter: boolean
+    }
+}
+const SearchQueryChecks: React.FunctionComponent<SearchQueryChecksProps> = ({ checks }) => (
     <div className={classNames(styles.formSeriesInput)}>
         <ul className={classNames(['mt-4 text-muted', styles.formSeriesInputSeriesCheck])}>
             <li>
-                <CheckListItem valid={true}>
+                <CheckListItem valid={checks.isValidRegex}>
                     Contains a properly formatted regular expression with at least one capture group
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={true}>
+                <CheckListItem valid={checks.isValidOperator}>
                     Does not contain boolean operator <code>AND</code> and <code>OR</code> (regular expression boolean
                     operators can still be used)
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={true}>
+                <CheckListItem valid={checks.isValidPatternType}>
                     Does not contain <code>patternType:literal</code> and <code>patternType:structural</code>
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={true}>
+                <CheckListItem valid={checks.isNotRepoOrFile}>
                     The capture group matches file contents (not <code>repo</code> or <code>file</code>)
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={true}>
+                <CheckListItem valid={checks.isNotCommitOrDiff}>
                     Does not contain <code>commit</code> or <code>diff</code> search
                 </CheckListItem>
             </li>
             <li>
-                <CheckListItem valid={true}>
+                <CheckListItem valid={checks.isNoRepoFilter}>
                     Does not contain the <code>repo:</code> filter as it will be added automatically if needed
                 </CheckListItem>
             </li>
@@ -123,6 +136,8 @@ const SearchQueryChecks: React.FunctionComponent = () => (
         </p>
     </div>
 )
+
+const isDiffOrCommit = (value: string): boolean => value === 'diff' || value === 'commit'
 
 /** Displays form series input (three field - name field, query field and color picker). */
 export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = props => {
@@ -192,6 +207,84 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
         formApi: formAPI,
     })
 
+    // Search query validators
+    const [isValidRegex, setIsValidRegex] = useState(false)
+    const [isValidOperator, setIsValidOperator] = useState(false)
+    const [isValidPatternType, setIsValidPatternType] = useState(false)
+    const [isNotRepoOrFile, setIsNotRepoOrFile] = useState(false)
+    const [isNotCommitOrDiff, setIsNotCommitOrDiff] = useState(false)
+    const [isNoRepoFilter, setIsNoRepoFilter] = useState(false)
+
+    const [queryState, nextQueryFieldChange] = useInputValidation(
+        useMemo(
+            () => ({
+                initialValue: queryField.input.value,
+                synchronousValidators: [
+                    (value: string) => {
+                        const tokens = scanSearchQuery(value)
+
+                        const validRegex = false
+                        let validOperator = false
+                        let validPatternType = false
+                        const notRepoOrFile = false
+                        let notCommitOrDiff = false
+                        let noRepoFilter = false
+
+                        if (tokens.type === 'success') {
+                            const filters = tokens.term.filter(token => token.type === 'filter')
+
+                            notCommitOrDiff = !filters.some(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.type &&
+                                    filter.value &&
+                                    isDiffOrCommit(filter.value.value)
+                            )
+
+                            noRepoFilter = !filters.some(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.repo &&
+                                    filter.value
+                            )
+
+                            const hasLiteral = filters.some(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                                    filter.value?.value === 'literal'
+                            )
+
+                            const hasStructural = filters.some(
+                                filter =>
+                                    filter.type === 'filter' &&
+                                    resolveFilter(filter.field.value)?.type === FilterType.patterntype &&
+                                    filter.value?.value === 'structural'
+                            )
+
+                            validPatternType = !(hasLiteral && hasStructural)
+
+                            const hasAnd = filters.some(filter => filter.type === 'keyword' && filter.value === 'AND')
+                            const hasOr = filters.some(filter => filter.type === 'keyword' && filter.value === 'OR')
+
+                            validOperator = !(hasAnd || hasOr)
+                        }
+
+                        setIsValidRegex(validRegex)
+                        setIsValidOperator(validOperator)
+                        setIsValidPatternType(validPatternType)
+                        setIsNotRepoOrFile(notRepoOrFile)
+                        setIsNotCommitOrDiff(notCommitOrDiff)
+                        setIsNoRepoFilter(noRepoFilter)
+
+                        return undefined
+                    },
+                ],
+            }),
+            [queryField.input.value]
+        )
+    )
+
     return (
         <div data-testid="series-form" ref={ref} className={classNames('d-flex flex-column', className)}>
             <FormInput
@@ -213,7 +306,16 @@ export const FormSeriesInput: React.FunctionComponent<FormSeriesInputProps> = pr
                 description={
                     <span>
                         {!isSearchQueryDisabled ? (
-                            <SearchQueryChecks />
+                            <SearchQueryChecks
+                                checks={{
+                                    isValidRegex,
+                                    isValidOperator,
+                                    isValidPatternType,
+                                    isNotRepoOrFile,
+                                    isNotCommitOrDiff,
+                                    isNoRepoFilter,
+                                }}
+                            />
                         ) : (
                             <>
                                 We don't yet allow editing queries for insights over all repos. To change the query,
