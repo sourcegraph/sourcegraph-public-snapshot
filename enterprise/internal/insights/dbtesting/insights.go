@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/migrations"
 	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
@@ -55,6 +56,9 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		t.Fatal("creating test database", err)
 	}
 
+
+
+
 	// Connect to the new DB.
 	u, err := url.Parse(timescaleDSN)
 	if err != nil {
@@ -62,7 +66,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 	}
 	u.Path = dbname
 	timescaleDSN = u.String()
-	db, closeDBConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN, dbconn.CodeInsights)
+	db, closeDBConn, err := dbconn.ConnectRawForTestDatabase(timescaleDSN, migrations.CodeInsights)
 	if err != nil {
 		t.Fatal(err)
 	}
