@@ -4,28 +4,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueryByRecordID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	got, err := s.GetQueryTriggerForJob(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	now := s.Now()
 	want := &QueryTrigger{
 		ID:           1,
@@ -38,38 +31,27 @@ func TestQueryByRecordID(t *testing.T) {
 		ChangedBy:    id,
 		ChangedAt:    now,
 	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 func TestTriggerQueryNextRun(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
 
 	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	got, err := s.GetQueryTriggerForJob(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	want := &QueryTrigger{
 		ID:           1,
 		Monitor:      m.ID,
@@ -82,22 +64,15 @@ func TestTriggerQueryNextRun(t *testing.T) {
 		ChangedAt:    s.Now(),
 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 func TestResetTriggerQueryTimestamps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
 	m, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	now := s.Now()
 	want := &QueryTrigger{
 		ID:           1,
@@ -111,22 +86,16 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		ChangedAt:    now,
 	}
 	got, err := s.triggerQueryByIDInt64(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.NoError(t, err)
+
+	require.Equal(t, want, got)
 
 	err = s.ResetQueryTriggerTimestamps(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	got, err = s.triggerQueryByIDInt64(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	want = &QueryTrigger{
 		ID:           1,
 		Monitor:      m.ID,
@@ -139,7 +108,5 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 		ChangedAt:    now,
 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }

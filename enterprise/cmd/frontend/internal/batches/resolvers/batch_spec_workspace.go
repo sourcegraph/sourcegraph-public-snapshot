@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"sync"
 
@@ -15,10 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 const batchSpecWorkspaceIDKind = "BatchSpecWorkspace"
@@ -39,10 +34,6 @@ type batchSpecWorkspaceResolver struct {
 
 	preloadedRepo *types.Repo
 
-	repoOnce sync.Once
-	repo     *types.Repo
-	repoErr  error
-
 	repoResolverOnce sync.Once
 	repoResolver     *graphqlbackend.RepositoryResolver
 	repoResolverErr  error
@@ -54,23 +45,16 @@ func (r *batchSpecWorkspaceResolver) ID() graphql.ID {
 	return marshalBatchSpecWorkspaceID(r.workspace.ID)
 }
 
-func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*types.Repo, error) {
-	r.repoOnce.Do(func() {
-		if r.preloadedRepo != nil {
-			r.repo = r.preloadedRepo
-		}
-
-		r.repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
-	})
-	return r.repo, r.repoErr
-}
-
 func (r *batchSpecWorkspaceResolver) computeRepoResolver(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	r.repoResolverOnce.Do(func() {
-		repo, err := r.computeRepo(ctx)
-		if err != nil {
-			r.repoResolverErr = err
-			return
+		var repo *types.Repo
+		if r.preloadedRepo != nil {
+			repo = r.preloadedRepo
+		} else {
+			repo, r.repoResolverErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
+			if r.repoResolverErr != nil {
+				return
+			}
 		}
 
 		r.repoResolver = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)
@@ -114,37 +98,10 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		}
 	}
 
-	repo, err := r.computeRepo(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	repoResolver, err := r.computeRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.workspace.BatchSpecID})
-	if err != nil {
-		return nil, err
-	}
-
-	taskKey := cache.KeyForWorkspace(
-		&template.BatchChangeAttributes{
-			Name:        spec.Spec.Name,
-			Description: spec.Spec.Description,
-		},
-		batches.Repository{
-			ID:          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			Name:        string(repo.Name),
-			BaseRef:     r.workspace.Branch,
-			BaseRev:     r.workspace.Commit,
-			FileMatches: r.workspace.FileMatches,
-		},
-		r.workspace.Path,
-		r.workspace.OnlyFetchWorkspace,
-		r.workspace.Steps,
-	)
 
 	resolvers := make([]graphqlbackend.BatchSpecWorkspaceStepResolver, 0, len(r.workspace.Steps))
 	for idx, step := range r.workspace.Steps {
@@ -157,46 +114,31 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 				si.Skipped = true
 			}
 		}
+
 		// Mark all steps as skipped when a cached result was found.
 		if r.CachedResultFound() {
 			si.Skipped = true
 		}
+
 		// Mark all steps as skipped when a workspace is skipped.
 		if r.workspace.Skipped {
 			si.Skipped = true
 		}
 
-		// See if we have a cache result for this step.
-		// TODO: When a cache result is cleared from the cache, this will disappear
-		// from the UI. We should persist the cache result on the execution itself,
-		// too.
-		var cachedResult *execution.AfterStepResult
-		key := cache.StepsCacheKey{ExecutionKey: &taskKey, StepIndex: idx}
-		rawKey, err := key.Key()
-		if err != nil {
-			return nil, err
-		}
-		entries, err := r.store.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
-			Keys: []string{rawKey},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if len(entries) == 1 {
-			if err := json.Unmarshal([]byte(entries[0].Value), &cachedResult); err != nil {
-				return nil, err
-			}
+		resolver := &batchSpecWorkspaceStepResolver{
+			index:    idx,
+			step:     step,
+			stepInfo: si,
+			store:    r.store,
+			repo:     repoResolver,
+			baseRev:  r.workspace.Commit,
 		}
 
-		resolver := &batchSpecWorkspaceStepResolver{
-			index:        idx,
-			step:         step,
-			stepInfo:     si,
-			store:        r.store,
-			repo:         repoResolver,
-			baseRev:      r.workspace.Commit,
-			cachedResult: cachedResult,
+		// See if we have a cache result for this step.
+		if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
+			resolver.cachedResult = cachedResult.Value
 		}
+
 		resolvers = append(resolvers, resolver)
 	}
 

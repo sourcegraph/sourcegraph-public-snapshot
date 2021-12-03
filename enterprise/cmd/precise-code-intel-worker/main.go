@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -121,15 +122,10 @@ func main() {
 }
 
 func mustInitializeDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().PostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().PostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
 	})
-
-	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "precise-code-intel-worker"}
-	sqlDB, _, err := dbconn.New(opts)
+	sqlDB, err := dbconn.NewFrontendDB(dsn, "precise-code-intel-worker", false)
 	if err != nil {
 		log.Fatalf("Failed to connect to frontend database: %s", err)
 	}
@@ -152,14 +148,10 @@ func mustInitializeDB() *sql.DB {
 }
 
 func mustInitializeCodeIntelDB() *sql.DB {
-	postgresDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN
-	conf.Watch(func() {
-		if newDSN := conf.Get().ServiceConnections().CodeIntelPostgresDSN; postgresDSN != newDSN {
-			log.Fatalf("Detected codeintel database DSN change, restarting to take effect: %s", newDSN)
-		}
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.CodeIntelPostgresDSN
 	})
-
-	db, _, err := dbconn.New(dbconn.Opts{DSN: postgresDSN, DBName: "codeintel", AppName: "precise-code-intel-worker", DatabasesToMigrate: []*dbconn.Database{dbconn.CodeIntel}})
+	db, err := dbconn.NewCodeIntelDB(dsn, "precise-code-intel-worker", true)
 	if err != nil {
 		log.Fatalf("Failed to connect to codeintel database: %s", err)
 	}

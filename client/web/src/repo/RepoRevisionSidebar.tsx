@@ -14,6 +14,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
+import settingsSchemaJSON from '../../../../schema/settings.schema.json'
 import { Tree } from '../tree/Tree'
 
 import styles from './RepoRevisionSidebar.module.scss'
@@ -36,7 +37,10 @@ const SIDEBAR_KEY = 'repo-revision-sidebar-toggle'
  */
 export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
     const [tabIndex, setTabIndex] = useLocalStorage(TABS_KEY, 0)
-    const [toggleSidebar, setToggleSidebar] = useLocalStorage(SIDEBAR_KEY, true)
+    const [toggleSidebar, setToggleSidebar] = useLocalStorage(
+        SIDEBAR_KEY,
+        settingsSchemaJSON.properties.sidebarToggle.default
+    )
 
     const handleTabsChange = useCallback((index: number) => setTabIndex(index), [setTabIndex])
     const handleSidebarToggle = useCallback(() => {
@@ -46,6 +50,9 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
         })
         setToggleSidebar(!toggleSidebar)
     }, [setToggleSidebar, toggleSidebar, props.telemetryService])
+    const handleSymbolClick = useCallback(() => props.telemetryService.log('SymbolTreeViewClicked'), [
+        props.telemetryService,
+    ])
 
     if (!toggleSidebar) {
         return (
@@ -111,6 +118,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             sizeKey={`Resizable:${SIZE_STORAGE_KEY}`}
                                             extensionsController={props.extensionsController}
                                             isLightTheme={props.isLightTheme}
+                                            telemetryService={props.telemetryService}
                                         />
                                     )}
                                 </TabPanel>
@@ -121,6 +129,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<Props> = props => {
                                             repoID={props.repoID}
                                             revision={props.revision}
                                             activePath={props.filePath}
+                                            onHandleSymbolClick={handleSymbolClick}
                                         />
                                     )}
                                 </TabPanel>

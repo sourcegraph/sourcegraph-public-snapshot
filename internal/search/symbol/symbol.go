@@ -405,7 +405,7 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-type SymbolSearch struct {
+type RepoSubsetSymbolSearch struct {
 	ZoektArgs         *search.ZoektParameters
 	PatternInfo       *search.TextPatternInfo
 	Limit             int
@@ -415,7 +415,7 @@ type SymbolSearch struct {
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
 }
 
-func (s *SymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+func (s *RepoSubsetSymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, s.Limit)
 	defer cancel()
 
@@ -436,6 +436,6 @@ func (s *SymbolSearch) Run(ctx context.Context, stream streaming.Sender, repos s
 	})
 }
 
-func (*SymbolSearch) Name() string {
-	return "Symbol"
+func (*RepoSubsetSymbolSearch) Name() string {
+	return "RepoSubsetSymbol"
 }

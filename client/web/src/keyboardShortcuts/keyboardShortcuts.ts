@@ -30,7 +30,7 @@ export const KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR: KeyboardShortcut = {
 export const KEYBOARD_SHORTCUT_FUZZY_FINDER: KeyboardShortcut = {
     id: 'fuzzyFinder',
     title: 'Fuzzy search files',
-    keybindings: [{ held: [isMacPlatform ? 'Meta' : 'Control'], ordered: ['p'] }],
+    keybindings: [{ held: [isMacPlatform ? 'Meta' : 'Control'], ordered: ['k'] }],
 }
 
 export const KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER: KeyboardShortcut = {
