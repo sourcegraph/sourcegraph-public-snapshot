@@ -20,8 +20,17 @@ const (
 	testDescription = "test description"
 )
 
-func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
+type testFixtures struct {
+	monitor    *Monitor
+	query      *QueryTrigger
+	emails     [2]*EmailAction
+	recipients [2]*Recipient
+}
+
+func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*testFixtures, error) {
 	t.Helper()
+
+	fixtures := testFixtures{}
 
 	actions := []*EmailActionArgs{
 		{
@@ -37,7 +46,8 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 	}
 	// Create monitor.
 	uid := actor.FromContext(ctx).UID
-	m, err := s.CreateMonitor(ctx, MonitorArgs{
+	var err error
+	fixtures.monitor, err = s.CreateMonitor(ctx, MonitorArgs{
 		Description:     testDescription,
 		Enabled:         true,
 		NamespaceUserID: &uid,
@@ -45,22 +55,22 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 	require.NoError(t, err)
 
 	// Create trigger.
-	_, err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	fixtures.query, err = s.CreateQueryTrigger(ctx, fixtures.monitor.ID, testQuery)
 	require.NoError(t, err)
 
-	for _, a := range actions {
-		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
+	for i, a := range actions {
+		fixtures.emails[i], err = s.CreateEmailAction(ctx, fixtures.monitor.ID, &EmailActionArgs{
 			Enabled:  a.Enabled,
 			Priority: a.Priority,
 			Header:   a.Header,
 		})
 		require.NoError(t, err)
 
-		_, err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		fixtures.recipients[i], err = s.CreateRecipient(ctx, fixtures.emails[i].ID, &uid, nil)
 		require.NoError(t, err)
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
-	return m, nil
+	return &fixtures, nil
 }
 
 func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {

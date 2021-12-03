@@ -10,7 +10,7 @@ import (
 func TestQueryByRecordID(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -24,7 +24,7 @@ func TestQueryByRecordID(t *testing.T) {
 	now := s.Now()
 	want := &QueryTrigger{
 		ID:           1,
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
 		LatestResult: &now,
@@ -39,7 +39,7 @@ func TestQueryByRecordID(t *testing.T) {
 func TestTriggerQueryNextRun(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
@@ -58,7 +58,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 
 	want := &QueryTrigger{
 		ID:           1,
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      wantNextRun,
 		LatestResult: &wantLatestResult,
@@ -74,13 +74,13 @@ func TestTriggerQueryNextRun(t *testing.T) {
 func TestResetTriggerQueryTimestamps(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
 	now := s.Now()
 	want := &QueryTrigger{
 		ID:           1,
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
 		LatestResult: &now,
@@ -102,7 +102,7 @@ func TestResetTriggerQueryTimestamps(t *testing.T) {
 
 	want = &QueryTrigger{
 		ID:           1,
-		Monitor:      m.ID,
+		Monitor:      fixtures.monitor.ID,
 		QueryString:  testQuery,
 		NextRun:      now,
 		LatestResult: nil,
