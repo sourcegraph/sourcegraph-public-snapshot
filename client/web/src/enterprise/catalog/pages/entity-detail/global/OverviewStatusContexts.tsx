@@ -14,6 +14,7 @@ import {
     CatalogEntityOwnerFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
+import { CatalogGroupIcon } from '../../../components/CatalogGroupIcon'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'

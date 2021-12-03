@@ -331,9 +331,16 @@ func Data() ([]Component, []Group, []Edge) {
 
 	groups := []Group{
 		{
-			Name:    "code-graph",
-			Title:   "Code graph",
-			Members: []string{"yink-teo"},
+			Name:    "engineering",
+			Title:   "Engineering",
+			Members: []string{"nick-snyder", "christina-forney", "beyang-liu"},
+		},
+
+		{
+			Name:        "code-graph",
+			Title:       "Code graph",
+			ParentGroup: "engineering",
+			Members:     []string{"yink-teo"},
 		},
 		{
 			Name:        "search-core",
@@ -375,6 +382,7 @@ func Data() ([]Component, []Group, []Edge) {
 			Name:        "enablement",
 			Title:       "Enablement",
 			Description: "Technical foundations critical to the business, our customers, and our products. We do this by ensuring we have the best tools, processes, and services in place, for use by both customers and our own engineers when using or developing Sourcegraph.",
+			ParentGroup: "engineering",
 			Members:     []string{"jean-du-plessis"},
 		},
 		{
@@ -410,6 +418,7 @@ func Data() ([]Component, []Group, []Edge) {
 			Name:        "cloud",
 			Title:       "Cloud",
 			Description: "Offer the fastest, most seamless way for development teams to bring Sourcegraph into their workflows, wherever they are.",
+			ParentGroup: "engineering",
 			Members:     []string{"billcreager"},
 		},
 		{
