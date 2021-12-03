@@ -66,7 +66,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*codem
 			return nil, err
 		}
 
-		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		_, err = s.CreateRecipient(ctx, e.ID, &uid, nil)
 		if err != nil {
 			return nil, err
 		}

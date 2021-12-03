@@ -278,7 +278,7 @@ func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipien
 			return errors.Wrap(err, "UnmarshalNamespaceID")
 		}
 
-		err := r.store.CreateRecipient(ctx, emailID, nilOrInt32(userID), nilOrInt32(orgID))
+		_, err := r.store.CreateRecipient(ctx, emailID, nilOrInt32(userID), nilOrInt32(orgID))
 		if err != nil {
 			return err
 		}
