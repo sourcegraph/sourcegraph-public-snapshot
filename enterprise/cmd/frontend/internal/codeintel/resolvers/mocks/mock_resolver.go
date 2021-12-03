@@ -253,6 +253,11 @@ func NewStrictMockResolver() *MockResolver {
 				panic("unexpected invocation of MockResolver.DocumentationSearch")
 			},
 		},
+		ExecutorResolverFunc: &ResolverExecutorResolverFunc{
+			defaultHook: func() graphql.Resolver {
+				panic("unexpected invocation of MockResolver.ExecutorResolver")
+			},
+		},
 		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
 			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
 				panic("unexpected invocation of MockResolver.GetConfigurationPolicies")

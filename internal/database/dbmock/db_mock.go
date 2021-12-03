@@ -300,7 +300,7 @@ func NewStrictMockDB() *MockDB {
 			},
 		},
 		ExecutorsFunc: &DBExecutorsFunc{
-			defaultHook: func() database.ExecutorStore {
+			defaultHook: func() store.Store {
 				panic("unexpected invocation of MockDB.Executors")
 			},
 		},
