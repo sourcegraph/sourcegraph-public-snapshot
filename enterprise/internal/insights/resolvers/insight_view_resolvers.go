@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
+
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -86,14 +88,42 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 		filters = &i.view.Filters
 	}
 
-	for j := range i.view.Series {
-		resolvers = append(resolvers, &insightSeriesResolver{
-			insightsStore:   i.timeSeriesStore,
-			workerBaseStore: i.workerBaseStore,
-			series:          i.view.Series[j],
-			metadataStore:   i.insightStore,
-			filters:         *filters,
-		})
+	for j, current := range i.view.Series {
+		if current.GeneratedFromCaptureGroups {
+			// this works fine for now because these are all just-in-time series. As soon as we start including global / recorded
+			// series, we need to have some logic to either fetch from the database or calculate the time series.
+			expanded, err := expandCaptureGroupSeries(ctx, current, i.baseInsightResolver)
+			if err != nil {
+				return nil, errors.Wrapf(err, "expandCaptureGroupSeries for seriesID: %s", current.SeriesID)
+			}
+			resolvers = append(resolvers, expanded...)
+		} else {
+			resolvers = append(resolvers, &insightSeriesResolver{
+				insightsStore:   i.timeSeriesStore,
+				workerBaseStore: i.workerBaseStore,
+				series:          i.view.Series[j],
+				metadataStore:   i.insightStore,
+				filters:         *filters,
+			})
+		}
+	}
+	return resolvers, nil
+}
+
+func expandCaptureGroupSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
+	executor := query.NewCaptureGroupExecutor(r.postgresDB, r.insightsDB, time.Now)
+	interval := query.TimeInterval{
+		Unit:  definition.SampleIntervalUnit,
+		Value: definition.SampleIntervalValue,
+	}
+	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Repositories, interval)
+	if err != nil {
+		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+	}
+
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for i := range generatedSeries {
+		resolvers = append(resolvers, &dynamicInsightSeriesResolver{generated: &generatedSeries[i]})
 	}
 
 	return resolvers, nil
