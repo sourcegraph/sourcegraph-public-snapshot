@@ -747,7 +747,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 	exists := gjson.Get(got.Config, "authorization").Exists()
 	assert.True(t, exists, `"authorization" field exists`)
 
-	// Reset Config field and test Upsert method
+	// Clear Config field and test Upsert method
 	es.Config = `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`
 	err = externalServices.Upsert(ctx, es)
 	require.NoError(t, err)
@@ -757,7 +757,7 @@ func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T
 	exists = gjson.Get(got.Config, "authorization").Exists()
 	assert.True(t, exists, `"authorization" field exists`)
 
-	// Reset Config field and test Update method
+	// Clear Config field and test Update method
 	es.Config = `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`
 	err = externalServices.Update(ctx,
 		conf.Get().AuthProviders,

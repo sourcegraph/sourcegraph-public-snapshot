@@ -675,11 +675,11 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 			"RateLimit-Limit",
 			"RateLimit-Observed",
 			"RateLimit-Remaining",
-			"RateLimit-Reset",
+			"RateLimit-Clear",
 			"RateLimit-Resettime",
 			"X-RateLimit-Limit",
 			"X-RateLimit-Remaining",
-			"X-RateLimit-Reset",
+			"X-RateLimit-Clear",
 		} {
 			i.Response.Headers.Del(name)
 		}

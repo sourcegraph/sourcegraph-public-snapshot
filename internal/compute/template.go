@@ -73,7 +73,7 @@ func scanTemplate(buf []byte) (*Template, error) {
 			return
 		}
 		result = append(result, atom)
-		// Reset token, but reuse the backing memory.
+		// Clear token, but reuse the backing memory.
 		token = token[:0]
 	}
 

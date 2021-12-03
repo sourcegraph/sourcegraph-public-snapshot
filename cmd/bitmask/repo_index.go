@@ -2,11 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-	"github.com/bits-and-blooms/bloom/v3"
-	"github.com/cockroachdb/errors"
-	"github.com/go-enry/go-enry/v2"
 	"io"
 	"os"
 	"os/exec"
@@ -15,16 +13,21 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/bits-and-blooms/bloom/v3"
+	"github.com/cockroachdb/errors"
+	"github.com/go-enry/go-enry/v2"
 )
 
 var (
-	Yellow = color("\033[1;33m%s\033[0m")
+	Yellow      = color("\033[1;33m%s\033[0m")
+	hashedBytes = make([]byte, 8)
 )
 
 const (
-	estimate         = 0.01
-	maxFileSize      = 1 << 20 // 1_048_576
-	bloomSizePadding = 10
+	targetFalsePositiveRatio = 0.01
+	maxFileSize              = 1 << 20 // 1_048_576
+	bloomSizePadding         = 10
 )
 
 type RepoIndex struct {
@@ -36,24 +39,131 @@ type BlobIndex struct {
 	Path   string
 }
 
+type Ngrams struct {
+	Unigram    Ngram
+	Bigram1    Ngram
+	Bigram2    Ngram
+	Trigram1   Ngram
+	Trigram2   Ngram
+	Trigram3   Ngram
+	Quadgram1  Ngram
+	Quadgram2  Ngram
+	Quadgram3  Ngram
+	Quadgram4  Ngram
+	Pentagram1 Ngram
+	Pentagram2 Ngram
+	Pentagram3 Ngram
+	Pentagram4 Ngram
+	Pentagram5 Ngram
+}
+
+func NewNgrams() Ngrams {
+	return Ngrams{
+		Unigram:    Ngram{Hash: 0},
+		Bigram1:    Ngram{Hash: 0},
+		Bigram2:    Ngram{Hash: 0},
+		Trigram1:   Ngram{Hash: 0},
+		Trigram2:   Ngram{Hash: 0},
+		Trigram3:   Ngram{Hash: 0},
+		Quadgram1:  Ngram{Hash: 0},
+		Quadgram2:  Ngram{Hash: 0},
+		Quadgram3:  Ngram{Hash: 0},
+		Quadgram4:  Ngram{Hash: 0},
+		Pentagram1: Ngram{Hash: 0},
+		Pentagram2: Ngram{Hash: 0},
+		Pentagram3: Ngram{Hash: 0},
+		Pentagram4: Ngram{Hash: 0},
+		Pentagram5: Ngram{Hash: 0},
+	}
+
+}
+func (g *Ngrams) Update(index int, b byte) {
+	g.Unigram.Update(b)
+	if index > 0 {
+		g.Bigram1.Update(b)
+		g.Bigram2.Update(b)
+	}
+	if index > 1 {
+		g.Trigram1.Update(b)
+		g.Trigram2.Update(b)
+		g.Trigram3.Update(b)
+	}
+	if index > 2 {
+		g.Quadgram1.Update(b)
+		g.Quadgram2.Update(b)
+		g.Quadgram3.Update(b)
+		g.Quadgram4.Update(b)
+	}
+	if index > 3 {
+		g.Pentagram1.Update(b)
+		g.Pentagram2.Update(b)
+		g.Pentagram3.Update(b)
+		g.Pentagram4.Update(b)
+		g.Pentagram5.Update(b)
+	}
+}
+
+func (g *Ngrams) OnIndex(index int, b byte, onBytes func(b []byte)) {
+	g.Update(index, b)
+	g.Unigram.Clear(onBytes)
+
+	switch index % 2 {
+	case 0:
+		g.Bigram1.Clear(onBytes)
+	case 1:
+		g.Bigram2.Clear(onBytes)
+	}
+
+	switch index % 3 {
+	case 0:
+		g.Trigram1.Clear(onBytes)
+	case 1:
+		g.Trigram2.Clear(onBytes)
+	case 2:
+		g.Trigram3.Clear(onBytes)
+	}
+	switch index % 4 {
+	case 0:
+		g.Quadgram1.Clear(onBytes)
+	case 1:
+		g.Quadgram2.Clear(onBytes)
+	case 2:
+		g.Quadgram3.Clear(onBytes)
+	case 3:
+		g.Quadgram4.Clear(onBytes)
+	}
+	switch index % 5 {
+	case 0:
+		g.Pentagram1.Clear(onBytes)
+	case 1:
+		g.Pentagram2.Clear(onBytes)
+	case 2:
+		g.Pentagram3.Clear(onBytes)
+	case 3:
+		g.Pentagram4.Clear(onBytes)
+	case 4:
+		g.Pentagram5.Clear(onBytes)
+	}
+}
+
+type Ngram struct {
+	Hash uint64
+}
+
+func (g *Ngram) Clear(onBytes func(b []byte)) {
+	binary.LittleEndian.PutUint64(hashedBytes, g.Hash)
+	onBytes(hashedBytes)
+	g.Hash = 0
+}
+
+func (g *Ngram) Update(b byte) {
+	g.Hash = 31*g.Hash + uint64(b)
+}
+
 func onGrams(textBytes []byte, onBytes func(b []byte)) {
-	for i, _ := range textBytes {
-		onBytes(textBytes[i : i+1]) // unigram
-		if i > 0 {
-			onBytes(textBytes[i-1 : i+1]) // bigram
-		}
-		if i > 1 {
-			onBytes(textBytes[i-2 : i+1]) // trigram
-		}
-		if i > 2 {
-			onBytes(textBytes[i-3 : i+1]) // quadgram
-		}
-		if i > 3 {
-			onBytes(textBytes[i-4 : i+1]) // pentagram
-		}
-		if i > 4 {
-			onBytes(textBytes[i-3 : i+1]) // hexagram
-		}
+	ngrams := NewNgrams()
+	for i, b := range textBytes {
+		ngrams.OnIndex(i, b, onBytes)
 	}
 }
 
@@ -139,7 +249,8 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 			continue
 		}
 		bloomSize := uint(len(textBytes) * bloomSizePadding)
-		filter := bloom.NewWithEstimates(bloomSize, estimate)
+		//bloomBitCount := uint(math.Ceil(-1 * float64(bloomSize) * math.Log(targetFalsePositiveRatio) / math.Pow(math.Log(2), 2)))
+		filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 		if enry.IsBinary(textBytes) {
 			continue
 		}

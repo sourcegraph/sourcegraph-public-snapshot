@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/cockroachdb/errors"
 	"os"
 )
@@ -25,5 +26,6 @@ func WriteCache(dir, cacheDir string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("Writing index...")
 	return r.SerializeToFile(cacheDir)
 }

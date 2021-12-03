@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/bits-and-blooms/bloom/v3"
+	"github.com/cockroachdb/errors"
 	"os"
 )
 
@@ -35,7 +36,7 @@ func main() {
 		case "grep":
 			r, err := ReadCache(cacheFile)
 			if err != nil {
-				panic(err)
+				panic(errors.Wrapf(err, "Failed to decode cache at %v", cacheFile))
 			}
 			for _, arg := range os.Args[2:] {
 				r.Grep(arg)
