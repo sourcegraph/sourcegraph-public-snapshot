@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -137,6 +138,47 @@ func newOperations(observationContext *observation.Context) *operations {
 // given Store.
 func (s *Service) WithStore(store *store.Store) *Service {
 	return &Service{store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
+}
+
+type CreateEmptyBatchChangeOpts struct {
+	NamespaceUserID int32 `json:"namespace_user_id"`
+	NamespaceOrgID  int32 `json:"namespace_org_id"`
+
+	Name string `json:"name"`
+}
+
+func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
+	fmt.Printf("CreateEmptyBatchChange: %+v\n", opts)
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	actor := actor.FromContext(ctx)
+	spec := &btypes.BatchSpec{
+		RawSpec:         "",
+		Spec:            &batcheslib.BatchSpec{Name: opts.Name},
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		UserID:          actor.UID}
+
+	if err := s.store.CreateBatchSpec(ctx, spec); err != nil {
+		return nil, err
+	}
+
+	batchChange = &btypes.BatchChange{
+		Name:            opts.Name,
+		NamespaceUserID: opts.NamespaceUserID,
+		NamespaceOrgID:  opts.NamespaceOrgID,
+		BatchSpecID:     spec.ID,
+	}
+	if err := s.store.CreateBatchChange(ctx, batchChange); err != nil {
+		return nil, err
+	}
+
+	return batchChange, nil
 }
 
 type CreateBatchSpecOpts struct {

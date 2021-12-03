@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
@@ -523,6 +524,75 @@ fragment batchChange on BatchChange {
 const mutationApplyBatchChange = `
 mutation($batchSpec: ID!, $ensureBatchChange: ID, $publicationStates: [ChangesetSpecPublicationStateInput!]){
 	applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange, publicationStates: $publicationStates) {
+		...batchChange
+	}
+}
+` + fragmentBatchChange
+
+func TestCreateEmptyBatchChange(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t)
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(database.NewDB(db), r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	userID := ct.CreateTestUser(t, db, true).ID
+	namespaceID := relay.MarshalID("User", userID)
+
+	input := map[string]interface{}{
+		"namespace": namespaceID,
+		"name":      "my-batch-change",
+	}
+
+	var response struct{ CreateEmptyBatchChange apitest.BatchChange }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	// First time it should work, because no batch change exists
+	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+
+	if response.CreateEmptyBatchChange.ID == "" {
+		t.Fatalf("expected batch change to be created, but was not")
+	}
+
+	// TODO: Namespace + name should be required to be unique
+	// errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+
+	// if len(errors) != 1 {
+	// 	t.Fatalf("expected single errors, but got none")
+	// }
+	// if have, want := errors[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
+	// 	t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	// }
+
+	// TODO: But a different namespace + the same name is okay
+	orgID := ct.InsertTestOrg(t, db, "my-org")
+	namespaceID2 := relay.MarshalID("User", orgID)
+
+	input2 := map[string]interface{}{
+		"namespace": namespaceID2,
+		"name":      "my-batch-change",
+	}
+
+	// First time it should work, because no batch change exists
+	apitest.MustExec(actorCtx, t, s, input2, &response, mutationCreateEmptyBatchChange)
+
+	if response.CreateEmptyBatchChange.ID == "" {
+		t.Fatalf("expected batch change to be created, but was not")
+	}
+}
+
+const mutationCreateEmptyBatchChange = `
+mutation($namespace: ID!, $name: String!){
+	createEmptyBatchChange(namespace: $namespace, name: $name) {
 		...batchChange
 	}
 }
