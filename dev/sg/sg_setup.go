@@ -192,7 +192,7 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: stringer("brew install gnu-sed")},
 			{name: "comby", check: checkInPath("comby"), instructionsCommands: stringer("brew install comby")},
 			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: stringer(`brew install pcre`)},
-			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: stringer(`install sqlite`)},
+			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: stringer(`brew install sqlite`)},
 			{name: "jq", check: checkInPath("jq"), instructionsCommands: stringer(`brew install jq`)},
 			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5", false), instructionsCommands: stringer(`brew install bash`)},
 			{
