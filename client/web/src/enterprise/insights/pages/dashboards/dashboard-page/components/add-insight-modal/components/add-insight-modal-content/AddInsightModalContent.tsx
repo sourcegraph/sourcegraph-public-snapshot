@@ -80,10 +80,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
 
                         <TruncatedText>{insight.title}</TruncatedText>
                         {insight.owner.name.length > 0 && (
-                            <InsightsBadge
-                                value="Sourcegraph really really long long long long"
-                                className={styles.insightOwnerName}
-                            />
+                            <InsightsBadge value={insight.owner.name} className={styles.insightOwnerName} />
                         )}
                     </label>
                 ))}
