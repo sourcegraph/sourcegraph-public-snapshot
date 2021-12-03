@@ -1,7 +1,9 @@
 env:
-  # DO NOT PUT SECRETS HERE - instead, go to https://sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/buildkite/kubernetes/gsm-secrets.tf
+  # 🚨 SECURITY: DO NOT PUT SECRETS HERE - instead, go to
+  # https://sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/buildkite/kubernetes/gsm-secrets.tf
   IMAGE: 'sourcegraph/server:main'
-  MUST_INCLUDE_COMMIT: '0cc1214d277f3f1bc16e7d01dd6dfb81f0ef07ee,39465014d9d84e54c9ac40406f8c9ca6ca6c9bc6,183ce8bd36202e9dea8e7808ed780775fab74c63'
+  # MUST_INCLUDE_COMMIT, as well as other non-secret variables, are now defined in
+  # https://sourcegraph.com/github.com/sourcegraph/infrastructure/-/blob/buildkite/kubernetes/buildkite-agent/buildkite-agent.Deployment.yaml
 
 steps:
   - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
