@@ -3,6 +3,7 @@ import React from 'react'
 
 import { BadgeProps, Badge } from './Badge'
 import { BADGE_VARIANTS, PRODUCT_STATUSES } from './constants'
+import styles from './ProductStatusBadge.module.scss'
 
 export type ProductStatusType = typeof PRODUCT_STATUSES[number]
 
@@ -52,7 +53,7 @@ export type ProductStatusBadgeProps = BaseProductStatusBadgeProps | PossibleLink
  */
 export const ProductStatusBadge: React.FunctionComponent<ProductStatusBadgeProps> = props => {
     const variant = STATUS_VARIANT_MAPPING[props.status]
-    const className = classNames('text-capitalize', props.className)
+    const className = classNames(styles.productStatusBadge, props.className)
 
     if ('linkToDocs' in props) {
         return (
