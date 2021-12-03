@@ -194,8 +194,8 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
-			defaultHook: func(context.Context, int64, *int32, *int32) error {
-				return nil
+			defaultHook: func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+				return nil, nil
 			},
 		},
 		DeleteEmailActionsFunc: &CodeMonitorStoreDeleteEmailActionsFunc{
@@ -401,7 +401,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
-			defaultHook: func(context.Context, int64, *int32, *int32) error {
+			defaultHook: func(context.Context, int64, *int32, *int32) (*Recipient, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.CreateRecipient")
 			},
 		},
@@ -1691,24 +1691,24 @@ func (c CodeMonitorStoreCreateQueryTriggerFuncCall) Results() []interface{} {
 // CreateRecipient method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCreateRecipientFunc struct {
-	defaultHook func(context.Context, int64, *int32, *int32) error
-	hooks       []func(context.Context, int64, *int32, *int32) error
+	defaultHook func(context.Context, int64, *int32, *int32) (*Recipient, error)
+	hooks       []func(context.Context, int64, *int32, *int32) (*Recipient, error)
 	history     []CodeMonitorStoreCreateRecipientFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateRecipient delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateRecipient(v0 context.Context, v1 int64, v2 *int32, v3 *int32) error {
-	r0 := m.CreateRecipientFunc.nextHook()(v0, v1, v2, v3)
-	m.CreateRecipientFunc.appendCall(CodeMonitorStoreCreateRecipientFuncCall{v0, v1, v2, v3, r0})
-	return r0
+func (m *MockCodeMonitorStore) CreateRecipient(v0 context.Context, v1 int64, v2 *int32, v3 *int32) (*Recipient, error) {
+	r0, r1 := m.CreateRecipientFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateRecipientFunc.appendCall(CodeMonitorStoreCreateRecipientFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CreateRecipient
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultHook(hook func(context.Context, int64, *int32, *int32) error) {
+func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultHook(hook func(context.Context, int64, *int32, *int32) (*Recipient, error)) {
 	f.defaultHook = hook
 }
 
@@ -1717,7 +1717,7 @@ func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultHook(hook func(context.C
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreCreateRecipientFunc) PushHook(hook func(context.Context, int64, *int32, *int32) error) {
+func (f *CodeMonitorStoreCreateRecipientFunc) PushHook(hook func(context.Context, int64, *int32, *int32) (*Recipient, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1725,21 +1725,21 @@ func (f *CodeMonitorStoreCreateRecipientFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int64, *int32, *int32) error {
-		return r0
+func (f *CodeMonitorStoreCreateRecipientFunc) SetDefaultReturn(r0 *Recipient, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreCreateRecipientFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int64, *int32, *int32) error {
-		return r0
+func (f *CodeMonitorStoreCreateRecipientFunc) PushReturn(r0 *Recipient, r1 error) {
+	f.PushHook(func(context.Context, int64, *int32, *int32) (*Recipient, error) {
+		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCreateRecipientFunc) nextHook() func(context.Context, int64, *int32, *int32) error {
+func (f *CodeMonitorStoreCreateRecipientFunc) nextHook() func(context.Context, int64, *int32, *int32) (*Recipient, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1787,7 +1787,10 @@ type CodeMonitorStoreCreateRecipientFuncCall struct {
 	Arg3 *int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *Recipient
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1799,7 +1802,7 @@ func (c CodeMonitorStoreCreateRecipientFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeMonitorStoreCreateRecipientFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreDeleteEmailActionsFunc describes the behavior when the

@@ -56,7 +56,7 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 		})
 		require.NoError(t, err)
 
-		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		_, err = s.CreateRecipient(ctx, e.ID, &uid, nil)
 		require.NoError(t, err)
 		// TODO(camdencheek): add other action types (webhooks) here
 	}

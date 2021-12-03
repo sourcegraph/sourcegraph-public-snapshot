@@ -51,7 +51,7 @@ type CodeMonitorStore interface {
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error
+	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error)
 	DeleteRecipients(ctx context.Context, emailID int64) error
 	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)
 	CountRecipients(ctx context.Context, emailID int64) (int32, error)
