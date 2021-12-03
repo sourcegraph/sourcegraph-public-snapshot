@@ -57,12 +57,12 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
                     return {
                         i: insight.id,
                         // Increase height of chart block if view has many data series
-                        h: isManySeriesChart ? DEFAULT_HEIGHT * 1.5 : DEFAULT_HEIGHT,
+                        h: isManySeriesChart ? DEFAULT_HEIGHT * insight.series.length * 0.3 : DEFAULT_HEIGHT,
                         w: width,
                         x: (index * width) % COLUMNS[breakpointName],
                         y: Math.floor((index * width) / COLUMNS[breakpointName]),
                         minW: MIN_WIDTHS[breakpointName],
-                        minH: isManySeriesChart ? 6 : 2,
+                        minH: isManySeriesChart ? DEFAULT_HEIGHT * insight.series.length * 0.15 : DEFAULT_HEIGHT,
                     }
                 })
             }
@@ -97,7 +97,7 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
                                         x: 0,
                                         y: grid.length,
                                         minW: MIN_WIDTHS[breakpointName],
-                                        minH: 2,
+                                        minH: DEFAULT_HEIGHT,
                                     },
                                 ])
                             } else {
@@ -109,7 +109,7 @@ export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts =>
                                     x: lastRowCurrentWidth,
                                     y: grid.length - 1,
                                     minW: MIN_WIDTHS[breakpointName],
-                                    minH: 2,
+                                    minH: DEFAULT_HEIGHT,
                                 })
                             }
 

@@ -45,7 +45,7 @@ export const EMPTY_DATA_POINT_VALUE = null
  * ● Item 1 ● Item 2
  * ```
  */
-export const MINIMAL_HORIZONTAL_LAYOUT_WIDTH = 450
+export const MINIMAL_HORIZONTAL_LAYOUT_WIDTH = 460
 
 /**
  * Even if have a big enough width for putting legend aside (see {@link MINIMAL_HORIZONTAL_LAYOUT_WIDTH})

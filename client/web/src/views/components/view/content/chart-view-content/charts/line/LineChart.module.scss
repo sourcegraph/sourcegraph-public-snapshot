@@ -34,12 +34,12 @@
 
     // Reset ul styles (bullets, paddings, margins)
     list-style: none;
-    padding: 0;
-    margin: 0.75rem 0 0;
+    margin: 0;
+    padding: 0.75rem 0 0 0;
     line-height: 1.2;
 
     &--horizontal {
-        margin-top: 0;
+        padding-top: 0;
         flex-wrap: nowrap;
         flex-direction: column;
     }
