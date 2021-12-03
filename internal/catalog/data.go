@@ -112,7 +112,8 @@ func Data() ([]Component, []Group, []Edge) {
 			SourceCommit: sourceCommit,
 			SourcePaths:  []string{"cmd/repo-updater", "enterprise/cmd/repo-updater"},
 			UsagePatterns: []UsagePattern{
-				newQueryUsagePattern(`repo-updater patterntype:regexp`),
+				newQueryUsagePattern(`lang:go REPO_UPDATER`),
+				newQueryUsagePattern(`lang:go repoupdater.`),
 				newQueryUsagePattern(`lang:go "github.com/sourcegraph/sourcegraph/internal/repoupdater" AND repoupdater patterntype:literal`),
 			},
 			DependsOn: []string{"gitserver", "github-proxy"},
