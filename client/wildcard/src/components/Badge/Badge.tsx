@@ -1,7 +1,6 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import styles from './Badge.module.scss'
 import { BADGE_SIZES, BADGE_VARIANTS } from './constants'
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -50,7 +49,6 @@ export const Badge: React.FunctionComponent<BadgeProps> = ({
         'data-tooltip': tooltip,
         className: classNames(
             'badge',
-            styles.badge,
             variant && `badge-${variant}`,
             size && `badge-${size}`,
             pill && 'badge-pill',
