@@ -30,7 +30,7 @@ type CodeMonitorStore interface {
 	ListMonitors(context.Context, ListMonitorsOpts) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID int32) (int32, error)
 
-	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error
+	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error)
 	UpdateQueryTrigger(ctx context.Context, id int64, query string) error
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error

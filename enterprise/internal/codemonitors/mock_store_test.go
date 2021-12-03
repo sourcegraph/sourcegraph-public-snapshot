@@ -189,8 +189,8 @@ func NewMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
-			defaultHook: func(context.Context, int64, string) error {
-				return nil
+			defaultHook: func(context.Context, int64, string) (*QueryTrigger, error) {
+				return nil, nil
 			},
 		},
 		CreateRecipientFunc: &CodeMonitorStoreCreateRecipientFunc{
@@ -396,7 +396,7 @@ func NewStrictMockCodeMonitorStore() *MockCodeMonitorStore {
 			},
 		},
 		CreateQueryTriggerFunc: &CodeMonitorStoreCreateQueryTriggerFunc{
-			defaultHook: func(context.Context, int64, string) error {
+			defaultHook: func(context.Context, int64, string) (*QueryTrigger, error) {
 				panic("unexpected invocation of MockCodeMonitorStore.CreateQueryTrigger")
 			},
 		},
@@ -1576,24 +1576,24 @@ func (c CodeMonitorStoreCreateMonitorFuncCall) Results() []interface{} {
 // CreateQueryTrigger method of the parent MockCodeMonitorStore instance is
 // invoked.
 type CodeMonitorStoreCreateQueryTriggerFunc struct {
-	defaultHook func(context.Context, int64, string) error
-	hooks       []func(context.Context, int64, string) error
+	defaultHook func(context.Context, int64, string) (*QueryTrigger, error)
+	hooks       []func(context.Context, int64, string) (*QueryTrigger, error)
 	history     []CodeMonitorStoreCreateQueryTriggerFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateQueryTrigger delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockCodeMonitorStore) CreateQueryTrigger(v0 context.Context, v1 int64, v2 string) error {
-	r0 := m.CreateQueryTriggerFunc.nextHook()(v0, v1, v2)
-	m.CreateQueryTriggerFunc.appendCall(CodeMonitorStoreCreateQueryTriggerFuncCall{v0, v1, v2, r0})
-	return r0
+func (m *MockCodeMonitorStore) CreateQueryTrigger(v0 context.Context, v1 int64, v2 string) (*QueryTrigger, error) {
+	r0, r1 := m.CreateQueryTriggerFunc.nextHook()(v0, v1, v2)
+	m.CreateQueryTriggerFunc.appendCall(CodeMonitorStoreCreateQueryTriggerFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CreateQueryTrigger
 // method of the parent MockCodeMonitorStore instance is invoked and the
 // hook queue is empty.
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, string) error) {
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(context.Context, int64, string) (*QueryTrigger, error)) {
 	f.defaultHook = hook
 }
 
@@ -1602,7 +1602,7 @@ func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Context, int64, string) error) {
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Context, int64, string) (*QueryTrigger, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1610,21 +1610,21 @@ func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushHook(hook func(context.Cont
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int64, string) error {
-		return r0
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) SetDefaultReturn(r0 *QueryTrigger, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64, string) (*QueryTrigger, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int64, string) error {
-		return r0
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) PushReturn(r0 *QueryTrigger, r1 error) {
+	f.PushHook(func(context.Context, int64, string) (*QueryTrigger, error) {
+		return r0, r1
 	})
 }
 
-func (f *CodeMonitorStoreCreateQueryTriggerFunc) nextHook() func(context.Context, int64, string) error {
+func (f *CodeMonitorStoreCreateQueryTriggerFunc) nextHook() func(context.Context, int64, string) (*QueryTrigger, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1669,7 +1669,10 @@ type CodeMonitorStoreCreateQueryTriggerFuncCall struct {
 	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 error
+	Result0 *QueryTrigger
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1681,7 +1684,7 @@ func (c CodeMonitorStoreCreateQueryTriggerFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c CodeMonitorStoreCreateQueryTriggerFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // CodeMonitorStoreCreateRecipientFunc describes the behavior when the
