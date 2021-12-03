@@ -261,7 +261,8 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 		autoFixing:         true,
 		dependencies: []*dependency{
 			{
-				name: "go", check: checkInPath("go"),
+				name:  "go",
+				check: checkCommandOutputContains("asdf current golang", ".tool-versions", false),
 				instructionsComment: `` +
 					`Souregraph requires Go to be installed.
 
@@ -279,7 +280,8 @@ asdf install golang
 `),
 			},
 			{
-				name: "yarn", check: checkInPath("yarn"),
+				name:  "yarn",
+				check: checkCommandOutputContains("asdf current yarn", ".tool-versions", false),
 				instructionsComment: `` +
 					`Souregraph requires Yarn to be installed.
 
