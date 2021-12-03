@@ -497,6 +497,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                                     showSearchNotebook={this.state.showSearchNotebook}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}
+                                                    isCodeInsightsGqlApiEnabled={
+                                                        window.context.codeInsightsGqlApiEnabled
+                                                    }
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
                                                     fetchRecentFileViews={fetchRecentFileViews}
