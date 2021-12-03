@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -53,6 +54,16 @@ func setupExec(ctx context.Context, args []string) error {
 	// Fetch the current user shell and shell RC file
 	userShell, userShellRC = guessUserShell()
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			writeOrangeLine("\n💡 You may need to restart your shell for the changes to work in this terminal.")
+			writeOrangeLine("   Close this terminal and open a new one or type the following command and press ENTER: " + filepath.Base(userShell))
+			os.Exit(0)
+		}
+	}()
+
 	var categories []dependencyCategory
 	if currentOS == "darwin" {
 		categories = macOSDependencies
@@ -82,6 +93,7 @@ func setupExec(ctx context.Context, args []string) error {
 		writeOrangeLine("-------------------------------------")
 		writeOrangeLine("|        Welcome to sg setup!       |")
 		writeOrangeLine("-------------------------------------")
+		writeOrangeLine("Quit any time by typing ctrl-c\n")
 
 		for i, category := range categories {
 			idx := i + 1
