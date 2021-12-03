@@ -7,6 +7,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { GroupDetailFields } from '../../../../graphql-operations'
+import { PersonLink } from '../../../../person/PersonLink'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 
 import { GroupDetailContentCardProps } from './GroupDetailContent'
@@ -65,8 +66,8 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                     )}
                     {group.childGroups && group.childGroups.length > 0 && (
                         <div className="card mb-3">
-                            <header className="card-header">
-                                <h4 className="card-title mb-0 mr-2">Subgroups</h4>
+                            <header className={classNames(headerClassName)}>
+                                <h4 className={classNames('mb-0 mr-2', titleClassName)}>Subgroups</h4>
                             </header>
                             <ul className="list-group list-group-flush">
                                 {group.childGroups.map(childGroup => (
@@ -91,25 +92,16 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                     )}
                     {group.members && group.members.length > 0 && (
                         <div className="card mb-3">
-                            <header className="card-header">
-                                <h4 className="card-title mb-0 mr-2">Members</h4>
+                            <header className={classNames(headerClassName)}>
+                                <h4 className={classNames('mb-0 mr-2', titleClassName)}>Members</h4>
                             </header>
                             <ul className="list-group list-group-flush">
-                                {group.childGroups.map(childGroup => (
+                                {group.members.map(member => (
                                     <li
-                                        key={childGroup.id}
+                                        key={member.email}
                                         className="list-group-item d-flex align-items-center position-relative"
                                     >
-                                        <Link
-                                            to={childGroup.url}
-                                            className="mr-2 flex-shrink-0 d-flex align-items-center stretched-link"
-                                        >
-                                            <CatalogGroupIcon className="icon-inline text-muted mr-1" />{' '}
-                                            {childGroup.name}
-                                        </Link>
-                                        {childGroup.description && (
-                                            <p className="mb-0 text-muted text-truncate">{childGroup.description}</p>
-                                        )}
+                                        <PersonLink person={member} />
                                     </li>
                                 ))}
                             </ul>
