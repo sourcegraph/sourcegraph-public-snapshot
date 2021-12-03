@@ -1234,7 +1234,7 @@ func TestFindMatchingSeries(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundTrue", false).Equal(t, gotFound)
+		autogold.Want("FoundTrue", true).Equal(t, gotFound)
 	})
 	t.Run("find no matching series when none exist", func(t *testing.T) {
 		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 2", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
@@ -1267,7 +1267,7 @@ func TestFindMatchingSeries(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
-		autogold.Want("FoundTrue", true).Equal(t, gotFound)
+		autogold.Want("FoundTrueCaptureGroups", true).Equal(t, gotFound)
 	})
 }
 
