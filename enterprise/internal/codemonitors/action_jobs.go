@@ -197,8 +197,8 @@ INNER JOIN cm_monitors cm on cm.id = cq.monitor
 WHERE caj.id = %s
 `
 
-func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error) {
-	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, recordID))
+func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error) {
+	row := s.Store.QueryRow(ctx, sqlf.Sprintf(getActionJobMetadataFmtStr, jobID))
 	m := &ActionJobMetadata{}
 	return m, row.Scan(&m.Description, &m.Query, &m.MonitorID, &m.NumResults)
 }
@@ -209,8 +209,8 @@ FROM cm_action_jobs
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) GetActionJob(ctx context.Context, recordID int) (*ActionJob, error) {
-	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), recordID)
+func (s *codeMonitorStore) GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error) {
+	q := sqlf.Sprintf(actionJobForIDFmtStr, sqlf.Join(ActionJobColumns, ", "), jobID)
 	row := s.QueryRow(ctx, q)
 	return scanActionJob(row)
 }
