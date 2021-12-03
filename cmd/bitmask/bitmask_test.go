@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,12 +23,12 @@ func BenchmarkIndex(b *testing.B) {
 }
 
 func BenchmarkQuery(b *testing.B) {
+	query := "drivers/gpu/drm/i915/i915_perf.c"
 	repo, err := ReadCache(cacheFile)
 	if err != nil {
 		panic(err)
 	}
 	b.ResetTimer()
-	query := "Case"
 	matchingPaths := make(map[string]struct{})
 	for j := 0; j < b.N; j++ {
 		paths := repo.PathsMatchingQuery(query)
@@ -46,15 +47,17 @@ func BenchmarkQuery(b *testing.B) {
 		t := string(b)
 		if strings.Index(t, query) < 0 {
 			falsePositives++
-		} else {
-			//fmt.Println(abspath)
+			if falsePositives == 1 {
+				fmt.Println(abspath)
+			}
 		}
 	}
 	if len(matchingPaths) > len(matchingPaths) {
 		println("NON DISTINCT!")
 
 	}
-	fmt.Printf("fp %v len %v\n", float64(falsePositives)/float64(len(matchingPaths)), len(matchingPaths))
+	ratio := float64(falsePositives) / math.Max(1.0, float64(len(matchingPaths)))
+	fmt.Printf("fp %v len %v\n", ratio, len(matchingPaths))
 }
 
 // TODO CPU: serialize, deserialize

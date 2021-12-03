@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"path"
@@ -20,8 +21,7 @@ import (
 )
 
 var (
-	Yellow      = color("\033[1;33m%s\033[0m")
-	hashedBytes = make([]byte, 8)
+	Yellow = color("\033[1;33m%s\033[0m")
 )
 
 const (
@@ -40,6 +40,7 @@ type BlobIndex struct {
 }
 
 type Ngrams struct {
+	SeenHashes map[uint64]struct{}
 	Unigram    Ngram
 	Bigram1    Ngram
 	Bigram2    Ngram
@@ -59,6 +60,7 @@ type Ngrams struct {
 
 func NewNgrams() Ngrams {
 	return Ngrams{
+		SeenHashes: map[uint64]struct{}{},
 		Unigram:    Ngram{Hash: 0},
 		Bigram1:    Ngram{Hash: 0},
 		Bigram2:    Ngram{Hash: 0},
@@ -101,44 +103,44 @@ func (g *Ngrams) Update(index int, b byte) {
 
 func (g *Ngrams) OnIndex(index int, b byte, onBytes func(b []byte)) {
 	g.Update(index, b)
-	g.Unigram.Clear(onBytes)
+	g.Unigram.Clear(g, onBytes)
 
 	switch index % 2 {
 	case 0:
-		g.Bigram1.Clear(onBytes)
+		g.Bigram1.Clear(g, onBytes)
 	case 1:
-		g.Bigram2.Clear(onBytes)
+		g.Bigram2.Clear(g, onBytes)
 	}
 
 	switch index % 3 {
 	case 0:
-		g.Trigram1.Clear(onBytes)
+		g.Trigram1.Clear(g, onBytes)
 	case 1:
-		g.Trigram2.Clear(onBytes)
+		g.Trigram2.Clear(g, onBytes)
 	case 2:
-		g.Trigram3.Clear(onBytes)
+		g.Trigram3.Clear(g, onBytes)
 	}
 	switch index % 4 {
 	case 0:
-		g.Quadgram1.Clear(onBytes)
+		g.Quadgram1.Clear(g, onBytes)
 	case 1:
-		g.Quadgram2.Clear(onBytes)
+		g.Quadgram2.Clear(g, onBytes)
 	case 2:
-		g.Quadgram3.Clear(onBytes)
+		g.Quadgram3.Clear(g, onBytes)
 	case 3:
-		g.Quadgram4.Clear(onBytes)
+		g.Quadgram4.Clear(g, onBytes)
 	}
 	switch index % 5 {
 	case 0:
-		g.Pentagram1.Clear(onBytes)
+		g.Pentagram1.Clear(g, onBytes)
 	case 1:
-		g.Pentagram2.Clear(onBytes)
+		g.Pentagram2.Clear(g, onBytes)
 	case 2:
-		g.Pentagram3.Clear(onBytes)
+		g.Pentagram3.Clear(g, onBytes)
 	case 3:
-		g.Pentagram4.Clear(onBytes)
+		g.Pentagram4.Clear(g, onBytes)
 	case 4:
-		g.Pentagram5.Clear(onBytes)
+		g.Pentagram5.Clear(g, onBytes)
 	}
 }
 
@@ -146,7 +148,12 @@ type Ngram struct {
 	Hash uint64
 }
 
-func (g *Ngram) Clear(onBytes func(b []byte)) {
+func (g *Ngram) Clear(gs *Ngrams, onBytes func(b []byte)) {
+	if _, ok := gs.SeenHashes[g.Hash]; ok {
+		return
+	}
+	gs.SeenHashes[g.Hash] = struct{}{}
+	hashedBytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(hashedBytes, g.Hash)
 	onBytes(hashedBytes)
 	g.Hash = 0
@@ -233,6 +240,9 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 	lines := strings.Split(stdout, NUL)
 	indexes := make([]BlobIndex, len(lines))
 	for i, line := range lines {
+		//if line != "fs/nfs/write.c" {
+		//	continue
+		//}
 		if i%100 == 0 {
 			fmt.Println(i)
 		}
@@ -245,6 +255,9 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 			continue
 		}
 		bloomSize := uint(len(textBytes) * bloomSizePadding)
+		if bloomSize < 10_000 {
+			bloomSize = 10_000
+		}
 		//bloomBitCount := uint(math.Ceil(-1 * float64(bloomSize) * math.Log(targetFalsePositiveRatio) / math.Pow(math.Log(2), 2)))
 		filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
 		if enry.IsBinary(textBytes) {
@@ -254,8 +267,8 @@ func NewRepoIndex(dir string) (*RepoIndex, error) {
 			filter.Add(b)
 		})
 		sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
+		//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
 		if sizeRatio > 0.5 {
-			//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
 		}
 		indexes = append(
 			indexes,
@@ -311,7 +324,7 @@ func (r *RepoIndex) Grep(query string) {
 	}
 	end := time.Now()
 	elapsed := (end.UnixNano() - start.UnixNano()) / int64(time.Millisecond)
-	falsePositiveRatio := float64(falsePositive) / float64(truePositive+falsePositive)
+	falsePositiveRatio := float64(falsePositive) / math.Max(1.0, float64(truePositive+falsePositive))
 	fmt.Printf("query '%v' time %vms fpr %v\n", query, elapsed, falsePositiveRatio)
 }
 
@@ -341,8 +354,10 @@ func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
 				if index.Filter == nil {
 					continue
 				}
-				isMatch := true
+				//fmt.Println(index.Filter.ApproximatedSize())
+				isMatch := len(grams) > 0
 				for _, gram := range grams {
+					//fmt.Printf("test %v %v\n", index.Filter.Test(gram))
 					if !index.Filter.Test(gram) {
 						isMatch = false
 						break
