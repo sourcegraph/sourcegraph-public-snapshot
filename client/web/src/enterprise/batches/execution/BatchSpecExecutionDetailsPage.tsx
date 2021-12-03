@@ -56,7 +56,7 @@ import {
     cancelBatchSpecExecution,
     fetchBatchSpecExecution as _fetchBatchSpecExecution,
     fetchBatchSpecWorkspace,
-    queryBatchSpecWorkspaces,
+    queryBatchSpecWorkspaces as _queryBatchSpecWorkspaces,
     queryBatchSpecWorkspaceStepFileDiffs,
     retryWorkspaceExecution,
 } from './backend'
@@ -68,6 +68,8 @@ export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     /** For testing only. */
     fetchBatchSpecExecution?: typeof _fetchBatchSpecExecution
     /** For testing only. */
+    queryBatchSpecWorkspaces?: typeof _queryBatchSpecWorkspaces
+    /** For testing only. */
     expandStage?: string
 }
 
@@ -75,6 +77,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
     batchSpecID,
     isLightTheme,
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
+    queryBatchSpecWorkspaces,
 }) => {
     const [batchSpec, setBatchSpecExecution] = useState<BatchSpecExecutionFields | null | undefined>()
 
@@ -236,7 +239,11 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             <div className="d-flex mb-3">
                 <div className={styles.workspacesListContainer}>
                     <h3 className="mb-2">Workspaces</h3>
-                    <WorkspacesList batchSpecID={batchSpec.id} selectedNode={selectedWorkspace ?? undefined} />
+                    <WorkspacesList
+                        batchSpecID={batchSpec.id}
+                        selectedNode={selectedWorkspace ?? undefined}
+                        queryBatchSpecWorkspaces={queryBatchSpecWorkspaces}
+                    />
                 </div>
                 <div className="flex-grow-1">
                     <SelectedWorkspace workspace={selectedWorkspace} isLightTheme={isLightTheme} />
@@ -249,7 +256,10 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 const WorkspacesList: React.FunctionComponent<{
     batchSpecID: Scalars['ID']
     selectedNode?: Scalars['ID']
-}> = ({ batchSpecID, selectedNode }) => {
+
+    /** For testing only. */
+    queryBatchSpecWorkspaces?: typeof _queryBatchSpecWorkspaces
+}> = ({ batchSpecID, selectedNode, queryBatchSpecWorkspaces = _queryBatchSpecWorkspaces }) => {
     const query = useCallback(
         (args: FilteredConnectionQueryArguments) =>
             queryBatchSpecWorkspaces({
@@ -260,7 +270,7 @@ const WorkspacesList: React.FunctionComponent<{
                 repeatWhen(notifier => notifier.pipe(delay(1000))),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             ),
-        [batchSpecID]
+        [batchSpecID, queryBatchSpecWorkspaces]
     )
     const history = useHistory()
     return (
@@ -656,6 +666,9 @@ const WorkspaceStateIcon: React.FunctionComponent<{
 }
 
 const StepStateIcon: React.FunctionComponent<{ step: BatchSpecWorkspaceStepFields }> = ({ step }) => {
+    if (step.cachedResultFound) {
+        return <ContentSaveIcon className="icon-inline text-success" />
+    }
     if (step.skipped) {
         return <LinkVariantRemoveIcon className="icon-inline text-muted" />
     }

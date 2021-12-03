@@ -82,9 +82,9 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
             </div>
             <dl className="list-group-flush">
                 {processedResults?.map((recentFile, index) => (
-                    <dd key={index} className="text-monospace test-recent-files-item">
+                    <dd key={index} className="text-monospace">
                         <small>
-                            <Link to={recentFile.url} onClick={logFileClicked}>
+                            <Link to={recentFile.url} onClick={logFileClicked} data-testid="recent-files-item">
                                 {recentFile.repoName} › {recentFile.filePath}
                             </Link>
                         </small>
@@ -92,8 +92,8 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
                 ))}
             </dl>
             {recentFiles?.pageInfo.hasNextPage && (
-                <div className="test-recent-files-show-more-container">
-                    <ShowMoreButton onClick={loadMoreItems} className="test-recent-files-panel-show-more" />
+                <div>
+                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
                 </div>
             )}
         </div>

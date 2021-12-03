@@ -106,11 +106,12 @@ func TestRepository(t *testing.T) {
 				repo:    "github.com/sgtest/go-diff",
 				wantNil: false,
 			},
-			{
-				name:    "private repository",
-				repo:    privateRepo,
-				wantNil: true,
-			},
+			// TODO: Flake: https://github.com/sourcegraph/sourcegraph/issues/28294
+			// {
+			// 	name:    "private repository",
+			// 	repo:    privateRepo,
+			// 	wantNil: true,
+			// },
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
@@ -126,15 +127,16 @@ func TestRepository(t *testing.T) {
 		}
 	})
 
-	t.Run("search repositories", func(t *testing.T) {
-		results, err := userClient.SearchRepositories("type:repo sgtest")
-		if err != nil {
-			t.Fatal(err)
-		}
-		got := results.Exists(privateRepo)
-		want := []string{privateRepo}
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
-		}
-	})
+	// TODO: Flake: https://github.com/sourcegraph/sourcegraph/issues/28294
+	// t.Run("search repositories", func(t *testing.T) {
+	// 	results, err := userClient.SearchRepositories("type:repo sgtest")
+	// 	if err != nil {
+	// 		t.Fatal(err)
+	// 	}
+	// 	got := results.Exists(privateRepo)
+	// 	want := []string{privateRepo}
+	// 	if diff := cmp.Diff(want, got); diff != "" {
+	// 		t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+	// 	}
+	// })
 }

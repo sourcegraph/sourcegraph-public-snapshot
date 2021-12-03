@@ -136,6 +136,79 @@ func NewMockSearchContextsStore() *MockSearchContextsStore {
 	}
 }
 
+// NewStrictMockSearchContextsStore creates a new mock of the
+// SearchContextsStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockSearchContextsStore() *MockSearchContextsStore {
+	return &MockSearchContextsStore{
+		CountSearchContextsFunc: &SearchContextsStoreCountSearchContextsFunc{
+			defaultHook: func(context.Context, database.ListSearchContextsOptions) (int32, error) {
+				panic("unexpected invocation of MockSearchContextsStore.CountSearchContexts")
+			},
+		},
+		CreateSearchContextWithRepositoryRevisionsFunc: &SearchContextsStoreCreateSearchContextWithRepositoryRevisionsFunc{
+			defaultHook: func(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+				panic("unexpected invocation of MockSearchContextsStore.CreateSearchContextWithRepositoryRevisions")
+			},
+		},
+		DeleteSearchContextFunc: &SearchContextsStoreDeleteSearchContextFunc{
+			defaultHook: func(context.Context, int64) error {
+				panic("unexpected invocation of MockSearchContextsStore.DeleteSearchContext")
+			},
+		},
+		DoneFunc: &SearchContextsStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockSearchContextsStore.Done")
+			},
+		},
+		ExecFunc: &SearchContextsStoreExecFunc{
+			defaultHook: func(context.Context, *sqlf.Query) error {
+				panic("unexpected invocation of MockSearchContextsStore.Exec")
+			},
+		},
+		GetAllRevisionsForReposFunc: &SearchContextsStoreGetAllRevisionsForReposFunc{
+			defaultHook: func(context.Context, []api.RepoID) (map[api.RepoID][]string, error) {
+				panic("unexpected invocation of MockSearchContextsStore.GetAllRevisionsForRepos")
+			},
+		},
+		GetSearchContextFunc: &SearchContextsStoreGetSearchContextFunc{
+			defaultHook: func(context.Context, database.GetSearchContextOptions) (*types.SearchContext, error) {
+				panic("unexpected invocation of MockSearchContextsStore.GetSearchContext")
+			},
+		},
+		GetSearchContextRepositoryRevisionsFunc: &SearchContextsStoreGetSearchContextRepositoryRevisionsFunc{
+			defaultHook: func(context.Context, int64) ([]*types.SearchContextRepositoryRevisions, error) {
+				panic("unexpected invocation of MockSearchContextsStore.GetSearchContextRepositoryRevisions")
+			},
+		},
+		HandleFunc: &SearchContextsStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockSearchContextsStore.Handle")
+			},
+		},
+		ListSearchContextsFunc: &SearchContextsStoreListSearchContextsFunc{
+			defaultHook: func(context.Context, database.ListSearchContextsPageOptions, database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
+				panic("unexpected invocation of MockSearchContextsStore.ListSearchContexts")
+			},
+		},
+		SetSearchContextRepositoryRevisionsFunc: &SearchContextsStoreSetSearchContextRepositoryRevisionsFunc{
+			defaultHook: func(context.Context, int64, []*types.SearchContextRepositoryRevisions) error {
+				panic("unexpected invocation of MockSearchContextsStore.SetSearchContextRepositoryRevisions")
+			},
+		},
+		TransactFunc: &SearchContextsStoreTransactFunc{
+			defaultHook: func(context.Context) (database.SearchContextsStore, error) {
+				panic("unexpected invocation of MockSearchContextsStore.Transact")
+			},
+		},
+		UpdateSearchContextWithRepositoryRevisionsFunc: &SearchContextsStoreUpdateSearchContextWithRepositoryRevisionsFunc{
+			defaultHook: func(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+				panic("unexpected invocation of MockSearchContextsStore.UpdateSearchContextWithRepositoryRevisions")
+			},
+		},
+	}
+}
+
 // NewMockSearchContextsStoreFrom creates a new mock of the
 // MockSearchContextsStore interface. All methods delegate to the given
 // implementation, unless overwritten.

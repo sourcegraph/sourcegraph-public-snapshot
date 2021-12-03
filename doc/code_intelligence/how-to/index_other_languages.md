@@ -1,4 +1,8 @@
-
+<style>
+img.terminal-screenshot {
+  max-width: 800px;
+}
+</style>
 
 This guide is meant to provide instructions for how to enable precise code intelligence for any programming language.
 The general steps for enabling precise code intelligence are as follows:
@@ -10,7 +14,7 @@ The general steps for enabling precise code intelligence are as follows:
 
 ### 1. Install Sourcegraph CLI
 
-The [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) is used for uploading LSIF data to your Sourcegraph instance (replace `linux` with `darwin` for macOS):
+The [Sourcegraph CLI](../../cli/index.md) is used for uploading LSIF data to your Sourcegraph instance (replace `linux` with `darwin` for macOS):
 
 ```
 $ curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
@@ -43,30 +47,24 @@ To generate the LSIF data for your repository run the command in the _generate L
 The upload step is the same for all languages. Make sure the current working directory is a path inside your repository, then use the Sourcegraph CLI to upload the LSIF file:
 
 #### To a private Sourcegraph instance (on prem)
+
 ```
-$ src -endpoint=<your sourcegraph endpoint> lsif upload -file=<LSIF file (e.g. dump.lsif)>
+$ SRC_ENDPOINT=https://sourcegraph.mycompany.com src lsif upload -file=dump.lsif
 ```
 
 #### To cloud based Sourcegraph.com
+
 ```
-$ src lsif upload -github-token=<your github token> -file=<LSIF file (e.g. dump.lsif)>
+$ src lsif upload -github-token=YourGitHubToken -file=dump.lsif
 ```
 
 The `src-cli` upload command will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0 or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
 
 > NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) supplied via the `-github-token` flag in the command above.
 
-On successful upload you'll see the following message:
+Successful output will appear similar to the following example.
 
-```
-Repository: <location of repository>
-Commit: <40-character commit associated with this LSIF upload>
-File: <LSIF data file>
-Root: <subdirectory in the repository where this LSIF dump was generated>
-
-LSIF dump successfully uploaded for processing.
-View processing status at <link to your Sourcegraph instance LSIF status>.
-```
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/uploads/src-lsif-upload.gif" class="screenshot terminal-screenshot" alt="Uploading a precise code intelligence index via the Sourcegraph CLI">
 
 ## Automate code indexing
 

@@ -214,12 +214,12 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 		return nil, err
 	}
 
-	for _, changesetSpec := range cs {
-		changesetSpec.BatchSpecID = spec.ID
-
-		if err := tx.UpdateChangesetSpec(ctx, changesetSpec); err != nil {
-			return nil, err
-		}
+	csIDs := make([]int64, 0, len(cs))
+	for _, c := range cs {
+		csIDs = append(csIDs, c.ID)
+	}
+	if err := tx.UpdateChangesetSpecBatchSpecID(ctx, csIDs, spec.ID); err != nil {
+		return nil, err
 	}
 
 	return spec, nil

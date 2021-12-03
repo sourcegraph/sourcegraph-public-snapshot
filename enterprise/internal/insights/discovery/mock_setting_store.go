@@ -40,6 +40,23 @@ func NewMockSettingStore() *MockSettingStore {
 	}
 }
 
+// NewStrictMockSettingStore creates a new mock of the SettingStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockSettingStore() *MockSettingStore {
+	return &MockSettingStore{
+		GetLastestSchemaSettingsFunc: &SettingStoreGetLastestSchemaSettingsFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*schema.Settings, error) {
+				panic("unexpected invocation of MockSettingStore.GetLastestSchemaSettings")
+			},
+		},
+		GetLatestFunc: &SettingStoreGetLatestFunc{
+			defaultHook: func(context.Context, api.SettingsSubject) (*api.Settings, error) {
+				panic("unexpected invocation of MockSettingStore.GetLatest")
+			},
+		},
+	}
+}
+
 // NewMockSettingStoreFrom creates a new mock of the MockSettingStore
 // interface. All methods delegate to the given implementation, unless
 // overwritten.

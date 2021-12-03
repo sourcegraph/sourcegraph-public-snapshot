@@ -1,7 +1,7 @@
+import { render } from '@testing-library/react'
 import { createMemoryHistory } from 'history'
 import React from 'react'
 import { Router } from 'react-router'
-import renderer from 'react-test-renderer'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -18,31 +18,29 @@ describe('RegistryExtensionOverviewPage', () => {
     test('renders', () => {
         const history = createMemoryHistory()
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <RegistryExtensionOverviewPage
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                            extension={{
-                                id: 'x',
-                                rawManifest: '{}',
-                                manifest: {
-                                    url: 'https://example.com',
-                                    activationEvents: ['*'],
-                                    categories: ['Programming languages', 'Other'],
-                                    tags: ['T1', 'T2'],
-                                    readme: '**A**',
-                                    repository: {
-                                        url: 'https://github.com/foo/bar',
-                                        type: 'git',
-                                    },
+            render(
+                <Router history={history}>
+                    <RegistryExtensionOverviewPage
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                        extension={{
+                            id: 'x',
+                            rawManifest: '{}',
+                            manifest: {
+                                url: 'https://example.com',
+                                activationEvents: ['*'],
+                                categories: ['Programming languages', 'Other'],
+                                tags: ['T1', 'T2'],
+                                readme: '**A**',
+                                repository: {
+                                    url: 'https://github.com/foo/bar',
+                                    type: 'git',
                                 },
-                            }}
-                            isLightTheme={true}
-                        />
-                    </Router>
-                )
-                .toJSON()
+                            },
+                        }}
+                        isLightTheme={true}
+                    />
+                </Router>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
@@ -50,38 +48,36 @@ describe('RegistryExtensionOverviewPage', () => {
     test('renders with no tags', () => {
         const history = createMemoryHistory()
         expect(
-            renderer
-                .create(
-                    <Router history={history}>
-                        <RegistryExtensionOverviewPage
-                            telemetryService={NOOP_TELEMETRY_SERVICE}
-                            extension={{
-                                id: 'x',
-                                rawManifest: '{}',
-                                manifest: {
-                                    url: 'https://example.com',
-                                    activationEvents: ['*'],
-                                    categories: ['Programming languages', 'Other'],
-                                    tags: [],
-                                    readme: '**A**',
-                                    repository: {
-                                        url: 'https://github.com/foo/bar',
-                                        type: 'git',
-                                    },
+            render(
+                <Router history={history}>
+                    <RegistryExtensionOverviewPage
+                        telemetryService={NOOP_TELEMETRY_SERVICE}
+                        extension={{
+                            id: 'x',
+                            rawManifest: '{}',
+                            manifest: {
+                                url: 'https://example.com',
+                                activationEvents: ['*'],
+                                categories: ['Programming languages', 'Other'],
+                                tags: [],
+                                readme: '**A**',
+                                repository: {
+                                    url: 'https://github.com/foo/bar',
+                                    type: 'git',
                                 },
-                            }}
-                            isLightTheme={true}
-                        />
-                    </Router>
-                )
-                .toJSON()
+                            },
+                        }}
+                        isLightTheme={true}
+                    />
+                </Router>
+            ).asFragment()
         ).toMatchSnapshot()
     })
 
     describe('categories', () => {
         test('filters out unrecognized categories', () => {
             const history = createMemoryHistory()
-            const output = renderer.create(
+            const output = render(
                 <Router history={history}>
                     <RegistryExtensionOverviewPage
                         telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -97,25 +93,24 @@ describe('RegistryExtensionOverviewPage', () => {
                         isLightTheme={true}
                     />
                 </Router>
-            ).root
-            expect(
-                toText(
-                    output.findAll(({ props: { className } }) =>
-                        className?.includes('test-registry-extension-categories')
-                    )
-                )
-            ).toEqual(['Programming languages', 'Other' /* no 'invalid' */])
+            )
+            expect(toText(output.getAllByTestId('test-registry-extension-categories'))).toEqual([
+                'Programming languages',
+                'Other' /* no 'invalid' */,
+            ])
         })
     })
 })
 
-function toText(values: (string | renderer.ReactTestInstance)[]): string[] {
+function toText(values: string[] | HTMLElement[] | NodeListOf<ChildNode>): string[] {
     const textNodes: string[] = []
     for (const value of values) {
         if (typeof value === 'string') {
             textNodes.push(value)
-        } else {
-            textNodes.push(...toText(value.children))
+        } else if (value.hasChildNodes()) {
+            textNodes.push(...toText(value.childNodes))
+        } else if (value.textContent !== null) {
+            textNodes.push(value.textContent)
         }
     }
     return textNodes

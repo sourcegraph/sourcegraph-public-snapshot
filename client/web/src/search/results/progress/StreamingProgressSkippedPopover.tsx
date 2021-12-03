@@ -131,7 +131,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 />
             ))}
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
-                <Form className="pb-3 px-3" onSubmit={submitHandler}>
+                <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
                     <div className="mb-2 mt-3">Search again:</div>
                     <FormGroup check={true}>
                         {sortedSkippedItems.map(
@@ -160,6 +160,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                         className="mt-2"
                         color="primary"
                         disabled={selectedSuggestedSearches.size === 0}
+                        data-testid="skipped-popover-form-submit-btn"
                     >
                         <SearchIcon className="icon-inline mr-1" />
                         Search again

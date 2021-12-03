@@ -102,6 +102,9 @@ add('Completed', () => (
                 {...props}
                 batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
+                queryBatchSpecWorkspaces={() =>
+                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                }
                 expandStage="srcPreview"
             />
         )}
@@ -115,6 +118,9 @@ add('Failed', () => (
                 {...props}
                 batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
+                queryBatchSpecWorkspaces={() =>
+                    of({ totalCount: 0, nodes: [], pageInfo: { endCursor: null, hasNextPage: false } })
+                }
                 expandStage="srcPreview"
             />
         )}

@@ -7,6 +7,7 @@ import * as sourcegraph from 'sourcegraph'
 import { renderMarkdown } from '../util/markdown'
 
 import { Notification } from './notification'
+import styles from './NotificationItem.module.scss'
 
 export interface NotificationClassNameProps {
     notificationClassNames: Record<sourcegraph.NotificationType, string>
@@ -77,15 +78,15 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         return (
             <div
                 className={classNames(
-                    'sourcegraph-notification-item',
+                    styles.sourcegraphNotificationItem,
                     this.props.className,
                     this.props.notificationClassNames[this.props.notification.type]
                 )}
             >
-                <div className="sourcegraph-notification-item__body-container">
-                    <div className="sourcegraph-notification-item__body">
+                <div className={styles.bodyContainer}>
+                    <div className={styles.body}>
                         <div
-                            className="sourcegraph-notification-item__title"
+                            className={styles.title}
                             dangerouslySetInnerHTML={{
                                 __html: renderMarkdown(this.props.notification.message || '', {
                                     allowDataUriLinksAndDownloads: true,
@@ -94,7 +95,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                         />
                         {this.state.progress && (
                             <div
-                                className="sourcegraph-notification-item__content"
+                                className={styles.content}
                                 dangerouslySetInnerHTML={{
                                     __html: renderMarkdown(this.state.progress.message),
                                 }}
@@ -104,7 +105,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     {(!this.props.notification.progress || !this.state.progress) && (
                         <button
                             type="button"
-                            className="sourcegraph-notification-item__close close"
+                            className={classNames('close', styles.close)}
                             onClick={this.onDismiss}
                             aria-label="Close"
                         >
@@ -113,9 +114,9 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                     )}
                 </div>
                 {this.props.notification.progress && this.state.progress && (
-                    <div className="sourcegraph-notification-item__progress progress">
+                    <div className={classNames('progress', styles.progress)}>
                         <div
-                            className="sourcegraph-notification-item__progressbar progress-bar"
+                            className={classNames('progress-bar', styles.progressbar)}
                             // eslint-disable-next-line react/forbid-dom-props
                             style={{ width: `${this.state.progress.percentage}%` }}
                         />

@@ -57,6 +57,9 @@ var rngLock sync.Mutex
 // NewDB uses NewFromDSN to create a testing database, using the default
 // DSN.
 func NewDB(t testing.TB) *sql.DB {
+	if os.Getenv("USE_FAST_DBTEST") != "" {
+		return NewFastDB(t)
+	}
 	return NewFromDSN(t, "")
 }
 
@@ -127,34 +130,25 @@ var templateOnce sync.Once
 // rather than running the full migration every time.
 func initTemplateDB(t testing.TB, config *url.URL) {
 	templateOnce.Do(func() {
-		templateName := templateDBName()
 		db := dbConn(t, config)
+		defer db.Close()
+
+		templateName := templateDBName()
+
 		// We must first drop the template database because
 		// migrations would not run on it if they had already ran,
 		// even if the content of the migrations had changed during development.
 		name := pq.QuoteIdentifier(templateName)
 		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
 		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
-		defer db.Close()
 
 		cfgCopy := *config
 		cfgCopy.Path = "/" + templateName
-		templateDB := dbConn(t, &cfgCopy)
-		defer templateDB.Close()
-
-		for _, database := range []*dbconn.Database{
+		_, close := dbConnInternal(t, &cfgCopy, []*dbconn.Schema{
 			dbconn.Frontend,
 			dbconn.CodeIntel,
-		} {
-			m, err := dbconn.NewMigrate(templateDB, database)
-			if err != nil {
-				t.Fatalf("failed to construct migrations: %s", err)
-			}
-			defer m.Close()
-			if err = dbconn.DoMigrate(m); err != nil {
-				t.Fatalf("failed to apply migrations: %s", err)
-			}
-		}
+		})
+		close(nil)
 	})
 }
 
@@ -175,12 +169,17 @@ func wdHash() string {
 }
 
 func dbConn(t testing.TB, cfg *url.URL) *sql.DB {
+	db, _ := dbConnInternal(t, cfg, nil)
+	return db
+}
+
+func dbConnInternal(t testing.TB, cfg *url.URL, schemas []*dbconn.Schema) (*sql.DB, func(err error) error) {
 	t.Helper()
-	db, err := dbconn.NewRaw(cfg.String())
+	db, close, err := dbconn.ConnectRawForTestDatabase(cfg.String(), schemas...)
 	if err != nil {
 		t.Fatalf("failed to connect to database %q: %s", cfg, err)
 	}
-	return db
+	return db, close
 }
 
 func dbExec(t testing.TB, db *sql.DB, q string, args ...interface{}) {

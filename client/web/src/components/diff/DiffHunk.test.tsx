@@ -61,13 +61,17 @@ describe('DiffHunk', () => {
         expect(
             render(
                 <Router history={history}>
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={{ head: new Map(), base: new Map() }}
-                        lineNumbers={true}
-                        isLightTheme={true}
-                        fileDiffAnchor="anchor_"
-                    />
+                    <table>
+                        <tbody>
+                            <DiffHunk
+                                hunk={hunk}
+                                decorations={{ head: new Map(), base: new Map() }}
+                                lineNumbers={true}
+                                isLightTheme={true}
+                                fileDiffAnchor="anchor_"
+                            />
+                        </tbody>
+                    </table>
                 </Router>
             ).asFragment()
         ).toMatchSnapshot()
@@ -116,13 +120,17 @@ describe('DiffHunk', () => {
         expect(
             render(
                 <Router history={history}>
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={decorations}
-                        lineNumbers={true}
-                        isLightTheme={true}
-                        fileDiffAnchor="anchor_"
-                    />
+                    <table>
+                        <tbody>
+                            <DiffHunk
+                                hunk={hunk}
+                                decorations={decorations}
+                                lineNumbers={true}
+                                isLightTheme={true}
+                                fileDiffAnchor="anchor_"
+                            />
+                        </tbody>
+                    </table>
                 </Router>
             ).asFragment()
         ).toMatchSnapshot()
@@ -132,13 +140,17 @@ describe('DiffHunk', () => {
         expect(
             render(
                 <Router history={history}>
-                    <DiffHunk
-                        hunk={hunk}
-                        decorations={decorations}
-                        lineNumbers={true}
-                        isLightTheme={false}
-                        fileDiffAnchor="anchor_"
-                    />
+                    <table>
+                        <tbody>
+                            <DiffHunk
+                                hunk={hunk}
+                                decorations={decorations}
+                                lineNumbers={true}
+                                isLightTheme={false}
+                                fileDiffAnchor="anchor_"
+                            />
+                        </tbody>
+                    </table>
                 </Router>
             ).asFragment()
         ).toMatchSnapshot()

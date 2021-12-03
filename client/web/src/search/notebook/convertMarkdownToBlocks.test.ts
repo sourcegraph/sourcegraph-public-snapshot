@@ -27,7 +27,7 @@ Paragraph`
                     repositoryName: 'github.com/sourcegraph/sourcegraph',
                     revision: 'feature',
                     filePath: 'client/web/index.ts',
-                    lineRange: undefined,
+                    lineRange: null,
                 },
             },
         ])
@@ -60,6 +60,8 @@ Link to a file is inside text https://sourcegraph.com/github.com/sourcegraph/sou
 
 https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts?L101-123
 
+https://sourcegraph.com/github.com/sourcegraph/sourcegraph@feature/-/blob/client/web/index.ts?L101
+
 ### Third title
 
 https://example.com/a/b
@@ -77,7 +79,7 @@ https://example.com/a/b
                     repositoryName: 'github.com/sourcegraph/sourcegraph',
                     revision: 'feature',
                     filePath: 'client/web/index.ts',
-                    lineRange: undefined,
+                    lineRange: null,
                 },
             },
             {
@@ -94,6 +96,18 @@ https://example.com/a/b
                     lineRange: {
                         startLine: 100,
                         endLine: 123,
+                    },
+                },
+            },
+            {
+                type: 'file',
+                input: {
+                    repositoryName: 'github.com/sourcegraph/sourcegraph',
+                    revision: 'feature',
+                    filePath: 'client/web/index.ts',
+                    lineRange: {
+                        startLine: 100,
+                        endLine: 101,
                     },
                 },
             },

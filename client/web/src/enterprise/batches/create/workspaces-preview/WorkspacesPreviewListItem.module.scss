@@ -7,6 +7,10 @@
     background-color: var(--subtle-bg-2);
 }
 
+.overflow {
+    overflow-wrap: anywhere;
+}
+
 .link {
     display: block;
     font-size: 1rem;

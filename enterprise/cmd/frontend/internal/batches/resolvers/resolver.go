@@ -44,7 +44,7 @@ func New(store *store.Store) graphqlbackend.BatchChangesResolver {
 
 // batchChangesCreateAccess returns true if the current user has batch changes enabled for
 // them and can create batchChanges/changesetSpecs/batchSpecs.
-func batchChangesCreateAccess(ctx context.Context, db dbutil.DB) error {
+func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, db); err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 }
 
 func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -163,7 +163,7 @@ func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -188,7 +188,7 @@ func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 }
 
 func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -211,7 +211,7 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 }
 
 func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -237,7 +237,7 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 }
 
 func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -263,7 +263,7 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 }
 
 func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangesCredentialResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -317,7 +317,7 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 }
 
 func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -447,7 +447,7 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 }
 
 func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -497,7 +497,7 @@ func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.Cre
 		tr.Finish()
 	}()
 
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -553,7 +553,7 @@ func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend
 		tr.Finish()
 	}()
 
-	if err := batchChangesCreateAccess(ctx, r.store.DB()); err != nil {
+	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -582,7 +582,7 @@ func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.Mov
 		tr.Finish()
 	}()
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -626,7 +626,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -655,7 +655,7 @@ func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.D
 }
 
 func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -738,7 +738,7 @@ func (r *Resolver) RepoDiffStat(ctx context.Context, repo *graphql.ID) (*graphql
 }
 
 func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -908,7 +908,7 @@ func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.Cl
 		tr.Finish()
 	}()
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -942,7 +942,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -970,7 +970,7 @@ func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -999,7 +999,7 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1144,7 +1144,7 @@ func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graph
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1204,7 +1204,7 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1239,7 +1239,7 @@ func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbac
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1283,7 +1283,7 @@ func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1318,7 +1318,7 @@ func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.Mer
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1356,7 +1356,7 @@ func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.Clo
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 
@@ -1393,7 +1393,7 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
 	}
 

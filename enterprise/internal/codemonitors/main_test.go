@@ -8,10 +8,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -23,39 +23,49 @@ const (
 func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
 	t.Helper()
 
-	owner := relay.MarshalID("User", actor.FromContext(ctx).UID)
-	args := &graphqlbackend.CreateCodeMonitorArgs{
-		Monitor: &graphqlbackend.CreateMonitorArgs{
-			Namespace:   owner,
-			Description: testDescription,
-			Enabled:     true,
+	actions := []*EmailActionArgs{
+		{
+			Enabled:  true,
+			Priority: "NORMAL",
+			Header:   "test header 1",
 		},
-		Trigger: &graphqlbackend.CreateTriggerArgs{
-			Query: testQuery,
-		},
-		Actions: []*graphqlbackend.CreateActionArgs{
-			{
-				Email: &graphqlbackend.CreateActionEmailArgs{
-					Enabled:    true,
-					Priority:   "NORMAL",
-					Recipients: []graphql.ID{owner},
-					Header:     "test header 1"},
-			},
-			{
-				Email: &graphqlbackend.CreateActionEmailArgs{
-					Enabled:    true,
-					Priority:   "CRITICAL",
-					Recipients: []graphql.ID{owner},
-					Header:     "test header 2"},
-			},
+		{
+			Enabled:  true,
+			Priority: "CRITICAL",
+			Header:   "test header 2",
 		},
 	}
-	return s.CreateCodeMonitor(ctx, args)
+	// Create monitor.
+	uid := actor.FromContext(ctx).UID
+	m, err := s.CreateMonitor(ctx, MonitorArgs{
+		Description:     testDescription,
+		Enabled:         true,
+		NamespaceUserID: &uid,
+	})
+	require.NoError(t, err)
+
+	// Create trigger.
+	err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	require.NoError(t, err)
+
+	for _, a := range actions {
+		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
+			Enabled:  a.Enabled,
+			Priority: a.Priority,
+			Header:   a.Header,
+		})
+		require.NoError(t, err)
+
+		err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		require.NoError(t, err)
+		// TODO(camdencheek): add other action types (webhooks) here
+	}
+	return m, nil
 }
 
 func newTestStore(t *testing.T) (context.Context, dbutil.DB, *codeMonitorStore) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, NewStoreWithClock(db, func() time.Time { return now })
 }
@@ -75,8 +85,6 @@ func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string
 
 	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
 	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	return userID
 }

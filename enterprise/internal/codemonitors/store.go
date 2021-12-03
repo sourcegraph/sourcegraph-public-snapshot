@@ -5,10 +5,8 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -24,51 +22,45 @@ type CodeMonitorStore interface {
 	Clock() func() time.Time
 	Exec(ctx context.Context, query *sqlf.Query) error
 
-	CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (*Monitor, error)
-
-	CreateMonitor(ctx context.Context, args *graphqlbackend.CreateMonitorArgs) (*Monitor, error)
-	UpdateMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*Monitor, error)
-	ToggleMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (*Monitor, error)
-	DeleteMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) error
+	CreateMonitor(ctx context.Context, args MonitorArgs) (*Monitor, error)
+	UpdateMonitor(ctx context.Context, id int64, args MonitorArgs) (*Monitor, error)
+	UpdateMonitorEnabled(ctx context.Context, id int64, enabled bool) (*Monitor, error)
+	DeleteMonitor(ctx context.Context, id int64) error
 	GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error)
-	ListMonitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) ([]*Monitor, error)
+	ListMonitors(context.Context, ListMonitorsOpts) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID int32) (int32, error)
 
-	CreateQueryTrigger(ctx context.Context, monitorID int64, args *graphqlbackend.CreateTriggerArgs) error
-	UpdateQueryTrigger(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) error
+	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) error
+	UpdateQueryTrigger(ctx context.Context, id int64, query string) error
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
 	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
 	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
-	GetQueryTriggerForJob(ctx context.Context, jobID int) (*QueryTrigger, error)
-
-	DeleteObsoleteTriggerJobs(ctx context.Context) error
-	UpdateTriggerJobWithResults(ctx context.Context, queryString string, numResults int, recordID int) error
-	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
-
-	EnqueueQueryTriggerJobs(ctx context.Context) error
-	ListQueryTriggerJobs(ctx context.Context, queryID int64, args *graphqlbackend.ListEventsArgs) ([]*TriggerJob, error)
+	GetQueryTriggerForJob(ctx context.Context, triggerJob int32) (*QueryTrigger, error)
+	EnqueueQueryTriggerJobs(context.Context) ([]*TriggerJob, error)
+	ListQueryTriggerJobs(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
-	CreateActions(ctx context.Context, args []*graphqlbackend.CreateActionArgs, monitorID int64) error
+	DeleteObsoleteTriggerJobs(ctx context.Context) error
+	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, numResults int) error
+	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
 
-	UpdateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.EditActionArgs) (*EmailAction, error)
-	CreateEmailAction(ctx context.Context, monitorID int64, action *graphqlbackend.CreateActionArgs) (*EmailAction, error)
+	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
+	CreateEmailAction(ctx context.Context, monitorID int64, _ *EmailActionArgs) (*EmailAction, error)
 	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error
 	CountEmailActions(ctx context.Context, monitorID int64) (int32, error)
 	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
 	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
 
-	CreateRecipients(ctx context.Context, recipients []graphql.ID, emailID int64) error
+	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) error
 	DeleteRecipients(ctx context.Context, emailID int64) error
-	ListRecipientsForEmailAction(ctx context.Context, emailID int64, args *graphqlbackend.ListRecipientsArgs) ([]*Recipient, error)
-	ListAllRecipientsForEmailAction(ctx context.Context, emailID int64) ([]*Recipient, error)
+	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)
 	CountRecipients(ctx context.Context, emailID int64) (int32, error)
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
 	GetActionJobMetadata(ctx context.Context, recordID int) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, recordID int) (*ActionJob, error)
-	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerEventID int) error
+	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJob int32) error
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models

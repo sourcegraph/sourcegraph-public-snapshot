@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -130,7 +131,7 @@ func createHoneyEvent(
 		fields["error"] = (*err).Error()
 	}
 	if traceID := trace.ID(ctx); traceID != "" {
-		fields["trace"] = trace.URL(traceID)
+		fields["trace"] = trace.URL(traceID, conf.ExternalURL())
 		fields["traceID"] = traceID
 	}
 

@@ -36,8 +36,12 @@ export interface CodeInsightsBackend {
      */
     getDashboards: () => Observable<InsightDashboard[]>
 
-    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
+    getDashboardById: (input: { dashboardId: string | undefined }) => Observable<InsightDashboard | null>
 
+    /**
+     * Returns all possible visibility options for dashboard. Dashboard can be stored
+     * as private (user subject), org level (organization subject) or global (site subject)
+     */
     getDashboardSubjects: () => Observable<SupportedInsightSubject[]>
 
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
@@ -58,7 +62,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (dashboardId: string) => Observable<Insight[]>
+    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
 
     /**
      * Returns all reachable subject's insights from subject with subjectId.
@@ -66,13 +70,11 @@ export interface CodeInsightsBackend {
      * User subject has access to all insights from all organizations and global site settings.
      * Organization subject has access to only its insights.
      */
-    getReachableInsights: (subjectId: string) => Observable<ReachableInsight[]>
+    getReachableInsights: (input: { subjectId: string }) => Observable<ReachableInsight[]>
 
     /**
      * Return insight (meta and presentation data) by insight id.
      * Note that insight model doesn't contain any data series points.
-     *
-     * @param id
      */
     getInsightById: (id: string) => Observable<Insight | null>
 

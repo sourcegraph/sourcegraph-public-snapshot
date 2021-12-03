@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
-var update = flag.Bool("update", true, "update testdata")
+var update = flag.Bool("update", false, "update testdata")
 
 func TestClient_ListProjects(t *testing.T) {
 	cli, save := NewTestClient(t, "ListRepos", *update)

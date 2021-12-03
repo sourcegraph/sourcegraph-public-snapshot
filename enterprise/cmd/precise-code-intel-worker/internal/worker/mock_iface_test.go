@@ -125,6 +125,73 @@ func NewMockDBStore() *MockDBStore {
 	}
 }
 
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		DeleteOverlappingDumpsFunc: &DBStoreDeleteOverlappingDumpsFunc{
+			defaultHook: func(context.Context, int, string, string, string) error {
+				panic("unexpected invocation of MockDBStore.DeleteOverlappingDumps")
+			},
+		},
+		DoneFunc: &DBStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockDBStore.Done")
+			},
+		},
+		HandleFunc: &DBStoreHandleFunc{
+			defaultHook: func() *basestore.TransactableHandle {
+				panic("unexpected invocation of MockDBStore.Handle")
+			},
+		},
+		InsertDependencySyncingJobFunc: &DBStoreInsertDependencySyncingJobFunc{
+			defaultHook: func(context.Context, int) (int, error) {
+				panic("unexpected invocation of MockDBStore.InsertDependencySyncingJob")
+			},
+		},
+		MarkRepositoryAsDirtyFunc: &DBStoreMarkRepositoryAsDirtyFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockDBStore.MarkRepositoryAsDirty")
+			},
+		},
+		RepoNameFunc: &DBStoreRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				panic("unexpected invocation of MockDBStore.RepoName")
+			},
+		},
+		TransactFunc: &DBStoreTransactFunc{
+			defaultHook: func(context.Context) (DBStore, error) {
+				panic("unexpected invocation of MockDBStore.Transact")
+			},
+		},
+		UpdateCommitedAtFunc: &DBStoreUpdateCommitedAtFunc{
+			defaultHook: func(context.Context, int, time.Time) error {
+				panic("unexpected invocation of MockDBStore.UpdateCommitedAt")
+			},
+		},
+		UpdatePackageReferencesFunc: &DBStoreUpdatePackageReferencesFunc{
+			defaultHook: func(context.Context, int, []precise.PackageReference) error {
+				panic("unexpected invocation of MockDBStore.UpdatePackageReferences")
+			},
+		},
+		UpdatePackagesFunc: &DBStoreUpdatePackagesFunc{
+			defaultHook: func(context.Context, int, []precise.Package) error {
+				panic("unexpected invocation of MockDBStore.UpdatePackages")
+			},
+		},
+		UpdateReferenceCountsFunc: &DBStoreUpdateReferenceCountsFunc{
+			defaultHook: func(context.Context, []int, dbstore.DependencyReferenceCountUpdateType) (int, error) {
+				panic("unexpected invocation of MockDBStore.UpdateReferenceCounts")
+			},
+		},
+		WithFunc: &DBStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) DBStore {
+				panic("unexpected invocation of MockDBStore.With")
+			},
+		},
+	}
+}
+
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
@@ -1509,6 +1576,33 @@ func NewMockGitserverClient() *MockGitserverClient {
 	}
 }
 
+// NewStrictMockGitserverClient creates a new mock of the GitserverClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitserverClient() *MockGitserverClient {
+	return &MockGitserverClient{
+		CommitDateFunc: &GitserverClientCommitDateFunc{
+			defaultHook: func(context.Context, int, string) (string, time.Time, bool, error) {
+				panic("unexpected invocation of MockGitserverClient.CommitDate")
+			},
+		},
+		DefaultBranchContainsFunc: &GitserverClientDefaultBranchContainsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				panic("unexpected invocation of MockGitserverClient.DefaultBranchContains")
+			},
+		},
+		DirectoryChildrenFunc: &GitserverClientDirectoryChildrenFunc{
+			defaultHook: func(context.Context, int, string, []string) (map[string][]string, error) {
+				panic("unexpected invocation of MockGitserverClient.DirectoryChildren")
+			},
+		},
+		ResolveRevisionFunc: &GitserverClientResolveRevisionFunc{
+			defaultHook: func(context.Context, int, string) (api.CommitID, error) {
+				panic("unexpected invocation of MockGitserverClient.ResolveRevision")
+			},
+		},
+	}
+}
+
 // NewMockGitserverClientFrom creates a new mock of the MockGitserverClient
 // interface. All methods delegate to the given implementation, unless
 // overwritten.
@@ -2103,6 +2197,73 @@ func NewMockLSIFStore() *MockLSIFStore {
 		WriteResultChunksFunc: &LSIFStoreWriteResultChunksFunc{
 			defaultHook: func(context.Context, int, chan precise.IndexedResultChunkData) (uint32, error) {
 				return 0, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockLSIFStore creates a new mock of the LSIFStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockLSIFStore() *MockLSIFStore {
+	return &MockLSIFStore{
+		DoneFunc: &LSIFStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockLSIFStore.Done")
+			},
+		},
+		TransactFunc: &LSIFStoreTransactFunc{
+			defaultHook: func(context.Context) (LSIFStore, error) {
+				panic("unexpected invocation of MockLSIFStore.Transact")
+			},
+		},
+		WriteDefinitionsFunc: &LSIFStoreWriteDefinitionsFunc{
+			defaultHook: func(context.Context, int, chan precise.MonikerLocations) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteDefinitions")
+			},
+		},
+		WriteDocumentationMappingsFunc: &LSIFStoreWriteDocumentationMappingsFunc{
+			defaultHook: func(context.Context, int, chan precise.DocumentationMapping) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteDocumentationMappings")
+			},
+		},
+		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
+			defaultHook: func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData, int, int) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteDocumentationPages")
+			},
+		},
+		WriteDocumentationPathInfoFunc: &LSIFStoreWriteDocumentationPathInfoFunc{
+			defaultHook: func(context.Context, int, chan *precise.DocumentationPathInfoData) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteDocumentationPathInfo")
+			},
+		},
+		WriteDocumentationSearchPreworkFunc: &LSIFStoreWriteDocumentationSearchPreworkFunc{
+			defaultHook: func(context.Context, dbstore.Upload, *types.Repo, bool) (int, int, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteDocumentationSearchPrework")
+			},
+		},
+		WriteDocumentsFunc: &LSIFStoreWriteDocumentsFunc{
+			defaultHook: func(context.Context, int, chan precise.KeyedDocumentData) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteDocuments")
+			},
+		},
+		WriteImplementationsFunc: &LSIFStoreWriteImplementationsFunc{
+			defaultHook: func(context.Context, int, chan precise.MonikerLocations) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteImplementations")
+			},
+		},
+		WriteMetaFunc: &LSIFStoreWriteMetaFunc{
+			defaultHook: func(context.Context, int, precise.MetaData) error {
+				panic("unexpected invocation of MockLSIFStore.WriteMeta")
+			},
+		},
+		WriteReferencesFunc: &LSIFStoreWriteReferencesFunc{
+			defaultHook: func(context.Context, int, chan precise.MonikerLocations) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteReferences")
+			},
+		},
+		WriteResultChunksFunc: &LSIFStoreWriteResultChunksFunc{
+			defaultHook: func(context.Context, int, chan precise.IndexedResultChunkData) (uint32, error) {
+				panic("unexpected invocation of MockLSIFStore.WriteResultChunks")
 			},
 		},
 	}

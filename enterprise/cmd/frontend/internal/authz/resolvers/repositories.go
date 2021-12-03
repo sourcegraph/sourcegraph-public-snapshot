@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -20,7 +19,7 @@ var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolve
 
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	ids *roaring.Bitmap
 
 	first int32
@@ -76,7 +75,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -86,14 +85,14 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 	}
 	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = graphqlbackend.NewRepositoryResolver(database.NewDB(r.db), repos[i])
+		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, repos[i])
 	}
 	return resolvers, nil
 }
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +102,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 

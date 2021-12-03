@@ -88,8 +88,8 @@ Then add the following lines to your site configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false,  // Set to true to enable anyone with a GitHub account to sign up without invitation
-      "allowOrgs": ["your-org-name"] // Restrict logins to members of these orgs.
+      "allowSignup": false,  // Set to true to enable signup. If nothing is specified in `allowOrgs`, any GitHub user can sign up.
+      "allowOrgs": ["your-org-name"] // Restrict logins and signups if enabled to members of these orgs.
     }
   ]
 }

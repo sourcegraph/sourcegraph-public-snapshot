@@ -20,7 +20,7 @@ export const AboutOrganizationPage: React.FunctionComponent<AboutOrganizationPag
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Organizations' }]}
-                description="Support for organizations is not currently available on Sourcegraph cloud."
+                description="Support for organizations is not currently available on Sourcegraph Cloud."
                 className="mb-3"
             />
             <Container>

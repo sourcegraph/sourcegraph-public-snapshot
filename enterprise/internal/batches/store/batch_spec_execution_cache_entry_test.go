@@ -50,33 +50,23 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 		}
 	})
 
-	t.Run("Get", func(t *testing.T) {
-		t.Run("GetByKey", func(t *testing.T) {
+	t.Run("List", func(t *testing.T) {
+		t.Run("ListByKeys", func(t *testing.T) {
 			for i, job := range entries {
 				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					have, err := s.GetBatchSpecExecutionCacheEntry(ctx, GetBatchSpecExecutionCacheEntryOpts{Key: job.Key})
-
+					cs, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{job.Key}})
 					if err != nil {
 						t.Fatal(err)
 					}
+					if len(cs) != 1 {
+						t.Fatal("cache entry not found")
+					}
+					have := cs[0]
 
 					if diff := cmp.Diff(have, job); diff != "" {
 						t.Fatal(diff)
 					}
 				})
-			}
-		})
-
-		t.Run("NoResults", func(t *testing.T) {
-			opts := GetBatchSpecExecutionCacheEntryOpts{
-				Key: "if-this-returns-something-lol-i-will-eat-a-hat",
-			}
-
-			_, have := s.GetBatchSpecExecutionCacheEntry(ctx, opts)
-			want := ErrNoResults
-
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
 			}
 		})
 	})
@@ -92,21 +82,25 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 			t.Fatal(err)
 		}
 
-		reloaded, err := s.GetBatchSpecExecutionCacheEntry(ctx, GetBatchSpecExecutionCacheEntryOpts{Key: keyConflict.Key})
+		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{keyConflict.Key}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if len(reloaded) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloaded[0]
 
-		if diff := cmp.Diff(reloaded, keyConflict); diff != "" {
+		if diff := cmp.Diff(reloadedEntry, keyConflict); diff != "" {
 			t.Fatal(diff)
 		}
 
-		if reloaded.CreatedAt.Equal(entries[0].CreatedAt) {
+		if reloadedEntry.CreatedAt.Equal(entries[0].CreatedAt) {
 			t.Fatal("CreatedAt not updated")
 		}
 	})
 
-	t.Run("MarkUsedBatchSpecExecutionCacheEntry", func(t *testing.T) {
+	t.Run("MarkUsedBatchSpecExecutionCacheEntries", func(t *testing.T) {
 		entry := &btypes.BatchSpecExecutionCacheEntry{
 			Key:   "the-amazing-cache-key",
 			Value: "the-mysterious-cache-value",
@@ -116,16 +110,20 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 			t.Fatal(err)
 		}
 
-		if err := s.MarkUsedBatchSpecExecutionCacheEntry(ctx, entry.ID); err != nil {
+		if err := s.MarkUsedBatchSpecExecutionCacheEntries(ctx, []int64{entry.ID}); err != nil {
 			t.Fatal(err)
 		}
 
-		reloaded, err := s.GetBatchSpecExecutionCacheEntry(ctx, GetBatchSpecExecutionCacheEntryOpts{Key: entry.Key})
+		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{Keys: []string{entry.Key}})
 		if err != nil {
 			t.Fatal(err)
 		}
+		if len(reloaded) != 1 {
+			t.Fatal("cache entry not found")
+		}
+		reloadedEntry := reloaded[0]
 
-		if want, have := clock.Now(), reloaded.LastUsedAt; !have.Equal(want) {
+		if want, have := clock.Now(), reloadedEntry.LastUsedAt; !have.Equal(want) {
 			t.Fatalf("entry.LastUsedAt is wrong.\n\twant=%s\n\thave=%s", want, have)
 		}
 	})

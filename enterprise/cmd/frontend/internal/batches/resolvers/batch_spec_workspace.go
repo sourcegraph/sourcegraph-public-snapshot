@@ -34,9 +34,9 @@ type batchSpecWorkspaceResolver struct {
 
 	preloadedRepo *types.Repo
 
-	repoOnce sync.Once
-	repo     *graphqlbackend.RepositoryResolver
-	repoErr  error
+	repoResolverOnce sync.Once
+	repoResolver     *graphqlbackend.RepositoryResolver
+	repoResolverErr  error
 }
 
 var _ graphqlbackend.BatchSpecWorkspaceResolver = &batchSpecWorkspaceResolver{}
@@ -45,25 +45,29 @@ func (r *batchSpecWorkspaceResolver) ID() graphql.ID {
 	return marshalBatchSpecWorkspaceID(r.workspace.ID)
 }
 
-func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	r.repoOnce.Do(func() {
+func (r *batchSpecWorkspaceResolver) computeRepoResolver(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	r.repoResolverOnce.Do(func() {
+		var repo *types.Repo
 		if r.preloadedRepo != nil {
-			r.repo = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), r.preloadedRepo)
+			repo = r.preloadedRepo
+		} else {
+			repo, r.repoResolverErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
+			if r.repoResolverErr != nil {
+				return
+			}
 		}
 
-		var repo *types.Repo
-		repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
-		r.repo = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)
+		r.repoResolver = graphqlbackend.NewRepositoryResolver(r.store.DatabaseDB(), repo)
 	})
-	return r.repo, r.repoErr
+	return r.repoResolver, r.repoResolverErr
 }
 
 func (r *batchSpecWorkspaceResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return r.computeRepo(ctx)
+	return r.computeRepoResolver(ctx)
 }
 
 func (r *batchSpecWorkspaceResolver) Branch(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	repo, err := r.computeRepo(ctx)
+	repo, err := r.computeRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +98,7 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 		}
 	}
 
-	repo, err := r.computeRepo(ctx)
+	repoResolver, err := r.computeRepoResolver(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,16 +114,32 @@ func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) (
 				si.Skipped = true
 			}
 		}
+
 		// Mark all steps as skipped when a cached result was found.
 		if r.CachedResultFound() {
 			si.Skipped = true
 		}
+
 		// Mark all steps as skipped when a workspace is skipped.
 		if r.workspace.Skipped {
 			si.Skipped = true
 		}
 
-		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
+		resolver := &batchSpecWorkspaceStepResolver{
+			index:    idx,
+			step:     step,
+			stepInfo: si,
+			store:    r.store,
+			repo:     repoResolver,
+			baseRev:  r.workspace.Commit,
+		}
+
+		// See if we have a cache result for this step.
+		if cachedResult, ok := r.workspace.StepCacheResult(idx + 1); ok {
+			resolver.cachedResult = cachedResult.Value
+		}
+
+		resolvers = append(resolvers, resolver)
 	}
 
 	return resolvers, nil

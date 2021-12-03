@@ -7,36 +7,25 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // GetOrAssignUserCustomerID returns the billing customer ID associated with the user. If no billing
 // customer ID exists for the user, a new one is created and saved on the user's DB record.
-func GetOrAssignUserCustomerID(ctx context.Context, userID int32) (_ string, err error) {
+func GetOrAssignUserCustomerID(ctx context.Context, db database.DB, userID int32) (_ string, err error) {
 	// Wrap this operation in a transaction so we never have stored 2 auto-created billing customer
 	// IDs for the same user.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := db.Transact(ctx)
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		if err != nil {
-			rollErr := tx.Rollback()
-			if rollErr != nil {
-				err = multierror.Append(err, rollErr)
-			}
-			return
-		}
-		err = tx.Commit()
-	}()
+	defer func() { err = tx.Done(err) }()
 
 	custID, err := dbBilling{db: tx}.getUserBillingCustomerID(ctx, userID)
 	if err != nil {

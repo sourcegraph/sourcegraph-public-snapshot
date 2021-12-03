@@ -23,6 +23,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -1082,6 +1083,7 @@ var (
 	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
 	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
 	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
+	ghe330PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
 )
 
 func timelineItemTypes(version *semver.Version) (string, error) {
@@ -1660,6 +1662,11 @@ type Repository struct {
 	// Metadata retained for ranking
 	StargazerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
+
+	// This is available for GitHub Enterprise Cloud and GitHub Enterprise Server 3.3.0+ and is used
+	// to identify if a repository is public or private or internal.
+	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
+	Visibility Visibility `json:",omitempty"`
 }
 
 func ownerNameCacheKey(owner, name string) string       { return "0:" + owner + "/" + name }
@@ -1731,6 +1738,7 @@ type restRepository struct {
 	Permissions restRepositoryPermissions `json:"permissions"`
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
+	Visibility  string                    `json:"visibility"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1752,7 +1760,7 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
-	return &Repository{
+	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
 		NameWithOwner:    restRepo.FullName,
@@ -1767,6 +1775,12 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 	}
+
+	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+		repo.Visibility = Visibility(restRepo.Visibility)
+	}
+
+	return &repo
 }
 
 // convertRestRepoPermissions converts repo information returned by the rest API
@@ -1793,9 +1807,10 @@ var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too la
 type Visibility string
 
 const (
-	VisibilityAll     Visibility = "all"
-	VisibilityPublic  Visibility = "public"
-	VisibilityPrivate Visibility = "private"
+	VisibilityAll      Visibility = "all"
+	VisibilityPublic   Visibility = "public"
+	VisibilityPrivate  Visibility = "private"
+	VisibilityInternal Visibility = "internal"
 )
 
 // RepositoryAffiliation is the affiliation filter for listing repositories.
