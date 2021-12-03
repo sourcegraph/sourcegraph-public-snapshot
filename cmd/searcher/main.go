@@ -105,10 +105,12 @@ func main() {
 		}),
 	}
 
-	log15.Info("searcher: listening", "addr", server.Addr)
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.Fatal(err)
-	}
+	go func() {
+		log15.Info("searcher: listening", "addr", server.Addr)
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
 
 	// Listen for shutdown signals. When we receive one attempt to clean up,
 	// but do an insta-shutdown if we receive more than one signal.
