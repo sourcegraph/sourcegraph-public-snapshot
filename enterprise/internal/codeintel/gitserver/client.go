@@ -3,10 +3,8 @@ package gitserver
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -114,25 +112,10 @@ func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api
 	return resp.Results, err
 }
 
-type CommitGraph struct {
-	graph map[string][]string
-	order []string
-}
-
-func (c *CommitGraph) Graph() map[string][]string { return c.graph }
-func (c *CommitGraph) Order() []string            { return c.order }
-
-type CommitGraphOptions struct {
-	Commit  string
-	AllRefs bool
-	Limit   int
-	Since   *time.Time
-}
-
 // CommitGraph returns the commit graph for the given repository as a mapping from a commit
 // to its parents. If a commit is supplied, the returned graph will be rooted at the given
 // commit. If a non-zero limit is supplied, at most that many commits will be returned.
-func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitGraphOptions) (_ *CommitGraph, err error) {
+func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts git.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
 	ctx, endObservation := c.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", opts.Commit),
@@ -140,75 +123,30 @@ func (c *Client) CommitGraph(ctx context.Context, repositoryID int, opts CommitG
 	}})
 	defer endObservation(1, observation.Args{})
 
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
-	if opts.AllRefs {
-		args = append(args, "--all")
-	}
-	if opts.Commit != "" {
-		args = append(args, opts.Commit)
-	}
-	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
-	}
-	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
-	}
-
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, opts.Commit, args...)
+	repo, err := c.repositoryIDToRepo(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return ParseCommitGraph(strings.Split(out, "\n")), nil
-}
-
-// ParseCommitGraph converts the output of git log into a map from commits to parent commits,
-// and a topological ordering of commits such that parents come before children. If a commit
-// is listed but has no ancestors then its parent slice is empty, but is still present in
-// the map and the ordering. If the ordering is to be correct, the git log output must be
-// formatted with --topo-order.
-func ParseCommitGraph(lines []string) *CommitGraph {
-	// Process lines backwards so that we see all parents before children.
-	// We get a topological ordering by simply scraping the keys off in this
-	// order.
-
-	n := len(lines) - 1
-	for i := 0; i < len(lines)/2; i++ {
-		lines[i], lines[n-i] = lines[n-i], lines[i]
+	g, err := git.CommitGraph(ctx, repo, opts)
+	if err == nil {
+		return g, nil
 	}
 
-	graph := make(map[string][]string, len(lines))
-	order := make([]string, 0, len(lines))
-
-	var prefix []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-
-		parts := strings.Split(line, " ")
-
-		if len(parts) == 1 {
-			graph[parts[0]] = []string{}
-		} else {
-			graph[parts[0]] = parts[1:]
-		}
-
-		order = append(order, parts[0])
-
-		for _, part := range parts[1:] {
-			if _, ok := graph[part]; !ok {
-				graph[part] = []string{}
-				prefix = append(prefix, part)
-			}
+	// If the repo doesn't exist don't bother trying to resolve the commit.
+	// Otherwise, if we're returning an error, try to resolve revision that was the
+	// target of the command. If the revision fails to resolve, we return an instance
+	// of a RevisionNotFoundError error instead of an "exit 128".
+	if !gitdomain.IsRepoNotExist(err) && opts.Commit != "" {
+		if _, err := git.ResolveRevision(ctx, repo, opts.Commit, git.ResolveRevisionOptions{}); err != nil {
+			return nil, errors.Wrap(err, "git.ResolveRevision")
 		}
 	}
 
-	return &CommitGraph{
-		graph: graph,
-		order: append(prefix, order...),
-	}
+	// If we didn't expect a particular revision to exist, or we did but it
+	// resolved without error, return the original error as the command had
+	// failed for another reason.
+	return nil, errors.Wrap(err, "git.CommitGraph")
 }
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each

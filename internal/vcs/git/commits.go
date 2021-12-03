@@ -570,3 +570,40 @@ func CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID) (_ 
 
 	return parts[0], duration, true, nil
 }
+
+type CommitGraphOptions struct {
+	Commit  string
+	AllRefs bool
+	Limit   int
+	Since   *time.Time
+}
+
+// CommitGraph returns the commit graph for the given repository as a mapping
+// from a commit to its parents. If a commit is supplied, the returned graph will
+// be rooted at the given commit. If a non-zero limit is supplied, at most that
+// many commits will be returned.
+func CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
+	args := []string{"log", "--pretty=%H %P", "--topo-order"}
+	if opts.AllRefs {
+		args = append(args, "--all")
+	}
+	if opts.Commit != "" {
+		args = append(args, opts.Commit)
+	}
+	if opts.Since != nil {
+		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
+	}
+	if opts.Limit > 0 {
+		args = append(args, fmt.Sprintf("-%d", opts.Limit))
+	}
+
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
+}
