@@ -90,7 +90,7 @@ func (r *RepoIndex) Serialize(w io.Writer) error {
 }
 
 func DeserializeRepoIndex(reader io.Reader) (*RepoIndex, error) {
-	var r *RepoIndex
+	r := &RepoIndex{}
 	err := gob.NewDecoder(reader).Decode(r)
 	if err != nil {
 		return nil, err
