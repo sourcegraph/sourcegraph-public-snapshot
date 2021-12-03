@@ -13,10 +13,12 @@ func TestQueryByRecordID(t *testing.T) {
 	m, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	triggerJobID := triggerJobs[0].ID
 
-	got, err := s.GetQueryTriggerForJob(ctx, 1)
+	got, err := s.GetQueryTriggerForJob(ctx, triggerJobID)
 	require.NoError(t, err)
 
 	now := s.Now()
@@ -40,8 +42,10 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	m, err := s.insertTestMonitor(userCTX, t)
 	require.NoError(t, err)
 
-	err = s.EnqueueQueryTriggerJobs(ctx)
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	triggerJobID := triggerJobs[0].ID
 
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
@@ -49,7 +53,7 @@ func TestTriggerQueryNextRun(t *testing.T) {
 	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
 	require.NoError(t, err)
 
-	got, err := s.GetQueryTriggerForJob(ctx, 1)
+	got, err := s.GetQueryTriggerForJob(ctx, triggerJobID)
 	require.NoError(t, err)
 
 	want := &QueryTrigger{

@@ -18,7 +18,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
@@ -208,7 +207,7 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
 		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
@@ -266,7 +265,7 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
 		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
@@ -315,7 +314,7 @@ func TestCalculateVisibleUploadsDistinctRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
 		strings.Join([]string{makeCommit(1)}, " "),
 	})
@@ -380,7 +379,7 @@ func TestCalculateVisibleUploadsOverlappingRoots(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
 		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
@@ -437,7 +436,7 @@ func TestCalculateVisibleUploadsIndexerName(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
 		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
 		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
@@ -483,7 +482,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlag(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
 		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
 		strings.Join([]string{makeCommit(1)}, " "),
@@ -566,7 +565,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	}
 	insertUploads(t, db, uploads...)
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
 		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
 		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
@@ -675,7 +674,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 		t.Fatalf("unexpected error inserting retention configuration: %s", err)
 	}
 
-	graph := gitserver.ParseCommitGraph([]string{
+	graph := gitdomain.ParseCommitGraph([]string{
 		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
 		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
 		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
@@ -816,13 +815,13 @@ func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	}
 }
 
-func readBenchmarkCommitGraph() (*gitserver.CommitGraph, error) {
+func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
 	contents, err := readBenchmarkFile("../../commitgraph/testdata/commits.txt.gz")
 	if err != nil {
 		return nil, err
 	}
 
-	return gitserver.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
 }
 
 func readBenchmarkCommitGraphView() ([]Upload, error) {

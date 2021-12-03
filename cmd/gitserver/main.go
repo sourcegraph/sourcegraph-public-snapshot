@@ -143,7 +143,7 @@ func main() {
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(handler)
-	handler = ot.HTTPMiddleware(trace.HTTPTraceMiddleware(handler, conf.DefaultClient()))
+	handler = ot.HTTPMiddleware(trace.HTTPMiddleware(handler, conf.DefaultClient()))
 
 	// Ready immediately
 	ready := make(chan struct{})

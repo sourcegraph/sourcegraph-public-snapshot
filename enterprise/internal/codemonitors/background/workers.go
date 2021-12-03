@@ -38,7 +38,8 @@ func newTriggerQueryEnqueuer(ctx context.Context, store cm.CodeMonitorStore) gor
 	enqueueActive := goroutine.NewHandlerWithErrorMessage(
 		"code_monitors_trigger_query_enqueuer",
 		func(ctx context.Context) error {
-			return store.EnqueueQueryTriggerJobs(ctx)
+			_, err := store.EnqueueQueryTriggerJobs(ctx)
+			return err
 		})
 	return goroutine.NewPeriodicGoroutine(ctx, 1*time.Minute, enqueueActive)
 }
@@ -147,7 +148,12 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 	}
 	defer func() { err = s.Done(err) }()
 
-	q, err := s.GetQueryTriggerForJob(ctx, record.RecordID())
+	triggerJob, ok := record.(*cm.TriggerJob)
+	if !ok {
+		return errors.Errorf("unexpected record type %T", record)
+	}
+
+	q, err := s.GetQueryTriggerForJob(ctx, triggerJob.ID)
 	if err != nil {
 		return err
 	}
@@ -170,7 +176,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		numResults = len(results.Data.Search.Results.Results)
 	}
 	if numResults > 0 {
-		err := s.EnqueueActionJobsForQuery(ctx, q.ID, record.RecordID())
+		err := s.EnqueueActionJobsForQuery(ctx, q.ID, triggerJob.ID)
 		if err != nil {
 			return errors.Errorf("store.EnqueueActionJobsForQuery: %w", err)
 		}
@@ -182,7 +188,7 @@ func (r *queryRunner) Handle(ctx context.Context, record workerutil.Record) (err
 		return err
 	}
 	// Log the actual query we ran and whether we got any new results.
-	err = s.UpdateTriggerJobWithResults(ctx, newQuery, numResults, record.RecordID())
+	err = s.UpdateTriggerJobWithResults(ctx, triggerJob.ID, newQuery, numResults)
 	if err != nil {
 		return errors.Errorf("LogSearch: %w", err)
 	}
