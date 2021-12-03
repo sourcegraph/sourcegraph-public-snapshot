@@ -60,7 +60,7 @@ type CodeMonitorStore interface {
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
 	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
-	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJob int32) error
+	EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJob int32) ([]*ActionJob, error)
 }
 
 // codeMonitorStore exposes methods to read and write codemonitors domain models

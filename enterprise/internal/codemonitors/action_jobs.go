@@ -176,12 +176,25 @@ busy AS (
 )
 INSERT INTO cm_action_jobs (email, trigger_event)
 SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
+RETURNING %s
 `
 
 // TODO(camdencheek): could/should we enqueue based on monitor ID rather than query ID? Would avoid joins above.
-func (s *codeMonitorStore) EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJobID int32) (err error) {
+func (s *codeMonitorStore) EnqueueActionJobsForQuery(ctx context.Context, queryID int64, triggerJobID int32) ([]*ActionJob, error) {
 	// TODO(camdencheek): Enqueue actions other than emails here
-	return s.Store.Exec(ctx, sqlf.Sprintf(enqueueActionEmailFmtStr, queryID, triggerJobID, triggerJobID))
+	q := sqlf.Sprintf(
+		enqueueActionEmailFmtStr,
+		queryID,
+		triggerJobID,
+		triggerJobID,
+		sqlf.Join(ActionJobColumns, ","),
+	)
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanActionJobs(rows)
 }
 
 const getActionJobMetadataFmtStr = `
@@ -204,7 +217,7 @@ func (s *codeMonitorStore) GetActionJobMetadata(ctx context.Context, jobID int32
 }
 
 const actionJobForIDFmtStr = `
-SELECT %s -- ActionJobsColumns
+SELECT %s -- ActionJobColumns
 FROM cm_action_jobs
 WHERE id = %s
 `
