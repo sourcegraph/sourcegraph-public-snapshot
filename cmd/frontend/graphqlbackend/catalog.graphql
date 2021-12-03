@@ -4,6 +4,7 @@ extend type Query {
     """
     catalog: Catalog!
     catalogEntity(name: String!): CatalogEntity
+    groups: [Group!]!
 }
 
 type Catalog {
@@ -44,7 +45,7 @@ interface CatalogEntity {
 
 union EntityOwner = Person | Group
 
-type Group {
+type Group implements Node {
     id: ID!
     name: String!
     title: String!

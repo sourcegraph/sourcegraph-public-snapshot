@@ -29,10 +29,15 @@ func makeGraphData(db database.DB, filterID graphql.ID) *catalogGraphResolver {
 	}
 
 	for _, e := range edges {
+		outNode := findNodeByName(e.Out)
+		inNode := findNodeByName(e.In)
+		if outNode == nil || inNode == nil {
+			continue
+		}
 		graph.edges = append(graph.edges, &catalogEntityRelationEdgeResolver{
 			type_:   gql.CatalogEntityRelationType(e.Type),
-			outNode: findNodeByName(e.Out),
-			inNode:  findNodeByName(e.In),
+			outNode: outNode,
+			inNode:  inNode,
 		})
 	}
 

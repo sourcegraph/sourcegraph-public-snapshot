@@ -15,7 +15,27 @@ func (r *catalogComponentResolver) Status(ctx context.Context) (gql.CatalogEntit
 	var statusContexts []gql.CatalogEntityStatusContextResolver
 
 	{
-		// Owners
+		// Owner
+		owner, err := r.Owner(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		sc := &catalogEntityStatusContextResolver{
+			name:  "owner",
+			title: "Owner",
+		}
+		if owner == nil {
+			sc.state = "FAILURE"
+			sc.description = "No owner specified"
+		} else {
+			sc.state = "INFO"
+		}
+		statusContexts = append(statusContexts, sc)
+	}
+
+	{
+		// Code owners
 		codeOwners, err := r.CodeOwners(ctx)
 		if err != nil {
 			// return nil, err

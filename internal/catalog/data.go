@@ -306,8 +306,9 @@ func Data() ([]Component, []Group, []Edge) {
 
 	groups := []Group{
 		{
-			Name:  "code-graph",
-			Title: "Code graph",
+			Name:    "code-graph",
+			Title:   "Code graph",
+			Members: []string{"yink-teo"},
 		},
 		{
 			Name:        "search-core",
@@ -328,20 +329,82 @@ func Data() ([]Component, []Group, []Edge) {
 			Members:     []string{"oconvey", "vgandhi", "cesarj", "chrismwendt", "teej", "olaf", "noahsc", "efritz"},
 		},
 		{
-			Name:  "enablement",
-			Title: "Enablement",
+			Name:        "batch-changes",
+			Title:       "Batch Changes",
+			ParentGroup: "code-graph",
+			Members:     []string{"chris-pine", "kelli-rockwell", "adeola-akinsiku", "adam-harvey", "erik-seliger", "thorsten-ball"},
+		},
+		{
+			Name:        "code-insights",
+			Title:       "Code insights",
+			ParentGroup: "code-graph",
+			Members:     []string{"felix-becker", "cristina-birkel", "justin-boyson", "coury-clark", "vova-kulikov"},
+		},
+
+		{
+			Name:    "enablement",
+			Title:   "Enablement",
+			Members: []string{"jean-du-plessis"},
 		},
 		{
 			Name:        "repo-mgmt",
 			Title:       "Repo management",
 			ParentGroup: "enablement",
-			Members:     []string{"jplahn", "indrag", "rslade", "mweitzel", "alexo"},
+			Members:     []string{"jplahn", "indrag", "rslade", "mweitzel", "alex-ostrikov"},
+		},
+		{
+			Name:        "delivery",
+			Title:       "Delivery",
+			ParentGroup: "enablement",
+			Members:     []string{"jean-du-plessis", "kevin-wojkovich", "crystal-augustus"},
+		},
+		{
+			Name:        "dev-experience",
+			Title:       "Dev experience",
+			ParentGroup: "enablement",
+			Members:     []string{"kristen-stretch", "jh-chabran", "robert-lin", "dave-try"},
 		},
 		{
 			Name:        "frontend-platform",
 			Title:       "Frontend platform",
 			ParentGroup: "enablement",
-			Members:     []string{"pdubroy", "valeryb", "tomross"},
+			Members:     []string{"patrick-dubroy", "valeryb", "tomross"},
+		},
+
+		{
+			Name:    "cloud",
+			Title:   "Cloud",
+			Members: []string{"billcreager"},
+		},
+		{
+			Name:        "growth",
+			Title:       "Growth",
+			ParentGroup: "cloud",
+			Members:     []string{"stephengutekanst"},
+		},
+		{
+			Name:        "extensibility",
+			Title:       "Extensibility",
+			ParentGroup: "cloud",
+			Members:     []string{"murat-sutunc", "erzhan-torokulov", "beatrix-woo", "tharuntej-kandala"},
+		},
+		{
+			Name:        "security",
+			Title:       "Security",
+			ParentGroup: "cloud",
+			Members:     []string{"diego-comas", "lauren-chapman", "david-sandy", "mohammad-alam", "andre-eleuterio"},
+		},
+		{
+			Name:        "devops",
+			Title:       "DevOps",
+			ParentGroup: "cloud",
+			Members:     []string{"jennifer-mitchell", "dax-mcdonald"},
+		},
+		{
+			Name:        "cloud-saas",
+			Title:       "Cloud SaaS",
+			ParentGroup: "cloud",
+			Members:     []string{"rafal-leszczynski", "rafal-gajdulewicz", "milan-freml", "artem-ruts", "joe-cheng"},
 		},
 	}
 	for _, g := range groups {

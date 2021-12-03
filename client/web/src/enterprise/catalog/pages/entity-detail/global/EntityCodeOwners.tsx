@@ -13,38 +13,40 @@ interface Props extends EntityDetailContentCardProps {
 }
 
 export const EntityCodeOwners: React.FunctionComponent<Props> = ({
-    entity: { owners },
+    entity: { codeOwners },
     className,
     headerClassName,
     titleClassName,
     bodyClassName,
     bodyScrollableClassName,
 }) =>
-    owners && owners.length > 0 ? (
+    codeOwners && codeOwners.length > 0 ? (
         <div className={className}>
             <header className={headerClassName}>
                 <h3 className={titleClassName}>Owners</h3>
             </header>
             <ol className={classNames('list-group list-group-horizontal border-0', bodyScrollableClassName)}>
-                {owners.map(owner => (
+                {codeOwners.map(codeOwner => (
                     <li
-                        key={owner.node}
+                        key={codeOwner.node}
                         className={classNames(
                             'list-group-item border-top-0 border-bottom-0 text-center pt-2',
                             styles.owner
                         )}
                     >
-                        {owner.node}
+                        {codeOwner.node}
                         <div
                             className={classNames(styles.percent)}
-                            title={`Owns ${owner.fileCount} ${pluralize('file', owner.fileCount)}`}
+                            title={`Owns ${codeOwner.fileCount} ${pluralize('file', codeOwner.fileCount)}`}
                         >
-                            {owner.fileProportion >= 0.01 ? `${(owner.fileProportion * 100).toFixed(0)}%` : '<1%'}
+                            {codeOwner.fileProportion >= 0.01
+                                ? `${(codeOwner.fileProportion * 100).toFixed(0)}%`
+                                : '<1%'}
                         </div>
                     </li>
                 ))}
             </ol>
         </div>
     ) : (
-        <div className="alert alert-info">No owners</div>
+        <div className="alert alert-info">No code owners</div>
     )

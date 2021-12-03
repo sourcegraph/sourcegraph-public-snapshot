@@ -2,6 +2,7 @@ import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
+import { CATALOG_ENTITY_OWNER_FRAGMENT } from '../../../components/entity-owner/gql'
 
 const CATALOG_ENTITY_GRAPH_FRAGMENT = gql`
     fragment CatalogEntityGraphFields on CatalogEntity {
@@ -224,8 +225,6 @@ const CATALOG_COMPONENT_API_FRAGMENT = gql`
     }
 `
 
-// TODO(sqs): show Group owner
-
 export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
     fragment CatalogEntityDetailFields on CatalogEntity {
         __typename
@@ -235,9 +234,10 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         description
         lifecycle
         url
+        ...CatalogEntityOwnerFields
+        ...CatalogEntityStatusFields
         ...CatalogEntityGraphFields
         ...CatalogEntityCodeOwnersFields
-        ...CatalogEntityStatusFields
         ... on CatalogComponent {
             kind
             ...CatalogComponentDocumentationFields
@@ -248,10 +248,10 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
             ...CatalogComponentAPIFields
         }
     }
-
+    ${CATALOG_ENTITY_OWNER_FRAGMENT}
+    ${CATALOG_ENTITY_STATUS_FRAGMENT}
     ${CATALOG_ENTITY_GRAPH_FRAGMENT}
     ${CATALOG_ENTITY_CODE_OWNERS_FRAGMENT}
-    ${CATALOG_ENTITY_STATUS_FRAGMENT}
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}
     ${CATALOG_COMPONENT_CHANGES_FRAGMENT}

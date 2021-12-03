@@ -1,5 +1,7 @@
 import classNames from 'classnames'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -11,6 +13,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { CatalogIcon } from '../../../../../catalog'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 import { catalogEntityIconComponent } from '../../../components/CatalogEntityIcon'
+import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentAPI } from './ComponentApi'
 import { ComponentDocumentation } from './ComponentDocumentation'
@@ -135,6 +138,24 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                         text: entity.name,
                     },
                 ]}
+                actions={
+                    // eslint-disable-next-line react/forbid-dom-props
+                    <nav className="d-flex align-items-center" style={{ marginBottom: '-5px' }}>
+                        <div className="d-inline-block mr-4">
+                            <span className="small font-weight-bold">Lifecycle</span>
+                            <br />
+                            {entity.lifecycle.toLowerCase()}
+                        </div>
+                        <Link to="#" className="text-body d-inline-block mr-4">
+                            <span className="small font-weight-bold">Owner</span>
+                            <br />
+                            <EntityOwner owner={entity.owner} />
+                        </Link>
+                        <Link to="#" className="d-inline-block btn btn-secondary btn-sm p-2 mb-0">
+                            <SettingsIcon className="icon-inline" />
+                        </Link>
+                    </nav>
+                }
                 className="mt-3 mb-1"
             />
             <div className="mb-4" />

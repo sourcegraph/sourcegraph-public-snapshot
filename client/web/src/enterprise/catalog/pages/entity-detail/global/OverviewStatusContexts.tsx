@@ -11,9 +11,11 @@ import {
     CatalogEntityDetailFields,
     CatalogEntityCodeOwnersFields,
     CatalogEntityStatusFields,
+    CatalogEntityOwnerFields,
 } from '../../../../../graphql-operations'
 import { PersonLink } from '../../../../../person/PersonLink'
 
+import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 import { OverviewStatusContextItem } from './OverviewStatusContextItem'
 
 interface Props {
@@ -25,6 +27,16 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
     <>
         {entity.status.contexts.map(statusContext => {
             switch (statusContext.name) {
+                case 'owner':
+                    return (
+                        <OwnerStatusContext
+                            key={statusContext.id}
+                            entity={entity}
+                            statusContext={statusContext}
+                            className={itemClassName}
+                        />
+                    )
+
                 case 'codeOwners':
                     return (
                         <CodeOwnersStatusContext
@@ -34,6 +46,7 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                             className={itemClassName}
                         />
                     )
+
                 case 'contributors':
                     return (
                         <ContributorsStatusContext
@@ -43,6 +56,7 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                             className={itemClassName}
                         />
                     )
+
                 case 'usage':
                     return (
                         <UsageStatusContext
@@ -52,6 +66,7 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
                             className={itemClassName}
                         />
                     )
+
                 default:
                     return (
                         <OverviewStatusContextItem
@@ -63,6 +78,16 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
             }
         })}
     </>
+)
+
+const OwnerStatusContext: React.FunctionComponent<{
+    entity: CatalogEntityOwnerFields
+    statusContext: CatalogEntityStatusFields['status']['contexts'][0]
+    className?: string
+}> = ({ entity, statusContext, className }) => (
+    <OverviewStatusContextItem statusContext={statusContext} className={className}>
+        {statusContext.description || <EntityOwner owner={entity.owner} />}
+    </OverviewStatusContextItem>
 )
 
 const CodeOwnersStatusContext: React.FunctionComponent<{

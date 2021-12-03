@@ -256,6 +256,11 @@ func (r *NodeResolver) ToCatalogComponent() (CatalogComponentResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToGroup() (GroupResolver, bool) {
+	n, ok := r.Node.(GroupResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToCatalogEntityStatus() (CatalogEntityStatusResolver, bool) {
 	n, ok := r.Node.(CatalogEntityStatusResolver)
 	return n, ok

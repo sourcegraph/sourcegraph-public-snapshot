@@ -3,9 +3,7 @@ import { uniqBy } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import PowerCycleIcon from 'mdi-react/PowerCycleIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import SlackIcon from 'mdi-react/SlackIcon'
 import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -53,7 +51,7 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                                 to={`/search?q=context:c/${entity.name}`}
                                 className="d-inline-flex align-items-center btn btn-outline-secondary mb-3"
                             >
-                                <SearchIcon className="icon-inline" /> Search...
+                                <SearchIcon className="icon-inline mr-1" /> Search...
                             </Link>
                             {entity.readme && (
                                 <div className="d-flex align-items-start">
@@ -80,14 +78,6 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                                 #dev-frontend
                             </Link>
                             <hr className="my-3" />
-                            <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                <PowerCycleIcon className="icon-inline mr-2" />
-                                Lifecycle:&nbsp;<strong>{entity.lifecycle.toLowerCase()}</strong>
-                            </Link>
-                            <Link to="#" className="d-flex align-items-center text-body mb-3">
-                                <SettingsIcon className="icon-inline mr-2" />
-                                Spec
-                            </Link>
                         </div>
                     </div>
                 </div>

@@ -15,6 +15,7 @@ import (
 type CatalogRootResolver interface {
 	Catalog(context.Context) (CatalogResolver, error)
 	CatalogEntity(context.Context, *CatalogEntityArgs) (*CatalogEntityResolver, error)
+	Groups() []GroupResolver
 
 	GitTreeEntryCatalogEntities(context.Context, *GitTreeEntryResolver) ([]*CatalogEntityResolver, error)
 
