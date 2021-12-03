@@ -26,6 +26,7 @@ func createNotebooks(ctx context.Context, store NotebooksStore, notebooks []*Not
 
 func TestCreateAndGetNotebook(t *testing.T) {
 	db := dbtest.NewDB(t)
+	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)
@@ -52,8 +53,33 @@ func TestCreateAndGetNotebook(t *testing.T) {
 	}
 }
 
+func TestCreatingNotebookWithInvalidBlock(t *testing.T) {
+	db := dbtest.NewDB(t)
+	t.Parallel()
+	ctx := actor.WithInternalActor(context.Background())
+	u := database.Users(db)
+	n := Notebooks(db)
+
+	user, err := u.Create(ctx, database.NewUser{Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	blocks := []NotebookBlock{{ID: "1", Type: NotebookQueryBlockType}}
+	notebook := &Notebook{Title: "Notebook Title", Blocks: blocks, Public: true, CreatorUserID: user.ID}
+	_, err = n.CreateNotebook(ctx, notebook)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	wantErr := "invalid query block with id: 1"
+	if err.Error() != wantErr {
+		t.Fatalf("wanted '%s' error, got '%s'", wantErr, err.Error())
+	}
+}
+
 func TestNotebookPermissions(t *testing.T) {
 	db := dbtest.NewDB(t)
+	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := database.Users(db)
 	n := Notebooks(db)

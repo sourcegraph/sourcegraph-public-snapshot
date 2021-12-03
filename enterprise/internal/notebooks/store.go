@@ -153,13 +153,12 @@ func (s *notebooksStore) GetNotebook(ctx context.Context, id int64) (*Notebook, 
 	if err != nil {
 		return nil, err
 	}
-	cond := sqlf.Sprintf("n.id = %d", id)
 	rows, err := s.Query(
 		ctx,
 		sqlf.Sprintf(
 			listNotebooksFmtStr,
 			permissionsCond,
-			cond,
+			sqlf.Sprintf("n.id = %d", id),
 			getNotebooksOrderByClause(NotebooksOrderByID, false),
 			1, // limit
 			0, // offset
@@ -178,6 +177,11 @@ RETURNING id
 `
 
 func (s *notebooksStore) CreateNotebook(ctx context.Context, n *Notebook) (*Notebook, error) {
+	err := validateNotebookBlocks(n.Blocks)
+	if err != nil {
+		return nil, err
+	}
+
 	blocksJSON, err := json.Marshal(n.Blocks)
 	if err != nil {
 		return nil, err
