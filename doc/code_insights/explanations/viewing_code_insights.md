@@ -50,12 +50,12 @@ You can attach insights to multiple dashboards.
 
 ## Repository and directory pages
 
-On repository pages, any code insight that runs over that repository will display. On directory pages, code insights defined for that repository will display **and** run only over files that are children of the directory.
+On repository pages, any code insight that runs over that repository can display. On directory pages, code insights defined for that repository can display **and** run only over files that are children of the directory.
 
-This is enabled by default and can be disabled with a flag in your global, organization, or user settings:
+This is disabled by default as it is the not the primary way to view insights and there are (yet) no ways to select only showing a subset of possible insights, but it can be enabled with a flag in your global, organization, or user settings:
 
 ```json
-"insights.displayLocation.directory": false
+"insights.displayLocation.directory": true
 ```
 
 ## Search home page
