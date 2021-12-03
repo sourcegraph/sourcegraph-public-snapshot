@@ -258,7 +258,7 @@ NOTE: You can ignore this if you're not a Sourcegraph employee.
 	{
 		name:               "Programming languages & tooling",
 		requiresRepository: true,
-		// TODO: Can we provide an autofix here that installs asdf, reloads shell, installs language versions?
+		autoFixing:         true,
 		dependencies: []*dependency{
 			{
 				name: "go", check: checkInPath("go"),
@@ -299,7 +299,7 @@ asdf install yarn
 			},
 			{
 				name:  "node",
-				check: checkInPath("node"),
+				check: checkCommandOutputContains("asdf current nodejs", ".nvmrc", false),
 				instructionsComment: `` +
 					`Souregraph requires Node.JS to be installed.
 
@@ -313,7 +313,7 @@ programming languages and tools. Find out how to install asdf here:
 Once you have asdf, execute the commands below.`,
 				instructionsCommands: stringer(`
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
-echo 'legacy_version_file = yes' >> ~/.asdfrc
+touch ~/.asdfrc && cat ~/.asdfrc | grep "legacy_version_file = yes" || echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
 `),
 			},
