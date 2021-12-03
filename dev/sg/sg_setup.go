@@ -26,6 +26,8 @@ import (
 )
 
 var (
+	userShell    string
+	userShellRC  string
 	setupFlagSet = flag.NewFlagSet("sg setup", flag.ExitOnError)
 	setupCommand = &ffcli.Command{
 		Name:       "setup",
@@ -47,6 +49,9 @@ func setupExec(ctx context.Context, args []string) error {
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
 		currentOS = overridesOS
 	}
+
+	// Fetch the current user shell and shell RC file
+	userShell, userShellRC = guessUserShell()
 
 	var categories []dependencyCategory
 	if currentOS == "darwin" {
@@ -171,23 +176,25 @@ Follow the instructions at https://brew.sh to install it, then rerun 'sg setup'.
 	{
 		name: "Install base utilities (git, docker, ...)",
 		dependencies: []*dependency{
-			{name: "git", check: checkInPath("git"), instructionsCommands: `brew install git`},
-			// TODO we should check that .profile is being sourced to avoid issues with custom dotfiles making this check fail.
-			// Possible fix: define and export in variable there, start a new shell and check that the env var is defined.
-			// Then remove it. If it fails, print an error about sourcing .profile.
-			// Possible fix: pick zshrc or bashrc depending on the shell the user is running. Anyone with custom doftiles will see
-			// it if they version them, signaling them that they may want to move it in a different place.
-			{name: "asdf", check: checkCommandOutputContains("asdf", "version", false), instructionsCommands: `brew install asdf && echo ". /opt/homebrew/opt/asdf/libexec/asdf.sh" >> ~/.zshrc`},
-			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: "brew install gnu-sed"},
-			{name: "comby", check: checkInPath("comby"), instructionsCommands: "brew install comby"},
-			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: `brew install pcre`},
-			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: `brew install sqlite`},
-			{name: "jq", check: checkInPath("jq"), instructionsCommands: `brew install jq`},
-			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5", false), instructionsCommands: `brew install bash`},
+			{name: "git", check: checkInPath("git"), instructionsCommands: stringer(`brew install git`)},
+			{
+				name:  "asdf",
+				check: checkCommandOutputContains("asdf", "version", false),
+				// Uses `&&` to avoid appending the shell config on failed installations attempts.
+				instructionsCommands: lazyString(func() string {
+					return `brew install asdf && echo ". /opt/homebrew/opt/asdf/libexec/asdf.sh" >> ` + userShellRC
+				}),
+			},
+			{name: "gnu-sed", check: checkInPath("gsed"), instructionsCommands: stringer("brew install gnu-sed")},
+			{name: "comby", check: checkInPath("comby"), instructionsCommands: stringer("brew install comby")},
+			{name: "pcre", check: checkInPath("pcregrep"), instructionsCommands: stringer(`brew install pcre`)},
+			{name: "sqlite", check: checkInPath("sqlite3"), instructionsCommands: stringer(`install sqlite`)},
+			{name: "jq", check: checkInPath("jq"), instructionsCommands: stringer(`brew install jq`)},
+			{name: "bash", check: checkCommandOutputContains("bash --version", "version 5", false), instructionsCommands: stringer(`brew install bash`)},
 			{
 				name:                 "docker",
 				check:                wrapCheckErr(checkInPath("docker"), "if Docker is installed and the check fails, you might need to start Docker.app and restart terminal and 'sg setup'"),
-				instructionsCommands: `brew install --cask docker`,
+				instructionsCommands: stringer(`brew install --cask docker`),
 			},
 		},
 		autoFixing: true,
@@ -208,14 +215,14 @@ https://docs.github.com/en/authentication/connecting-to-github-with-ssh
 			{
 				name:                 "github.com/sourcegraph/sourcegraph",
 				check:                checkInMainRepoOrRepoInDirectory,
-				instructionsCommands: `git clone git@github.com:sourcegraph/sourcegraph.git`,
+				instructionsCommands: stringer(`git clone git@github.com:sourcegraph/sourcegraph.git`),
 				instructionsComment: `` +
 					`The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
 			},
 			{
 				name:                 "github.com/sourcegraph/dev-private",
 				check:                checkDevPrivateInParentOrInCurrentDirectory,
-				instructionsCommands: `git clone git@github.com:sourcegraph/dev-private.git`,
+				instructionsCommands: stringer(`git clone git@github.com:sourcegraph/dev-private.git`),
 				instructionsComment: `` +
 					`In order to run the local development environment as a Sourcegraph employee,
 you'll need to clone another repository: github.com/sourcegraph/dev-private.
@@ -254,10 +261,10 @@ programming languages and tools. Find out how to install asdf here:
 	https://asdf-vm.com/guide/getting-started.html
 
 Once you have asdf, execute the commands below.`,
-				instructionsCommands: `
+				instructionsCommands: stringer(`
 asdf plugin-add golang https://github.com/kennyp/asdf-golang.git
 asdf install golang
-`,
+`),
 			},
 			{
 				name: "yarn", check: checkInPath("yarn"),
@@ -272,11 +279,11 @@ programming languages and tools. Find out how to install asdf here:
 	https://asdf-vm.com/guide/getting-started.html
 
 Once you have asdf, execute the commands below.`,
-				instructionsCommands: `
+				instructionsCommands: stringer(`
 brew install gpg
 asdf plugin-add yarn
 asdf install yarn 
-`,
+`),
 			},
 			{
 				name:  "node",
@@ -292,11 +299,11 @@ programming languages and tools. Find out how to install asdf here:
 	https://asdf-vm.com/guide/getting-started.html
 
 Once you have asdf, execute the commands below.`,
-				instructionsCommands: `
+				instructionsCommands: stringer(`
 asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git 
 echo 'legacy_version_file = yes' >> ~/.asdfrc
 asdf install nodejs
-`,
+`),
 			},
 		},
 	},
@@ -321,13 +328,13 @@ that create users and databsaes: 'createdb', 'createuser', ...
 
 If you're not sure: use the recommended commands to install PostgreSQL, start it
 and create the 'sourcegraph' database.`,
-				instructionsCommands: `brew reinstall postgresql && brew services start postgresql 
+				instructionsCommands: stringer(`brew reinstall postgresql && brew services start postgresql 
 sleep 10
 createdb
 createuser --superuser sourcegraph || true
 psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
 createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-`,
+`),
 			},
 			{
 				name:  "psql",
@@ -352,7 +359,7 @@ If you used another method, make sure psql is available.`,
 				instructionsComment: `` +
 					`Sourcegraph requires the Redis database to be running.
 					We recommend installing it with Homebrew and starting it as a system service.`,
-				instructionsCommands: "brew reinstall redis && brew services start redis",
+				instructionsCommands: stringer("brew reinstall redis && brew services start redis"),
 			},
 		},
 	},
@@ -366,7 +373,7 @@ If you used another method, make sure psql is available.`,
 				instructionsComment: `` +
 					`Sourcegraph should be reachable under https://sourcegraph.test:3443.
 					To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
-				instructionsCommands: `./dev/add_https_domain_to_hosts.sh`,
+				instructionsCommands: stringer(`./dev/add_https_domain_to_hosts.sh`),
 			},
 			{
 				name:  "Caddy root certificate is trusted by system",
@@ -376,7 +383,7 @@ If you used another method, make sure psql is available.`,
 trust the certificate created by Caddy, the proxy we use locally.
 
 YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
-				instructionsCommands:   `./dev/caddy.sh trust`,
+				instructionsCommands:   stringer(`./dev/caddy.sh trust`),
 				requiresSgSetupRestart: true,
 			},
 		},
@@ -711,7 +718,7 @@ func fixCategoryAutomatically(ctx context.Context, category *dependencyCategory)
 func fixDependencyAutomatically(ctx context.Context, dep *dependency) error {
 	writeFingerPointingLine("Trying my hardest to fix %q automatically...", dep.name)
 
-	cmd := sourceExec(ctx, dep.instructionsCommands)
+	cmd := sourceExec(ctx, dep.instructionsCommands.String())
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -779,7 +786,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 
 		// If we don't have anything do run, we simply print instructions to
 		// the user
-		if dep.instructionsCommands == "" {
+		if dep.instructionsCommands.String() == "" {
 			writeFingerPointingLine("Hit return once you're done")
 			waitForReturn()
 		} else {
@@ -792,7 +799,7 @@ func fixCategoryManually(ctx context.Context, categoryIdx int, category *depende
 			}
 			out.Write("")
 
-			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands)))
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(dep.instructionsCommands.String())))
 
 			choice, err := getChoice(map[int]string{
 				1: "I'll fix this manually (either by running the command or doing something else)",
@@ -900,9 +907,8 @@ func guessUserShell() (shell string, shellrc string) {
 // changes added by various checks to be run. This negates the new to ask the
 // user to restart sg for many checks.
 func sourceExec(ctx context.Context, cmd string) *exec.Cmd {
-	shell, shellrc := guessUserShell()
-	command := fmt.Sprintf("source %s ; %s", shellrc, cmd)
-	return exec.CommandContext(ctx, shell, "-c", command)
+	command := fmt.Sprintf("source %s ; %s", userShellRC, cmd)
+	return exec.CommandContext(ctx, userShell, "-c", command)
 }
 
 // combinedSourceExec runs a command in a fresh shell environment,
@@ -1023,8 +1029,18 @@ type dependency struct {
 	err error
 
 	instructionsComment    string
-	instructionsCommands   string
+	instructionsCommands   fmt.Stringer
 	requiresSgSetupRestart bool
+}
+
+type stringer string
+
+func (i stringer) String() string { return string(i) }
+
+type lazyString func() string
+
+func (l lazyString) String() string {
+	return l()
 }
 
 func (d *dependency) IsMet() bool { return d.err == nil }
