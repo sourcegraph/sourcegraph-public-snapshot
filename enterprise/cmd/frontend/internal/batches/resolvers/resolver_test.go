@@ -573,7 +573,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	// 	t.Fatalf("wrong error. want=%q, have=%q", want, have)
 	// }
 
-	// TODO: But a different namespace + the same name is okay
+	// But a different namespace + the same name is okay
 	orgID := ct.InsertTestOrg(t, db, "my-org")
 	namespaceID2 := relay.MarshalID("User", orgID)
 
@@ -582,7 +582,6 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 		"name":      "my-batch-change",
 	}
 
-	// First time it should work, because no batch change exists
 	apitest.MustExec(actorCtx, t, s, input2, &response, mutationCreateEmptyBatchChange)
 
 	if response.CreateEmptyBatchChange.ID == "" {

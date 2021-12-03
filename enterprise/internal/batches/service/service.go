@@ -148,13 +148,13 @@ type CreateEmptyBatchChangeOpts struct {
 }
 
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
-	fmt.Printf("CreateEmptyBatchChange: %+v\n", opts)
-
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: Validate a unique combination of namespace + name
 
 	actor := actor.FromContext(ctx)
 	spec := &btypes.BatchSpec{
@@ -162,7 +162,8 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		Spec:            &batcheslib.BatchSpec{Name: opts.Name},
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-		UserID:          actor.UID}
+		UserID:          actor.UID,
+	}
 
 	if err := s.store.CreateBatchSpec(ctx, spec); err != nil {
 		return nil, err
