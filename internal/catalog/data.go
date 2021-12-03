@@ -331,9 +331,10 @@ func Data() ([]Component, []Group, []Edge) {
 
 	groups := []Group{
 		{
-			Name:    "engineering",
-			Title:   "Engineering",
-			Members: []string{"nick-snyder", "christina-forney", "beyang-liu"},
+			Name:        "product-eng",
+			Title:       "Product and engineering",
+			Description: "The entire product & engineering team.",
+			Members:     []string{"nick-snyder", "christina-forney", "beyang-liu"},
 		},
 
 		{
