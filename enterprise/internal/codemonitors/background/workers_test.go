@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
@@ -36,7 +36,6 @@ func TestActionRunner(t *testing.T) {
 	var (
 		queryID      int64 = 1
 		triggerEvent       = 1
-		record       *codemonitors.ActionJob
 	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -57,7 +56,6 @@ func TestActionRunner(t *testing.T) {
 			}
 
 			// Create a TestStore.
-			var err error
 			now := time.Now()
 			clock := func() time.Time { return now }
 			s := codemonitors.NewStoreWithClock(db, clock)
@@ -66,32 +64,24 @@ func TestActionRunner(t *testing.T) {
 			_, _, _, userCtx := storetest.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
-			_, err = ts.InsertTestMonitor(userCtx, t)
-			if err != nil {
-				t.Fatal(err)
-			}
+			_, err := ts.InsertTestMonitor(userCtx, t)
+			require.NoError(t, err)
+
 			err = ts.EnqueueQueryTriggerJobs(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			err = ts.UpdateTriggerJobWithResults(ctx, testQuery, tt.numResults, triggerEvent)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
 			err = ts.EnqueueActionJobsForQuery(ctx, queryID, triggerEvent)
-			if err != nil {
-				t.Fatal(err)
-			}
-			record, err = ts.GetActionJob(ctx, 1)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
+
+			record, err := ts.GetActionJob(ctx, 1)
+			require.NoError(t, err)
 
 			a := actionRunner{s}
 			err = a.Handle(ctx, record)
-			if err != nil {
-				t.Fatal(err)
-			}
+			require.NoError(t, err)
 
 			want := email.TemplateDataNewSearchResults{
 				Priority:       "New",
@@ -101,9 +91,7 @@ func TestActionRunner(t *testing.T) {
 			}
 
 			want.NumberOfResultsWithDetail = tt.wantNumResultsText
-			if diff := cmp.Diff(got, want); diff != "" {
-				t.Fatalf("diff: %s", diff)
-			}
+			require.Equal(t, want, got)
 		})
 	}
 }

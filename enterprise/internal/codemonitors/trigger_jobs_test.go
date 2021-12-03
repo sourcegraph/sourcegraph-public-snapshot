@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 )
 
 const setToCompletedFmtStr = `
@@ -24,40 +25,28 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, _, _, userCTX := newTestUser(ctx, t, db)
 	_, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Add 1 job and date it back to a long time ago.
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	longTimeAgo := s.Now().AddDate(0, 0, -(retentionInDays + 1))
 	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, longTimeAgo, longTimeAgo, 1))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// Add second job.
 	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
 	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, s.Now(), s.Now(), 2))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	err = s.DeleteOldTriggerJobs(ctx, retentionInDays)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(getJobIDs))
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer rows.Close()
 
 	var (
@@ -70,12 +59,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 			t.Fatalf("got more than 1 row, expected exactly 1 row")
 		}
 		err = rows.Scan(&id)
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 	}
-	wantID := 2
-	if id != wantID {
-		t.Fatalf("got %d, expected %d", id, wantID)
-	}
+	require.Equal(t, 2, id)
 }
