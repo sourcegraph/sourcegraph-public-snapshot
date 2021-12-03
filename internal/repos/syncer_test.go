@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
@@ -27,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -2035,7 +2035,7 @@ func testSyncReposWithLastErrors(s *repos.Store) func(*testing.T) {
 		}
 
 		// Run the syncer, which should find the repo with non-empty last_error and delete it
-		syncer.SyncReposWithLastErrors(ctx)
+		syncer.SyncReposWithLastErrors(ctx, ratelimit.DefaultRegistry)
 
 		// TODO: figure out how to do this without a sleep (i.e. subscribing to a channel or something)
 		time.Sleep(5 * time.Second)
