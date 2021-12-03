@@ -1,14 +1,5 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
-export const CATALOG_ENTITY_STATE_FRAGMENT = gql`
-    fragment CatalogEntityStateFields on CatalogEntity {
-        status {
-            id
-            state
-        }
-    }
-`
-
 export const CATALOG_ENTITIES = gql`
     query CatalogEntities($query: String, $first: Int, $after: String) {
         catalog {
@@ -29,8 +20,5 @@ export const CATALOG_ENTITIES = gql`
         ... on CatalogComponent {
             kind
         }
-        ...CatalogEntityStateFields
     }
-
-    ${CATALOG_ENTITY_STATE_FRAGMENT}
 `

@@ -12,7 +12,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CatalogEntityByNameResult, CatalogEntityByNameVariables } from '../../../../../graphql-operations'
 import { useTemporarySetting } from '../../../../../settings/temporary/useTemporarySetting'
-import { CatalogEntityFiltersProps } from '../../../core/entity-filters'
+import { useCatalogEntityFilters } from '../../../core/entity-filters'
 import { EntityList } from '../../overview/components/entity-list/EntityList'
 import { Sidebar } from '../sidebar/Sidebar'
 
@@ -20,12 +20,7 @@ import { EntityDetailContent } from './EntityDetailContent'
 import styles from './EntityDetailPage.module.scss'
 import { CATALOG_ENTITY_BY_NAME } from './gql'
 
-export interface Props
-    extends CatalogEntityFiltersProps,
-        TelemetryProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        SettingsCascadeProps {
+export interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     /** The name of the catalog entity. */
     entityName: string
 }
@@ -33,13 +28,7 @@ export interface Props
 /**
  * The catalog entity detail page.
  */
-export const EntityDetailPage: React.FunctionComponent<Props> = ({
-    entityName,
-    filters,
-    onFiltersChange,
-    telemetryService,
-    ...props
-}) => {
+export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, telemetryService, ...props }) => {
     useEffect(() => {
         telemetryService.logViewEvent('CatalogEntityDetail')
     }, [telemetryService])
@@ -63,6 +52,8 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({
     const disableSidebar = true
     const [showSidebar, setShowSidebar] = useTemporarySetting('catalog.sidebar.visible', true)
 
+    const { filters, onFiltersChange } = useCatalogEntityFilters()
+
     return (
         <>
             <PageTitle
@@ -84,7 +75,6 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({
                             filters={filters}
                             onFiltersChange={onFiltersChange}
                             className="flex-1"
-                            size="sm"
                         />
                         <div className="flex-1" />
                         <button type="button" className="btn btn-link btn-sm" onClick={() => setShowSidebar(false)}>

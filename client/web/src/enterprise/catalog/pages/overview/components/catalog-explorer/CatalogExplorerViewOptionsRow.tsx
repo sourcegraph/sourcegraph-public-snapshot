@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
+import { useLocation } from 'react-router'
 import { NavLink } from 'react-router-dom'
 import { Form } from 'reactstrap'
 
@@ -7,12 +8,17 @@ import { useDebounce } from '@sourcegraph/wildcard'
 
 import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 
+import styles from './CatalogExplorerViewOptionsRow.module.scss'
+
 interface Props extends CatalogEntityFiltersProps {
-    size: 'sm' | 'lg'
     className?: string
 }
 
-export const EntityListFilters: React.FunctionComponent<Props> = ({ filters, onFiltersChange, size, className }) => {
+export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
+    filters,
+    onFiltersChange,
+    className,
+}) => {
     const [query, setQuery] = useState(filters.query)
 
     const debouncedQuery = useDebounce(query, 200)
@@ -35,13 +41,25 @@ export const EntityListFilters: React.FunctionComponent<Props> = ({ filters, onF
         [filters, onFiltersChange, query]
     )
 
+    const location = useLocation()
+
     return (
-        <Form className={className} onSubmit={onSubmit}>
+        <Form className={classNames(styles.form, className)} onSubmit={onSubmit}>
             <div className="btn-group" role="group">
-                <NavLink to="/catalog" exact={true} className="btn border" activeClassName="btn-primary">
+                <NavLink
+                    to={{ pathname: '/catalog', search: location.search }}
+                    exact={true}
+                    className="btn border"
+                    activeClassName="btn-primary"
+                >
                     List
                 </NavLink>
-                <NavLink to="/catalog/graph" exact={true} className="btn border" activeClassName="btn-primary">
+                <NavLink
+                    to={{ pathname: '/catalog/graph', search: location.search }}
+                    exact={true}
+                    className="btn border"
+                    activeClassName="btn-primary"
+                >
                     Graph
                 </NavLink>
             </div>

@@ -6,7 +6,7 @@ import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { CatalogEntityIcon } from '../../../enterprise/catalog/components/CatalogEntityIcon'
 import { OverviewStatusContexts } from '../../../enterprise/catalog/pages/entity-detail/global/OverviewStatusContexts'
-import { CatalogEntityStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-list/EntityList'
+import { CatalogEntityStateIndicator } from '../../../enterprise/catalog/pages/overview/components/entity-state-indicator/EntityStateIndicator'
 import { positionBottomRight } from '../../../enterprise/insights/components/context-menu/utils'
 import { Popover } from '../../../enterprise/insights/components/popover/Popover'
 import {

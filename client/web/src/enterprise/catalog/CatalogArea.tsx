@@ -10,9 +10,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '../../components/HeroPage'
 
 import styles from './CatalogArea.module.scss'
-import { useCatalogEntityFilters } from './core/entity-filters'
 import { EntityDetailPage } from './pages/entity-detail/global/EntityDetailPage'
-import { OverviewPage } from './pages/overview/global/OverviewPage'
+import { ExplorePage } from './pages/overview/global/ExplorePage'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {}
 
@@ -21,8 +20,6 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
  */
 export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, ...props }) => {
     const match = useRouteMatch()
-
-    const { filters, onFiltersChange } = useCatalogEntityFilters()
 
     return (
         <div className={styles.container}>
@@ -33,18 +30,12 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
                             key={1}
                             {...props}
                             entityName={matchProps.match.params.name}
-                            filters={filters}
-                            onFiltersChange={onFiltersChange}
                             telemetryService={telemetryService}
                         />
                     )}
                 </Route>
                 <Route path={match.url}>
-                    <OverviewPage
-                        filters={filters}
-                        onFiltersChange={onFiltersChange}
-                        telemetryService={telemetryService}
-                    />
+                    <ExplorePage telemetryService={telemetryService} />
                 </Route>
                 <Route>
                     <HeroPage icon={MapSearchIcon} title="404: Not Found" />

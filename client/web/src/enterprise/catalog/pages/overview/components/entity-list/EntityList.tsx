@@ -18,12 +18,9 @@ import {
     CatalogEntitiesResult,
     CatalogEntitiesVariables,
     CatalogEntityFields,
-    CatalogEntityStateFields,
-    CatalogEntityStatusState,
 } from '../../../../../../graphql-operations'
 import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
 import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
-import { STATE_TO_COLOR } from '../../../entity-detail/global/OverviewStatusContextItem'
 
 import { EntityListFilters } from './EntityListFilters'
 import { CATALOG_ENTITIES } from './gql'
@@ -32,7 +29,6 @@ interface Props extends CatalogEntityFiltersProps {
     /** The name of the currently selected catalog entity, if any. */
     selectedEntityName?: string
 
-    size: 'sm' | 'lg'
     className?: string
 }
 
@@ -42,7 +38,6 @@ export const EntityList: React.FunctionComponent<Props> = ({
     selectedEntityName,
     filters,
     onFiltersChange,
-    size,
     className,
 }) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
@@ -57,7 +52,7 @@ export const EntityList: React.FunctionComponent<Props> = ({
             after: null,
         },
         options: {
-            useURL: size === 'lg',
+            useURL: false,
             fetchPolicy: 'cache-and-network',
         },
         getConnection: result => {
@@ -68,15 +63,10 @@ export const EntityList: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <EntityListFilters
-                filters={filters}
-                onFiltersChange={onFiltersChange}
-                size={size}
-                className="p-2 border-bottom"
-            />
+            <EntityListFilters filters={filters} onFiltersChange={onFiltersChange} className="pb-2 border-bottom" />
             <ConnectionContainer className={className}>
                 {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className={classNames('list-group list-group-flush')}>
+                <ConnectionList className={classNames('list-group list-group-flush border-bottom')}>
                     {connection?.nodes?.map(node => (
                         <CatalogEntity
                             key={node.id}
@@ -109,15 +99,13 @@ export const EntityList: React.FunctionComponent<Props> = ({
 const CatalogEntity: React.FunctionComponent<{
     node: CatalogEntityFields
     selected?: boolean
-    size: 'sm' | 'lg'
-}> = ({ node, selected, size }) => (
+}> = ({ node, selected }) => (
     <li className={classNames('list-group-item d-flex', { active: selected })}>
         <h3 className="h6 font-weight-bold mb-0 overflow-hidden">
             <Link
                 to={node.url}
-                className={classNames('d-block text-truncate', {
+                className={classNames('d-block text-truncate stretched-link', {
                     'text-body': selected,
-                    'stretched-link': size === 'sm',
                 })}
             >
                 <CatalogEntityIcon
@@ -127,21 +115,5 @@ const CatalogEntity: React.FunctionComponent<{
                 {node.name}
             </Link>
         </h3>
-        {size === 'lg' && <CatalogEntityStateIndicator entity={node} />}
-        <div className="flex-1" />
     </li>
-)
-
-export const CatalogEntityStateIndicator: React.FunctionComponent<{
-    entity: CatalogEntityStateFields
-    className?: string
-}> = ({ entity, className }) => (
-    <span className={classNames(`ml-2 text-${STATE_TO_COLOR[entity.status.state]}`, className)}>
-        {entity.status.state === CatalogEntityStatusState.SUCCESS
-            ? '\u2713'
-            : entity.status.state === CatalogEntityStatusState.FAILURE ||
-              entity.status.state === CatalogEntityStatusState.ERROR
-            ? '\u00D7'
-            : entity.status.state.toLowerCase()}
-    </span>
 )

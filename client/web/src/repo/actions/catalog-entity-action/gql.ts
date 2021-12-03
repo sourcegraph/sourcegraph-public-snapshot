@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { CATALOG_ENTITY_DETAIL_FRAGMENT } from '../../../enterprise/catalog/pages/entity-detail/global/gql'
-import { CATALOG_ENTITY_STATE_FRAGMENT } from '../../../enterprise/catalog/pages/overview/components/entity-list/gql'
+import { CATALOG_ENTITY_STATE_FRAGMENT } from '../../../enterprise/catalog/pages/overview/components/catalog-explorer/gql'
 
 // TODO(sqs): only works for blobs not trees right now
 

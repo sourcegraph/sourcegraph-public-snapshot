@@ -3,10 +3,7 @@ import { useCallback, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 export interface CatalogEntityFilters {
-    query?: string
-    owner?: string
-    system?: string
-    tags?: string[]
+    query: string
 }
 
 export interface CatalogEntityFiltersProps {
@@ -35,10 +32,7 @@ export const useCatalogEntityFilters = (): CatalogEntityFiltersProps => {
 function filtersFromLocation(locationSearch: H.Location['search']): CatalogEntityFilters {
     const parameters = new URLSearchParams(locationSearch)
     return {
-        query: parameters.get('q') || undefined,
-        owner: parameters.get('owner') || undefined,
-        system: parameters.get('system') || undefined,
-        tags: parameters.get('tags')?.split(','),
+        query: parameters.get('q') || '',
     }
 }
 
@@ -49,24 +43,6 @@ function urlSearchParametersFromFilters(filters: CatalogEntityFilters, base: URL
         parameters.set('q', filters.query)
     } else {
         parameters.delete('q')
-    }
-
-    if (filters.owner) {
-        parameters.set('owner', filters.owner)
-    } else {
-        parameters.delete('owner')
-    }
-
-    if (filters.system) {
-        parameters.set('system', filters.system)
-    } else {
-        parameters.delete('system')
-    }
-
-    if (filters.tags) {
-        parameters.set('tags', filters.tags.join(','))
-    } else {
-        parameters.delete('tags')
     }
 
     return parameters
