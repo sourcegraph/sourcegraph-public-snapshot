@@ -556,26 +556,26 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 	var response struct{ CreateEmptyBatchChange apitest.BatchChange }
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	// First time it should work, because no batch change exists
+	// First time should work because no batch change exists
 	apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
 
 	if response.CreateEmptyBatchChange.ID == "" {
 		t.Fatalf("expected batch change to be created, but was not")
 	}
 
-	// TODO: Namespace + name should be required to be unique
-	// errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+	// Second time should fail because namespace + name are not unique
+	errors := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
 
-	// if len(errors) != 1 {
-	// 	t.Fatalf("expected single errors, but got none")
-	// }
-	// if have, want := errors[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
-	// 	t.Fatalf("wrong error. want=%q, have=%q", want, have)
-	// }
+	if len(errors) != 1 {
+		t.Fatalf("expected single errors, but got none")
+	}
+	if have, want := errors[0].Message, service.ErrNameNotUnique.Error(); have != want {
+		t.Fatalf("wrong error. want=%q, have=%q", want, have)
+	}
 
-	// But a different namespace + the same name is okay
+	// But third time should work because a different namespace + the same name is okay
 	orgID := ct.InsertTestOrg(t, db, "my-org")
-	namespaceID2 := relay.MarshalID("User", orgID)
+	namespaceID2 := relay.MarshalID("Org", orgID)
 
 	input2 := map[string]interface{}{
 		"namespace": namespaceID2,

@@ -31,6 +31,10 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
+// ErrNameNotUnique is returned by CreateEmptyBatchChange if the combination of name and
+// namespace provided are already used by another batch change.
+var ErrNameNotUnique = errors.New("a batch change with this name already exists in this namespace")
+
 // New returns a Service.
 func New(store *store.Store) *Service {
 	return NewWithClock(store, store.Clock())
@@ -154,18 +158,33 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		return nil, err
 	}
 
-	// TODO: Validate a unique combination of namespace + name
+	// Construct and parse the batch spec YAML of just the provided name to validate the
+	// pattern of the name is okay
+	rawSpec := "name: " + opts.Name
+	spec, err := batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{})
+	if err != nil {
+		return nil, err
+	}
 
 	actor := actor.FromContext(ctx)
-	spec := &btypes.BatchSpec{
-		RawSpec:         "",
-		Spec:            &batcheslib.BatchSpec{Name: opts.Name},
+	batchSpec := &btypes.BatchSpec{
+		RawSpec:         rawSpec,
+		Spec:            spec,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
 		UserID:          actor.UID,
 	}
 
-	if err := s.store.CreateBatchSpec(ctx, spec); err != nil {
+	// The combination of name + namespace must be unique
+	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+	if batchChange != nil {
+		return nil, ErrNameNotUnique
+	}
+
+	if err := s.store.CreateBatchSpec(ctx, batchSpec); err != nil {
 		return nil, err
 	}
 
@@ -173,7 +192,7 @@ func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBa
 		Name:            opts.Name,
 		NamespaceUserID: opts.NamespaceUserID,
 		NamespaceOrgID:  opts.NamespaceOrgID,
-		BatchSpecID:     spec.ID,
+		BatchSpecID:     batchSpec.ID,
 	}
 	if err := s.store.CreateBatchChange(ctx, batchChange); err != nil {
 		return nil, err
