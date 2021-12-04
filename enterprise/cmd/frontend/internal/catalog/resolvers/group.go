@@ -64,6 +64,15 @@ func (r *groupResolver) ChildGroups() []gql.GroupResolver {
 	return childGroups
 }
 
+func (r *groupResolver) DescendentGroups() []gql.GroupResolver {
+	var descendentGroups []gql.GroupResolver
+	for _, group := range r.ChildGroups() {
+		descendentGroups = append(descendentGroups, group)
+		descendentGroups = append(descendentGroups, group.DescendentGroups()...)
+	}
+	return descendentGroups
+}
+
 func (r *groupResolver) Members() []*gql.PersonResolver {
 	var (
 		members []*gql.PersonResolver

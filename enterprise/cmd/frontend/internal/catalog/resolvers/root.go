@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -43,14 +42,7 @@ func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 			return nil, nil
 		},
 		"Group": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			_, groups, _ := catalog.Data()
-			for _, g := range groups {
-				gr := &groupResolver{group: g}
-				if gr.ID() == id {
-					return gr, nil
-				}
-			}
-			return nil, nil
+			return groupByID(id), nil
 		},
 	}
 }

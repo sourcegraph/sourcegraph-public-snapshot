@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/graph-gophers/graphql-go"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -15,12 +16,44 @@ type catalogResolver struct {
 func (r *catalogResolver) Entities(ctx context.Context, args *gql.CatalogEntitiesArgs) (gql.CatalogEntityConnectionResolver, error) {
 	components := dummyData(r.db)
 
+	var query string
+	if args.Query != nil {
+		query = *args.Query
+	}
+	literal, groupID := parseQuery(query)
+	group := groupByID(groupID)
+	isComponentInGroup := func(c *catalogComponentResolver) bool {
+		if c.component.OwnedBy == group.group.Name {
+			return true
+		}
+		for _, dg := range group.DescendentGroups() {
+			if c.component.OwnedBy == dg.Name() {
+				return true
+			}
+		}
+		return false
+	}
+
 	var keep []gql.CatalogEntity
 	for _, c := range components {
-		if args.Query == nil || strings.Contains(c.component.Name, *args.Query) {
+		match := strings.Contains(c.component.Name, literal) && (group == nil || isComponentInGroup(c))
+		if match {
 			keep = append(keep, c)
 		}
 	}
 
 	return &catalogEntityConnectionResolver{entities: wrapInCatalogEntityInterfaceType(keep)}, nil
+}
+
+func parseQuery(q string) (literal string, groupID graphql.ID) {
+	parts := strings.Fields(q)
+	for _, part := range parts {
+		const groupPrefix = "group:"
+		if strings.HasPrefix(part, groupPrefix) {
+			groupID = graphql.ID(strings.TrimPrefix(part, groupPrefix))
+		} else {
+			literal += part
+		}
+	}
+	return
 }

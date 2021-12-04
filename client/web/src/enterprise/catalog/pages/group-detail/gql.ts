@@ -37,6 +37,9 @@ const GROUP_CHILD_GROUPS_FRAGMENT = gql`
     fragment GroupChildGroupsFields on Group {
         childGroups {
             ...GroupLinkFields
+            members {
+                __typename
+            }
         }
     }
     ${GROUP_LINK_FRAGMENT}

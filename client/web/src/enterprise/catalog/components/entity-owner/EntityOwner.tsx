@@ -6,7 +6,7 @@ import { GroupLink } from '../../pages/group-detail/GroupLink'
 
 interface Props {
     owner: CatalogEntityOwnerFields['owner']
-    blankIfNone?: string
+    blankIfNone?: boolean
     className?: string
 }
 

@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import AccountIcon from 'mdi-react/AccountIcon'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -16,6 +17,7 @@ import { CatalogEntityIcon } from '../../components/CatalogEntityIcon'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { CatalogEntityStateIndicator } from '../overview/components/entity-state-indicator/EntityStateIndicator'
 
+import { GroupCatalogExplorer } from './GroupCatalogExplorer'
 import { GroupDetailContentCardProps } from './GroupDetailContent'
 import { GroupLink } from './GroupLink'
 import styles from './GroupOverviewTab.module.scss'
@@ -32,100 +34,141 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
     bodyClassName,
     className,
 }) => (
-    <div className={classNames('d-flex flex-column flex-1', className)}>
-        <div className="row no-gutters h-100">
-            <div className="col-md-4 col-lg-3 border-right p-3">
-                <h2 className="d-flex align-items-center mb-1">
-                    <CatalogGroupIcon className="icon-inline mr-2" />
-                    {group.title || group.name}
-                </h2>
-                <div className="text-muted small mb-2">Group</div>
-                {group.description && <p className="mb-3">{group.description}</p>}
-                <Link
-                    to={`/search?q=context:g/${group.name}`}
-                    className="d-inline-flex align-items-center btn btn-outline-secondary mb-3"
-                >
-                    <SearchIcon className="icon-inline mr-1" /> Search code...
-                </Link>
-                <Link to="#" className="d-flex align-items-center text-body mb-3 mr-2">
-                    <FileDocumentIcon className="icon-inline mr-2" />
-                    Handbook page
-                </Link>
-                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                    <AlertCircleOutlineIcon className="icon-inline mr-2" />
-                    Issues
-                </Link>
-                <Link to="#" className="d-flex align-items-center text-body mb-3">
-                    <SlackIcon className="icon-inline mr-2" />
-                    #extensibility-chat
-                </Link>
-                <hr className="my-3" />
-                {group.members && group.members.length > 0 && (
-                    <>
-                        <h4>
-                            <Link to={`${group.url}/members`} className="text-body">
-                                {group.members.length} {pluralize('member', group.members.length)}
-                            </Link>
-                        </h4>
-                        <ul className="list-unstyled d-flex flex-wrap">
-                            {group.members.map(member => (
-                                <li key={member.email} className="mr-1 mb-1">
-                                    <LinkOrSpan to={member.user?.url} title={formatPersonName(member)}>
-                                        <UserAvatar user={member} size={28} />
-                                    </LinkOrSpan>
-                                </li>
-                            ))}
-                        </ul>
-                    </>
-                )}
-            </div>
-            <div className="col-md-8 col-lg-9 p-3">
-                {group.childGroups && group.childGroups.length > 0 && (
-                    <div className="mb-3">
-                        <h4>Subgroups</h4>
-                        <ul className={styles.boxGrid}>
-                            {group.childGroups.map(childGroup => (
-                                <li
-                                    key={childGroup.id}
-                                    className={classNames('position-relative border rounded', styles.boxGridItem)}
-                                >
-                                    <GroupLink group={childGroup} className="stretched-link" />
-                                    {childGroup.description && (
-                                        <p className={classNames('mb-0 text-muted small', styles.boxGridItemBody)}>
-                                            {childGroup.description}
-                                        </p>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
+    <div className={classNames('flex-1 align-self-stretch row no-gutters', className)}>
+        <div className="col-md-4 col-lg-3 border-right p-3">
+            <h2 className="d-flex align-items-center mb-1">
+                <CatalogGroupIcon className="icon-inline mr-2" />
+                {group.title || group.name}
+            </h2>
+            <div className="text-muted small mb-2">Group</div>
+            {group.description && <p className="mb-3">{group.description}</p>}
+            <Link
+                to={`/search?q=context:g/${group.name}`}
+                className="d-inline-flex align-items-center btn btn-outline-secondary mb-3"
+            >
+                <SearchIcon className="icon-inline mr-1" /> Search code...
+            </Link>
+            <Link to="#" className="d-flex align-items-center text-body mb-3 mr-2">
+                <FileDocumentIcon className="icon-inline mr-2" />
+                Handbook page
+            </Link>
+            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                <AlertCircleOutlineIcon className="icon-inline mr-2" />
+                Issues
+            </Link>
+            <Link to="#" className="d-flex align-items-center text-body mb-3">
+                <SlackIcon className="icon-inline mr-2" />
+                #extensibility-chat
+            </Link>
+            <hr className="my-3" />
+            {group.members && group.members.length > 0 && (
+                <>
+                    <h4>
+                        <Link to={`${group.url}/members`} className="text-body">
+                            {group.members.length} {pluralize('member', group.members.length)}
+                        </Link>
+                    </h4>
+                    <ul className="list-unstyled d-flex flex-wrap">
+                        {group.members.map(member => (
+                            <li key={member.email} className="mr-1 mb-1">
+                                <LinkOrSpan to={member.user?.url} title={formatPersonName(member)}>
+                                    <UserAvatar user={member} size={28} />
+                                </LinkOrSpan>
+                            </li>
+                        ))}
+                    </ul>
+                </>
+            )}
+        </div>
+        <div className="col-md-8 col-lg-9 p-3">
+            {group.childGroups && group.childGroups.length > 0 && (
+                <div className="mb-3">
+                    <h4 className="font-weight-bold">
+                        {group.childGroups.length} {pluralize('subgroup', group.childGroups.length)}
+                    </h4>
+                    <ul className={styles.boxGrid}>
+                        {group.childGroups.map(childGroup => (
+                            <li
+                                key={childGroup.id}
+                                className={classNames(
+                                    'position-relative border rounded d-flex flex-column',
+                                    styles.boxGridItem
+                                )}
+                            >
+                                <GroupLink group={childGroup} className="stretched-link" />
+                                {childGroup.description && (
+                                    <p className={classNames('my-1 text-muted small', styles.boxGridItemBody)}>
+                                        {childGroup.description}
+                                    </p>
+                                )}
+                                <div className="flex-1" />
+                                <div className="text-muted small">
+                                    <AccountIcon className="icon-inline" /> {childGroup.members.length}{' '}
+                                    {pluralize('member', childGroup.members.length)}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
-                {group.ownedEntities && group.ownedEntities.length > 0 && (
-                    <div className="card mb-3">
-                        <header className={classNames(headerClassName)}>
-                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Components</h4>
-                        </header>
-                        <ul className="list-group list-group-flush">
-                            {group.ownedEntities.map(entity => (
-                                <li
-                                    key={entity.id}
-                                    className="list-group-item d-flex align-items-center position-relative"
-                                >
-                                    <Link to={entity.url} className="d-flex align-items-center mr-1">
+            <GroupCatalogExplorer group={group.id} className="mb-3" />
+
+            {group.ownedEntities && group.ownedEntities.length > 0 && false && (
+                <div className="mb-3">
+                    <h4 className="font-weight-bold">
+                        {group.ownedEntities.length} {pluralize('component', group.ownedEntities.length)}
+                    </h4>
+                    <ul className={styles.boxGrid}>
+                        {group.ownedEntities.map(entity => (
+                            <li
+                                key={entity.id}
+                                className={classNames(
+                                    'position-relative border rounded d-flex flex-column',
+                                    styles.boxGridItem
+                                )}
+                            >
+                                <div className="mb-0 d-flex align-items-center">
+                                    <Link to={entity.url} className="d-inline-flex align-items-center stretched-link">
                                         <CatalogEntityIcon entity={entity} className="icon-inline text-muted mr-1" />
 
                                         {entity.name}
                                     </Link>
                                     {entity.__typename === 'CatalogComponent' && (
-                                        <CatalogEntityStateIndicator entity={entity} />
+                                        <CatalogEntityStateIndicator entity={entity} className="ml-1" />
                                     )}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
-            </div>
+                                </div>
+                                {entity.description && (
+                                    <p className={classNames('my-1 text-muted small', styles.boxGridItemBody)}>
+                                        {entity.description}
+                                    </p>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {group.ownedEntities && group.ownedEntities.length > 0 && false && (
+                <div className="card mb-3">
+                    <header className={classNames(headerClassName)}>
+                        <h4 className={classNames('mb-0 mr-2', titleClassName)}>Components</h4>
+                    </header>
+                    <ul className="list-group list-group-flush">
+                        {group.ownedEntities.map(entity => (
+                            <li key={entity.id} className="list-group-item d-flex align-items-center position-relative">
+                                <Link to={entity.url} className="d-flex align-items-center mr-1">
+                                    <CatalogEntityIcon entity={entity} className="icon-inline text-muted mr-1" />
+                                    {entity.name}
+                                </Link>
+                                {entity.__typename === 'CatalogComponent' && (
+                                    <CatalogEntityStateIndicator entity={entity} />
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
         </div>
     </div>
 )

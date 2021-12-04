@@ -28,12 +28,23 @@ import styles from './CatalogExplorerList.module.scss'
 import { CATALOG_ENTITIES_FOR_EXPLORER } from './gql'
 
 interface Props extends Pick<CatalogEntityFiltersProps, 'filters'> {
+    queryScope?: string
     className?: string
+    noBottomBorder?: boolean
+    itemStartClassName?: string
+    itemEndClassName?: string
 }
 
 const FIRST = 20
 
-export const CatalogExplorerList: React.FunctionComponent<Props> = ({ filters, className }) => {
+export const CatalogExplorerList: React.FunctionComponent<Props> = ({
+    filters,
+    queryScope,
+    className,
+    itemStartClassName,
+    itemEndClassName,
+    noBottomBorder,
+}) => {
     const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
         CatalogEntitiesForExplorerResult,
         CatalogEntitiesForExplorerVariables,
@@ -41,7 +52,7 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({ filters, c
     >({
         query: CATALOG_ENTITIES_FOR_EXPLORER,
         variables: {
-            query: filters.query || '',
+            query: `${queryScope || ''} ${filters.query || ''}`,
             first: FIRST,
             after: null,
         },
@@ -61,13 +72,19 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({ filters, c
                 {error && <ConnectionError errors={[error.message]} />}
                 {connection?.nodes && connection?.nodes.length > 0 && (
                     <ConnectionList className={classNames(styles.table)} as="div">
-                        <span className="text-muted mt-2 small">Name</span>
-                        <span className="text-muted mt-2 small">Owner</span>
-                        <span className="text-muted mt-2 small">Lifecycle</span>
-                        <span className="text-muted mt-2 small">Description</span>
+                        <div className={classNames('text-muted mt-2 small', itemStartClassName)}>Name</div>
+                        <div className="text-muted mt-2 small">Owner</div>
+                        <div className="text-muted mt-2 small">Lifecycle</div>
+                        <div className={classNames('text-muted mt-2 small', itemEndClassName)}>Description</div>
                         <div className={classNames('border-top', styles.separator)} />
-                        {connection?.nodes?.map(node => (
-                            <CatalogEntity key={node.id} node={node} />
+                        {connection?.nodes?.map((node, index) => (
+                            <CatalogEntity
+                                key={node.id}
+                                node={node}
+                                itemStartClassName={itemStartClassName}
+                                itemEndClassName={itemEndClassName}
+                                noBorder={index === connection?.nodes?.length - 1 && noBottomBorder}
+                            />
                         ))}
                     </ConnectionList>
                 )}
@@ -93,18 +110,21 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({ filters, c
 
 const CatalogEntity: React.FunctionComponent<{
     node: CatalogEntityForExplorerFields
-}> = ({ node }) => (
+    itemStartClassName?: string
+    itemEndClassName?: string
+    noBorder?: boolean
+}> = ({ node, itemStartClassName, itemEndClassName, noBorder }) => (
     <>
-        <h3 className="h6 font-weight-bold mb-0 d-flex align-items-center">
+        <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', itemStartClassName)}>
             <Link to={node.url} className={classNames('d-block text-truncate')}>
                 <CatalogEntityIcon entity={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
                 {node.name}
             </Link>
-            <CatalogEntityStateIndicator entity={node} />
+            <CatalogEntityStateIndicator entity={node} className="ml-1" />
         </h3>
         <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
         <span className="text-nowrap">{node.lifecycle.toLowerCase()}</span>
-        <div className="text-muted text-truncate">{node.description}</div>
-        <div className={classNames('border-top', styles.separator)} />
+        <div className={classNames('text-muted text-truncate', itemEndClassName)}>{node.description}</div>
+        <div className={classNames({ 'border-top': !noBorder }, styles.separator)} />
     </>
 )

@@ -1,6 +1,6 @@
 .form {
     display: grid;
-    grid-template-columns: minmax(4rem, min-content) 1fr;
+    grid-template-columns: [before] min-content [toggle] minmax(4rem, min-content) [query] 1fr;
     align-items: center;
     gap: 0.5rem;
 }

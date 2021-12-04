@@ -91,6 +91,7 @@ type GroupResolver interface {
 	ParentGroup() GroupResolver
 	AncestorGroups() []GroupResolver
 	ChildGroups() []GroupResolver
+	DescendentGroups() []GroupResolver
 	Members() []*PersonResolver
 	OwnedEntities() []*CatalogEntityResolver
 }

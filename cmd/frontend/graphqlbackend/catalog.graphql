@@ -55,6 +55,7 @@ type Group implements Node {
     parentGroup: Group
     ancestorGroups: [Group!]!
     childGroups: [Group!]!
+    descendentGroups: [Group!]!
     members: [Person!]!
     ownedEntities: [CatalogEntity!]!
 }

@@ -11,10 +11,14 @@ import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 import styles from './CatalogExplorerViewOptionsRow.module.scss'
 
 interface Props extends CatalogEntityFiltersProps {
+    before?: React.ReactFragment
+    toggle: React.ReactFragment
     className?: string
 }
 
 export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
+    before,
+    toggle,
     filters,
     onFiltersChange,
     className,
@@ -41,28 +45,10 @@ export const CatalogExplorerViewOptionsRow: React.FunctionComponent<Props> = ({
         [filters, onFiltersChange, query]
     )
 
-    const location = useLocation()
-
     return (
         <Form className={classNames(styles.form, className)} onSubmit={onSubmit}>
-            <div className="btn-group" role="group">
-                <NavLink
-                    to={{ pathname: '/catalog', search: location.search }}
-                    exact={true}
-                    className="btn border"
-                    activeClassName="btn-primary"
-                >
-                    List
-                </NavLink>
-                <NavLink
-                    to={{ pathname: '/catalog/graph', search: location.search }}
-                    exact={true}
-                    className="btn border"
-                    activeClassName="btn-primary"
-                >
-                    Graph
-                </NavLink>
-            </div>
+            <div>{before}</div>
+            {toggle}
             <div className={classNames('form-group mb-0')}>
                 <label htmlFor="entity-list-filters__query" className="sr-only">
                     Query

@@ -341,6 +341,7 @@ func Data() ([]Component, []Group, []Edge) {
 		{
 			Name:        "code-graph",
 			Title:       "Code graph",
+			Description: "The Code Graph org’s mission is to build the code graph to make working with code easier, regardless of how much you have, how complex it is, where you store it, or even how technical you are.",
 			ParentGroup: "product-eng",
 			Members:     []string{"yink-teo"},
 		},

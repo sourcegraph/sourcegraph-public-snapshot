@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/catalog"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,6 +17,17 @@ func allGroups(db database.DB) []*groupResolver {
 		groupResolvers = append(groupResolvers, &groupResolver{group: group, db: db})
 	}
 	return groupResolvers
+}
+
+func groupByID(id graphql.ID) *groupResolver {
+	_, groups, _ := catalog.Data()
+	for _, g := range groups {
+		gr := &groupResolver{group: g}
+		if gr.ID() == id {
+			return gr
+		}
+	}
+	return nil
 }
 
 func (r *rootResolver) Groups() []gql.GroupResolver {
