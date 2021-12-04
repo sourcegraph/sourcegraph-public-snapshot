@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
@@ -19,11 +18,9 @@ import {
     CatalogEntitiesForExplorerVariables,
     CatalogEntityForExplorerFields,
 } from '../../../../../../graphql-operations'
-import { CatalogEntityIcon } from '../../../../components/CatalogEntityIcon'
-import { EntityOwner } from '../../../../components/entity-owner/EntityOwner'
 import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
-import { CatalogEntityStateIndicator } from '../entity-state-indicator/EntityStateIndicator'
 
+import { CatalogEntityRow } from './CatalogEntityRow'
 import styles from './CatalogExplorerList.module.scss'
 import { CATALOG_ENTITIES_FOR_EXPLORER } from './gql'
 
@@ -78,7 +75,7 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
                         <div className={classNames('text-muted mt-2 small', itemEndClassName)}>Description</div>
                         <div className={classNames('border-top', styles.separator)} />
                         {connection?.nodes?.map((node, index) => (
-                            <CatalogEntity
+                            <CatalogEntityRow
                                 key={node.id}
                                 node={node}
                                 itemStartClassName={itemStartClassName}
@@ -107,24 +104,3 @@ export const CatalogExplorerList: React.FunctionComponent<Props> = ({
         </>
     )
 }
-
-const CatalogEntity: React.FunctionComponent<{
-    node: CatalogEntityForExplorerFields
-    itemStartClassName?: string
-    itemEndClassName?: string
-    noBorder?: boolean
-}> = ({ node, itemStartClassName, itemEndClassName, noBorder }) => (
-    <>
-        <h3 className={classNames('h6 font-weight-bold mb-0 d-flex align-items-center', itemStartClassName)}>
-            <Link to={node.url} className={classNames('d-block text-truncate')}>
-                <CatalogEntityIcon entity={node} className={classNames('icon-inline mr-1 flex-shrink-0 text-muted')} />
-                {node.name}
-            </Link>
-            <CatalogEntityStateIndicator entity={node} className="ml-1" />
-        </h3>
-        <EntityOwner owner={node.owner} className="text-nowrap" blankIfNone={true} />
-        <span className="text-nowrap">{node.lifecycle.toLowerCase()}</span>
-        <div className={classNames('text-muted text-truncate', itemEndClassName)}>{node.description}</div>
-        <div className={classNames({ 'border-top': !noBorder }, styles.separator)} />
-    </>
-)
