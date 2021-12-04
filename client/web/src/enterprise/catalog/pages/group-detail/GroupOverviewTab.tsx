@@ -37,7 +37,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                         to={`/search?q=context:g/${group.name}`}
                         className="d-inline-flex align-items-center btn btn-outline-secondary mb-3"
                     >
-                        <SearchIcon className="icon-inline mr-1" /> Search group's code...
+                        <SearchIcon className="icon-inline mr-1" /> Search code...
                     </Link>
                     <Link to="#" className="d-flex align-items-center text-body mb-3 mr-2">
                         <FileDocumentIcon className="icon-inline mr-2" />
@@ -56,13 +56,14 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
             </div>
             <div className="col-md-9">
                 {group.childGroups && group.childGroups.length > 0 && (
-                    <div className="card mb-3">
-                        <header className={classNames(headerClassName)}>
-                            <h4 className={classNames('mb-0 mr-2', titleClassName)}>Subgroups</h4>
-                        </header>
+                    <div className="mb-3">
+                        <h4>Subgroups</h4>
                         <ul className={styles.boxGrid}>
                             {group.childGroups.map(childGroup => (
-                                <li key={childGroup.id} className={classNames('position-relative', styles.boxGridItem)}>
+                                <li
+                                    key={childGroup.id}
+                                    className={classNames('position-relative border rounded', styles.boxGridItem)}
+                                >
                                     <GroupLink group={childGroup} className="stretched-link" />
                                     {childGroup.description && (
                                         <p className={classNames('mb-0 text-muted small', styles.boxGridItemBody)}>

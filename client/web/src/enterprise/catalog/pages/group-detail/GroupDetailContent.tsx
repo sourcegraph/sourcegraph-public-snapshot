@@ -1,17 +1,16 @@
 import classNames from 'classnames'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import React, { useMemo } from 'react'
-import { Link } from 'react-router-dom'
-
+import { useRouteMatch } from 'react-router'
+import { NavLink } from 'react-router-dom'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
-import { PageHeader } from '@sourcegraph/wildcard'
 
 import { CatalogIcon } from '../../../../catalog'
 import { GroupDetailFields } from '../../../../graphql-operations'
+import { CatalogAreaHeader } from '../../components/catalog-area-header/CatalogAreaHeader'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { TabRouter } from '../entity-detail/global/TabRouter'
 
@@ -49,9 +48,10 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
             ].filter(isDefined),
         [group]
     )
+    const match = useRouteMatch()
     return (
-        <div>
-            <PageHeader
+        <>
+            <CatalogAreaHeader
                 path={[
                     { icon: CatalogIcon, to: '/catalog' },
                     ...group.ancestorGroups.map(group => ({ icon: CatalogGroupIcon, text: group.name, to: group.url })),
@@ -60,18 +60,29 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
                         text: group.name,
                     },
                 ].filter(isDefined)}
-                actions={
-                    // eslint-disable-next-line react/forbid-dom-props
-                    <nav className="d-flex align-items-center">
-                        <Link to="#" className="d-inline-block btn btn-secondary btn-sm p-2 mb-0">
-                            <SettingsIcon className="icon-inline" />
-                        </Link>
-                    </nav>
+                nav={
+                    <ul className="nav nav-tabs">
+                        {tabs.map(tab => (
+                            <li key={tab.path} className="nav-item">
+                                <NavLink
+                                    to={tabPath(match.url, tab)}
+                                    exact={tab.exact}
+                                    className="nav-link px-3"
+                                    // TODO(sqs): hack so that active items when bolded don't shift the ones to the right over by a few px because bold text is wider
+                                    style={{ minWidth: '6rem' }}
+                                >
+                                    {tab.label}
+                                </NavLink>
+                            </li>
+                        ))}
+                    </ul>
                 }
-                className="mt-3 mb-1"
             />
-            <div className="mb-4" />
             <TabRouter tabs={tabs} />
-        </div>
+        </>
     )
+}
+
+function tabPath(basePath: string, tab: Pick<Tab, 'path'>): string {
+    return tab.path ? `${basePath}/${tab.path}` : basePath
 }

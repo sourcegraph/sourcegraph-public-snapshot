@@ -52,17 +52,15 @@ export const GroupDetailPage: React.FunctionComponent<Props> = ({ groupName, tel
                         : data.group.name
                 }
             />
-            <div className="pt-2 container-fluid pb-4 overflow-auto w-100">
-                {loading && !data ? (
-                    <LoadingSpinner className="icon-inline" />
-                ) : error && !data ? (
-                    <div className="alert alert-danger">Error: {error.message}</div>
-                ) : !data || !data.group ? (
-                    <div className="alert alert-danger">Group not found</div>
-                ) : (
-                    <GroupDetailContent {...props} group={data.group} telemetryService={telemetryService} />
-                )}
-            </div>
+            {loading && !data ? (
+                <LoadingSpinner className="m-3 icon-inline" />
+            ) : error && !data ? (
+                <div className="m-3 alert alert-danger">Error: {error.message}</div>
+            ) : !data || !data.group ? (
+                <div className="m-3 alert alert-danger">Group not found</div>
+            ) : (
+                <GroupDetailContent {...props} group={data.group} telemetryService={telemetryService} />
+            )}
         </>
     )
 }

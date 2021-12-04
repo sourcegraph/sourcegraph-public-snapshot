@@ -9,7 +9,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { HeroPage } from '../../components/HeroPage'
 
-import styles from './CatalogArea.module.scss'
 import { EntityDetailPage } from './pages/entity-detail/global/EntityDetailPage'
 import { GroupDetailPage } from './pages/group-detail/GroupDetailPage'
 import { ExplorePage } from './pages/overview/global/ExplorePage'
@@ -23,35 +22,33 @@ export const CatalogArea: React.FunctionComponent<Props> = ({ telemetryService, 
     const match = useRouteMatch()
 
     return (
-        <div className={styles.container}>
-            <Switch>
-                <Route path={`${match.url}/entities/:name`}>
-                    {(matchProps: RouteComponentProps<{ name: string }>) => (
-                        <EntityDetailPage
-                            key={1}
-                            {...props}
-                            entityName={matchProps.match.params.name}
-                            telemetryService={telemetryService}
-                        />
-                    )}
-                </Route>
-                <Route path={`${match.url}/groups/:name`}>
-                    {(matchProps: RouteComponentProps<{ name: string }>) => (
-                        <GroupDetailPage
-                            key={1}
-                            {...props}
-                            groupName={matchProps.match.params.name}
-                            telemetryService={telemetryService}
-                        />
-                    )}
-                </Route>
-                <Route path={match.url}>
-                    <ExplorePage telemetryService={telemetryService} />
-                </Route>
-                <Route>
-                    <HeroPage icon={MapSearchIcon} title="404: Not Found" />
-                </Route>
-            </Switch>
-        </div>
+        <Switch>
+            <Route path={`${match.url}/entities/:name`}>
+                {(matchProps: RouteComponentProps<{ name: string }>) => (
+                    <EntityDetailPage
+                        key={1}
+                        {...props}
+                        entityName={matchProps.match.params.name}
+                        telemetryService={telemetryService}
+                    />
+                )}
+            </Route>
+            <Route path={`${match.url}/groups/:name`}>
+                {(matchProps: RouteComponentProps<{ name: string }>) => (
+                    <GroupDetailPage
+                        key={1}
+                        {...props}
+                        groupName={matchProps.match.params.name}
+                        telemetryService={telemetryService}
+                    />
+                )}
+            </Route>
+            <Route path={match.url}>
+                <ExplorePage telemetryService={telemetryService} />
+            </Route>
+            <Route>
+                <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+            </Route>
+        </Switch>
     )
 }
