@@ -7,8 +7,8 @@ import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ContributableMenu } from '@sourcegraph/shared/src/api/protocol'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ActivationDropdown } from '@sourcegraph/shared/src/components/activation/ActivationDropdown'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -51,7 +51,7 @@ import {
     SearchContextInputProps,
 } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { useGlobalStore } from '../stores/global'
+import { useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
@@ -148,7 +148,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
         )
     )
 
-    const onNavbarQueryChange = useGlobalStore(state => state.setQueryState)
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in

@@ -10,15 +10,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDefinitionDumps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	moniker1 := precise.QualifiedMonikerData{
@@ -137,10 +134,7 @@ func TestDefinitionDumps(t *testing.T) {
 }
 
 func TestReferenceIDsAndFilters(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -243,10 +237,7 @@ func TestReferenceIDsAndFilters(t *testing.T) {
 }
 
 func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -309,10 +300,7 @@ func TestReferenceIDsAndFiltersVisibility(t *testing.T) {
 }
 
 func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,
@@ -381,10 +369,7 @@ func TestReferenceIDsAndFiltersRemoteVisibility(t *testing.T) {
 }
 
 func TestReferencesForUpload(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	store := testStore(db)
 
 	insertUploads(t, db,

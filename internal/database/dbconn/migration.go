@@ -3,7 +3,6 @@ package dbconn
 import (
 	"database/sql"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"os"
 	"time"
@@ -13,69 +12,32 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/inconshreveable/log15"
-
-	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
-// Database describes one of our Postgres (or Postgres-like) databases.
-type Database struct {
-	// Name is the name of the database.
-	Name string
-
-	// MigrationsTable is the migrations SQL table name.
-	MigrationsTable string
-
-	// FS describes the raw migration assets to run to migrate the target schema to a new
-	// version.
-	FS fs.FS
-
-	// TargetsTimescaleDB indicates if the database targets TimescaleDB. Otherwise, Postgres.
-	TargetsTimescaleDB bool
-}
-
-var (
-	Frontend = &Database{
-		Name:            "frontend",
-		MigrationsTable: "schema_migrations",
-		FS:              migrations.Frontend,
-	}
-
-	CodeIntel = &Database{
-		Name:            "codeintel",
-		MigrationsTable: "codeintel_schema_migrations",
-		FS:              migrations.CodeIntel,
-	}
-
-	CodeInsights = &Database{
-		Name:               "codeinsights",
-		TargetsTimescaleDB: true,
-		MigrationsTable:    "codeinsights_schema_migrations",
-		FS:                 migrations.CodeInsights,
-	}
-)
-
-func MigrateDB(db *sql.DB, database *Database) error {
-	m, err := NewMigrate(db, database)
+func migrateDB(db *sql.DB, schema *Schema) (func(), error) {
+	m, err := newMigrate(db, schema)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if err := DoMigrate(m); err != nil {
-		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
+
+	if err := doMigrate(m); err != nil {
+		return nil, errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
-	return nil
+
+	return func() { m.Close() }, nil
 }
 
-// NewMigrate returns a new configured migration object for the given database. The migration can
+// newMigrate returns a new configured migration object for the given database. The migration can
 // be subsequently run by invoking `dbconn.DoMigrate`.
-func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
+func newMigrate(db *sql.DB, schema *Schema) (*migrate.Migrate, error) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{
-		MigrationsTable: database.MigrationsTable,
+		MigrationsTable: schema.MigrationsTableName,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	d, err := httpfs.New(http.FS(database.FS), ".")
+	d, err := httpfs.New(http.FS(schema.FS), ".")
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +57,8 @@ func NewMigrate(db *sql.DB, database *Database) (*migrate.Migrate, error) {
 	return m, nil
 }
 
-// DoMigrate runs all up migrations.
-func DoMigrate(m *migrate.Migrate) (err error) {
+// doMigrate runs all up migrations.
+func doMigrate(m *migrate.Migrate) (err error) {
 	err = m.Up()
 	if err == nil || err == migrate.ErrNoChange {
 		return nil

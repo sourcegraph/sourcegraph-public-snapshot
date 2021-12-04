@@ -31,9 +31,15 @@ type CommitSearch struct {
 	Diff          bool
 	HasTimeFilter bool
 	Limit         int
+
+	Db database.DB
 }
 
 func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+	if err := j.ExpandUsernames(ctx, j.Db); err != nil {
+		return err
+	}
+
 	opts := j.RepoOpts
 	if opts.Limit == 0 {
 		opts.Limit = reposLimit(j.HasTimeFilter)
@@ -190,17 +196,7 @@ func HasTimeFilter(q query.Q) bool {
 	return hasTimeFilter
 }
 
-func NewSearchJob(q query.Q, diff bool, limit int, repoOpts search.RepoOptions) (*CommitSearch, error) {
-	return &CommitSearch{
-		Query:         queryToGitQuery(q, diff),
-		RepoOpts:      repoOpts,
-		Diff:          diff,
-		Limit:         limit,
-		HasTimeFilter: HasTimeFilter(q),
-	}, nil
-}
-
-func queryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
+func QueryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...))
 }
 

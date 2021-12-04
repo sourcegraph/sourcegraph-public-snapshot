@@ -23,7 +23,9 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
 
     const { getInsights } = useContext(CodeInsightsBackendContext)
 
-    const insights = useObservable(useMemo(() => getInsights(dashboard.id), [getInsights, dashboard.id]))
+    const insights = useObservable(
+        useMemo(() => getInsights({ dashboardId: dashboard.id }), [getInsights, dashboard.id])
+    )
 
     if (insights === undefined) {
         return <LoadingSpinner />

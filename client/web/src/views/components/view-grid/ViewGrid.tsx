@@ -20,7 +20,7 @@ const breakpoints: Record<BreakpointName, number> = { xs: 0, sm: 576, md: 768, l
 const columns: Record<BreakpointName, number> = { xs: 1, sm: 6, md: 8, lg: 12 }
 const defaultItemsPerRow: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 2, lg: 3 }
 const minWidths: Record<BreakpointName, number> = { xs: 1, sm: 2, md: 3, lg: 3 }
-const defaultHeight = 3
+const defaultHeight = 3.25
 
 const viewsToReactGridLayouts = (viewIds: string[]): ReactGridLayouts => {
     const reactGridLayouts = Object.fromEntries(

@@ -13,9 +13,6 @@ import (
 // See https://github.com/hexops/autogold for more information.
 
 func TestDocumentationPage(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	got, err := store.DocumentationPage(context.Background(), testBundleID, "/")
@@ -28,9 +25,6 @@ func TestDocumentationPage(t *testing.T) {
 }
 
 func TestDocumentationPathInfo(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	testCases := []struct {
@@ -77,9 +71,6 @@ func TestDocumentationPathInfo(t *testing.T) {
 }
 
 func TestDocumentationDefinitions(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	testCases := []autogold.Value{
@@ -141,9 +132,6 @@ func TestDocumentationDefinitions(t *testing.T) {
 // Confirms that the various data fields (detail strings, labels, tags, etc.) are not changing via a
 // snapshot.
 func TestDocumentationSearch_resultData(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	got, err := store.DocumentationSearch(context.Background(), "public", "error", nil)
@@ -154,9 +142,6 @@ func TestDocumentationSearch_resultData(t *testing.T) {
 }
 
 func TestDocumentationSearch(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	store := populateTestStore(t)
 
 	testCases := []struct {

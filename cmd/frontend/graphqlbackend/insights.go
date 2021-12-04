@@ -19,6 +19,8 @@ type InsightsResolver interface {
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
+	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -36,6 +38,18 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+}
+
+type SearchInsightLivePreviewArgs struct {
+	Input SearchInsightLivePreviewInput
+}
+
+type SearchInsightLivePreviewInput struct {
+	Query                      string
+	Label                      string
+	RepositoryScope            RepositoryScopeInput
+	TimeScope                  TimeScopeInput
+	GeneratedFromCaptureGroups bool
 }
 
 type InsightsArgs struct {
@@ -363,4 +377,9 @@ type InsightViewQueryArgs struct {
 
 type DeleteInsightViewArgs struct {
 	Id graphql.ID
+}
+
+type SearchInsightLivePreviewSeriesResolver interface {
+	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
+	Label(ctx context.Context) (string, error)
 }

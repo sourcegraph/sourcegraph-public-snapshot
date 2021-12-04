@@ -4,8 +4,8 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { isErrorLike } from '@sourcegraph/shared/src/codeintellify/errors'
 import {
     Scalars,
     SearchContextEditInput,

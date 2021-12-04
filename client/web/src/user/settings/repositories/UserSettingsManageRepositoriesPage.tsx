@@ -361,13 +361,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          * number of affiliated repos equals to the number of selected repos -
          * set radio to 'all'
          * 2. if only some repos were selected - set radio to 'selected'
-         * 3. if no repos selected - empty state
+         * 3. if no repos selected or this is an org - set radio to 'selected'
+         * 4. otherwise, empty
          */
 
         const radioSelectOption =
             externalServices.length === codeHostsHaveSyncAllQuery.length && codeHostsHaveSyncAllQuery.every(Boolean)
                 ? 'all'
-                : selectedAffiliatedRepos.size > 0
+                : selectedAffiliatedRepos.size > 0 || isOrgOwner
                 ? 'selected'
                 : ''
 
@@ -385,7 +386,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, isOrgOwner])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {

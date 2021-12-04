@@ -1,0 +1,39 @@
+.line-chart {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &--no-interaction {
+        pointer-events: none;
+    }
+}
+
+.content-parent-size {
+    flex-grow: 1;
+    position: relative;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+
+    // Reset ul styles (bullets, paddings, margins)
+    list-style: none;
+    padding: 0;
+    margin: 0.75rem 0 0;
+    line-height: 1;
+}
+
+.legend-item {
+    display: flex;
+    margin-right: 0.5rem;
+    align-items: center;
+}
+
+.legend-mark {
+    width: 0.75rem;
+    height: 0.75rem;
+    flex-shrink: 0;
+    margin-right: 0.25rem;
+    border-radius: 50%;
+}

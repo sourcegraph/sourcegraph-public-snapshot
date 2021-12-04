@@ -1,307 +1,262 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`ActionItem "open" command renders as link 1`] = `
-<a
-  className="action-item test-action-item"
-  href="https://example.com/bar"
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  tabIndex={0}
->
-   
-  
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    class="action-item test-action-item"
+    href="https://example.com/bar"
+    tabindex="0"
+  >
+     t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem "open" command renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined 1`] = `
-<a
-  className="action-item test-action-item"
-  href="https://other.com/foo"
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  rel="noopener noreferrer"
-  tabIndex={0}
-  target="_blank"
->
-   
-  
-  primary
-   
-</a>
+<DocumentFragment>
+  <a
+    class="action-item test-action-item"
+    href="https://other.com/foo"
+    rel="noopener noreferrer"
+    tabindex="0"
+    target="_blank"
+  >
+     primary 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem "open" command renders as link with icon and opens a new tab for a different origin 1`] = `
-<a
-  className="action-item test-action-item"
-  href="https://other.com/foo"
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  rel="noopener noreferrer"
-  tabIndex={0}
-  target="_blank"
->
-   
-  
-  t
-   
-  <OpenInNewIcon />
-</a>
+<DocumentFragment>
+  <a
+    class="action-item test-action-item"
+    href="https://other.com/foo"
+    rel="noopener noreferrer"
+    tabindex="0"
+    target="_blank"
+  >
+     t 
+    <openinnewicon />
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem actionItem variant 1`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem non-actionItem variant 1`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem non-pressed actionItem 1`] = `
-<a
-  aria-pressed={false}
-  className="action-item test-action-item"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-   b
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-pressed="false"
+    class="action-item test-action-item"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+     b 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem noop command 1`] = `
-<span
-  data-tooltip="d"
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-</span>
+<DocumentFragment>
+  <span
+    data-tooltip="d"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t
+  </span>
+</DocumentFragment>
 `;
 
 exports[`ActionItem pressed toggle actionItem 1`] = `
-<a
-  aria-pressed={true}
-  className="action-item test-action-item"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-   b
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-pressed="true"
+    class="action-item test-action-item"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+     b 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem run command 1`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item disabled"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={-1}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem run command 2`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem run command with error 1`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem run command with error with showInlineError 1`] = `
-<a
-  aria-label="Error: x"
-  className="action-item test-action-item"
-  data-tooltip="Error: x"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="Error: x"
+    class="action-item test-action-item"
+    data-tooltip="Error: x"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item actionItemLoading disabled"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={-1}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-  <div
-    className="loader"
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item actionItemLoading disabled"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="-1"
   >
-    <div
-      className="loading-spinner "
+    <img
+      alt="d"
+      src="u"
     />
-  </div>
-</a>
+     g: t 
+    <div
+      class="loader"
+      data-testid="action-item-spinner"
+    >
+      <div
+        class="loading-spinner "
+      />
+    </div>
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <img
-    alt="d"
-    src="u"
-  />
-   
-  g: 
-  t
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <img
+      alt="d"
+      src="u"
+    />
+     g: t 
+  </a>
+</DocumentFragment>
 `;
 
 exports[`ActionItem title element 1`] = `
-<a
-  aria-label="d"
-  className="action-item test-action-item"
-  data-tooltip="d"
-  href=""
-  onAuxClick={[Function]}
-  onClick={[Function]}
-  onKeyPress={[Function]}
-  role="button"
-  tabIndex={0}
->
-  <span>
-    t2
-  </span>
-   
-</a>
+<DocumentFragment>
+  <a
+    aria-label="d"
+    class="action-item test-action-item"
+    data-tooltip="d"
+    href=""
+    role="button"
+    tabindex="0"
+  >
+    <span>
+      t2
+    </span>
+     
+  </a>
+</DocumentFragment>
 `;

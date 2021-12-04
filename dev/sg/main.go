@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
@@ -76,14 +77,17 @@ func setMaxOpenFiles() error {
 
 	var rLimit syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
-		return err
+		return errors.Wrap(err, "getrlimit failed")
 	}
 
 	if rLimit.Cur < maxOpenFiles {
 		rLimit.Cur = maxOpenFiles
 
 		// This may not succeed, see https://github.com/golang/go/issues/30401
-		return syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+		err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+		if err != nil {
+			return errors.Wrap(err, "setrlimit failed")
+		}
 	}
 
 	return nil

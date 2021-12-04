@@ -133,6 +133,11 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		step.GenerateKey()
 	}
 
+	// Set a default agent queue to assign this job to
+	if len(step.Agents) == 0 {
+		step.Agents["queue"] = "standard"
+	}
+
 	p.Steps = append(p.Steps, step)
 }
 

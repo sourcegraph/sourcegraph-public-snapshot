@@ -1,4 +1,5 @@
 import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
+import { fetchCache } from '@sourcegraph/shared/src/util/fetchCache'
 
 import { OptionFlagValues } from '../../shared/util/optionFlags'
 
@@ -83,6 +84,7 @@ export interface BackgroundPageApi {
     }): Promise<GraphQLResult<T>>
     notifyPrivateCloudError(hasPrivateCloudError: boolean): Promise<void>
     checkPrivateCloudError(tabId: number): Promise<boolean>
+    fetchCache: typeof fetchCache
 }
 
 /**

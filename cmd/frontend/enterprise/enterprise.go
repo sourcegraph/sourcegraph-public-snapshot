@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
@@ -103,12 +102,12 @@ func BatchChangesEnabledForSite() error {
 
 // Checks if Batch Changes are enabled for the current user and returns `nil` if they are,
 // or else an error indicating why they're disabled
-func BatchChangesEnabledForUser(ctx context.Context, db dbutil.DB) error {
+func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
 	if err := BatchChangesEnabledForSite(); err != nil {
 		return err
 	}
 
-	if conf.BatchChangesRestrictedToAdmins() && backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) != nil {
+	if conf.BatchChangesRestrictedToAdmins() && backend.CheckCurrentUserIsSiteAdmin(ctx, db) != nil {
 		return ErrBatchChangesDisabledForUser{}
 	}
 	return nil

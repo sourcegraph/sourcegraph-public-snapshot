@@ -22,12 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -105,14 +103,15 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 	return []byte(formatted), nil
 }
 
-func overrideSiteConfig(ctx context.Context) error {
+func overrideSiteConfig(ctx context.Context, db database.DB) error {
 	path := os.Getenv("SITE_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
+	cs := &configurationSource{db: db}
 	paths := filepath.SplitList(path)
 	updateFunc := func(ctx context.Context) error {
-		raw, err := (&configurationSource{}).Read(ctx)
+		raw, err := cs.Read(ctx)
 		if err != nil {
 			return err
 		}
@@ -122,7 +121,7 @@ func overrideSiteConfig(ctx context.Context) error {
 		}
 		raw.Site = string(site)
 
-		err = (&configurationSource{}).Write(ctx, raw)
+		err = cs.Write(ctx, raw)
 		if err != nil {
 			return errors.Wrap(err, "writing site config overrides to database")
 		}
@@ -137,7 +136,7 @@ func overrideSiteConfig(ctx context.Context) error {
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
+func overrideGlobalSettings(ctx context.Context, db database.DB) error {
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil
@@ -175,16 +174,17 @@ func overrideGlobalSettings(ctx context.Context, db dbutil.DB) error {
 	return nil
 }
 
-func overrideExtSvcConfig(ctx context.Context, db dbutil.DB) error {
+func overrideExtSvcConfig(ctx context.Context, db database.DB) error {
 	log := log15.Root().New("svc", "config.file")
 	path := os.Getenv("EXTSVC_CONFIG_FILE")
 	if path == "" {
 		return nil
 	}
 	extsvcs := database.ExternalServices(db)
+	cs := &configurationSource{db: db}
 
 	update := func(ctx context.Context) error {
-		raw, err := (&configurationSource{}).Read(ctx)
+		raw, err := cs.Read(ctx)
 		if err != nil {
 			return err
 		}
@@ -394,12 +394,14 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 	return out, nil
 }
 
-type configurationSource struct{}
+type configurationSource struct {
+	db database.DB
+}
 
 func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
-	site, err := confdb.SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
-		return conftypes.RawUnified{}, errors.Wrap(err, "confdb.SiteGetLatest")
+		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
 
 	return conftypes.RawUnified{
@@ -410,13 +412,13 @@ func (c configurationSource) Read(ctx context.Context) (conftypes.RawUnified, er
 
 func (c configurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
 	// TODO(slimsag): future: pass lastID through for race prevention
-	site, err := confdb.SiteGetLatest(ctx)
+	site, err := c.db.Conf().SiteGetLatest(ctx)
 	if err != nil {
-		return errors.Wrap(err, "confdb.SiteGetLatest")
+		return errors.Wrap(err, "ConfStore.SiteGetLatest")
 	}
-	_, err = confdb.SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
+	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, input.Site)
 	if err != nil {
-		return errors.Wrap(err, "confdb.SiteCreateIfUpToDate")
+		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
 	}
 	return nil
 }

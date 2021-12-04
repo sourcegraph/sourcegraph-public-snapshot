@@ -16,23 +16,20 @@ import (
 
 var errOptionalPublishedUnsupported = NewValidationError(errors.New(`This Sourcegraph version requires the "published" field to be specified in the batch spec; upgrade to version 3.30.0 or later to be able to omit the published field and control publication from the UI.`))
 
-type ChangesetSpecRepository struct {
+// Repository is a repository in which the steps of a batch spec are executed.
+//
+// It is part of the cache.ExecutionKey, so changes to the names of fields here
+// will lead to cache busts.
+type Repository struct {
+	ID          string
 	Name        string
+	BaseRef     string
+	BaseRev     string
 	FileMatches []string
-
-	BaseRef string
-	BaseRev string
 }
 
 type ChangesetSpecInput struct {
-	// BaseRepositoryID is the GraphQL ID of the base repository.
-	BaseRepositoryID string
-	// HeadRepositoryID is the GraphQL ID of the head repository. Until we
-	// support forks it always needs to be the same as BaseRepositoryID.
-	HeadRepositoryID string
-
-	// Repository contains information about the repository in which the changes were made.
-	Repository ChangesetSpecRepository
+	Repository Repository
 
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 	Template              *ChangesetTemplate              `json:"-"`
@@ -120,8 +117,8 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		}
 
 		return &ChangesetSpec{
-			BaseRepository: input.BaseRepositoryID,
-			HeadRepository: input.HeadRepositoryID,
+			BaseRepository: input.Repository.ID,
+			HeadRepository: input.Repository.ID,
 			BaseRef:        input.Repository.BaseRef,
 			BaseRev:        input.Repository.BaseRev,
 

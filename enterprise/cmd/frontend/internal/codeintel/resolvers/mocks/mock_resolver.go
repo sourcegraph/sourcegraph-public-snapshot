@@ -210,6 +210,123 @@ func NewMockResolver() *MockResolver {
 	}
 }
 
+// NewStrictMockResolver creates a new mock of the Resolver interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockResolver() *MockResolver {
+	return &MockResolver{
+		CommitGraphFunc: &ResolverCommitGraphFunc{
+			defaultHook: func(context.Context, int) (graphqlbackend.CodeIntelligenceCommitGraphResolver, error) {
+				panic("unexpected invocation of MockResolver.CommitGraph")
+			},
+		},
+		CreateConfigurationPolicyFunc: &ResolverCreateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) (dbstore.ConfigurationPolicy, error) {
+				panic("unexpected invocation of MockResolver.CreateConfigurationPolicy")
+			},
+		},
+		DeleteConfigurationPolicyByIDFunc: &ResolverDeleteConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockResolver.DeleteConfigurationPolicyByID")
+			},
+		},
+		DeleteIndexByIDFunc: &ResolverDeleteIndexByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockResolver.DeleteIndexByID")
+			},
+		},
+		DeleteUploadByIDFunc: &ResolverDeleteUploadByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockResolver.DeleteUploadByID")
+			},
+		},
+		DocumentationSearchFunc: &ResolverDocumentationSearchFunc{
+			defaultHook: func(context.Context, string, []string) ([]precise.DocumentationSearchResult, error) {
+				panic("unexpected invocation of MockResolver.DocumentationSearch")
+			},
+		},
+		GetConfigurationPoliciesFunc: &ResolverGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {
+				panic("unexpected invocation of MockResolver.GetConfigurationPolicies")
+			},
+		},
+		GetConfigurationPolicyByIDFunc: &ResolverGetConfigurationPolicyByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.ConfigurationPolicy, bool, error) {
+				panic("unexpected invocation of MockResolver.GetConfigurationPolicyByID")
+			},
+		},
+		GetIndexByIDFunc: &ResolverGetIndexByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Index, bool, error) {
+				panic("unexpected invocation of MockResolver.GetIndexByID")
+			},
+		},
+		GetIndexesByIDsFunc: &ResolverGetIndexesByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockResolver.GetIndexesByIDs")
+			},
+		},
+		GetUploadByIDFunc: &ResolverGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+				panic("unexpected invocation of MockResolver.GetUploadByID")
+			},
+		},
+		GetUploadsByIDsFunc: &ResolverGetUploadsByIDsFunc{
+			defaultHook: func(context.Context, ...int) ([]dbstore.Upload, error) {
+				panic("unexpected invocation of MockResolver.GetUploadsByIDs")
+			},
+		},
+		IndexConfigurationFunc: &ResolverIndexConfigurationFunc{
+			defaultHook: func(context.Context, int) ([]byte, bool, error) {
+				panic("unexpected invocation of MockResolver.IndexConfiguration")
+			},
+		},
+		IndexConnectionResolverFunc: &ResolverIndexConnectionResolverFunc{
+			defaultHook: func(dbstore.GetIndexesOptions) *resolvers.IndexesResolver {
+				panic("unexpected invocation of MockResolver.IndexConnectionResolver")
+			},
+		},
+		InferredIndexConfigurationFunc: &ResolverInferredIndexConfigurationFunc{
+			defaultHook: func(context.Context, int) (*config.IndexConfiguration, bool, error) {
+				panic("unexpected invocation of MockResolver.InferredIndexConfiguration")
+			},
+		},
+		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
+			defaultHook: func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error) {
+				panic("unexpected invocation of MockResolver.PreviewGitObjectFilter")
+			},
+		},
+		PreviewRepositoryFilterFunc: &ResolverPreviewRepositoryFilterFunc{
+			defaultHook: func(context.Context, []string, int, int) ([]int, int, *int, error) {
+				panic("unexpected invocation of MockResolver.PreviewRepositoryFilter")
+			},
+		},
+		QueryResolverFunc: &ResolverQueryResolverFunc{
+			defaultHook: func(context.Context, *graphqlbackend.GitBlobLSIFDataArgs) (resolvers.QueryResolver, error) {
+				panic("unexpected invocation of MockResolver.QueryResolver")
+			},
+		},
+		QueueAutoIndexJobsForRepoFunc: &ResolverQueueAutoIndexJobsForRepoFunc{
+			defaultHook: func(context.Context, int, string, string) ([]dbstore.Index, error) {
+				panic("unexpected invocation of MockResolver.QueueAutoIndexJobsForRepo")
+			},
+		},
+		UpdateConfigurationPolicyFunc: &ResolverUpdateConfigurationPolicyFunc{
+			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) error {
+				panic("unexpected invocation of MockResolver.UpdateConfigurationPolicy")
+			},
+		},
+		UpdateIndexConfigurationByRepositoryIDFunc: &ResolverUpdateIndexConfigurationByRepositoryIDFunc{
+			defaultHook: func(context.Context, int, string) error {
+				panic("unexpected invocation of MockResolver.UpdateIndexConfigurationByRepositoryID")
+			},
+		},
+		UploadConnectionResolverFunc: &ResolverUploadConnectionResolverFunc{
+			defaultHook: func(dbstore.GetUploadsOptions) *resolvers.UploadsResolver {
+				panic("unexpected invocation of MockResolver.UploadConnectionResolver")
+			},
+		},
+	}
+}
+
 // NewMockResolverFrom creates a new mock of the MockResolver interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {

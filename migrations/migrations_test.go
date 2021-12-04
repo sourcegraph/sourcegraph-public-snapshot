@@ -3,6 +3,7 @@ package migrations_test
 import (
 	"database/sql"
 	"io/fs"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -10,9 +11,11 @@ import (
 	"testing"
 
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/httpfs"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
@@ -71,46 +74,64 @@ func TestMigrations(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	for _, tt := range []struct {
-		name     string
-		database *dbconn.Database
+		name   string
+		schema *dbconn.Schema
 	}{
 		{"Frontend", dbconn.Frontend},
 		{"CodeIntel", dbconn.CodeIntel},
 	} {
 
 		t.Logf("Running migrations in %s", tt.name)
-		testMigrations(t, db, tt.database)
+		testMigrations(t, db, tt.schema)
 	}
 }
 
 // testMigrations runs all migrations up, then the migrations for the given database
 // all the way back down, then back up to check for syntax errors and reversibility.
-func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
-	m, err := dbconn.NewMigrate(db, database)
-	if err != nil {
-		t.Fatalf("error constructing migrations: %s", err)
+func testMigrations(t *testing.T, db *sql.DB, schema *dbconn.Schema) {
+	m := makeMigration(t, db, schema)
+
+	// All the way up
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("unexpected error migrating database: %s", err)
 	}
 
-	if err := dbconn.DoMigrate(m); err != nil {
-		t.Fatalf("unexpected error migration database: %s", err)
-	}
-
+	// All the way down
 	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
 		t.Fatalf("unexpected error running down migrations: %s", err)
 	}
 
+	// All the way up again
 	if _, err := db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"); err != nil {
 		t.Fatalf("failed to recreate schema")
 	}
 
-	m, err = dbconn.NewMigrate(db, database)
-	if err != nil {
-		t.Fatalf("unexpected error constructing migrations: %s", err)
-	}
+	m = makeMigration(t, db, schema)
 	if err := m.Up(); err != nil {
 		t.Fatalf("unexpected error re-running up migrations: %s", err)
 	}
+}
+
+func makeMigration(t *testing.T, db *sql.DB, schema *dbconn.Schema) *migrate.Migrate {
+	driver, err := postgres.WithInstance(db, &postgres.Config{
+		MigrationsTable: schema.MigrationsTableName,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error creating driver: %s", err)
+	}
+
+	d, err := httpfs.New(http.FS(schema.FS), ".")
+	if err != nil {
+		t.Fatalf("unexpected error creating migration source: %s", err)
+	}
+
+	m, err := migrate.NewWithInstance("httpfs", d, "postgres", driver)
+	if err != nil {
+		t.Fatalf("unexpected error creating migration: %s", err)
+	}
+
+	return m
 }

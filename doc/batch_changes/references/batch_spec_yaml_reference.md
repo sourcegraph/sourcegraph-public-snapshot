@@ -727,7 +727,7 @@ Optional: the file diffs matching the given directory will only be grouped in a 
 
 The optional `workspaces` property allows users to define where projects are located in repositories and cause the [`steps`](#steps) to be executed for each project, instead of once per repository. That allows easier creation of multiple changesets in large repositories.
 
-For each repository that's yielded by [`on`](#on) and matched by a [`workspaces.in`](#workspaces-in) property, Sourcegraph search is used to get the locations of the `rootAtLocationOf` file. Each location then serves as a workspace for the execution of the `steps`, instead of the root of the repository.
+For each repository that's yielded by [`on`](#on), Sourcegraph search is used to get the locations of the `rootAtLocationOf` file. Each location then serves as a workspace for the execution of the `steps`, instead of the root of the repository. Use the [`workspaces.in`](#workspaces-in) property to scope the workspaces definitions. Omitting it is treated as `*`.
 
 **Important**: Since multiple workspaces in the same repository can produce multiple changesets, it's **required** to use templating to produce a unique [`changesetTemplate.branch`](#changesettemplate-branch) for each produced changeset. See the [examples](#workspaces-examples) below.
 

@@ -18,6 +18,9 @@ func RenderTrackingIssue(context IssueContext) string {
 	)))
 
 	var parts []string
+
+	parts = append(parts, renderSummary(context))
+
 	for _, assignee := range assignees {
 		assigneeContext := context.Match(NewMatcher(
 			nonTrackingLabels(context.trackingIssue.Labels),
@@ -30,6 +33,22 @@ func RenderTrackingIssue(context IssueContext) string {
 	}
 
 	return strings.Join(parts, "\n")
+}
+
+func renderSummary(context IssueContext) string {
+	var (
+		total    float64
+		complete float64
+	)
+	for _, issue := range context.issues {
+		days := estimateFromLabelSet(issue.Labels)
+		total += days
+		if issue.Closed() {
+			complete += days
+		}
+	}
+	percent := complete / total * 100.0
+	return fmt.Sprintf("__Completion Summary: %.2fd / %.2fd (%.2f%%)__\n", complete, total, percent)
 }
 
 // findAssignees returns the list of assignees for the given tracking issue. A user is an
@@ -545,7 +564,7 @@ func estimateFromLabelSets(labels [][]string) (days float64) {
 	return days
 }
 
-// estimateFromLabelSet returns the value of a `estimate/` lables in the given label set.
+// estimateFromLabelSet returns the value of a `estimate/` labels in the given label set.
 func estimateFromLabelSet(labels []string) float64 {
 	for _, label := range labels {
 		if strings.HasPrefix(label, "estimate/") {

@@ -80,6 +80,48 @@ func NewMockDBStore() *MockDBStore {
 	}
 }
 
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		AddUploadPartFunc: &DBStoreAddUploadPartFunc{
+			defaultHook: func(context.Context, int, int) error {
+				panic("unexpected invocation of MockDBStore.AddUploadPart")
+			},
+		},
+		DoneFunc: &DBStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockDBStore.Done")
+			},
+		},
+		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
+			defaultHook: func(context.Context, int) (dbstore.Upload, bool, error) {
+				panic("unexpected invocation of MockDBStore.GetUploadByID")
+			},
+		},
+		InsertUploadFunc: &DBStoreInsertUploadFunc{
+			defaultHook: func(context.Context, dbstore.Upload) (int, error) {
+				panic("unexpected invocation of MockDBStore.InsertUpload")
+			},
+		},
+		MarkFailedFunc: &DBStoreMarkFailedFunc{
+			defaultHook: func(context.Context, int, string) error {
+				panic("unexpected invocation of MockDBStore.MarkFailed")
+			},
+		},
+		MarkQueuedFunc: &DBStoreMarkQueuedFunc{
+			defaultHook: func(context.Context, int, *int64) error {
+				panic("unexpected invocation of MockDBStore.MarkQueued")
+			},
+		},
+		TransactFunc: &DBStoreTransactFunc{
+			defaultHook: func(context.Context) (DBStore, error) {
+				panic("unexpected invocation of MockDBStore.Transact")
+			},
+		},
+	}
+}
+
 // NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
@@ -887,6 +929,23 @@ func NewMockGitHubClient() *MockGitHubClient {
 		ListInstallationRepositoriesFunc: &GitHubClientListInstallationRepositoriesFunc{
 			defaultHook: func(context.Context) ([]*github.Repository, error) {
 				return nil, nil
+			},
+		},
+	}
+}
+
+// NewStrictMockGitHubClient creates a new mock of the GitHubClient
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockGitHubClient() *MockGitHubClient {
+	return &MockGitHubClient{
+		GetRepositoryFunc: &GitHubClientGetRepositoryFunc{
+			defaultHook: func(context.Context, string, string) (*github.Repository, error) {
+				panic("unexpected invocation of MockGitHubClient.GetRepository")
+			},
+		},
+		ListInstallationRepositoriesFunc: &GitHubClientListInstallationRepositoriesFunc{
+			defaultHook: func(context.Context) ([]*github.Repository, error) {
+				panic("unexpected invocation of MockGitHubClient.ListInstallationRepositories")
 			},
 		},
 	}

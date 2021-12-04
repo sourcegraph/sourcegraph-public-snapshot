@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"net/url"
 	"runtime"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
@@ -142,7 +142,6 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Sourcegraph-User-ID", strconv.FormatInt(int64(userID), 10))
 	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
@@ -160,7 +159,7 @@ func search(ctx context.Context, query string, userID int32) (*gqlSearchResponse
 }
 
 func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(api.InternalClient.URL)
+	u, err := url.Parse(internalapi.Client.URL)
 	if err != nil {
 		return "", err
 	}

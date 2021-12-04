@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -1553,7 +1554,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 
-	svcs := types.MakeExternalServices()
+	svcs := typestest.MakeExternalServices()
 
 	t.Run("no external services", func(t *testing.T) {
 		if err := ExternalServices(db).Upsert(ctx); err != nil {
@@ -1607,7 +1608,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		want := types.GenerateExternalServices(7, svcs...)
+		want := typestest.GenerateExternalServices(7, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
@@ -1691,7 +1692,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			}
 		}()
 
-		want := types.GenerateExternalServices(7, svcs...)
+		want := typestest.GenerateExternalServices(7, svcs...)
 
 		if err := tx.Upsert(ctx, want...); err != nil {
 			t.Fatalf("Upsert error: %s", err)
