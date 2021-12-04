@@ -6,6 +6,10 @@
     &--no-interaction {
         pointer-events: none;
     }
+
+    &--horizontal {
+        flex-direction: row;
+    }
 }
 
 .content-parent-size {
@@ -14,25 +18,42 @@
 }
 
 .legend {
+    &--horizontal {
+        flex-grow: 1;
+        flex-shrink: 0;
+        min-width: 11rem;
+        margin-left: 1rem;
+        width: 30%;
+    }
+}
+
+.legend-content {
     display: flex;
     flex-wrap: wrap;
+    gap: 0.5rem;
 
     // Reset ul styles (bullets, paddings, margins)
     list-style: none;
-    padding: 0;
-    margin: 0.75rem 0 0;
-    line-height: 1;
+    margin: 0;
+    padding: 0.75rem 0 0 0;
+    line-height: 1.2;
+
+    &--horizontal {
+        padding-top: 0;
+        flex-wrap: nowrap;
+        flex-direction: column;
+    }
 }
 
 .legend-item {
     display: flex;
-    margin-right: 0.5rem;
-    align-items: center;
+    align-items: baseline;
 }
 
 .legend-mark {
-    width: 0.75rem;
-    height: 0.75rem;
+    align-self: baseline;
+    width: 0.5rem;
+    height: 0.5rem;
     flex-shrink: 0;
     margin-right: 0.25rem;
     border-radius: 50%;

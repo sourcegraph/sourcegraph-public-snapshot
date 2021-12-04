@@ -8,6 +8,7 @@ import (
 	"os"
 	stdlibpath "path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -327,4 +328,25 @@ func lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID,
 	util.SortFileInfosByName(fis)
 
 	return fis, nil
+}
+
+// ListFiles returns a list of root-relative file paths matching the given
+// pattern in a particular commit of a repository.
+func ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
+	cmd := gitserver.DefaultClient.Command("git", "ls-tree", "--name-only", "-r", string(commit), "--")
+	cmd.Repo = repo
+
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var matching []string
+	for _, path := range strings.Split(string(out), "\n") {
+		if pattern.MatchString(path) {
+			matching = append(matching, path)
+		}
+	}
+
+	return matching, nil
 }

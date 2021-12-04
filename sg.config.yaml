@@ -712,7 +712,7 @@ checks:
 
   go-version:
     cmd: |
-      go_version=#$(go version | cut -d' ' -f 3 | sed 's/go//')
+      go_version=$(go version | cut -d' ' -f 3 | sed 's/go//')
       tools_version=$(cat .tool-versions | grep golang | sed 's/golang //')
       [ "$go_version" = "$tools_version" ] || (echo "➡️ Need go version $tools_version, but got $go_version instead" && exit 1)
     failMessage: 'Incorrect go version'

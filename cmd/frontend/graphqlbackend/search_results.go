@@ -24,7 +24,6 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -44,7 +43,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
-	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -223,9 +221,7 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 	tr, _ := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -389,9 +385,7 @@ var (
 // been performed.
 func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
-	defer func() {
-		tr.Finish()
-	}()
+	defer tr.Finish()
 	var types []string
 	resultTypes, _ := si.Query.StringValues(query.FieldType)
 	for _, typ := range resultTypes {
@@ -651,6 +645,47 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// whether global zoekt search will run (value true).
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
+		if globalSearch {
+			repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+			defaultScope, err := zoektutil.DefaultGlobalQueryScope(repoOptions)
+			if err != nil {
+				return nil, nil, err
+			}
+			includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+
+			if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+				typ := search.TextRequest
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				globalZoektQuery := zoektutil.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
+
+				zoektArgs := &search.ZoektParameters{
+					// TODO(rvantonder): the Query value is set when the global zoekt query is
+					// enriched with private repository data in the search job's Run method, and
+					// is therefore set to `nil` below.
+					// Ideally, The ZoektParameters type should not expose this field for Universe text
+					// searches at all, and will be removed once jobs are fully migrated.
+					Query:          nil,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				jobs = append(jobs, &unindexed.RepoUniverseTextSearch{
+					GlobalZoektQuery: globalZoektQuery,
+					ZoektArgs:        zoektArgs,
+					FileMatchLimit:   args.PatternInfo.FileMatchLimit,
+
+					RepoOptions: repoOptions,
+					Db:          r.db,
+				})
+			}
+		}
+
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 			if !skipUnindexed {
 				typ := search.TextRequest
@@ -702,7 +737,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					Zoekt:          args.Zoekt,
 				}
 
-				jobs = append(jobs, &symbol.SymbolSearch{
+				jobs = append(jobs, &symbol.RepoSubsetSymbolSearch{
 					ZoektArgs:         zoektArgs,
 					PatternInfo:       args.PatternInfo,
 					Limit:             r.MaxResults(),
@@ -1609,66 +1644,20 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
 	if globalSearch {
-		argsIndexed := *args
-
-		userID := int32(0)
-		if envvar.SourcegraphDotComMode() {
-			if a := actor.FromContext(ctx); a != nil {
-				userID = a.UID
-			}
-		}
-
-		// Get all private repos for the the current actor. On sourcegraph.com, those are
-		// only the repos directly added by the user. Otherwise it's all repos the user has
-		// access to on all connected code hosts / external services.
-		//
-		// TODO: We should use repos.Resolve here. However, the logic for
-		// UserID is different to repos.Resolve, so we need to work out how
-		// best to address that first.
-		userPrivateRepos, err := r.db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-			UserID:         userID, // Zero valued when not in sourcegraph.com mode
-			OnlyPrivate:    true,
-			LimitOffset:    &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
-			OnlyForks:      args.RepoOptions.OnlyForks,
-			NoForks:        args.RepoOptions.NoForks,
-			OnlyArchived:   args.RepoOptions.OnlyArchived,
-			NoArchived:     args.RepoOptions.NoArchived,
-			ExcludePattern: repos.UnionRegExps(args.RepoOptions.MinusRepoFilters),
-		})
-
-		if err != nil {
-			log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
-			tr.LazyPrintf("error resolving user private repos: %v", err)
-		} else {
-			argsIndexed.UserPrivateRepos = userPrivateRepos
-		}
-
-		wg := waitGroup(true)
-		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(argsIndexed.PatternInfo.FileMatchLimit))
-				defer cleanup()
-
-				// This code path implies global-search (3rd arg is true).
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, true, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
-				if err != nil {
-					agg.Error(err)
-					return
-				}
-
-				searcherArgs := &search.SearcherParameters{
-					SearcherURLs:    argsIndexed.SearcherURLs,
-					PatternInfo:     argsIndexed.PatternInfo,
-					UseFullDeadline: argsIndexed.UseFullDeadline,
-				}
-				// This code path implies not-only-searcher is run (3rd arg is true)
-				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, true, stream)
-			})
-		}
-
 		if args.ResultTypes.Has(result.TypeSymbol) {
+			argsIndexed := *args
+
+			userID := int32(0)
+
+			if envvar.SourcegraphDotComMode() {
+				if a := actor.FromContext(ctx); a != nil {
+					userID = a.UID
+				}
+			}
+
+			argsIndexed.UserPrivateRepos = repos.PrivateReposForUser(ctx, r.db, userID, args.RepoOptions)
+
+			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
@@ -1715,11 +1704,11 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		case "Commit":
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-		case "Symbol":
+		case "RepoSubsetSymbol":
 			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		case "Repo":
 			return waitGroup(true)
-		case "RepoSubsetText":
+		case "RepoSubsetText", "RepoUniverseText":
 			return waitGroup(true)
 		case "Structural":
 			return waitGroup(true)

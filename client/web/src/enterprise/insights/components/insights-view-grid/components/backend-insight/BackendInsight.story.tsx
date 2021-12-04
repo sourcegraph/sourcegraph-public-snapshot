@@ -61,6 +61,7 @@ const TestBackendInsight: React.FunctionComponent = () => (
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}
         telemetryService={NOOP_TELEMETRY_SERVICE}
+        innerRef={() => {}}
     />
 )
 

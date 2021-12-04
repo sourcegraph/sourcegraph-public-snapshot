@@ -13,20 +13,17 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 // TestJobQueue tests that EnqueueJob and dequeueJob work mutually to transfer jobs to/from the
 // database.
 func TestJobQueue(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	//t.Parallel() // TODO: dbtesting.GetDB is not parallel-safe, yuck.
+	t.Parallel()
+	mainAppDB := dbtest.NewDB(t)
 
 	ctx := actor.WithInternalActor(context.Background())
 
-	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	// Check we get no dequeued job first.
@@ -73,12 +70,10 @@ func TestJobQueue(t *testing.T) {
 }
 
 func TestJobQueueDependencies(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
+	mainAppDB := dbtest.NewDB(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	mainAppDB := dbtesting.GetDB(t)
 	workerBaseStore := basestore.NewWithDB(mainAppDB, sql.TxOptions{})
 
 	t.Run("enqueue without dependencies, get none back", func(t *testing.T) {

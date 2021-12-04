@@ -73,7 +73,13 @@ func GetBackgroundJobs(ctx context.Context, mainAppDB *sql.DB, insightsDB *sql.D
 		routines = append(routines, newInsightHistoricalEnqueuer(ctx, workerBaseStore, insightsMetadataStore, insightsStore, observationContext))
 	}
 
-	routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	// this flag will allow users to ENABLE the settings sync job. This is a last resort option if for some reason the new GraphQL API does not work. This
+	// should not be published as an option externally, and will be deprecated as soon as possible.
+	enableSync, _ := strconv.ParseBool(os.Getenv("ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE"))
+	if enableSync {
+		log15.Warn("Enabling Code Insights Settings Storage - This is a deprecated functionality!")
+		routines = append(routines, discovery.NewMigrateSettingInsightsJob(ctx, mainAppDB, insightsDB))
+	}
 	routines = append(routines, pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB))
 
 	return routines

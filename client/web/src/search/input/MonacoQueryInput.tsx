@@ -355,7 +355,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 editor.addAction({
                     id: 'triggerFuzzyFinder',
                     label: 'triggerFuzzyFinder',
-                    keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
+                    keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_K],
                     run: () => onHandleFuzzyFinder(true),
                 })
             )

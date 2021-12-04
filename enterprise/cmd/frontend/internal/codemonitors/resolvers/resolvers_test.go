@@ -20,16 +20,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestCreateCodeMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -80,12 +76,8 @@ func TestCreateCodeMonitor(t *testing.T) {
 }
 
 func TestListCodeMonitors(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	userID := insertTestUser(t, db, "cm-user1", true)
@@ -170,11 +162,7 @@ func requireHasNextPage(t *testing.T, r graphqlbackend.MonitorConnectionResolver
 }
 
 func TestIsAllowedToEdit(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	// Setup users and org
 	owner := insertTestUser(t, db, "cm-user1", false)
@@ -236,11 +224,7 @@ func TestIsAllowedToEdit(t *testing.T) {
 }
 
 func TestIsAllowedToCreate(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	// Setup users and org
 	member := insertTestUser(t, db, "cm-user1", false)
@@ -312,12 +296,8 @@ func (u *testUser) id() graphql.ID {
 }
 
 func TestQueryMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.
@@ -356,12 +336,12 @@ func TestQueryMonitor(t *testing.T) {
 	// in the database. After we create the monitor they fill the job tables and
 	// update the job status.
 	postHookOpt := WithPostHooks([]hook{
-		func() error { return r.store.EnqueueQueryTriggerJobs(ctx) },
-		func() error { return r.store.EnqueueActionJobsForQuery(ctx, 1, 1) },
+		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
+		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		func() error {
 			return (&storetest.TestStore{CodeMonitorStore: r.store}).SetJobStatus(ctx, storetest.ActionJobs, storetest.Completed, 1)
 		},
-		func() error { return r.store.EnqueueActionJobsForQuery(ctx, 1, 1) },
+		func() error { _, err := r.store.EnqueueActionJobsForMonitor(ctx, 1, 1); return err },
 		// Set the job status of trigger job with id = 1 to "completed". Since we already
 		// created another monitor, there is still a second trigger job (id = 2) which
 		// remains in status queued.
@@ -381,10 +361,10 @@ func TestQueryMonitor(t *testing.T) {
 		// 1   1     completed
 		// 2   2     queued
 		// 3   1	 queued
-		func() error { return r.store.EnqueueQueryTriggerJobs(ctx) },
+		func() error { _, err := r.store.EnqueueQueryTriggerJobs(ctx); return err },
 		// To have a consistent state we have to log the number of search results for
 		// each completed trigger job.
-		func() error { return r.store.UpdateTriggerJobWithResults(ctx, "", 1, 1) },
+		func() error { return r.store.UpdateTriggerJobWithResults(ctx, 1, "", 1) },
 	})
 	_, err = r.insertTestMonitorWithOpts(ctx, t, actionOpt, postHookOpt)
 	if err != nil {
@@ -584,12 +564,8 @@ query($userName: String!, $actionCursor: String!){
 `
 
 func TestEditCodeMonitor(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	r := newTestResolver(t, db)
 
 	// Create 2 test users.

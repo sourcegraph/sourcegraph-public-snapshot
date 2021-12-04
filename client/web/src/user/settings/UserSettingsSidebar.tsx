@@ -2,9 +2,11 @@ import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
+import { ProductStatusBadge } from '@sourcegraph/wildcard'
+import type { ProductStatusType } from '@sourcegraph/wildcard/src/components/Badge'
+
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
-import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
@@ -22,7 +24,7 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
-    status?: BadgeStatus
+    status?: ProductStatusType
 }
 
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
@@ -68,7 +70,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
                             <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
-                                {label} {status && <Badge className="ml-1" status={status} />}
+                                {label} {status && <ProductStatusBadge className="ml-1" status={status} />}
                             </SidebarNavItem>
                         )
                 )}

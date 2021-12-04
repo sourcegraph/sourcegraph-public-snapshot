@@ -4,142 +4,83 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
-func TestQueryByRecordID(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
+func TestQueryTriggerForJob(t *testing.T) {
 	ctx, db, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got, err := s.GetQueryTriggerForJob(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	now := s.Now()
-	want := &QueryTrigger{
-		ID:           1,
-		Monitor:      m.ID,
-		QueryString:  testQuery,
-		NextRun:      now,
-		LatestResult: &now,
-		CreatedBy:    id,
-		CreatedAt:    now,
-		ChangedBy:    id,
-		ChangedAt:    now,
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	_, _, _, userCTX := newTestUser(ctx, t, db)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
+	require.NoError(t, err)
+
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
+	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	triggerJobID := triggerJobs[0].ID
+
+	got, err := s.GetQueryTriggerForJob(ctx, triggerJobID)
+	require.NoError(t, err)
+
+	require.Equal(t, fixtures.query, got)
 }
 
-func TestTriggerQueryNextRun(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
+func TestSetQueryTriggerNextRun(t *testing.T) {
 	ctx, db, s := newTestStore(t)
 	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = s.EnqueueQueryTriggerJobs(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+	fixtures, err := s.insertTestMonitor(userCTX, t)
+	require.NoError(t, err)
+
+	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
+	require.NoError(t, err)
+	require.Len(t, triggerJobs, 1)
+	triggerJobID := triggerJobs[0].ID
 
 	wantLatestResult := s.Now().Add(time.Minute)
 	wantNextRun := s.Now().Add(time.Hour)
 
 	err = s.SetQueryTriggerNextRun(ctx, 1, wantNextRun, wantLatestResult)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got, err := s.GetQueryTriggerForJob(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
+
+	got, err := s.GetQueryTriggerForJob(ctx, triggerJobID)
+	require.NoError(t, err)
+
 	want := &QueryTrigger{
-		ID:           1,
-		Monitor:      m.ID,
-		QueryString:  testQuery,
+		ID:           fixtures.query.ID,
+		Monitor:      fixtures.monitor.ID,
+		QueryString:  fixtures.query.QueryString,
+		CreatedBy:    fixtures.query.CreatedBy,
+		CreatedAt:    fixtures.query.CreatedAt,
 		NextRun:      wantNextRun,
 		LatestResult: &wantLatestResult,
-		CreatedBy:    id,
-		CreatedAt:    s.Now(),
 		ChangedBy:    id,
 		ChangedAt:    s.Now(),
 	}
-
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }
 
 func TestResetTriggerQueryTimestamps(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	ctx, db, s := newTestStore(t)
-	_, id, _, userCTX := newTestUser(ctx, t, db)
-	m, err := s.insertTestMonitor(userCTX, t)
-	if err != nil {
-		t.Fatal(err)
-	}
-	now := s.Now()
+	_, _, _, userCTX := newTestUser(ctx, t, db)
+	fixtures, err := s.insertTestMonitor(userCTX, t)
+	require.NoError(t, err)
+
+	err = s.ResetQueryTriggerTimestamps(ctx, fixtures.query.ID)
+	require.NoError(t, err)
+
+	got, err := s.GetQueryTriggerForMonitor(ctx, fixtures.monitor.ID)
+	require.NoError(t, err)
+
 	want := &QueryTrigger{
-		ID:           1,
-		Monitor:      m.ID,
-		QueryString:  testQuery,
-		NextRun:      now,
-		LatestResult: &now,
-		CreatedBy:    id,
-		CreatedAt:    now,
-		ChangedBy:    id,
-		ChangedAt:    now,
-	}
-	got, err := s.triggerQueryByIDInt64(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
-
-	err = s.ResetQueryTriggerTimestamps(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got, err = s.triggerQueryByIDInt64(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want = &QueryTrigger{
-		ID:           1,
-		Monitor:      m.ID,
-		QueryString:  testQuery,
-		NextRun:      now,
+		ID:           fixtures.query.ID,
+		Monitor:      fixtures.monitor.ID,
+		QueryString:  fixtures.query.QueryString,
+		NextRun:      s.Now(),
 		LatestResult: nil,
-		CreatedBy:    id,
-		CreatedAt:    now,
-		ChangedBy:    id,
-		ChangedAt:    now,
+		CreatedBy:    fixtures.query.CreatedBy,
+		CreatedAt:    fixtures.query.CreatedAt,
+		ChangedBy:    fixtures.query.ChangedBy,
+		ChangedAt:    fixtures.query.ChangedAt,
 	}
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("diff: %s", diff)
-	}
+	require.Equal(t, want, got)
 }

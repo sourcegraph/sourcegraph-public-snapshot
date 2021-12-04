@@ -98,6 +98,7 @@ export function testSingleFilePage({
             const [token] = await line.$x('.//span[text()="CallOption"]')
             await token.hover()
             await getDriver().page.waitForSelector('.test-tooltip-go-to-definition')
+            await getDriver().page.waitForSelector('.test-tooltip-content')
             await retry(async () => {
                 assert.strictEqual(
                     await getDriver().page.evaluate(

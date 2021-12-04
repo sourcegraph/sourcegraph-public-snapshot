@@ -13,9 +13,9 @@ const webpack = require('webpack')
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer')
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
-const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
+const { getMonacoWebpackPlugin, getCSSLoaders } = require('@sourcegraph/build-config')
+
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
-const { MONACO_LANGUAGES_AND_FEATURES } = require('./dev/webpack/monacoWebpack')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -54,6 +54,8 @@ const monacoEditorPaths = [path.resolve(nodeModulesPath, 'monaco-editor')]
 
 const isEnterpriseBuild = process.env.ENTERPRISE && Boolean(JSON.parse(process.env.ENTERPRISE))
 const enterpriseDirectory = path.resolve(__dirname, 'src', 'enterprise')
+
+const styleLoader = isDevelopment ? 'style-loader' : MiniCssExtractPlugin.loader
 
 const babelLoader = {
   loader: 'babel-loader',
@@ -161,7 +163,7 @@ const config = {
       // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
-    new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES),
+    getMonacoWebpackPlugin(),
     !shouldServeIndexHTML &&
       new WebpackManifestPlugin({
         writeToFileEmit: true,
@@ -236,7 +238,7 @@ const config = {
         test: /\.(sass|scss)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
         include: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(rootPath, isDevelopment, {
+        use: getCSSLoaders(styleLoader, {
           loader: 'css-loader',
           options: {
             sourceMap: isDevelopment,
@@ -250,7 +252,10 @@ const config = {
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
-        use: getCSSLoaders(rootPath, isDevelopment, { loader: 'css-loader', options: { url: false } }),
+        use: getCSSLoaders(styleLoader, {
+          loader: 'css-loader',
+          options: { url: false },
+        }),
       },
       {
         // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)

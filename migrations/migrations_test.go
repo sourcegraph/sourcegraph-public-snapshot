@@ -14,8 +14,8 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	internalmigrations "github.com/sourcegraph/sourcegraph/internal/database/migrations"
 	"github.com/sourcegraph/sourcegraph/migrations"
 )
 
@@ -74,25 +74,25 @@ func TestMigrations(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 
 	for _, tt := range []struct {
-		name     string
-		database *dbconn.Database
+		name   string
+		schema *internalmigrations.Schema
 	}{
-		{"Frontend", dbconn.Frontend},
-		{"CodeIntel", dbconn.CodeIntel},
+		{"Frontend", internalmigrations.Frontend},
+		{"CodeIntel", internalmigrations.CodeIntel},
 	} {
 
 		t.Logf("Running migrations in %s", tt.name)
-		testMigrations(t, db, tt.database)
+		testMigrations(t, db, tt.schema)
 	}
 }
 
 // testMigrations runs all migrations up, then the migrations for the given database
 // all the way back down, then back up to check for syntax errors and reversibility.
-func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
-	m := makeMigration(t, db, database)
+func testMigrations(t *testing.T, db *sql.DB, schema *internalmigrations.Schema) {
+	m := makeMigration(t, db, schema)
 
 	// All the way up
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
@@ -109,21 +109,21 @@ func testMigrations(t *testing.T, db *sql.DB, database *dbconn.Database) {
 		t.Fatalf("failed to recreate schema")
 	}
 
-	m = makeMigration(t, db, database)
+	m = makeMigration(t, db, schema)
 	if err := m.Up(); err != nil {
 		t.Fatalf("unexpected error re-running up migrations: %s", err)
 	}
 }
 
-func makeMigration(t *testing.T, db *sql.DB, database *dbconn.Database) *migrate.Migrate {
+func makeMigration(t *testing.T, db *sql.DB, schema *internalmigrations.Schema) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{
-		MigrationsTable: database.MigrationsTable,
+		MigrationsTable: schema.MigrationsTableName,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error creating driver: %s", err)
 	}
 
-	d, err := httpfs.New(http.FS(database.FS), ".")
+	d, err := httpfs.New(http.FS(schema.FS), ".")
 	if err != nil {
 		t.Fatalf("unexpected error creating migration source: %s", err)
 	}

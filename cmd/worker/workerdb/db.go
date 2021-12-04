@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
@@ -21,15 +22,13 @@ func Init() (*sql.DB, error) {
 }
 
 var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
-	postgresDSN := WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-
-	opts := dbconn.Opts{DSN: postgresDSN, DBName: "frontend", AppName: "worker"}
-	sqlDB, _, err := dbconn.New(opts)
+	db, err := dbconn.NewFrontendDB(dsn, "worker", false)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	return sqlDB, nil
+	return db, nil
 })
