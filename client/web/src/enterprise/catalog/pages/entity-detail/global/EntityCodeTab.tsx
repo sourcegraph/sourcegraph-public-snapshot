@@ -12,49 +12,18 @@ import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { ComponentSources } from './ComponentSources'
 import { EntityCodeOwners } from './EntityCodeOwners'
 
-interface Props
-    extends EntityDetailContentCardProps,
-        TelemetryProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        SettingsCascadeProps {
+interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
+    className?: string
 }
 
-export const EntityCodeTab: React.FunctionComponent<Props> = ({
-    entity,
-    className,
-    headerClassName,
-    titleClassName,
-    bodyClassName,
-    bodyScrollableClassName,
-    ...props
-}) => (
-    <div>
+export const EntityCodeTab: React.FunctionComponent<Props> = ({ entity, className, ...props }) => (
+    <div className={className}>
         {entity.__typename === 'CatalogComponent' && (
             <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
         )}
-        <EntityCodeOwners
-            entity={entity}
-            className="card mb-2"
-            headerClassName={headerClassName}
-            titleClassName={titleClassName}
-            bodyClassName={bodyClassName}
-            bodyScrollableClassName={bodyScrollableClassName}
-        />
-        <ComponentAuthors
-            catalogComponent={entity}
-            className="card mb-3"
-            headerClassName={headerClassName}
-            titleClassName={titleClassName}
-            bodyClassName={bodyClassName}
-            bodyScrollableClassName={bodyScrollableClassName}
-        />
-        <ComponentSources
-            {...props}
-            catalogComponent={entity}
-            className=""
-            bodyScrollableClassName={bodyScrollableClassName}
-        />
+        <EntityCodeOwners entity={entity} className="card mb-2" />
+        <ComponentAuthors catalogComponent={entity} className="card mb-3" />
+        <ComponentSources {...props} catalogComponent={entity} className="" />
     </div>
 )

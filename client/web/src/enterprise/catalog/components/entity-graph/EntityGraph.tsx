@@ -7,6 +7,7 @@ import { UncontrolledReactSVGPanZoom } from 'react-svg-pan-zoom'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { CatalogGraphFields } from '../../../../graphql-operations'
+import { catalogRelationTypeDisplayName } from '../../core/edges'
 import { CatalogEntityIcon } from '../CatalogEntityIcon'
 
 interface Props {
@@ -42,10 +43,10 @@ const defaultEdgeConfig: RecursivePartial<EdgeOptions> = {
             styles: { fill: 'var(--text-muted)', fontSize: '0.6rem' },
         },
         edge: {
-            styles: { stroke: 'var(--border-color-2)', strokeWidth: '2.5px', fill: 'transparent' },
+            styles: { stroke: 'var(--text-muted)', strokeWidth: '2.5px', fill: 'transparent' },
         },
         marker: {
-            styles: { fill: 'var(--border-color-2)' },
+            styles: { fill: 'var(--text-muted)' },
         },
     },
 }
@@ -87,13 +88,14 @@ export const EntityGraph: React.FunctionComponent<Props> = ({ graph, activeNodeI
                 existing.label += `, ${edge.type}`
             } else {
                 edges.set(key, {
-                    label: edge.type,
+                    label: catalogRelationTypeDisplayName(edge.type),
                     from: edge.outNode.id,
                     to: edge.inNode.id,
                     styles:
-                        activeNodeID === edge.inNode.id
+                        activeNodeID && edge.inNode.id !== activeNodeID && edge.outNode.id !== activeNodeID
                             ? {
-                                  edge: { styles: { strokeOpacity: 0.7, strokeWidth: '1.5px' } },
+                                  edge: { styles: { strokeOpacity: 0.5, strokeWidth: '1px' } },
+                                  marker: { styles: { fillOpacity: 0.5 } },
                               }
                             : undefined,
                 })

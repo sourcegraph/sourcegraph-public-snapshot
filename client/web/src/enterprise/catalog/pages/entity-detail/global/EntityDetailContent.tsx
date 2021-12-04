@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -18,27 +17,13 @@ import { ComponentDocumentation } from './ComponentDocumentation'
 import { ComponentUsage } from './ComponentUsage'
 import { EntityChangesTab } from './EntityChangesTab'
 import { EntityCodeTab } from './EntityCodeTab'
-import styles from './EntityDetailContent.module.scss'
 import { EntityOverviewTab } from './EntityOverviewTab'
 
 interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
 }
 
-export interface EntityDetailContentCardProps {
-    className?: string
-    headerClassName?: string
-    titleClassName?: string
-    bodyClassName?: string
-    bodyScrollableClassName?: string
-}
-
-const cardProps: EntityDetailContentCardProps = {
-    headerClassName: classNames('card-header', styles.cardHeader),
-    titleClassName: classNames('card-title', styles.cardTitle),
-    bodyClassName: classNames('card-body', styles.cardBody),
-    bodyScrollableClassName: styles.cardBodyScrollable,
-}
+const TAB_CONTENT_CLASS_NAME = 'flex-1 align-self-stretch'
 
 export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ...props }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
@@ -48,41 +33,47 @@ export const EntityDetailContent: React.FunctionComponent<Props> = ({ entity, ..
                     path: '',
                     exact: true,
                     text: 'Overview',
-                    content: <EntityOverviewTab {...cardProps} entity={entity} />,
+                    content: <EntityOverviewTab entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                 },
                 entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'code',
                           text: 'Code',
-                          content: <EntityCodeTab {...props} {...cardProps} entity={entity} />,
+                          content: <EntityCodeTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
                 entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'changes',
                           text: 'Changes',
-                          content: <EntityChangesTab {...props} {...cardProps} entity={entity} />,
+                          content: <EntityChangesTab {...props} entity={entity} className={TAB_CONTENT_CLASS_NAME} />,
                       }
                     : null,
                 false && entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'docs',
                           text: 'Docs',
-                          content: <ComponentDocumentation catalogComponent={entity} />,
+                          content: (
+                              <ComponentDocumentation catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                          ),
                       }
                     : null,
                 false && entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'api',
                           text: 'API',
-                          content: <ComponentAPI {...props} catalogComponent={entity} />,
+                          content: (
+                              <ComponentAPI {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                          ),
                       }
                     : null,
                 entity.__typename === 'CatalogComponent'
                     ? {
                           path: 'usage',
                           text: 'Usage',
-                          content: <ComponentUsage {...props} {...cardProps} catalogComponent={entity} />,
+                          content: (
+                              <ComponentUsage {...props} catalogComponent={entity} className={TAB_CONTENT_CLASS_NAME} />
+                          ),
                       }
                     : null,
             ].filter(isDefined),

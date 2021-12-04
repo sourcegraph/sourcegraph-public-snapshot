@@ -12,14 +12,7 @@ interface Props extends EntityDetailContentCardProps {
     entity: CatalogEntityCodeOwnersFields
 }
 
-export const EntityCodeOwners: React.FunctionComponent<Props> = ({
-    entity: { codeOwners },
-    className,
-    headerClassName,
-    titleClassName,
-    bodyClassName,
-    bodyScrollableClassName,
-}) =>
+export const EntityCodeOwners: React.FunctionComponent<Props> = ({ entity: { codeOwners }, className }) =>
     codeOwners && codeOwners.length > 0 ? (
         <div className={className}>
             <header className={headerClassName}>

@@ -66,7 +66,13 @@ type CatalogEntity interface {
 	URL() string
 	Status(context.Context) (CatalogEntityStatusResolver, error)
 	CodeOwners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
-	RelatedEntities(context.Context) (CatalogEntityRelatedEntityConnectionResolver, error)
+	RelatedEntities(context.Context, *CatalogEntityRelatedEntitiesArgs) (CatalogEntityRelatedEntityConnectionResolver, error)
+}
+
+type CatalogEntityRelatedEntitiesArgs struct {
+	Query *string
+	First *int32
+	After *string
 }
 
 type CatalogEntityResolver struct {

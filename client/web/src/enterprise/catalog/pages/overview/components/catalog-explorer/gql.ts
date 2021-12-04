@@ -11,17 +11,7 @@ export const CATALOG_ENTITY_STATE_FRAGMENT = gql`
     }
 `
 
-export const CATALOG_ENTITIES_FOR_EXPLORER = gql`
-    query CatalogEntitiesForExplorer($query: String, $first: Int, $after: String) {
-        catalog {
-            entities(query: $query, first: $first, after: $after) {
-                nodes {
-                    ...CatalogEntityForExplorerFields
-                }
-            }
-        }
-    }
-
+export const CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT = gql`
     fragment CatalogEntityForExplorerFields on CatalogEntity {
         __typename
         id
@@ -36,7 +26,19 @@ export const CATALOG_ENTITIES_FOR_EXPLORER = gql`
         ...CatalogEntityStateFields
         ...CatalogEntityOwnerFields
     }
-
     ${CATALOG_ENTITY_STATE_FRAGMENT}
     ${CATALOG_ENTITY_OWNER_FRAGMENT}
+`
+
+export const CATALOG_ENTITIES_FOR_EXPLORER = gql`
+    query CatalogEntitiesForExplorer($query: String, $first: Int, $after: String) {
+        catalog {
+            entities(query: $query, first: $first, after: $after) {
+                nodes {
+                    ...CatalogEntityForExplorerFields
+                }
+            }
+        }
+    }
+    ${CATALOG_ENTITY_FOR_EXPLORER_FRAGMENT}
 `

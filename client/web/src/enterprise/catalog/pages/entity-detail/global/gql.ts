@@ -4,27 +4,6 @@ import { personLinkFieldsFragment } from '../../../../../person/PersonLink'
 import { gitCommitFragment } from '../../../../../repo/commits/RepositoryCommitsPage'
 import { CATALOG_ENTITY_OWNER_FRAGMENT } from '../../../components/entity-owner/gql'
 
-const CATALOG_ENTITY_GRAPH_FRAGMENT = gql`
-    fragment CatalogEntityGraphFields on CatalogEntity {
-        relatedEntities {
-            edges {
-                node {
-                    __typename
-                    id
-                    type
-                    name
-                    description
-                    url
-                    ... on CatalogComponent {
-                        kind
-                    }
-                }
-                type
-            }
-        }
-    }
-`
-
 const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
     fragment CatalogEntityCodeOwnersFields on CatalogEntity {
         codeOwners {
@@ -236,7 +215,6 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
         url
         ...CatalogEntityOwnerFields
         ...CatalogEntityStatusFields
-        ...CatalogEntityGraphFields
         ...CatalogEntityCodeOwnersFields
         ... on CatalogComponent {
             kind
@@ -250,7 +228,6 @@ export const CATALOG_ENTITY_DETAIL_FRAGMENT = gql`
     }
     ${CATALOG_ENTITY_OWNER_FRAGMENT}
     ${CATALOG_ENTITY_STATUS_FRAGMENT}
-    ${CATALOG_ENTITY_GRAPH_FRAGMENT}
     ${CATALOG_ENTITY_CODE_OWNERS_FRAGMENT}
     ${CATALOG_COMPONENT_DOCUMENTATION_FRAGMENT}
     ${CATALOG_COMPONENT_SOURCES_FRAGMENT}

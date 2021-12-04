@@ -1,9 +1,9 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { Page } from '../../../../components/Page'
 import { GroupMembersFields } from '../../../../graphql-operations'
 import { formatPersonName } from '../../../../person/PersonLink'
 import { UserAvatar } from '../../../../user/UserAvatar'
@@ -16,7 +16,7 @@ interface Props extends GroupDetailContentCardProps {
 }
 
 export const GroupMembersTab: React.FunctionComponent<Props> = ({ group, className }) => (
-    <Page className={className}>
+    <div className={classNames('container', className)}>
         {group.members && group.members.length > 0 && (
             <>
                 <h4>
@@ -33,5 +33,5 @@ export const GroupMembersTab: React.FunctionComponent<Props> = ({ group, classNa
                 </ul>
             </>
         )}
-    </Page>
+    </div>
 )

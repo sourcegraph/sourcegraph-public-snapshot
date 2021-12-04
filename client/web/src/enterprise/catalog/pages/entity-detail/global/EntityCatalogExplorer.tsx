@@ -4,7 +4,7 @@ import React from 'react'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { useCatalogEntityFilters } from '../../../core/entity-filters'
-import { CatalogExplorerList } from '../../overview/components/catalog-explorer/CatalogExplorerList'
+import { CatalogExplorerRelationList } from '../../overview/components/catalog-explorer/CatalogExplorerRelationList'
 import { CatalogExplorerViewOptionsRow } from '../../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
 import { useViewModeTemporarySettings, ViewModeToggle } from '../../overview/components/catalog-explorer/ViewModeToggle'
 import { OverviewEntityGraph } from '../../overview/components/overview-content/OverviewEntityGraph'
@@ -35,9 +35,10 @@ export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, 
                 className="pl-3 pr-2 py-2 border-bottom"
             />
             {viewMode === 'list' ? (
-                <CatalogExplorerList
+                <CatalogExplorerRelationList
+                    entity={entity}
                     filters={filters}
-                    queryScope={`${queryScope} -entity:${entity}`}
+                    queryScope={queryScope}
                     noBottomBorder={true}
                     itemStartClassName="pl-3"
                     itemEndClassName="pr-3"

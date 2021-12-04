@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -8,30 +9,14 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { CatalogEntityDetailFields } from '../../../../../graphql-operations'
 
 import { ComponentCommits } from './ComponentCommits'
-import { EntityDetailContentCardProps } from './EntityDetailContent'
 
-interface Props
-    extends EntityDetailContentCardProps,
-        TelemetryProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        SettingsCascadeProps {
+interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, SettingsCascadeProps {
     entity: CatalogEntityDetailFields
+    className?: string
 }
 
-export const EntityChangesTab: React.FunctionComponent<Props> = ({
-    entity,
-    headerClassName,
-    titleClassName,
-    bodyClassName,
-    bodyScrollableClassName,
-}) => (
-    <ComponentCommits
-        catalogComponent={entity}
-        className="card"
-        headerClassName={headerClassName}
-        titleClassName={titleClassName}
-        bodyClassName={bodyClassName}
-        bodyScrollableClassName={bodyScrollableClassName}
-    />
+export const EntityChangesTab: React.FunctionComponent<Props> = ({ entity, className }) => (
+    <div className={classNames('container', className)}>
+        <ComponentCommits catalogComponent={entity} />
+    </div>
 )

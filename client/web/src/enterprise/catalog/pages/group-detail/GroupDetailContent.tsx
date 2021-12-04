@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -12,7 +11,6 @@ import { GroupDetailFields } from '../../../../graphql-operations'
 import { CatalogPage } from '../../components/catalog-area-header/CatalogPage'
 import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 
-import styles from './GroupDetailContent.module.scss'
 import { GroupMembersTab } from './GroupMembersTab'
 import { GroupOverviewTab } from './GroupOverviewTab'
 
@@ -20,20 +18,7 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
     group: GroupDetailFields
 }
 
-export interface GroupDetailContentCardProps {
-    className?: string
-    headerClassName?: string
-    titleClassName?: string
-    bodyClassName?: string
-}
-
-const cardProps: GroupDetailContentCardProps = {
-    headerClassName: classNames('card-header', styles.cardHeader),
-    titleClassName: classNames('card-title', styles.cardTitle),
-    bodyClassName: classNames('card-body', styles.cardBody),
-}
-
-export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...props }) => {
+export const GroupDetailContent: React.FunctionComponent<Props> = ({ group }) => {
     const tabs = useMemo<React.ComponentProps<typeof CatalogPage>['tabs']>(
         () =>
             [
@@ -41,7 +26,7 @@ export const GroupDetailContent: React.FunctionComponent<Props> = ({ group, ...p
                     path: '',
                     exact: true,
                     text: 'Overview',
-                    content: <GroupOverviewTab {...cardProps} group={group} />,
+                    content: <GroupOverviewTab group={group} />,
                 },
                 {
                     path: 'members',

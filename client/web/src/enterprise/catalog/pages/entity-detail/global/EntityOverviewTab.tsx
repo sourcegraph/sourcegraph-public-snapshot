@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import { uniqBy } from 'lodash'
 import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
 import FileAlertIcon from 'mdi-react/FileAlertIcon'
 import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
@@ -10,7 +9,6 @@ import { Link } from 'react-router-dom'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { CatalogEntityRelationType } from '@sourcegraph/shared/src/graphql/schema'
 
 import { Timestamp } from '../../../../../components/time/Timestamp'
 import { CatalogComponentDocumentationFields, CatalogEntityDetailFields } from '../../../../../graphql-operations'
@@ -18,7 +16,6 @@ import { formatPersonName, PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { Popover } from '../../../../insights/components/popover/Popover'
 import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
-import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
@@ -31,7 +28,7 @@ interface Props extends EntityDetailContentCardProps {
 }
 
 export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, className }) => (
-    <div className="flex-1 row no-gutters">
+    <div className="flex-1 align-self-stretch row no-gutters">
         <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             {entity.name && (
                 <h2 className="d-flex align-items-center mb-1">
@@ -98,28 +95,6 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
             </div>
             <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
             <EntityCatalogExplorer entity={entity.id} className="mb-3" />
-            {false && (
-                <EntityGraph
-                    graph={{
-                        edges: entity.relatedEntities.edges.map(edge =>
-                            edge.type === CatalogEntityRelationType.DEPENDS_ON
-                                ? {
-                                      type: edge.type,
-                                      outNode: entity,
-                                      inNode: edge.node,
-                                  }
-                                : {
-                                      type: CatalogEntityRelationType.DEPENDS_ON,
-                                      outNode: edge.node,
-                                      inNode: entity,
-                                  }
-                        ),
-                        nodes: uniqBy(entity.relatedEntities.edges.map(edge => edge.node).concat(entity), 'id'),
-                    }}
-                    activeNodeID={entity.id}
-                    className="border my-3"
-                />
-            )}
         </div>
     </div>
 )

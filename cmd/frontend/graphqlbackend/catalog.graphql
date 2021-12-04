@@ -41,7 +41,7 @@ interface CatalogEntity {
     url: String!
     status: CatalogEntityStatus!
     codeOwners: [CatalogEntityCodeOwnerEdge!]
-    relatedEntities: CatalogEntityRelatedEntityConnection!
+    relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
 }
 
 union EntityOwner = Person | Group
@@ -130,7 +130,7 @@ type CatalogComponent implements Node & CatalogEntity {
     url: String!
     status: CatalogEntityStatus!
     codeOwners: [CatalogEntityCodeOwnerEdge!]
-    relatedEntities: CatalogEntityRelatedEntityConnection!
+    relatedEntities(query: String, first: Int, after: String): CatalogEntityRelatedEntityConnection!
 
     kind: CatalogComponentKind!
 

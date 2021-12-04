@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"log"
 	"strings"
 	"sync"
 
@@ -101,4 +102,17 @@ func (q *queryMatcher) matchNode(c *catalogComponentResolver) bool {
 		(q.relatedToEntity == nil || isRelatedToEntity(c)) &&
 		(c.ID() != q.excludeEntity) &&
 		(len(q.groups) == 0 || isInAnyGroup(c, q.groups))
+}
+
+func (q *queryMatcher) matchEdge(e *catalogEntityRelationEdgeResolver) bool {
+	var id graphql.ID
+	if q.relatedToEntity != nil {
+		id = q.relatedToEntity.ID()
+	}
+	log.Printf("q.relatedToEntity = %v e.outNode.ID()=%v e.inNode.ID()=%v", id, e.outNode.ID(), e.inNode.ID())
+	if q.relatedToEntity != nil && e.outNode.ID() != q.relatedToEntity.ID() && e.inNode.ID() != q.relatedToEntity.ID() {
+		return false
+	}
+
+	return true
 }

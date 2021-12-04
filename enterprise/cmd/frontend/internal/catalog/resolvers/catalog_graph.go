@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func makeGraphData(db database.DB, q *queryMatcher) *catalogGraphResolver {
+func makeGraphData(db database.DB, q *queryMatcher, allEdges bool) *catalogGraphResolver {
 	var graph catalogGraphResolver
 
 	components, _, edges := catalog.Data()
@@ -30,29 +30,32 @@ func makeGraphData(db database.DB, q *queryMatcher) *catalogGraphResolver {
 		return nil
 	}
 
-	edgeMatches := map[*gql.CatalogEntityResolver]struct{}{}
+	// edgeMatches := map[*gql.CatalogEntityResolver]struct{}{}
 	for _, e := range edges {
 		outNode := findNodeByName(e.Out)
 		inNode := findNodeByName(e.In)
 		if outNode == nil || inNode == nil {
 			continue
 		}
-		graph.edges = append(graph.edges, &catalogEntityRelationEdgeResolver{
+		edge := &catalogEntityRelationEdgeResolver{
 			type_:   gql.CatalogEntityRelationType(e.Type),
 			outNode: outNode,
 			inNode:  inNode,
-		})
-		edgeMatches[inNode] = struct{}{}
-		edgeMatches[outNode] = struct{}{}
+		}
+		if allEdges || q.matchEdge(edge) {
+			graph.edges = append(graph.edges, edge)
+		}
+		// edgeMatches[inNode] = struct{}{}
+		// edgeMatches[outNode] = struct{}{}
 	}
 
-	keepNodes := graph.nodes[:0]
-	for _, node := range graph.nodes {
-		if _, edgeMatches := edgeMatches[node]; edgeMatches {
-			keepNodes = append(keepNodes, node)
-		}
-	}
-	graph.nodes = keepNodes
+	// keepNodes := graph.nodes[:0]
+	// for _, node := range graph.nodes {
+	// 	if _, edgeMatches := edgeMatches[node]; edgeMatches {
+	// 		keepNodes = append(keepNodes, node)
+	// 	}
+	// }
+	// graph.nodes = keepNodes
 
 	return &graph
 }
@@ -64,7 +67,7 @@ func (r *catalogResolver) Graph(ctx context.Context, args *gql.CatalogGraphArgs)
 		query = *args.Query
 	}
 
-	return makeGraphData(r.db, parseQuery(r.db, query)), nil
+	return makeGraphData(r.db, parseQuery(r.db, query), true), nil
 }
 
 type catalogGraphResolver struct {

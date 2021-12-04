@@ -19,8 +19,8 @@ import { fetchHighlightedFileLineRanges } from '../../../../../repo/backend'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
 
-import { EntityDetailContentCardProps } from './EntityDetailContent'
 import styles from './ComponentUsage.module.scss'
+import { EntityDetailContentCardProps } from './EntityDetailContent'
 
 interface Props
     extends Pick<EntityDetailContentCardProps, 'className' | 'bodyClassName' | 'bodyScrollableClassName'>,
@@ -51,7 +51,7 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
 
     const { people: peopleEdges, components: componentEdges, locations } = usage
     return locations && locations.nodes.length > 0 ? (
-        <div className={className}>
+        <div className={classNames('flex-1 align-self-stretch p-3', className)}>
             <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
                 {peopleEdges.map(edge => (
                     <li key={edge.node.email} className={classNames('list-group-item text-center pt-2', styles.author)}>

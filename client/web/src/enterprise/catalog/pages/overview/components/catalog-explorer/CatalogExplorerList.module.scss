@@ -2,7 +2,10 @@
     display: grid;
     gap: 0.5rem 1.25rem;
     grid-template-columns:
-        [name] min-content [owner] min-content [lifecycle] min-content [description] minmax(auto, 1fr)
+        [before] min-content [name] min-content [owner] min-content [lifecycle] min-content [description] minmax(
+            auto,
+            1fr
+        )
         [end];
     overflow: hidden;
 }

@@ -5,34 +5,24 @@ import { Link } from 'react-router-dom'
 import { CatalogComponentChangesFields, GitCommitFields } from '../../../../../graphql-operations'
 import { GitCommitNodeByline } from '../../../../../repo/commits/GitCommitNodeByline'
 
-import { EntityDetailContentCardProps } from './EntityDetailContent'
-
-interface Props extends EntityDetailContentCardProps {
+interface Props {
     catalogComponent: CatalogComponentChangesFields
+    className?: string
 }
 
-export const ComponentCommits: React.FunctionComponent<Props> = ({
-    catalogComponent: { commits },
-    className,
-    headerClassName,
-    titleClassName,
-    bodyClassName,
-    bodyScrollableClassName,
-}) =>
-    commits && commits.nodes.length > 0 ? (
-        <div className={className}>
-            <header className={headerClassName}>
-                <h3 className={titleClassName}>Commits</h3>
-            </header>
-            <ol className={classNames('list-group list-group-flush', bodyClassName, bodyScrollableClassName)}>
+export const ComponentCommits: React.FunctionComponent<Props> = ({ catalogComponent: { commits }, className }) => (
+    <div className={className}>
+        {commits && commits.nodes.length > 0 ? (
+            <ol className={classNames('list-group list-group-flush')}>
                 {commits.nodes.map(commit => (
                     <GitCommit key={commit.oid} commit={commit} tag="li" className="list-group-item py-2" />
                 ))}
             </ol>
-        </div>
-    ) : (
-        <p>No changes found</p>
-    )
+        ) : (
+            <p>No changes found</p>
+        )}
+    </div>
+)
 
 const GitCommit: React.FunctionComponent<{ commit: GitCommitFields; tag: 'li'; className?: string }> = ({
     commit,
