@@ -1,10 +1,8 @@
-import classNames from 'classnames'
 import React from 'react'
-import { Link } from 'react-router-dom'
 
 import { CatalogEntityOwnerFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
-import { CatalogGroupIcon } from '../CatalogGroupIcon'
+import { GroupLink } from '../../pages/group-detail/GroupLink'
 
 interface Props {
     owner: CatalogEntityOwnerFields['owner']
@@ -17,9 +15,7 @@ export const EntityOwner: React.FunctionComponent<Props> = ({ owner, blankIfNone
         owner.__typename === 'Person' ? (
             <PersonLink person={owner} className={className} />
         ) : owner.__typename === 'Group' ? (
-            <Link to={owner.url} className={classNames('d-inline-flex', 'align-items-center', className)}>
-                <CatalogGroupIcon className="icon-inline text-muted mr-1" /> {owner.name}
-            </Link>
+            <GroupLink group={owner} className={className} />
         ) : (
             <span className={className}>Unknown</span>
         )

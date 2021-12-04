@@ -9,10 +9,10 @@ import { Link } from 'react-router-dom'
 import { GroupDetailFields } from '../../../../graphql-operations'
 import { PersonLink } from '../../../../person/PersonLink'
 import { CatalogEntityIcon } from '../../components/CatalogEntityIcon'
-import { CatalogGroupIcon } from '../../components/CatalogGroupIcon'
 import { CatalogEntityStateIndicator } from '../overview/components/entity-state-indicator/EntityStateIndicator'
 
 import { GroupDetailContentCardProps } from './GroupDetailContent'
+import { GroupLink } from './GroupLink'
 
 interface Props extends GroupDetailContentCardProps {
     group: GroupDetailFields
@@ -38,18 +38,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                                 <>
                                     <dt className={classNames('mb-0 mr-2', titleClassName)}>Parent group</dt>
                                     <dd className={classNames('mb-0 d-flex align-items-center position-relative')}>
-                                        <Link
-                                            to={group.parentGroup.url}
-                                            className="mr-2 py-1 flex-shrink-0 d-flex align-items-center stretched-link"
-                                        >
-                                            <CatalogGroupIcon className="icon-inline text-muted mr-1" />{' '}
-                                            {group.parentGroup.name}
-                                        </Link>
-                                        {false && group.parentGroup.description && (
-                                            <p className="mb-0 text-muted text-truncate">
-                                                {group.parentGroup.description}
-                                            </p>
-                                        )}
+                                        <GroupLink group={group.parentGroup} className="stretched-link" />
                                     </dd>
                                 </>
                             )}
@@ -63,18 +52,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                                                     key={childGroup.id}
                                                     className="d-flex align-items-center position-relative"
                                                 >
-                                                    <Link
-                                                        to={childGroup.url}
-                                                        className="mr-2 py-1 flex-shrink-0 d-flex align-items-center stretched-link"
-                                                    >
-                                                        <CatalogGroupIcon className="icon-inline text-muted mr-1" />{' '}
-                                                        {childGroup.name}
-                                                    </Link>
-                                                    {false && childGroup.description && (
-                                                        <p className="mb-0 text-muted text-truncate">
-                                                            {childGroup.description}
-                                                        </p>
-                                                    )}
+                                                    <GroupLink group={childGroup} className="stretched-link" />
                                                 </li>
                                             ))}
                                         </ul>

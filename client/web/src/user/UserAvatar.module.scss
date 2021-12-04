@@ -7,4 +7,9 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+
+    &--not-tiny {
+        min-width: 1.5rem;
+        min-height: 1.5rem;
+    }
 }
