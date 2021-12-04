@@ -220,8 +220,16 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 	if err != nil {
 		return nil, err
 	}
-	indexes := make([]BlobIndex, len(filenames))
+	var indexes []BlobIndex
+	for index := range repoIndexes(fs, filenames) {
+		indexes = append(indexes, index)
+	}
+	return &RepoIndex{Dir: fs.RootDir(), Blobs: indexes}, nil
+}
+func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
+	res := make(chan BlobIndex, len(filenames))
 	bar := progressbar.Default(int64(len(filenames)))
+	var wg sync.WaitGroup
 	for _, filename := range filenames {
 		bar.Add(1)
 		textBytes, err := fs.ReadRelativeFilename(filename)
@@ -243,21 +251,19 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 		if bloomSize < 10_000 {
 			bloomSize = 10_000
 		}
-		filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-		onGrams(text, func(b []byte) {
-			filter.Add(b)
-		})
-		//sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
-		//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
-		indexes = append(
-			indexes,
-			BlobIndex{
-				Path:   filename,
-				Filter: filter,
-			},
-		)
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
+			onGrams(text, func(b []byte) {
+				filter.Add(b)
+			})
+			res <- BlobIndex{Path: path, Filter: filter}
+		}(filename)
 	}
-	return &RepoIndex{Dir: fs.RootDir(), Blobs: indexes}, nil
+	wg.Wait()
+	close(res)
+	return res
 }
 
 func (r *RepoIndex) Grep(query string) {

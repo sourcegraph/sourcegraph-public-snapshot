@@ -21,7 +21,11 @@ var (
 	kubernetes  = Corpus{Name: "kubernetes", URL: "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.22.4.zip",
 		Queries: []string{"OPZ", "Q13", "rrra", "Resolver", "buildServiceResolver", "cache.ResourceEventHandlerFuncs"},
 	}
-	linux      = Corpus{Name: "linux", URL: "https://github.com/torvalds/linux/archive/refs/tags/v5.16-rc3.zip"}
+	linux = Corpus{Name: "linux", URL: "https://github.com/torvalds/linux/archive/refs/tags/v5.16-rc3.zip",
+		Queries: []string{
+			"ø", "AAA", "44441", "soundcard", "bugzilla.redhat.com/show_bug.cgi?id=726143", "new address of the crtc (GPU MC address)",
+		},
+	}
 	all        = []Corpus{flask, sourcegraph, kubernetes, linux}
 	querySizes = []int{1, 2, 3, 4, 5, 6, 7, 10, 15, 20}
 )
