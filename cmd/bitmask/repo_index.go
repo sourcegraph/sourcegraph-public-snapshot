@@ -24,6 +24,7 @@ const (
 	targetFalsePositiveRatio = 0.01
 	maxFileSize              = 1 << 20 // 1_048_576
 	bloomSizePadding         = 5
+	initialHashValue         = 1
 )
 
 type RepoIndex struct {
@@ -57,21 +58,21 @@ type Ngrams struct {
 func NewNgrams() Ngrams {
 	return Ngrams{
 		SeenHashes: map[uint64]struct{}{},
-		Unigram:    Ngram{Hash: 0},
-		Bigram1:    Ngram{Hash: 0},
-		Bigram2:    Ngram{Hash: 0},
-		Trigram1:   Ngram{Hash: 0},
-		Trigram2:   Ngram{Hash: 0},
-		Trigram3:   Ngram{Hash: 0},
-		Quadgram1:  Ngram{Hash: 0},
-		Quadgram2:  Ngram{Hash: 0},
-		Quadgram3:  Ngram{Hash: 0},
-		Quadgram4:  Ngram{Hash: 0},
-		Pentagram1: Ngram{Hash: 0},
-		Pentagram2: Ngram{Hash: 0},
-		Pentagram3: Ngram{Hash: 0},
-		Pentagram4: Ngram{Hash: 0},
-		Pentagram5: Ngram{Hash: 0},
+		Unigram:    Ngram{Hash: initialHashValue},
+		Bigram1:    Ngram{Hash: initialHashValue},
+		Bigram2:    Ngram{Hash: initialHashValue},
+		Trigram1:   Ngram{Hash: initialHashValue},
+		Trigram2:   Ngram{Hash: initialHashValue},
+		Trigram3:   Ngram{Hash: initialHashValue},
+		Quadgram1:  Ngram{Hash: initialHashValue},
+		Quadgram2:  Ngram{Hash: initialHashValue},
+		Quadgram3:  Ngram{Hash: initialHashValue},
+		Quadgram4:  Ngram{Hash: initialHashValue},
+		Pentagram1: Ngram{Hash: initialHashValue},
+		Pentagram2: Ngram{Hash: initialHashValue},
+		Pentagram3: Ngram{Hash: initialHashValue},
+		Pentagram4: Ngram{Hash: initialHashValue},
+		Pentagram5: Ngram{Hash: initialHashValue},
 	}
 
 }
@@ -152,7 +153,7 @@ func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes func(b []byte)) {
 		binary.LittleEndian.PutUint64(hashedBytes, g.Hash)
 		onBytes(hashedBytes)
 	}
-	g.Hash = 0
+	g.Hash = initialHashValue
 }
 
 func (g *Ngram) Update(b int32) {

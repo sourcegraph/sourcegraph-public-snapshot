@@ -9,7 +9,15 @@ import (
 	"testing"
 )
 
-var result = 0
+const (
+	exampleText = `Hello world,
+this is the world,
+this it the time!
+We all do our Best!
+The World is the best.
+`
+)
+
 var dir = os.Getenv("HOME") + "/dev/sourcegraph/sourcegraph"
 var benchmarkCacheDir = os.Getenv("HOME") + "/dev/sourcegraph/benchmark-cache"
 
@@ -60,24 +68,34 @@ func BenchmarkQuery(b *testing.B) {
 	fmt.Printf("fp %v len %v\n", ratio, len(matchingPaths))
 }
 
-func TestNoFalseNegatives(t *testing.T) {
-	text := `Hello world,
-this is the world,
-this it the time!
-We all do our Best!
-The World is the best.
-`
-	fs := InMemoryFileSystem{map[string]string{"readme.md": text}}
+func newRepoIndex(t *testing.T) *RepoIndex {
+	fs := InMemoryFileSystem{map[string]string{"readme.md": exampleText}}
 	r, err := NewRepoIndex(&fs)
 	if err != nil {
-		panic(err)
+		t.Fatalf("failed to create repo index %v", err)
 	}
-	for i := range text {
-		for j := i + 1; j < len(text); j++ {
-			query := text[i:j]
-			matchingPathCount := len(r.PathsMatchingQuerySync(query))
-			if matchingPathCount == 0 {
+	return r
+}
+
+func TestFalseResults(t *testing.T) {
+	r := newRepoIndex(t)
+	for i := range exampleText {
+		for j := i + 1; j < len(exampleText); j++ {
+			query := exampleText[i:j]
+			truePositiveCount := len(r.PathsMatchingQuerySync(query))
+			if truePositiveCount == 0 {
 				t.Fatalf("query '%v' triggered a false negative", query)
+			}
+
+			falseQueries := []string{
+				exampleText[i:j] + "1",
+				strings.ToUpper(exampleText[i:j]) + strings.ToLower(exampleText[i:j]),
+			}
+			for _, falseQuery := range falseQueries {
+				falsePositiveCount := len(r.PathsMatchingQuerySync(falseQuery))
+				if falsePositiveCount > 0 {
+					t.Fatalf("query '%v' triggered a false positive", query)
+				}
 			}
 		}
 	}
