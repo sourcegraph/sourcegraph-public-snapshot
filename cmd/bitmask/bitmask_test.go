@@ -61,8 +61,7 @@ func BenchmarkQuery(b *testing.B) {
 		}
 	}
 	if len(matchingPaths) > len(matchingPaths) {
-		println("NON DISTINCT!")
-
+		panic("NON DISTINCT!")
 	}
 	ratio := float64(falsePositives) / math.Max(1.0, float64(len(matchingPaths)))
 	fmt.Printf("fp %v len %v\n", ratio, len(matchingPaths))
@@ -103,3 +102,24 @@ func TestFalseResults(t *testing.T) {
 
 // TODO CPU: serialize, deserialize
 // TODO Size: serialized file, in-memory index
+func TestFalsePositive(t *testing.T) {
+	file := "/Users/olafurpg/dev/sourcegraph/sourcegraph/client/web/src/nav/UserNavItem.story.tsx"
+	bytes, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+	fs := InMemoryFileSystem{
+		map[string]string{
+			file: string(bytes),
+		},
+	}
+	r, err := NewRepoIndex(&fs)
+	if err != nil {
+		panic(err)
+	}
+	query := "JVM"
+	paths := r.PathsMatchingQuerySync(query)
+	if len(paths) > 0 {
+		t.Fatalf("query '%v' triggered a false positive", query)
+	}
+}

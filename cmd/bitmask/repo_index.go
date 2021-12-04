@@ -167,7 +167,7 @@ func onGrams(text string, onBytes func(b []byte)) {
 	}
 }
 
-func collectGrams(query string) [][]byte {
+func CollectGrams(query string) [][]byte {
 	var result [][]byte
 	onGrams(query, func(b []byte) {
 		result = append(result, b)
@@ -289,7 +289,10 @@ func (r *RepoIndex) Grep(query string) {
 		if matchCount > 0 {
 			truePositive++
 		} else {
-			//fmt.Println(matchingPath)
+			if falsePositive == 1 {
+				fmt.Printf("FALSE POSITIVE %v\n", matchingPath)
+			}
+			fmt.Printf("FALSE POSITIVE %v\n", matchingPath)
 			falsePositive++
 		}
 	}
@@ -338,7 +341,7 @@ func (r *RepoIndex) pathsMatchingQuerySync(
 }
 
 func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
-	grams := collectGrams(query)
+	grams := CollectGrams(query)
 	var result []string
 	r.pathsMatchingQuerySync(grams, r.Blobs, func(matchingPath string) {
 		result = append(result, matchingPath)
@@ -347,7 +350,7 @@ func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
 }
 
 func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
-	grams := collectGrams(query)
+	grams := CollectGrams(query)
 	res := make(chan string, len(r.Blobs))
 	batchSize := 5_000
 	var wg sync.WaitGroup
