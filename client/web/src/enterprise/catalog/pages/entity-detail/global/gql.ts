@@ -7,11 +7,15 @@ import { CATALOG_ENTITY_OWNER_FRAGMENT } from '../../../components/entity-owner/
 const CATALOG_ENTITY_CODE_OWNERS_FRAGMENT = gql`
     fragment CatalogEntityCodeOwnersFields on CatalogEntity {
         codeOwners {
-            node
+            node {
+                ...PersonLinkFields
+                avatarURL
+            }
             fileCount
             fileProportion
         }
     }
+    ${personLinkFieldsFragment}
 `
 
 const CATALOG_ENTITY_STATUS_FRAGMENT = gql`

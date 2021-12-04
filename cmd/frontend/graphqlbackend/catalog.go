@@ -65,7 +65,7 @@ type CatalogEntity interface {
 	Lifecycle() CatalogEntityLifecycle
 	URL() string
 	Status(context.Context) (CatalogEntityStatusResolver, error)
-	CodeOwners(context.Context) (*[]CatalogEntityOwnerEdgeResolver, error)
+	CodeOwners(context.Context) (*[]CatalogEntityCodeOwnerEdgeResolver, error)
 	RelatedEntities(context.Context, *CatalogEntityRelatedEntitiesArgs) (CatalogEntityRelatedEntityConnectionResolver, error)
 }
 
@@ -168,8 +168,8 @@ type CatalogComponentAuthorEdgeResolver interface {
 	LastCommit(context.Context) (*GitCommitResolver, error)
 }
 
-type CatalogEntityOwnerEdgeResolver interface {
-	Node() string
+type CatalogEntityCodeOwnerEdgeResolver interface {
+	Node() *PersonResolver
 	FileCount() int32
 	FileProportion() float64
 }

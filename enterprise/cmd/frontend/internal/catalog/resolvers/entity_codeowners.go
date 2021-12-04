@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"path"
 	"sort"
+	"strings"
 	"sync"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -17,7 +18,7 @@ type codeOwnerData struct {
 	FileCount int // count of owned files
 }
 
-func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.CatalogEntityOwnerEdgeResolver, error) {
+func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.CatalogEntityCodeOwnerEdgeResolver, error) {
 	var allEntries []fs.FileInfo
 	for _, sourcePath := range r.component.SourcePaths {
 		// TODO(sqs): doesnt check perms? SECURITY
@@ -99,7 +100,7 @@ func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.Catal
 		}
 	}
 
-	edges := make([]gql.CatalogEntityOwnerEdgeResolver, 0, len(byOwner))
+	edges := make([]gql.CatalogEntityCodeOwnerEdgeResolver, 0, len(byOwner))
 	for _, od := range byOwner {
 		edges = append(edges, &catalogEntityCodeOwnerEdgeResolver{
 			db:             r.db,
@@ -113,7 +114,7 @@ func (r *catalogComponentResolver) CodeOwners(ctx context.Context) (*[]gql.Catal
 		if ei.FileCount() != ej.FileCount() {
 			return ei.FileCount() > ej.FileCount()
 		}
-		return ei.Node() < ej.Node()
+		return ei.Node().Email() < ej.Node().Email()
 	})
 
 	return &edges, nil
@@ -125,7 +126,9 @@ type catalogEntityCodeOwnerEdgeResolver struct {
 	totalFileCount int
 }
 
-func (r *catalogEntityCodeOwnerEdgeResolver) Node() string     { return r.data.Owner }
+func (r *catalogEntityCodeOwnerEdgeResolver) Node() *gql.PersonResolver {
+	return gql.NewPersonResolver(r.db, strings.TrimPrefix(r.data.Owner, "@"), strings.TrimPrefix(r.data.Owner, "@")+"@sourcegraph.com", false)
+}
 func (r *catalogEntityCodeOwnerEdgeResolver) FileCount() int32 { return int32(r.data.FileCount) }
 func (r *catalogEntityCodeOwnerEdgeResolver) FileProportion() float64 {
 	return float64(r.data.FileCount) / float64(r.totalFileCount)

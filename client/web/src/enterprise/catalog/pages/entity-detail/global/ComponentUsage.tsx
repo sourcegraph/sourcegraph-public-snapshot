@@ -20,20 +20,17 @@ import { UserAvatar } from '../../../../../user/UserAvatar'
 import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
 
 import styles from './ComponentUsage.module.scss'
-import { EntityDetailContentCardProps } from './EntityDetailContent'
 
 interface Props
-    extends Pick<EntityDetailContentCardProps, 'className' | 'bodyClassName' | 'bodyScrollableClassName'>,
-        SettingsCascadeProps,
+    extends         SettingsCascadeProps,
         TelemetryProps {
     catalogComponent: CatalogComponentUsageFields
+    className?:string
 }
 
 export const ComponentUsage: React.FunctionComponent<Props> = ({
     catalogComponent: { usage },
     className,
-    bodyClassName,
-    bodyScrollableClassName,
     settingsCascade,
     telemetryService,
 }) => {
@@ -52,7 +49,7 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
     const { people: peopleEdges, components: componentEdges, locations } = usage
     return locations && locations.nodes.length > 0 ? (
         <div className={classNames('flex-1 align-self-stretch p-3', className)}>
-            <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
+            <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0')}>
                 {peopleEdges.map(edge => (
                     <li key={edge.node.email} className={classNames('list-group-item text-center pt-2', styles.author)}>
                         <div>
@@ -69,7 +66,7 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
                 ))}
             </ol>
             <br className="mb-3" />
-            <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0', bodyClassName)}>
+            <ol className={classNames('list-group list-group-horizontal overflow-auto flex-shrink-0')}>
                 {componentEdges.map(edge => (
                     <li key={edge.node.id} className={classNames('list-group-item')}>
                         <Link to={edge.node.url} className="d-flex align-items-center text-body">
@@ -100,7 +97,6 @@ export const ComponentUsage: React.FunctionComponent<Props> = ({
                 icon={SourceRepositoryIcon}
                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                 settingsCascade={settingsCascade}
-                className={classNames(bodyClassName, bodyScrollableClassName)}
                 parentContainerIsEmpty={false}
                 telemetryService={telemetryService}
             />

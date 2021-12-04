@@ -151,7 +151,7 @@ type CatalogComponentAuthorEdge {
 }
 
 type CatalogEntityCodeOwnerEdge {
-    node: String!
+    node: Person!
     fileCount: Int!
     fileProportion: Float!
 }

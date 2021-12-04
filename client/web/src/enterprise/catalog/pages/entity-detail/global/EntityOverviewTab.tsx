@@ -20,11 +20,11 @@ import { EntityOwner } from '../../../components/entity-owner/EntityOwner'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
 import { EntityCatalogExplorer } from './EntityCatalogExplorer'
-import { EntityDetailContentCardProps } from './EntityDetailContent'
 import { OverviewStatusContexts } from './OverviewStatusContexts'
 
-interface Props extends EntityDetailContentCardProps {
+interface Props {
     entity: CatalogEntityDetailFields
+    className?: string
 }
 
 export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, className }) => (

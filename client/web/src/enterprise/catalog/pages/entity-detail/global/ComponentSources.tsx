@@ -12,28 +12,15 @@ import { getFileDecorations } from '../../../../../backend/features'
 import { CatalogEntityDetailFields, CatalogComponentSourcesFields } from '../../../../../graphql-operations'
 import { TreeEntriesSection } from '../../../../../repo/tree/TreeEntriesSection'
 
-import { EntityDetailContentCardProps } from './EntityDetailContent'
-
-interface Props
-    extends Pick<EntityDetailContentCardProps, 'className' | 'bodyScrollableClassName'>,
-        ExtensionsControllerProps,
-        ThemeProps {
+interface Props extends ExtensionsControllerProps, ThemeProps {
     catalogComponent: CatalogComponentSourcesFields & Pick<CatalogEntityDetailFields, 'url'>
+    className?: string
 }
 
-export const ComponentSources: React.FunctionComponent<Props> = ({
-    catalogComponent,
-    className,
-    bodyScrollableClassName,
-    ...props
-}) => (
+export const ComponentSources: React.FunctionComponent<Props> = ({ catalogComponent, className, ...props }) => (
     <div className={className}>
         {catalogComponent.sourceLocations.length > 0 && (
-            <ComponentFiles
-                {...props}
-                sourceLocations={catalogComponent.sourceLocations}
-                className={classNames(bodyScrollableClassName)}
-            />
+            <ComponentFiles {...props} sourceLocations={catalogComponent.sourceLocations} />
         )}
     </div>
 )
