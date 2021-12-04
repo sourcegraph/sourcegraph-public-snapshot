@@ -163,19 +163,18 @@ func (s *codeMonitorStore) CountActionJobs(ctx context.Context, opts ListActionJ
 }
 
 const enqueueActionEmailFmtStr = `
-WITH due AS (
+WITH due_emails AS (
 	SELECT id
 	FROM cm_emails
 	WHERE monitor = %s 
 		AND enabled = true
-),
-busy AS (
+	EXCEPT
 	SELECT DISTINCT email as id FROM cm_action_jobs
 	WHERE state = 'queued'
-	OR state = 'processing'
+		OR state = 'processing'
 )
 INSERT INTO cm_action_jobs (email, trigger_event)
-SELECT id, %s::integer from due EXCEPT SELECT id, %s::integer from busy ORDER BY id
+SELECT id, %s::integer from due_emails
 RETURNING %s
 `
 
@@ -185,7 +184,6 @@ func (s *codeMonitorStore) EnqueueActionJobsForMonitor(ctx context.Context, moni
 	q := sqlf.Sprintf(
 		enqueueActionEmailFmtStr,
 		monitorID,
-		triggerJobID,
 		triggerJobID,
 		sqlf.Join(ActionJobColumns, ","),
 	)
