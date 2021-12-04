@@ -8,8 +8,10 @@ import (
 	"github.com/schollz/progressbar/v3"
 	"io"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -31,6 +33,7 @@ const (
 type RepoIndex struct {
 	Dir   string
 	Blobs []BlobIndex
+	FS    FileSystem
 }
 type BlobIndex struct {
 	Filter *bloom.BloomFilter
@@ -59,21 +62,21 @@ type Ngrams struct {
 func NewNgrams() Ngrams {
 	return Ngrams{
 		SeenHashes: map[uint64]struct{}{},
-		Unigram:    Ngram{Hash: xxhash.New()},
-		Bigram1:    Ngram{Hash: xxhash.New()},
-		Bigram2:    Ngram{Hash: xxhash.New()},
-		Trigram1:   Ngram{Hash: xxhash.New()},
-		Trigram2:   Ngram{Hash: xxhash.New()},
-		Trigram3:   Ngram{Hash: xxhash.New()},
-		Quadgram1:  Ngram{Hash: xxhash.New()},
-		Quadgram2:  Ngram{Hash: xxhash.New()},
-		Quadgram3:  Ngram{Hash: xxhash.New()},
-		Quadgram4:  Ngram{Hash: xxhash.New()},
-		Pentagram1: Ngram{Hash: xxhash.New()},
-		Pentagram2: Ngram{Hash: xxhash.New()},
-		Pentagram3: Ngram{Hash: xxhash.New()},
-		Pentagram4: Ngram{Hash: xxhash.New()},
-		Pentagram5: Ngram{Hash: xxhash.New()},
+		Unigram:    Ngram{Arity: 1, Hash: xxhash.New()},
+		Bigram1:    Ngram{Arity: 2, Hash: xxhash.New()},
+		Bigram2:    Ngram{Arity: 2, Hash: xxhash.New()},
+		Trigram1:   Ngram{Arity: 3, Hash: xxhash.New()},
+		Trigram2:   Ngram{Arity: 3, Hash: xxhash.New()},
+		Trigram3:   Ngram{Arity: 3, Hash: xxhash.New()},
+		Quadgram1:  Ngram{Arity: 4, Hash: xxhash.New()},
+		Quadgram2:  Ngram{Arity: 4, Hash: xxhash.New()},
+		Quadgram3:  Ngram{Arity: 4, Hash: xxhash.New()},
+		Quadgram4:  Ngram{Arity: 4, Hash: xxhash.New()},
+		Pentagram1: Ngram{Arity: 5, Hash: xxhash.New()},
+		Pentagram2: Ngram{Arity: 5, Hash: xxhash.New()},
+		Pentagram3: Ngram{Arity: 5, Hash: xxhash.New()},
+		Pentagram4: Ngram{Arity: 5, Hash: xxhash.New()},
+		Pentagram5: Ngram{Arity: 5, Hash: xxhash.New()},
 	}
 
 }
@@ -99,7 +102,7 @@ func (g *Ngrams) Update(b int32) {
 	g.Pentagram5.Update(b)
 }
 
-func (g *Ngrams) OnIndex(index int, b int32, onBytes func(b []byte)) {
+func (g *Ngrams) OnIndex(index int, b int32, onBytes OnBytes) {
 	g.Update(b)
 
 	g.Unigram.EmitHashAndClear(g, onBytes)
@@ -144,16 +147,17 @@ func (g *Ngrams) OnIndex(index int, b int32, onBytes func(b []byte)) {
 }
 
 type Ngram struct {
-	Hash *xxhash.Digest
+	Hash  *xxhash.Digest
+	Arity int
 }
 
-func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes func(b []byte)) {
+func (g *Ngram) EmitHashAndClear(gs *Ngrams, onBytes OnBytes) {
 	hash := g.Hash.Sum64()
 	if _, ok := gs.SeenHashes[hash]; !ok {
 		gs.SeenHashes[hash] = struct{}{}
 		hashedBytes := make([]byte, 8)
 		binary.LittleEndian.PutUint64(hashedBytes, hash)
-		onBytes(hashedBytes)
+		onBytes(hashedBytes, g.Arity)
 	}
 	g.Hash.Reset()
 }
@@ -167,7 +171,9 @@ func (g *Ngram) Update(b int32) {
 	_, _ = g.Hash.Write(hashedBytes)
 }
 
-func onGrams(text string, onBytes func(b []byte)) {
+type OnBytes func(b []byte, arity int)
+
+func onGrams(text string, onBytes OnBytes) {
 	ngrams := NewNgrams()
 	for i, b := range text {
 		ngrams.OnIndex(i, b, onBytes)
@@ -176,8 +182,26 @@ func onGrams(text string, onBytes func(b []byte)) {
 
 func CollectGrams(query string) [][]byte {
 	var result [][]byte
-	onGrams(query, func(b []byte) {
+	var arities []int
+	onGrams(query, func(b []byte, arity int) {
+		arities = append(arities, arity)
 		result = append(result, b)
+	})
+	randomNumbers := make([]int, len(arities))
+	for i := range randomNumbers {
+		randomNumbers[i] = rand.Int()
+	}
+	sort.SliceStable(result, func(i, j int) bool {
+		if arities[i] == arities[j] {
+			// Shuffle the ordering of n-grams with the same arity to increase entropy
+			// among the n-grams that appear first in the results.
+			// For example, the ID number in the query "bugzilla.redhat.com/show_bug.cgi?id=726143"
+			// appears at the end of the query and we want to move the n-grams from that
+			// ID to appear early in the results to allow the first bloom filter tests to exit early.
+			// we want to avoid the case where we test only the start of the query
+			return randomNumbers[i] < randomNumbers[j]
+		}
+		return arities[i] > arities[j]
 	})
 	return result
 }
@@ -224,7 +248,7 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 	for index := range repoIndexes(fs, filenames) {
 		indexes = append(indexes, index)
 	}
-	return &RepoIndex{Dir: fs.RootDir(), Blobs: indexes}, nil
+	return &RepoIndex{Dir: fs.RootDir(), Blobs: indexes, FS: fs}, nil
 }
 func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 	res := make(chan BlobIndex, len(filenames))
@@ -255,7 +279,7 @@ func repoIndexes(fs FileSystem, filenames []string) chan BlobIndex {
 		go func(path string) {
 			defer wg.Done()
 			filter := bloom.NewWithEstimates(bloomSize, targetFalsePositiveRatio)
-			onGrams(text, func(b []byte) {
+			onGrams(text, func(b []byte, arity int) {
 				filter.Add(b)
 			})
 			res <- BlobIndex{Path: path, Filter: filter}
@@ -368,7 +392,7 @@ func (r *RepoIndex) PathsMatchingQuerySync(query string) []string {
 func (r *RepoIndex) PathsMatchingQuery(query string) chan string {
 	grams := CollectGrams(query)
 	res := make(chan string, len(r.Blobs))
-	batchSize := 5_000
+	batchSize := 10_000
 	var wg sync.WaitGroup
 	for i := 0; i < len(r.Blobs); i += batchSize {
 		j := i + batchSize

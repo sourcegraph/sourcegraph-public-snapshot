@@ -6,6 +6,7 @@ import (
 	"github.com/loov/hrtime"
 	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -23,7 +24,10 @@ var (
 	}
 	linux = Corpus{Name: "linux", URL: "https://github.com/torvalds/linux/archive/refs/tags/v5.16-rc3.zip",
 		Queries: []string{
-			"ø", "AAA", "44441", "soundcard", "bugzilla.redhat.com/show_bug.cgi?id=726143", "new address of the crtc (GPU MC address)",
+			"ø", "AAA", "44441", "soundcard", "#include <sys/socket.h>",
+			"new address of the crtc (GPU MC address)",
+			"bugzilla.redhat.com/show_bug.cgi?id=726143",
+			"Clone map from listener for newly accepted socket",
 		},
 	}
 	all        = []Corpus{flask, sourcegraph, kubernetes, linux}
@@ -129,12 +133,24 @@ func (c *Corpus) run() error {
 		bench := hrtime.NewBenchmark(50)
 		var matchingPaths []string
 		for bench.Next() {
+			matchingPaths = []string{}
 			for path := range index.PathsMatchingQuery(query) {
-				matchingPaths = []string{path}
+				matchingPaths = append(matchingPaths, path)
 			}
 		}
 		fmt.Println(bench.Histogram(5))
-		fmt.Printf("paths %v\n", len(matchingPaths))
+		if index.FS != nil {
+			falsePositives := 0
+			for _, p := range matchingPaths {
+				bytes, _ := index.FS.ReadRelativeFilename(p)
+				text := string(bytes)
+				if strings.Index(text, query) < 0 {
+					falsePositives++
+				}
+			}
+			falsePositiveRatio := float64(falsePositives) / math.Max(1, float64(len(matchingPaths)))
+			fmt.Printf("paths %v fp %v (%v%%) \n", len(matchingPaths), falsePositives, falsePositiveRatio)
+		}
 	}
 	return nil
 }
