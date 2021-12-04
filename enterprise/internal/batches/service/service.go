@@ -151,6 +151,9 @@ type CreateEmptyBatchChangeOpts struct {
 	Name string
 }
 
+// CreateEmptyBatchChange creates a new batch change with an empty batch spec. It enforces
+// namespace permissions of the caller and validates that the combination of name +
+// namespace is unique.
 func (s *Service) CreateEmptyBatchChange(ctx context.Context, opts CreateEmptyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
 	// Check whether the current user has access to either one of the namespaces.
 	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)

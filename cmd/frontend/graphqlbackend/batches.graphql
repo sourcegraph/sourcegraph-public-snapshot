@@ -1326,7 +1326,8 @@ extend type Mutation {
 
     """
     Creates a batch change with an empty batch spec, such as for drafting a new batch
-    change's batch spec. Use `replaceBatchSpecInput` to update the input batch spec after
+    change. The user creating the batch change must have permission to create it in the
+    namespace provided. Use `replaceBatchSpecInput` to update the input batch spec after
     creating.
     """
     createEmptyBatchChange(
@@ -1336,7 +1337,7 @@ extend type Mutation {
         namespace: ID!
 
         """
-        The (unique) name to identify the batch change by.
+        The (unique) name to identify the batch change by in its namespace.
         """
         name: String!
     ): BatchChange!
