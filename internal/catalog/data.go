@@ -211,7 +211,7 @@ func Data() ([]Component, []Group, []Edge) {
 			OwnedBy:      "code-intel",
 		},
 		{
-			Kind:         "SERVICE",
+			Kind:         "TOOL",
 			Name:         "sitemap",
 			Description:  "This tool is run offline to generate the sitemap files served at https://sourcegraph.com/sitemap.xml.",
 			Lifecycle:    LifecycleExperimental,

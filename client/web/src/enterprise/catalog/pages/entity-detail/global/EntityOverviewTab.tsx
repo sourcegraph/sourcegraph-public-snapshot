@@ -16,6 +16,7 @@ import { CatalogComponentDocumentationFields, CatalogEntityDetailFields } from '
 import { PersonLink } from '../../../../../person/PersonLink'
 import { UserAvatar } from '../../../../../user/UserAvatar'
 import { Popover } from '../../../../insights/components/popover/Popover'
+import { CatalogEntityIcon } from '../../../components/CatalogEntityIcon'
 import { EntityGraph } from '../../../components/entity-graph/EntityGraph'
 
 import { ComponentSourceDefinitions } from './ComponentSourceDefinitions'
@@ -31,20 +32,16 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
         {entity.__typename === 'CatalogComponent' ? (
             <>
                 <div className="row">
-                    <div className="col-md-8">
-                        <div className="card mb-3">
-                            <ComponentSourceDefinitions
-                                catalogComponent={entity}
-                                listGroupClassName="list-group-flush"
-                            />
-                            {entity.commits?.nodes[0] && (
-                                <LastCommit commit={entity.commits?.nodes[0]} className="card-footer" />
-                            )}
+                    <div className="col-md-4 col-lg-3">
+                        {entity.name && (
+                            <h2 className="d-flex align-items-center mb-1">
+                                <CatalogEntityIcon entity={entity} className="icon-inline mr-1" /> {entity.name}
+                            </h2>
+                        )}
+                        <div className="text-muted small mb-2">
+                            {entity.__typename === 'CatalogComponent' &&
+                                `${entity.kind[0]}${entity.kind.slice(1).toLowerCase()}`}
                         </div>
-                        <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
-                    </div>
-                    <div className="col-md-4">
-                        {/* owner-docs-API def -- authorities. then who you could ask. */}
                         {entity.description && <p className="mb-3">{entity.description}</p>}
                         <div>
                             <Link
@@ -79,6 +76,18 @@ export const EntityOverviewTab: React.FunctionComponent<Props> = ({ entity, clas
                             </Link>
                             <hr className="my-3" />
                         </div>
+                    </div>
+                    <div className="col-md-8 col-lg-9">
+                        <div className="card mb-3">
+                            <ComponentSourceDefinitions
+                                catalogComponent={entity}
+                                listGroupClassName="list-group-flush"
+                            />
+                            {entity.commits?.nodes[0] && (
+                                <LastCommit commit={entity.commits?.nodes[0]} className="card-footer" />
+                            )}
+                        </div>
+                        <OverviewStatusContexts entity={entity} itemClassName="mb-3" />
                     </div>
                 </div>
                 <EntityGraph
