@@ -105,8 +105,8 @@ const CodeOwnersStatusContext: React.FunctionComponent<{
                 moreLinkClassName="text-muted small"
             >
                 {entity.codeOwners?.map(codeOwner => (
-                    <li key={codeOwner.node} className="list-inline-item mr-2">
-                        {codeOwner.node}
+                    <li key={codeOwner.node.email} className="list-inline-item mr-2">
+                        {codeOwner.node.email}
                         <span
                             className="small text-muted ml-1"
                             title={`Owns ${codeOwner.fileCount} ${pluralize('file', codeOwner.fileCount)}`}

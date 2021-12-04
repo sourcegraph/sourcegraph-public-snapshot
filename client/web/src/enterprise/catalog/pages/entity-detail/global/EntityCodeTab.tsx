@@ -21,10 +21,15 @@ interface Props extends TelemetryProps, ExtensionsControllerProps, ThemeProps, S
 export const EntityCodeTab: React.FunctionComponent<Props> = ({ entity, className, ...props }) => (
     <div className={classNames('container p-3', className)}>
         {entity.__typename === 'CatalogComponent' && (
-            <ComponentSourceDefinitions catalogComponent={entity} className="mb-2" />
+            <>
+                <h4>Sources</h4>
+                <ComponentSourceDefinitions catalogComponent={entity} className="mb-3" />
+            </>
         )}
-        <EntityCodeOwners entity={entity} className="card mb-2" />
-        <ComponentAuthors catalogComponent={entity} className="card mb-3 overflow-auto" />
-        <ComponentSources {...props} catalogComponent={entity} />
+        <EntityCodeOwners entity={entity} className="mb-3" />
+        <ComponentAuthors catalogComponent={entity} className="mb-3" />
+
+        <h4>All files</h4>
+        <ComponentSources {...props} catalogComponent={entity} className="mb-3 card p-2" />
     </div>
 )

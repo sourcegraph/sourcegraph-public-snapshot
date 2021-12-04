@@ -15,6 +15,11 @@ export const ScrollListRow: React.FunctionComponent<Props> = ({
 }) => (
     <div className={classNames('', className)}>
         <h4>{title}</h4>
-        <ListTag className={classNames('list-group list-group-horizontal border-0')}>{children}</ListTag>
+        <div
+            className="overflow-auto rounded border-left border-right"
+            style={{ width: 'fit-content', maxWidth: '100%' }}
+        >
+            <ListTag className={classNames('list-group list-group-horizontal')}>{children}</ListTag>
+        </div>
     </div>
 )

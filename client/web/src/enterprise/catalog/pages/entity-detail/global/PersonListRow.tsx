@@ -24,11 +24,8 @@ interface Props extends Pick<React.ComponentPropsWithoutRef<typeof ScrollListRow
 export const PersonListRow: React.FunctionComponent<Props> = ({ items, ...props }) => (
     <ScrollListRow {...props}>
         {items.map(({ person, text, textTooltip, date }) => (
-            <li
-                key={person.email}
-                className={classNames('list-group-item border-top-0 border-bottom-0 text-center pt-2', styles.item)}
-            >
-                <UserAvatar className="icon-inline d-block" user={person} />
+            <li key={person.email} className={classNames('list-group-item text-center pt-2', styles.item)}>
+                <UserAvatar className="icon-inline" user={person} />
                 <PersonLink person={person} className="text-muted small text-truncate d-block" />
                 <div className={classNames(styles.itemText)} title={textTooltip}>
                     {text}
