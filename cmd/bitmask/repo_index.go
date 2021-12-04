@@ -1,4 +1,4 @@
-package main
+package bitmask
 
 import (
 	"encoding/binary"
@@ -243,8 +243,8 @@ func NewRepoIndex(fs FileSystem) (*RepoIndex, error) {
 		onGrams(text, func(b []byte) {
 			filter.Add(b)
 		})
-		sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
-		fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
+		//sizeRatio := float64(filter.ApproximatedSize()) / float64(bloomSize)
+		//fmt.Printf("%v %v %v\n", sizeRatio, filter.ApproximatedSize(), bloomSize)
 		indexes = append(
 			indexes,
 			BlobIndex{
@@ -271,21 +271,21 @@ func (r *RepoIndex) Grep(query string) {
 		start := 0
 		end := strings.Index(text[start:], "\n")
 		matchCount := 0
-		for lineNumber, line := range strings.Split(text, "\n") {
+		for _, line := range strings.Split(text, "\n") {
 			columnNumber := strings.Index(line, query)
 			if columnNumber >= 0 {
 				matchCount++
-				prefix := line[0:columnNumber]
-				suffix := line[columnNumber+len(query):]
-				fmt.Printf(
-					"%v:%v:%v %v%v%v\n",
-					matchingPath,
-					lineNumber,
-					columnNumber,
-					prefix,
-					Yellow(query),
-					suffix,
-				)
+				//prefix := line[0:columnNumber]
+				//suffix := line[columnNumber+len(query):]
+				//fmt.Printf(
+				//	"%v:%v:%v %v%v%v\n",
+				//	matchingPath,
+				//	lineNumber,
+				//	columnNumber,
+				//	prefix,
+				//	Yellow(query),
+				//	suffix,
+				//)
 			}
 			start = end + 1
 			end = strings.Index(text[end+1:], "\n")

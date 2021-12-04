@@ -1,7 +1,8 @@
-package main
+package bitmask
 
 import (
 	"fmt"
+	"github.com/loov/hrtime/hrtesting"
 	"math"
 	"os"
 	"path/filepath"
@@ -19,10 +20,13 @@ The World is the best.
 )
 
 var dir = os.Getenv("HOME") + "/dev/sourcegraph/sourcegraph"
+var cacheFile = os.Getenv("HOME") + "/dev/sourcegraph/bitmask-cache"
 var benchmarkCacheDir = os.Getenv("HOME") + "/dev/sourcegraph/benchmark-cache"
 
 func BenchmarkIndex(b *testing.B) {
-	for j := 0; j < b.N; j++ {
+	bench := hrtesting.NewBenchmark(b)
+	defer bench.Report()
+	for bench.Next() {
 		err := WriteCache(dir, benchmarkCacheDir)
 		if err != nil {
 			panic(err)
@@ -102,7 +106,7 @@ func TestFalseResults(t *testing.T) {
 
 // TODO CPU: serialize, deserialize
 // TODO Size: serialized file, in-memory index
-func TestFalsePositive(t *testing.T) {
+func FalsePositive(t *testing.T) {
 	files := map[string]string{
 		"monitoring/definitions/git_server.go": "Repository",
 		//"client/web/src/nav/UserNavItem.story.tsx": "JVM",

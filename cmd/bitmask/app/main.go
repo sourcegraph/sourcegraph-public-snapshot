@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bits-and-blooms/bloom/v3"
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/bitmask"
 	"os"
 )
 
@@ -29,12 +30,12 @@ func main() {
 		switch os.Args[1] {
 		case "index":
 			dir := os.Args[2]
-			err := WriteCache(dir, cacheFile)
+			err := bitmask.WriteCache(dir, cacheFile)
 			if err != nil {
 				panic(err)
 			}
 		case "grep":
-			r, err := ReadCache(cacheFile)
+			r, err := bitmask.ReadCache(cacheFile)
 			if err != nil {
 				panic(errors.Wrapf(err, "Failed to decode cache at %v", cacheFile))
 			}
