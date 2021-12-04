@@ -35,7 +35,7 @@ export const CatalogAreaHeader: React.FunctionComponent<Props> = ({ path, nav })
     ) : null
 
 const PathComponent: React.FunctionComponent<PathComponent> = ({ to, icon: Icon, text }) => (
-    <LinkOrSpan to={to} className={styles.pathComponent}>
+    <LinkOrSpan to={to}>
         {Icon && <Icon className={classNames('icon-inline', styles.icon)} />}
         {text && <span className={styles.text}>{text}</span>}
     </LinkOrSpan>

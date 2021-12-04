@@ -213,6 +213,7 @@ func Data() ([]Component, []Group, []Edge) {
 		{
 			Kind:         "SERVICE",
 			Name:         "sitemap",
+			Description:  "This tool is run offline to generate the sitemap files served at https://sourcegraph.com/sitemap.xml.",
 			Lifecycle:    LifecycleExperimental,
 			SourceRepo:   sourceRepo,
 			SourceCommit: sourceCommit,

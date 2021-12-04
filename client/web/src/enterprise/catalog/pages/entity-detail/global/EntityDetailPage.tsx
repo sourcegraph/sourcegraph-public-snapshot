@@ -91,17 +91,15 @@ export const EntityDetailPage: React.FunctionComponent<Props> = ({ entityName, t
                         <FormatListBulletedIcon className="icon-inline" />
                     </button>
                 ))}
-            <div className="pt-2 container-fluid pb-4 overflow-auto w-100">
-                {loading && !data ? (
-                    <LoadingSpinner className="icon-inline" />
-                ) : error && !data ? (
-                    <div className="alert alert-danger">Error: {error.message}</div>
-                ) : !data || !data.catalogEntity ? (
-                    <div className="alert alert-danger">Entity not found in catalog</div>
-                ) : (
-                    <EntityDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
-                )}
-            </div>
+            {loading && !data ? (
+                <LoadingSpinner className="m-3 icon-inline" />
+            ) : error && !data ? (
+                <div className="m-3 alert alert-danger">Error: {error.message}</div>
+            ) : !data || !data.catalogEntity ? (
+                <div className="m-3 alert alert-danger">Entity not found in catalog</div>
+            ) : (
+                <EntityDetailContent {...props} entity={data.catalogEntity} telemetryService={telemetryService} />
+            )}
         </>
     )
 }

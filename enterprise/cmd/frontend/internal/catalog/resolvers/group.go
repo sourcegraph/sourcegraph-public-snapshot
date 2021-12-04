@@ -48,6 +48,9 @@ func (r *groupResolver) AncestorGroups() []gql.GroupResolver {
 		}
 		ancestors = append(ancestors, cur)
 	}
+	for i, j := 0, len(ancestors)-1; i < j; i, j = i+1, j-1 {
+		ancestors[i], ancestors[j] = ancestors[j], ancestors[i]
+	}
 	return ancestors
 }
 
