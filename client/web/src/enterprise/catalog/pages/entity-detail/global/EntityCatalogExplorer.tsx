@@ -3,23 +3,27 @@ import React from 'react'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
-import { useCatalogEntityFilters } from '../../core/entity-filters'
-import { CatalogExplorerList } from '../overview/components/catalog-explorer/CatalogExplorerList'
-import { CatalogExplorerViewOptionsRow } from '../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
-import { ViewModeToggle, useViewModeTemporarySettings } from '../overview/components/catalog-explorer/ViewModeToggle'
-import { OverviewEntityGraph } from '../overview/components/overview-content/OverviewEntityGraph'
+import { useCatalogEntityFilters } from '../../../core/entity-filters'
+import { CatalogExplorerList } from '../../overview/components/catalog-explorer/CatalogExplorerList'
+import { CatalogExplorerViewOptionsRow } from '../../overview/components/catalog-explorer/CatalogExplorerViewOptionsRow'
+import { useViewModeTemporarySettings, ViewModeToggle } from '../../overview/components/catalog-explorer/ViewModeToggle'
+import { OverviewEntityGraph } from '../../overview/components/overview-content/OverviewEntityGraph'
 
 interface Props {
-    group: Scalars['ID']
     className?: string
 }
 
-export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, className }) => {
+interface Props {
+    entity: Scalars['ID']
+    className?: string
+}
+
+export const EntityCatalogExplorer: React.FunctionComponent<Props> = ({ entity, className }) => {
     const { filters, onFiltersChange } = useCatalogEntityFilters()
 
     const [viewMode, setViewMode] = useViewModeTemporarySettings()
 
-    const queryScope = `group:${group}`
+    const queryScope = `entity:${entity}`
 
     return (
         <div className={classNames('card', className)}>
@@ -39,7 +43,12 @@ export const GroupCatalogExplorer: React.FunctionComponent<Props> = ({ group, cl
                     itemEndClassName="pr-3"
                 />
             ) : (
-                <OverviewEntityGraph filters={filters} queryScope={queryScope} />
+                <OverviewEntityGraph
+                    filters={filters}
+                    queryScope={queryScope}
+                    highlightID={entity}
+                    errorClassName="p-3"
+                />
             )}
         </div>
     )

@@ -33,13 +33,7 @@ func (r *rootResolver) CatalogEntity(ctx context.Context, args *gql.CatalogEntit
 func (r *rootResolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	return map[string]gql.NodeByIDFunc{
 		"CatalogComponent": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
-			components := dummyData(r.db)
-			for _, c := range components {
-				if c.ID() == id {
-					return c, nil
-				}
-			}
-			return nil, nil
+			return entityByID(r.db, id), nil
 		},
 		"Group": func(ctx context.Context, id graphql.ID) (gql.Node, error) {
 			return groupByID(id), nil

@@ -34,8 +34,8 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
     bodyClassName,
     className,
 }) => (
-    <div className={classNames('flex-1 align-self-stretch row no-gutters', className)}>
-        <div className="col-md-4 col-lg-3 border-right p-3">
+    <div className={classNames('flex-1 row no-gutters', className)}>
+        <div className="col-md-4 col-lg-3 col-xl-2 border-right p-3">
             <h2 className="d-flex align-items-center mb-1">
                 <CatalogGroupIcon className="icon-inline mr-2" />
                 {group.title || group.name}
@@ -63,7 +63,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
             <hr className="my-3" />
             {group.members && group.members.length > 0 && (
                 <>
-                    <h4>
+                    <h4 className="font-weight-bold">
                         <Link to={`${group.url}/members`} className="text-body">
                             {group.members.length} {pluralize('member', group.members.length)}
                         </Link>
@@ -80,7 +80,7 @@ export const GroupOverviewTab: React.FunctionComponent<Props> = ({
                 </>
             )}
         </div>
-        <div className="col-md-8 col-lg-9 p-3">
+        <div className="col-md-8 col-lg-9 col-xl-10 p-3">
             {group.childGroups && group.childGroups.length > 0 && (
                 <div className="mb-3">
                     <h4 className="font-weight-bold">

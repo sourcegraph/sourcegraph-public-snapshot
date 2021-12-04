@@ -1,6 +1,8 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 
 import { CatalogGraphResult, CatalogGraphVariables } from '../../../../../../graphql-operations'
@@ -10,11 +12,19 @@ import { CatalogEntityFiltersProps } from '../../../../core/entity-filters'
 import { CATALOG_GRAPH } from './gql'
 
 interface Props extends Pick<CatalogEntityFiltersProps, 'filters'> {
+    highlightID?: Scalars['ID']
     queryScope?: string
     className?: string
+    errorClassName?: string
 }
 
-export const OverviewEntityGraph: React.FunctionComponent<Props> = ({ filters, queryScope, className }) => {
+export const OverviewEntityGraph: React.FunctionComponent<Props> = ({
+    filters,
+    highlightID,
+    queryScope,
+    className,
+    errorClassName,
+}) => {
     const { data, error, loading } = useQuery<CatalogGraphResult, CatalogGraphVariables>(CATALOG_GRAPH, {
         variables: {
             query: `${queryScope || ''} ${filters.query || ''}`,
@@ -31,18 +41,21 @@ export const OverviewEntityGraph: React.FunctionComponent<Props> = ({ filters, q
     })
 
     return error ? (
-        <p>Error loading graph</p>
+        <div className={classNames('alert alert-error', errorClassName)}>Error loading graph</div>
     ) : loading && !data ? (
         <LoadingSpinner className="icon-inline" />
     ) : !data || !data.catalog.graph ? (
-        <p>Catalog graph is not available</p>
-    ) : (
+        <div className={classNames('alert alert-error', errorClassName)}>Catalog graph is not available</div>
+    ) : data.catalog.graph.nodes.length > 0 ? (
         <EntityGraph
             graph={{
                 ...data.catalog.graph,
                 edges: data.catalog.graph.edges.filter(edge => edge.type === 'DEPENDS_ON'),
             }}
+            activeNodeID={highlightID}
             className={className}
         />
+    ) : (
+        <p className={classNames('text-muted mb-0', errorClassName)}>Empty graph</p>
     )
 }

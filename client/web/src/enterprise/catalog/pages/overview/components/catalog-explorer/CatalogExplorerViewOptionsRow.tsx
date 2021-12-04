@@ -1,7 +1,5 @@
 import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
-import { useLocation } from 'react-router'
-import { NavLink } from 'react-router-dom'
 import { Form } from 'reactstrap'
 
 import { useDebounce } from '@sourcegraph/wildcard'

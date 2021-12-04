@@ -9,9 +9,14 @@ export const CATALOG_ENTITY_OWNER_FRAGMENT = gql`
             __typename
             ... on Person {
                 ...PersonLinkFields
+                avatarURL
             }
             ... on Group {
                 ...GroupLinkFields
+                members {
+                    ...PersonLinkFields
+                    avatarURL
+                }
                 ancestorGroups {
                     ...GroupLinkFields
                 }

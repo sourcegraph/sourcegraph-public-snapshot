@@ -28,14 +28,14 @@ export const OverviewStatusContexts: React.FunctionComponent<Props> = ({ entity,
         {entity.status.contexts.map(statusContext => {
             switch (statusContext.name) {
                 case 'owner':
-                    return (
+                    return false ? (
                         <OwnerStatusContext
                             key={statusContext.id}
                             entity={entity}
                             statusContext={statusContext}
                             className={itemClassName}
                         />
-                    )
+                    ) : null
 
                 case 'codeOwners':
                     return (
